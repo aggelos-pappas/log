@@ -156,8 +156,15 @@ export async function openVoiceIndex(embedder: Embedder, dir = voiceDir()): Prom
   return { dir, pairs, byId: new Map(pairs.map((p) => [p.id, p])), profiles, keyword, embedder, vectors, wording, close: () => db.close() }
 }
 
+export function isOneToOneWith(pair: VoicePair, target: VoiceTarget): boolean {
+  if (target.with?.length !== 1 || pair.kind !== 'dm' || pair.with.length !== 1) return false
+  if (target.platform && pair.platform !== target.platform) return false
+  return pair.with[0].toLowerCase() === target.with[0].toLowerCase()
+}
+
 export function tierOf(pair: VoicePair, target: VoiceTarget): NearPair['tier'] {
   if (target.conversationId && pair.conversationId === target.conversationId && (!target.platform || pair.platform === target.platform)) return 'sameChat'
+  if (!target.conversationId && isOneToOneWith(pair, target)) return 'sameChat'
   const people = new Set((target.with ?? []).map((w) => w.toLowerCase()))
   if (people.size && pair.with.some((w) => people.has(w.toLowerCase()))) return 'samePerson'
   if (target.platform && pair.platform === target.platform) return 'samePlatform'

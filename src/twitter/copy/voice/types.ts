@@ -27,6 +27,7 @@ export interface VoiceReading {
   to: string
   voice: number
   inContext: number
+  answerRequired: boolean
   friendLike: number
   openerOnly: number
   toThem: number | null
@@ -40,6 +41,7 @@ export interface VoiceReading {
 
 export const VOICE_PASS = 0.8
 export const CONTEXT_PASS = 0.7
+export const ANSWER_WINDOW_MS = 24 * 60 * 60 * 1000
 export const RANKED_CONTEXT = 12
 export const RANKED_SHORTLIST = 40
 export const VOICE_MODEL = 'subq-snap-1.1'

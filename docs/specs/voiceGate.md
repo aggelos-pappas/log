@@ -16,7 +16,7 @@ Checked by: code and SubQ
 
 ### REQ-VOICE-02: A chat with the person adds that chat's evidence
 
-When there is a chat with the person, the draft is also read against the owner's replies, closest wording and latest messages in that chat, and SubQ is asked whether it reads like him writing in that chat.
+When there is a chat with the person, the draft is also read against the owner's replies, closest wording and latest messages in that chat, (an X dm is found by the one person in it, because X gives the same dm two conversation ids), and SubQ is asked whether it reads like him writing in that chat.
 
 Checked by: SubQ
 
@@ -46,7 +46,7 @@ Checked by: code and SubQ
 
 ### REQ-VOICE-06: A draft passes only when every answer passes
 
-A draft passes only when the voice answer reaches its threshold, the context, friend-like and opener answers reach theirs, the chat answer reaches its threshold when there is a chat, the builds-on answer reaches its threshold when the draft is spoken (REQ-VOICE-13), no never-said phrase is found and the watermark finds no artifacts.
+A draft passes only when the voice answer reaches its threshold, the context answer reaches its threshold when an answer is owed (they wrote last, within the last day, or the owner has never talked with them; a share to someone he already talks to with nothing of theirs waiting answers nothing), the friend-like and opener answers reach theirs, the chat answer reaches its threshold when there is a chat, the builds-on answer reaches its threshold when the draft is spoken (REQ-VOICE-13), no never-said phrase is found and the watermark finds no artifacts.
 
 Checked by: code and SubQ
 

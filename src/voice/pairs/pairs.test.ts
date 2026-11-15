@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { hashEmbedder } from '../../search/conversations/index'
 import type { Conversation } from '../../search/conversations/index'
-import { buildVoiceIndex, nearestPairs, openVoiceIndex, pairsOf, offProfile, profileFor, profilesOf, splitPlan, startRatesOf } from './index'
+import { buildVoiceIndex, nearestPairs, openVoiceIndex, pairsOf, offProfile, profileFor, profilesOf, recentInChat, splitPlan, startRatesOf, tierOf } from './index'
 
 const msg = (id: string, fromMe: boolean, text: string, from = fromMe ? 'the owner' : 'them') => ({ id, at: `2026-10-28T08:${id.padStart(2, '0')}:00Z`, from, fromMe, text })
 
@@ -106,5 +106,20 @@ describe('the owner\'s voice, per person and per chat', () => {
     expect(offProfile('haha the 60 year olds are cooked', profile)).toEqual([])
     expect(offProfile('Haha the 60 year olds are cooked!', profile)).toEqual([])
     expect(offProfile('haha 😭', { ...profile, replies: 4 })).toEqual([])
+  })
+})
+
+describe('an X dm is found by the one person in it, since X gives one chat two ids', () => {
+  const xChat = (conversationId: string, text: string): Conversation => ({ platform: 'twitter', account: 'xAccount', conversationId, box: 'xchat', with: ['vladFriend'], messages: [msg('1', false, 'what are you building'), msg('2', true, text)] })
+  const pairs = [...pairsOf([xChat('111:222', 'outbound stuff lad')]), ...pairsOf([xChat('111-222', 'cost will be high doe')])]
+
+  test('both ids of the dm are the same chat for a target named by the person, and a group with them is not', () => {
+    const group = pairsOf([{ ...xChat('333', 'yo all'), with: ['vladFriend', 'someoneElse'], box: 'group' }])
+    expect(pairs.map((p) => tierOf(p, { with: ['VladFriend'] }))).toEqual(['sameChat', 'sameChat'])
+    expect(tierOf(group[0], { with: ['vladFriend'] })).toBe('samePerson')
+  })
+
+  test('his latest messages in that dm are read, so the gate knows they have already talked', () => {
+    expect(recentInChat({ pairs }, { with: ['vladFriend'] }).map((p) => p.reply).sort()).toEqual(['cost will be high doe', 'outbound stuff lad'])
   })
 })
