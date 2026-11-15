@@ -6,7 +6,7 @@ pack:
 plugins:
   - repo: matthewdonsemail-lab/log
     subdir: hermesPlugin
-    ref: fe8bd3c995dc0cfcf9306f171ddf5aeabcbaa7b9
+    ref: 0617800662667187a62cd3670eee95e6b8e88468
   - repo: matthewdonsemail-lab/log
     subdir: hermesPlugin/native
-    ref: fe8bd3c995dc0cfcf9306f171ddf5aeabcbaa7b9
+    ref: 0617800662667187a62cd3670eee95e6b8e88468
