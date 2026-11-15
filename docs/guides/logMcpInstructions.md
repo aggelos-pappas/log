@@ -161,11 +161,11 @@ From the current AGENTS.md (`log://agents`). Every other guide cites its rules b
 
 **Rule 35.** 2026-10-19 · Browser work uses one account browser through its active day, with actions as tabs/steps; close only for a logged lifecycle reason. Preserve existing proxy-country, locale/timezone, device/profile, headed visibility, capture, active-hours and launch-budget gates. Keep checkpoint stops and account-specific constraints in the browser/flow guides. Do not create a fresh browser per action.
 
-**Rule 38.** 2026-10-19 · Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless the owner raises them.
+**Rule 38.** 2026-10-19 · Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless The owner raises them.
 
-**Rule 39.** 2026-10-19 · Use only the scope, options and intent the owner stated or implied. Do not add unrelated alternatives to research, comparisons, plans or implementation.
+**Rule 39.** 2026-10-19 · Use only the scope, options and intent The owner stated or implied. Do not add unrelated alternatives to research, comparisons, plans or implementation.
 
-**Rule 40.** 2026-10-19 · Do not propose physical infrastructure unless the owner asks. Their available implementation scope is hosted/cloud environments and the tools already selected.
+**Rule 40.** 2026-10-19 · Do not propose physical infrastructure unless The owner asks. Their available implementation scope is hosted/cloud environments and the tools already selected.
 
 **Rule 41.** 2026-10-19 · Paid work must stay within the authorized task and spend. Ask before adding a paid operation they did not authorize; do not substitute a new paid provider implicitly.
 
@@ -173,25 +173,25 @@ From the current AGENTS.md (`log://agents`). Every other guide cites its rules b
 
 **Rule 73.** 2026-10-23 · For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence. Use the existing REA/SubQ reading workflow when applicable, report the unknown state, write Point/Evidence/Explain and the fix, then name the state. Preserve paid-work scope. This runtime analysis does not add SubQ to commit/CI gates.
 
-**Rule 94.** 2026-10-29 · Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies. A refusal, failed send, 429, block, disable, captcha or cooldown stops that run/account until the owner authorizes continuation. Do not retry through refusals. Bulk reading and sending are separate sessions; cold DMs stay a few a day, minutes apart, and opening a DM counts as a write.
+**Rule 94.** 2026-10-29 · Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies. A refusal, failed send, 429, block, disable, captcha or cooldown stops that run/account until The owner authorizes continuation. Do not retry through refusals. Bulk reading and sending are separate sessions; cold DMs stay a few a day, minutes apart, and opening a DM counts as a write.
 
 **Rule 105.** 2026-11-01 · One platform/account owns one continuous engine session and push connection. Reads, writes, queues and watches share that owner through existing relay/serialization. Never open a parallel client to bypass the owner or its governor.
 
-**Rule 109.** 2026-11-01 · Read the full relevant chat and current private context before drafting or sending. Include media/transcript/attachment context and pending queued actions; hold a send if required context cannot be obtained. Follow the selected channel's voice and task-brief contract. Cold outreach excludes existing conversations through the current prior-conversation check; bypass it only when the owner asks.
+**Rule 109.** 2026-11-01 · Read the full relevant chat and current private context before drafting or sending. Include media/transcript/attachment context and pending queued actions; hold a send if required context cannot be obtained. Follow the selected channel's voice and task-brief contract. Cold outreach excludes existing conversations through the current prior-conversation check; bypass it only when The owner asks.
 
 **Rule 133.** 2026-11-04 · Claim a chat before acting; consult recent actions, preserve claim generation and check it before subsequent message parts. A lost claim stops the remaining send. Release when done; retain claim/action evidence in the existing private store.
 
 **Rule 134.** 2026-11-04 · Existing workspace log.db is the native private record/coordination foundation. Preserve events, stable identities, chats/messages, attachments/interactions, claims/owners/cursors, queues/jobs, media/search and records/state. Keep current WAL/migration/version semantics and transaction boundaries; unknown events retain source payload and are surfaced for analysis. Only proven projections are rebuildable.
 
-**Rule 137.** 2026-11-04 · Preserve current context-aware voice and AI-artifact gates for messages sent as the owner. Rework refused drafts from the stated cause. Exact-message overrides and dictated/translated voice-note exceptions require the owner's request and preserve remaining artifact checks. Do not treat an exception as permanent permission.
+**Rule 137.** 2026-11-04 · Preserve current context-aware voice and AI-artifact gates for messages sent as The owner. Rework refused drafts from the stated cause. Exact-message overrides and dictated/translated voice-note exceptions require The owner's request and preserve remaining artifact checks. Do not treat an exception as permanent permission.
 
 **Rule 138.** 2026-11-04 · Media and voice-note context uses the existing private media descriptions and transcripts. Do not claim to have understood undescribed media. Preserve hash-based deduplication, private storage and the one describer process.
 
-**Rule 158.** 2026-11-07 · Select the relevant guide/use case from the task. Read the guide before using its Log tools and carry context across the full workflow; do not require the owner to remember internal command names.
+**Rule 158.** 2026-11-07 · Select the relevant guide/use case from the task. Read the guide before using its Log tools and carry context across the full workflow; do not require The owner to remember internal command names.
 
 **Rule 160.** 2026-11-07 · Answer eligible chat reads from log.db when the owner is live, caught up and the needed history is present/backfilled. Otherwise fill the missing scope once through the owner. A refused catch-up is a refusal, never a reason to bypass it with another live read. Report the read source.
 
-**Rule 163.** 2026-11-07 · Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients. Terminal-only credential prompts remain for the owner. Expose discoverable command contracts through the existing Log catalog: search the job, get exact inputs, then call. Keep tool descriptions concise and accurate to the current implementation.
+**Rule 163.** 2026-11-07 · Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients. Terminal-only credential prompts remain for The owner. Expose discoverable command contracts through the existing Log catalog: search the job, get exact inputs, then call. Keep tool descriptions concise and accurate to the current implementation.
 
 **Rule 167.** 2026-11-07 · Use supported MCP/runtime reload behavior for changes. Avoid restarting healthy sessions unnecessarily; never silently interrupt active account work or bypass owner locks.
 
@@ -199,4 +199,4 @@ From the current AGENTS.md (`log://agents`). Every other guide cites its rules b
 
 **Rule 172.** 2026-11-11 · The selected persistent cloud workspace owns private accounts, credentials/sessions, messages and execution data in existing SQLite plus protected files. Central storage owns identity, team authorization, scoped grants and minimal routing/recovery metadata only. No durable central private payload/message catalog. Use paired outbound routing, fencing and uncertain-write reconciliation; one selected workspace per team in V1.
 
-**Rule 176.** 2026-11-11 · the owner requested pruning obsolete agent rules. AGENTS.md is the concise active instruction set; prior instructions are archived outside this repository as non-authoritative history. Keep platform procedures in their relevant skills/specs and dated one-off incidents out of global instructions. A historical citation does not restore superseded architecture.
+**Rule 176.** 2026-11-11 · The owner requested pruning obsolete agent rules. AGENTS.md is the concise active instruction set; prior instructions are archived outside this repository as non-authoritative history. Keep platform procedures in their relevant skills/specs and dated one-off incidents out of global instructions. A historical citation does not restore superseded architecture.

@@ -13,7 +13,7 @@ title: "treg"
 | `tregSearch` | `log treg search "<what you want done>" [--limit <n>]` | The endpoints that do the job, each with its id, what it does and its price |
 | `tregGet` | `log treg get <endpointId>` | One endpoint in full: its price, every param and a call that works |
 | `tregCall` | `log treg call <endpointId> --params '<json object>' [--path <p>] [--method <m>] [--data '<body>'] [--await]` | Its answer, as the provider sent it |
-| `tregCallLive` | the same with `--live --approvedBy matt` | The same, for a priced endpoint matt asked to spend on |
+| `tregCallLive` | the same with `--live --approvedBy the owner` | The same, for a priced endpoint the owner asked to spend on |
 
 ## What it costs
 
@@ -21,7 +21,7 @@ Every call reads the endpoint's price with `get` first:
 
 - **A free endpoint runs.** `tinyfish.web.search` is free, for example.
 - **A priced endpoint is a dry run.** It prints the price and the exact `treg call` it would run, and calls and spends nothing.
-- **It runs only with `--live` and `--approvedBy`,** when matt asked for that spend (rule 41). Over MCP that's `tregCallLive` with `confirmLive: true`.
+- **It runs only with `--live` and `--approvedBy`,** when the owner asked for that spend (rule 41). Over MCP that's `tregCallLive` with `confirmLive: true`.
 
 The team's treg balance is in `log balance` (rule 164).
 

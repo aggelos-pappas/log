@@ -66,7 +66,7 @@ Starts the login page's conditional sign-in (passkey autofill): the server hands
 
 ## What our machine does with it
 
-Not used: matt signs in himself (matt, 2026-10-28), so our step only records it.
+Not used: the owner signs in himself (the owner, 2026-10-28), so our step only records it.
 
 ## What can go wrong
 

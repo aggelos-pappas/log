@@ -1,7 +1,7 @@
 ---
 name: log-twitter-manager-maxxing
 description: "Manager maxxing: the managers of the biggest Kick streamers. A log play (docs/useCases/twitter/managerMaxxing.md): The owner's go-to-market, in his words (https://x.com/matthewsoldit/status/2118285429674017268): \"find every single kick streamers managers on twitter, reply guy them for a few days then cold dm them to use log and show claviculars twitter\". The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck."
-when_to_use: "Use when matt asks for this, in words like: \"manager maxxing\", \"find every kick streamer's manager on twitter\", \"reply guy the kick managers with memes\", \"the managers that engaged, send them their tweet, a message and a voice note\"."
+when_to_use: "Use when the owner asks for this, in words like: \"manager maxxing\", \"find every kick streamer's manager on twitter\", \"reply guy the kick managers with memes\", \"the managers that engaged, send them their tweet, a message and a voice note\"."
 metadata:
   summary: "Manager maxxing: the managers of the biggest Kick streamers"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/managerMaxxing`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/managerMaxxing" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 The owner's go-to-market, in his words (https://x.com/matthewsoldit/status/2118285429674017268): "find every single kick streamers managers on twitter, reply guy them for a few days then cold dm them to use log and show claviculars twitter". The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck.
 
@@ -90,3 +90,5 @@ flowchart TD
 
 - Steps 1 to 4 are read by hand from StreamerStats, the agencies' sites and treg for now; a command that builds `streamers.json` and `agencies.json` would make them repeatable.
 - StreamerStats shows only the top 75 without a login; a deeper ranking per category needs the owner signed in there.
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

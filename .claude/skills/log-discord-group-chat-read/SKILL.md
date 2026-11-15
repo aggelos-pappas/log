@@ -1,7 +1,7 @@
 ---
 name: log-discord-group-chat-read
 description: "Reading a Discord group chat without Twenty. A log play (docs/useCases/discord/groupChatRead.md): Catch up on what was said in a Discord group DM over the last few hours, on the account's own session, with the account kept in a local file instead of Twenty. This page reads and sends nothing. A channel inside a server is read the same way by `\"<server> #<channel>\"`, but always live from Discord, since log.db keeps only its mentions and replies: see [serverReply](serverReply.md) for how a server channel differs from a group DM."
-when_to_use: "Use when matt asks for this, in words like: \"read the <group> chat over the last <N> hours\", \"what did <someone> set up in <group>\""
+when_to_use: "Use when the owner asks for this, in words like: \"read the <group> chat over the last <N> hours\", \"what did <someone> set up in <group>\""
 metadata:
   summary: "Reading a Discord group chat without Twenty"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `discord/groupChatRead`. Before anything else, call the log MCP tool `getGuide({ useCase: "discord/groupChatRead" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Catch up on what was said in a Discord group DM over the last few hours, on the account's own session, with the account kept in a local file instead of Twenty. This page reads and sends nothing. A channel inside a server is read the same way by `"<server> #<channel>"`, but always live from Discord, since log.db keeps only its mentions and replies: see [serverReply](../log-discord-server-reply/SKILL.md) for how a server channel differs from a group DM.
 

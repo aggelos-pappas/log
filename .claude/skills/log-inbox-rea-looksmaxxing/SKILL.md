@@ -1,7 +1,7 @@
 ---
 name: log-inbox-rea-looksmaxxing
 description: "/rea-looksmaxxing: moneymaxx like a creator. A log play (docs/useCases/inbox/reaLooksmaxxing.md): Reverse engineer how a creator gets paid, then run the same play on your own accounts. [treg](https://treg.to/?ref=matthewdonse-aebsh) reads the social data (the creator's most viral clips, the clip farms reposting them, views and comments), the formula is decoded from what won, and log posts it through your accounts and funnels everyone who replies or DMs into your offer, every message checked against how you write. Clavicular is the worked example: 40 of his clips pulled, the top one at 8.44M views, a looksmaxxing program as the offer. The video and the page (`log.listeningkit.com/rea-looksmaxxing`) tell the same play."
-when_to_use: "Use when matt asks for this, in words like: \"/rea-looksmaxxing how clavicular gets paid\", \"moneymaxx like <creator>\", \"how does <creator> get paid\""
+when_to_use: "Use when the owner asks for this, in words like: \"/rea-looksmaxxing how clavicular gets paid\", \"moneymaxx like <creator>\", \"how does <creator> get paid\""
 metadata:
   summary: "/rea-looksmaxxing: moneymaxx like a creator"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `inbox/reaLooksmaxxing`. Before anything else, call the log MCP tool `getGuide({ useCase: "inbox/reaLooksmaxxing" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Reverse engineer how a creator gets paid, then run the same play on your own accounts. [treg](https://treg.to/?ref=matthewdonse-aebsh) reads the social data (the creator's most viral clips, the clip farms reposting them, views and comments), the formula is decoded from what won, and log posts it through your accounts and funnels everyone who replies or DMs into your offer, every message checked against how you write. Clavicular is the worked example: 40 of his clips pulled, the top one at 8.44M views, a looksmaxxing program as the offer. The video and the page (`log.listeningkit.com/rea-looksmaxxing`) tell the same play.
 
@@ -41,3 +41,5 @@ Say: **"go on docs/useCases/inbox/reaLooksmaxxing.md for <creator> and <offer>"*
 - **Sends follow the account's rules.** Reads first, every `…Live` tool needs `confirmLive: true`, one session per account, never in quick succession, and a 429 or any refusal stops the run (rules 8, 94, 105).
 - **Sell the outcome.** Step 7 of the video says to build the offer on people's insecurities and adds "we don't recommend it". The play doesn't either.
 - The video's beats, copy rules and render steps are in the `reaLooksmaxxing` skill (`skills/reaLooksmaxxing/SKILL.md`); the play everyone can install is `skills/published/reaLooksmaxxing/SKILL.md`.
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

@@ -1,7 +1,7 @@
 ---
 name: log-discord-server-reply
 description: "Replying in a Discord server channel. A log play (docs/useCases/discord/serverReply.md): Answer someone in a channel of a Discord server: a mention of the account, a reply to its message, or a question in a channel the owner is part of, like \"pennyserver #general\". A server channel is not a group chat. It is a room inside someone else's server, with members who never joined a conversation with the owner, an owner and its own rules, so it is read, answered and sent differently from a DM or a group DM. DMs and group DMs are [channelReply](channelReply.md)."
-when_to_use: "Use when matt asks for this, in words like: \"reply to <someone> in <server>\", \"answer him in the general\", \"message the guy in <server> #<channel> who mentioned me\", \"reply in the <server> server\", \"find what <someone> said in <server> and answer it\""
+when_to_use: "Use when the owner asks for this, in words like: \"reply to <someone> in <server>\", \"answer him in the general\", \"message the guy in <server> #<channel> who mentioned me\", \"reply in the <server> server\", \"find what <someone> said in <server> and answer it\""
 metadata:
   summary: "Replying in a Discord server channel"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `discord/serverReply`. Before anything else, call the log MCP tool `getGuide({ useCase: "discord/serverReply" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Answer someone in a channel of a Discord server: a mention of the account, a reply to its message, or a question in a channel the owner is part of, like "pennyserver #general". A server channel is not a group chat. It is a room inside someone else's server, with members who never joined a conversation with the owner, an owner and its own rules, so it is read, answered and sent differently from a DM or a group DM. DMs and group DMs are [channelReply](../log-discord-channel-reply/SKILL.md).
 

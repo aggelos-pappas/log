@@ -43,20 +43,20 @@ describe("catching up after a gap (rule 135)", () => {
     expect(db().prepare("SELECT kind FROM alerts WHERE kind = 'catchUpRefused'").all()).toHaveLength(1);
   });
 
-  test("a refused gap stays refused until matt resumes it, and then the runner catches up again", async () => {
+  test("a refused gap stays refused until the owner resumes it, and then the runner catches up again", async () => {
     openGap("twitter", "acct", "2026-11-04T01:00:00Z", "socketDropped");
     await catchUpRunner("twitter", "acct", async () => ({ appended: 0, refused: "xchatLocked: transient" })).run();
-    expect(resumeGap("discord", "acct", "matt")).toBeNull();
+    expect(resumeGap("discord", "acct", "the owner")).toBeNull();
     let calls = 0;
     await catchUpRunner("twitter", "acct", async () => (calls++, { appended: 1 })).run();
     expect(calls).toBe(0);
-    expect(resumeGap("twitter", "acct", "matt")).toMatchObject({ status: "open", fromAt: "2026-11-04T01:00:00Z" });
-    expect(String(behindOf("twitter", "acct")?.detail)).toContain("resumed by matt");
+    expect(resumeGap("twitter", "acct", "the owner")).toMatchObject({ status: "open", fromAt: "2026-11-04T01:00:00Z" });
+    expect(String(behindOf("twitter", "acct")?.detail)).toContain("resumed by the owner");
     expect(db().prepare("SELECT kind FROM alerts WHERE kind = 'gapResumed'").all()).toHaveLength(1);
     await catchUpRunner("twitter", "acct", async () => (calls++, { appended: 1 })).run();
     expect(calls).toBe(1);
     expect(behindOf("twitter", "acct")).toBeNull();
-    expect(resumeGap("twitter", "acct", "matt")).toBeNull();
+    expect(resumeGap("twitter", "acct", "the owner")).toBeNull();
   });
 
   test("an X user id finds its handle from the notifications the owner stored, so the voice gate reads the right chat", () => {

@@ -1,10 +1,10 @@
-# Research: processes and IPC, from the fundamentals and measured on matt's machine
+# Research: processes and IPC, from the fundamentals and measured on the owner's machine
 
 Sources were read in full for the sections cited. Copyrighted sources are paraphrased.
 
 ## What the classic sources establish
 
-- **OSTEP (Arpaci-Dusseau), "Limited Direct Execution":** a system call and a context switch each cost microseconds. The book's 1996 figures were about 4 µs and 6 µs; on modern CPUs both are under 1 µs. Creating a process costs far more: a new address space, loading the program, and starting a runtime. matt's 24 ms bare process start is 10^4 to 10^5 system calls, and the 750 ms Python start-up about 10^6.
+- **OSTEP (Arpaci-Dusseau), "Limited Direct Execution":** a system call and a context switch each cost microseconds. The book's 1996 figures were about 4 µs and 6 µs; on modern CPUs both are under 1 µs. Creating a process costs far more: a new address space, loading the program, and starting a runtime. the owner's 24 ms bare process start is 10^4 to 10^5 system calls, and the 750 ms Python start-up about 10^6.
 - **OSTEP, "Process API" (5.4):**
   - UNIX keeps `fork` and `exec` separate so the shell can rewire file descriptors between them.
   - Windows has none of this: its `CreateProcess` creates a process and runs the new program in one step. This point is general knowledge, not from OSTEP.
@@ -28,7 +28,7 @@ Sources were read in full for the sections cited. Copyrighted sources are paraph
   - **"HTTP/1.X":** keep-alive saves a round trip per request.
 - **Beej's Guide to Network Programming:** a send can be partial and a read can return part of a message. The receiver buffers until it has a whole frame. Newline-delimited JSON is a valid frame.
 
-## Measured on matt's machine, 2026-11-08
+## Measured on the owner's machine, 2026-11-08
 
 Windows 11, Ryzen 9 8945HS, Bun 1.4.0, Python 3.12, Claude Code 2.1.305. 10,000 samples per row after 500 warm-up runs, unless the row says otherwise. 2 KB JSON request, small reply.
 

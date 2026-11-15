@@ -13,7 +13,7 @@ const CHATS: DiscordChat[] = [
   { id: '1000000000000000015', kind: 'group', name: null, members: ['Ash', 'Breeze'] },
 ]
 
-describe('a chat said the way matt says it', () => {
+describe('a chat said the way the owner says it', () => {
   test('filler words go, the name stays', () => {
     expect(normalizedName('the log community group chat')).toBe('log')
     expect(normalizedName('DM with Wren')).toBe('wren')

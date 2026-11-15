@@ -16,7 +16,7 @@ ruleHistory/
 RESEARCH/
 media/personas/
 
-# matt's messages and everything built from them stay on this machine (~/.logCli), never in git
+# the owner's messages and everything built from them stay on this machine (~/.logCli), never in git
 .logCli/
 pairs.json
 profiles.json

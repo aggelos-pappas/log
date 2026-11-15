@@ -23,7 +23,7 @@ const files: DatasetFiles = {
   ]
 }
 
-describe('drawPersona: a behaviour profile from the three datasets matt named (rule 50)', () => {
+describe('drawPersona: a behaviour profile from the three datasets the owner named (rule 50)', () => {
   test("the account's country and a Facebook or Instagram user where the data has them; a TikTok participant from DaRUS", () => {
     const persona = drawPersona(files, 'US', 1)
     expect(persona.rows.map((r) => r.source)).toEqual(['doomscrolling D1', 'socialBehaviour U1', 'shortFormMemory 201'])

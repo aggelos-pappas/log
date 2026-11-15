@@ -1,6 +1,6 @@
 # AGENTS.md — Log
 
-Current instructions, consolidated at Matt's request on 11 November 2026.
+Current instructions, consolidated at The owner's request on 11 November 2026.
 
 ## Current implementation scope
 
@@ -20,13 +20,13 @@ Use the current task and active rules below. Stable rule numbers are retained fo
 
 For platform work, read the relevant skill/use-case and current domain spec. Platform browser gates, current account-specific limits and credential formats remain enforced by existing implementations. Do not turn their historical storage conventions into a new native schema.
 
-## Hard rules (from matt)
+## Hard rules (from the owner)
 
 1. 2026-10-18 · Use camelCase for owned files, folders, values, ids, statuses and error codes. Convert external naming once at the boundary. See docs/namingConventions.md.
 
 2. 2026-10-18 · Put platform code under src/<platform>/<area>/<domain>; shared code stays in its shared library/domain. Use index.ts, types.ts, client.ts, machine.ts and helpers where appropriate. Keep scripts and Python in domain folders.
 
-4. 2026-10-18 · Commit and push as Matt to GitHub origin. Preserve unrelated work and inspect current changes before editing. Never bypass hooks.
+4. 2026-10-18 · Commit and push as The owner to GitHub origin. Preserve unrelated work and inspect current changes before editing. Never bypass hooks.
 
 5. 2026-10-18 · Each commit needs its AST-backed day-log entry, written by the pre-commit hook to the private devlog (`LOG_DEVLOG_DIR`, default `~/.logCli/devlog/<UTC-date>.md`), never into the repo. Follow skills/commitLog/SKILL.md; never fabricate or hand-edit the generated AST evidence.
 
@@ -50,11 +50,11 @@ For platform work, read the relevant skill/use-case and current domain spec. Pla
 
 35. 2026-10-19 · Browser work uses one account browser through its active day, with actions as tabs/steps; close only for a logged lifecycle reason. Preserve existing proxy-country, locale/timezone, device/profile, headed visibility, capture, active-hours and launch-budget gates. Keep checkpoint stops and account-specific constraints in the browser/flow guides. Do not create a fresh browser per action.
 
-38. 2026-10-19 · Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless Matt raises them.
+38. 2026-10-19 · Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless The owner raises them.
 
-39. 2026-10-19 · Use only the scope, options and intent Matt stated or implied. Do not add unrelated alternatives to research, comparisons, plans or implementation.
+39. 2026-10-19 · Use only the scope, options and intent The owner stated or implied. Do not add unrelated alternatives to research, comparisons, plans or implementation.
 
-40. 2026-10-19 · Do not propose physical infrastructure unless Matt asks. His available implementation scope is hosted/cloud environments and the tools already selected.
+40. 2026-10-19 · Do not propose physical infrastructure unless The owner asks. His available implementation scope is hosted/cloud environments and the tools already selected.
 
 41. 2026-10-19 · Paid work must stay within the authorized task and spend. Ask before adding a paid operation he did not authorize; do not substitute a new paid provider implicitly.
 
@@ -78,19 +78,19 @@ For platform work, read the relevant skill/use-case and current domain spec. Pla
 
 83. 2026-10-25 · New platforms use the existing scaffold, shared account/session boundary, command/catalog wiring, platform documentation and spec anchors. Native hosted scaffolds must not recreate a Twenty dependency.
 
-86. 2026-10-26 · Governor, waking-hours, voice-gate and other bypasses apply only when Matt explicitly requests the specific supported override. A bypass never implicitly disables unrelated gates.
+86. 2026-10-26 · Governor, waking-hours, voice-gate and other bypasses apply only when The owner explicitly requests the specific supported override. A bypass never implicitly disables unrelated gates.
 
 89. 2026-10-26 · Find conversational context by scoped search and existing private records. Do not reread every thread for a single person or task.
 
-90. 2026-10-28 · Preserve platform message splitting: draft lines send as separate messages unless Matt explicitly requests the supported asOne behavior.
+90. 2026-10-28 · Preserve platform message splitting: draft lines send as separate messages unless The owner explicitly requests the supported asOne behavior.
 
-94. 2026-10-29 · Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies. A refusal, failed send, 429, block, disable, captcha or cooldown stops that run/account until Matt authorizes continuation. Do not retry through refusals. Bulk reading and sending are separate sessions; cold DMs stay a few a day, minutes apart, and opening a DM counts as a write.
+94. 2026-10-29 · Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies. A refusal, failed send, 429, block, disable, captcha or cooldown stops that run/account until The owner authorizes continuation. Do not retry through refusals. Bulk reading and sending are separate sessions; cold DMs stay a few a day, minutes apart, and opening a DM counts as a write.
 
 103. 2026-10-31 · The public log repository on origin is the working repository. Keep archived repository references as history, not implementation destinations.
 
 105. 2026-11-01 · One platform/account owns one continuous engine session and push connection. Reads, writes, queues and watches share that owner through existing relay/serialization. Never open a parallel client to bypass the owner or its governor.
 
-109. 2026-11-01 · Read the full relevant chat and current private context before drafting or sending. Include media/transcript/attachment context and pending queued actions; hold a send if required context cannot be obtained. Follow the selected channel's voice and task-brief contract. Cold outreach excludes existing conversations through the current prior-conversation check; bypass it only when Matt asks.
+109. 2026-11-01 · Read the full relevant chat and current private context before drafting or sending. Include media/transcript/attachment context and pending queued actions; hold a send if required context cannot be obtained. Follow the selected channel's voice and task-brief contract. Cold outreach excludes existing conversations through the current prior-conversation check; bypass it only when The owner asks.
 
 117. 2026-11-02 · Current behavior belongs in its domain spec with code anchors; generator/wiring changes update that spec and relevant use cases. Distinguish implemented anchors from future design. Rule 170 governs which checks run automatically.
 
@@ -100,21 +100,21 @@ For platform work, read the relevant skill/use-case and current domain spec. Pla
 
 134. 2026-11-04 · Existing workspace log.db is the native private record/coordination foundation. Preserve events, stable identities, chats/messages, attachments/interactions, claims/owners/cursors, queues/jobs, media/search and records/state. Keep current WAL/migration/version semantics and transaction boundaries; unknown events retain source payload and are surfaced for analysis. Only proven projections are rebuildable.
 
-137. 2026-11-04 · Preserve current context-aware voice and AI-artifact gates for messages sent as Matt. Rework refused drafts from the stated cause. Exact-message overrides and dictated/translated voice-note exceptions require Matt's request and preserve remaining artifact checks. Do not treat an exception as permanent permission.
+137. 2026-11-04 · Preserve current context-aware voice and AI-artifact gates for messages sent as The owner. Rework refused drafts from the stated cause. Exact-message overrides and dictated/translated voice-note exceptions require The owner's request and preserve remaining artifact checks. Do not treat an exception as permanent permission.
 
 138. 2026-11-04 · Media and voice-note context uses the existing private media descriptions and transcripts. Do not claim to have understood undescribed media. Preserve hash-based deduplication, private storage and the one describer process.
 
-142. 2026-11-05 · Send a cloned voice note only when Matt asks, through the platform's native voice-note tool and existing provider adapter. Use his authorized words, requested language/translation and pronunciation checks. Follow the voice-note guide for exact behavior; do not turn historical sample/model choices into a new global deployment requirement.
+142. 2026-11-05 · Send a cloned voice note only when The owner asks, through the platform's native voice-note tool and existing provider adapter. Use his authorized words, requested language/translation and pronunciation checks. Follow the voice-note guide for exact behavior; do not turn historical sample/model choices into a new global deployment requirement.
 
 154. 2026-11-05 · Show people/chats by meaningful names and handles; keep routing ids internal unless needed for the specific technical artifact. Do not show a person as a bare UUID.
 
 157. 2026-11-07 · Draft from each recipient's actual context. Do not fill a queue with interchangeable copy or mechanically reword the same message for everyone.
 
-158. 2026-11-07 · Select the relevant guide/use case from the task. Read the guide before using its Log tools and carry context across the full workflow; do not require Matt to remember internal command names.
+158. 2026-11-07 · Select the relevant guide/use case from the task. Read the guide before using its Log tools and carry context across the full workflow; do not require The owner to remember internal command names.
 
 160. 2026-11-07 · Answer eligible chat reads from log.db when the owner is live, caught up and the needed history is present/backfilled. Otherwise fill the missing scope once through the owner. A refused catch-up is a refusal, never a reason to bypass it with another live read. Report the read source.
 
-163. 2026-11-07 · Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients. Terminal-only credential prompts remain for Matt. Expose discoverable command contracts through the existing Log catalog: search the job, get exact inputs, then call. Keep tool descriptions concise and accurate to the current implementation.
+163. 2026-11-07 · Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients. Terminal-only credential prompts remain for The owner. Expose discoverable command contracts through the existing Log catalog: search the job, get exact inputs, then call. Keep tool descriptions concise and accurate to the current implementation.
 
 164. 2026-11-07 · Use existing provider balance/status and timing diagnostics when needed. Do not buy credit or change paid providers merely because a call failed.
 
@@ -122,7 +122,7 @@ For platform work, read the relevant skill/use-case and current domain spec. Pla
 
 167. 2026-11-07 · Use supported MCP/runtime reload behavior for changes. Avoid restarting healthy sessions unnecessarily; never silently interrupt active account work or bypass owner locks.
 
-168. 2026-11-08 · Reset governor or browser-launch counts only when Matt explicitly asks, using the existing recorded reset command. A code/schema migration is not authorization to reset them.
+168. 2026-11-08 · Reset governor or browser-launch counts only when The owner explicitly asks, using the existing recorded reset command. A code/schema migration is not authorization to reset them.
 
 170. 2026-11-08 · SubQ is not part of commit, push or CI checks. Existing spec anchor/wiring checks remain; paid semantic/spec reviews run only when explicitly requested. Do not add or run application tests unless the user asks; report checks actually performed and respect required hooks when committing/pushing.
 
@@ -136,7 +136,7 @@ For platform work, read the relevant skill/use-case and current domain spec. Pla
 
 175. 2026-11-11 · Use existing log.db and platform-agnostic engine contracts for native schemas. Do not copy Twenty agency prefixes or CRM/SMS structures. Old listing/campaign functionality is deferred. Add only missing account/credential and hosted execution contracts; preserve existing identity, message, queue, job and governor authorities.
 
-176. 2026-11-11 · Matt requested pruning obsolete agent rules. AGENTS.md is the concise active instruction set; prior instructions are archived outside this repository as non-authoritative history. Keep platform procedures in their relevant skills/specs and dated one-off incidents out of global instructions. A historical citation does not restore superseded architecture.
+176. 2026-11-11 · The owner requested pruning obsolete agent rules. AGENTS.md is the concise active instruction set; prior instructions are archived outside this repository as non-authoritative history. Keep platform procedures in their relevant skills/specs and dated one-off incidents out of global instructions. A historical citation does not restore superseded architecture.
 
 177. 2026-11-12 · Website and console errors show as toasts through the shared `@listeningkit/ui` toast, never inline under a field, in a form or on the page. A failed load toasts its error and leaves only a neutral empty state with its Try again action. Errors from embedded widgets (Clerk's form) are hidden in place and raised as toasts.
 

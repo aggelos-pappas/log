@@ -32,9 +32,9 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 
 - **Rule 30.** Complete the authorized task.
 - **Rule 35.** Browser work uses one account browser through its active day, with actions as tabs/steps; close only for a logged lifecycle reason.
-- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless the owner raises them.
-- **Rule 39.** Use only the scope, options and intent the owner stated or implied.
-- **Rule 40.** Do not propose physical infrastructure unless the owner asks.
+- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless The owner raises them.
+- **Rule 39.** Use only the scope, options and intent The owner stated or implied.
+- **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
 - **Rule 154.** Show people/chats by meaningful names and handles; keep routing ids internal unless needed for the specific technical artifact.
 - **Rule 163.** Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients.

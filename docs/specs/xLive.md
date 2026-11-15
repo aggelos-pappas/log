@@ -28,7 +28,7 @@ Checked by: code and SubQ
 
 ### REQ-XLIVE-04: A refused read stops the poll
 
-When X refuses a live read (the badge count or the notifications page), the refusal goes into `events` and the poll stops on that account; nothing resumes until matt says so. A dropped connection (a network error, not X answering) is written too and the poll goes on. Rules 94 and 115.
+When X refuses a live read (the badge count or the notifications page), the refusal goes into `events` and the poll stops on that account; nothing resumes until the owner says so. A dropped connection (a network error, not X answering) is written too and the poll goes on. Rules 94 and 115.
 
 Checked by: code and SubQ
 
@@ -36,7 +36,7 @@ Checked by: code and SubQ
 
 ### REQ-XLIVE-05: The X live hook puts new events in front of the agent
 
-On SessionStart, every prompt and every log tool or shell call, the X live hook reads what is new in `events` for every X account and puts it in the agent's context as `>>> X LIVE`, telling the agent to say it to matt first. Rule 115.
+On SessionStart, every prompt and every log tool or shell call, the X live hook reads what is new in `events` for every X account and puts it in the agent's context as `>>> X LIVE`, telling the agent to say it to the owner first. Rule 115.
 
 Checked by: code and SubQ
 
@@ -46,8 +46,8 @@ The hook keeps one cursor per Claude session in `cursors` (`xLive:<session_id>`,
 
 Checked by: code and SubQ
 
-### REQ-XLIVE-07: A refused read is said to matt
+### REQ-XLIVE-07: A refused read is said to the owner
 
-When the new events hold a refused live read that is not only a network error, the hook says that the poll on that account stopped and nothing resumes until matt says so. Rules 94 and 115.
+When the new events hold a refused live read that is not only a network error, the hook says that the poll on that account stopped and nothing resumes until the owner says so. Rules 94 and 115.
 
 Checked by: code and SubQ

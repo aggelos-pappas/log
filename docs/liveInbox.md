@@ -50,7 +50,7 @@ A contact writes a short question on Discord while a reply to them is going out 
 - **Context from the database.** The full context before a send (rule 109) is read from the database, not fetched from the platform again.
 - **The voice gate on the database.** Every send runs every voice check (the watermark and scrambler readings, the AI-tells index, his phrasing, SubQ). Embeddings are stored in the database with their model name. Results are always worked out fresh at send time, never saved.
 
-## Waiting on matt
+## Waiting on the owner
 
 - **The media describer:** a small local vision model (`LFM2.5-VL-450M`, SubQ's pick) kept warm from the start of the session. It turns pictures and video frames into text, so a reply answers what was actually sent. Audio already goes through AssemblyAI (rule 126).
 - **Jina's newer models:** `jina-embeddings-v5-omni` (text and media in one space) and `jina-reranker-v3.5`, to rank the conversation, media, replies and likes that go into the voice step. These are paid calls, so they wait for his yes.

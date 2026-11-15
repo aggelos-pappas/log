@@ -3,11 +3,11 @@ import { roomFromRead, roomOf } from './index'
 
 const now = new Date('2026-11-05T15:20:00Z')
 
-test('a channel where only matt has spoken lately is talked to as a whole, never as one person', () => {
+test('a channel where only the owner has spoken lately is talked to as a whole, never as one person', () => {
   const room = roomOf('pennyserver #general', 'channel', [
     { from: 'pennyserver', fromMe: false, at: '2026-10-11T00:52:48Z' },
-    { from: 'matt', fromMe: true, at: '2026-11-05T15:04:40Z' },
-    { from: 'matt', fromMe: true, at: '2026-11-05T15:05:10Z' },
+    { from: 'the owner', fromMe: true, at: '2026-11-05T15:04:40Z' },
+    { from: 'the owner', fromMe: true, at: '2026-11-05T15:05:10Z' },
   ], now)
   expect(room.nobodyElseLately).toBe(true)
   expect(room.mattsInARowAtTheEnd).toBe(2)

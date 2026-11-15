@@ -1,7 +1,7 @@
 ---
 name: log-discord-forum-posts
 description: "Going through a Discord forum for posts worth answering. A log play (docs/useCases/discord/forumPosts.md): Find a forum in a server, list its posts, read the ones that look right, and tell the owner which are worth answering and why: someone asking for help with something the owner has built or knows, a question nobody answered yet, a problem log solves. This page reads and sends nothing; answering one is [serverReply](serverReply.md)."
-when_to_use: "Use when matt asks for this, in words like: \"look at the <server> forum and find the one about <problem>\", \"go through the forum in <server> and tell me which posts to respond to\", \"list the posts in <server> #<forum>\", \"find posts in <server> asking for help with <thing>\""
+when_to_use: "Use when the owner asks for this, in words like: \"look at the <server> forum and find the one about <problem>\", \"go through the forum in <server> and tell me which posts to respond to\", \"list the posts in <server> #<forum>\", \"find posts in <server> asking for help with <thing>\""
 metadata:
   summary: "Going through a Discord forum for posts worth answering"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `discord/forumPosts`. Before anything else, call the log MCP tool `getGuide({ useCase: "discord/forumPosts" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Find a forum in a server, list its posts, read the ones that look right, and tell the owner which are worth answering and why: someone asking for help with something the owner has built or knows, a question nobody answered yet, a problem log solves. This page reads and sends nothing; answering one is [serverReply](../log-discord-server-reply/SKILL.md).
 

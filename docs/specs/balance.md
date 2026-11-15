@@ -4,7 +4,7 @@ title: "Provider balances"
 
 # Provider balances
 
-Every paid provider log calls, with what is left, so a failing voice note, gate or search is seen as money and not a bug. Reading a balance spends nothing, and topping up is matt's. Rules 41, 73, 94 and 164.
+Every paid provider log calls, with what is left, so a failing voice note, gate or search is seen as money and not a bug. Reading a balance spends nothing, and topping up is the owner's. Rules 41, 73, 94 and 164.
 
 ## Reading
 

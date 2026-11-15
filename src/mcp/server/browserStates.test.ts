@@ -10,21 +10,21 @@ const CHECKPOINT = "https://www.facebook.com/checkpoint/1501092823525282/";
 const at = (url: string, text: string, extra: Partial<BrowserAt> = {}): BrowserAt => ({ account: "bethlehem", step: "04_snapshot", url, text, failed: null, ...extra });
 
 describe("where every open browser is, in every tool result (rules 54-55)", () => {
-  test("a checkpoint's first page is never pressed through: no next, matt is told the account is deactivated (rule 118)", () => {
+  test("a checkpoint's first page is never pressed through: no next, the owner is told the account is deactivated (rule 118)", () => {
     const view = browserView(at(CHECKPOINT, "- generic [ref=e62]: Fitri, confirm that you're human to use your account\n- generic [ref=e69]: Continue"));
     expect(view.state).toMatchObject({ id: "checkpointStart", person: true });
     expect(view.next).toBeNull();
     expect(view.needsMatt).toContain("deactivated");
   });
 
-  test("a video selfie is matt's: no next, needsMatt says so", () => {
+  test("a video selfie is the owner's: no next, needsMatt says so", () => {
     const view = browserView(at(CHECKPOINT, "- generic [ref=e130]: Confirm that you're a real person with a video selfie"));
     expect(view.state).toMatchObject({ id: "videoSelfie", person: true });
     expect(view.next).toBeNull();
     expect(view.needsMatt).toContain("video selfie");
   });
 
-  test("Messenger's Create PIN runs the recorded flow when the PIN is in Twenty, and is matt's when it isn't", () => {
+  test("Messenger's Create PIN runs the recorded flow when the PIN is in Twenty, and is the owner's when it isn't", () => {
     const text = "- heading \"Create a PIN to access your chats on any device\" [ref=e3]";
     expect(browserView(at("https://www.facebook.com/messages/", text, { messengerPin: true })).next).toEqual({ tool: "facebookFlowMessengerPinCreateLive", input: { account: "bethlehem", confirmLive: true } });
     const without = browserView(at("https://www.facebook.com/messages/", text));
@@ -52,7 +52,7 @@ describe("where every open browser is, in every tool result (rules 54-55)", () =
     }
   });
 
-  test("a group members list is named with no next call and nothing for matt", () => {
+  test("a group members list is named with no next call and nothing for the owner", () => {
     const exchanges = [{ offsetMs: 1, kind: "api" as const, name: "GroupsCometMembersPageNewMembersSectionRefetchQuery", method: "POST", host: "www.facebook.com", path: "/api/graphql/", status: 200, ms: 600, sent: {}, answer: { data: { node: { new_members: { edges: [{ node: { id: "1" } }] } } } }, errors: [], known: false }];
     const view = browserView(at("https://www.facebook.com/groups/junkremovalwinners/members", "", { exchanges }));
     expect(view).toMatchObject({ state: { id: "groupMembersList", person: false }, next: null, needsMatt: null });

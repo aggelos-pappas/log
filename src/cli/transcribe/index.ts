@@ -220,7 +220,7 @@ export const transcribeCommand: Command = {
         code: failed.length ? 1 : 0,
         stdout: [
           `log transcribe: ${done.length} voice note(s) transcribed (${fresh} new with AssemblyAI, ${done.length - fresh} from the cache), ${failed.length} failed, ${missing.length} without their file; ${applied.changed.length} conversation(s) rewritten in the store`,
-          ...(done.length ? ["by who said it:", ...byPerson(results, "matt")] : []),
+          ...(done.length ? ["by who said it:", ...byPerson(results, "the owner")] : []),
           ...failed.map((r) => `  failed: ${r.note.platform} ${r.note.account} ${r.note.messageId} ${r.note.name}: ${r.answer && !r.answer.ok ? `${r.answer.code}: ${r.answer.error}` : ""}`),
           ...lines,
           ...(indexed ? [indexed] : []),

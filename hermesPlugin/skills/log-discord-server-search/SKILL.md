@@ -1,7 +1,7 @@
 ---
 name: log-discord-server-search
 description: "Finding a conversation in a Discord server. A log play (docs/useCases/discord/serverSearch.md): Find what someone said in a server, or a conversation the owner had there, with Discord's own search across every channel, forum post and thread at once, then read around it. This is how \"the conversation I had with <someone> about <a topic> in the <server> server\" is found in one search instead of reading a channel back hundreds of messages. This page reads and sends nothing."
-when_to_use: "Use when matt asks for this, in words like: \"find the conversation I had with <someone> in <server> about <thing>\", \"what did <someone> say in <server> about <thing>\", \"search <server> for <words>\", \"read through the <server> server and find <thing>\""
+when_to_use: "Use when the owner asks for this, in words like: \"find the conversation I had with <someone> in <server> about <thing>\", \"what did <someone> say in <server> about <thing>\", \"search <server> for <words>\", \"read through the <server> server and find <thing>\""
 metadata:
   summary: "Finding a conversation in a Discord server"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `discord/serverSearch`. Before anything else, call the log MCP tool `getGuide({ useCase: "discord/serverSearch" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Find what someone said in a server, or a conversation the owner had there, with Discord's own search across every channel, forum post and thread at once, then read around it. This is how "the conversation I had with <someone> about <a topic> in the <server> server" is found in one search instead of reading a channel back hundreds of messages. This page reads and sends nothing.
 

@@ -13,7 +13,7 @@ describe('fishAudio helpers', () => {
     expect(pickReferences([rec('b', 34.1), rec('c', 8.5), rec('d', 15.9)], { least: 3, most: 30 }).map((r) => r.messageId)).toEqual(['c', 'd'])
   })
 
-  test('only recordings matt sent are kept', () => {
+  test('only recordings the owner sent are kept', () => {
     saveConversations([{ platform: 'discord', account: 'mattDiscord', conversationId: '77', box: 'dm', with: ['someone'], messages: [{ id: '1', at: '2026-11-01T00:00:00Z', from: 'mattDiscord', fromMe: true, text: 'one' }, { id: '2', at: '2026-11-01T00:01:00Z', from: 'someone', fromMe: false, text: 'two' }] }], defaultDbPath())
     const base = { platform: 'discord', account: 'mattDiscord', conversationId: '77' }
     expect(sentByMatt({ ...base, messageId: '1' })).toBe(true)
@@ -107,7 +107,7 @@ describe("spoken words and realism (rule 147)", () => {
     expect(paceOf(1.5, "yo")).toBeLessThanOrEqual(1.5)
   })
 
-  test("shapeLikeMatt lays matt's own room tone under the voice at the measured level, and is the same for the same seed", () => {
+  test("shapeLikeMatt lays the owner's own room tone under the voice at the measured level, and is the same for the same seed", () => {
     const rate = REALISM.rate;
     const voice = new Float32Array(rate).map((_, i) => (i % 9600 < 4800 ? 0.3 * Math.sin((2 * Math.PI * 220 * i) / rate) : 0));
     const room = [new Float32Array(rate / 2).map((_, i) => 0.001 * Math.sin(i))]
@@ -121,8 +121,8 @@ describe("spoken words and realism (rule 147)", () => {
   });
 });
 
-describe("how matt talks, for the spoken gate (rule 149)", () => {
-  test("only matt's own voice notes from before the first clone are kept, never ones the clone made", () => {
+describe("how the owner talks, for the spoken gate (rule 149)", () => {
+  test("only the owner's own voice notes from before the first clone are kept, never ones the clone made", () => {
     const at = (iso: string) => String((BigInt(Date.parse(iso) - 1420070400000) << 22n))
     const before = { path: "/a", platform: "discord", account: "a", conversationId: "1", messageId: at("2026-11-01T08:04:01Z"), seconds: 34 }
     const after = { ...before, path: "/b", messageId: at("2026-11-05T10:40:55Z") }

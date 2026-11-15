@@ -1,7 +1,7 @@
 ---
 name: log-twitter-get-the-action
 description: "Getting people to do the thing: retweet, like, try it. A log play (docs/useCases/twitter/getTheAction.md): The owner needs people to do one action for him: retweet a post, like it, try the tool. This page goes through everyone talking to him, tells him in plain words what each conversation is about, and gets each of them a message that answers what they said and asks for the action. All of it goes out through the account's one queue."
-when_to_use: "Use when matt asks for this, in words like: \"get me all them people who liked it ... yo cool to see that you liked that, would you give that a wee retweet\", \"notifications: people who like, comment, reply\", \"go through all the people there who need a message\", \"get them to retweet the thing\", \"would you do me a favour and give it a wee retweet\", \"I need them to retweet it so I can get some inbound leads\", \"I don't know what they're even talking about, explain the context\", \"make them do the action I need\", \"get the full context of everything on the account at the time of sending the message\"."
+when_to_use: "Use when the owner asks for this, in words like: \"get me all them people who liked it ... yo cool to see that you liked that, would you give that a wee retweet\", \"notifications: people who like, comment, reply\", \"go through all the people there who need a message\", \"get them to retweet the thing\", \"would you do me a favour and give it a wee retweet\", \"I need them to retweet it so I can get some inbound leads\", \"I don't know what they're even talking about, explain the context\", \"make them do the action I need\", \"get the full context of everything on the account at the time of sending the message\"."
 metadata:
   summary: "Getting people to do the thing: retweet, like, try it"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/getTheAction`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/getTheAction" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 The owner needs people to do one action for him: retweet a post, like it, try the tool. This page goes through everyone talking to him, tells him in plain words what each conversation is about, and gets each of them a message that answers what they said and asks for the action. All of it goes out through the account's one queue.
 
@@ -54,3 +54,5 @@ Say: **"go on docs/useCases/twitter/getTheAction.md"**, with the action and its 
 - Use only facts from the thread. Never invent where a deal is up to.
 - The link goes in as a plain URL. Every line of a draft is one message (rule 90).
 - Everything is sent through the account's one X session (rule 105), and the answer's `xSession` names it.
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

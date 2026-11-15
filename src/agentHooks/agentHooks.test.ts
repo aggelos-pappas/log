@@ -36,17 +36,17 @@ describe("page state hook", () => {
     expect(findingOf(captcha)).toMatchObject({ kind: "state", resolvable: true });
     expect(findingOf(captcha).line).toContain("log inspect do solve");
     expect(findingOf(selfie)).toMatchObject({ kind: "state", resolvable: false });
-    expect(findingOf(selfie).line).toContain("tell matt");
+    expect(findingOf(selfie).line).toContain("tell the owner");
   });
 
-  test("Messenger's Create PIN is resolved with the flow when the session has the PIN, and is matt's when not (rule 67)", () => {
+  test("Messenger's Create PIN is resolved with the flow when the session has the PIN, and is the owner's when not (rule 67)", () => {
     const create = { url: "https://www.facebook.com/messages/", text: 'heading "Create a PIN to access your chats on any device" [level=2]' };
     const withPin = findingOf(at({ ...create, messengerPin: true }));
     expect(withPin).toMatchObject({ kind: "state", resolvable: true });
     expect(withPin.line).toContain("log flow run messengerPinCreate");
     const without = findingOf(at(create));
     expect(without).toMatchObject({ kind: "state", resolvable: false });
-    expect(without.line).toContain("tell matt");
+    expect(without.line).toContain("tell the owner");
   });
 
   test("a failed step is an unconfirmed page: snapshot, then resolve", () => {
@@ -123,7 +123,7 @@ describe("live logs hook", () => {
     expect(liveLogVerdict("Bash", "bun bin/log.ts facebook accounts --json").deny).toContain("rule 163");
   });
 
-  test("the terminal-only prompts matt runs himself are not refused", () => {
+  test("the terminal-only prompts the owner runs himself are not refused", () => {
     expect(liveLogVerdict("Bash", "log twitter chat pin --account a")).toEqual({ deny: null, context: null });
     expect(liveLogVerdict("Bash", "log twitter cookies save --account a")).toEqual({ deny: null, context: null });
     expect(liveLogVerdict("Bash", "log login")).toEqual({ deny: null, context: null });

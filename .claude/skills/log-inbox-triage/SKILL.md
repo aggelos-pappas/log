@@ -1,7 +1,7 @@
 ---
 name: log-inbox-triage
 description: "Triage: scoping someone's job and handing it to whoever does it. A log play (docs/useCases/inbox/triage.md): A person comes to the owner needing something built. The owner is the face of the work: the person on the other side deals with him and nobody else. Behind that, the work goes to whoever actually does it. This page is that route: read what the person needing it has said, get the scope out of them, and hand the whole thing to the person who will build it, as a brief, without ever telling either side about the other."
-when_to_use: "Use when matt asks for this, in words like: \"triage this\", \"scope it out with him and pass it to <person>\", \"inform <person> of what the job is and what he needs to do\", \"we've already scoped the work with the client, hand it over\", \"this is a triage job\", \"don't tell him anyone else is doing it\""
+when_to_use: "Use when the owner asks for this, in words like: \"triage this\", \"scope it out with him and pass it to <person>\", \"inform <person> of what the job is and what he needs to do\", \"we've already scoped the work with the client, hand it over\", \"this is a triage job\", \"don't tell him anyone else is doing it\""
 metadata:
   summary: "Triage: scoping someone's job and handing it to whoever does it"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `inbox/triage`. Before anything else, call the log MCP tool `getGuide({ useCase: "inbox/triage" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 A person comes to the owner needing something built. The owner is the face of the work: the person on the other side deals with him and nobody else. Behind that, the work goes to whoever actually does it. This page is that route: read what the person needing it has said, get the scope out of them, and hand the whole thing to the person who will build it, as a brief, without ever telling either side about the other.
 

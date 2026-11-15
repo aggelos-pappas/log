@@ -190,7 +190,7 @@ export const dmsCommand: Command = {
       if (parsed.flags["force"] === true) {
         const engine = opened.engine;
         opened.engine = (spec) => engine({ ...spec, force: true });
-        context.err(`${opened.account.accountName}: reading past the governor for this call, as matt asked (rule 86)`);
+        context.err(`${opened.account.accountName}: reading past the governor for this call, as the owner asked (rule 86)`);
       }
       const secrets = early && knownId === opened.account.id ? await early : await context.twenty.loginSecrets(opened.account.id).catch(() => null);
       const chatPin = secrets?.messengerPin ?? undefined;

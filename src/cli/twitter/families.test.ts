@@ -167,21 +167,21 @@ describe("log twitter reply, quote, like, dm", () => {
   test("--live needs who approved it, and the style and target are checked before X is called", async () => {
     const h = harness();
     expect((await h.run(["twitter", "reply", "--account", "xTwo", "--tweet", POST_A, "--text", "love this", "--live"])).err).toContain("notApproved");
-    expect((await h.run(["twitter", "quote", "--account", "xTwo", "--tweet", POST_A, "--text", "Love this.", "--approvedBy", "matt", "--live"])).err).toContain("styleFailed");
-    expect((await h.run(["twitter", "like", "--account", "xTwo", "--tweet", "https://example.com/1", "--approvedBy", "matt", "--live"])).err).toContain("tweetUrlInvalid");
-    expect((await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "bob", "--text", "hey", "--approvedBy", "matt", "--live"])).err).toContain("userIdInvalid");
+    expect((await h.run(["twitter", "quote", "--account", "xTwo", "--tweet", POST_A, "--text", "Love this.", "--approvedBy", "the owner", "--live"])).err).toContain("styleFailed");
+    expect((await h.run(["twitter", "like", "--account", "xTwo", "--tweet", "https://example.com/1", "--approvedBy", "the owner", "--live"])).err).toContain("tweetUrlInvalid");
+    expect((await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "bob", "--text", "hey", "--approvedBy", "the owner", "--live"])).err).toContain("userIdInvalid");
     expect(h.calls).toEqual([]);
   });
 
   test("--live sends once with the approver, and X's answer decides", async () => {
     const h = harness((spec) => (spec.action === "reply" ? { ok: true, event: "sent", tweetId: "777" } : { ok: false, event: "dropped", code: "xSentNothing", detail: "x created no tweet" }));
-    const sent = await h.run(["twitter", "reply", "--account", "xTwo", "--tweet", POST_A, "--text", "love this one", "--approvedBy", "matt", "--live"]);
+    const sent = await h.run(["twitter", "reply", "--account", "xTwo", "--tweet", POST_A, "--text", "love this one", "--approvedBy", "the owner", "--live"]);
     expect(sent.code).toBe(0);
     expect(sent.out).toContain("posted https://x.com/xTwo/status/777");
-    expect(h.calls[0]).toEqual({ action: "reply", live: true, approvedBy: "matt", tweetUrl: POST_A, text: "love this one" });
-    const dropped = await h.run(["twitter", "quote", "--account", "xTwo", "--tweet", POST_A, "--text", "yes", "--approvedBy", "matt", "--live", "--json"]);
+    expect(h.calls[0]).toEqual({ action: "reply", live: true, approvedBy: "the owner", tweetUrl: POST_A, text: "love this one" });
+    const dropped = await h.run(["twitter", "quote", "--account", "xTwo", "--tweet", POST_A, "--text", "yes", "--approvedBy", "the owner", "--live", "--json"]);
     expect(dropped.code).toBe(1);
-    expect(JSON.parse(dropped.out)).toMatchObject({ event: "dropped", code: "xSentNothing", approvedBy: "matt" });
+    expect(JSON.parse(dropped.out)).toMatchObject({ event: "dropped", code: "xSentNothing", approvedBy: "the owner" });
   });
 
   test("post: a dry run checks the copy and the media and contacts nothing; --live uploads and posts once", async () => {
@@ -211,17 +211,17 @@ describe("log twitter reply, quote, like, dm", () => {
     const dry = await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "was sick meeting you\ncoffee was class"]);
     expect(dry.out).toContain("as 2 messages");
     expect(h.calls).toEqual([]);
-    const sent = await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "was sick meeting you\ncoffee was class", "--approvedBy", "matt", "--live"]);
+    const sent = await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "was sick meeting you\ncoffee was class", "--approvedBy", "the owner", "--live"]);
     expect(sent.code).toBe(0);
     expect(h.calls.map((c) => c.text)).toEqual(["was sick meeting you", "coffee was class"]);
     expect(h.calls.map((c) => (c as { continuesSend?: boolean }).continuesSend)).toEqual([undefined, true]);
     expect(sent.out).toContain("sent the dm as 2 messages");
     h.calls.length = 0;
-    await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "was sick meeting you\ncoffee was class", "--asOne", "--approvedBy", "matt", "--live"]);
+    await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "was sick meeting you\ncoffee was class", "--asOne", "--approvedBy", "the owner", "--live"]);
     expect(h.calls.map((c) => c.text)).toEqual(["was sick meeting you\ncoffee was class"]);
     let n = 0;
     const dropped = harness(() => (n++ ? { ok: false, event: "throttled", code: "429", detail: "rate limited" } : { ok: true, event: "sent", conversationId: "42-1" }));
-    const partial = await dropped.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "one\ntwo\nthree", "--approvedBy", "matt", "--live"]);
+    const partial = await dropped.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "one\ntwo\nthree", "--approvedBy", "the owner", "--live"]);
     expect(partial.code).toBe(1);
     expect(dropped.calls.map((c) => c.text)).toEqual(["one", "two"]);
     expect(partial.out).toContain("1 of 3 sent");
@@ -230,11 +230,11 @@ describe("log twitter reply, quote, like, dm", () => {
   test("a dm to an X Chat group id needs the saved PIN, and a person's id still must be digits", async () => {
     twitterSendDeps.profiles = () => ({});
     const h = harness(() => ({ ok: true, event: "sent", mode: "xchatGroup", messageId: "m1", conversationId: "g2116557730857284053" }));
-    const noPin = await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "g2116557730857284053", "--text", "idk", "--overGate", "--approvedBy", "matt", "--live"]);
+    const noPin = await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "g2116557730857284053", "--text", "idk", "--overGate", "--approvedBy", "the owner", "--live"]);
     expect(noPin.code).not.toBe(0);
     expect(noPin.err + noPin.out).toContain("xchatPinMissing");
     expect(h.calls).toEqual([]);
-    expect((await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "x2116557730857284053", "--text", "idk", "--approvedBy", "matt", "--live"])).err).toContain("userIdInvalid");
+    expect((await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "x2116557730857284053", "--text", "idk", "--approvedBy", "the owner", "--live"])).err).toContain("userIdInvalid");
   });
 
   test("--overGate sends a dm the voice gate refused, only when given, and still refuses AI artifacts (rule 152)", async () => {
@@ -244,16 +244,16 @@ describe("log twitter reply, quote, like, dm", () => {
     gateDeps.gate = async () => (gated++, { ok: false, refused: ">>> VOICE GATE FAILED for 42" });
     try {
       const h = harness(() => ({ ok: true, event: "sent", conversationId: "42-1" }));
-      const refused = await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "sick", "--approvedBy", "matt", "--live"]);
+      const refused = await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "sick", "--approvedBy", "the owner", "--live"]);
       expect(refused.code).toBe(1);
       expect(refused.err).toContain("voiceGateFailed");
       expect(h.calls).toEqual([]);
-      const over = await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "sick", "--overGate", "--approvedBy", "matt", "--live"]);
+      const over = await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "sick", "--overGate", "--approvedBy", "the owner", "--live"]);
       expect(over.code).toBe(0);
       expect(over.err).toContain("--overGate");
       expect(h.calls.map((c) => c.text)).toEqual(["sick"]);
       expect(gated).toBe(1);
-      const hidden = await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "sick​", "--overGate", "--approvedBy", "matt", "--live"]);
+      const hidden = await h.run(["twitter", "dm", "--account", "xTwo", "--userId", "42", "--text", "sick​", "--overGate", "--approvedBy", "the owner", "--live"]);
       expect(hidden.code).toBe(1);
       expect(hidden.err).toContain("aiArtifacts");
     } finally {
@@ -263,17 +263,17 @@ describe("log twitter reply, quote, like, dm", () => {
 
   test("--force asks the engine to go past the governor, only when given, and says what it went past", async () => {
     const h = harness(() => ({ ok: true, event: "sent", tweetId: "778", forcedPast: "cooldown active for 660s" }));
-    const forced = await h.run(["twitter", "reply", "--account", "xTwo", "--tweet", POST_A, "--text", "love this one", "--approvedBy", "matt", "--force", "--live"]);
+    const forced = await h.run(["twitter", "reply", "--account", "xTwo", "--tweet", POST_A, "--text", "love this one", "--approvedBy", "the owner", "--force", "--live"]);
     expect(forced.code).toBe(0);
-    expect(h.calls[0]).toEqual({ action: "reply", live: true, approvedBy: "matt", tweetUrl: POST_A, text: "love this one", force: true });
+    expect(h.calls[0]).toEqual({ action: "reply", live: true, approvedBy: "the owner", tweetUrl: POST_A, text: "love this one", force: true });
     expect(forced.out).toContain("Forced past the governor: cooldown active for 660s");
-    await h.run(["twitter", "reply", "--account", "xTwo", "--tweet", POST_A, "--text", "love this one", "--approvedBy", "matt", "--live"]);
+    await h.run(["twitter", "reply", "--account", "xTwo", "--tweet", POST_A, "--text", "love this one", "--approvedBy", "the owner", "--live"]);
     expect(h.calls[1].force).toBeUndefined();
   });
 
   test("a dead session goes back to Twenty", async () => {
     const h = harness(() => ({ ok: false, event: "sessionDead", code: "sessionDead", loginState: "loggedOut", detail: "401" }));
-    const r = await h.run(["twitter", "like", "--account", "xTwo", "--tweet", POST_A, "--approvedBy", "matt", "--live"]);
+    const r = await h.run(["twitter", "like", "--account", "xTwo", "--tweet", POST_A, "--approvedBy", "the owner", "--live"]);
     expect(r.code).toBe(1);
     expect(h.twenty.rows.socialAccounts!.find((a) => a.accountName === "xTwo")!.sessionState).toBe("loggedOut");
   });
@@ -292,7 +292,7 @@ async function builtAndPlanned(h: ReturnType<typeof harness>) {
   const f = queueFiles();
   expect((await h.run(["twitter", "queue", "build", "--targets", f.targets, "--variations", f.lines, "--out", f.queue, "--account", "xTwo"])).code).toBe(0);
   expect((await h.run(["twitter", "queue", "check", f.queue])).code).toBe(0);
-  expect((await h.run(["twitter", "queue", "approve", f.queue, "--by", "matt"])).code).toBe(0);
+  expect((await h.run(["twitter", "queue", "approve", f.queue, "--by", "the owner"])).code).toBe(0);
   expect((await h.run(["twitter", "queue", "plan", f.queue, "--window", "30m", "--minGap", "60"])).code).toBe(0);
   return f;
 }
@@ -308,7 +308,7 @@ describe("log twitter queue", () => {
     expect(new Set(queue.items.map((i) => i.text)).size).toBe(3);
     expect(queue.items.map((i) => i.tweetUrl)).toEqual([POST_A, POST_B, POST_C]);
     expect((await h.run(["twitter", "queue", "build", "--targets", f.targets, "--variations", f.lines, "--out", f.queue, "--account", "xTwo"])).err).toContain("never overwritten");
-    await h.run(["twitter", "queue", "approve", f.queue, "--by", "matt"]);
+    await h.run(["twitter", "queue", "approve", f.queue, "--by", "the owner"]);
     const edited = loadQueue(f.queue);
     edited.items[0].text = "something else";
     saveQueue(f.queue, edited);
@@ -333,7 +333,7 @@ describe("log twitter queue", () => {
     const f = await builtAndPlanned(h);
     const r = await h.run(["twitter", "queue", "run", f.queue]);
     expect(r.code).toBe(0);
-    expect(r.out).toContain("dry run: @xTwo, approved by matt, 3 events would fire");
+    expect(r.out).toContain("dry run: @xTwo, approved by the owner, 3 events would fire");
     expect(h.calls).toEqual([]);
   });
 
@@ -352,7 +352,7 @@ describe("log twitter queue", () => {
     expect(queue.items.map((i) => i.status)).toEqual(["sent", "gone", "sent"]);
     expect(h.calls.filter((c) => c.tweetUrl === POST_C)).toHaveLength(2);
     const sends = h.calls.filter((c) => c.action !== "notifications" && c.action !== "inbox");
-    expect(sends.every((c) => c.live === true && c.approvedBy === "matt")).toBe(true);
+    expect(sends.every((c) => c.live === true && c.approvedBy === "the owner")).toBe(true);
     expect(r.err).toContain("a network error, not x refusing");
     expect(r.err).toMatch(/state +retrying/);
     expect(queueLogLines(f.queue).join("\n")).toContain("random run done: 2 replies sent, 1 skipped");
@@ -368,7 +368,7 @@ describe("log twitter queue", () => {
     expect(loadQueue(f.queue).items.filter((i) => i.status === "pending")).toHaveLength(3);
     const log = queueLogLines(f.queue).join("\n");
     expect(log).toMatch(/STOPPED: REFUSED reply #\d+ @\S+: x answered at \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC: CouldNotTweet: \(344\)/);
-    expect(log).toContain("Nothing goes out on @xTwo until matt starts a run again");
+    expect(log).toContain("Nothing goes out on @xTwo until the owner starts a run again");
     expect(log).not.toContain("[cooling]");
   });
 
@@ -427,7 +427,7 @@ describe("log twitter queue", () => {
       },
     };
     const f = queueFiles();
-    for (const argv of [["build", "--targets", f.targets, "--variations", f.lines, "--out", f.queue, "--account", "xTwo"], ["approve", f.queue, "--by", "matt"], ["plan", f.queue, "--window", "30m", "--start", "2026-10-26T01:10:00Z"]]) await runCli(["twitter", "queue", ...argv], ctx as never);
+    for (const argv of [["build", "--targets", f.targets, "--variations", f.lines, "--out", f.queue, "--account", "xTwo"], ["approve", f.queue, "--by", "the owner"], ["plan", f.queue, "--window", "30m", "--start", "2026-10-26T01:10:00Z"]]) await runCli(["twitter", "queue", ...argv], ctx as never);
     const code = await runCli(["twitter", "queue", "run", f.queue, "--live"], ctx as never);
     expect(code).toBe(5);
     expect(sent).toEqual([]);

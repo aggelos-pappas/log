@@ -4,7 +4,7 @@ title: "Launch budget"
 
 # Launch budget
 
-Before a run opens an account's browser, `prepareRun` checks when it may open: only inside the account's local waking hours, at most 8 launches a local day and at least 10 minutes apart. `--bypass` skips the hours only, `--now` skips the gap only, and only matt resets the count, with `log facebook account resetOpens`. Rules 18, 20, 24, 30 and 37.
+Before a run opens an account's browser, `prepareRun` checks when it may open: only inside the account's local waking hours, at most 8 launches a local day and at least 10 minutes apart. `--bypass` skips the hours only, `--now` skips the gap only, and only the owner resets the count, with `log facebook account resetOpens`. Rules 18, 20, 24, 30 and 37.
 
 ## Active hours
 
@@ -80,6 +80,6 @@ Checked by: code and SubQ
 
 ### REQ-LAUNCH-12: resetOpens is refused while a browser is open
 
-matt resets the opens only with every browser closed first. A reset for an account whose browser session is still open is refused, naming the open session. Rule 37.
+the owner resets the opens only with every browser closed first. A reset for an account whose browser session is still open is refused, naming the open session. Rule 37.
 
 Checked by: code and SubQ

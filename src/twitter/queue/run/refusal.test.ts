@@ -10,7 +10,7 @@ const START = Date.parse('2026-11-02T16:00:00Z')
 function queueOf(): Queue {
   const queue = buildQueue({ account: 'matthewsoldit', action: 'dm', targets: [{ handle: 'a', userId: '1', text: 'yo a' }, { handle: 'b', userId: '2', text: 'yo b' }], lines: [], sources: [], seed: 1, now: new Date(START) })
   queue.randomRun = { planned: new Date(START).toISOString(), window: '1h', minGap: 300, events: [{ n: 1, kind: 'reply', at: new Date(START + 600_000).toISOString() }, { n: 2, kind: 'reply', at: new Date(START + 1_200_000).toISOString() }] }
-  return approveQueue(queue, 'matt', new Date(START))
+  return approveQueue(queue, 'the owner', new Date(START))
 }
 
 function depsOf(answers: TwitterSessionAnswer[], sent: string[], alerts: string[], logs: string[]): RunDeps {
@@ -54,7 +54,7 @@ describe('a refusal from X stops the run (rule 94)', () => {
       expect(alerts).toHaveLength(1)
       expect(alerts[0]).toContain(`REFUSED reply #1 @a: x answered at 2026-11-02 16:1`)
       expect(alerts[0]).toContain(`${answer.code}: ${answer.detail}`)
-      expect(alerts[0]).toContain('Nothing goes out on @matthewsoldit until matt starts a run again')
+      expect(alerts[0]).toContain('Nothing goes out on @matthewsoldit until the owner starts a run again')
     })
   }
 

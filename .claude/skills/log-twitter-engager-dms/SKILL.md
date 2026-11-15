@@ -1,7 +1,7 @@
 ---
 name: log-twitter-engager-dms
 description: "DMing the people who liked or reposted your post. A log play (docs/useCases/twitter/engagerDms.md): A post that does well leaves hundreds of people who liked or reposted it and were never followed up. This page turns them into a short list the owner knows is worth it, writes each one a DM that opens on why they're on the list, and sends them through the queue as dms."
-when_to_use: "Use when matt asks for this, in words like: \"dm everyone who liked my post\", \"message the people who retweeted my tweet\", \"dm the likers and reposters of <post url> pitching <what>\"."
+when_to_use: "Use when the owner asks for this, in words like: \"dm everyone who liked my post\", \"message the people who retweeted my tweet\", \"dm the likers and reposters of <post url> pitching <what>\"."
 metadata:
   summary: "DMing the people who liked or reposted your post"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/engagerDms`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/engagerDms" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 A post that does well leaves hundreds of people who liked or reposted it and were never followed up. This page turns them into a short list the owner knows is worth it, writes each one a DM that opens on why they're on the list, and sends them through the queue as dms.
 
@@ -58,3 +58,5 @@ Never: "saw you're `<bio thing>`", their name, made-up camaraderie, or "thanks f
 
 - A DM only lands if the person accepts DMs from accounts they don't follow. X answers otherwise, and the queue logs it and moves on.
 - Some chats live in X's encrypted Chat. `twitterDms` reads them once the account's X Chat PIN is saved, and step 4 must include them: a person you already talk to in X Chat never gets a cold template. A send still goes out as an old-style DM, which shows in their X Chat too.
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

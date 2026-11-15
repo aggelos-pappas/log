@@ -71,14 +71,14 @@ describe('one conversation per person', () => {
   })
 })
 
-describe('a reaction is a follow-up, not a reply waiting on matt', () => {
+describe('a reaction is a follow-up, not a reply waiting on the owner', () => {
   test('their reaction as the last event means they opened it: a follow-up, never waiting on you', () => {
     const reacted = { lastFromMe: false, lastText: '(reacted ❤️)' }
     expect(reactedOnly(reacted)).toBe(true)
     expect(waitingOnYou(reacted)).toBe(false)
   })
 
-  test('their words are waiting on you, and matt sending last is neither', () => {
+  test('their words are waiting on you, and the owner sending last is neither', () => {
     expect(waitingOnYou({ lastFromMe: false, lastText: 'Sweet will do!' })).toBe(true)
     expect(reactedOnly({ lastFromMe: false, lastText: 'they (reacted 🔥) to it lol' })).toBe(false)
     expect(reactedOnly({ lastFromMe: true, lastText: '(reacted 😂)' })).toBe(false)
@@ -87,7 +87,7 @@ describe('a reaction is a follow-up, not a reply waiting on matt', () => {
 })
 
 describe('an opened message with no reply is a follow-up too', () => {
-  test('matt sent last and their read receipt is past it: opened, a follow-up', () => {
+  test('the owner sent last and their read receipt is past it: opened, a follow-up', () => {
     const opened = { lastFromMe: true, lastText: 'saw this', openedByThem: true }
     expect(openedNoReply(opened)).toBe(true)
     expect(followUpDue(opened)).toBe(true)

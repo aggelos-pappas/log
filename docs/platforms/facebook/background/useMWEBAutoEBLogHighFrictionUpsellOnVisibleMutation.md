@@ -70,7 +70,7 @@ Logs that Messenger showed its PIN prompt for the encrypted chats (the "high fri
 
 ## What our machine does with it
 
-It is the request that confirms the PIN dialog is on the page: it marks the `messengerPinCreate` state from the network side, as the snapshot's heading does from the page side. Today nothing waits for it: the state is read from the snapshot, and only matt's PIN clears it (`log facebook messenger pin`, then `log inspect do pin --live`). The PIN flow recorded from the Create PIN screens is to use it as its first step's confirming request.
+It is the request that confirms the PIN dialog is on the page: it marks the `messengerPinCreate` state from the network side, as the snapshot's heading does from the page side. Today nothing waits for it: the state is read from the snapshot, and only the owner's PIN clears it (`log facebook messenger pin`, then `log inspect do pin --live`). The PIN flow recorded from the Create PIN screens is to use it as its first step's confirming request.
 
 ## What can go wrong
 

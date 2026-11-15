@@ -80,7 +80,7 @@ export const aiTells = {
     'REQ-AITELLS-04': noul('Does valeRules read the substitution and existence rules from the vale-ai-tells styles folder, and does readAiTells run ruleHits on the text and set pass to false when there is any hit?'),
     'REQ-AITELLS-05': noul('Does aiPhrases add the tokens of the vale-ai-tells rules before it reads feedHive and the other lists, does buildAiIndex call embedder.embed on the text of every phrase, and does voiceDeps in the voice command make aiEmbedder return jinaEmbedder()?'),
     'REQ-AITELLS-06': noul('Does buildAiIndex keep an X_COMPLAINT phrase only when its best cosine to a curated phrase is at least X_COMPLAINT_KEEP, and drop it otherwise?'),
-    'REQ-AITELLS-07': noul("Does buildAiIndex measure matt's own replies against the phrase vectors and store their p50 and p99 with percentile in the baseline?"),
+    'REQ-AITELLS-07': noul("Does buildAiIndex measure the owner's own replies against the phrase vectors and store their p50 and p99 with percentile in the baseline?"),
     'REQ-AITELLS-08': noul('Does mutedRules mute a rule that hits in more than MUTE_IF_MATT_USES of the replies, and does readAiTells skip the muted rules?'),
     'REQ-AITELLS-09': noul('Does mattsOwnPhrases count, for each vale rule match, how many of the replies contain it and keep the matches with at least MATT_SAYS_IT_TIMES, does buildAiIndex store them as baseline.mattsPhrases, and does readAiTells put index.baseline.mattsPhrases into the muted set it passes to ruleHits?'),
     'REQ-AITELLS-10': noul('Does readAiTells cut the text with chunksOf into lines and word windows, find each chunk\'s best phrase by cosine, and rerank the closest with embedder.rerank?'),

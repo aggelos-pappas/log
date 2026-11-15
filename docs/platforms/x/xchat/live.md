@@ -32,12 +32,12 @@ One real example, 28 Oct 05:49:45 UTC: @<name:1> typed "Ok wait let ai reply now
 | Engine | `python/twitterApi/engine.py` action `xchatWatch` | Unlocks with the PIN, prints one `{"liveEvent": …}` JSON line per message as it lands, then its usual answer |
 | Runner | `src/twitter/account/session/client.ts` `runTwitterEngineLive` | Spawns the engine and calls back on each `liveEvent` line, so the command can print it the moment it comes (rule 26) |
 | Command | `log twitter chat watch --account <a> [--seconds <n>] [--inbox] [--json]` | Prints each message as X pushes it; `--inbox` hands each new message from someone else to the inbox hook |
-| Hook | `scripts/hooks/inbox.ts`, `src/inbox/watch` `ensureLiveWatchers` | Keeps one `chat watch --inbox` running per signed-in X account (pid in `~/.logCli/inbox/twitter/<a>/watch.pid`, its log in `watch.log`) and puts each new message in front of the agent with what to do: read the thread, draft from matt's guide, `log voice`, show matt, send only when he says |
-| Voice gate | `log voice --to <h> --text "<draft>" [--context "<what they said>"]`, `src/twitter/copy/voice` | SubQ reads the draft against matt's writing across all his conversations, with `GUIDES/MATT_WRITING_STYLE.md` behind it; a phrase he never says, AI artifacts or AI phrasing fail it outright ([docs/specs/voiceGate.md](../../../specs/voiceGate.md)) |
+| Hook | `scripts/hooks/inbox.ts`, `src/inbox/watch` `ensureLiveWatchers` | Keeps one `chat watch --inbox` running per signed-in X account (pid in `~/.logCli/inbox/twitter/<a>/watch.pid`, its log in `watch.log`) and puts each new message in front of the agent with what to do: read the thread, draft from the owner's guide, `log voice`, show the owner, send only when he says |
+| Voice gate | `log voice --to <h> --text "<draft>" [--context "<what they said>"]`, `src/twitter/copy/voice` | SubQ reads the draft against the owner's writing across all his conversations, with `GUIDES/MATT_WRITING_STYLE.md` behind it; a phrase he never says, AI artifacts or AI phrasing fail it outright ([docs/specs/voiceGate.md](../../../specs/voiceGate.md)) |
 
 ## What we saw live
 
-- 28 Oct ~05:35 to 05:40 UTC (probe): 40 `messageEvent` frames in ~85 s while matt was getting messages. Two shapes: 1143 to 1454 bytes with a 19-digit event id first (messages), 896 to 912 bytes with a UUID first (non-message events such as receipts).
+- 28 Oct ~05:35 to 05:40 UTC (probe): 40 `messageEvent` frames in ~85 s while the owner was getting messages. Two shapes: 1143 to 1454 bytes with a 19-digit event id first (messages), 896 to 912 bytes with a UUID first (non-message events such as receipts).
 - The socket stayed open past the JWT's `exp`; only a new connection needs a new token.
 - Without the key-change events chat-xdk says `Message encrypted with key version '…' but no matching key found`. Priming fixed it (05:49:45 UTC, first message opened live).
 - 90 s run: 8 messages pushed, nothing polled, exit 0.

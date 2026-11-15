@@ -9,7 +9,7 @@ import type { Command, CommandInput, FlagSpec } from "../runner/types.ts";
 export const GOVERNOR_USAGE = [
   "Usage: log governor show [--platform <p>] [--json]",
   "       log governor reset --platform <p> --account <accountName|all> --by <who> [--reason <text>] [--json]",
-  "Every platform account's governor counts what it sent X, Discord, Slack, Instagram, Reddit, LinkedIn or Facebook today: requests (500 a day), writes and this hour's requests. show reads them. reset puts an account's requests, writes and hour count back to 0, only when the owner says so (rule 168): the count is written back, read again to prove it holds, and the reset is a row in log.db's ledger (kind governorReset) with who said it and what the count was. A cooldown after a block is kept: nothing resumes on a blocked account until matt says so (rule 94), and the platform's own answer still decides (rule 73).",
+  "Every platform account's governor counts what it sent X, Discord, Slack, Instagram, Reddit, LinkedIn or Facebook today: requests (500 a day), writes and this hour's requests. show reads them. reset puts an account's requests, writes and hour count back to 0, only when the owner says so (rule 168): the count is written back, read again to prove it holds, and the reset is a row in log.db's ledger (kind governorReset) with who said it and what the count was. A cooldown after a block is kept: nothing resumes on a blocked account until the owner says so (rule 94), and the platform's own answer still decides (rule 73).",
 ].join("\n");
 
 const PLATFORM: FlagSpec = { name: "platform", kind: "enum", values: PLATFORMS, description: "The platform" };
@@ -37,7 +37,7 @@ function countLine(c: GovernorCount): string {
 }
 
 function resetLine(r: GovernorResetResult): string {
-  const kept = r.cooldownKept ? `; its cooldown (${Math.ceil(r.before.cooldownSeconds / 60)} min) is kept until matt says so (rule 94)` : "";
+  const kept = r.cooldownKept ? `; its cooldown (${Math.ceil(r.before.cooldownSeconds / 60)} min) is kept until the owner says so (rule 94)` : "";
   return `  ${r.platform} ${r.account}: ${r.before.requests} → ${r.after.requests} requests, ${r.before.writes} → ${r.after.writes} writes, ${r.before.hourRequests} → ${r.after.hourRequests} this hour; in log.db as ledger #${r.ledgerSeq}${kept}`;
 }
 

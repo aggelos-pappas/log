@@ -22,7 +22,7 @@ function deciding(answer: (request: DecisionRequest) => Record<string, unknown>)
   return { seen, decide }
 }
 
-describe("matt's meme taste (rule 120)", () => {
+describe("the owner's meme taste (rule 120)", () => {
   test('every picture in his X media posts is a candidate, its text without the t.co link', () => {
     const candidates = candidatesFromXPosts(POSTS)
     expect(candidates.map((c) => [c.url, c.kind, c.text])).toEqual([
@@ -55,6 +55,6 @@ describe("matt's meme taste (rule 120)", () => {
     const { seen, decide } = deciding(() => ({ fit: { type: 'noul', noul: 0.82 }, style: { type: 'choice', choice: 'streamerReacts', confidence: 0.7 } }))
     const fit = await tasteFit(decide, null, { name: 'Jerry Jones pissed', description: 'a reaction' }, { mediaType: 'image/jpeg', base64: 'AA==' })
     expect(fit).toEqual({ fit: 0.82, style: 'streamerReacts', styleConfidence: 0.7 })
-    expect((seen[0]?.state as { mattsTaste: string }).mattsTaste).toContain("matt's meme taste")
+    expect((seen[0]?.state as { mattsTaste: string }).mattsTaste).toContain("the owner's meme taste")
   })
 })

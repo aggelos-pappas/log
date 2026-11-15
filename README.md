@@ -498,6 +498,10 @@ bun run check
 
 Every commit and push runs the same checks CI does (lefthook): the docs and reference match the code, the naming and layout are right, there are no comments in code, the specs hold, and the tests pass. The rules agents work by are in [AGENTS.md](AGENTS.md).
 
+## Referral links
+
+Some plays link to services log works with (treg, Memelord, Inworld, Fish Audio), and those links carry ListeningKit's referral or affiliate code (`ref=` or `aff=`). Using them costs nothing extra; drop the code from the address if you'd rather not. Every skill with such a link says so.
+
 ## License
 
 MIT

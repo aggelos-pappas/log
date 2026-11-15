@@ -66,7 +66,7 @@ from browser import proxyGate
 Each by its number and first line. The full text is in AGENTS.md (`log://agents`); the core rules are in full in `getGuide({ topic: "logMcpInstructions" })`.
 
 - **Rule 30.** Complete the authorized task.
-- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless the owner raises them.
-- **Rule 39.** Use only the scope, options and intent the owner stated or implied.
-- **Rule 40.** Do not propose physical infrastructure unless the owner asks.
+- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless The owner raises them.
+- **Rule 39.** Use only the scope, options and intent The owner stated or implied.
+- **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.

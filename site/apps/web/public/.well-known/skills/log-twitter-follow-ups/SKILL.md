@@ -1,7 +1,7 @@
 ---
 name: log-twitter-follow-ups
 description: "Following up in your own voice. A log play (docs/useCases/twitter/followUps.md): Answer or follow up the people the owner picked, each in the owner's own voice, the way they write to that person. It's for warming a relationship as much as for a deal: say it was good to meet, ask for advice, take someone up on an offer, keep a door open. Nothing goes out until the owner has seen every draft and said yes."
-when_to_use: "Use when matt asks for this, in words like: \"follow up with these, not for anything in particular, just warming up the relationship\", \"say it was cool to meet him\", \"ask him for some advice on what he's doing\", \"take him up on the doc he offered\"."
+when_to_use: "Use when the owner asks for this, in words like: \"follow up with these, not for anything in particular, just warming up the relationship\", \"say it was cool to meet him\", \"ask him for some advice on what he's doing\", \"take him up on the doc he offered\"."
 metadata:
   summary: "Following up in your own voice"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/followUps`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/followUps" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Answer or follow up the people the owner picked, each in the owner's own voice, the way they write to that person. It's for warming a relationship as much as for a deal: say it was good to meet, ask for advice, take someone up on an offer, keep a door open. Nothing goes out until the owner has seen every draft and said yes.
 

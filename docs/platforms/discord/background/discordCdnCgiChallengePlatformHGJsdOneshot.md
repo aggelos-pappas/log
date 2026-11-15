@@ -79,4 +79,4 @@ Not decided on. A Cloudflare challenge page instead of Discord would be its own 
 
 ## What can go wrong
 
-If Cloudflare challenges, the page shows a check instead of Discord; that is said to matt.
+If Cloudflare challenges, the page shows a check instead of Discord; that is said to the owner.

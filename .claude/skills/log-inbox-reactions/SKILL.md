@@ -1,7 +1,7 @@
 ---
 name: log-inbox-reactions
 description: "Reacting to a message. A log play (docs/useCases/inbox/reactions.md): React to someone's message with an emoji on X, Discord, Slack or Instagram, the way a person answers a moment without typing: a laugh at a joke, a fire on a win, a heart on good news. It goes through the platform's own engine and the account's one session, never the browser, and counts as a write (rule 8)."
-when_to_use: "Use when matt asks for this, in words like: \"react to that\", \"heart his message\", \"put a 😂 on what she said\", \"send a reaction to <person>\""
+when_to_use: "Use when the owner asks for this, in words like: \"react to that\", \"heart his message\", \"put a 😂 on what she said\", \"send a reaction to <person>\""
 metadata:
   summary: "Reacting to a message"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `inbox/reactions`. Before anything else, call the log MCP tool `getGuide({ useCase: "inbox/reactions" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 React to someone's message with an emoji on X, Discord, Slack or Instagram, the way a person answers a moment without typing: a laugh at a joke, a fire on a win, a heart on good news. It goes through the platform's own engine and the account's one session, never the browser, and counts as a write (rule 8).
 

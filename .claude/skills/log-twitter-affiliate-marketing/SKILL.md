@@ -1,7 +1,7 @@
 ---
 name: log-twitter-affiliate-marketing
 description: "Affiliate marketing through your DMs. A log play (docs/useCases/twitter/affiliateMarketing.md): You use a tool, you make content about it, and people message you about it. This page turns those conversations into affiliate income without sounding like a pitch: each person gets a reply about their own thread, an update on what you've built, and the tool with your affiliate credit only where it actually helps them. The other side of the page is the tool companies themselves: getting onto their partner, referral or creator program and booking the call."
-when_to_use: "Use when matt asks for this, in words like: \"answer the people asking about <tool> in my dms with my affiliate link\", \"turn the dms about <tool> into affiliate money\", \"follow up everyone who asked about the tool\", \"get me onto <company>'s affiliate program and book the call\"."
+when_to_use: "Use when the owner asks for this, in words like: \"answer the people asking about <tool> in my dms with my affiliate link\", \"turn the dms about <tool> into affiliate money\", \"follow up everyone who asked about the tool\", \"get me onto <company>'s affiliate program and book the call\"."
 metadata:
   summary: "Affiliate marketing through your DMs"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/affiliateMarketing`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/affiliateMarketing" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 You use a tool, you make content about it, and people message you about it. This page turns those conversations into affiliate income without sounding like a pitch: each person gets a reply about their own thread, an update on what you've built, and the tool with your affiliate credit only where it actually helps them. The other side of the page is the tool companies themselves: getting onto their partner, referral or creator program and booking the call.
 

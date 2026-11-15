@@ -12,7 +12,7 @@ const MATT = [
   'nah lad thats mad haha',
 ]
 
-describe('matt phrasing', () => {
+describe('the owner phrasing', () => {
   test('words and word pairs ignore links, case and apostrophes', () => {
     expect(wordsOf("That's MAD https://x.com/a lad")).toEqual(['thats', 'mad', 'lad'])
     expect(wordPairsOf(['a', 'b', 'c'])).toEqual(['a b', 'b c'])
@@ -42,7 +42,7 @@ describe('matt phrasing', () => {
     expect(answering.familiarity).toBe(alone.familiarity)
   })
 
-  test('a new subject is named apart from phrasing he never uses, so its words are not read as his voice (matt, 2026-11-12)', () => {
+  test('a new subject is named apart from phrasing he never uses, so its words are not read as his voice (the owner, 2026-11-12)', () => {
     const index = buildPhraseIndex([...MATT, ...MATT, ...MATT])
     const reading = readPhrases('yo lad the craic is in the datamart what are you building', index)
     expect(reading.newWords).toContain('the datamart')

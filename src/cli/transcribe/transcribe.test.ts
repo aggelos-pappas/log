@@ -51,13 +51,13 @@ function fixture() {
 
 function seed() {
   saveConversations([
-    { platform: "twitter", account: "matt", conversationId: "1:2", box: "xchat", with: ["handle_n1"], messages: [{ id: "10", at: "2026-11-01T00:00:00Z", from: "handle_n1", fromMe: false, text: "(audio: v.m4a)" }] },
+    { platform: "twitter", account: "the owner", conversationId: "1:2", box: "xchat", with: ["handle_n1"], messages: [{ id: "10", at: "2026-11-01T00:00:00Z", from: "handle_n1", fromMe: false, text: "(audio: v.m4a)" }] },
     { platform: "discord", account: "discordOne", conversationId: "55", box: "dm", with: ["A"], messages: [{ id: "9", at: "2026-11-02T00:00:00Z", from: "A", fromMe: false, text: "" }] },
   ]);
   const media = { type: "audio", filename: "v.m4a", media_hash_key: "abc" };
-  mkdirSync(join(dir, "twitter", "matt", "media", "1_2"), { recursive: true });
-  writeFileSync(join(dir, "twitter", "matt", "inboxSync.json"), JSON.stringify({ xchat: { "1:2": { messages: [{ event_id: "10", media: [media] }] } } }));
-  writeFileSync(join(dir, "twitter", "matt", "media", "1_2", "abc.m4a"), "x audio");
+  mkdirSync(join(dir, "twitter", "the owner", "media", "1_2"), { recursive: true });
+  writeFileSync(join(dir, "twitter", "the owner", "inboxSync.json"), JSON.stringify({ xchat: { "1:2": { messages: [{ event_id: "10", media: [media] }] } } }));
+  writeFileSync(join(dir, "twitter", "the owner", "media", "1_2", "abc.m4a"), "x audio");
   mkdirSync(join(dir, "state", "discord", "discordOne", "media", "55"), { recursive: true });
   writeFileSync(join(dir, "state", "discord", "discordOne", "media", "55", "9_voice-message.ogg"), "d audio");
 }

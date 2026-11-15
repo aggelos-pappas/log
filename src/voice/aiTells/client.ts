@@ -169,7 +169,7 @@ export async function buildAiIndex(embedder: AiEmbedder, replies: readonly strin
   const vectors = embedded.filter((_, i) => kept[i])
   const index = { vectors: vectors.map((v) => Float32Array.from(v)) }
   const sample = replies.filter((r) => r.trim().split(/\s+/).length >= 3).slice(-BASELINE_SAMPLE)
-  log(`ai tells: measuring how close ${sample.length} of matt's own messages sit to them`)
+  log(`ai tells: measuring how close ${sample.length} of the owner's own messages sit to them`)
   const scores: number[] = []
   const chunked = sample.map((r) => chunksOf(r))
   const flat = await embedder.embed(chunked.flat())
@@ -212,7 +212,7 @@ export async function readAiTells(text: string, index: AiIndex, embedder: AiEmbe
 export function aiTellsLine(reading: AiReading): string {
   const head = reading.pass ? 'ai tells: none' : 'AI TELLS'
   const hits = reading.hits.map((h) => `"${h.match}" (${h.rule})`).join(', ')
-  const close = reading.closest[0] ? `closest AI phrase "${reading.closest[0].phrase}" to "${reading.closest[0].chunk}" at ${reading.score.toFixed(3)} (matt's own p50 ${reading.p50.toFixed(3)}, p99 ${reading.p99.toFixed(3)}${reading.flagged ? ', past his p99' : ''})` : 'nothing to compare'
+  const close = reading.closest[0] ? `closest AI phrase "${reading.closest[0].phrase}" to "${reading.closest[0].chunk}" at ${reading.score.toFixed(3)} (the owner's own p50 ${reading.p50.toFixed(3)}, p99 ${reading.p99.toFixed(3)}${reading.flagged ? ', past his p99' : ''})` : 'nothing to compare'
   const words = reading.overused.length ? `; words AI overuses: ${reading.overused.map((w) => `${w.word} ×${w.ratio.toFixed(1)}`).join(', ')}` : ''
   return `${head}${hits ? `: ${hits}` : ''}; ${close}${words}`
 }

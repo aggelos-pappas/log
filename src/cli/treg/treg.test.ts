@@ -82,7 +82,7 @@ describe("treg extension", () => {
     expect(refused.code).toBe(1);
     expect(refused.stderr).toContain("notApproved");
     const seen = fake(PRICED);
-    const ran = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--live", "--approvedBy", "matt"]);
+    const ran = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--live", "--approvedBy", "the owner"]);
     expect(ran.code).toBe(0);
     expect(seen.some((a) => a[0] === "call")).toBe(true);
   });
@@ -96,21 +96,21 @@ describe("treg extension", () => {
     ];
     const stdout = JSON.stringify({ output: { posts, next_cursor: "x" }, raw: { output: { data: { tweets: posts } } }, _treg: { charged_micro: 450 } });
     fake(PRICED, { ok: true, code: 0, stdout, stderr: "" });
-    const plain = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--live", "--approvedBy", "matt", "--json"]);
+    const plain = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--live", "--approvedBy", "the owner", "--json"]);
     const whole = JSON.parse(plain.stdout ?? "{}").answer;
     expect(whole.raw).toBeUndefined();
     expect(whole.output.posts).toHaveLength(4);
     fake(PRICED, { ok: true, code: 0, stdout, stderr: "" });
-    const trimmed = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--live", "--approvedBy", "matt", "--json", "--where", "isReply=false", "--maxItems", "2", "--fields", "id,text"]);
+    const trimmed = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--live", "--approvedBy", "the owner", "--json", "--where", "isReply=false", "--maxItems", "2", "--fields", "id,text"]);
     const answer = JSON.parse(trimmed.stdout ?? "{}").answer;
     expect(answer.output.posts).toEqual([{ id: "2", text: "b" }, { id: "3", text: "c" }]);
     expect(answer.output.next_cursor).toBe("x");
     expect(answer._treg).toEqual({ charged_micro: 450 });
     fake(PRICED, { ok: true, code: 0, stdout, stderr: "" });
-    const kept = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--live", "--approvedBy", "matt", "--json", "--raw"]);
+    const kept = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--live", "--approvedBy", "the owner", "--json", "--raw"]);
     expect(JSON.parse(kept.stdout ?? "{}").answer.raw).toBeDefined();
     fake(PRICED);
-    const bad = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--live", "--approvedBy", "matt", "--where", "isReply"]);
+    const bad = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--live", "--approvedBy", "the owner", "--where", "isReply"]);
     expect(bad.stderr).toContain("tregTrimInvalid");
   });
 
@@ -134,7 +134,7 @@ describe("treg extension", () => {
         return args[0] === "catalog" ? { ok: true, code: 0, stdout: PRICED, stderr: "" } : { ok: true, code: 0, stdout: "{\"results\":[1]}", stderr: "" };
       });
     const { err, ctx } = context();
-    const live = await tregCommand.run(ctx, ["call", "tikhub.x.user-tweets", "--params", "{\"user\":\"x\"}", "--live", "--approvedBy", "matt"]);
+    const live = await tregCommand.run(ctx, ["call", "tikhub.x.user-tweets", "--params", "{\"user\":\"x\"}", "--live", "--approvedBy", "the owner"]);
     expect(live.code).toBe(0);
     expect(started.sort()).toEqual(["call", "get"]);
     expect(err.join(" ")).toContain("costs $0.001/call");

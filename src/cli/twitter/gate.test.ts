@@ -18,7 +18,7 @@ describe("the voice gate inside every send (rule 137)", () => {
     expect(parts[1]).toContain("voice 0.40");
   });
 
-  test("a voice note that repeats what matt already said names it (rule 149)", () => {
+  test("a voice note that repeats what the owner already said names it (rule 149)", () => {
     const parts = failedParts({ ...passing, buildsOn: 0.3, pass: false });
     expect(parts).toHaveLength(1);
     expect(parts[0]).toContain("buildsOn 0.30");
@@ -71,7 +71,7 @@ describe("the gate inside a send only grades an answer when there is something t
     expect(momentAnswered([{ fromMe: true, text: "you there", time: "2026-11-05T00:24:58Z" }, { fromMe: false, text: "Not me", time: "2026-11-05T00:26:44Z" }])).toBe("Not me");
   });
 
-  test("when matt's own message is the newest, the send is new news, not a reply", () => {
+  test("when the owner's own message is the newest, the send is new news, not a reply", () => {
     expect(momentAnswered([{ fromMe: false, text: "Not me", time: "2026-11-05T00:26:44Z" }, { fromMe: true, text: "(voice note: look at my screen)", time: "2026-11-05T06:27:57Z" }])).toBe("");
     expect(momentAnswered([])).toBe("");
     expect(momentAnswered([{ fromMe: true, text: "how you gonna get people on it", time: "2026-11-05T17:47:00Z" }, { fromMe: false, text: "just put on earning sites", time: "2026-11-05T17:47:30Z" }, { fromMe: false, text: "will take a while", time: "2026-11-05T17:49:06Z" }])).toBe("just put on earning sites\nwill take a while");

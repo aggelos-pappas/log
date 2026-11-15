@@ -178,7 +178,7 @@ export function readPersonas(file = personasFile()): PersonaRecord[] {
 }
 
 export function rejectPicture(record: PersonaRecord, reason: string): PersonaRecord {
-  record.rejected = [...(record.rejected ?? []), { at: new Date().toISOString(), by: 'matt', reason, tasks: record.attempts.filter((a) => !(record.rejected ?? []).some((r) => r.tasks.includes(a.task))).map((a) => a.task) }]
+  record.rejected = [...(record.rejected ?? []), { at: new Date().toISOString(), by: 'the owner', reason, tasks: record.attempts.filter((a) => !(record.rejected ?? []).some((r) => r.tasks.includes(a.task))).map((a) => a.task) }]
   record.matched = false
   record.profilePicture = null
   return record

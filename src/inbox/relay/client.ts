@@ -315,7 +315,7 @@ export function catchUpRunner(platform: string, account: string, catchUp: CatchU
       }
       if (got.refused) {
         markGap(gap.id, 'refused', got.refused, got.appended)
-        log(`${platform} ${account}: catch-up refused: ${got.refused}; it stays behind until matt says so (rule 94)`)
+        log(`${platform} ${account}: catch-up refused: ${got.refused}; it stays behind until the owner says so (rule 94)`)
         return
       }
       if (!markGap(gap.id, 'closed', got.detail ?? null, got.appended, new Date(), drops)) {

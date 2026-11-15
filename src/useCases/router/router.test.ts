@@ -94,7 +94,7 @@ describe('the scoring', () => {
     expect(decide('ok').outcome).toBe('none')
   })
 
-  test("matt's prompts from 2026-11-07 still land on the play he meant", () => {
+  test("the owner's prompts from 2026-11-07 still land on the play he meant", () => {
     expect(top('message the people who are new to following me')).toBe('twitter/replyGuyFunnel')
     expect(top('you are meant to reply guy them first and foremost, send a meme to the tweet')).toBe('twitter/replyGuyFunnel')
     expect(top('read my instagram dms')).toBe('instagram/dmReply')

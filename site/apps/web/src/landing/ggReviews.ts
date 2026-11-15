@@ -10,7 +10,7 @@ export const GG_REVIEWS: Review[] = [
   { quote: 'the **30 convos in two days** is the real flex, not the tool.', name: 'Lucyyy', handle: '@lucy_puppyy' },
   { quote: '30 real conversations for $10 is **wild**.', name: 'Steven', handle: '@StephGlansberg' },
   { quote: 'Whoa, this is **next level** for GTM people', name: 'Taus', handle: '@ShehjadTaus' },
-  { quote: 'matt, the **clay sales team** hates you now', name: 'Anderson', handle: '@ItsGoharr' },
+  { quote: 'the owner, the **clay sales team** hates you now', name: 'Anderson', handle: '@ItsGoharr' },
   { quote: 'Gonna check out the **OSS repo**!', name: 'AI Builder Club', handle: '@aibuilderclub_' },
   { quote: 'Yoo this is **insane** launch video!', name: 'Treg', handle: '@treg_ai' },
   { quote: 'Jason is literally **FREE**', name: 'Knowix', handle: '@knowixbuilds' },

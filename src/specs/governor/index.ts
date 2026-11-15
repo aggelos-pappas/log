@@ -8,7 +8,7 @@ const LEDGER_TYPES = 'src/storage/ledger/types.ts'
 const FROM_OLD = 'src/storage/ledger/helpers/fromOld.ts'
 
 export const governor = {
-  description: "Every platform account's governor count read with one command and put back to 0 with another when matt says so, each reset checked and kept in log.db's ledger",
+  description: "Every platform account's governor count read with one command and put back to 0 with another when the owner says so, each reset checked and kept in log.db's ledger",
   specPath: 'docs/specs/governor.md',
   codePaths: [CLIENT, TYPES, COMMAND, LEDGER_TYPES, FROM_OLD],
   anchors: {

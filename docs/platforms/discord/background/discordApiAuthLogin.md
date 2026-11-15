@@ -127,4 +127,4 @@ The step that pressed Log In is decided on this answer (rule 73): 200 with a tok
 
 ## What can go wrong
 
-400 with `captcha_key` is a captcha, `mfa: true` is two-step, `ACCOUNT_LOGIN_VERIFICATION_EMAIL` a new-location email to confirm. Each is said to matt, who does the sign-in on Discord.
+400 with `captcha_key` is a captcha, `mfa: true` is two-step, `ACCOUNT_LOGIN_VERIFICATION_EMAIL` a new-location email to confirm. Each is said to the owner, who does the sign-in on Discord.

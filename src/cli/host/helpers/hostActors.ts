@@ -186,7 +186,7 @@ export function hostActors(context: CommandContext, account: FacebookAccount, br
     }),
 
     setProfile: fromPromise<StepOutcome, LifecycleActorInputs["setProfile"]>(async ({ input }) => {
-      if (!input.live) return error("needsLive", "the profile changes Facebook: run the host with --live when matt asks (rule 8)");
+      if (!input.live) return error("needsLive", "the profile changes Facebook: run the host with --live when the owner asks (rule 8)");
       const recorded = loadFlow("profileSetup");
       if (!recorded || !browser.session) return error("flowNotRecorded", "profileSetup");
       if (!account.profilePhoto) return error("noProfileInTwenty", "profilePhoto is needed in Twenty");

@@ -45,9 +45,9 @@ function usageOf(shape: VoiceShape): string {
   return [
     `Usage: log ${shape.platform} voice --account <accountName> --${shape.chat.name} <${shape.chat.name}> --text "<what the owner says>"${shape.extra.map((f) => ` [--${f.name} <${f.name}>]`).join("")} [--provider inworld|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]`,
     `Sends a voice note in the owner's cloned voice (the voice provider, log clone voice) as ${shape.platform}'s own voice note: ${shape.native}. It takes text only, never an audio file: the words are said in his voice, converted with ffmpeg to ${PLATFORM_AUDIO[shape.platform].container} and uploaded on the direct-API engine through the account's one session (${shape.engine}, no browser).`,
-    "A voice note goes out only when matt asks for one (rule 142). The provider is --provider, else LOG_VOICE_PROVIDER, else inworld; the command only ever calls the shared voice layer (rule 143). Without --live it is a dry run: nothing is generated and nothing is contacted. --live needs --approvedBy (rule 8). It says and converts the note while the account catches up (rule 135) and the text goes through the voice gate every send runs (rule 137), so a note that passes goes out without waiting for it to be made; one the gate refuses is never sent. It then claims the chat (rule 133) and releases it after. The governor counts it as a write, the platform's answer decides (rule 73), and a refusal stops with nothing retried (rule 94).",
-    "--mattsWords says the text is matt's own words, dictated by him for this voice note: the voice gate's read is skipped, since it grades speech as typed text and as a reply, while the AI artifact check still runs and refuses aiArtifacts (rule 144).",
-    "--translationOf \"<what it translates>\" says the text is a translation, only when matt asked for one: the voice gate grades those original words (his own language, which the gate reads) instead of the translation, which it can't match to his writing; both are read for AI artifacts. --language <code> (zh-CN, es-ES ...) is the language the clone speaks it in, instead of the clone's own, and it is needed with --translationOf (rule 148).",
+    "A voice note goes out only when the owner asks for one (rule 142). The provider is --provider, else LOG_VOICE_PROVIDER, else inworld; the command only ever calls the shared voice layer (rule 143). Without --live it is a dry run: nothing is generated and nothing is contacted. --live needs --approvedBy (rule 8). It says and converts the note while the account catches up (rule 135) and the text goes through the voice gate every send runs (rule 137), so a note that passes goes out without waiting for it to be made; one the gate refuses is never sent. It then claims the chat (rule 133) and releases it after. The governor counts it as a write, the platform's answer decides (rule 73), and a refusal stops with nothing retried (rule 94).",
+    "--mattsWords says the text is the owner's own words, dictated by him for this voice note: the voice gate's read is skipped, since it grades speech as typed text and as a reply, while the AI artifact check still runs and refuses aiArtifacts (rule 144).",
+    "--translationOf \"<what it translates>\" says the text is a translation, only when the owner asked for one: the voice gate grades those original words (his own language, which the gate reads) instead of the translation, which it can't match to his writing; both are read for AI artifacts. --language <code> (zh-CN, es-ES ...) is the language the clone speaks it in, instead of the clone's own, and it is needed with --translationOf (rule 148).",
   ].join("\n");
 }
 
@@ -79,7 +79,7 @@ export function voiceNoteCommandOf(shape: VoiceShape): Command {
       const translationOf = typeof parsed.flags["translationOf"] === "string" ? parsed.flags["translationOf"].trim() : "";
       const language = typeof parsed.flags["language"] === "string" ? parsed.flags["language"].trim() : "";
       if (translationOf && !language) return refuse(label, "voiceNoteInvalid", "--translationOf needs --language: the language the clone speaks the translation in (rule 148)");
-      if (translationOf && mattsWords) return refuse(label, "voiceNoteInvalid", "--translationOf and --mattsWords are two different things: a translation is gated on its original (rule 148), matt's dictated words skip the gate's read (rule 144)");
+      if (translationOf && mattsWords) return refuse(label, "voiceNoteInvalid", "--translationOf and --mattsWords are two different things: a translation is gated on its original (rule 148), the owner's dictated words skip the gate's read (rule 144)");
       if (language && !/^[a-z]{2,3}(-[A-Z]{2})?$/.test(language)) return refuse(label, "voiceNoteInvalid", `--language ${language} isn't a language code like zh-CN or es-ES`);
       const problem = textOnlyProblem(text);
       if (problem) return refuse(label, "voiceNoteInvalid", problem);
@@ -96,9 +96,9 @@ export function voiceNoteCommandOf(shape: VoiceShape): Command {
         const where = { platform: shape.platform, account: resolved.account, chat: resolved.chatId, text: text.trim(), provider, container: PLATFORM_AUDIO[shape.platform].container, ...(translationOf ? { translationOf, language } : language ? { language } : {}) };
         if (!live) {
           if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ engine: "directApi", ok: true, dryRun: true, cloned: !!clone, mattsWords, ...where }, null, 2) };
-          return { code: 0, stdout: [`log ${label}: dry run: ${resolved.account} would send ${resolved.label} a voice note in the owner's cloned voice (${PLATFORM_AUDIO[shape.platform].container}) saying:`, `  ${text.trim()}`, clone ? `The clone on ${provider} is ready (made ${clone.createdAt}).` : `There is no clone on ${provider} yet: log clone voice --provider ${provider} --apply makes it first.`, ...(mattsWords ? ["These are matt's own dictated words (--mattsWords): the voice gate's read is skipped, the AI artifact check passed (rule 144)."] : []), ...(translationOf ? [`It is a translation into ${language} of: ${translationOf} (--translationOf): the voice gate grades that original (rule 148).`] : language ? [`Spoken in ${language}.`] : []), "Nothing was generated or sent. --live --approvedBy <who> sends it, only when matt asked for a voice note (rules 8, 142)."].join("\n") };
+          return { code: 0, stdout: [`log ${label}: dry run: ${resolved.account} would send ${resolved.label} a voice note in the owner's cloned voice (${PLATFORM_AUDIO[shape.platform].container}) saying:`, `  ${text.trim()}`, clone ? `The clone on ${provider} is ready (made ${clone.createdAt}).` : `There is no clone on ${provider} yet: log clone voice --provider ${provider} --apply makes it first.`, ...(mattsWords ? ["These are the owner's own dictated words (--mattsWords): the voice gate's read is skipped, the AI artifact check passed (rule 144)."] : []), ...(translationOf ? [`It is a translation into ${language} of: ${translationOf} (--translationOf): the voice gate grades that original (rule 148).`] : language ? [`Spoken in ${language}.`] : []), "Nothing was generated or sent. --live --approvedBy <who> sends it, only when the owner asked for a voice note (rules 8, 142)."].join("\n") };
         }
-        if (!clone) return refuse(label, "voiceCloneMissing", `log clone voice --provider ${provider} --apply makes it once from matt's own voice notes`);
+        if (!clone) return refuse(label, "voiceCloneMissing", `log clone voice --provider ${provider} --apply makes it once from the owner's own voice notes`);
         const acted = await runAction<VoiceHeld, PlatformAnswer>({
           gate: async () => {
             context.err(`${resolved.account}: voice note to ${resolved.label}, approved by ${approvedBy}`);
@@ -106,7 +106,7 @@ export function voiceNoteCommandOf(shape: VoiceShape): Command {
             const rendering = voiceNoteDeps.render(provider, shape.platform, text, language || undefined).catch((error): Rendered => ({ ok: false, code: "voiceProcessingFailed", detail: error instanceof Error ? error.message : String(error) }) as Rendered);
             const caught = await waitCaughtUp(shape.platform, resolved.account);
             if (!caught.ok) return { ok: false, code: "accountBehind", detail: caught.refused };
-            if (mattsWords) context.err(`${resolved.account}: matt's own dictated words (--mattsWords): the voice gate's read of his typing is skipped, the AI artifact check passed`);
+            if (mattsWords) context.err(`${resolved.account}: the owner's own dictated words (--mattsWords): the voice gate's read of his typing is skipped, the AI artifact check passed`);
             else {
               if (translationOf) context.err(`${resolved.account}: a translation into ${language} (--translationOf): the voice gate grades the original words`);
               const voiced = await gateDeps.gate(context, { platform: shape.platform, account: resolved.account, to: resolved.label, text: translationOf || text, conversationId: resolved.gateHandle ? undefined : resolved.chatId, handle: resolved.gateHandle, spoken: true, ...(resolved.room ? { readRoom: resolved.room } : {}) });
@@ -136,7 +136,7 @@ export function voiceNoteCommandOf(shape: VoiceShape): Command {
         guard.done(answer.ok ? "sent" : "failed", `voice note (${note.seconds} s): ${text.trim().slice(0, 240)}${answer.ok ? "" : `: ${answer.code}`}`);
         const code = answer.ok ? 0 : 1;
         if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", approvedBy, ...where, file: note.path, seconds: note.seconds, ...answer }, null, 2) };
-        if (answer.ok) return { code, stdout: `log ${label}: ${resolved.account} sent ${resolved.label} a ${note.seconds} s voice note in matt's voice${answer.messageId ? ` (message ${answer.messageId})` : ""}: ${text.trim()}` };
+        if (answer.ok) return { code, stdout: `log ${label}: ${resolved.account} sent ${resolved.label} a ${note.seconds} s voice note in the owner's voice${answer.messageId ? ` (message ${answer.messageId})` : ""}: ${text.trim()}` };
         return { code, stdout: `log ${label}: ${resolved.account}: ${answer.code}: ${answer.detail ?? ""}. Nothing is retried (rule 94).` };
       } catch (error) {
         return refuseError(label, error);
@@ -223,7 +223,7 @@ export const twitterVoiceCommand = voiceNoteCommandOf({
     if (!direct) return { ok: false, result: { code: 1, stderr: `log ${label}: the direct-API engine isn't wired in this context` } };
     const secrets = await context.twenty.loginSecrets(opened.account.id).catch(() => null);
     const chatPin = secrets?.messengerPin ? String(secrets.messengerPin) : "";
-    if (!chatPin) return { ok: false, result: refuse(label, "xchatPinMissing", `${opened.account.accountName} has no X Chat PIN saved, so X Chat can't be opened to send: matt saves it once with log twitter chat pin --account ${opened.account.accountName}`) };
+    if (!chatPin) return { ok: false, result: refuse(label, "xchatPinMissing", `${opened.account.accountName} has no X Chat PIN saved, so X Chat can't be opened to send: the owner saves it once with log twitter chat pin --account ${opened.account.accountName}`) };
     const said = String(flags["with"]).trim().replace(/^@/, "");
     const who = /^\d{5,25}$/.test(said) ? { userId: said } : { screenName: said };
     const account = opened.account;

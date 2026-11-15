@@ -386,4 +386,4 @@ This is the engine's `read` action: `read` in `python/slackApi/engine.py` calls 
 
 ## What can go wrong
 
-`ok: false` returns an error from the engine's call: `channel_not_found`, `not_in_channel` or `missing_scope` would mean the chat id is wrong or not visible to the account, and `ratelimited` or `not_authed` mean the run stops (rule 94) and the account stays behind until matt says so. The recordings here all answered 200 with `ok: true`.
+`ok: false` returns an error from the engine's call: `channel_not_found`, `not_in_channel` or `missing_scope` would mean the chat id is wrong or not visible to the account, and `ratelimited` or `not_authed` mean the run stops (rule 94) and the account stays behind until the owner says so. The recordings here all answered 200 with `ok: true`.

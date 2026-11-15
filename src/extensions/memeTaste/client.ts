@@ -98,11 +98,11 @@ export function tasteCounts(index: TasteIndex): Record<string, number> {
 
 export function tasteSummary(index: TasteIndex | null): string {
   const named = Object.entries(TASTE_STYLES).map(([k, v]) => `${k}: ${v.split(': ').slice(1).join(': ')}`).join('; ')
-  if (!index) return `matt's meme taste: ${named}. No index of the memes he has sent yet (log memelord taste --build).`
+  if (!index) return `the owner's meme taste: ${named}. No index of the memes he has sent yet (log memelord taste --build).`
   const counts = Object.entries(tasteCounts(index)).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(', ')
   const lines = index.memes.map((m) => m.text.replace(/^(@\w+\s*)+/, '').replace(/\s+/g, ' ').trim()).filter(Boolean)
   const said = lines.slice(0, 6).map((l) => `"${l.slice(0, 60)}"`).join(', ')
-  return `matt's meme taste: ${named}. Of the ${index.memes.length} memes he has sent (${counts})${said ? `, with lines like ${said}` : ''}.`
+  return `the owner's meme taste: ${named}. Of the ${index.memes.length} memes he has sent (${counts})${said ? `, with lines like ${said}` : ''}.`
 }
 
 export async function tasteFit(decide: DecisionsClient, index: TasteIndex | null, template: { name: string; description: string }, image: DecisionImage, ratings: readonly TasteRating[] = []): Promise<TasteFit> {

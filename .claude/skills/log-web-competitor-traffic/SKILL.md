@@ -1,7 +1,7 @@
 ---
 name: log-web-competitor-traffic
 description: "Competitor traffic: finding how to rank on your competitors' names. A log play (docs/useCases/web/competitorTraffic.md): Work out how a tool gets search and AI-search traffic from its competitors: what each competitor ranks for, who pays affiliate commission, what the people in the owner's DMs could link from, and what forums like BlackHatWorld say works this month. Then rank what to do first with a SubQ matrix and write it up. It reads and researches only. It publishes nothing and contacts nobody."
-when_to_use: "Use when matt asks for this, in words like: \"find out all of our competitors\", \"what are we lacking\", \"go through the bhw mcp and see what they're saying\", \"compare this month to last month\", \"find who in my messages has a website for a backlink\", \"competitor pages that backlink to us\", \"make affiliate money through it\", \"run it through subq matrices\", \"do some deeper research\""
+when_to_use: "Use when the owner asks for this, in words like: \"find out all of our competitors\", \"what are we lacking\", \"go through the bhw mcp and see what they're saying\", \"compare this month to last month\", \"find who in my messages has a website for a backlink\", \"competitor pages that backlink to us\", \"make affiliate money through it\", \"run it through subq matrices\", \"do some deeper research\""
 metadata:
   summary: "Competitor traffic: finding how to rank on your competitors' names"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `web/competitorTraffic`. Before anything else, call the log MCP tool `getGuide({ useCase: "web/competitorTraffic" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Work out how a tool gets search and AI-search traffic from its competitors: what each competitor ranks for, who pays affiliate commission, what the people in the owner's DMs could link from, and what forums like BlackHatWorld say works this month. Then rank what to do first with a SubQ matrix and write it up. It reads and researches only. It publishes nothing and contacts nobody.
 
@@ -42,3 +42,5 @@ Say: **"go on docs/useCases/web/competitorTraffic.md for <tool>"**. The agent re
 - **Free first.** TinyFish search and fetch through treg cost nothing. Ranked keywords, profile lookups and deep research cost money: say the price and ask before running anything the owner didn't ask to pay for (rule 41).
 - **"Open source" on a competitor's page isn't always the whole thing.** Say exactly what each one is, as the owner knows it.
 - **On Windows the Parallel CLI can fail writing the report** (a charmap error). Read the finished run from Parallel's API instead and save it as UTF-8.
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

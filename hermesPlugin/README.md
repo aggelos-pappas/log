@@ -71,6 +71,7 @@ An Agent Plugins v1 package:
 - **Network calls:** log calls the platforms you signed in (X, Discord, Slack, Instagram and Reddit, plus LinkedIn for its session check) directly, as your own accounts, and only when a tool runs. This plugin adds no telemetry and sends nothing anywhere else.
 - **Data and credentials:** your account sessions, cookies and message history stay in log's own folder on your machine (`~/.logCli`). The plugin never reads cookies or credentials; only log does. The dashboard tab reads only the files named above. Nothing is put in `mcp.json`.
 - **Writes:** sends, replies, quotes, likes and follows go out as you, so they are gated by Hermes approval (`trust: untrusted`) and by log's own per-account daily limits. log stops on any rate limit, block or failed send instead of retrying.
+- **Referral links:** some plays link to services log works with, and those links carry ListeningKit's referral or affiliate code: treg (`treg.to/?ref=`), Memelord (`memelord.com/sign-up?ref=`), Inworld (`inworld.ai/signup?ref=`) and Fish Audio (`fish.audio/?aff=`). Using them costs nothing extra; drop the code from the address if you'd rather not. Every skill with such a link says so at its end.
 - **The tool set** comes from your installed log version at runtime and is not covered by this plugin's pinned commit.
 
 ## License
