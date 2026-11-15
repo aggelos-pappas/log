@@ -1,7 +1,7 @@
 ---
 name: log-twitter-topic-replies
 description: "Replying to everyone posting about one topic. A log play (docs/useCases/twitter/topicReplies.md): Pick a topic you have something real to say about, find everyone on X posting about it, and reply to each person with one line about their own post, backed by one of your own facts. Each reply can point at your article or video on the topic. The owner approves the list, then the queue sends it over days, inside the account's 240 writes a day ([write budgets](../../specs/writeBudgets.md))."
-when_to_use: "Use when matt asks for this, in words like: \"reply to everyone tweeting about <topic>\", \"find everyone posting about <topic> on x and reply with my article\", \"reply to the people talking about <topic> with my video\"."
+when_to_use: "Use when the owner asks for this, in words like: \"reply to everyone tweeting about <topic>\", \"find everyone posting about <topic> on x and reply with my article\", \"reply to the people talking about <topic> with my video\"."
 metadata:
   summary: "Replying to everyone posting about one topic"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/topicReplies`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/topicReplies" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Pick a topic you have something real to say about, find everyone on X posting about it, and reply to each person with one line about their own post, backed by one of your own facts. Each reply can point at your article or video on the topic. The owner approves the list, then the queue sends it over days, inside the account's 240 writes a day ([write budgets](https://github.com/matthewdonsemail-lab/log/blob/main/docs/specs/writeBudgets.md)).
 
@@ -50,3 +50,5 @@ Say: **"go on docs/useCases/twitter/topicReplies.md for <topic>, linking <articl
 ## Next
 
 - [#37](https://github.com/matthewdonsemail-lab/log/issues/37) spreads a long list over several days. Until then, the queue plans up to its limit and is planned again each day.
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

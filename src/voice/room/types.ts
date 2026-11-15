@@ -12,7 +12,7 @@ export interface Room {
   kind: RoomKind
   othersActiveLately: string[]
   lastFromOthers: { who: string; at: string; daysAgo: number } | null
-  mattsInARowAtTheEnd: number
+  ownersInARowAtTheEnd: number
   nobodyElseLately: boolean
   addressTo: string
 }

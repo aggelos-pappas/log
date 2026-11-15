@@ -11,7 +11,7 @@ const FONT = "'Satoshi', 'Inter', system-ui, sans-serif"
  * across and zooms up until its letters fill the screen.
  *
  * The backdrop hard-swaps between the two listening photos as you
- * scroll (matt <-> mandee), both riding the same zoom so only the
+ * scroll (owner <-> mandee), both riding the same zoom so only the
  * photo itself cuts.
  *
  * Everything lives in ONE SVG so the geometry is shared by construction:

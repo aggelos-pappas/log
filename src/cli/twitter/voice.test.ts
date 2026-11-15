@@ -21,7 +21,7 @@ describe("log voice keeps its own AI tells index current (rule 112)", () => {
     expect(aiIndexStale(aiIndexAt("2026-11-02T05:00:00Z"), join(tmpdir(), "noPairs.json"), "m")).toBe(false);
   });
 
-  test("an index older than matt's voice index is rebuilt, a newer one is kept", () => {
+  test("an index older than the owner's voice index is rebuilt, a newer one is kept", () => {
     const pairs = join(mkdtempSync(join(tmpdir(), "voice")), "pairs.json");
     writeFileSync(pairs, "[]");
     utimesSync(pairs, new Date("2026-11-02T04:00:00Z"), new Date("2026-11-02T04:00:00Z"));

@@ -20,7 +20,7 @@ function localClock(iso: string): string {
   const at = new Date(iso)
   if (Number.isNaN(at.getTime())) return iso
   const pad = (n: number) => String(n).padStart(2, '0')
-  return `${at.getMonth() + 1}/${at.getDate()} ${pad(at.getHours())}:${pad(at.getMinutes())} matt's time`
+  return `${at.getMonth() + 1}/${at.getDate()} ${pad(at.getHours())}:${pad(at.getMinutes())} the owner's time`
 }
 export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   facebookRead: { platform: 'facebook', library: 'fbk', only: false, surface: 'groups', method: 'feed_read', when: 'read group without --live on a numeric group id', seam: 'directRead' },
@@ -55,7 +55,7 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   discordPosts: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'get_threads', when: 'posts (a forum or media channel, threads/search)', seam: 'directDiscord' },
   discordSearch: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'search', when: 'search (a whole server, messages/search)', seam: 'directDiscord' },
   discordWatch: { platform: 'discord', library: 'endcord', only: true, surface: 'gateway', method: 'Gateway', when: 'watch (Discord pushes each message over wss://gateway.discord.gg, nothing polled)', seam: 'directDiscordLive' },
-  discordVoice: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'send_voice_message', when: 'voice --live (a voice note in the voice cloned from matt, flags 8192)', seam: 'directDiscord' },
+  discordVoice: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'send_voice_message', when: 'voice --live (a voice note in the voice cloned from the owner, flags 8192)', seam: 'directDiscord' },
   discordReact: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'send_reaction', when: 'react --live (--remove takes it off)', seam: 'directDiscord' },
   discordSend: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'send_message', when: 'send --live', seam: 'directDiscord' },
   discordDelete: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'delete_message', when: 'delete --live (only the account own messages, each read first)', seam: 'directDiscord' },
@@ -75,14 +75,14 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   slackChats: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'conversations.list', when: 'chats (the DMs and group DMs)', seam: 'directSlack' },
   slackRead: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'conversations.history', when: 'read (a chat, paged by cursor)', seam: 'directSlack' },
   slackWatch: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'websocket', method: 'connect', when: 'watch (Slack pushes each event over wss-primary.slack.com, nothing polled)', seam: 'directSlackLive' },
-  slackVoice: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'files.completeUploadExternal', when: 'voice --live (a voice note in the voice cloned from matt, uploaded then shared)', seam: 'directSlack' },
+  slackVoice: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'files.completeUploadExternal', when: 'voice --live (a voice note in the voice cloned from the owner, uploaded then shared)', seam: 'directSlack' },
   slackReact: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'reactions.add', when: 'react --live (--remove takes it off)', seam: 'directSlack' },
   slackSend: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'chat.postMessage', when: 'send --live', seam: 'directSlack' },
   slackCookies: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'account', method: 'exchange_cookie', when: 'cookies save (the d cookie is checked with Slack before it is saved)', seam: 'directSlack' },
   instagramSession: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directInstagram' },
   instagramDms: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_threads', when: 'dms (the inbox, or one thread with --with)', seam: 'directInstagram' },
-  twitterVoice: { platform: 'twitter', library: 'twikit', only: true, surface: 'messages', method: 'SendMessageCreateMutation', when: 'voice --live (a voice note in the voice cloned from matt, encrypted with chat-xdk and sent as an X Chat AUDIO attachment)', seam: 'directTwitter' },
-  instagramVoice: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send_voice', when: 'voice --live (a voice note in the voice cloned from matt, its upload on curl_cffi)', seam: 'directInstagram' },
+  twitterVoice: { platform: 'twitter', library: 'twikit', only: true, surface: 'messages', method: 'SendMessageCreateMutation', when: 'voice --live (a voice note in the voice cloned from the owner, encrypted with chat-xdk and sent as an X Chat AUDIO attachment)', seam: 'directTwitter' },
+  instagramVoice: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send_voice', when: 'voice --live (a voice note in the voice cloned from the owner, its upload on curl_cffi)', seam: 'directInstagram' },
   instagramReact: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send_reaction', when: 'react --live (--remove takes it off)', seam: 'directInstagram' },
   instagramSend: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send', when: 'send --live (text one message per line, and --photo through direct_send_photo)', seam: 'directInstagram' },
   instagramWatch: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'websocket', method: 'realtime_connect', when: 'watch (Instagram pushes each DM over its realtime MQTT, edge-mqtt.facebook.com, nothing polled)', seam: 'directInstagramLive' }

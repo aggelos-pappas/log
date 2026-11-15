@@ -24,7 +24,7 @@ Seen 2 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T185330_mattinferencesaver**, upload: paulie.jpg handed to the file chooser: 200, 1747 ms
+**runs/inspect/20261103T185330_instagramAccount**, upload: paulie.jpg handed to the file chooser: 200, 1747 ms
 
 Sent:
 
@@ -47,7 +47,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, upload: grievous.jpg handed to the file chooser: 200, 2098 ms
+**runs/inspect/20261103T180010_instagramAccount**, upload: grievous.jpg handed to the file chooser: 200, 2098 ms
 
 Sent:
 

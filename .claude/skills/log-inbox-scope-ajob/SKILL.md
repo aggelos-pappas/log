@@ -1,7 +1,7 @@
 ---
 name: log-inbox-scope-ajob
 description: "Scoping a job out of someone in a DM. A log play (docs/useCases/inbox/scopeAJob.md): Someone offers the owner a job in a chat. Before any number, any promise or any handover, the job has to be known: what it actually is, what they already have, what is blocked, and what \"done\" means to them. This page is that, and the writing rules that make the questions actually go out as the owner."
-when_to_use: "Use when matt asks for this, in words like: \"probe <person> so we can scope out what the task is\", \"scope it out with him\", \"find out what he actually wants done\", \"go through and then scope it out\"."
+when_to_use: "Use when the owner asks for this, in words like: \"probe <person> so we can scope out what the task is\", \"scope it out with him\", \"find out what he actually wants done\", \"go through and then scope it out\"."
 metadata:
   summary: "Scoping a job out of someone in a DM"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `inbox/scopeAJob`. Before anything else, call the log MCP tool `getGuide({ useCase: "inbox/scopeAJob" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 ---
 title: "Scoping a job out of someone in a DM"

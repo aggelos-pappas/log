@@ -116,20 +116,20 @@ export function xLiveContext(accounts: readonly AccountLive[], options: { sessio
   if (!loud.length && !first.length && !options.sessionStart) return null
   const lines: string[] = []
   if (loud.length) {
-    lines.push(">>> X LIVE, NEW ACTIVITY: tell matt now, first thing in your reply, every line below in plain words (who did what on which post), before anything else you were doing. Read through each account's one session the way x.com does (rule 115).")
+    lines.push(">>> X LIVE, NEW ACTIVITY: tell the owner now, first thing in your reply, every line below in plain words (who did what on which post), before anything else you were doing. Read through each account's one session the way x.com does (rule 115).")
     for (const a of loud) {
       const said = sayingOf(a)
       lines.push(`  @${a.account}${a.latest ? ` (${badgeLine(a.latest)})` : ''}:`)
       for (const line of said.slice(-15)) lines.push(`    ${line}`)
       if (said.length > 15) lines.push(`    (${said.length - 15} more earlier)`)
     }
-    if (loud.some((a) => a.events.some((e) => e.type === 'notification' && (e.kind === 'reply' || e.kind === 'quote' || e.kind === 'mention')))) lines.push('  A reply, quote or mention is someone talking to matt: read them (`twitterDms` { with }) and answer when it fits (rules 108, 109).')
-    if (loud.some((a) => a.events.some((e) => (e.type === 'pollRefused' && !networkOnly(e)) || e.type === 'notificationsRefused'))) lines.push("  A refused read stops the live poll on that account: tell matt X's answer and the time, nothing resumes until he says (rule 94).")
+    if (loud.some((a) => a.events.some((e) => e.type === 'notification' && (e.kind === 'reply' || e.kind === 'quote' || e.kind === 'mention')))) lines.push('  A reply, quote or mention is someone talking to the owner: read them (`twitterDms` { with }) and answer when it fits (rules 108, 109).')
+    if (loud.some((a) => a.events.some((e) => (e.type === 'pollRefused' && !networkOnly(e)) || e.type === 'notificationsRefused'))) lines.push("  A refused read stops the live poll on that account: tell the owner X's answer and the time, nothing resumes until he says (rule 94).")
   }
   if (first.length) {
     lines.push(">>> X LIVE: each X account's unread counts right now, from X's own ViewerBadgeCounts (rule 115):")
     for (const a of first) lines.push(`  @${a.account}: ${badgeLine(a.latest!)}`)
   }
-  if (options.sessionStart) lines.push(`>>> X LIVE: start a Monitor now, for the whole session, so each like, retweet, reply, quote, mention or follow wakes you the moment it lands, even while idle, and say it to matt at once: Monitor { command: ${JSON.stringify(LIVE_MONITOR)}, timeout_ms: 1800000 }, re-armed when it expires (rule 115).`)
+  if (options.sessionStart) lines.push(`>>> X LIVE: start a Monitor now, for the whole session, so each like, retweet, reply, quote, mention or follow wakes you the moment it lands, even while idle, and say it to the owner at once: Monitor { command: ${JSON.stringify(LIVE_MONITOR)}, timeout_ms: 1800000 }, re-armed when it expires (rule 115).`)
   return lines.join('\n')
 }

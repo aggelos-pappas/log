@@ -1,8 +1,8 @@
-# Tool call speed: what matt and VIBE BOT worked out, and what to bring in
+# Tool call speed: what the owner and VIBE BOT worked out, and what to bring in
 
-matt asked VIBE BOT in vibe coders university #❓｜bot-help (2026-11-08, 01:27 to 01:44 UTC) how to make tool calls fast when the database already is. This page sets out what was asked, what VIBE BOT outlined, what is verified, and the outside projects and libraries that can bring the speed-up into log. Measurements are in `docs/hookStartup.md`; the data side is in `docs/storageReadPath.md`.
+the owner asked VIBE BOT in vibe coders university #❓｜bot-help (2026-11-08, 01:27 to 01:44 UTC) how to make tool calls fast when the database already is. This page sets out what was asked, what VIBE BOT outlined, what is verified, and the outside projects and libraries that can bring the speed-up into log. Measurements are in `docs/hookStartup.md`; the data side is in `docs/storageReadPath.md`.
 
-## What matt asked
+## What the owner asked
 
 1. Why does a tool call spend almost all its time starting Bun, when Bun is meant to be fast, and how do we make it start faster?
 2. Find, through the GitHub API, the repos and Bun issues about the fastest possible start-up.
@@ -29,7 +29,7 @@ matt asked VIBE BOT in vibe coders university #❓｜bot-help (2026-11-08, 01:27
 
 ## What is verified, and what isn't
 
-Measured on matt's machine (`docs/hookStartup.md`):
+Measured on the owner's machine (`docs/hookStartup.md`):
 - The MCP server stays up. The per-call start-up cost is in two places: hooks (6 new Bun processes per tool call, about 200 to 260 ms each through Git Bash), and Discord, Slack and Reddit engine calls (a new Python process each, about 750 ms).
 - An empty Bun script takes 48 ms in the repo, so Bun itself is not the main cost. Git Bash (+115 to 120 ms), loading the script's TypeScript, and Python's imports are.
 
@@ -47,7 +47,7 @@ Each checked with `gh api repos/<repo>` on 2026-11-08.
 | [sammcj/mcp-devtools](https://github.com/sammcj/mcp-devtools), [observability.md](https://github.com/sammcj/mcp-devtools/blob/main/docs/observability.md) | 164, Go, Apache-2.0 | OpenTelemetry traces, histograms of tool durations, and written p50/p95/p99 queries | Reference for the histogram and percentile design |
 | [disler/claude-code-hooks-multi-agent-observability](https://github.com/disler/claude-code-hooks-multi-agent-observability) | 1,567, Python, no licence | Every Claude Code hook event recorded and shown as a timeline | Reference only (no licence, so nothing copied) |
 | [yeet-src/claudetree](https://github.com/yeet-src/claudetree) | 0, JavaScript, no licence | A live tree of the processes a Claude session starts | Reference only, for seeing what spawns |
-| [sharkdp/hyperfine](https://github.com/sharkdp/hyperfine) | 29,225, Rust, Apache-2.0 | The tool Bun's own docs recommend for timing CLI start-up | A benchmark tool. Installing it means downloading a binary, so it's matt's call; the `Bun.spawnSync` harness in `hookStartup.md` does the same job without it |
+| [sharkdp/hyperfine](https://github.com/sharkdp/hyperfine) | 29,225, Rust, Apache-2.0 | The tool Bun's own docs recommend for timing CLI start-up | A benchmark tool. Installing it means downloading a binary, so it's the owner's call; the `Bun.spawnSync` harness in `hookStartup.md` does the same job without it |
 | [Bun's benchmarking docs](https://github.com/oven-sh/bun/blob/main/docs/project/benchmarking.mdx) and [bench suite](https://github.com/oven-sh/bun/tree/main/bench) | Bun | `--cpu-prof` for CPU inside a process, and `Bun.nanoseconds()` | How to profile inside the warm service |
 | [yetanotheraryan/coldstart](https://github.com/yetanotheraryan/coldstart) | 11, TypeScript, MIT | Module-load timing tree for Node | The idea only; it doesn't profile Bun |
 | [faucetdb/mcp-db-benchmark](https://github.com/faucetdb/mcp-db-benchmark) | 0, Go, MIT | SQLite and other databases benchmarked through real MCP `tools/call` | Method only; its numbers aren't log's workload |
@@ -83,7 +83,7 @@ Built on what log already has: the context service (rule 159), the reload proxy 
    - p50, p95, p99 and p99.9 with `n`, cold and warm kept apart.
 7. **It heals itself from the same spans.**
    - The service reads its own recent spans.
-   - A hook or engine path whose p99 crosses its target (`docs/hookStartup.md`) is raised to matt in the hook context, with the slowest stage named.
+   - A hook or engine path whose p99 crosses its target (`docs/hookStartup.md`) is raised to the owner in the hook context, with the slowest stage named.
    - A failing handler is turned off, as in clooks.
 
    Nothing changes its own route without a person seeing it.

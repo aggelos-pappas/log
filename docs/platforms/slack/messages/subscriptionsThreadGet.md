@@ -15,7 +15,7 @@ Content-Disposition: form-data; name`, `------WebKitFormBoundaryuTDJuZwHk6eOvWC4
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryUygUPHnlyUw6it8f
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `subscriptions` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:146 z2QR`, `runs/inspect/20261103T065639_mattSlack/script3.js:2954 z2QR` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:146 z2QR`, `runs/inspect/20261103T065639_slackAccount/script3.js:2954 z2QR` |
 | rea | `ev_a43314148da83fd9fe8fd728f37ab130d0765c5beffcd87246fa0be2eb978482` |
 
 Seen 5 time(s) in 1 run(s).
@@ -28,7 +28,7 @@ Seen 5 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 16: press Control+a: 200, 290 ms
+**runs/inspect/20261103T065639_slackAccount**, step 16: press Control+a: 200, 290 ms
 
 Sent:
 

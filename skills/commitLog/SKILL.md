@@ -71,9 +71,9 @@ Checked: <fill in>
 
 - **What changed**: the behaviour behind the AST lines. Example: "`log facebook connect`
   replaces `log login` for Facebook sessions", not "edited index.ts".
-- **Why**: the request or bug behind it. Quote matt's ask when there is one.
+- **Why**: the request or bug behind it. Quote the owner's ask when there is one.
 - **Checked**: the exact command and its result (`bun run check`: 62 pass),
   plus any real run. Say what you didn't check.
 
-If the commit also adds a rule from matt, `skills/captureRule/SKILL.md`
+If the commit also adds a rule from the owner, `skills/captureRule/SKILL.md`
 applies too.

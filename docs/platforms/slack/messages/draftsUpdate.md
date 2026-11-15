@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundaryQf7lBY8wRQGaEPAG
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `draft.id`, `draft.date_created`, `draft.user_id`, `draft.team_id`, `draft.last_updated_ts`, `draft.last_updated_client`, `draft.blocks`, `draft.file_ids`, `draft.is_from_composer`, `draft.is_deleted`, `draft.is_sent` and 5 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script3.js:2895 statement`, `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script3.js:2895 statement`, `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_393c379ebcd2d612034a5b6a17f377c66133e9187f6250b2610105c57300caa5` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, POST 0 /beacon/error (383 ms): 200, 312 ms
+**runs/inspect/20261103T065639_slackAccount**, POST 0 /beacon/error (383 ms): 200, 312 ms
 
 Sent:
 

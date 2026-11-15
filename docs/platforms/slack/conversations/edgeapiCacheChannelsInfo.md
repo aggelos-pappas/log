@@ -10,7 +10,7 @@
 | Path | `edgeapi.slack.com/cache/channels/info` |
 | Sends | — |
 | Reads | `failed_ids`, `results`, `ok`, `member_channels` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script38.js:771 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script38.js:771 anonymous` |
 | rea | `ev_c768a8dd3a32ade2e987e251d0627a66b7d798dc007c87a92e41828826c7a8e2` |
 
 Seen 4 time(s) in 1 run(s).
@@ -25,7 +25,7 @@ Seen 4 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 508 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 508 ms
 
 Sent:
 
@@ -52,7 +52,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 14: press Enter: 200, 373 ms
+**runs/inspect/20261103T065639_slackAccount**, step 14: press Enter: 200, 373 ms
 
 Sent:
 
@@ -175,7 +175,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 16: press Control+a: 200, 109 ms
+**runs/inspect/20261103T065639_slackAccount**, step 16: press Control+a: 200, 109 ms
 
 Sent:
 

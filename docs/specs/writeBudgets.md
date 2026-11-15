@@ -4,7 +4,7 @@ title: "Write budgets"
 
 # Write budgets
 
-How many times an account may write on its platform in a day, how matt can push one call past the account's governor, and how a refusal stops an account instead of being pushed through. Every direct-API engine (X, Discord, LinkedIn, Reddit and any new platform) runs each call through the account's own governor. Rules 86, 91, 94, 96, 101 and 102.
+How many times an account may write on its platform in a day, how the owner can push one call past the account's governor, and how a refusal stops an account instead of being pushed through. Every direct-API engine (X, Discord, LinkedIn, Reddit and any new platform) runs each call through the account's own governor. Rules 86, 91, 94, 96, 101 and 102.
 
 ## Budgets
 

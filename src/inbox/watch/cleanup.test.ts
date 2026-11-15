@@ -67,7 +67,7 @@ describe("nothing runs stale (rule 108)", () => {
     expect(liveLock(queue)).toBe(false);
   });
 
-  test("a new message says reply straight away when it fits, and the time is matt's own clock", () => {
+  test("a new message says reply straight away when it fits, and the time is the owner's own clock", () => {
     const text = inboxContext([{ platform: "twitter", account: "acct", conversationId: "1:2", with: "sam", text: "nice one", at: "2026-11-01T16:08:00Z", box: "xchat", seenAt: "2026-11-01T16:08:05Z" }])!;
     expect(text).toContain("Send it straight away when it answers what they said");
     expect(text).not.toContain("send only when he says");

@@ -38,6 +38,6 @@ Corrected by hand from the pattern search: Discord-S.C.U.M reads history (`discu
 
 - **The watch** (one gateway socket, every `MESSAGE_CREATE` to someone else) is done in Discord-S.C.U.M, endcord and hata alike. endcord is the only one with `PASSIVE_UPDATE_V2` and is kept up to date (pushed the day we searched); Discord-S.C.U.M hasn't been pushed since March 2024.
 - **Read and send** (history paging, a send with a `nonce`, ack, typing) are in all three Python ones. None sends `mobile_network_type`, which the web client does.
-- **Sign-in** is in Discord-S.C.U.M and endcord; only Discord-S.C.U.M does two-step. Our account is signed in by matt in the browser, so the client would carry the token from the account's session.
+- **Sign-in** is in Discord-S.C.U.M and endcord; only Discord-S.C.U.M does two-step. Our account is signed in by the owner in the browser, so the client would carry the token from the account's session.
 - **The background calls** (experiments, quests, billing, science…) are mostly the web client's own; no client does many of them, and nothing we do depends on them.
 - concord (Rust) covers about as much as the Python ones, and is the one to read when the web client's exact headers matter.

@@ -29,8 +29,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `instagramWatch` | Every Instagram DM as Instagram's realtime connection pushes it… | `log instagram watch --account <accountName> [--seconds <s>] [--inbox] [--json]` |
 | `instagramReact` | React to a Instagram message with an emoji, on the direct-API engine | `log instagram react --account <accountName> --thread <thread> --message <id> --emoji <emoji> [--remove] [--approvedBy <who>] [--live] [--json]` |
 | `instagramReactLive` | React to a Instagram message with an emoji, on the…, live on Instagram | `log instagram react --account <accountName> --thread <thread> --message <id> --emoji <emoji> [--remove] [--approvedBy <who>] [--live] [--json]` |
-| `instagramVoice` | Send a voice note in the owner's cloned voice as Instagram's own… | `log instagram voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
-| `instagramVoiceLive` | Send a voice note in the owner's cloned voice as…, live on Instagram | `log instagram voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
+| `instagramVoice` | Send a voice note in the owner's cloned voice as Instagram's own… | `log instagram voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
+| `instagramVoiceLive` | Send a voice note in the owner's cloned voice as…, live on Instagram | `log instagram voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
 
 ## The work, step by step: instagram
 
@@ -100,17 +100,17 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 - **Rule 8.** Platform actions require the user authorization their tool defines.
 - **Rule 26.** Stream progress while work runs, one meaningful line per stage, with the run log retained.
 - **Rule 30.** Complete the authorized task.
-- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless the owner raises them.
-- **Rule 39.** Use only the scope, options and intent the owner stated or implied.
-- **Rule 40.** Do not propose physical infrastructure unless the owner asks.
+- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless The owner raises them.
+- **Rule 39.** Use only the scope, options and intent The owner stated or implied.
+- **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
 - **Rule 73.** For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence.
-- **Rule 90.** Preserve platform message splitting: draft lines send as separate messages unless the owner explicitly requests the supported asOne behavior.
+- **Rule 90.** Preserve platform message splitting: draft lines send as separate messages unless The owner explicitly requests the supported asOne behavior.
 - **Rule 94.** Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies.
 - **Rule 105.** One platform/account owns one continuous engine session and push connection.
 - **Rule 109.** Read the full relevant chat and current private context before drafting or sending.
 - **Rule 123.** Platforms use their existing push/watch path to keep private records current.
 - **Rule 133.** Claim a chat before acting; consult recent actions, preserve claim generation and check it before subsequent message parts.
-- **Rule 137.** Preserve current context-aware voice and AI-artifact gates for messages sent as the owner.
+- **Rule 137.** Preserve current context-aware voice and AI-artifact gates for messages sent as The owner.
 - **Rule 138.** Media and voice-note context uses the existing private media descriptions and transcripts.
-- **Rule 142.** Send a cloned voice note only when the owner asks, through the platform's native voice-note tool and existing provider adapter.
+- **Rule 142.** Send a cloned voice note only when The owner asks, through the platform's native voice-note tool and existing provider adapter.

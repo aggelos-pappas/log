@@ -1,7 +1,7 @@
 ---
 name: log-facebook-marketplace-listings
 description: "From accounts to live Marketplace listings. A log play (docs/useCases/facebook/marketplaceListings.md): How a local service business gets listings in front of people in every town it serves: take aged Facebook accounts, turn each one into a believable local profile, and post a listing from each one. This page walks one account all the way through, shows which part of log-cli does each step, and what decides that the step worked."
-when_to_use: "Use when matt asks for this, in words like: \"post a marketplace listing in <town>\", \"get listings up on facebook marketplace in every town\", \"set up the facebook accounts and publish the listings\", \"take the marketplace listing down\"."
+when_to_use: "Use when the owner asks for this, in words like: \"post a marketplace listing in <town>\", \"get listings up on facebook marketplace in every town\", \"set up the facebook accounts and publish the listings\", \"take the marketplace listing down\"."
 metadata:
   summary: "From accounts to live Marketplace listings"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `facebook/marketplaceListings`. Before anything else, call the log MCP tool `getGuide({ useCase: "facebook/marketplaceListings" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 How a local service business gets listings in front of people in every town it serves: take aged Facebook accounts, turn each one into a believable local profile, and post a listing from each one. This page walks one account all the way through, shows which part of log-cli does each step, and what decides that the step worked.
 

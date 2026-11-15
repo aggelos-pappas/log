@@ -30,11 +30,11 @@ describe("only the session that claims a chat acts on it (rule 133)", () => {
   });
 
   test("an X chat is one chat whether it is named by the person's id or the X Chat pair", () => {
-    const pair = { platform: "twitter", account: "matthewsoldit", conversationId: "1270818113412612097:1974596626342686720" };
+    const pair = { platform: "twitter", account: "xAccount", conversationId: "1270818113412612097:1974596626342686720" };
     expect(claimChat(pair, 111, new Date(), alive).ok).toBe(true);
-    expect(claimsOn("twitter", "matthewsoldit", "1270818113412612097", new Date(), alive)).toHaveLength(1);
-    expect(claimsOn("twitter", "matthewsoldit", "26043955", new Date(), alive)).toHaveLength(0);
-    expect(claimsOn("twitter", "matthewsoldit", "26043955:1974596626342686720", new Date(), alive)).toHaveLength(0);
+    expect(claimsOn("twitter", "xAccount", "1270818113412612097", new Date(), alive)).toHaveLength(1);
+    expect(claimsOn("twitter", "xAccount", "26043955", new Date(), alive)).toHaveLength(0);
+    expect(claimsOn("twitter", "xAccount", "26043955:1974596626342686720", new Date(), alive)).toHaveLength(0);
     expect(claimChat({ ...pair, conversationId: "1270818113412612097" }, 222, new Date(), alive).ok).toBe(false);
   });
 

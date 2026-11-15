@@ -98,7 +98,7 @@ describe('knowledge base', () => {
 
   test('AGENTS.md rules become one article each', () => {
     const repo = mkdtempSync(join(tmpdir(), 'kbRepo'))
-    writeFileSync(join(repo, 'AGENTS.md'), '# AGENTS\n\n## Rule one\n\nRead the API.\n\n## Hard rules (from matt)\n\n1. 2026-10-18 · camelCase everywhere, never kebab-case.\n2. 2026-10-18 · Code lives in src.\n   More text.\n\n## Checks\n\n- run it\n')
+    writeFileSync(join(repo, 'AGENTS.md'), '# AGENTS\n\n## Rule one\n\nRead the API.\n\n## Hard rules (from the owner)\n\n1. 2026-10-18 · camelCase everywhere, never kebab-case.\n2. 2026-10-18 · Code lives in src.\n   More text.\n\n## Checks\n\n- run it\n')
     const rules = collectRules(repo)
     expect(rules.filter((r) => r.kind === 'rule').map((r) => r.key)).toEqual(['rule:1', 'rule:2'])
     expect(rules.find((r) => r.key === 'rule:2')?.body).toContain('More text.')
@@ -152,10 +152,10 @@ describe('knowledge base', () => {
     const store = memoryStore()
     const index = memoryIndex()
     const embedder = hashEmbedder()
-    await store.save(note('note:matt', 'Pricing', 'Charge per listing.', 'note'), '', null)
+    await store.save(note('note:the owner', 'Pricing', 'Charge per listing.', 'note'), '', null)
     const report = await syncKnowledge([], store, index, embedder)
     expect(report.indexed).toBe(1)
-    store.rows.delete('note:matt')
+    store.rows.delete('note:the owner')
     expect((await syncKnowledge([], store, index, embedder)).dropped).toBe(1)
   })
 

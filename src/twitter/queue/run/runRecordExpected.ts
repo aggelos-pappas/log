@@ -436,7 +436,7 @@ export const EXPECTED: Record<string, unknown> = {
       "+30s context #2 -",
       "+30s send reply #2 @fakeFinch",
       "+30s save items[1:sent,2:pending,3:pending] events[1r@10:done@10,2r@30,3r@50] #e09c3469be",
-      "+30s alert! REFUSED reply #2 @fakeFinch: x answered at 2026-11-14 10:00:30 UTC: governorBlocked: cooldown active for 660s. The run stopped here: #2 stays pending and nothing more was sent. Nothing goes out on @xActs until matt starts a run again (rule 94). (1 sent in total)"
+      "+30s alert! REFUSED reply #2 @fakeFinch: x answered at 2026-11-14 10:00:30 UTC: governorBlocked: cooldown active for 660s. The run stopped here: #2 stays pending and nothing more was sent. Nothing goes out on @xActs until the owner starts a run again (rule 94). (1 sent in total)"
     ],
     "result": {
       "state": "halted",
@@ -521,7 +521,7 @@ export const EXPECTED: Record<string, unknown> = {
       "cancelled false",
       "+30s send like #1 @fakeBird",
       "+30s save items[1:sent,2:pending,3:pending] events[1r@10:done@10,1l@30,2r@50] #08228f17f7",
-      "+30s alert! REFUSED like #1 @fakeBird: x answered at 2026-11-14 10:00:30 UTC: CouldNotTweet: (226) This request looks like it might be automated. The run stopped here: #1 stays pending and nothing more was sent. Nothing goes out on @xActs until matt starts a run again (rule 94). (1 sent in total)"
+      "+30s alert! REFUSED like #1 @fakeBird: x answered at 2026-11-14 10:00:30 UTC: CouldNotTweet: (226) This request looks like it might be automated. The run stopped here: #1 stays pending and nothing more was sent. Nothing goes out on @xActs until the owner starts a run again (rule 94). (1 sent in total)"
     ],
     "result": {
       "state": "halted",
@@ -598,7 +598,7 @@ export const EXPECTED: Record<string, unknown> = {
       "+10s context #1 -",
       "+10s send reply #1 @fakeBird",
       "+10s save items[1:pending,2:pending] events[1r@10,2r@30] #ee514cd9ef",
-      "+10s alert! REFUSED reply #1 @fakeBird: x answered at 2026-11-14 10:00:10 UTC: sessionDead: X answered HTTP 401. The session failed: log in to x again by hand. The run stopped here: #1 stays pending and nothing more was sent. Nothing goes out on @xActs until matt starts a run again (rule 94). (0 sent in total)"
+      "+10s alert! REFUSED reply #1 @fakeBird: x answered at 2026-11-14 10:00:10 UTC: sessionDead: X answered HTTP 401. The session failed: log in to x again by hand. The run stopped here: #1 stays pending and nothing more was sent. Nothing goes out on @xActs until the owner starts a run again (rule 94). (0 sent in total)"
     ],
     "result": {
       "state": "halted",

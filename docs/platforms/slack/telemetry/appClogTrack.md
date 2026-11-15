@@ -10,7 +10,7 @@
 | Path | `app.slack.com/clog/track` |
 | Sends | — |
 | Reads | — |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script192.js:11 children`, `runs/inspect/20261103T065639_mattSlack/script6.js:16 statement`, `runs/inspect/20261103T065639_mattSlack/script618.js:4 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:193 tlRz` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script192.js:11 children`, `runs/inspect/20261103T065639_slackAccount/script6.js:16 statement`, `runs/inspect/20261103T065639_slackAccount/script618.js:4 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:193 tlRz` |
 | rea | `ev_3f950f5511e42ad6153036f13fd5395b0a2449e37d42dc8d71c817d7af0194b7` |
 
 Seen 1 time(s) in 1 run(s).
@@ -23,7 +23,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065218_mattSlack**, step 3: click e536: 200, 276 ms
+**runs/inspect/20261103T065218_slackAccount**, step 3: click e536: 200, 276 ms
 
 Sent:
 

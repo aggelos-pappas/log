@@ -22,7 +22,7 @@ function watch(event: string): { lines: { liveEvent: Record<string, unknown> }[]
     "        return b'picture bytes'",
     '    async def get_user_by_id(self, user_id):',
     "        return type('U', (), {'screen_name': 'HandleA1'})()",
-    "spec = {'account': 'matt', 'pinPath': 'pin.json'}",
+    "spec = {'account': 'the owner', 'pinPath': 'pin.json'}",
     "asyncio.run(e.xchat_stream(Client(), {'twid': 'u%3D1'}, spec))",
   ].join('\n')
   const run = spawnSync(process.env.LOG_PYTHON || 'python', ['-c', script], { cwd: python, encoding: 'utf8', env: { ...process.env, LOG_TWITTER_STATE: state } })

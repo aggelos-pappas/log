@@ -90,7 +90,7 @@ export const accountCommand: Command = {
     if (!ref || extra !== undefined || !["show", "status", "resave", "resetOpens"].includes(action ?? "")) return { code: 1, error: "inputInvalid", stderr: `log facebook account: pick show, status, resave or resetOpens\n${ACCOUNT_USAGE}` };
     try {
       if (action === "resetOpens") {
-        const reason = typeof parsed.flags["reason"] === "string" ? parsed.flags["reason"] : "reset by matt";
+        const reason = typeof parsed.flags["reason"] === "string" ? parsed.flags["reason"] : "reset by the owner";
         const accounts = ref === "all" ? await listFacebookAccounts(context.twenty) : [await findAccount(context.twenty, ref)];
         const open = openInspects().filter((s) => accounts.some((a) => a.accountName === s.account));
         if (open.length) return { code: 1, stderr: `log facebook account resetOpens: close every browser first (rule 37): ${open.map((s) => `${s.account} (${s.runDir})`).join(", ")} still open` };

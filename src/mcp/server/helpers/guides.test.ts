@@ -7,6 +7,8 @@ import { platformOfTopic } from "../../../surface/scorecard/index.ts";
 import { cite, DEVELOPER_RULES, HOSTED_INSTRUCTIONS_FILE, operatingRuleIds, serverInstructions, SERVER_INSTRUCTIONS } from "./agentRules.ts";
 import { guideAnswer } from "./guideAnswer.ts";
 import { CORE_GUIDE, GUIDE_LIMIT, GUIDE_TOPICS, guideForCaller, guideOfCommand, GUIDES_DIR, nextGuidesLine, noShellOnly, ownerNeutral, readGuide, ruleSummary, ruleText, shellOnly } from "./guides.ts";
+import { ownerNameIn } from "../../../surface/scorecard/helpers/measure.ts";
+import { loadDenylist } from "../../../privacy/scan/client.ts";
 
 const ROOT = join(import.meta.dir, "..", "..", "..", "..");
 
@@ -42,7 +44,7 @@ describe("guide topics by capability and platform", () => {
       expect(`${topic} ${text.length <= GUIDE_LIMIT}`).toBe(`${topic} true`);
       expect(text.includes("## Current scope")).toBe(topic === CORE_GUIDE);
       expect(text).not.toContain("## Every tool, in full");
-      expect(/\bmatt\b/i.test(text)).toBe(false);
+      expect(ownerNameIn([{ path: "guide", text }], loadDenylist().filter((term) => /^[A-Za-z]+$/.test(term)))).toEqual([]);
     }
   });
 
@@ -84,8 +86,8 @@ describe("rules in served text", () => {
 
   test("a rule is cited by its first sentence, in the owner's terms", () => {
     expect(ruleSummary("2026-10-19 · Do one thing. Then another.")).toBe("Do one thing.");
-    expect(ruleText("Ask Matt first. His scope stays.")).toBe("Ask the owner first. Their scope stays.");
-    expect(ownerNeutral("Matt's call; needsMatt stays")).toBe("the owner's call; needsMatt stays");
+    expect(ruleText("Ask the owner first. His scope stays.")).toBe("Ask the owner first. Their scope stays.");
+    expect(ownerNeutral("the owner's call. the owner decides; ask the owner")).toBe("The owner's call. The owner decides; ask the owner");
   });
 });
 
@@ -99,7 +101,7 @@ describe("one source for the server instructions", () => {
     for (const text of [hosted, SERVER_INSTRUCTIONS]) {
       expect(text).toContain('getGuide({ topic: "logMcpInstructions" })');
       expect(text).toContain("loads that use case as the play only on a clear match");
-      expect(/\bmatt\b/i.test(text)).toBe(false);
+      expect(ownerNameIn([{ path: "guide", text }], loadDenylist().filter((term) => /^[A-Za-z]+$/.test(term)))).toEqual([]);
     }
   });
 

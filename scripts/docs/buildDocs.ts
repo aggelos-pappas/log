@@ -138,7 +138,7 @@ put("docs/specs/README.md", specsIndex(specDomains(root).filter((d) => existsSyn
             "",
             ...shellOnly([`- ${longRunLine({ shell: true })}`]),
             ...noShellOnly([`- ${longRunLine({ shell: false })}`]),
-            "- Every result also says where every open browser is (`browsers`), the call that resolves its known page state (`next`: make it, don't stop, rule 79) and what only the owner can clear (`needsMatt`).",
+            "- Every result also says where every open browser is (`browsers`), the call that resolves its known page state (`next`: make it, don't stop, rule 79) and what only the owner can clear (`needsOwner`).",
             "- A refusal names its error code; the `errors` tool says what each one means and what to do.",
           ]
         : theirs.length

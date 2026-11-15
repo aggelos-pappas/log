@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryv1xTOdawMpoX4ADF
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `bookmarks` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script3.js:2976 dCBi` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script3.js:2976 dCBi` |
 | rea | `ev_40d3903db77a72ccaeaab50917039bb895fce5af28babe9b1304895404c96802` |
 
 Seen 2 time(s) in 1 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 295 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 295 ms
 
 Sent:
 
@@ -58,7 +58,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:2>: 200, 288 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:2>: 200, 288 ms
 
 Sent:
 

@@ -4,7 +4,7 @@ title: "AI tells and watermark"
 
 # AI tells and watermark
 
-Every X and Discord send's copy is read for what AI chat interfaces leave in text (the watermark reading), and every draft the voice gate reads is also read for AI phrasing against curated lists and matt's own writing. Rules 111 and 112.
+Every X and Discord send's copy is read for what AI chat interfaces leave in text (the watermark reading), and every draft the voice gate reads is also read for AI phrasing against curated lists and the owner's own writing. Rules 111 and 112.
 
 ## Watermark reading
 
@@ -52,21 +52,21 @@ A phrase from the X complaints list is kept in the index only when it sits at co
 
 Checked by: code and SubQ
 
-### REQ-AITELLS-07: matt's own p50 and p99 are measured
+### REQ-AITELLS-07: the owner's own p50 and p99 are measured
 
-The index measures matt's own messages from the voice index against the phrases and keeps his p50 and p99 closeness.
-
-Checked by: code and SubQ
-
-### REQ-AITELLS-08: Vale rules matt uses himself are muted
-
-A vale rule that hits in over 2% of matt's own messages is muted and never fails a draft.
+The index measures the owner's own messages from the voice index against the phrases and keeps his p50 and p99 closeness.
 
 Checked by: code and SubQ
 
-### REQ-AITELLS-09: Phrases matt says himself never fail a draft
+### REQ-AITELLS-08: Vale rules the owner uses himself are muted
 
-A phrase vale flags that matt says himself in 5 or more of his own messages is his voice and never fails a draft.
+A vale rule that hits in over 2% of the owner's own messages is muted and never fails a draft.
+
+Checked by: code and SubQ
+
+### REQ-AITELLS-09: Phrases the owner says himself never fail a draft
+
+A phrase vale flags that the owner says himself in 5 or more of his own messages is his voice and never fails a draft.
 
 Checked by: code and SubQ
 
@@ -76,14 +76,14 @@ The draft is cut into lines and word windows, each chunk's closest AI phrase is 
 
 Checked by: code and SubQ
 
-### REQ-AITELLS-11: A draft closer to AI phrasing than matt's p99 fails
+### REQ-AITELLS-11: A draft closer to AI phrasing than the owner's p99 fails
 
-The draft fails when a vale rule hits or its closest chunk sits closer to an AI phrase than matt's own p99.
+The draft fails when a vale rule hits or its closest chunk sits closer to an AI phrase than the owner's own p99.
 
 Checked by: code and SubQ
 
 ### REQ-AITELLS-12: The voice gate keeps the index current and fails on AI tells
 
-`log voice` builds the AI tells index itself when it is missing or older than matt's voice index, and a draft whose AI tells reading fails does not pass the gate.
+`log voice` builds the AI tells index itself when it is missing or older than the owner's voice index, and a draft whose AI tells reading fails does not pass the gate.
 
 Checked by: code and SubQ

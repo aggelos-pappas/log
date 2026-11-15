@@ -81,11 +81,11 @@ describe('the goal of an inspect session (rule 75)', () => {
     expect(md).toContain('**Fix:** Typed "Bethlehem, Pennsylvania"')
   })
 
-  test('what only a person can clear never holds the turn; it is said to matt', () => {
+  test('what only a person can clear never holds the turn; it is said to the owner', () => {
     const p = goalProgressOf(GOAL, [reading('07_click', 0.1, 'stoppedByPlatform', 0.9)], [])
     const note = goalLine('bethlehem', p)!
     expect(note.blocks).toBe(false)
-    expect(note.line).toContain('tell matt')
+    expect(note.line).toContain('tell the owner')
   })
 
   test('the Stop hook holds the turn while the goal is open, once per unchanged state', () => {

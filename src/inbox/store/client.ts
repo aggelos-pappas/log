@@ -352,7 +352,7 @@ export function markGap(id: number, status: GapStatus, detail: string | null = n
     const sql = closing ? `UPDATE gaps SET status = ?, detail = COALESCE(?, detail), appended = appended + ?, toAt = ?, closedAt = ? WHERE id = ?${guard}` : 'UPDATE gaps SET status = ?, detail = COALESCE(?, detail), appended = appended + ? WHERE id = ?'
     const args = closing ? [status, detail, appended, now.toISOString(), now.toISOString(), id, ...(guard ? [expectDrops as number] : [])] : [status, detail, appended, id]
     const changed = handle.prepare(sql).run(...args).changes > 0
-    if (gap && status === 'refused') addAlertRow({ platform: gap.platform, account: gap.account, kind: 'catchUpRefused', detail: `catching up ${gap.platform} ${gap.account} was refused: ${detail ?? ''}; it stays behind and nothing resumes until matt says so (rule 94)` }, now, handle)
+    if (gap && status === 'refused') addAlertRow({ platform: gap.platform, account: gap.account, kind: 'catchUpRefused', detail: `catching up ${gap.platform} ${gap.account} was refused: ${detail ?? ''}; it stays behind and nothing resumes until the owner says so (rule 94)` }, now, handle)
     return changed
   })
 }

@@ -48,7 +48,7 @@ One `d` cookie can be signed in to many workspaces. `log slack workspaces` lists
 
 ## How it reaches Slack
 
-- **Pacing:** every call goes through the account's governor (`python/platformKit/engine.py`). A message on several lines goes out one per line (rule 90), each its own engine call, with matt's own gap between them.
+- **Pacing:** every call goes through the account's governor (`python/platformKit/engine.py`). A message on several lines goes out one per line (rule 90), each its own engine call, with the owner's own gap between them.
 - **Writes:** `send` is the only write. It is a dry run unless `--live` with `--approvedBy` (rule 8), and its copy is read for AI artifacts first (rule 111).
 - **No proxy, no browser:** the account calls Slack from this machine.
 - **Transport (rule 125):** gabriel reaches Slack only through `vendor/gabrielSlack/gabriel/core/transport.py`: one curl_cffi `AsyncSession` pinned to `IMPERSONATE` (`chrome150`), sending Chrome 150's own user agent, for the web API, the cookie exchange and the websocket alike. It keeps no cookies between calls. httpx, websockets and gabriel's own login CLI are gone. `bun run check:slackTransport` refuses anything else.

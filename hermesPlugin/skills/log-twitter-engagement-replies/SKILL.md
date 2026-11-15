@@ -1,7 +1,7 @@
 ---
 name: log-twitter-engagement-replies
 description: "Answering the people who engaged with your posts. A log play (docs/useCases/twitter/engagementReplies.md): When one of your posts gets comments, the people who commented are the warmest people on X for you. There are two ways to follow up, both public replies:"
-when_to_use: "Use when matt asks for this, in words like: \"reply to everyone who commented on my last tweet\", \"answer the comments on my post\", \"reply to the people who replied to my tweet with the follow-up link\"."
+when_to_use: "Use when the owner asks for this, in words like: \"reply to everyone who commented on my last tweet\", \"answer the comments on my post\", \"reply to the people who replied to my tweet with the follow-up link\"."
 metadata:
   summary: "Answering the people who engaged with your posts"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/engagementReplies`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/engagementReplies" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 When one of your posts gets comments, the people who commented are the warmest people on X for you. There are two ways to follow up, both public replies:
 
@@ -54,3 +54,5 @@ Where the comment was a question (for example "what does the first message actua
 - [#36](https://github.com/matthewdonsemail-lab/log/issues/36) expands spintax in the queue.
 
 Likers and reposters aren't in a comments read: they have their own page, [engagerDms.md](../log-twitter-engager-dms/SKILL.md).
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

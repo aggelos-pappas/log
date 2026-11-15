@@ -10,10 +10,10 @@ Made by `log new platform discord`. Discord is a platform of its own: every comm
 | The session (find the account, its gate, its engine, the answer back to Twenty) | `src/discord/account/session`, on the shared `src/platformKit/session` |
 | The commands | `src/cli/discord/index.ts`: `log discord session check` (MCP `discordSessionCheck`) |
 | The engine | `python/discordApi/engine.py`, on the shared `python/platformKit/engine.py`; each account's governor is under `~/.logCli/discord/<account>` |
-| The client | `vendor/endcord` (sparklost/endcord at `d6765b0`, matt's pick 2026-10-28 from `clients.md`): its `endcord/discord.py` REST client, `gateway.py` gateway and `auth.py` sign-in |
+| The client | `vendor/endcord` (sparklost/endcord at `d6765b0`, the owner's pick 2026-10-28 from `clients.md`): its `endcord/discord.py` REST client, `gateway.py` gateway and `auth.py` sign-in |
 | The session | the account's discord.com localStorage `token`, saved to Twenty (`storageOrigins`) when its browser closes (`savePlatformSession`, for every platform but Facebook) and handed to the engine with the cookies (`sessionStorage` on the platform's shape). Never printed |
 | The session | the account's discord.com localStorage `token`, saved to Twenty (`storageOrigins`) when its browser closes (`savePlatformSession`, for every platform but Facebook) and handed to the engine with the cookies (`sessionStorage` on the platform's shape). Never printed |
-| Proxy | none, like Reddit (matt, 2026-10-28): the gate reads this machine's own exit and the profile's timezone follows it |
+| Proxy | none, like Reddit (the owner, 2026-10-28): the gate reads this machine's own exit and the profile's timezone follows it |
 
 ## What the inspect found (2026-10-28, `log inspect` on `<name:1>`)
 
@@ -22,8 +22,8 @@ Runs `~/.logCli/runs/inspect/20261028T062914_…` (sign-in, chats, paging) and `
 ### Signing in
 
 - `discord.gg` is the invite domain. `discord.gg/login` reads `login` as an invite code: `GET /api/v9/invites/login` answers **404 `Unknown Invite`** (code 10006) and the page says "Invite Invalid". The login page is `https://discord.com/login`.
-- matt typed his details himself; pressing Log In sent `POST /api/v9/auth/login` → **200**, and the page went to `discord.com/app`, then `discord.com/channels/@me` ("Friends"). No captcha, no two-step on this account.
-- The page-state map calls Discord's login page `loginForm`, a Facebook state whose resolver is Facebook's auto sign-in. It does not apply here; the sign-in is matt's.
+- the owner typed his details himself; pressing Log In sent `POST /api/v9/auth/login` → **200**, and the page went to `discord.com/app`, then `discord.com/channels/@me` ("Friends"). No captcha, no two-step on this account.
+- The page-state map calls Discord's login page `loginForm`, a Facebook state whose resolver is Facebook's auto sign-in. It does not apply here; the sign-in is the owner's.
 
 ### Finding a chat
 
@@ -77,12 +77,12 @@ So a Discord watch is the X Chat watch again (`docs/platforms/x/xchat/live.md`):
 | --- | --- | --- |
 | `log discord session check --account <a>` | `discordSessionCheck` | `GET /api/v9/users/@me`: is the saved token still signed in |
 | `log discord chats --account <a>` | `discordChats` | Every DM and group DM with its id, name and members (`/users/<me>/channels`; any answer but 200 stops it and says what Discord answered, rule 94) |
-| `log discord send --account <a> --channel "<as matt says it>" --text "…"` | `discordSend`, `discordSendLive` | One message; the chat is matched the way matt says it (`src/discord/chat/match`: "the log group", "<name:4>", "the partners group"), refused with the candidates when two fit; a dry run unless `--live --approvedBy`. The copy is read for what AI chat interfaces leave in text first (rule 111): hidden characters, odd spaces or pasted Claude HTML refuse it with `aiArtifacts`, and the reading is logged and kept in `--json` |
+| `log discord send --account <a> --channel "<as the owner says it>" --text "…"` | `discordSend`, `discordSendLive` | One message; the chat is matched the way the owner says it (`src/discord/chat/match`: "the log group", "<name:4>", "the partners group"), refused with the candidates when two fit; a dry run unless `--live --approvedBy`. The copy is read for what AI chat interfaces leave in text first (rule 111): hidden characters, odd spaces or pasted Claude HTML refuse it with `aiArtifacts`, and the reading is logged and kept in `--json` |
 | `log discord read --account <a> --channel <id or name> [--after <id>]` | `discordRead` | A chat or channel's latest messages, oldest first: who, when, bot or not, what it replies to, text and embeds; `--after` keeps what came after a message (a bot's answer to ours) |
 | `log discord watch --account <a> [--channel …] [--seconds <s>] [--inbox]` | `discordWatch` | endcord's gateway (`wss://gateway.discord.gg`): every message printed the moment Discord pushes it, nothing polled. `--inbox` hands each DM, group message, mention of the account or reply to it (never a bot's "Thinking..." placeholder) to the inbox hook |
 | `log search index --platform discord` | `searchIndex` | Every DM and group's messages, up to 20,000 each (paged 100 at a time with `before`; a 429 or any other refusal from Discord stops the whole read at that conversation: the answer names it and what Discord answered, the conversations read before it are kept and indexed, nothing more is read or retried, and a 429 pauses the account, rule 94; a network drop only notes that conversation and goes on), kept in `~/.logCli/conversations/discord/<account>` and indexed with X's for `log search` (rule 89) |
 
-The inbox hook (`scripts/hooks/inbox.ts`) keeps one `log discord watch --inbox` running for every signed-in Discord account, as it does `log twitter chat watch --inbox` for X, and puts each new message in front of the agent as `>>> NEW DISCORD MESSAGE`, with how to read the chat, draft from matt's guide, gate it with `log voice` and send only when matt says. Tested 2026-10-28: VIBE BOT's answer in #bot-help reached the agent through the hook with no read.
+The inbox hook (`scripts/hooks/inbox.ts`) keeps one `log discord watch --inbox` running for every signed-in Discord account, as it does `log twitter chat watch --inbox` for X, and puts each new message in front of the agent as `>>> NEW DISCORD MESSAGE`, with how to read the chat, draft from the owner's guide, gate it with `log voice` and send only when the owner says. Tested 2026-10-28: VIBE BOT's answer in #bot-help reached the agent through the hook with no read.
 
 First full read, 2026-10-28: 176 conversations, 13,666 messages; with X's, 4,819 chunks. `log search bench`: warm p50 4.7 ms, p99 8.1 ms, against 66.7 ms for a plain scan.
 

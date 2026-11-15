@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundarypsFjOmkX5tI287jp
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `channels`, `unchanged_channel_ids` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script29.js:146 statement`, `runs/inspect/20261103T065639_mattSlack/script3.js:2954 statement`, `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script125.js:37 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script29.js:146 statement`, `runs/inspect/20261103T065639_slackAccount/script3.js:2954 statement`, `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script125.js:37 anonymous` |
 | rea | `ev_b0b9b469d7f4ea706fbef57e76f36fd79776b009477d63e3da46553eee76d18c` |
 
 Seen 2 time(s) in 1 run(s).
@@ -25,7 +25,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 310 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 310 ms
 
 Sent:
 

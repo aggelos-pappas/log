@@ -135,13 +135,13 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 
 - **Rule 26.** Stream progress while work runs, one meaningful line per stage, with the run log retained.
 - **Rule 30.** Complete the authorized task.
-- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless the owner raises them.
-- **Rule 39.** Use only the scope, options and intent the owner stated or implied.
-- **Rule 40.** Do not propose physical infrastructure unless the owner asks.
+- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless The owner raises them.
+- **Rule 39.** Use only the scope, options and intent The owner stated or implied.
+- **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
 - **Rule 89.** Find conversational context by scoped search and existing private records.
 - **Rule 94.** Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies.
 - **Rule 105.** One platform/account owns one continuous engine session and push connection.
-- **Rule 137.** Preserve current context-aware voice and AI-artifact gates for messages sent as the owner.
+- **Rule 137.** Preserve current context-aware voice and AI-artifact gates for messages sent as The owner.
 - **Rule 138.** Media and voice-note context uses the existing private media descriptions and transcripts.
 - **Rule 163.** Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients.

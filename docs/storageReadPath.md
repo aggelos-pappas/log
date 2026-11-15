@@ -1,6 +1,6 @@
 # How log reads its data: where JSON fits, time series, locality, cache and atomicity
 
-matt, 2026-11-08: the tables have to be flexible without losing a correct schema, time-series events have to fit SQLite even though it isn't built for them, and a tool call's context has to arrive whole, in the right order, atomically and fast, with as few disk reads as possible. This page works that out from *Designing Data-Intensive Applications* (Kleppmann) and from measurements on a copy of the real `log.db` (2026-11-08: 120,375 messages, 5,034 events, SQLite 3.53.2, 4 KB pages). It builds on `docs/storageAgainstTheBook.md`.
+the owner, 2026-11-08: the tables have to be flexible without losing a correct schema, time-series events have to fit SQLite even though it isn't built for them, and a tool call's context has to arrive whole, in the right order, atomically and fast, with as few disk reads as possible. This page works that out from *Designing Data-Intensive Applications* (Kleppmann) and from measurements on a copy of the real `log.db` (2026-11-08: 120,375 messages, 5,034 events, SQLite 3.53.2, 4 KB pages). It builds on `docs/storageAgainstTheBook.md`.
 
 ## What a tool call actually waits for
 

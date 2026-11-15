@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundary3P4jUyYbxlPMD2Ap
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `current_teams`, `current_orgs`, `invited_teams`, `domain_enabled_teams`, `has_valid_cookie`, `confirmed_email`, `privacy_consent_group` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script252.js:1 statement`, `runs/inspect/20261103T065639_mattSlack/script3.js:2977 B7kl` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script252.js:1 statement`, `runs/inspect/20261103T065639_slackAccount/script3.js:2977 B7kl` |
 | rea | `ev_d0f640a6f473253defb026e7558c7e35073a8ccd86d05a61e21ddde6ffd69496` |
 
 Seen 2 time(s) in 2 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 1: goto /get-started: 200, 648 ms
+**runs/inspect/20261103T065639_slackAccount**, step 1: goto /get-started: 200, 648 ms
 
 Sent:
 
@@ -107,7 +107,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065218_mattSlack**, step 3: click e536: 200, 1052 ms
+**runs/inspect/20261103T065218_slackAccount**, step 3: click e536: 200, 1052 ms
 
 Sent:
 

@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryTPAAfLjL1sov5Ehk
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `misc.is_europe`, `misc.is_content_reporting_enabled`, `misc.transfer_links`, `misc.team_classification`, `misc.creator_email_type`, `salesforce_features.is_sfdc_auto_slack`, `salesforce_features.is_slack_first_crm`, `salesforce_features.lob_sales_home_enabled_for_team`, `salesforce_features.lob_sales_home_enabled_for_user`, `salesforce_features.is_salesforce_pro_connected`, `salesforce_features.is_salesforce_any_connected` and 15 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script289.js:1371 anonymous`, `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script289.js:1371 anonymous`, `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_c9fe1f0442839e09888210f67ae438498321d994bf73af4f7232c51ba282598b` |
 
 Seen 2 time(s) in 1 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 555 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 555 ms
 
 Sent:
 
@@ -96,7 +96,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 310 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 310 ms
 
 Sent:
 

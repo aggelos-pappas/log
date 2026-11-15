@@ -92,7 +92,7 @@ describe("the other activity steps read Facebook's answers too (rule 73)", () =>
   })
 })
 
-describe('skipping as a thumb does (matt, 2026-10-20)', () => {
+describe('skipping as a thumb does (the owner, 2026-10-20)', () => {
   test('most reels get a glance and a skip, often several in a row; only watched reels get comments, a profile or a like', () => {
     let glances = 0
     let watched = 0

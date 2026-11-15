@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryRYtYhXF3bL7Xrnmv
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `profile.title`, `profile.phone`, `profile.skype`, `profile.real_name`, `profile.real_name_normalized`, `profile.display_name`, `profile.display_name_normalized`, `profile.fields`, `profile.status_text`, `profile.status_emoji`, `profile.status_emoji_display_info` and 18 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script3.js:2877 statement`, `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script3.js:2877 statement`, `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_faa9f7318ff0f6d50c372eeec541ae040c0c16f852fe8046533df4f9dd1da0c8` |
 
 Seen 2 time(s) in 1 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 7: pageText: 200, 288 ms
+**runs/inspect/20261103T065639_slackAccount**, step 7: pageText: 200, 288 ms
 
 Sent:
 
@@ -89,7 +89,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, POST 0 /beacon/error (383 ms): 200, 286 ms
+**runs/inspect/20261103T065639_slackAccount**, POST 0 /beacon/error (383 ms): 200, 286 ms
 
 Sent:
 
@@ -156,7 +156,7 @@ Answered:
 
 ## What it does
 
-Reads one person's profile (sent `user: <userId:1>`, reason `with-call-menu`) and answered `ok: true` with `profile.real_name: Matthew Don`, empty status and title, avatar URLs and email. It fired 13.3 s into step 7 (`pageText`, 288 ms) and again with the page's `/beacon/error` POST (286 ms), both 200.
+Reads one person's profile (sent `user: <userId:1>`, reason `with-call-menu`) and answered `ok: true` with `profile.real_name: <the account's real name>`, empty status and title, avatar URLs and email. It fired 13.3 s into step 7 (`pageText`, 288 ms) and again with the page's `/beacon/error` POST (286 ms), both 200.
 
 ## What our machine does with it
 

@@ -4,7 +4,7 @@ title: "Voice notes"
 
 # Voice notes
 
-Every voice note on X and Discord, sent to matt or by him, is transcribed with AssemblyAI and written into the conversation store, so search, the voice gate and SubQ see what was said. Rules 26, 41, 88, 89, 94, 105, 106 and 126.
+Every voice note on X and Discord, sent to the owner or by him, is transcribed with AssemblyAI and written into the conversation store, so search, the voice gate and SubQ see what was said. Rules 26, 41, 88, 89, 94, 105, 106 and 126.
 
 ## AssemblyAI
 

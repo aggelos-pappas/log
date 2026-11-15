@@ -1,7 +1,7 @@
 ---
 name: log-instagram-new-platform
 description: "Bringing a new platform up, then vendoring its client. A log play (docs/useCases/instagram/newPlatform.md): Make a platform log-cli doesn't have yet, open it in the account's [AdsPower](https://www.adspower.com/share/pD25Iu) browser, sign in by hand, keep the session, read what its own client called with rea, then find the open-source client that speaks the same calls and vendor it so the platform works on the direct-API engine. Instagram was the first one done this way."
-when_to_use: "Use when matt asks for this, in words like: \"make a new platform via the MCP for <platform>\", \"open <platform> in AdsPower\", \"find me via the gh api the most likely to go into the vendor\", \"make it work\""
+when_to_use: "Use when the owner asks for this, in words like: \"make a new platform via the MCP for <platform>\", \"open <platform> in AdsPower\", \"find me via the gh api the most likely to go into the vendor\", \"make it work\""
 metadata:
   summary: "Bringing a new platform up, then vendoring its client"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `instagram/newPlatform`. Before anything else, call the log MCP tool `getGuide({ useCase: "instagram/newPlatform" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Make a platform log-cli doesn't have yet, open it in the account's [AdsPower](https://www.adspower.com/share/pD25Iu) browser, sign in by hand, keep the session, read what its own client called with rea, then find the open-source client that speaks the same calls and vendor it so the platform works on the direct-API engine. Instagram was the first one done this way.
 

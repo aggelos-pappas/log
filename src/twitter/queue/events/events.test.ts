@@ -24,7 +24,7 @@ describe('the queue in the agent context (rule 114)', () => {
     const text = queueContext(events)!
     expect(text).toContain('1 HELD')
     expect(text).toContain('QUEUE STOPPED: A SEND WAS REFUSED')
-    expect(text).toContain('Nothing goes out on that account until matt says so')
+    expect(text).toContain('Nothing goes out on that account until the owner says so')
     expect(text).not.toMatch(/cool/i)
     expect(newQueueEvents(root, session)).toEqual([])
   })

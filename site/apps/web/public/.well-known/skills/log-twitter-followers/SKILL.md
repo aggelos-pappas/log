@@ -1,7 +1,7 @@
 ---
 name: log-twitter-followers
 description: "Checking who really follows you. A log play (docs/useCases/twitter/followers.md): Before a slide, a page or a message says someone follows you (or that you follow them), check it live on X. Engaging with you isn't following you. This page reads it on the account's own session and sends nothing."
-when_to_use: "Use when matt asks for this, in words like: \"does <someone> follow me\", \"check who really follows me on x\", \"is <someone> following me on twitter\", \"check these people follow me before the slide says so\"."
+when_to_use: "Use when the owner asks for this, in words like: \"does <someone> follow me\", \"check who really follows me on x\", \"is <someone> following me on twitter\", \"check these people follow me before the slide says so\"."
 metadata:
   summary: "Checking who really follows you"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/followers`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/followers" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Before a slide, a page or a message says someone follows you (or that you follow them), check it live on X. Engaging with you isn't following you. This page reads it on the account's own session and sends nothing.
 

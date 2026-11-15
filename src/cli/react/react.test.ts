@@ -48,27 +48,27 @@ describe("log discord react (rule 140)", () => {
   });
 
   test("--live reacts through the engine with the channel, message and emoji, and --remove takes it off", async () => {
-    const sent = await run(["discord", "react", "--account", "discordOne", "--channel", CHANNEL, "--message", MESSAGE, "--emoji", "fire", "--approvedBy", "matt", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
+    const sent = await run(["discord", "react", "--account", "discordOne", "--channel", CHANNEL, "--message", MESSAGE, "--emoji", "fire", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
     expect(sent.code).toBe(0);
     expect(sent.out).toContain("reacted fire to message");
-    expect(sent.specs).toEqual([{ action: "react", channel: CHANNEL, message: MESSAGE, emoji: "fire", remove: false, live: true, approvedBy: "matt" }]);
-    const removed = await run(["discord", "react", "--account", "discordOne", "--channel", CHANNEL, "--message", MESSAGE, "--emoji", "fire", "--remove", "--approvedBy", "matt", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
+    expect(sent.specs).toEqual([{ action: "react", channel: CHANNEL, message: MESSAGE, emoji: "fire", remove: false, live: true, approvedBy: "the owner" }]);
+    const removed = await run(["discord", "react", "--account", "discordOne", "--channel", CHANNEL, "--message", MESSAGE, "--emoji", "fire", "--remove", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
     expect(removed.specs[0]?.remove).toBe(true);
   });
 
   test("a refusal is said with its code and nothing is retried", async () => {
-    const r = await run(["discord", "react", "--account", "discordOne", "--channel", CHANNEL, "--message", MESSAGE, "--emoji", "fire", "--approvedBy", "matt", "--live"], { ok: false, code: "reactRefused", detail: "Discord refused it" });
+    const r = await run(["discord", "react", "--account", "discordOne", "--channel", CHANNEL, "--message", MESSAGE, "--emoji", "fire", "--approvedBy", "the owner", "--live"], { ok: false, code: "reactRefused", detail: "Discord refused it" });
     expect(r.code).toBe(1);
     expect(r.out).toContain("reactRefused");
     expect(r.specs.length).toBe(1);
   });
 
   test("it runs through the shared action machine: an engine that throws is a crash said once, never retried", async () => {
-    const sent = await run(["discord", "react", "--account", "discordOne", "--channel", CHANNEL, "--message", MESSAGE, "--emoji", "fire", "--approvedBy", "matt", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
-    expect(sent.err).toContain("on the direct-API engine, approved by matt");
+    const sent = await run(["discord", "react", "--account", "discordOne", "--channel", CHANNEL, "--message", MESSAGE, "--emoji", "fire", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
+    expect(sent.err).toContain("on the direct-API engine, approved by the owner");
     let calls = 0;
     const err: string[] = [];
-    const code = await runCli(["discord", "react", "--account", "discordOne", "--channel", CHANNEL, "--message", MESSAGE, "--emoji", "fire", "--approvedBy", "matt", "--live"], {
+    const code = await runCli(["discord", "react", "--account", "discordOne", "--channel", CHANNEL, "--message", MESSAGE, "--emoji", "fire", "--approvedBy", "the owner", "--live"], {
       twenty: fixture(),
       out: () => {},
       err: (l) => err.push(l),

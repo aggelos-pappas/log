@@ -9,9 +9,9 @@ import type { TwitterNotification } from '../../notification/feed/index'
 const START = Date.parse('2026-11-01T16:00:00Z')
 
 function queueOf(): Queue {
-  const queue = buildQueue({ account: 'matthewsoldit', action: 'dm', targets: [{ handle: 'tester_m', userId: '1', text: 'yo tester_m made a new free tool' }, { handle: 'gabe', userId: '2', text: 'yo gabe made a new free tool' }], lines: [], sources: [], seed: 1, now: new Date(START) })
+  const queue = buildQueue({ account: 'xAccount', action: 'dm', targets: [{ handle: 'tester_m', userId: '1', text: 'yo tester_m made a new free tool' }, { handle: 'gabe', userId: '2', text: 'yo gabe made a new free tool' }], lines: [], sources: [], seed: 1, now: new Date(START) })
   queue.randomRun = { planned: new Date(START).toISOString(), window: '1h', minGap: 300, events: [{ n: 1, kind: 'reply', at: new Date(START + 600_000).toISOString() }, { n: 2, kind: 'reply', at: new Date(START + 1_200_000).toISOString() }] }
-  return approveQueue(queue, 'matt', new Date(START))
+  return approveQueue(queue, 'the owner', new Date(START))
 }
 
 const row = (kind: TwitterNotification['kind'], userId: string, handle: string, at: string, text?: string): TwitterNotification => ({ key: `${kind}:${userId}:${at}`, kind, at, userId, handle, postText: 'yc deadline is tomorrow', ...(text ? { text } : {}) })
@@ -47,7 +47,7 @@ describe('full context before every send (rule 109)', () => {
     queue.items[0].status = 'held'
     queue.randomRun!.events[0].skipped = 'held'
     const now = new Date(START + 900_000)
-    const event = editItem(queue, 1, 'cheers for the retweet lad', 'matt', seededRandom(2), now, '30m')
+    const event = editItem(queue, 1, 'cheers for the retweet lad', 'the owner', seededRandom(2), now, '30m')
     expect(queue.items[0]).toMatchObject({ status: 'pending', text: 'cheers for the retweet lad', draftedAt: now.toISOString() })
     expect(Date.parse(event!.at)).toBeLessThanOrEqual(now.getTime() + 30 * 60_000 + 30_000)
     expect(queue.approval?.at).toBe(now.toISOString())
@@ -56,7 +56,7 @@ describe('full context before every send (rule 109)', () => {
   test('a sent item can never be edited', () => {
     const queue = queueOf()
     queue.items[0].status = 'sent'
-    expect(() => editItem(queue, 1, 'new', 'matt', seededRandom(1), new Date(START))).toThrow('only a pending or held item')
+    expect(() => editItem(queue, 1, 'new', 'the owner', seededRandom(1), new Date(START))).toThrow('only a pending or held item')
   })
 
   test('what changed counts a message either way and anything they did on the posts after the draft, nothing before', () => {

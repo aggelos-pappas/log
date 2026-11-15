@@ -10,7 +10,7 @@ afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
 const convo = (id: string, who: string, lines: [boolean, string][]): Conversation => ({
   platform: 'twitter',
-  account: 'matthewsoldit',
+  account: 'xAccount',
   conversationId: id,
   box: 'inbox',
   with: [who],
@@ -28,7 +28,7 @@ describe('conversation search', () => {
     const chunks = chunksOf(convo('x', 'bob', [[false, '1'], [true, '2'], [false, '3'], [true, '4'], [false, '5'], [true, '6']]), 4, 1)
     expect(chunks.length).toBe(2)
     expect(chunks[0].text).toContain('@bob: 1')
-    expect(chunks[0].text).toContain('@matthewsoldit: 2')
+    expect(chunks[0].text).toContain('@xAccount: 2')
     expect(chunks[1].messageIds[0]).toBe('xm3')
   })
 

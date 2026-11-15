@@ -68,8 +68,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `twitterQueueAdd` | Add approved dms, replies or quotes to an account's queue, even while… | `log twitter queue add <queue.json> --targets <targets.json> --by <who> [--action reply\|quote\|dm\|voice] [--window <2h\|90m>] [--minGap <s>]` |
 | `twitterQueueNudge` | Tell a running queue to send its next replies now | `log twitter queue nudge <queue.json> [--replies <n>]` |
 | `twitterQueueEdit` | Put new copy on a pending or held queue item | `log twitter queue edit <queue.json> --n <n> --text "<new copy>" --by <who> [--window <30m>]` |
-| `twitterVoice` | Send a voice note in the owner's cloned voice as Twitter's own voice… | `log twitter voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
-| `twitterVoiceLive` | Send a voice note in the owner's cloned voice as…, live on X | `log twitter voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
+| `twitterVoice` | Send a voice note in the owner's cloned voice as Twitter's own voice… | `log twitter voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
+| `twitterVoiceLive` | Send a voice note in the owner's cloned voice as…, live on X | `log twitter voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
 
 ## The work, step by step: xPosting
 
@@ -189,7 +189,7 @@ The parts every page uses:
   `--force` goes past it only when the owner says so (rule 86). See
   [docs/specs/writeBudgets.md](../../docs/specs/writeBudgets.md).
 
-### 3b. The growth loop (how the owner grows @matthewsoldit)
+### 3b. The growth loop (how the owner grows @xAccount)
 
 What worked for the owner (`log kb show memory:-buzz/listeningkit-real-state`): a
 text post about treg ("$10 -> 30 conversations") did 205K views and 1,182
@@ -275,18 +275,18 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 - **Rule 8.** Platform actions require the user authorization their tool defines.
 - **Rule 26.** Stream progress while work runs, one meaningful line per stage, with the run log retained.
 - **Rule 30.** Complete the authorized task.
-- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless the owner raises them.
-- **Rule 39.** Use only the scope, options and intent the owner stated or implied.
-- **Rule 40.** Do not propose physical infrastructure unless the owner asks.
+- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless The owner raises them.
+- **Rule 39.** Use only the scope, options and intent The owner stated or implied.
+- **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
 - **Rule 53.** Verify current external facts from sources.
 - **Rule 73.** For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence.
-- **Rule 86.** Governor, waking-hours, voice-gate and other bypasses apply only when the owner explicitly requests the specific supported override.
+- **Rule 86.** Governor, waking-hours, voice-gate and other bypasses apply only when The owner explicitly requests the specific supported override.
 - **Rule 89.** Find conversational context by scoped search and existing private records.
 - **Rule 94.** Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies.
 - **Rule 105.** One platform/account owns one continuous engine session and push connection.
 - **Rule 109.** Read the full relevant chat and current private context before drafting or sending.
 - **Rule 133.** Claim a chat before acting; consult recent actions, preserve claim generation and check it before subsequent message parts.
-- **Rule 137.** Preserve current context-aware voice and AI-artifact gates for messages sent as the owner.
+- **Rule 137.** Preserve current context-aware voice and AI-artifact gates for messages sent as The owner.
 - **Rule 138.** Media and voice-note context uses the existing private media descriptions and transcripts.
-- **Rule 142.** Send a cloned voice note only when the owner asks, through the platform's native voice-note tool and existing provider adapter.
+- **Rule 142.** Send a cloned voice note only when The owner asks, through the platform's native voice-note tool and existing provider adapter.

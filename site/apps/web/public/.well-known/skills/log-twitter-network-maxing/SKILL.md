@@ -1,7 +1,7 @@
 ---
 name: log-twitter-network-maxing
 description: "Network maxing: grow the network, the niche map. A log play (docs/useCases/twitter/networkMaxing.md): The point is to expand the owner's network, and the network is his niche map: the people around the communities and creators in his niche, each with their role, whether they follow him, and how close they sit to him. Network maxing grows it, one real conversation at a time. Every conversation is about getting to know them and what they're doing: what they're building, how they work, what's going on for them. It is never about what the owner sells."
-when_to_use: "Use when matt asks for this, in words like: \"all them people messaging me, just message them something nice, get the ball moving with the networking\", \"we're not even trying to get anything out of these people, network max\", \"throw some new people in the mixer\", \"network max ... look at the nicheMap\", \"the whole point of it is to expand our network, which is the niche map\", \"follow them before you cold message them, and like the tweet you send them\"."
+when_to_use: "Use when the owner asks for this, in words like: \"all them people messaging me, just message them something nice, get the ball moving with the networking\", \"we're not even trying to get anything out of these people, network max\", \"throw some new people in the mixer\", \"network max ... look at the nicheMap\", \"the whole point of it is to expand our network, which is the niche map\", \"follow them before you cold message them, and like the tweet you send them\"."
 metadata:
   summary: "Network maxing: grow the network, the niche map"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/networkMaxing`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/networkMaxing" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 The point is to expand the owner's network, and the network is his niche map: the people around the communities and creators in his niche, each with their role, whether they follow him, and how close they sit to him. Network maxing grows it, one real conversation at a time. Every conversation is about getting to know them and what they're doing: what they're building, how they work, what's going on for them. It is never about what the owner sells.
 
@@ -95,3 +95,5 @@ flowchart TD
 ## Next
 
 - [#38](https://github.com/matthewdonsemail-lab/log/issues/38) writes back to the niche map who the owner is now talking to, so it shows how much of the network is reached.
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

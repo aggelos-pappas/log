@@ -7,7 +7,7 @@ export const TREG_USAGE = [
   "Usage: log treg search \"<what you want done>\" [--limit <n>] [--json]   (treg's catalog, found by the job: each endpoint's id, what it does and its price)",
   "       log treg get <endpointId> [--json]   (one endpoint in full: its price, its params and a call that works)",
   "       log treg call <endpointId> [--params '<json object>'] [--path <path>] [--method <GET|POST>] [--data '<body>'] [--await] [--maxItems <n>] [--fields <a,b>] [--where <key=value>] [--raw] [--approvedBy <who>] [--live] [--json]   (calls it through treg, the key injected server-side: a free endpoint runs; a priced one is a dry run that says its price unless --live with --approvedBy; the answer drops treg's raw copy unless --raw, and --maxItems, --fields and --where trim every list in it)",
-  "treg is an extension (docs/extensions/treg.md): every lookup comes from an external source through it (rule 53), and nothing that costs money runs unless matt asked (rule 41). It runs the treg CLI on this machine (TREG_BIN moves it); treg's balance is in log balance.",
+  "treg is an extension (docs/extensions/treg.md): every lookup comes from an external source through it (rule 53), and nothing that costs money runs unless the owner asked (rule 41). It runs the treg CLI on this machine (TREG_BIN moves it); treg's balance is in log balance.",
 ].join("\n");
 
 const APPROVED_BY: FlagSpec = { name: "approvedBy", kind: "string", description: "Who approved spending on a priced endpoint: needed with --live (rule 41)" };

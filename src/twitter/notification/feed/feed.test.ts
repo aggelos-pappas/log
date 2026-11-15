@@ -151,7 +151,7 @@ describe("querying the kept notifications", () => {
   });
 
   test("a post is its id or its url", () => {
-    expect(postIdOf("https://x.com/matthewsoldit/status/2116868115028120050")).toBe("2116868115028120050");
+    expect(postIdOf("https://x.com/xAccount/status/2116868115028120050")).toBe("2116868115028120050");
     expect(postIdOf("2116868115028120050")).toBe("2116868115028120050");
     expect(postIdOf("not a post")).toBeNull();
   });

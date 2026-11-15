@@ -76,7 +76,7 @@ const quote = (s: string) => `"${s.replace(/"/g, "'")}"`
 export function goalLine(account: string, p: GoalProgress): { line: string; blocks: boolean } | null {
   if (p.status === 'none' || !p.goal) return null
   const goal = quote(p.goal)
-  if (p.personNeeded) return { line: `${account}: goal ${goal}: SubQ says only a person can clear step ${p.personNeeded.step} (${p.personNeeded.text.slice(0, 300)}). Stop this account and tell matt.`, blocks: false }
+  if (p.personNeeded) return { line: `${account}: goal ${goal}: SubQ says only a person can clear step ${p.personNeeded.step} (${p.personNeeded.text.slice(0, 300)}). Stop this account and tell the owner.`, blocks: false }
   if (p.needsFinding) {
     return {
       line: `${account}: goal ${goal} is not reached, and step ${p.needsFinding.step} went wrong. Before the next step, write its P.E.E. finding: \`log inspect finding --account ${account} --step ${p.needsFinding.step} --point "<the issue, one sentence>" --explain "<why the evidence shows it, and what caused it>"\`. Its evidence is taken from the step's reading: ${p.needsFinding.evidence.slice(0, 4).map(quote).join('; ')}.`,

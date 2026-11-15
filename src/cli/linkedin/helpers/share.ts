@@ -17,7 +17,7 @@ export const ACCOUNT_FLAG: FlagSpec = { name: "account", kind: "string", require
 export const APPROVED_BY_FLAG: FlagSpec = { name: "approvedBy", kind: "string", description: "Who approved it: needed with --live (rule 8)" };
 
 export function liveFlag(what: string): FlagSpec {
-  return { name: "live", kind: "boolean", live: true, description: `${what} on LinkedIn, only when matt asked (rule 8); without it a dry run sends nothing` };
+  return { name: "live", kind: "boolean", live: true, description: `${what} on LinkedIn, only when owner asked (rule 8); without it a dry run sends nothing` };
 }
 
 export function text(flags: Record<string, unknown>, name: string): string {

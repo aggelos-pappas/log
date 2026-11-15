@@ -19,7 +19,7 @@ export default function VslPlayer({
   videoTitle = 'gg vsl (log)',
   src = VSL_VIDEO,
   poster = VSL_POSTER,
-  alt = 'matt on the go getters call',
+  alt = 'the owner on the go getters call',
   autoPlay = true,
   title = 'go getters',
 }: {

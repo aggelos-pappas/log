@@ -7,7 +7,7 @@ const ENDPOINT = 'src/extensions/treg/helpers/endpoint.ts'
 const TRIM = 'src/extensions/treg/helpers/trim.ts'
 
 export const treg = {
-  description: "treg's catalog as an extension: found by the job, read, called with the key held server-side, priced calls only when matt approved",
+  description: "treg's catalog as an extension: found by the job, read, called with the key held server-side, priced calls only when the owner approved",
   specPath: 'docs/specs/treg.md',
   codePaths: [COMMAND, CLIENT, ENDPOINT, TRIM],
   anchors: {

@@ -22,7 +22,7 @@ Each claim is marked: **R** read in the code, **X** ran in a script, **I** infer
 | Other hooks (`src/agentHooks/answers/client.ts`) | session start, prompt, after a tool, stop | browser states, storage, engines, the knowledge pointer, pending inbox messages and the watcher start, the X queue, the X live feed | varies | hook harnesses only. The queue, the live feed and the stored inbox are X only (`:100,105,136`) |
 | Refusals before a tool (chat names, live logs) | before a tool call | deny a bare chat id; deny a hand-run `log …` | | Claude Code and Codex |
 | Play footer (`activePlay.ts:50-60`) | every tool result once a play is active | which step this call is | about 300 chars | local MCP only. The hosted runtime calls `runToolCall` directly and skips it (`src/cli/runtime/index.ts:29-35`) |
-| Result `next`, `browsers`, `needsMatt` | every result | the next call, open browsers | | local only; the hosted relay strips them |
+| Result `next`, `browsers`, `needsOwner` | every result | the next call, open browsers | | local only; the hosted relay strips them |
 | Skills | the harness's own skill matching | `.claude/skills/log-*` (38, generated); the site's copy; `hermesPlugin/skills` (2, hand-written) | | Claude Code inside the repo; the Hermes plugin. Nothing installs them elsewhere |
 
 ## 2. Where the wrong content is injected

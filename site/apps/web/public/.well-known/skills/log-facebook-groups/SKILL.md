@@ -1,7 +1,7 @@
 ---
 name: log-facebook-groups
 description: "Listening to local Facebook groups. A log play (docs/useCases/facebook/groups.md): The same accounts can join the local groups in their town and hear when someone asks for what the business sells (\"anyone know someone who can take away an old sofa?\"). This page shows the parts."
-when_to_use: "Use when matt asks for this, in words like: \"join the local facebook groups in <town>\", \"listen to the facebook groups for people asking for <service>\", \"read the posts in the facebook group\", \"poll the facebook group for new posts\", \"find the business owners in the facebook group\"."
+when_to_use: "Use when the owner asks for this, in words like: \"join the local facebook groups in <town>\", \"listen to the facebook groups for people asking for <service>\", \"read the posts in the facebook group\", \"poll the facebook group for new posts\", \"find the business owners in the facebook group\"."
 metadata:
   summary: "Listening to local Facebook groups"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `facebook/groups`. Before anything else, call the log MCP tool `getGuide({ useCase: "facebook/groups" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 The same accounts can join the local groups in their town and hear when someone asks for what the business sells ("anyone know someone who can take away an old sofa?"). This page shows the parts.
 

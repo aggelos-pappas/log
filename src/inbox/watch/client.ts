@@ -370,20 +370,20 @@ export function localTime(iso: string): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   const offset = -at.getTimezoneOffset()
   const zone = `UTC${offset >= 0 ? '+' : '-'}${Math.floor(Math.abs(offset) / 60)}${offset % 60 ? `:${pad(Math.abs(offset) % 60)}` : ''}`
-  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())} matt's time (${zone})`
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())} the owner's time (${zone})`
 }
 
-const SEND_RULE = 'Send it straight away when it answers what they said and fits that conversation: matt has given full authority to reply and follow up (rule 108). Then tell matt what they said and what went out. Hold it and ask him only when it would book a meeting, make a promise, name a price or money, or you cannot tell what the conversation is about.'
+const SEND_RULE = 'Send it straight away when it answers what they said and fits that conversation: the owner has given full authority to reply and follow up (rule 108). Then tell the owner what they said and what went out. Hold it and ask him only when it would book a meeting, make a promise, name a price or money, or you cannot tell what the conversation is about.'
 
 function discordContext(messages: readonly InboxMessage[]): string {
   const lines = messages.map((m) => `  ${m.with} on discord ${m.account} (${m.box === 'dm' ? 'DM or group' : m.box === 'mention' ? 'mentioned you in a server channel' : 'replied to you in a server channel'}) at ${localTime(m.at)}: "${m.text.replace(/\s+/g, ' ').slice(0, 240)}" (channel ${m.conversationId})`)
   const { account } = messages[0]
   return [
-    `>>> NEW DISCORD MESSAGE${messages.length === 1 ? '' : 'S'} (${messages.length}): pushed by Discord's gateway the moment it landed. Tell matt now, with what they said and what the conversation is about. Then, for each one:`,
+    `>>> NEW DISCORD MESSAGE${messages.length === 1 ? '' : 'S'} (${messages.length}): pushed by Discord's gateway the moment it landed. Tell the owner now, with what they said and what the conversation is about. Then, for each one:`,
     `  1. Read the chat around it: \`discordRead\` { account: "${account}", channel: "<channel>", limit: 20 }.`,
-    '  2. Before writing a word, pull how matt really writes in that chat: `voice` { to: "<who>", with: "<channel>", context: "<what they said>" } (no text): his latest messages there and his real replies to things like it. Draft from those, in his words and his length, using only facts matt has said, answering what they actually asked. Never from the twitter guide alone.',
+    '  2. Before writing a word, pull how the owner really writes in that chat: `voice` { to: "<who>", with: "<channel>", context: "<what they said>" } (no text): his latest messages there and his real replies to things like it. Draft from those, in his words and his length, using only facts the owner has said, answering what they actually asked. Never from the twitter guide alone.',
     '  3. Gate it against the same chat: `voice` { to, with, context, text: "<draft>" }. Rewrite until it passes.',
-    `  4. ${SEND_RULE} (\`discordSendLive\` { account: "${account}", channel: "<channel>", text: "<draft>", approvedBy: "matt", confirmLive: true }).`,
+    `  4. ${SEND_RULE} (\`discordSendLive\` { account: "${account}", channel: "<channel>", text: "<draft>", approvedBy: "the owner", confirmLive: true }).`,
     ...lines,
   ].join('\n')
 }
@@ -392,11 +392,11 @@ function slackContext(messages: readonly InboxMessage[]): string {
   const lines = messages.map((m) => `  ${m.with} on slack ${m.account}${m.workspace ? ` in ${m.workspace}` : ''} (${m.box === 'dm' ? 'DM' : m.box === 'group' ? 'group DM' : 'mentioned you in a channel'}) at ${localTime(m.at)}: "${m.text.replace(/\s+/g, ' ').slice(0, 240)}" (chat ${m.conversationId})`)
   const { account } = messages[0]
   return [
-    `>>> NEW SLACK MESSAGE${messages.length === 1 ? '' : 'S'} (${messages.length}): pushed by the workspace's websocket the moment it landed. Tell matt now, with what they said and what the conversation is about. Then, for each one:`,
+    `>>> NEW SLACK MESSAGE${messages.length === 1 ? '' : 'S'} (${messages.length}): pushed by the workspace's websocket the moment it landed. Tell the owner now, with what they said and what the conversation is about. Then, for each one:`,
     `  1. Read the chat around it: \`slackRead\` { account: "${account}", workspace: "<workspace>", chat: "<chat>", limit: 20 }.`,
-    '  2. Before writing a word, pull how matt really writes to them: `voice` { to: "<who>", with: "<chat>", context: "<what they said>" } (no text): his messages to them first, then his whole history. Draft from those, in his words and his length, using only facts matt has said, answering what they actually asked.',
+    '  2. Before writing a word, pull how the owner really writes to them: `voice` { to: "<who>", with: "<chat>", context: "<what they said>" } (no text): his messages to them first, then his whole history. Draft from those, in his words and his length, using only facts the owner has said, answering what they actually asked.',
     '  3. Gate it against the same chat: `voice` { to, with, context, text: "<draft>" }. Rewrite until it passes.',
-    `  4. ${SEND_RULE} (\`slackSendLive\` { account: "${account}", workspace: "<workspace>", chat: "<chat>", text: "<draft>", approvedBy: "matt", confirmLive: true }).`,
+    `  4. ${SEND_RULE} (\`slackSendLive\` { account: "${account}", workspace: "<workspace>", chat: "<chat>", text: "<draft>", approvedBy: "the owner", confirmLive: true }).`,
     ...lines,
   ].join('\n')
 }
@@ -405,11 +405,11 @@ function instagramContext(messages: readonly InboxMessage[]): string {
   const lines = messages.map((m) => `  @${m.with} on instagram ${m.account} at ${localTime(m.at)}: "${m.text.replace(/\s+/g, ' ').slice(0, 240)}" (thread ${m.conversationId})`)
   const { account } = messages[0]
   return [
-    `>>> NEW INSTAGRAM MESSAGE${messages.length === 1 ? '' : 'S'} (${messages.length}): pushed by Instagram's realtime connection the moment it landed. Tell matt now, with what they said and what the conversation is about. Then, for each one (never through the browser):`,
+    `>>> NEW INSTAGRAM MESSAGE${messages.length === 1 ? '' : 'S'} (${messages.length}): pushed by Instagram's realtime connection the moment it landed. Tell the owner now, with what they said and what the conversation is about. Then, for each one (never through the browser):`,
     `  1. Read the thread around it: \`instagramDms\` { account: "${account}", with: "<handle or thread>", limit: 20 }.`,
-    '  2. Before writing a word, pull how matt really writes to them: `voice` { to: "<handle>", with: "<who>", context: "<what they said>" } (no text). Draft from those, in his words and his length, using only facts matt has said, answering what they actually asked.',
+    '  2. Before writing a word, pull how the owner really writes to them: `voice` { to: "<handle>", with: "<who>", context: "<what they said>" } (no text). Draft from those, in his words and his length, using only facts the owner has said, answering what they actually asked.',
     '  3. Gate it: `voice` { to, with, context, text: "<draft>" }. Rewrite until it passes.',
-    `  4. ${SEND_RULE} (\`instagramSendLive\` { account: "${account}", with: "<handle or thread>", text: "<draft>", approvedBy: "matt", confirmLive: true }; a meme or picture goes as photo: "<file>").`,
+    `  4. ${SEND_RULE} (\`instagramSendLive\` { account: "${account}", with: "<handle or thread>", text: "<draft>", approvedBy: "the owner", confirmLive: true }; a meme or picture goes as photo: "<file>").`,
     ...lines,
   ].join('\n')
 }
@@ -428,11 +428,11 @@ function twitterContext(messages: readonly InboxMessage[]): string {
   const lines = messages.map((m) => `  @${m.with} on ${m.platform} ${m.account}${m.box === 'xchat' ? ' (X Chat)' : ''} at ${localTime(m.at)}: "${(m.text || '(no text)').replace(/\s+/g, ' ').slice(0, 240)}" (conversation ${m.conversationId})`)
   const { platform, account } = messages[0]
   return [
-    `>>> NEW MESSAGE${messages.length === 1 ? '' : 'S'} (${messages.length}): someone wrote to an account, pushed by X the moment it landed. Tell matt now, with what they said and what the conversation is about. Then, for each person:`,
+    `>>> NEW MESSAGE${messages.length === 1 ? '' : 'S'} (${messages.length}): someone wrote to an account, pushed by X the moment it landed. Tell the owner now, with what they said and what the conversation is about. Then, for each person:`,
     `  1. Read their full context right now, the old DM thread and X Chat merged (one conversation, whichever id a message names) and what they did on the account's posts (likes, retweets, replies, quotes), all in one call (rule 109): \`twitterDms\` { account: "${account}", with: "<handle>" }.`,
-    '  2. Before writing a word, pull how matt really writes to them: `voice` { to: "<handle>", with: "<handle>", context: "<what they said>" } (no text): his messages to them first, then his whole history (every platform). Draft from those, in his words and his length, using only facts matt has said, answering what they actually asked. Never from the twitter guide alone.',
+    '  2. Before writing a word, pull how the owner really writes to them: `voice` { to: "<handle>", with: "<handle>", context: "<what they said>" } (no text): his messages to them first, then his whole history (every platform). Draft from those, in his words and his length, using only facts the owner has said, answering what they actually asked. Never from the twitter guide alone.',
     `  3. Gate it against the same person: \`voice\` { to, with, context, text: "<draft>" }. Rewrite until it passes.`,
-    `  4. ${SEND_RULE} One reply goes straight out with \`twitterDmLive\` { account: "${account}", userId: "<id>", text: "<draft>", approvedBy: "matt", confirmLive: true }; more than one goes into the account's one running queue (\`twitterQueueAdd\`, rule 107). Every step is the log MCP tool, never a hand-run command (rule 106).`,
+    `  4. ${SEND_RULE} One reply goes straight out with \`twitterDmLive\` { account: "${account}", userId: "<id>", text: "<draft>", approvedBy: "the owner", confirmLive: true }; more than one goes into the account's one running queue (\`twitterQueueAdd\`, rule 107). Every step is the log MCP tool, never a hand-run command (rule 106).`,
     ...lines,
   ].join('\n')
 }

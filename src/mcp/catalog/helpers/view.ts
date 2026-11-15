@@ -21,8 +21,8 @@ export function helpLines(lines: readonly string[]): string[] {
 }
 
 export function actsOf(entry: CatalogEntry): string {
-  if (entry.terminalOnly) return `run by matt in a terminal, not over MCP: it ${entry.terminalOnly}`;
-  if (entry.liveTool) return `live run with live: true and confirmLive: true, only when matt asked (rules 8, 10)`;
+  if (entry.terminalOnly) return `run by the owner in a terminal, not over MCP: it ${entry.terminalOnly}`;
+  if (entry.liveTool) return `live run with live: true and confirmLive: true, only when the owner asked (rules 8, 10)`;
   return entry.effect === "read" ? "no" : `changes ${entry.effect === "browser" ? "the account's browser" : "local or Twenty data"}`;
 }
 
@@ -59,7 +59,7 @@ export function renderGet(entry: CatalogEntry): string {
       `summary: ${cell(entry.summary)}`,
       `acts: ${actsOf(entry)}`,
       `terminal: ${cliExample(entry, inputs)}`,
-      ...helpLines([`tell matt to run \`${cliExample(entry, inputs)}\` in a terminal (rule 106)`]),
+      ...helpLines([`tell the owner to run \`${cliExample(entry, inputs)}\` in a terminal (rule 106)`]),
     ].join("\n");
   }
   const guide = entry.guide ? `getGuide({ topic: "${entry.guide}" })` : null;
@@ -69,7 +69,7 @@ export function renderGet(entry: CatalogEntry): string {
     `platform: ${isPlatform(entry.platform) ? PLATFORM_LABELS[entry.platform as Platform] : entry.platform === "byArgument" ? "named in args, first" : "any"}`,
     `acts: ${actsOf(entry)}`,
     ...(entry.longRunning ? ["runs: seconds to minutes; watch `tail -f ~/.logCli/mcp/<day>.log` while it runs (rule 26), and a run past waitMs comes back as a job (jobStatus)"] : []),
-    ...(entry.bypass ? ["bypass: outside the account's hours only when matt asked, with confirmBypass: true (rule 20)"] : []),
+    ...(entry.bypass ? ["bypass: outside the account's hours only when the owner asked, with confirmBypass: true (rule 20)"] : []),
     ...table("inputs", ["name", "type", "required", "note"], inputRows(entry.inputs)),
     ...(entry.liveInputs.length ? table("liveInputs", ["name", "type", "required", "note"], inputRows(entry.liveInputs)) : []),
     `call: ${callLine(entry, inputs)}`,

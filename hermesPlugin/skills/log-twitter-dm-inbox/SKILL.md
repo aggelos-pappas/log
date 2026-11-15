@@ -1,7 +1,7 @@
 ---
 name: log-twitter-dm-inbox
 description: "Reading the DM inbox: who is waiting on you. A log play (docs/useCases/twitter/dmInbox.md): Read every DM conversation on the account and sort it into a pipeline: who is waiting on you and what they asked, who you're waiting on, and what to do next for each. It sends nothing and marks nothing read. Replies only go out after the owner says what to send."
-when_to_use: "Use when matt asks for this, in words like: \"who is waiting on me\", \"check my x dms\", \"go through my twitter inbox and tell me who needs a reply\", \"who am I waiting on in my dms\"."
+when_to_use: "Use when the owner asks for this, in words like: \"who is waiting on me\", \"check my x dms\", \"go through my twitter inbox and tell me who needs a reply\", \"who am I waiting on in my dms\"."
 metadata:
   summary: "Reading the DM inbox: who is waiting on you"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/dmInbox`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/dmInbox" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Read every DM conversation on the account and sort it into a pipeline: who is waiting on you and what they asked, who you're waiting on, and what to do next for each. It sends nothing and marks nothing read. Replies only go out after the owner says what to send.
 
@@ -38,7 +38,7 @@ Who wrote last is already in context at the start of a session: the SessionStart
 
 - **The threads are already local.** `~/.logCli/conversations/twitter/<account>` holds every saved thread and `~/.logCli/log.db` every event since (messages, the account's own, notifications): read who is waiting and what they said from there first, and read X only for one person right before a send (rule 109).
 - **Gate one draft at a time.** Running several `voice` gates at once crashed them on 2026-11-07 (EPERM renaming `search/voice/vectors/manifest.json`); nothing was sent, and run one after another they pass.
-- **Past the daily cap only when the owner says.** At its request cap the governor refuses every read; `twitterDms` { force: true } reads past it for that call, and the governor still counts it (rule 86). On 2026-11-02 matthewsoldit read its inbox at 501-506 of 500 this way, with the owner's go-ahead.
+- **Past the daily cap only when the owner says.** At its request cap the governor refuses every read; `twitterDms` { force: true } reads past it for that call, and the governor still counts it (rule 86). On 2026-11-02 xAccount read its inbox at 501-506 of 500 this way, with the owner's go-ahead.
 - **A nudge can be a meme.** Where someone owes a reply or promised something, `twitterDmLive` { media: ["<meme url>"] } sends the meme as an image on the first message, with the nudge after it (docs/extensions/memelord.md). A chat where the owner's last messages are still unanswered gets nothing stacked on top.
 
 - `twitterDms` reads the inbox, the message requests and X's encrypted Chat. X Chat opens with the account's X Chat PIN, saved once in a masked terminal prompt (`log twitter chat pin --account <account>`); without it X Chat threads show who and when, not what.
@@ -59,3 +59,5 @@ Who wrote last is already in context at the start of a session: the SessionStart
 ## Next
 
 - [#34](https://github.com/matthewdonsemail-lab/log/issues/34) writes every conversation into Twenty, so each person's thread sits on their record.
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

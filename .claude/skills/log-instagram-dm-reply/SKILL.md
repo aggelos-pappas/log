@@ -1,7 +1,7 @@
 ---
 name: log-instagram-dm-reply
 description: "Reading and answering an Instagram DM. A log play (docs/useCases/instagram/dmReply.md): Read what someone wrote to the account on Instagram and answer it in the owner's voice, with text or a meme, on the account's own session through vendor/instagrapi. No browser, ever."
-when_to_use: "Use when matt asks for this, in words like: \"read my instagram dms\", \"what did <someone> say on instagram\", \"reply to <someone> on instagram\", \"send <someone> a meme on instagram\""
+when_to_use: "Use when the owner asks for this, in words like: \"read my instagram dms\", \"what did <someone> say on instagram\", \"reply to <someone> on instagram\", \"send <someone> a meme on instagram\""
 metadata:
   summary: "Reading and answering an Instagram DM"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `instagram/dmReply`. Before anything else, call the log MCP tool `getGuide({ useCase: "instagram/dmReply" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Read what someone wrote to the account on Instagram and answer it in the owner's voice, with text or a meme, on the account's own session through vendor/instagrapi. No browser, ever.
 
@@ -40,3 +40,5 @@ New messages arrive by themselves: the inbox hook keeps `log instagram watch --i
 - **Never the browser.** On 2026-11-04 a meme went out through the account's [AdsPower](https://www.adspower.com/share/pD25Iu) browser and the owner said that is not the way: read, send and watch are the engine's.
 - **A meme goes as the picture.** [Memelord](https://www.memelord.com/sign-up?ref=kfwut9wc) answers with a media URL; save it as a JPEG and send it as `photo`, never the link.
 - **Pick from the top of the taste ranking, with judgement.** A template built on a stereotype is skipped even when it ranks first.
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

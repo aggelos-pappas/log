@@ -25,7 +25,7 @@ fix problems"; rules 25 and 27).
   response.
 - **Docs are committed, captures are not.** Each doc holds names, ids,
   timings and statuses only. Variable values, cookies and tokens stay in the
-  raw HAR on matt's machine (rule 19). Step lines are cleaned: exit IPs,
+  raw HAR on the owner's machine (rule 19). Step lines are cleaned: exit IPs,
   account ids and URLs are removed.
 
 ## Domains

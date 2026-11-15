@@ -1,7 +1,7 @@
 ---
 name: log-inbox-governor-reset
 description: "Resetting an account's governor count. A log play (docs/useCases/inbox/governorReset.md): Every platform account's governor counts what it sent today and refuses once the count is spent (\"daily cap reached (500/day)\"). When the owner says to, the count goes back to 0 so the work can carry on, on X, Discord, Slack, Instagram, Reddit, LinkedIn or Facebook alike. The reset is checked and kept in log.db, so it is never a hand edit nobody can see (rule 168)."
-when_to_use: "Use when matt asks for this, in words like: \"reset the governor on X back to 0\", \"confirm it's in the db\", \"reset X to 0\", \"reset the limit back to 0 from 500\", \"reset the platforms count to 0\""
+when_to_use: "Use when the owner asks for this, in words like: \"reset the governor on X back to 0\", \"confirm it's in the db\", \"reset X to 0\", \"reset the limit back to 0 from 500\", \"reset the platforms count to 0\""
 metadata:
   summary: "Resetting an account's governor count"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `inbox/governorReset`. Before anything else, call the log MCP tool `getGuide({ useCase: "inbox/governorReset" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Every platform account's governor counts what it sent today and refuses once the count is spent ("daily cap reached (500/day)"). When the owner says to, the count goes back to 0 so the work can carry on, on X, Discord, Slack, Instagram, Reddit, LinkedIn or Facebook alike. The reset is checked and kept in log.db, so it is never a hand edit nobody can see (rule 168).
 

@@ -98,7 +98,7 @@ export function WhopJoin() {
         <p className="lk-body mt-2 text-lg">
           i read every application myself. if you're a fit you'll hear from me on x or email. first 10 get founding price.
         </p>
-        <p className="lk-hand mt-3 text-3xl text-[#2A8CFF]">see you in there. matt</p>
+        <p className="lk-hand mt-3 text-3xl text-[#2A8CFF]">see you in there. the owner</p>
       </div>
     )
   }

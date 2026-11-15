@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundary9nMQaA1eVAIC7RGf
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `build_version_enabled`, `should_reload`, `client_min_version`, `client_min_build_version`, `client_min_config_version`, `recommended_build_version`, `build_manifest_last_modified`, `should_fetch_new_service_worker` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script36.js:1 maybeStartTrace` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script36.js:1 maybeStartTrace` |
 | rea | `ev_2996fdc433a0d8c3802737045c4c2ddf029d1fd662a71194c2326befe2a9286f` |
 
 Seen 2 time(s) in 1 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 540 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 540 ms
 
 Sent:
 
@@ -63,7 +63,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 298 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 298 ms
 
 Sent:
 

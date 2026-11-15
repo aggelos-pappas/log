@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundarydgUf1IW1MzpABYlv
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `domains_ts`, `domains.useless-signin-prod.herokuapp.com`, `domains.open.workast.com`, `domains.open.workast.app`, `domains.loom.com`, `domains.www.loom.com`, `domains.lucid.app`, `domains.atlassian.net`, `domains.bitbucket.org`, `domains.trello.com`, `wildcard_domains.bitbucket.org` and 4 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script3.js:2908 statement`, `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script3.js:2908 statement`, `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_4a8886575dabfa8974994a6184592e0c330698626980cf00b54a7909f0d9eec9` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 941 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 941 ms
 
 Sent:
 
@@ -81,7 +81,7 @@ Fetches Slack's list of domains it unfurls links for: it answered `ok: true` wit
 
 ## What our machine does with it
 
-Nothing: no log-cli code calls it. The engine (`python/slackApi/engine.py`, actions ping, workspaces, chats, read, send, watch over `vendor/gabrielSlack`) never uses this endpoint; it is Slack's web client's own traffic, seen only because the `log inspect` AdsPower run on mattSlack loaded the page. It only affects how links in messages are previewed.
+Nothing: no log-cli code calls it. The engine (`python/slackApi/engine.py`, actions ping, workspaces, chats, read, send, watch over `vendor/gabrielSlack`) never uses this endpoint; it is Slack's web client's own traffic, seen only because the `log inspect` AdsPower run on slackAccount loaded the page. It only affects how links in messages are previewed.
 
 ## What can go wrong
 

@@ -19,7 +19,7 @@ export const REEL: PlatformActivity = {
       id: 'unmute',
       action: 'clickRole',
       args: ['button', 'Unmute'],
-      why: 'sound on: Reels start muted, and nobody watches a reel with the sound off (matt, 2026-10-20)',
+      why: 'sound on: Reels start muted, and nobody watches a reel with the sound off (the owner, 2026-10-20)',
       expect: { hides: { role: 'button', name: 'Unmute' } },
       clicks: true,
       recorded: `${RUN} step 03: the player showed button "Unmute" [pressed] (muted); run 20261020T052708 step 12: clicked, the Unmute button gone (11/11 with the sound on)`
@@ -38,7 +38,7 @@ export const REEL: PlatformActivity = {
       id: 'glance',
       action: 'dwell',
       args: ['1-3'],
-      why: "a glance: most reels aren't watched through, a person skips on after a second or two (matt, 2026-10-20)"
+      why: "a glance: most reels aren't watched through, a person skips on after a second or two (the owner, 2026-10-20)"
     },
     { id: 'swipe', action: 'clickRole', args: ['button', 'Next card'], why: 'skip on', expect: { urlChanges: true, urlMatches: '/reel/\\d+', answers: [{ call: 'FBUnifiedVideoSeenStateMutation', says: [{ answer: 'data.xfb_fb_shorts_seen_state_mutation.viewer.actor.id', home: 'uid' }] }] }, clicks: true },
     { id: 'glance', action: 'dwell', args: ['1-3'], why: 'another glance' },
@@ -99,6 +99,6 @@ export const REEL: PlatformActivity = {
     }
   ],
   knownIssues: [
-    "glance and the skip streaks: new (matt, 2026-10-20: people skip past most reels); first checked live by a drawn session (`run`)"
+    "glance and the skip streaks: new (the owner, 2026-10-20: people skip past most reels); first checked live by a drawn session (`run`)"
   ]
 }

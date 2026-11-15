@@ -13,7 +13,7 @@ export function findingOf(at: BrowserAt): Finding {
     return { account: at.account, kind: "state", state, mark: `${at.step}:${state.id}`, line: `${at.account}: page state **${state.id}**: ${state.what} (${where}). Known, nothing to resolve: ${state.resolve}.`, resolvable: false };
   }
   if (state) {
-    const next = state.person ? "Only a person can clear it: stop this account and tell matt." : "Known state, resolve it, do not stop:";
+    const next = state.person ? "Only a person can clear it: stop this account and tell the owner." : "Known state, resolve it, do not stop:";
     return { account: at.account, kind: "state", state, mark: `${at.step}:${state.id}`, line: `${at.account}: page state **${state.id}**: ${state.what} (${where}). ${next} ${state.resolve}.`, resolvable: !state.person };
   }
   if (at.reading && !at.reading.decided) {
@@ -67,7 +67,7 @@ export function hookReply(event: HookEvent, browsers: BrowserAt[], memory: HookM
     const marks = [...open.map((f) => `${f.account}=${f.mark}`), ...goalsOpen.map((g) => g.mark)].join(",");
     if (stopHookActive && memory.stopBlocked === marks) return { output: null, memory: { seen, stopBlocked: marks } };
     const reason = [
-      `${HEADER} the turn is not over (matt: "you're not meant to stop").`,
+      `${HEADER} the turn is not over (the owner: "you're not meant to stop").`,
       ...open.map((f) => `- ${f.line}`),
       ...goalsOpen.map((g) => `- ${g.line}`),
     ].join("\n");

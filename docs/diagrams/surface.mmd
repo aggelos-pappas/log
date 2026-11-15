@@ -2,7 +2,7 @@
 %% Written by `bun run docs:build` from the code (rule 56). Not edited by hand.
 flowchart LR
   agent["Agent (Claude Code, Codex)"]
-  matt["matt, in a terminal"]
+  owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
   mcp["MCP server log: 264 command tools + saved flows"]
   bin["bin/log.ts"]
@@ -14,7 +14,7 @@ flowchart LR
   api["The platform's internal API: its answer decides (rule 73)"]
   twenty[("Twenty: socialAccounts.sessionState, refreshed cookies")]
   agent --> shell
-  matt --> bin
+  owner --> bin
   shell --> bin
   agent -->|mcp__log__tool| mcp
   bin --> runCli

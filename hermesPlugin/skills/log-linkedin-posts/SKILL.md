@@ -1,7 +1,7 @@
 ---
 name: log-linkedin-posts
 description: "Posting on LinkedIn, liking or reposting, and taking a post down. A log play (docs/useCases/linkedin/posts.md): Post text, an image or mentions from the account's own session, like or repost someone's post, or delete one of the account's own posts, each the way LinkedIn's own web client does it, with no browser."
-when_to_use: "Use when matt asks for this, in words like: \"post this on linkedin\", \"put this up on linkedin with the picture\", \"like <someone>'s post on linkedin\", \"repost that on linkedin\", \"delete that linkedin post\""
+when_to_use: "Use when the owner asks for this, in words like: \"post this on linkedin\", \"put this up on linkedin with the picture\", \"like <someone>'s post on linkedin\", \"repost that on linkedin\", \"delete that linkedin post\""
 metadata:
   summary: "Posting on LinkedIn, liking or reposting, and taking a post down"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `linkedin/posts`. Before anything else, call the log MCP tool `getGuide({ useCase: "linkedin/posts" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Post text, an image or mentions from the account's own session, like or repost someone's post, or delete one of the account's own posts, each the way LinkedIn's own web client does it, with no browser.
 

@@ -1,7 +1,7 @@
 ---
 name: log-twitter-collab-maxxing
 description: "Collab maxxing: turn open conversations into collabs. A log play (docs/useCases/twitter/collabMaxxing.md): Network maxing gets people talking to the owner. Collab maxxing turns those conversations into something you can work on together. Everything the owner builds is open source and he earns nothing from it. So the collab is the deal: he builds their system with them and makes content about doing it, they get the outcome, and they back the work. Money is the last thing in the conversation, never the first. It comes as a small ask once they're keen, or a retainer the owner prices himself."
-when_to_use: "Use when matt asks for this, in words like: \"position a collab first then be like just a few quid so i can make a video about it\", \"start network maxxing and collab maxxing and trying to see what hes doing get him to reveal it all\", \"follow up on <someone> and the other people, small commitment from deals, not just new people but already open convos\", \"respond with the collabmaxxing\", \"selling the outcome\", \"let him name it\", \"check in with <someone> whats good there he is keen but isnt liquid\", \"just be nice to them there the poor people\", \"ask <someone> if i could become a contributor\", \"look on my twitter for missed opportunities\"."
+when_to_use: "Use when the owner asks for this, in words like: \"position a collab first then be like just a few quid so i can make a video about it\", \"start network maxxing and collab maxxing and trying to see what hes doing get him to reveal it all\", \"follow up on <someone> and the other people, small commitment from deals, not just new people but already open convos\", \"respond with the collabmaxxing\", \"selling the outcome\", \"let him name it\", \"check in with <someone> whats good there he is keen but isnt liquid\", \"just be nice to them there the poor people\", \"ask <someone> if i could become a contributor\", \"look on my twitter for missed opportunities\"."
 metadata:
   summary: "Collab maxxing: turn open conversations into collabs"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/collabMaxxing`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/collabMaxxing" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Network maxing gets people talking to the owner. Collab maxxing turns those conversations into something you can work on together. Everything the owner builds is open source and he earns nothing from it. So the collab is the deal: he builds their system with them and makes content about doing it, they get the outcome, and they back the work. Money is the last thing in the conversation, never the first. It comes as a small ask once they're keen, or a retainer the owner prices himself.
 
@@ -46,3 +46,5 @@ Say: **"go on docs/useCases/twitter/collabMaxxing.md"**, and say who it's for th
 - **Missed openings are the cheapest wins.** Someone who explained their model, said they're hiring, or said "lets do it", and never got an answer. Find them in step 1 before reaching for new people.
 - Never ask the people the owner has ruled out for money (in the agent memory). Never send the same message twice: check the thread before a resend. Memes go as media, never as a raw link.
 - Every send counts against the account's writes for the day, each line one write. Space people out and never act in quick succession. Any refusal stops the run (rule 94).
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

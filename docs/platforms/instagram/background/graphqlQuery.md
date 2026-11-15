@@ -10,7 +10,7 @@
 | Path | `/graphql/query` |
 | Sends | `after`, `before`, `data`, `first`, `last`, `variant`, `__relay_internal__pv__PolarisShortDramaEnabledrelayprovider`, `__relay_internal__pv__PolarisMultiCaptionCarouselEnabledrelayprovider`, `__relay_internal__pv__PolarisThreadsStyleCommentsEnabledrelayprovider`, `__relay_internal__pv__PolarisReelsRecoDebugOverlayEnabledrelayprovider`, `__relay_internal__pv__PolarisAdDebugToolEnabledrelayprovider`, `__relay_internal__pv__PolarisSuggestedUserFeedUnitCardsEnabledrelayprovider` |
 | Reads | `data.xdt_api__v1__feed__timeline__connection`, `extensions.is_final`, `extensions.all_video_dash_prefetch_representations`, `extensions.server_metadata`, `status` |
-| Called from | `runs/inspect/20261103T185330_mattinferencesaver/script4.js:343 e`, `runs/inspect/20261103T185330_mattinferencesaver/script4.js:371 anonymous`, `runs/inspect/20261103T185330_mattinferencesaver/script4.js:417 anonymous`, `runs/inspect/20261103T185330_mattinferencesaver/script33.js:118 anonymous` |
+| Called from | `runs/inspect/20261103T185330_instagramAccount/script4.js:343 e`, `runs/inspect/20261103T185330_instagramAccount/script4.js:371 anonymous`, `runs/inspect/20261103T185330_instagramAccount/script4.js:417 anonymous`, `runs/inspect/20261103T185330_instagramAccount/script33.js:118 anonymous` |
 | rea | `ev_9526128ceabbf057d2d22a7013da9a214adbe53a32932238933540d4c03b7101` |
 
 Seen 4 time(s) in 2 run(s).
@@ -26,7 +26,7 @@ Seen 4 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T185330_mattinferencesaver**, step 1: goto /direct/t/<id>/: 200, 2017 ms
+**runs/inspect/20261103T185330_instagramAccount**, step 1: goto /direct/t/<id>/: 200, 2017 ms
 
 Sent:
 
@@ -129,7 +129,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 2: snapshot: 200, 2372 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 2: snapshot: 200, 2372 ms
 
 Sent:
 
@@ -235,7 +235,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 3: goto /direct/inbox/: 200, 1281 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 3: goto /direct/inbox/: 200, 1281 ms
 
 Sent:
 

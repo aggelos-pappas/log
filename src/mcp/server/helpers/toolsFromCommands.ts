@@ -95,7 +95,7 @@ export function hasShell(clientName: string | undefined): boolean {
 
 export function longRunLine(options: ToolOptions, minutes = "seconds to minutes"): string {
   return options.shell === false
-    ? `Runs for ${minutes}: every line it streams comes back in the result's \`progress\` (with its time), and the result says where every open browser is (\`browsers\`, \`next\`, \`needsMatt\`) (${cite(26, 54)}). A run that outlasts the call's wait (\`waitMs\`, default 20 s, at most 50 s) comes back as a job (\`exit\` -1, \`job.id\`): follow it with \`jobStatus\` { jobId, afterLine }, stop it at its next browser step with \`jobCancel\`.`
+    ? `Runs for ${minutes}: every line it streams comes back in the result's \`progress\` (with its time), and the result says where every open browser is (\`browsers\`, \`next\`, \`needsOwner\`) (${cite(26, 54)}). A run that outlasts the call's wait (\`waitMs\`, default 20 s, at most 50 s) comes back as a job (\`exit\` -1, \`job.id\`): follow it with \`jobStatus\` { jobId, afterLine }, stop it at its next browser step with \`jobCancel\`.`
     : `Runs for ${minutes}: start a Monitor on \`tail -f ~/.logCli/mcp/<day>.log\` before calling, so the owner watches it live (${cite(26)}). A run that outlasts the call's wait (\`waitMs\`, default 20 s, at most 50 s) comes back as a job (\`exit\` -1, \`job.id\`): follow it with \`jobStatus\` { jobId, afterLine }, stop it at its next browser step with \`jobCancel\`.`;
 }
 

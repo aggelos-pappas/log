@@ -10,7 +10,7 @@
 | Path | `pixel-config.reddit.com/pixels/config` |
 | Sends | — |
 | Reads | `pixelEventConfigs`, `aam.email`, `aam.phone_number`, `esc.page_metadata` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script15.js:1 nu` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script15.js:1 nu` |
 | rea | `ev_d2728c276e2bd0500e61b6f3b0f50180a5cc5e72fc8e3506145a9c5228c7c883` |
 
 Seen 3 time(s) in 2 run(s).
@@ -24,7 +24,7 @@ Seen 3 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 1: goto /get-started: 200, 3 ms
+**runs/inspect/20261103T065639_slackAccount**, step 1: goto /get-started: 200, 3 ms
 
 Sent:
 
@@ -126,7 +126,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065218_mattSlack**, step 3: click e536: 200, 2 ms
+**runs/inspect/20261103T065218_slackAccount**, step 3: click e536: 200, 2 ms
 
 Sent:
 
