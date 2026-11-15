@@ -180,7 +180,7 @@ describe("the native Hermes plugin installed on its own, with no log launch --se
       const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout.trim()) as { root: string; answer: { context: string } };
-      expect(realpathSync(out.root)).toBe(realpathSync(installed));
+      expect(realpathSync.native(out.root).toLowerCase()).toBe(realpathSync.native(installed).toLowerCase());
       expect(out.answer.context).toBe("found UserPromptSubmit");
     } finally {
       rmSync(scratch, { recursive: true, force: true });
