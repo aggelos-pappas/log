@@ -1,7 +1,7 @@
 ---
 name: log-discord-channel-reply
 description: "Answering someone in a Discord DM or group DM. A log play (docs/useCases/discord/channelReply.md): Answer what someone said to the account in a Discord DM or group DM, with words: a question about what the owner is building, a reply to something the owner posted. A group DM is a private chat of a few people with no server; a channel inside a server (\"pennyserver #general\") is a different place, read and answered differently, and is [serverReply](serverReply.md). The chat is read first, the answer is written from what was said there and what the owner has told you, gated like every send, and sent through the account's one session. No meme and no voice note (those are [memeReply](memeReply.md) and [voiceNote](../inbox/voiceNote.md))."
-when_to_use: "Use when matt asks for this, in words like: \"reply to <someone> on discord\", \"reply to <someone> in <group>\", \"explain what I'm trying to do to <someone> in <group>\", \"answer the group\""
+when_to_use: "Use when the owner asks for this, in words like: \"reply to <someone> on discord\", \"reply to <someone> in <group>\", \"explain what I'm trying to do to <someone> in <group>\", \"answer the group\""
 metadata:
   summary: "Answering someone in a Discord DM or group DM"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `discord/channelReply`. Before anything else, call the log MCP tool `getGuide({ useCase: "discord/channelReply" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Answer what someone said to the account in a Discord DM or group DM, with words: a question about what the owner is building, a reply to something the owner posted. A group DM is a private chat of a few people with no server; a channel inside a server ("pennyserver #general") is a different place, read and answered differently, and is [serverReply](../log-discord-server-reply/SKILL.md). The chat is read first, the answer is written from what was said there and what the owner has told you, gated like every send, and sent through the account's one session. No meme and no voice note (those are [memeReply](../log-discord-meme-reply/SKILL.md) and [voiceNote](../log-inbox-voice-note/SKILL.md)).
 

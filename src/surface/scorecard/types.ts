@@ -86,6 +86,7 @@ export interface ScorecardInput {
   guides: Readonly<Record<string, string>>;
   serverInstructions: string;
   hostedInstructions: string;
+  ownerNames?: readonly string[];
   hookTypes: string;
   ruleIds: ReadonlySet<number>;
   useCaseFiles: readonly SourceText[];

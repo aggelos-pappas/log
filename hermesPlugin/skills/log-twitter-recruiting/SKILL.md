@@ -1,7 +1,7 @@
 ---
 name: log-twitter-recruiting
 description: "Recruiting on X with a reply queue. A log play (docs/useCases/twitter/recruiting.md): Find people who just posted that they want work, or who already do the job. Reply to each one publicly with one line in their own language, about their own post, ending with the job link. The owner approves the list, then the queue sends the replies slowly with likes mixed in. Applicants then come in through the job page."
-when_to_use: "Use when matt asks for this, in words like: \"recruit for the <role> role on x\", \"find people looking for work on twitter and reply with the job link\", \"hire a <role> through tweet replies\"."
+when_to_use: "Use when the owner asks for this, in words like: \"recruit for the <role> role on x\", \"find people looking for work on twitter and reply with the job link\", \"hire a <role> through tweet replies\"."
 metadata:
   summary: "Recruiting on X with a reply queue"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/recruiting`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/recruiting" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Find people who just posted that they want work, or who already do the job. Reply to each one publicly with one line in their own language, about their own post, ending with the job link. The owner approves the list, then the queue sends the replies slowly with likes mixed in. Applicants then come in through the job page.
 
@@ -85,3 +85,5 @@ The same steps can run on a schedule with nobody watching: search, skip anyone s
 ## Next
 
 - [#39](https://github.com/matthewdonsemail-lab/log/issues/39) tracks who answered a recruiting reply. Until then, applicants show up wherever the job page stores them.
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

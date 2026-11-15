@@ -126,7 +126,7 @@ Checked by: code and SubQ
 
 ### REQ-INSPECT-19: What only a person can clear never holds the turn
 
-When the latest reading says only a person can clear the step, the goal's line says to stop the account and tell matt, and it does not hold the turn.
+When the latest reading says only a person can clear the step, the goal's line says to stop the account and tell the owner, and it does not hold the turn.
 
 Checked by: code and SubQ
 

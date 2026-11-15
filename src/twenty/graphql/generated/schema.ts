@@ -38554,7 +38554,7 @@ export interface SocialAccount {
     proxy?: Scalars['String']
     /** log-cli: the vendor order or invoice id */
     vendorOrderId?: Scalars['String']
-    /** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by matt with log facebook messenger pin (a Clack prompt). A credential: never print it */
+    /** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by owner with log facebook messenger pin (a Clack prompt). A credential: never print it */
     messengerPin?: Scalars['String']
     /** log-cli: the cover (background) photo `log profile setup` uploads (a URL or a local path) */
     coverPhoto?: Scalars['String']
@@ -124920,7 +124920,7 @@ export interface SocialAccountGenqlSelection{
     proxy?: boolean | number
     /** log-cli: the vendor order or invoice id */
     vendorOrderId?: boolean | number
-    /** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by matt with log facebook messenger pin (a Clack prompt). A credential: never print it */
+    /** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by owner with log facebook messenger pin (a Clack prompt). A credential: never print it */
     messengerPin?: boolean | number
     /** log-cli: the cover (background) photo `log profile setup` uploads (a URL or a local path) */
     coverPhoto?: boolean | number
@@ -126363,7 +126363,7 @@ homeCity?: (Scalars['String'] | null),
 proxy?: (Scalars['String'] | null),
 /** log-cli: the vendor order or invoice id */
 vendorOrderId?: (Scalars['String'] | null),
-/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by matt with log facebook messenger pin (a Clack prompt). A credential: never print it */
+/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by owner with log facebook messenger pin (a Clack prompt). A credential: never print it */
 messengerPin?: (Scalars['String'] | null),
 /** log-cli: the cover (background) photo `log profile setup` uploads (a URL or a local path) */
 coverPhoto?: (Scalars['String'] | null),emailPassword?: (Scalars['String'] | null),email?: (Scalars['String'] | null),
@@ -126463,7 +126463,7 @@ homeCity?: (Scalars['String'] | null),
 proxy?: (Scalars['String'] | null),
 /** log-cli: the vendor order or invoice id */
 vendorOrderId?: (Scalars['String'] | null),
-/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by matt with log facebook messenger pin (a Clack prompt). A credential: never print it */
+/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by owner with log facebook messenger pin (a Clack prompt). A credential: never print it */
 messengerPin?: (Scalars['String'] | null),
 /** log-cli: the cover (background) photo `log profile setup` uploads (a URL or a local path) */
 coverPhoto?: (Scalars['String'] | null),emailPassword?: (Scalars['String'] | null),email?: (Scalars['String'] | null),
@@ -126563,7 +126563,7 @@ homeCity?: (StringFilter | null),
 proxy?: (StringFilter | null),
 /** log-cli: the vendor order or invoice id */
 vendorOrderId?: (StringFilter | null),
-/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by matt with log facebook messenger pin (a Clack prompt). A credential: never print it */
+/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by owner with log facebook messenger pin (a Clack prompt). A credential: never print it */
 messengerPin?: (StringFilter | null),
 /** log-cli: the cover (background) photo `log profile setup` uploads (a URL or a local path) */
 coverPhoto?: (StringFilter | null),emailPassword?: (StringFilter | null),email?: (StringFilter | null),
@@ -126667,7 +126667,7 @@ homeCity?: (OrderByDirection | null),
 proxy?: (OrderByDirection | null),
 /** log-cli: the vendor order or invoice id */
 vendorOrderId?: (OrderByDirection | null),
-/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by matt with log facebook messenger pin (a Clack prompt). A credential: never print it */
+/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by owner with log facebook messenger pin (a Clack prompt). A credential: never print it */
 messengerPin?: (OrderByDirection | null),
 /** log-cli: the cover (background) photo `log profile setup` uploads (a URL or a local path) */
 coverPhoto?: (OrderByDirection | null),emailPassword?: (OrderByDirection | null),email?: (OrderByDirection | null),
@@ -126769,7 +126769,7 @@ homeCity?: (OrderByDirection | null),
 proxy?: (OrderByDirection | null),
 /** log-cli: the vendor order or invoice id */
 vendorOrderId?: (OrderByDirection | null),
-/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by matt with log facebook messenger pin (a Clack prompt). A credential: never print it */
+/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by owner with log facebook messenger pin (a Clack prompt). A credential: never print it */
 messengerPin?: (OrderByDirection | null),
 /** log-cli: the cover (background) photo `log profile setup` uploads (a URL or a local path) */
 coverPhoto?: (OrderByDirection | null),emailPassword?: (OrderByDirection | null),email?: (OrderByDirection | null),
@@ -127499,7 +127499,7 @@ homeCity?: (Scalars['Boolean'] | null),
 proxy?: (Scalars['Boolean'] | null),
 /** log-cli: the vendor order or invoice id */
 vendorOrderId?: (Scalars['Boolean'] | null),
-/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by matt with log facebook messenger pin (a Clack prompt). A credential: never print it */
+/** log-cli: the 6-digit PIN for the account's encrypted chats (Messenger's Create a PIN), set by owner with log facebook messenger pin (a Clack prompt). A credential: never print it */
 messengerPin?: (Scalars['Boolean'] | null),
 /** log-cli: the cover (background) photo `log profile setup` uploads (a URL or a local path) */
 coverPhoto?: (Scalars['Boolean'] | null),emailPassword?: (Scalars['Boolean'] | null),email?: (Scalars['Boolean'] | null),

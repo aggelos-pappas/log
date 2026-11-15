@@ -193,7 +193,7 @@ export const queueRunMachine = setup({
       if (stop.kind === 'refused') {
         const by = stop.failure === 'broken' ? 'the engine' : 'x'
         const why = stop.failure === 'auth' ? ' The session failed: log in to x again by hand.' : ''
-        context.deps.alert(`REFUSED ${stop.what}: ${by} answered at ${stop.refusal.at.slice(0, 19).replace('T', ' ')} UTC: ${stop.refusal.code}: ${stop.refusal.detail.slice(0, 200)}.${why} The run stopped here: #${stop.n} stays pending and nothing more was sent. Nothing goes out on @${context.queue.account} until matt starts a run again (rule 94). (${sentTotal(context)} sent in total)`, true)
+        context.deps.alert(`REFUSED ${stop.what}: ${by} answered at ${stop.refusal.at.slice(0, 19).replace('T', ' ')} UTC: ${stop.refusal.code}: ${stop.refusal.detail.slice(0, 200)}.${why} The run stopped here: #${stop.n} stays pending and nothing more was sent. Nothing goes out on @${context.queue.account} until the owner starts a run again (rule 94). (${sentTotal(context)} sent in total)`, true)
       } else if (stop.kind === 'halt') context.deps.alert(`[halted] ${stop.message} (${sentTotal(context)} sent in total)`, true)
     },
     settleHalted: assign(({ context }): { result: RunResult } => {

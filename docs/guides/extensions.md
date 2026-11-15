@@ -74,7 +74,7 @@ tools, so nothing here costs money (rule 41).
 3. Search: `memelordSearch` { query: [the moment in a few words] }. The
    answer leads with the owner's taste and ranks by it (deep fried, larping,
    streamer reacts like FlightReacts, Zias and Bloo, shitposts, and the memes
-   the owner has sent): pick from the top, a clean corporate meme is never the owner's. Short
+   The owner has sent): pick from the top, a clean corporate meme is never the owner's. Short
    queries match best: a long sentence often returns one result or none. Use
    `method: "combined"` to add keyword matching, `type: "meme"` for a still
    image, `"video"` for a clip. `memelordTrending` gives what is current, each
@@ -173,13 +173,13 @@ Docs: `docs/extensions/treg.md`. Spec: `docs/specs/treg.md`.
 Each by its number and first line. The full text is in AGENTS.md (`log://agents`); the core rules are in full in `getGuide({ topic: "logMcpInstructions" })`.
 
 - **Rule 30.** Complete the authorized task.
-- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless the owner raises them.
-- **Rule 39.** Use only the scope, options and intent the owner stated or implied.
-- **Rule 40.** Do not propose physical infrastructure unless the owner asks.
+- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless The owner raises them.
+- **Rule 39.** Use only the scope, options and intent The owner stated or implied.
+- **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
 - **Rule 53.** Verify current external facts from sources.
 - **Rule 73.** For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence.
 - **Rule 94.** Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies.
-- **Rule 142.** Send a cloned voice note only when the owner asks, through the platform's native voice-note tool and existing provider adapter.
+- **Rule 142.** Send a cloned voice note only when The owner asks, through the platform's native voice-note tool and existing provider adapter.
 - **Rule 163.** Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients.
 - **Rule 164.** Use existing provider balance/status and timing diagnostics when needed.

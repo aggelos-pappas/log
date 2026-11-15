@@ -161,7 +161,7 @@ describe('launch budget (rule 24)', () => {
     const resets = join(root, 'launchResets.jsonl')
     launchAt(root, 'connect', '2026-10-19T09:00:00.000Z')
     launchAt(root, 'scan', '2026-10-19T09:20:00.000Z', 'otherOne')
-    recordLaunchReset('phillyOne', 'reset by matt', new Date('2026-10-19T09:10:00.000Z'), resets)
+    recordLaunchReset('phillyOne', 'reset by the owner', new Date('2026-10-19T09:10:00.000Z'), resets)
     launchAt(root, 'inspect', '2026-10-19T09:30:00.000Z')
     const roots = { runs: root, publish: join(root, 'none'), resets }
     expect(listLaunches('phillyOne', roots).map((d) => d.toISOString())).toEqual(['2026-10-19T09:30:00.000Z'])

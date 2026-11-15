@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundaryBF0FP56X97vpINhN
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `saved_items`, `counts.uncompleted_count`, `counts.uncompleted_overdue_count`, `counts.archived_count`, `counts.completed_count`, `counts.total_count`, `response_metadata.next_cursor` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:169 Ywus`, `runs/inspect/20261103T065639_mattSlack/script3.js:2977 Ywus` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:169 Ywus`, `runs/inspect/20261103T065639_slackAccount/script3.js:2977 Ywus` |
 | rea | `ev_62782e16f780de89eb58fb07151807e89dcf2a22c4a01e7a51a6e22fcfb2bc55` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 14: press Enter: 200, 289 ms
+**runs/inspect/20261103T065639_slackAccount**, step 14: press Enter: 200, 289 ms
 
 Sent:
 

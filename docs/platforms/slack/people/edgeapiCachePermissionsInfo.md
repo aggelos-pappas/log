@@ -10,7 +10,7 @@
 | Path | `edgeapi.slack.com/cache/permissions/info` |
 | Sends | — |
 | Reads | `allowed`, `allowed_per_team`, `ok` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script38.js:771 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script38.js:771 anonymous` |
 | rea | `ev_c768a8dd3a32ade2e987e251d0627a66b7d798dc007c87a92e41828826c7a8e2` |
 
 Seen 12 time(s) in 1 run(s).
@@ -25,7 +25,7 @@ Seen 12 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 282 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 282 ms
 
 Sent:
 
@@ -50,7 +50,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 184 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 184 ms
 
 Sent:
 
@@ -75,7 +75,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 9: press Control+a: 200, 101 ms
+**runs/inspect/20261103T065639_slackAccount**, step 9: press Control+a: 200, 101 ms
 
 Sent:
 

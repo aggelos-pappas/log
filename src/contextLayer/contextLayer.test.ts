@@ -7,7 +7,7 @@ import { isPrompt, playMatchText } from '../useCases/router/index'
 
 const use = (name: string, input: Record<string, unknown> = {}) => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: `mcp__log__${name}`, input }] } })
 
-describe('the router hears matt the way he types', () => {
+describe('the router hears the owner the way he types', () => {
   test('a typo within one or two edits becomes the playbook word, a short word is left alone', () => {
     const vocabulary = new Set(['message', 'retweet', 'voice', 'note', 'group'])
     expect(correctTypos('retweeet the mesage to the grouo', vocabulary).text).toBe('retweet the message to the group')

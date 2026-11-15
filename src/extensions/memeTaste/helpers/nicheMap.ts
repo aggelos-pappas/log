@@ -207,7 +207,7 @@ export function pickPerson(people: readonly NicheMapEntry[], ratings: readonly T
 }
 
 export function replyProfileSummary(profile: ReplyProfile): string {
-  if (!profile.rated) return 'what matt replies to: nothing rated yet'
+  if (!profile.rated) return 'what the owner replies to: nothing rated yet'
   const lean = profile.roles.map((r) => `${r.role} ${r.replied} replied / ${r.skipped} skipped`).join(', ')
-  return `what matt replies to (${profile.replied} replied, ${profile.skipped} skipped${lean ? `: ${lean}` : ''})`
+  return `what the owner replies to (${profile.replied} replied, ${profile.skipped} skipped${lean ? `: ${lean}` : ''})`
 }

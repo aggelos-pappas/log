@@ -4,7 +4,7 @@ title: "Marketplace publish and check"
 
 # Marketplace publish and check
 
-log-cli is read-only on Facebook except where matt asked for an action. Posting a listing is one he asked for: `log facebook publish` posts one listing through the publish machine, a dry run unless `--live`, with nothing retried once Publish is clicked. Once a listing is live, the account is checked on a schedule in the browser the host holds (`log facebook check` runs it once), reading Facebook's own answers and clicking nothing. Rules 8, 10 and 69.
+log-cli is read-only on Facebook except where the owner asked for an action. Posting a listing is one he asked for: `log facebook publish` posts one listing through the publish machine, a dry run unless `--live`, with nothing retried once Publish is clicked. Once a listing is live, the account is checked on a schedule in the browser the host holds (`log facebook check` runs it once), reading Facebook's own answers and clicking nothing. Rules 8, 10 and 69.
 
 ## Publish
 

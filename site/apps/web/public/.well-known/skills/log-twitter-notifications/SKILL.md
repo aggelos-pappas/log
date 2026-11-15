@@ -1,7 +1,7 @@
 ---
 name: log-twitter-notifications
 description: "Seeing who engaged with your posts. A log play (docs/useCases/twitter/notifications.md): After a post goes out, people like it, repost it, reply, quote it and follow you. This page pulls all of that from the account's X notifications, new and back through the history, keeps it on this machine, and gives the agent a list of who did what on which post. It sends nothing."
-when_to_use: "Use when matt asks for this, in words like: \"check my x notifications\", \"who liked my tweet\", \"who engaged with my post since <date>\", \"pull my twitter notifications\"."
+when_to_use: "Use when the owner asks for this, in words like: \"check my x notifications\", \"who liked my tweet\", \"who engaged with my post since <date>\", \"pull my twitter notifications\"."
 metadata:
   summary: "Seeing who engaged with your posts"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/notifications`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/notifications" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 After a post goes out, people like it, repost it, reply, quote it and follow you. This page pulls all of that from the account's X notifications, new and back through the history, keeps it on this machine, and gives the agent a list of who did what on which post. It sends nothing.
 

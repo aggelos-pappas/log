@@ -38,10 +38,10 @@ describe("a dm can carry a meme (rule 119)", () => {
         return { answer: { ok: true, event: "sent", loginState: "loggedIn" as const }, refreshed: null };
       };
       const plan = { parts: ["one", "two", "three"], gapSeconds: 1, why: "three lines" } as never;
-      const { interrupted } = await sendDmParts({ err: () => {}, sleep: async () => {} }, engine as never, { action: "dm", userId: "42", live: true } as TwitterEngineSpec, plan, { account: "matthewsoldit", userId: "42" });
+      const { interrupted } = await sendDmParts({ err: () => {}, sleep: async () => {} }, engine as never, { action: "dm", userId: "42", live: true } as TwitterEngineSpec, plan, { account: "xAccount", userId: "42" });
       expect(specs.map((s) => s.text)).toEqual(["one"]);
       expect(interrupted.map((m) => m.text)).toEqual(["hold on"]);
-      expect(dmInterruptedLines("matthewsoldit", plan, 1, interrupted).join("\n")).toContain("not sent: two");
+      expect(dmInterruptedLines("xAccount", plan, 1, interrupted).join("\n")).toContain("not sent: two");
     } finally {
       Object.assign(twitterSendDeps, saved);
     }

@@ -22,7 +22,7 @@ export interface VoiceSettings {
 export const SPEAK_FORMATS = ['mp3', 'wav'] as const
 export type SpeakFormat = (typeof SPEAK_FORMATS)[number]
 
-export const CLONE_TITLE = 'matt'
+export const CLONE_TITLE = 'owner'
 export const SHORTEST_CLIP = 5
 export const MAX_SPEAK_CHARACTERS = 600
 

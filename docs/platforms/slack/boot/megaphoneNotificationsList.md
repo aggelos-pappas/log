@@ -15,7 +15,7 @@ Content-Disposition: form-data; name`, `------WebKitFormBoundaryjJgVoI0ckgJPk0lY
 Content-Disposition: form-data; name`, `------WebKitFormBoundarykOLlhd5pMoLAuhUF
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `notifications.client_footer`, `notifications.client_header_right`, `notifications.message_pane`, `notifications.sidebar_footer`, `notifications.launch_modal`, `notifications.in_product_coachmark`, `notifications.in_product_glow`, `notifications.education_user_group_sections_coachmark`, `notifications.quick_reactions`, `notifications.message_actions_labels`, `notifications.welcome_space` and 28 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:169 oYBt`, `runs/inspect/20261103T065639_mattSlack/script3.js:2977 oYBt` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:169 oYBt`, `runs/inspect/20261103T065639_slackAccount/script3.js:2977 oYBt` |
 | rea | `ev_e17cfbdfab177a94900b80d1ca7b2fe660af932547648ecd8e88b642d2eb9d73` |
 
 Seen 5 time(s) in 1 run(s).
@@ -29,7 +29,7 @@ Seen 5 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 527 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 527 ms
 
 Sent:
 
@@ -99,7 +99,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 493 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 493 ms
 
 Sent:
 

@@ -1,7 +1,7 @@
 ---
 name: log-twitter-who-needs-you
 description: "Finding who needs something from you, or who matters. A log play (docs/useCases/twitter/whoNeedsYou.md): Go through the account's messages and find the people who clearly need something from the owner, or who matter: someone asking for work, a collaboration, a referral, a call; someone well placed (a fund, a big audience, a shared network). It reads what each conversation is about across its whole history, not just the last line, and says how close each one is to money. It sends nothing. What happens next with each person is the owner's call, and the reply itself is [followUps.md](followUps.md)."
-when_to_use: "Use when matt asks for this, in words like: \"look through my messages and find someone who clearly needs something off me\", \"summarise everything on my twitter, how likely is it we make money\", \"who's worth following up\"."
+when_to_use: "Use when the owner asks for this, in words like: \"look through my messages and find someone who clearly needs something off me\", \"summarise everything on my twitter, how likely is it we make money\", \"who's worth following up\"."
 metadata:
   summary: "Finding who needs something from you, or who matters"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/whoNeedsYou`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/whoNeedsYou" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Go through the account's messages and find the people who clearly need something from the owner, or who matter: someone asking for work, a collaboration, a referral, a call; someone well placed (a fund, a big audience, a shared network). It reads what each conversation is about across its whole history, not just the last line, and says how close each one is to money. It sends nothing. What happens next with each person is the owner's call, and the reply itself is [followUps.md](../log-twitter-follow-ups/SKILL.md).
 
@@ -41,3 +41,5 @@ Say: **"go on docs/useCases/twitter/whoNeedsYou.md"**, and which account. The ag
 - "(could not decrypt)" means X Chat couldn't be opened for that message, not that the person said nothing. Never say "nobody replied" from it.
 - Reads go one person at a time. Never read the whole inbox in a loop of calls, and never in the same session as a bulk send (rule 94).
 - How likely money is gets said plainly, from what was said. Nothing is inferred that the person didn't say.
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

@@ -24,7 +24,7 @@ Checked by: code and SubQ
 
 ### REQ-STATE-03: A checkpoint's first page is never pressed through
 
-A checkpoint's first page ("confirm that you're human to use your account") has no resolver: a checkpointed account is deactivated (rule 82, matt 2026-11-02, rule 118), so nothing on the page is clicked, the state is one only matt is told about, and the browser's checkpoint watch sets the account DEACTIVATED.
+A checkpoint's first page ("confirm that you're human to use your account") has no resolver: a checkpointed account is deactivated (rule 82, the owner 2026-11-02, rule 118), so nothing on the page is clicked, the state is one only the owner is told about, and the browser's checkpoint watch sets the account DEACTIVATED.
 
 Checked by: code and SubQ
 
@@ -54,7 +54,7 @@ Checked by: code and SubQ
 
 ### REQ-STATE-08: Any other checkpoint page stops the account
 
-A checkpoint page no other state names stops the account the same way: no resolver, nothing clicked, the account deactivated and matt told (rule 118). A two-step code page under a /checkpoint URL is still the sign-in's code step, which comes first in the map.
+A checkpoint page no other state names stops the account the same way: no resolver, nothing clicked, the account deactivated and the owner told (rule 118). A two-step code page under a /checkpoint URL is still the sign-in's code step, which comes first in the map.
 
 Checked by: SubQ
 
@@ -62,7 +62,7 @@ Checked by: SubQ
 
 ### REQ-STATE-09: Only what a person must clear stops an account
 
-A disabled account, a video selfie and an identity check are a person's states: they have no resolver, and the hook says to stop the account and tell matt.
+A disabled account, a video selfie and an identity check are a person's states: they have no resolver, and the hook says to stop the account and tell the owner.
 
 Checked by: code and SubQ
 

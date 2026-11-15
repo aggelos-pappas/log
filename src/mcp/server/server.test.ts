@@ -179,7 +179,7 @@ describe("log MCP server", () => {
     expect(result.isError).toBe(false);
     expect((result.structuredContent as { json: { listings: unknown[] } }).json.listings).toHaveLength(8);
     expect(textOf(result).startsWith("Browsers: none open.\n")).toBe(true);
-    expect(result.structuredContent).toMatchObject({ browsers: [], next: null, needsMatt: null });
+    expect(result.structuredContent).toMatchObject({ browsers: [], next: null, needsOwner: null });
   });
 
   test("a failing command is an error result with its stderr", async () => {

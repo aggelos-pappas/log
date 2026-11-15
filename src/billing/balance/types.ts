@@ -39,7 +39,7 @@ export interface ProviderInfo {
 export const PROVIDER_INFO: Record<Provider, ProviderInfo> = {
   subq: { label: 'SubQ', usedFor: 'the voice gate, page readings, meme taste and the spec gate', keyNames: ['SUBQ_API_KEY'], topUp: 'https://subq.ai', balanceApi: false },
   jina: { label: 'Jina', usedFor: 'the AI tells index and the voice gate ranking (embeddings and rerank)', keyNames: ['JINA_API_KEY'], topUp: 'https://jina.ai/api-dashboard', balanceApi: true },
-  inworld: { label: 'Inworld', usedFor: 'voice notes in matt\'s cloned voice (the default voice provider)', keyNames: ['INWORLD_API_KEY'], topUp: 'https://platform.inworld.ai (Billing)', balanceApi: false },
+  inworld: { label: 'Inworld', usedFor: 'voice notes in the owner\'s cloned voice (the default voice provider)', keyNames: ['INWORLD_API_KEY'], topUp: 'https://platform.inworld.ai (Billing)', balanceApi: false },
   fishAudio: { label: 'Fish Audio', usedFor: 'voice notes when --provider fishAudio', keyNames: ['FISH_API_KEY'], topUp: 'https://fish.audio/app/billing', balanceApi: true },
   assemblyAi: { label: 'AssemblyAI', usedFor: 'voice note transcripts and the listen-back check', keyNames: ['ASSEMBLYAI_API_KEY', 'ASSEMBLY_AI_KEY'], topUp: 'https://www.assemblyai.com/dashboard/account/billing', balanceApi: false },
   parallel: { label: 'Parallel', usedFor: 'web search and deep research', keyNames: ['PARALLEL_API_KEY'], topUp: 'https://platform.parallel.ai/settings?tab=billing', balanceApi: false },

@@ -112,7 +112,7 @@ describe("log slack chats, read and send", () => {
     slackDeps.profiles = () => ({});
     slackDeps.wait = async () => {};
     let n = 0;
-    const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo\nthree", "--live", "--approvedBy", "matt"], () => (++n === 2 ? { answer: { ok: false, code: "slackRefused", detail: "chat.postMessage answered ratelimited" }, refreshed: null } : { answer: { ok: true, sent: [{ ts: String(n) }] }, refreshed: null }));
+    const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo\nthree", "--live", "--approvedBy", "the owner"], () => (++n === 2 ? { answer: { ok: false, code: "slackRefused", detail: "chat.postMessage answered ratelimited" }, refreshed: null } : { answer: { ok: true, sent: [{ ts: String(n) }] }, refreshed: null }));
     expect(r.code).toBe(1);
     expect(r.calls).toEqual(["slackOne:send", "slackOne:send"]);
     expect(r.out).toContain("1 of 3 sent");
@@ -127,7 +127,7 @@ describe("log slack chats, read and send", () => {
     slackDeps.incoming = (account, chat) => (++checks < 2 ? [] : [{ platform: "slack", account, conversationId: chat, with: "sam", text: "wait what", at: "2026-11-03T19:00:20.000Z", box: "dm", seenAt: "2026-11-03T19:00:20.500Z" }]);
     try {
       let n = 0;
-      const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo\nthree", "--live", "--approvedBy", "matt"], () => ({ answer: { ok: true, sent: [{ ts: String(++n) }] }, refreshed: null }));
+      const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo\nthree", "--live", "--approvedBy", "the owner"], () => ({ answer: { ok: true, sent: [{ ts: String(++n) }] }, refreshed: null }));
       expect(r.code).toBe(1);
       expect(r.calls).toEqual(["slackOne:send", "slackOne:send"]);
       expect(r.out).toContain(">>> INTERRUPTED");
@@ -158,8 +158,8 @@ describe("the Slack watch and the d cookie", () => {
 
 describe("the hooks on Slack", () => {
   test("a hand-run log slack command is refused and pointed at its MCP tool, the cookie prompt is not", () => {
-    expect(liveLogVerdict("Bash", 'log slack send --account mattSlack --chat sam --text "yo"').deny).toContain("rule 163");
-    expect(liveLogVerdict("Bash", "bun bin/log.ts slack read --account mattSlack --chat sam").deny).toContain("rule 163");
-    expect(liveLogVerdict("Bash", "log slack cookies save --account mattSlack").deny).toBeNull();
+    expect(liveLogVerdict("Bash", 'log slack send --account slackAccount --chat sam --text "yo"').deny).toContain("rule 163");
+    expect(liveLogVerdict("Bash", "bun bin/log.ts slack read --account slackAccount --chat sam").deny).toContain("rule 163");
+    expect(liveLogVerdict("Bash", "log slack cookies save --account slackAccount").deny).toBeNull();
   });
 });

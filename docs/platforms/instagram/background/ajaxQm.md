@@ -27,7 +27,7 @@ Seen 6 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T185330_mattinferencesaver**, step 1: goto /direct/t/<id>/: 200, 195 ms
+**runs/inspect/20261103T185330_instagramAccount**, step 1: goto /direct/t/<id>/: 200, 195 ms
 
 Sent:
 
@@ -46,7 +46,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 1: goto /: 200, 198 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 1: goto /: 200, 198 ms
 
 Sent:
 
@@ -65,7 +65,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 2: snapshot: 200, 274 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 2: snapshot: 200, 274 ms
 
 Sent:
 

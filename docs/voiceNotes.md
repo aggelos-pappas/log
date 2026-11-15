@@ -4,7 +4,7 @@ title: "Voice notes"
 
 # Voice notes
 
-Every voice note matt was sent, or sent himself, on X, Discord and Slack is transcribed with [AssemblyAI](https://www.assemblyai.com/docs) and written into the conversation store. `log search`, `voice` and the SubQ matrices then see what was said instead of a bare file name.
+Every voice note the owner was sent, or sent himself, on X, Discord and Slack is transcribed with [AssemblyAI](https://www.assemblyai.com/docs) and written into the conversation store. `log search`, `voice` and the SubQ matrices then see what was said instead of a bare file name.
 
 ## What it looks like in the store
 

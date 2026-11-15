@@ -1,7 +1,7 @@
 ---
 name: log-inbox-sign-in
 description: "Signing an account in: checking it, then the live browser. A log play (docs/useCases/inbox/signIn.md): An account's session has run out, or it was never signed in. The agent checks it through the platform's own answer, and when it needs a person, it opens the account's own browser for the owner to sign in. On the owner's machine that browser is the window on their screen. From a remote runtime it is streamed into the chat as a live view, the same one the console's Connections page opens. The agent never types a password; the owner does."
-when_to_use: "Use when matt asks for this, in words like: \"sign in to my account\", \"is my x account logged in\", \"check my accounts\", \"log me back into instagram\", \"my session expired\", \"check the status of my accounts\", \"open the browser so I can sign in\""
+when_to_use: "Use when the owner asks for this, in words like: \"sign in to my account\", \"is my x account logged in\", \"check my accounts\", \"log me back into instagram\", \"my session expired\", \"check the status of my accounts\", \"open the browser so I can sign in\""
 metadata:
   summary: "Signing an account in: checking it, then the live browser"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `inbox/signIn`. Before anything else, call the log MCP tool `getGuide({ useCase: "inbox/signIn" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 An account's session has run out, or it was never signed in. The agent checks it through the platform's own answer, and when it needs a person, it opens the account's own browser for the owner to sign in. On the owner's machine that browser is the window on their screen. From a remote runtime it is streamed into the chat as a live view, the same one the console's Connections page opens. The agent never types a password; the owner does.
 

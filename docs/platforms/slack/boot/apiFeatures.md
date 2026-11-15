@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundary7tQXAPxlsKoG9o1Q
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `features.feature_builder_story_step`, `features.feature_olug_remove_required_workspace_setting`, `features.feature_file_threads`, `features.feature_broadcast_indicator`, `features.feature_channel_mgmt_message_count`, `features.feature_channel_exports`, `features.feature_allow_intra_word_formatting`, `features.feature_beacon_js_errors`, `features.feature_user_app_disable_speed_bump`, `features.feature_cea_allowlist_changes`, `features.feature_cea_admin_controls` and 13 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script36.js:1 anonymous`, `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script36.js:1 anonymous`, `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_1d54471c83d0e4beade9f26c5f556d7aa7a8fda485f4e34881297a1010f427a6` |
 
 Seen 2 time(s) in 1 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 539 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 539 ms
 
 Sent:
 
@@ -82,7 +82,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 305 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 305 ms
 
 Sent:
 

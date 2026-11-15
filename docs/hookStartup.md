@@ -1,8 +1,8 @@
 # Why tool calls are slow: process start-up, measured
 
-matt, 2026-11-08: the database is lean and fast, but tool calls are slow, because every hook and every engine call starts a new process. This page measures where that time goes, collects what GitHub says about it, and sets out what to change so tool calls meet p99.9. It builds on `docs/storageReadPath.md`.
+the owner, 2026-11-08: the database is lean and fast, but tool calls are slow, because every hook and every engine call starts a new process. This page measures where that time goes, collects what GitHub says about it, and sets out what to change so tool calls meet p99.9. It builds on `docs/storageReadPath.md`.
 
-Everything was measured on matt's machine (Windows 11, Bun 1.4.0, Python 3.12, Claude Code 2.1.305) on 2026-11-08. Processes were started from a Bun script with `Bun.spawnSync`, 21 to 31 runs each, unless the row says Git Bash.
+Everything was measured on the owner's machine (Windows 11, Bun 1.4.0, Python 3.12, Claude Code 2.1.305) on 2026-11-08. Processes were started from a Bun script with `Bun.spawnSync`, 21 to 31 runs each, unless the row says Git Bash.
 
 ## What a tool call pays today
 
@@ -105,7 +105,7 @@ Still to do:
    - Expected: saves about 750 ms per engine call.
 5. **Upgrade Bun when bun#48148 lands.** It matters for any child process started with its working folder in `%TEMP%`.
 6. **Not worth doing:** compiling hooks to an executable with bytecode (bun#21596).
-7. **matt's call, not ours:** Windows Defender exclusions for the Python and Bun installs and the repo might cut the per-file import cost. It's a security setting, so it's left to matt. Measure the import time before and after if he does it.
+7. **the owner's call, not ours:** Windows Defender exclusions for the Python and Bun installs and the repo might cut the per-file import cost. It's a security setting, so it's left to the owner. Measure the import time before and after if he does it.
 
 ## Measuring it all the time
 

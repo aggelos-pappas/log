@@ -4,13 +4,13 @@ title: "Message split and the opener"
 
 # Message split and the opener
 
-How a message to a person goes out: a draft on several lines goes out one message per line in every chat, a one-line draft is split the way matt writes in that chat, and a first message is gated as the opener as a whole before any of it is sent. Rules 90 and 98.
+How a message to a person goes out: a draft on several lines goes out one message per line in every chat, a one-line draft is split the way the owner writes in that chat, and a first message is gated as the opener as a whole before any of it is sent. Rules 90 and 98.
 
 ## Splitting
 
 ### REQ-SPLIT-01: A draft on several lines goes out one message per line
 
-A draft with more than one non-empty line is sent as one message per line, in order, whatever matt's habit in that chat.
+A draft with more than one non-empty line is sent as one message per line, in order, whatever the owner's habit in that chat.
 
 Checked by: code and SubQ
 
@@ -20,15 +20,15 @@ Only `--asOne` sends a draft as one message, and it is never on by default.
 
 Checked by: code and SubQ
 
-### REQ-SPLIT-03: A one-line draft is split the way matt writes in that chat
+### REQ-SPLIT-03: A one-line draft is split the way the owner writes in that chat
 
-A one-line draft is split into as many messages as matt usually sends in a row in that chat (at most 4), sized to his usual message length there. With no messages of his in that chat, or when he mostly sends one message there, it goes as one.
+A one-line draft is split into as many messages as the owner usually sends in a row in that chat (at most 4), sized to his usual message length there. With no messages of his in that chat, or when he mostly sends one message there, it goes as one.
 
 Checked by: code and SubQ
 
 ### REQ-SPLIT-04: The parts go out with his usual gap
 
-The parts are sent with matt's usual gap between his messages in that chat, kept between 1 and 8 seconds.
+The parts are sent with the owner's usual gap between his messages in that chat, kept between 1 and 8 seconds.
 
 Checked by: code and SubQ
 
@@ -46,7 +46,7 @@ Checked by: code and SubQ
 
 ### REQ-SPLIT-09: The line gap is the gap, and the governor doesn't stack its own on it
 
-The discord send loop passes `continuesSend: true` with every part after the first. In `run` in `python/platformKit/engine.py`, a write with `continuesSend` gets its governor from `governor_for(..., continues_send=True)`, whose `mean_gap_s` is the config's `min_gap_s`. So the governor still enforces its floor, its hourly, daily and write caps and its cooldown, but draws no second random gap on top of the line gap the send already waited. The first part, and any send that isn't a continuation, keeps the governor's full lognormal gap, counted from the account's last write (`write_gap_from_writes`, `last_mutation_ts` in `vendor/fbk/src/governor.py`), so a read or a catch-up call just before it doesn't make it wait. Every read on these engines (`read=True` in `governor_for`) is paced at `READ_MIN_GAP_S` 0.8 s and `READ_MEAN_GAP_S` 1.6 s instead of the write gap. matt, 2026-11-07: "we're not achieving p99", after a read of 4 messages took 16 s and a send waited 47 s on a gap drawn from the catch-up's last call. matt, 2026-11-07: a two-line send took 46 s, the second line 33 s after the first. Rule 161. The X dm does the same: `sendDmParts` in `src/cli/twitter/helpers/send.ts` passes `continuesSend: true` with every line after the first, and `run_locked` in `python/twitterApi/engine.py` builds its governor with `governor_for(..., continues_send=True)` for such a write, its `mean_gap_s` set to `min_gap_s` with every cap and its cooldown unchanged; rule 104's 4 to 11 s spacing between sends stays. matt, 2026-11-08: a two-line dm to @dynbuzzdigital waited 26 s in the governor before its second line.
+The discord send loop passes `continuesSend: true` with every part after the first. In `run` in `python/platformKit/engine.py`, a write with `continuesSend` gets its governor from `governor_for(..., continues_send=True)`, whose `mean_gap_s` is the config's `min_gap_s`. So the governor still enforces its floor, its hourly, daily and write caps and its cooldown, but draws no second random gap on top of the line gap the send already waited. The first part, and any send that isn't a continuation, keeps the governor's full lognormal gap, counted from the account's last write (`write_gap_from_writes`, `last_mutation_ts` in `vendor/fbk/src/governor.py`), so a read or a catch-up call just before it doesn't make it wait. Every read on these engines (`read=True` in `governor_for`) is paced at `READ_MIN_GAP_S` 0.8 s and `READ_MEAN_GAP_S` 1.6 s instead of the write gap. the owner, 2026-11-07: "we're not achieving p99", after a read of 4 messages took 16 s and a send waited 47 s on a gap drawn from the catch-up's last call. the owner, 2026-11-07: a two-line send took 46 s, the second line 33 s after the first. Rule 161. The X dm does the same: `sendDmParts` in `src/cli/twitter/helpers/send.ts` passes `continuesSend: true` with every line after the first, and `run_locked` in `python/twitterApi/engine.py` builds its governor with `governor_for(..., continues_send=True)` for such a write, its `mean_gap_s` set to `min_gap_s` with every cap and its cooldown unchanged; rule 104's 4 to 11 s spacing between sends stays. the owner, 2026-11-08: a two-line dm to @dynbuzzdigital waited 26 s in the governor before its second line.
 
 Checked by: code and SubQ
 
@@ -60,6 +60,6 @@ Checked by: code and SubQ
 
 ### REQ-SPLIT-07: A first message is gated whole as the opener
 
-The voice gate reads the whole draft, every line of it, before it is split, and fails a first message to someone matt has never talked with when it carries an ask (a pitch, a question about his tool, a call or a link to his own stuff). Rule 98.
+The voice gate reads the whole draft, every line of it, before it is split, and fails a first message to someone the owner has never talked with when it carries an ask (a pitch, a question about his tool, a call or a link to his own stuff). Rule 98.
 
 Checked by: code and SubQ

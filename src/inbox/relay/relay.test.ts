@@ -43,17 +43,17 @@ describe("one owner, every subscriber attached (rule 132)", () => {
 
   test("an owner whose heartbeat went quiet is stopped loudly so the next start becomes the one owner", () => {
     const old = new Date(Date.now() - 120_000).toISOString();
-    db().prepare("INSERT INTO owners (platform, account, pid, hostname, startedAt, heartbeat, status, port, token, subscribers) VALUES ('twitter', 'matthewsoldit', 4242, 'h', ?, ?, 'streaming', 1, 't', 0)").run(old, old);
-    expect(sessionLive(readSession("twitter", "matthewsoldit"), Date.now(), () => true)).toBe(false);
+    db().prepare("INSERT INTO owners (platform, account, pid, hostname, startedAt, heartbeat, status, port, token, subscribers) VALUES ('twitter', 'xAccount', 4242, 'h', ?, ?, 'streaming', 1, 't', 0)").run(old, old);
+    expect(sessionLive(readSession("twitter", "xAccount"), Date.now(), () => true)).toBe(false);
     const killed: number[] = [];
     const now = Date.now();
     const sameStart = () => null;
-    expect(replaceHungOwners("twitter", ["matthewsoldit"], now, () => true, (pid) => killed.push(pid), sameStart)).toEqual([]);
-    expect(replaceHungOwners("twitter", ["matthewsoldit"], now + 5_000, () => true, (pid) => killed.push(pid), sameStart)).toEqual([]);
+    expect(replaceHungOwners("twitter", ["xAccount"], now, () => true, (pid) => killed.push(pid), sameStart)).toEqual([]);
+    expect(replaceHungOwners("twitter", ["xAccount"], now + 5_000, () => true, (pid) => killed.push(pid), sameStart)).toEqual([]);
     expect(killed).toEqual([]);
-    expect(replaceHungOwners("twitter", ["matthewsoldit"], now + 10_000, () => true, (pid) => killed.push(pid), sameStart)).toEqual(["matthewsoldit"]);
+    expect(replaceHungOwners("twitter", ["xAccount"], now + 10_000, () => true, (pid) => killed.push(pid), sameStart)).toEqual(["xAccount"]);
     expect(killed).toEqual([4242]);
-    expect(takeAlerts("session").join("\n")).toContain("HUNGOWNER twitter matthewsoldit");
+    expect(takeAlerts("session").join("\n")).toContain("HUNGOWNER twitter xAccount");
   });
 
   test("a quiet owner whose pid now belongs to another process is not killed", () => {
@@ -100,6 +100,18 @@ describe("who stopped a catch-up", () => {
   test("a network failure or our own crash isn't the platform refusing", () => {
     expect(notThePlatform("DNSError: Failed to perform, curl: (6) Could not resolve host: api.x.com.")).toBe(true);
     expect(notThePlatform("xSessionHostError: name 'XCHAT_MEDIA_PART_BYTES' is not defined")).toBe(true);
+  });
+
+  test("a Python import that fails on this machine is our own error, not the platform", () => {
+    expect(notThePlatform("reading 1156984415931600977: ImportError: DLL load failed while importing win32clipboard: The specified module could not be found.")).toBe(true);
+    expect(notThePlatform("reading the inbox: ImportError: cannot import name 'ArgsKwargs' from 'pydantic_core._pydantic_core' (unknown location)")).toBe(true);
+    expect(notThePlatform("ModuleNotFoundError: No module named 'curl_cffi'")).toBe(true);
+  });
+
+  test("X Chat unlocking and then timing out is a network failure, not a locked account", () => {
+    expect(notThePlatform("xchatReadFailed: X Chat unlocked but its messages didn't open: Failed to perform, curl: (28) Operation timed out after 32090 milliseconds with 0 bytes received.")).toBe(true);
+    expect(notThePlatform("xchatLocked: X Chat didn't unlock with the saved PIN")).toBe(false);
+    expect(notThePlatform("this account is locked")).toBe(false);
   });
 
   test("the platform's own refusal stays a refusal", () => {

@@ -1,7 +1,7 @@
 ---
 name: log-inbox-show-me
 description: "Showing it as a view: generative UI in the chat. A log play (docs/useCases/inbox/showMe.md): The owner wants to see something rather than read it. The agent builds a view for that one question (stats, charts, people, a page per person) and log draws it in the chat with the numbers read from log.db. It reads only and sends nothing. A question about one person gets that person; a question about the week gets the week."
-when_to_use: "Use when matt asks for this, in words like: \"show me who has been messaging me\", \"make a report of my DMs\", \"chart of who messages me most\", \"a dashboard of my inbox\", \"tell me about this person\", \"show me the people who messaged me this week\", \"visualise my DMs\", \"graph my messages\""
+when_to_use: "Use when the owner asks for this, in words like: \"show me who has been messaging me\", \"make a report of my DMs\", \"chart of who messages me most\", \"a dashboard of my inbox\", \"tell me about this person\", \"show me the people who messaged me this week\", \"visualise my DMs\", \"graph my messages\""
 metadata:
   summary: "Showing it as a view: generative UI in the chat"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `inbox/showMe`. Before anything else, call the log MCP tool `getGuide({ useCase: "inbox/showMe" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 The owner wants to see something rather than read it. The agent builds a view for that one question (stats, charts, people, a page per person) and log draws it in the chat with the numbers read from log.db. It reads only and sends nothing. A question about one person gets that person; a question about the week gets the week.
 

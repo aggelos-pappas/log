@@ -1,6 +1,6 @@
 ## The problem
 
-Claude Code starts the log MCP server (`bun bin/logMcp.ts`, `.mcp.json`) once, when the app opens. Every change to log's code after that leaves the running server on old code, and the hook says so ("The log MCP server … is running older code than the checkout … tell matt to restart the Claude app"). Restarting Claude Code or T3 takes matt about 3 minutes, many times a day.
+Claude Code starts the log MCP server (`bun bin/logMcp.ts`, `.mcp.json`) once, when the app opens. Every change to log's code after that leaves the running server on old code, and the hook says so ("The log MCP server … is running older code than the checkout … tell the owner to restart the Claude app"). Restarting Claude Code or T3 takes the owner about 3 minutes, many times a day.
 
 ## What decides it (from research, 2026-11-07)
 

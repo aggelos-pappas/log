@@ -89,7 +89,7 @@ describe("watching a long call live over MCP (rule 26)", () => {
       const description = tools.find((t) => t.name === tool)!.description!;
       expect(description).not.toContain("Monitor");
       expect(description).toContain("`progress`");
-      expect(description).toContain("`browsers`, `next`, `needsMatt`");
+      expect(description).toContain("`browsers`, `next`, `needsOwner`");
     }
     await client.close();
   });

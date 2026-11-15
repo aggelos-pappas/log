@@ -10,7 +10,7 @@
 | Path | `slack.com/beacon/error` |
 | Sends | `description`, `version`, `version_sha`, `error_json`, `team`, `user`, `session_id`, `visitor_cookie`, `sub_app_name`, `tracing_enabled_for_session`, `frontend_build_type`, `app_context`, `app_variant`, `is_service_worker_active` |
 | Reads | — |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script125.js:37 anonymous`, `runs/inspect/20261103T065639_mattSlack/script125.js:102 setLocalePreference`, `runs/inspect/20261103T065639_mattSlack/script3.js:2878 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:200 mHed` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script125.js:37 anonymous`, `runs/inspect/20261103T065639_slackAccount/script125.js:102 setLocalePreference`, `runs/inspect/20261103T065639_slackAccount/script3.js:2878 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:200 mHed` |
 | rea | `ev_bdfab10512b46ded775d22e8102fdb497797c1e0af64f1c1366855e7e9a17cfd` |
 
 Seen 12 time(s) in 1 run(s).
@@ -27,7 +27,7 @@ Seen 12 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 0, 280 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 0, 280 ms
 
 Sent:
 
@@ -60,7 +60,7 @@ Answered:
 null
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, POST 0 /clog/track/ (0 ms): 0, 294 ms
+**runs/inspect/20261103T065639_slackAccount**, POST 0 /clog/track/ (0 ms): 0, 294 ms
 
 Sent:
 
@@ -93,7 +93,7 @@ Answered:
 null
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 0, 358 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 0, 358 ms
 
 Sent:
 

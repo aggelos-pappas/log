@@ -101,14 +101,14 @@ export function readSpoken(intended: string, words: readonly SpokenWord[], lexic
     const heard = new Set(entry.heard.map((h) => wordsOf(h).join(' ')))
     if (!pair.got) {
       const letters = pairs.slice(at + 1).filter((p) => !p.want && p.got && p.got.word.length === 1).map((p) => p.got!.word)
-      problems.push(letters.length > 1 ? `"${pair.want}" was spelled out as letters (${letters.join(' ')}), when matt says it as a ${entry.say}` : `"${pair.want}" wasn't heard at all`)
+      problems.push(letters.length > 1 ? `"${pair.want}" was spelled out as letters (${letters.join(' ')}), when the owner says it as a ${entry.say}` : `"${pair.want}" wasn't heard at all`)
       return
     }
     if (!heard.has(pair.got.word)) {
       problems.push(`"${pair.want}" was heard as "${pair.got.word}"`)
       return
     }
-    if (entry.say === 'word' && pair.got.ms > WORD_MOST_MS) problems.push(`"${pair.want}" took ${Math.round(pair.got.ms)} ms, as letters would: matt says it as one word`)
+    if (entry.say === 'word' && pair.got.ms > WORD_MOST_MS) problems.push(`"${pair.want}" took ${Math.round(pair.got.ms)} ms, as letters would: the owner says it as one word`)
   })
   const errorRate = want.length ? errors / want.length : 0
   if (errorRate > SPOKEN_MOST_ERROR) problems.push(`${Math.round(errorRate * 100)}% of the words came out differently from what was written (at most ${Math.round(SPOKEN_MOST_ERROR * 100)}%)`)

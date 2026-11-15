@@ -134,7 +134,7 @@ Asks, for a listing (`id`), what deleting it would involve, so the listing's men
 
 ## What our machine does with it
 
-Nothing reads it. It answers `should_show_txn_survey_on_delete`, which says the delete will be followed by the "Did you sell this item?" survey, the last two steps of `marketplaceListingDelete` (run by `log facebook listing remove`, only when matt asks, rule 8).
+Nothing reads it. It answers `should_show_txn_survey_on_delete`, which says the delete will be followed by the "Did you sell this item?" survey, the last two steps of `marketplaceListingDelete` (run by `log facebook listing remove`, only when the owner asks, rule 8).
 
 ## What can go wrong
 

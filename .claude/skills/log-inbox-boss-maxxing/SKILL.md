@@ -1,7 +1,7 @@
 ---
 name: log-inbox-boss-maxxing
 description: "Bossmaxxing: giving out tasks to the team. A log play (docs/useCases/inbox/bossMaxxing.md): Give out tasks to the people the owner works with, wherever they are (a Discord group, an X DM, Slack, Instagram), and keep track of every job across the team: who has what, what they owe, what's blocked. Each task goes out as a brief that says what to do, why, what done looks like and by when. A live monitor stays on, so every reply is answered as it lands, and someone being set up is walked through one step at a time until it works."
-when_to_use: "Use when matt asks for this, in words like: \"bossmaxxing\", \"give out the tasks\", \"send <person> the task in <group> and tag them\", \"tell <person> about everything I researched and give them an outline\", \"triage the jobs across the team\", \"walk <person> through setting up <tool>\", \"help <person> get set up like we did with <other person>\""
+when_to_use: "Use when the owner asks for this, in words like: \"bossmaxxing\", \"give out the tasks\", \"send <person> the task in <group> and tag them\", \"tell <person> about everything I researched and give them an outline\", \"triage the jobs across the team\", \"walk <person> through setting up <tool>\", \"help <person> get set up like we did with <other person>\""
 metadata:
   summary: "Bossmaxxing: giving out tasks to the team"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `inbox/bossMaxxing`. Before anything else, call the log MCP tool `getGuide({ useCase: "inbox/bossMaxxing" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Give out tasks to the people the owner works with, wherever they are (a Discord group, an X DM, Slack, Instagram), and keep track of every job across the team: who has what, what they owe, what's blocked. Each task goes out as a brief that says what to do, why, what done looks like and by when. A live monitor stays on, so every reply is answered as it lands, and someone being set up is walked through one step at a time until it works.
 

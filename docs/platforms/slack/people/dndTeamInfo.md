@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryUP5h90z1pj92UkUA
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `error` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script125.js:37 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:146 "2bB/"`, `runs/inspect/20261103T065639_mattSlack/script3.js:2954 "2bB/"` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script125.js:37 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:146 "2bB/"`, `runs/inspect/20261103T065639_slackAccount/script3.js:2954 "2bB/"` |
 | rea | `ev_e155976e730445a1e2ee00e54f9fbcbc57f4556e541ad2d601de0b94c62a2f4e` |
 
 Seen 2 time(s) in 1 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 367 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 367 ms
 
 Sent:
 
@@ -61,7 +61,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 304 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 304 ms
 
 Sent:
 

@@ -51,7 +51,7 @@ beforeEach(() => {
     rendered.push(`${provider}:${platform}:${text}${language ? `:${language}` : ""}`);
     return { ok: true, note: { path: join(voiceNotesDir(), `note${platform === "discord" ? ".ogg" : ".m4a"}`), platform, seconds: 2.5, waveform: "AAAA", levels: [0.5, 1], provider, model: "inworld-tts-2-flash" } };
   };
-  writeClone({ provider: "inworld", voiceId: "ws__matt", title: "matt", model: "inworld-tts-2-flash", createdAt: "2026-11-05T00:00:00.000Z", state: "ready", references: [] });
+  writeClone({ provider: "inworld", voiceId: "ws__owner", title: "the owner", model: "inworld-tts-2-flash", createdAt: "2026-11-05T00:00:00.000Z", state: "ready", references: [] });
 });
 
 afterEach(() => {
@@ -85,7 +85,7 @@ describe("log discord|instagram|slack voice (rule 142)", () => {
     const existing = join(voiceNotesDir(), "theirs.txt");
     writeFileSync(existing, "x");
     for (const text of ["C:/Users/tester/clip.ogg", "voice_123.m4a", existing]) {
-      const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", text, "--approvedBy", "matt", "--live"]);
+      const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", text, "--approvedBy", "the owner", "--live"]);
       expect(r.err + r.out).toContain("voiceNoteInvalid");
     }
     const flag = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "yo", "--audio", "clip.ogg"]);
@@ -95,32 +95,32 @@ describe("log discord|instagram|slack voice (rule 142)", () => {
 
   test("--live with no clone is refused before anything is made", async () => {
     forgetClones();
-    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "yo", "--approvedBy", "matt", "--live"]);
+    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "yo", "--approvedBy", "the owner", "--live"]);
     expect(r.err + r.out).toContain("voiceCloneMissing");
     expect(rendered).toEqual([]);
     expect(r.specs).toEqual([]);
   });
 
   test("--live makes it from the text and hands the engine its own file, waveform and duration", async () => {
-    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "yo how was the gym", "--approvedBy", "matt", "--live"], { ok: true, event: "sent", loginState: "loggedIn", messageId: "99" });
+    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "yo how was the gym", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn", messageId: "99" });
     expect(r.code).toBe(0);
     expect(rendered).toEqual(["inworld:discord:yo how was the gym"]);
-    expect(r.specs).toEqual([{ action: "voice", channel: CHANNEL, path: join(voiceNotesDir(), "note.ogg"), seconds: 2.5, waveform: "AAAA", live: true, approvedBy: "matt" }]);
-    expect(r.out).toContain("voice note in matt's voice (message 99)");
-    const ig = await run(["instagram", "voice", "--account", "instagramOne", "--with", "someone", "--text", "yo", "--approvedBy", "matt", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
+    expect(r.specs).toEqual([{ action: "voice", channel: CHANNEL, path: join(voiceNotesDir(), "note.ogg"), seconds: 2.5, waveform: "AAAA", live: true, approvedBy: "the owner" }]);
+    expect(r.out).toContain("voice note in the owner's voice (message 99)");
+    const ig = await run(["instagram", "voice", "--account", "instagramOne", "--with", "someone", "--text", "yo", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
     expect(ig.specs[0]).toMatchObject({ action: "voice", with: "someone", levels: [0.5, 1] });
-    const slack = await run(["slack", "voice", "--account", "slackOne", "--chat", "D0123456789", "--text", "yo", "--approvedBy", "matt", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
+    const slack = await run(["slack", "voice", "--account", "slackOne", "--chat", "D0123456789", "--text", "yo", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
     expect(slack.specs[0]).toMatchObject({ action: "voice", chat: "D0123456789" });
   });
 
   test("--provider picks who says it, and the clone must be on that provider", async () => {
-    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "yo", "--provider", "fishAudio", "--approvedBy", "matt", "--live"]);
+    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "yo", "--provider", "fishAudio", "--approvedBy", "the owner", "--live"]);
     expect(r.err + r.out).toContain("voiceCloneMissing");
     expect(rendered).toEqual([]);
   });
 
   test("a refusal is said with its code and nothing is retried", async () => {
-    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "yo", "--approvedBy", "matt", "--live"], { ok: false, code: "voiceNoteRefused", detail: "Discord refused it" });
+    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "yo", "--approvedBy", "the owner", "--live"], { ok: false, code: "voiceNoteRefused", detail: "Discord refused it" });
     expect(r.code).toBe(1);
     expect(r.out).toContain("voiceNoteRefused");
     expect(r.specs.length).toBe(1);
@@ -135,65 +135,65 @@ describe("log discord|instagram|slack voice (rule 142)", () => {
   });
 
   test("an X voice note goes to the engine as xchatVoice with the handle, the file, its seconds and the saved PIN (rule 151)", async () => {
-    const r = await run(["twitter", "voice", "--account", "xOne", "--with", "@HandleA1", "--text", "yo", "--approvedBy", "matt", "--live"], { ok: true, event: "sent", mode: "xchatVoice", messageId: "m1" });
+    const r = await run(["twitter", "voice", "--account", "xOne", "--with", "@HandleA1", "--text", "yo", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", mode: "xchatVoice", messageId: "m1" });
     expect(r.code).toBe(0);
     expect(rendered).toEqual(["inworld:twitter:yo"]);
     expect(r.specs).toHaveLength(1);
-    expect(r.specs[0]).toMatchObject({ action: "xchatVoice", screenName: "HandleA1", seconds: 2.5, live: true, approvedBy: "matt", chatPin: "2580" });
+    expect(r.specs[0]).toMatchObject({ action: "xchatVoice", screenName: "HandleA1", seconds: 2.5, live: true, approvedBy: "the owner", chatPin: "2580" });
     expect(String(r.specs[0]!.path)).toEndWith(".m4a");
   });
 
   test("an X voice note without a saved X Chat PIN is refused before anything is made", async () => {
-    const r = await run(["twitter", "voice", "--account", "xNoPin", "--with", "123456789", "--text", "yo", "--approvedBy", "matt", "--live"]);
+    const r = await run(["twitter", "voice", "--account", "xNoPin", "--with", "123456789", "--text", "yo", "--approvedBy", "the owner", "--live"]);
     expect(r.code).not.toBe(0);
     expect(r.out + r.err).toContain("xchatPinMissing");
     expect(r.specs.length).toBe(0);
   });
 });
 
-const MATTS_WORDS = "my phone screen is broken the phone is fine like theres two big green lines going down the side of it and that but it still works thank the lord";
+const OWNERS_WORDS = "my phone screen is broken the phone is fine like theres two big green lines going down the side of it and that but it still works thank the lord";
 
-describe("--mattsWords: matt's own dictated words (rule 144)", () => {
-  test("a dry run with --mattsWords says the gate's read is skipped and calls nothing", async () => {
-    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", MATTS_WORDS, "--mattsWords"]);
+describe("--ownersWords: the owner's own dictated words (rule 144)", () => {
+  test("a dry run with --ownersWords says the gate's read is skipped and calls nothing", async () => {
+    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", OWNERS_WORDS, "--ownersWords"]);
     expect(r.code).toBe(0);
     expect(r.out).toContain("dry run");
-    expect(r.out).toContain("--mattsWords");
+    expect(r.out).toContain("--ownersWords");
     expect(r.specs).toEqual([]);
     expect(rendered).toEqual([]);
     expect(gated).toEqual([]);
   });
 
-  test("live with --mattsWords never calls the voice gate, and sends his words", async () => {
-    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", MATTS_WORDS, "--mattsWords", "--approvedBy", "matt", "--live"], { ok: true, event: "sent", loginState: "loggedIn", messageId: "1567811929500811294" });
+  test("live with --ownersWords never calls the voice gate, and sends his words", async () => {
+    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", OWNERS_WORDS, "--ownersWords", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn", messageId: "1567811929500811294" });
     expect(r.code).toBe(0);
     expect(gated).toEqual([]);
-    expect(rendered).toEqual([`inworld:discord:${MATTS_WORDS}`]);
+    expect(rendered).toEqual([`inworld:discord:${OWNERS_WORDS}`]);
     expect(r.specs[0]).toMatchObject({ action: "voice", channel: CHANNEL });
   });
 
-  test("without --mattsWords the voice gate still runs while the note is said, and its refusal stops the send", async () => {
+  test("without --ownersWords the voice gate still runs while the note is said, and its refusal stops the send", async () => {
     gateRefuses = true;
-    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", MATTS_WORDS, "--approvedBy", "matt", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
+    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", OWNERS_WORDS, "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
     expect(r.code).toBe(1);
     expect(r.err + r.out).toContain("voiceGateFailed");
-    expect(gated).toEqual([MATTS_WORDS]);
-    expect(rendered).toEqual([`inworld:discord:${MATTS_WORDS}`]);
+    expect(gated).toEqual([OWNERS_WORDS]);
+    expect(rendered).toEqual([`inworld:discord:${OWNERS_WORDS}`]);
     expect(r.specs).toEqual([]);
   });
 
   test("--translationOf gates the original words and speaks the translation in --language (rule 148)", async () => {
     const original = "this is what im on about bro";
     const chinese = "兄弟，这就是我说的那个";
-    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", chinese, "--translationOf", original, "--language", "zh-CN", "--approvedBy", "matt", "--live"], { ok: true, event: "sent", loginState: "loggedIn", messageId: "1" });
+    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", chinese, "--translationOf", original, "--language", "zh-CN", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn", messageId: "1" });
     expect(r.code).toBe(0);
     expect(gated).toEqual([original]);
     expect(rendered).toEqual([`inworld:discord:${chinese}:zh-CN`]);
   });
 
-  test("--translationOf needs --language, can't be paired with --mattsWords, and refuses a bad code, calling nothing", async () => {
-    const base = ["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "兄弟", "--approvedBy", "matt", "--live"];
-    for (const extra of [["--translationOf", "bro"], ["--translationOf", "bro", "--language", "zh-CN", "--mattsWords"], ["--language", "chinese"]]) {
+  test("--translationOf needs --language, can't be paired with --ownersWords, and refuses a bad code, calling nothing", async () => {
+    const base = ["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "兄弟", "--approvedBy", "the owner", "--live"];
+    for (const extra of [["--translationOf", "bro"], ["--translationOf", "bro", "--language", "zh-CN", "--ownersWords"], ["--language", "chinese"]]) {
       const r = await run([...base, ...extra], { ok: true, event: "sent", loginState: "loggedIn" });
       expect(r.code).not.toBe(0);
       expect(r.err + r.out).toContain("voiceNoteInvalid");
@@ -202,8 +202,8 @@ describe("--mattsWords: matt's own dictated words (rule 144)", () => {
     expect(rendered).toEqual([]);
   });
 
-  test("AI artifacts are still refused with --mattsWords", async () => {
-    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "my phone​ screen is broken", "--mattsWords", "--approvedBy", "matt", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
+  test("AI artifacts are still refused with --ownersWords", async () => {
+    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "my phone​ screen is broken", "--ownersWords", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
     expect(r.code).toBe(1);
     expect(r.err + r.out).toContain("aiArtifacts");
     expect(gated).toEqual([]);

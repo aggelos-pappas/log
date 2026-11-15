@@ -1,6 +1,6 @@
 ---
 name: marketingPage
-description: Make a marketing page on log's site (log.listeningkit.com) for one play, the way /rea-looksmaxxing was made - the platform pages' own sections, the play's copy as data, a phone story with real clips, an agent session running the whole play, an embedded post, logo chips, a use case and an installable skill. Use when matt asks for "a new page called <x>", "a page like the platform pages for <play>", or to turn a video or a play into a page.
+description: Make a marketing page on log's site (log.listeningkit.com) for one play, the way /rea-looksmaxxing was made - the platform pages' own sections, the play's copy as data, a phone story with real clips, an agent session running the whole play, an embedded post, logo chips, a use case and an installable skill. Use when the owner asks for "a new page called <x>", "a page like the platform pages for <play>", or to turn a video or a play into a page.
 ---
 
 # marketingPage
@@ -20,7 +20,7 @@ and only the copy, clips and session are new. The worked example is
   other page stays the same.
 - **A summary of the play, never the whole script.** The page says how it
   works in three steps. A step-by-step grid of every beat was tried on
-  /rea-looksmaxxing and matt took it out: the full script lives in the video.
+  /rea-looksmaxxing and the owner took it out: the full script lives in the video.
 - **Embeds sit on the page, not in a card.** A post is shown as itself, inside
   a section (the money section's `embed`), never boxed in a separate
   decorated card.
@@ -29,7 +29,7 @@ and only the copy, clips and session are new. The worked example is
   nobody checked is written as "priced per call", never invented.
 - **Funny, deadpan.** The headline says it straight; the sticker word and the
   aside carry the joke ("Your jawline is optional").
-- Only what matt asked for (rules 39-41), and nothing about any platform's
+- Only what the owner asked for (rules 39-41), and nothing about any platform's
   rules (rule 38).
 
 ## The page, top to bottom
@@ -50,7 +50,7 @@ and only the copy, clips and session are new. The worked example is
 
 1. **Data first.** Write the play in `useCases/<page>.ts` as a `Play`
    (`platformPages.ts`'s type): name, ask, calls, outcome, three steps and its
-   `how` (moments and rows). The ask is how matt says it.
+   `how` (moments and rows). The ask is how the owner says it.
 2. **The page.** `useCases/<Page>Page.tsx` puts the sections above in order and
    sets `document.title`. Route it in `App.tsx` and add it to
    `public/sitemap.xml`.

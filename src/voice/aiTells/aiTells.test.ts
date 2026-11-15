@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { aiPhrases, buildAiIndex, chunksOf, mattsOwnPhrases, mutedRules, openAiIndex, percentile, readAiTells, ruleHits, valeRules } from './index'
+import { aiPhrases, buildAiIndex, chunksOf, ownersOwnPhrases, mutedRules, openAiIndex, percentile, readAiTells, ruleHits, valeRules } from './index'
 import type { AiEmbedder } from './index'
 
 const VOCAB = ['delve', 'tapestry', 'hope', 'helps', 'lad', 'tool', 'free', 'yo', 'filmed', 'game', 'changer', 'landscape']
@@ -13,7 +13,7 @@ function fakeEmbedder(): AiEmbedder {
 }
 
 describe('AI tells: vale-ai-tells and the other lists, read against a draft (rule 112)', () => {
-  test('vale-ai-tells loads as rules and catches AI phrasing, and nothing in a line matt wrote', () => {
+  test('vale-ai-tells loads as rules and catches AI phrasing, and nothing in a line the owner wrote', () => {
     const rules = valeRules()
     expect(rules.length).toBeGreaterThan(100)
     const hits = ruleHits('I hope this helps! Let us delve into the rich tapestry.', rules).map((h) => h.rule)
@@ -28,16 +28,16 @@ describe('AI tells: vale-ai-tells and the other lists, read against a draft (rul
     expect(new Set(phrases.map((p) => p.source.split(' ')[0]))).toEqual(expect.objectContaining({}))
   })
 
-  test('a rule matt uses himself in more than 2% of his messages is muted', () => {
+  test('a rule the owner uses himself in more than 2% of his messages is muted', () => {
     const rules = valeRules()
     const replies = Array.from({ length: 10 }, (_, i) => (i < 3 ? 'i hope this helps lad' : 'yo lad'))
     expect(mutedRules(replies, rules)).toContain('ClosingPleasantries')
   })
 
-  test('a phrase vale flags that matt says himself in 5 or more messages is his voice and never fails a draft', () => {
+  test('a phrase vale flags that the owner says himself in 5 or more messages is his voice and never fails a draft', () => {
     const rules = valeRules()
     const replies = [...Array.from({ length: 6 }, () => 'to be honest lad'), 'yo']
-    const mine = mattsOwnPhrases(replies, rules)
+    const mine = ownersOwnPhrases(replies, rules)
     expect(mine).toContain('to be honest')
     expect(ruleHits('to be honest lad', rules, new Set(mine))).toEqual([])
     expect(ruleHits('great question lad', rules, new Set(mine)).length).toBeGreaterThan(0)
@@ -48,7 +48,7 @@ describe('AI tells: vale-ai-tells and the other lists, read against a draft (rul
     expect(percentile([0.1, 0.2, 0.3, 0.4], 50)).toBe(0.2)
   })
 
-  test('the index measures matt against the AI phrases and flags a draft past his p99', async () => {
+  test('the index measures the owner against the AI phrases and flags a draft past his p99', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'aiTells'))
     const embedder = fakeEmbedder()
     const phrases = [{ text: 'delve into the rich tapestry', source: 'test' }, { text: 'game changer for the landscape', source: 'test' }]

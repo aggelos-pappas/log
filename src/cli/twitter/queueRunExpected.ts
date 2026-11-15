@@ -192,7 +192,7 @@ export const EXPECTED: Record<string, unknown> = {
       "err 2026-11-14 10:00:40 #2 @fakeFinch: context read from the .db right before sending (their messages both ways and what they did on the account's posts since the draft at 2026-11-14T10:00:00.000Z, the account caught up): nothing new",
       "err 2026-11-14 10:00:40 #2 @fakeFinch: watermark clean: no hidden characters, pasted Claude markup or AI punctuation; Claude's statistical watermark: unknown (no public detector)",
       "err 2026-11-14 10:00:40 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
-      "err 2026-11-14 10:00:40 STOPPED: REFUSED reply #2 @fakeFinch: x answered at 2026-11-14 10:00:40 UTC: governorBlocked: cooldown active for 660s. The run stopped here: #2 stays pending and nothing more was sent. Nothing goes out on @xQueue until matt starts a run again (rule 94). (1 sent in total)",
+      "err 2026-11-14 10:00:40 STOPPED: REFUSED reply #2 @fakeFinch: x answered at 2026-11-14 10:00:40 UTC: governorBlocked: cooldown active for 660s. The run stopped here: #2 stays pending and nothing more was sent. Nothing goes out on @xQueue until the owner starts a run again (rule 94). (1 sent in total)",
       "err 2026-11-14 10:00:40 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     ],
     "state": {
@@ -238,7 +238,7 @@ export const EXPECTED: Record<string, unknown> = {
         "2026-11-14 10:00:40 #2 @fakeFinch: context read from the .db right before sending (their messages both ways and what they did on the account's posts since the draft at 2026-11-14T10:00:00.000Z, the account caught up): nothing new",
         "2026-11-14 10:00:40 #2 @fakeFinch: watermark clean: no hidden characters, pasted Claude markup or AI punctuation; Claude's statistical watermark: unknown (no public detector)",
         "2026-11-14 10:00:40 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
-        "2026-11-14 10:00:40 STOPPED: REFUSED reply #2 @fakeFinch: x answered at 2026-11-14 10:00:40 UTC: governorBlocked: cooldown active for 660s. The run stopped here: #2 stays pending and nothing more was sent. Nothing goes out on @xQueue until matt starts a run again (rule 94). (1 sent in total)",
+        "2026-11-14 10:00:40 STOPPED: REFUSED reply #2 @fakeFinch: x answered at 2026-11-14 10:00:40 UTC: governorBlocked: cooldown active for 660s. The run stopped here: #2 stays pending and nothing more was sent. Nothing goes out on @xQueue until the owner starts a run again (rule 94). (1 sent in total)",
         "2026-11-14 10:00:40 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       ]
     }
@@ -255,7 +255,7 @@ export const EXPECTED: Record<string, unknown> = {
       "err 2026-11-14 10:00:10 #1 @fakeBird: watermark clean: no hidden characters, pasted Claude markup or AI punctuation; Claude's statistical watermark: unknown (no public detector)",
       "err Twenty: xQueue sessionState loggedIn (X's own answer).",
       "err 2026-11-14 10:00:10 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
-      "err 2026-11-14 10:00:10 STOPPED: REFUSED reply #1 @fakeBird: x answered at 2026-11-14 10:00:10 UTC: rateLimited: status: 429, Rate limit exceeded. The run stopped here: #1 stays pending and nothing more was sent. Nothing goes out on @xQueue until matt starts a run again (rule 94). (0 sent in total)",
+      "err 2026-11-14 10:00:10 STOPPED: REFUSED reply #1 @fakeBird: x answered at 2026-11-14 10:00:10 UTC: rateLimited: status: 429, Rate limit exceeded. The run stopped here: #1 stays pending and nothing more was sent. Nothing goes out on @xQueue until the owner starts a run again (rule 94). (0 sent in total)",
       "err 2026-11-14 10:00:10 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     ],
     "state": {
@@ -286,7 +286,7 @@ export const EXPECTED: Record<string, unknown> = {
         "2026-11-14 10:00:10 #1 @fakeBird: context read from the .db right before sending (their messages both ways and what they did on the account's posts since the draft at 2026-11-14T10:00:00.000Z, the account caught up): nothing new",
         "2026-11-14 10:00:10 #1 @fakeBird: watermark clean: no hidden characters, pasted Claude markup or AI punctuation; Claude's statistical watermark: unknown (no public detector)",
         "2026-11-14 10:00:10 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
-        "2026-11-14 10:00:10 STOPPED: REFUSED reply #1 @fakeBird: x answered at 2026-11-14 10:00:10 UTC: rateLimited: status: 429, Rate limit exceeded. The run stopped here: #1 stays pending and nothing more was sent. Nothing goes out on @xQueue until matt starts a run again (rule 94). (0 sent in total)",
+        "2026-11-14 10:00:10 STOPPED: REFUSED reply #1 @fakeBird: x answered at 2026-11-14 10:00:10 UTC: rateLimited: status: 429, Rate limit exceeded. The run stopped here: #1 stays pending and nothing more was sent. Nothing goes out on @xQueue until the owner starts a run again (rule 94). (0 sent in total)",
         "2026-11-14 10:00:10 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       ]
     }

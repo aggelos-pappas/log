@@ -16,6 +16,9 @@ const check = process.argv.includes("--check");
 const problems = [];
 const LISTING_MAX = 1500;
 const PLAY_PREFIX = "log-";
+const NOT_IN_HERMES = new Set(["facebook/marketplaceListings"]);
+const REFERRAL_LINK = /\]\(https?:\/\/[^)\s]*[?&](?:ref|aff)=[^)\s]*\)/;
+const REFERRAL_NOTE = "Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.";
 
 const toKebab = (name) => name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 const oneLine = (text) => text.replace(/\s+/g, " ").trim();
@@ -64,16 +67,17 @@ function playSkillOf(platform, page, text) {
   const lead = oneLine(text.split("\n\n").find((block, i) => i > 0 && !block.startsWith("#")) ?? "");
   const asks = oneLine(/^How the owner asks for it: (.+)$/m.exec(text)?.[1] ?? "");
   const description = `${title}. A log play (docs/useCases/${id}.md): ${lead}`.slice(0, 900);
-  const whenToUse = (asks ? `Use when matt asks for this, in words like: ${asks}` : `Use when matt asks for: ${title.toLowerCase()}.`).slice(0, LISTING_MAX - description.length);
+  const whenToUse = (asks ? `Use when the owner asks for this, in words like: ${asks}` : `Use when the owner asks for: ${title.toLowerCase()}.`).slice(0, LISTING_MAX - description.length);
   const body = [
     `# ${title}`,
     "",
     `This is the log play \`${id}\`. Before anything else, call the log MCP tool \`getGuide({ useCase: "${id}" })\`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.`,
     "",
-    "Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).",
+    "Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).",
     "",
     linksOf(text.replace(/^# .+\n/, "").replace(/<!-- stepsDiagram[\s\S]*?<!-- \/stepsDiagram -->\n?/, "").trim(), platform, page),
     "",
+    ...(REFERRAL_LINK.test(text) ? [`> ${REFERRAL_NOTE}`, ""] : []),
   ].join("\n");
   const skill = `---\nname: ${name}\ndescription: ${yamlValue(description)}\nwhen_to_use: ${yamlValue(whenToUse)}\nmetadata:\n  summary: ${yamlValue(title)}\n---\n\n${body}`;
   return { name, description, summary: title, skill };
@@ -145,6 +149,7 @@ for (const platform of platforms) {
   }
 }
 files.set("index.json", `${JSON.stringify(index, null, 2)}\n`);
+const hermesFiles = new Map([...repoFiles].filter(([path]) => !NOT_IN_HERMES.has(String(sources.get(path)).replace(/^docs\/useCases\//, "").replace(/\.md$/, ""))));
 
 const privacy = { allowlist: loadAllowlist(join(root, "scripts", "privacy", "allowlist.json")), denylist: loadDenylist() };
 const stagedOnly = process.argv.includes("--staged");
@@ -167,9 +172,9 @@ function compare(dir, label, wanted) {
 if (check) {
   compare(outDir, "site/apps/web/public/.well-known/skills", files);
   compare(repoSkillsDir, ".claude/skills", repoFiles);
-  compare(hermesSkillsDir, "hermesPlugin/skills", repoFiles);
+  compare(hermesSkillsDir, "hermesPlugin/skills", hermesFiles);
   if (existsSync(hermesSkillsDir)) {
-    const wanted = new Set([...repoFiles.keys()].map((p) => p.split(/[\\/]/)[0]));
+    const wanted = new Set([...hermesFiles.keys()].map((p) => p.split(/[\\/]/)[0]));
     for (const entry of readdirSync(hermesSkillsDir)) if (!wanted.has(entry)) problems.push(`hermesPlugin/skills/${entry} isn't a generated play skill: run bun run skills:build`);
   }
   if (existsSync(repoSkillsDir)) {
@@ -188,7 +193,7 @@ if (check) {
     writeFileSync(join(repoSkillsDir, path), text);
   }
   rmSync(hermesSkillsDir, { recursive: true, force: true });
-  for (const [path, text] of repoFiles) {
+  for (const [path, text] of hermesFiles) {
     mkdirSync(dirname(join(hermesSkillsDir, path)), { recursive: true });
     writeFileSync(join(hermesSkillsDir, path), text);
   }
@@ -199,4 +204,4 @@ if (problems.length) {
   for (const problem of problems) console.error(`  - ${problem}`);
   process.exit(1);
 }
-console.log(`${check ? "check:siteSkills OK" : "skills:build wrote"} ${index.skills.length} skill(s), ${repoFiles.size} of them use-case plays also in .claude/skills and hermesPlugin/skills: ${index.skills.map((skill) => skill.name).join(", ")}`);
+console.log(`${check ? "check:siteSkills OK" : "skills:build wrote"} ${index.skills.length} skill(s), ${repoFiles.size} of them use-case plays also in .claude/skills, ${hermesFiles.size} in hermesPlugin/skills (not ${[...NOT_IN_HERMES].join(", ")}): ${index.skills.map((skill) => skill.name).join(", ")}`);

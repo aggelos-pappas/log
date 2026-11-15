@@ -68,13 +68,13 @@ Pair a second runtime that cannot touch the real one: its own `LOG_RUNTIME_DIR` 
 Each by its number and first line. The full text is in AGENTS.md (`log://agents`); the core rules are in full in `getGuide({ topic: "logMcpInstructions" })`.
 
 - **Rule 30.** Complete the authorized task.
-- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless the owner raises them.
-- **Rule 39.** Use only the scope, options and intent the owner stated or implied.
-- **Rule 40.** Do not propose physical infrastructure unless the owner asks.
+- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless The owner raises them.
+- **Rule 39.** Use only the scope, options and intent The owner stated or implied.
+- **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
 - **Rule 47.** CLI, MCP, hooks and guides share the current instructions.
 - **Rule 134.** Existing workspace log.db is the native private record/coordination foundation.
 - **Rule 163.** Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients.
 - **Rule 164.** Use existing provider balance/status and timing diagnostics when needed.
-- **Rule 168.** Reset governor or browser-launch counts only when the owner explicitly asks, using the existing recorded reset command.
+- **Rule 168.** Reset governor or browser-launch counts only when The owner explicitly asks, using the existing recorded reset command.
 - **Rule 172.** The selected persistent cloud workspace owns private accounts, credentials/sessions, messages and execution data in existing SQLite plus protected files.

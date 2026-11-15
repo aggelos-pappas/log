@@ -44,17 +44,17 @@ export const GROUP_MEMBERS_REFETCH = 'GroupsCometMembersPageNewMembersSectionRef
 export const newMembersAnswered = (exchanges: readonly StepExchange[]): boolean =>
   exchanges.some((e) => e.name === GROUP_MEMBERS_REFETCH && answered(e.answer, 'new_members', (v) => Array.isArray((v as { edges?: unknown } | null)?.edges) && ((v as { edges: unknown[] }).edges.length > 0)))
 
-const PIN_FROM_MATT = 'matt gives the account\'s 6-digit PIN once: `log facebook messenger pin --account <a>` in his terminal (a Clack prompt, kept in Twenty, never printed). Then reopen the browser so the session has it'
+const PIN_FROM_OWNER = 'the owner gives the account\'s 6-digit PIN once: `log facebook messenger pin --account <a>` in his terminal (a Clack prompt, kept in Twenty, never printed). Then reopen the browser so the session has it'
 
 export const PAGE_STATES: readonly StateRule[] = [
   { id: 'disabled', url: /checkpoint\/disabled|account\/disabled/i, what: 'the account is disabled', resolve: 'a person: the account is lost or appealed (rule 13: keep its record)', person: true },
-  { id: 'videoSelfie', text: /video selfie|record a video|upload a video|take a video|verify with video|video verification/i, what: "Facebook's video selfie check", resolve: 'a person on camera (rules 10, 23): stop the account, tell matt', person: true },
+  { id: 'videoSelfie', text: /video selfie|record a video|upload a video|take a video|verify with video|video verification/i, what: "Facebook's video selfie check", resolve: 'a person on camera (rules 10, 23): stop the account, tell the owner', person: true },
   {
     id: 'identityVerificationHold',
     text: /confirm your identity to publish|more info needed to publish this listing|confirm your mobile number before selling on marketplace/i,
     answer: (exchanges) => exchanges.some((x) => x.name === 'MarketplaceYourListingDialogQuery' && JSON.stringify(x.answer ?? '').includes('INTEGRITY_NEEDS_VERIFICATION')),
     what: 'Facebook holds the listings until a person confirms their identity (Selling: "Confirm your identity to publish this and any future listings"; MarketplaceYourListingDialogQuery: INTEGRITY_NEEDS_VERIFICATION_VH)',
-    resolve: 'a person: only matt can confirm the identity; `log facebook check --account <a>` records identityVerificationRequired, so the account is RESTRICTED and its listings ACCOUNT_LOST',
+    resolve: 'a person: only the owner can confirm the identity; `log facebook check --account <a>` records identityVerificationRequired, so the account is RESTRICTED and its listings ACCOUNT_LOST',
     person: true
   },
   { id: 'textCaptcha', text: /enter the text from the image/i, what: 'a text captcha ("Enter the text from the image")', resolve: '`log inspect do solve --live --account <a>` (2Captcha image solver, types the answer, presses Continue), then a snapshot for the next state', person: false },
@@ -63,7 +63,7 @@ export const PAGE_STATES: readonly StateRule[] = [
     url: /\/checkpoint/i,
     text: /confirm that you.?re human to use your account/i,
     what: 'a checkpoint\'s first page ("confirm that you\'re human to use your account")',
-    resolve: 'none: a checkpointed account is deactivated (rule 82, matt 2026-11-02): the browser\'s checkpoint watch sets it DEACTIVATED, reason checkpointed, its listings lost; the browser closes and nothing is pressed. Tell matt',
+    resolve: 'none: a checkpointed account is deactivated (rule 82, the owner 2026-11-02): the browser\'s checkpoint watch sets it DEACTIVATED, reason checkpointed, its listings lost; the browser closes and nothing is pressed. Tell the owner',
     person: true
   },
   { id: 'automatedBehaviour', text: /suspect automated behaviou?r|we suspect automated|نشتبه في وجود سلوك تلقائي/i, what: '"We suspect automated behaviour"', resolve: 'dismiss it (rule 23): the Dismiss/Continue control, then go on', person: false },
@@ -86,7 +86,7 @@ export const PAGE_STATES: readonly StateRule[] = [
     text: /create a pin to access your chats/i,
     what: 'Messenger\'s "Create a PIN to access your chats on any device": the inbox stays behind it (Bethlehem, warm-up 20261022T092119 steps 25-27)',
     resolve: 'run the recorded flow with the PIN from Twenty: `log flow run messengerPinCreate --account <a> --live` (Create PIN, the PIN, the PIN again; Bethlehem 20261022T100521), then a snapshot: the inbox shows Chats',
-    withoutPin: PIN_FROM_MATT,
+    withoutPin: PIN_FROM_OWNER,
     person: false
   },
   {
@@ -94,7 +94,7 @@ export const PAGE_STATES: readonly StateRule[] = [
     text: /enter your pin/i,
     what: 'Messenger asks for the account\'s PIN to open its chats here (a PIN set before, met on another browser or device). Mapped 2026-10-22 before its first recording',
     resolve: 'type the PIN from Twenty: `log inspect do pin --live --account <a>`, then `log inspect do snapshot --account <a>`; if it stays, press its Continue/Next by its ref. Not recorded yet: keep each step (rule 29) and make the flow `messengerPinEnter` with `log flow fromInspect`',
-    withoutPin: PIN_FROM_MATT,
+    withoutPin: PIN_FROM_OWNER,
     person: false
   },
   {
@@ -111,7 +111,7 @@ export const PAGE_STATES: readonly StateRule[] = [
     text: /limit reached|not able to create new listings/i,
     answer: mayNotPost,
     what: 'Marketplace\'s create page answers that this account may not post now: its HTML says `marketplace_new_seller_can_post_item: false` and the page shows "Limit reached" (Bethlehem, inspect 20261023T045453 step 01; the same field was true on 2026-10-22, runs 20261022T105341 and 20261022T110738)',
-    resolve: 'nothing to press: no listing can be created from this account now, so it publishes nothing and matt decides. Read it again on a later day from the create page\'s answer (`marketplace_new_seller_can_post_item`)',
+    resolve: 'nothing to press: no listing can be created from this account now, so it publishes nothing and the owner decides. Read it again on a later day from the create page\'s answer (`marketplace_new_seller_can_post_item`)',
     person: true
   },
   {
@@ -158,7 +158,7 @@ export const PAGE_STATES: readonly StateRule[] = [
   },
   { id: 'twoStepCode', url: /two_step_verification|two_factor|\/checkpoint/i, text: /enter (the )?(6-digit )?code|authentication code|login code/i, what: 'two-step: the code field', resolve: '`log inspect do code --live --account <a>` (the TOTP from Twenty, rule 21)', person: false },
   { id: 'loginForm', url: /\/login|login\.php/i, what: 'the login form', resolve: '`log inspect do signIn --live --account <a>` (rule 21), or `log facebook connect --account <a>`', person: false },
-  { id: 'checkpoint', url: /\/checkpoint/i, what: 'a Facebook checkpoint', resolve: 'none: a checkpointed account is deactivated (rule 82, matt 2026-11-02): the browser checkpoint watch sets it DEACTIVATED, reason checkpointed, its listings lost; the browser closes and nothing is pressed. Tell matt', person: true }
+  { id: 'checkpoint', url: /\/checkpoint/i, what: 'a Facebook checkpoint', resolve: 'none: a checkpointed account is deactivated (rule 82, the owner 2026-11-02): the browser checkpoint watch sets it DEACTIVATED, reason checkpointed, its listings lost; the browser closes and nothing is pressed. Tell the owner', person: true }
 ]
 
 export function platformOfUrl(url: string): Platform | null {

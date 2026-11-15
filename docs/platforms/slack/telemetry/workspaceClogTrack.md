@@ -43,7 +43,7 @@ Seen 15 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 5: saveState: 200, 280 ms
+**runs/inspect/20261103T065639_slackAccount**, step 5: saveState: 200, 280 ms
 
 Sent:
 
@@ -59,7 +59,7 @@ Answered:
 "R0lGODlhAQABAAAAACwAAAAAAQABAAACAkwBADs="
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 7: pageText: 200, 293 ms
+**runs/inspect/20261103T065639_slackAccount**, step 7: pageText: 200, 293 ms
 
 Sent:
 
@@ -75,7 +75,7 @@ Answered:
 "R0lGODlhAQABAAAAACwAAAAAAQABAAACAkwBADs="
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 9: press Control+a: 200, 471 ms
+**runs/inspect/20261103T065639_slackAccount**, step 9: press Control+a: 200, 471 ms
 
 Sent:
 

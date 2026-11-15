@@ -27,7 +27,7 @@ const evidence = [
 ];
 
 const situation = `SITUATION
-log is an MCP server (Bun, stdio) that Claude Code starts once per session from .mcp.json. When log's code changes, the running server keeps the old code until matt restarts Claude Code or T3, which costs him about 3 minutes, many times a day. He wants code changes to reach the next tool call without restarting the client. He runs Claude Code 2.1.305 on Windows inside T3 Code.
+log is an MCP server (Bun, stdio) that Claude Code starts once per session from .mcp.json. When log's code changes, the running server keeps the old code until the owner restarts Claude Code or T3, which costs him about 3 minutes, many times a day. He wants code changes to reach the next tool call without restarting the client. He runs Claude Code 2.1.305 on Windows inside T3 Code.
 Judge only from the evidence below.
 
 OPTIONS

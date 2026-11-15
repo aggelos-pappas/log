@@ -154,11 +154,11 @@ describe("the doc", () => {
   test("a new doc asks for its reasoning; a rebuild keeps what was written", () => {
     const fresh = renderOperationDoc(operation, null);
     expect(fresh.split(TO_WRITE)).toHaveLength(4);
-    const written = fresh.replaceAll(`${TO_WRITE} `, "Written by matt. ");
+    const written = fresh.replaceAll(`${TO_WRITE} `, "Written by the owner. ");
     const rebuilt = renderOperationDoc({ ...operation, reaEvidenceId: "ev_2" }, written);
     expect(rebuilt).toContain("`ev_2`");
     expect(rebuilt).not.toContain("`ev_1`");
-    expect(rebuilt).toContain("Written by matt.");
+    expect(rebuilt).toContain("Written by the owner.");
     expect(rebuilt).not.toContain(TO_WRITE);
   });
 });

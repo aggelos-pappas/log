@@ -104,7 +104,7 @@ def run(socket: FakeSocket) -> browserGateway.BrowserGateway:
 
 
 def test_the_gateway_signs_on_as_the_browser_and_hands_over_messages() -> None:
-    message = {"id": "9", "channel_id": "5", "content": "yo", "author": {"id": "7", "username": "matt", "global_name": "Matt"}, "referenced_message": {"id": "8", "author": {"id": "1"}}}
+    message = {"id": "9", "channel_id": "5", "content": "yo", "author": {"id": "7", "username": "owner", "global_name": "Owner"}, "referenced_message": {"id": "8", "author": {"id": "1"}}}
     socket = FakeSocket([json.dumps({"op": 10, "d": {"heartbeat_interval": 41250}}).encode()] + stream({"op": 0, "s": 1, "t": "READY", "d": {"user": {"id": "1"}, "guilds": [{"id": "3", "properties": {"name": "srv"}, "channels": []}]}}, {"op": 0, "s": 2, "t": "MESSAGE_CREATE", "d": message}))
     gateway = run(socket)
     started = time.time()

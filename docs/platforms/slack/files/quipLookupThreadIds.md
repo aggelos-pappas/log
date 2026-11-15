@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundaryETN5zi8blIBcrSNK
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `lookup.<fileId:1>` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:169 Gx6E`, `runs/inspect/20261103T065639_mattSlack/script3.js:2977 Gx6E` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:169 Gx6E`, `runs/inspect/20261103T065639_slackAccount/script3.js:2977 Gx6E` |
 | rea | `ev_ded8f36da996e21cd24d54a17b9c52bd574b65bfa6a382b17d43adf174e8944f` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 14: press Enter: 200, 315 ms
+**runs/inspect/20261103T065639_slackAccount**, step 14: press Enter: 200, 315 ms
 
 Sent:
 

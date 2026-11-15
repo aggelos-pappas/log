@@ -49,7 +49,7 @@ describe('one conversation per person', () => {
   })
 
   test('search indexes the pair as one conversation, so one hit', () => {
-    const base = { platform: 'twitter', account: 'matthewsoldit', with: ['tester_t'], box: 'inbox' }
+    const base = { platform: 'twitter', account: 'xAccount', with: ['tester_t'], box: 'inbox' }
     const said = { id: 'a', at: '2026-10-26T08:00:00Z', from: 'tester_t', fromMe: false, text: 'affiliate program referral fee' }
     const merged = onePerPerson([
       { ...base, conversationId: '1-2', messages: [said] },
@@ -64,21 +64,21 @@ describe('one conversation per person', () => {
     const now = new Date('2026-10-27T00:00:00Z')
     const reply = { with: 'handle_b1', lastAt: '2026-10-26T20:39:56Z', lastFromMe: false, lastText: 'news processing' }
     const seen = { '1-2': '2026-10-26T00:00:00Z' }
-    const first = newMessages('twitter', 'matthewsoldit', [{ ...reply, conversationId: '1:2', box: 'xchat' }, { ...reply, conversationId: '1-2', box: 'inbox' }], seen, now)
+    const first = newMessages('twitter', 'xAccount', [{ ...reply, conversationId: '1:2', box: 'xchat' }, { ...reply, conversationId: '1-2', box: 'inbox' }], seen, now)
     expect(first.messages).toHaveLength(1)
-    const again = newMessages('twitter', 'matthewsoldit', [{ ...reply, conversationId: '1-2', box: 'inbox' }], first.seen, now)
+    const again = newMessages('twitter', 'xAccount', [{ ...reply, conversationId: '1-2', box: 'inbox' }], first.seen, now)
     expect(again.messages).toHaveLength(0)
   })
 })
 
-describe('a reaction is a follow-up, not a reply waiting on matt', () => {
+describe('a reaction is a follow-up, not a reply waiting on the owner', () => {
   test('their reaction as the last event means they opened it: a follow-up, never waiting on you', () => {
     const reacted = { lastFromMe: false, lastText: '(reacted ❤️)' }
     expect(reactedOnly(reacted)).toBe(true)
     expect(waitingOnYou(reacted)).toBe(false)
   })
 
-  test('their words are waiting on you, and matt sending last is neither', () => {
+  test('their words are waiting on you, and the owner sending last is neither', () => {
     expect(waitingOnYou({ lastFromMe: false, lastText: 'Sweet will do!' })).toBe(true)
     expect(reactedOnly({ lastFromMe: false, lastText: 'they (reacted 🔥) to it lol' })).toBe(false)
     expect(reactedOnly({ lastFromMe: true, lastText: '(reacted 😂)' })).toBe(false)
@@ -87,7 +87,7 @@ describe('a reaction is a follow-up, not a reply waiting on matt', () => {
 })
 
 describe('an opened message with no reply is a follow-up too', () => {
-  test('matt sent last and their read receipt is past it: opened, a follow-up', () => {
+  test('the owner sent last and their read receipt is past it: opened, a follow-up', () => {
     const opened = { lastFromMe: true, lastText: 'saw this', openedByThem: true }
     expect(openedNoReply(opened)).toBe(true)
     expect(followUpDue(opened)).toBe(true)

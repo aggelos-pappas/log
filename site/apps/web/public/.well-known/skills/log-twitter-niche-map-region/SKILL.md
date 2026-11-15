@@ -1,7 +1,7 @@
 ---
 name: log-twitter-niche-map-region
 description: "A new region of the niche map, then outbound to it. A log play (docs/useCases/twitter/nicheMapRegion.md): The niche map is the owner's network ([networkMaxing.md](networkMaxing.md)). A region is one world added to it, for example the YC 2026 batches (the founders, their companies and the partners around them). The region's people go through the same niche map pipeline as everyone else: three months of who talks to them, everyone scored, bands set, and each person's closeness to the owner (ring 1 engaged with him, ring 2 talks to his followers, ring 3 follows him, ring 4 new). The outbound then goes to ring 2 first, the warmest people who haven't talked to him yet."
-when_to_use: "Use when matt asks for this, in words like: \"for getting accepted into YC ... make a new area of the niche map through the systems we've already made ... the YC world and the funds' world, based on the 26 batch\", \"the YC stuff in and around the boat.dev people and the people involved in GTM tools\", \"pull all of my new followers ... set a budget of like 60$\", \"start with the 43\", \"not just treg but the actual index that we did already\"."
+when_to_use: "Use when the owner asks for this, in words like: \"for getting accepted into YC ... make a new area of the niche map through the systems we've already made ... the YC world and the funds' world, based on the 26 batch\", \"the YC stuff in and around the boat.dev people and the people involved in GTM tools\", \"pull all of my new followers ... set a budget of like 60$\", \"start with the 43\", \"not just treg but the actual index that we did already\"."
 metadata:
   summary: "A new region of the niche map, then outbound to it"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/nicheMapRegion`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/nicheMapRegion" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 The niche map is the owner's network ([networkMaxing.md](../log-twitter-network-maxing/SKILL.md)). A region is one world added to it, for example the YC 2026 batches (the founders, their companies and the partners around them). The region's people go through the same niche map pipeline as everyone else: three months of who talks to them, everyone scored, bands set, and each person's closeness to the owner (ring 1 engaged with him, ring 2 talks to his followers, ring 3 follows him, ring 4 new). The outbound then goes to ring 2 first, the warmest people who haven't talked to him yet.
 
@@ -43,3 +43,5 @@ Say: **"go on docs/useCases/twitter/nicheMapRegion.md for <the world>, <the area
 - **The owner names the batches, the areas and the money.** Never add a world, a batch or a source he didn't say (rule 39).
 - **The page reads YC slowly,** about one page every 1.5 s, and keeps every page it read in `data/yc/pages`, so a rerun costs nothing.
 - **A dropped write is never retried through.** A 429 or a soft block stops the sends, and the next action waits for the owner (rule 94).
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

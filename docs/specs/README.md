@@ -35,7 +35,7 @@ Every log command has one shape: a command that acts on one platform starts with
 
 ## [MCP server](./mcpServer.md)
 
-The log MCP server is how every agent works with log-cli: it carries matt's rules into the agent's context, serves the guides and the use cases, names on every tool the rules, guide and use cases it falls under, and the hooks keep agents on it. Active rules 47, 55, 73, 158, 163 and 176 govern current guidance. Retired citations are consolidated into active rules; historical snapshots never restore superseded scope.
+The log MCP server is how every agent works with log-cli: it carries the owner's rules into the agent's context, serves the guides and the use cases, names on every tool the rules, guide and use cases it falls under, and the hooks keep agents on it. Active rules 47, 55, 73, 158, 163 and 176 govern current guidance. Retired citations are consolidated into active rules; historical snapshots never restore superseded scope.
 
 - **REQ-MCP-01** The instructions carry the core rules, rule one first
 - **REQ-MCP-02** The instructions send the agent to the full guide first
@@ -48,7 +48,7 @@ The log MCP server is how every agent works with log-cli: it carries matt's rule
 - **REQ-MCP-09** The use-case review asks SubQ whether the use cases are stale, when run
 - **REQ-MCP-10** A log command run by hand from a shell is refused
 - **REQ-MCP-11** The terminal-only prompts are let through
-- **REQ-MCP-12** A stale MCP server is said to matt
+- **REQ-MCP-12** A stale MCP server is said to the owner
 - **REQ-MCP-13** Uncommitted local changes are said loudly
 - **REQ-MCP-14** They are said at session start and whenever they change
 - **REQ-MCP-18** Any command is found and run with logSearch, logGet and logCall
@@ -141,8 +141,8 @@ The agent hooks put log-cli's state in front of the agent (Claude Code or Codex)
 - **REQ-HOOKS-15** Only the session that claims a chat acts on it
 - **REQ-HOOKS-16** The inbox is one database, read from cursors
 - **REQ-HOOKS-17** An account behind is caught up by its owner, and sends wait for it
-- **REQ-HOOKS-18** A refused catch-up resumes only on matt's word
-- **REQ-HOOKS-19** Every event is named before matt sees it
+- **REQ-HOOKS-18** A refused catch-up resumes only on the owner's word
+- **REQ-HOOKS-19** Every event is named before the owner sees it
 - **REQ-HOOKS-20** A Discord, Slack or Instagram call names its chat, never its id
 - **REQ-HOOKS-21** Claude Code's hooks reach log through the warm service, and only the refusals start a process
 - **REQ-HOOKS-22** The hook service moves itself onto new code
@@ -266,7 +266,7 @@ Before an account's browser loads anything, it goes through one gate: a headed l
 
 ## [Launch budget](./launchBudget.md)
 
-Before a run opens an account's browser, `prepareRun` checks when it may open: only inside the account's local waking hours, at most 8 launches a local day and at least 10 minutes apart. `--bypass` skips the hours only, `--now` skips the gap only, and only matt resets the count, with `log facebook account resetOpens`. Rules 18, 20, 24, 30 and 37.
+Before a run opens an account's browser, `prepareRun` checks when it may open: only inside the account's local waking hours, at most 8 launches a local day and at least 10 minutes apart. `--bypass` skips the hours only, `--now` skips the gap only, and only the owner resets the count, with `log facebook account resetOpens`. Rules 18, 20, 24, 30 and 37.
 
 - **REQ-LAUNCH-01** No run outside the account's waking hours
 - **REQ-LAUNCH-02** The account's own hours replace the default
@@ -403,7 +403,7 @@ How log-cli talks to X: directly, with no proxy, through one curl_cffi client pe
 
 ## [Write budgets](./writeBudgets.md)
 
-How many times an account may write on its platform in a day, how matt can push one call past the account's governor, and how a refusal stops an account instead of being pushed through. Every direct-API engine (X, Discord, LinkedIn, Reddit and any new platform) runs each call through the account's own governor. Rules 86, 91, 94, 96, 101 and 102.
+How many times an account may write on its platform in a day, how the owner can push one call past the account's governor, and how a refusal stops an account instead of being pushed through. Every direct-API engine (X, Discord, LinkedIn, Reddit and any new platform) runs each call through the account's own governor. Rules 86, 91, 94, 96, 101 and 102.
 
 - **REQ-BUDGET-01** Each platform has its own daily write budget
 - **REQ-BUDGET-02** Every engine run carries the platform's budget
@@ -459,15 +459,15 @@ Before anything goes to a person on X, log reads that person's full context thro
 
 ## [Voice gate](./voiceGate.md)
 
-Every message log sends as matt passes the voice gate first (`log voice`, MCP `voice`). The gate asks SubQ whether matt typed it himself, reading his own writing across all his conversations. Rules 90, 98, 111 and 112.
+Every message log sends as the owner passes the voice gate first (`log voice`, MCP `voice`). The gate asks SubQ whether the owner typed it himself, reading his own writing across all his conversations. Rules 90, 98, 111 and 112.
 
-- **REQ-VOICE-01** Every draft is read against matt's writing across all his conversations
+- **REQ-VOICE-01** Every draft is read against the owner's writing across all his conversations
 - **REQ-VOICE-02** A chat with the person adds that chat's evidence
-- **REQ-VOICE-03** Phrases matt never says fail the draft
+- **REQ-VOICE-03** Phrases the owner never says fail the draft
 - **REQ-VOICE-04** A first message is only the opener
 - **REQ-VOICE-05** A draft with AI artifacts fails
 - **REQ-VOICE-06** A draft passes only when every answer passes
-- **REQ-VOICE-07** A draft written in word pairs matt has never written fails
+- **REQ-VOICE-07** A draft written in word pairs the owner has never written fails
 - **REQ-VOICE-20** A draft written on several lines is graded as the messages it sends
 - **REQ-VOICE-21** A subject he has never written about never counts against his voice
 - **REQ-VOICE-22** Outside X, his X guide is scoped to his vocabulary
@@ -475,9 +475,9 @@ Every message log sends as matt passes the voice gate first (`log voice`, MCP `v
 - **REQ-VOICE-09** The gate runs inside every send and refuses a failing draft
 - **REQ-VOICE-10** The chat's context is ranked for the moment and given in full
 - **REQ-VOICE-11** Only embeddings are stored, each once, in the .db
-- **REQ-VOICE-12** The gate inside a send reads matt's real replies in that chat
+- **REQ-VOICE-12** The gate inside a send reads the owner's real replies in that chat
 - **REQ-VOICE-13** A voice note is graded as spoken and must build on the conversation
-- **REQ-VOICE-14** matt can send one dm over the gate's refusal
+- **REQ-VOICE-14** the owner can send one dm over the gate's refusal
 - **REQ-VOICE-19** A task is gated as a brief, and its files go with it
 - **REQ-VOICE-18** A draft that just passed is not sent to SubQ again
 - **REQ-VOICE-17** A refused draft says where to look before it is rewritten
@@ -486,7 +486,7 @@ Every message log sends as matt passes the voice gate first (`log voice`, MCP `v
 
 ## [AI tells and watermark](./aiTells.md)
 
-Every X and Discord send's copy is read for what AI chat interfaces leave in text (the watermark reading), and every draft the voice gate reads is also read for AI phrasing against curated lists and matt's own writing. Rules 111 and 112.
+Every X and Discord send's copy is read for what AI chat interfaces leave in text (the watermark reading), and every draft the voice gate reads is also read for AI phrasing against curated lists and the owner's own writing. Rules 111 and 112.
 
 - **REQ-AITELLS-01** The reading is clean, stylistic or artifacts
 - **REQ-AITELLS-02** planSend refuses copy with artifacts
@@ -495,20 +495,20 @@ Every X and Discord send's copy is read for what AI chat interfaces leave in tex
 - **REQ-AITELLS-04** vale-ai-tells rules run on the draft
 - **REQ-AITELLS-05** The index embeds every literal phrase with Jina
 - **REQ-AITELLS-06** Phrases quoted on X are kept only when close to a curated one
-- **REQ-AITELLS-07** matt's own p50 and p99 are measured
-- **REQ-AITELLS-08** Vale rules matt uses himself are muted
-- **REQ-AITELLS-09** Phrases matt says himself never fail a draft
+- **REQ-AITELLS-07** the owner's own p50 and p99 are measured
+- **REQ-AITELLS-08** Vale rules the owner uses himself are muted
+- **REQ-AITELLS-09** Phrases the owner says himself never fail a draft
 - **REQ-AITELLS-10** Each chunk's closest AI phrase is found and reranked
-- **REQ-AITELLS-11** A draft closer to AI phrasing than matt's p99 fails
+- **REQ-AITELLS-11** A draft closer to AI phrasing than the owner's p99 fails
 - **REQ-AITELLS-12** The voice gate keeps the index current and fails on AI tells
 
 ## [Message split and the opener](./messageSplit.md)
 
-How a message to a person goes out: a draft on several lines goes out one message per line in every chat, a one-line draft is split the way matt writes in that chat, and a first message is gated as the opener as a whole before any of it is sent. Rules 90 and 98.
+How a message to a person goes out: a draft on several lines goes out one message per line in every chat, a one-line draft is split the way the owner writes in that chat, and a first message is gated as the opener as a whole before any of it is sent. Rules 90 and 98.
 
 - **REQ-SPLIT-01** A draft on several lines goes out one message per line
 - **REQ-SPLIT-02** --asOne sends it as one message
-- **REQ-SPLIT-03** A one-line draft is split the way matt writes in that chat
+- **REQ-SPLIT-03** A one-line draft is split the way the owner writes in that chat
 - **REQ-SPLIT-04** The parts go out with his usual gap
 - **REQ-SPLIT-05** Every chat splits the same way
 - **REQ-SPLIT-06** A part that is not sent stops the rest
@@ -518,7 +518,7 @@ How a message to a person goes out: a draft on several lines goes out one messag
 
 ## [X Chat](./xChat.md)
 
-X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it only through its own engine and vendored twikit, with the account's PIN from Twenty, uses it to keep cold dms away from people matt already talks to, and treats a reaction or a read receipt as a follow-up to send. Rules 87, 88 and 100.
+X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it only through its own engine and vendored twikit, with the account's PIN from Twenty, uses it to keep cold dms away from people the owner already talks to, and treats a reaction or a read receipt as a follow-up to send. Rules 87, 88 and 100.
 
 - **REQ-XCHAT-01** A dm queue check reads the account's X Chat inbox
 - **REQ-XCHAT-02** A pending dm to someone already in a conversation is dropped
@@ -528,7 +528,7 @@ X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it onl
 - **REQ-XCHAT-06** The PIN is saved only from a masked prompt, after it unlocks
 - **REQ-XCHAT-07** A person's old DM thread and X Chat thread are one conversation
 - **REQ-XCHAT-08** A reaction as their last event is a follow-up
-- **REQ-XCHAT-09** A read receipt past matt's last message is a follow-up
+- **REQ-XCHAT-09** A read receipt past the owner's last message is a follow-up
 - **REQ-XCHAT-10** --waiting lists the follow-ups apart
 - **REQ-XCHAT-11** twikit sends in X Chat the way X Chat's own app does
 - **REQ-XCHAT-12** A dm can go to an X Chat group
@@ -544,7 +544,7 @@ While an account's X Chat watch is open, its one session keeps X's own notificat
 - **REQ-XLIVE-04** A refused read stops the poll
 - **REQ-XLIVE-05** The X live hook puts new events in front of the agent
 - **REQ-XLIVE-06** Each Claude session reads from its own cursor
-- **REQ-XLIVE-07** A refused read is said to matt
+- **REQ-XLIVE-07** A refused read is said to the owner
 
 ## [X notifications](./xNotifications.md)
 
@@ -636,7 +636,7 @@ log's first extension: Memelord's meme templates, clips and stickers, searched f
 
 ## [Voice notes](./voiceNotes.md)
 
-Every voice note on X and Discord, sent to matt or by him, is transcribed with AssemblyAI and written into the conversation store, so search, the voice gate and SubQ see what was said. Rules 26, 41, 88, 89, 94, 105, 106 and 126.
+Every voice note on X and Discord, sent to the owner or by him, is transcribed with AssemblyAI and written into the conversation store, so search, the voice gate and SubQ see what was said. Rules 26, 41, 88, 89, 94, 105, 106 and 126.
 
 - **REQ-TRANSCRIBE-01** Upload, ask, poll until done
 - **REQ-TRANSCRIBE-02** No key means no call
@@ -687,12 +687,12 @@ An X account's own lists, shown, made and added to through its one session on ve
 
 ## [Voice clone and voice notes](./voiceClone.md)
 
-matt's voice is cloned once per voice provider from the voice notes he sent himself, and a voice note in that voice goes out only when he asks for one, as the platform's own voice note, made from text. The voice layer is provider-agnostic: Inworld and Fish Audio are providers behind one interface. Every voice note is shaped like his own voice notes and listened back before it goes. Rules 142 to 151.
+the owner's voice is cloned once per voice provider from the voice notes he sent himself, and a voice note in that voice goes out only when he asks for one, as the platform's own voice note, made from text. The voice layer is provider-agnostic: Inworld and Fish Audio are providers behind one interface. Every voice note is shaped like his own voice notes and listened back before it goes. Rules 142 to 151.
 
 
 ## [Provider balances](./balance.md)
 
-Every paid provider log calls, with what is left, so a failing voice note, gate or search is seen as money and not a bug. Reading a balance spends nothing, and topping up is matt's. Rules 41, 73, 94 and 164.
+Every paid provider log calls, with what is left, so a failing voice note, gate or search is seen as money and not a bug. Reading a balance spends nothing, and topping up is the owner's. Rules 41, 73, 94 and 164.
 
 - **REQ-BALANCE-01** One command shows every paid provider
 - **REQ-BALANCE-02** A balance API is read where the provider has one
@@ -721,15 +721,15 @@ Every call is timed, never guessed: one timing layer across Bun and Python gives
 
 ## [treg](./treg.md)
 
-treg's catalog reached from log as an extension: endpoints found by the job, read, and called with the key held server-side, with nothing priced run unless matt approved the spend. Rule 166.
+treg's catalog reached from log as an extension: endpoints found by the job, read, and called with the key held server-side, with nothing priced run unless the owner approved the spend. Rule 166.
 
 - **REQ-TREG-01** Search, get and call run the treg CLI, never a shell
-- **REQ-TREG-02** Nothing priced runs unless matt approved the spend
+- **REQ-TREG-02** Nothing priced runs unless the owner approved the spend
 - **REQ-TREG-03** A call's answer comes back trimmed
 
 ## [Governor counts](./governor.md)
 
-Every platform account's governor counts what it sent today (requests, writes, this hour's requests) and refuses once the day is spent. Its count is read with one command and put back to 0 with another, only when matt says so, and every reset is checked and kept in log.db. Rules 73, 94 and 168.
+Every platform account's governor counts what it sent today (requests, writes, this hour's requests) and refuses once the day is spent. Its count is read with one command and put back to 0 with another, only when the owner says so, and every reset is checked and kept in log.db. Rules 73, 94 and 168.
 
 - **REQ-GOVERNOR-01** One command shows every account's count
 - **REQ-GOVERNOR-02** A reset puts the count back to 0 and proves it held
@@ -777,7 +777,7 @@ Where a Marketplace listing is and where an account sells from is typed as a pla
 
 ## [Marketplace publish and check](./marketplacePublish.md)
 
-log-cli is read-only on Facebook except where matt asked for an action. Posting a listing is one he asked for: `log facebook publish` posts one listing through the publish machine, a dry run unless `--live`, with nothing retried once Publish is clicked. Once a listing is live, the account is checked on a schedule in the browser the host holds (`log facebook check` runs it once), reading Facebook's own answers and clicking nothing. Rules 8, 10 and 69.
+log-cli is read-only on Facebook except where the owner asked for an action. Posting a listing is one he asked for: `log facebook publish` posts one listing through the publish machine, a dry run unless `--live`, with nothing retried once Publish is clicked. Once a listing is live, the account is checked on a schedule in the browser the host holds (`log facebook check` runs it once), reading Facebook's own answers and clicking nothing. Rules 8, 10 and 69.
 
 - **REQ-LISTING-16** Publish is a dry run unless --live
 - **REQ-LISTING-17** Nothing is retried once Publish is clicked

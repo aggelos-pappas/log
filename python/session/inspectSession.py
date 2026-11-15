@@ -456,7 +456,7 @@ class Inspector:
     async def enter_pin(self) -> None:
         pin = str(self.secrets.get("messengerPin") or "")
         if not re.fullmatch(r"\d{6}", pin):
-            raise RuntimeError("no 6-digit messengerPin in Twenty: matt sets it with log facebook messenger pin --account <a>")
+            raise RuntimeError("no 6-digit messengerPin in Twenty: the owner sets it with log facebook messenger pin --account <a>")
         field = await self.first_visible('input[autocomplete="one-time-code"], input[inputmode="numeric"], input[type="password"], input[type="tel"], input[type="text"]')
         if field is not None:
             await self.mouse.click(field, circle=False)

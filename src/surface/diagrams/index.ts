@@ -80,7 +80,7 @@ export function surfaceDiagram(entries: readonly CommandEntry[], hooks: readonly
   const lines = [
     "flowchart LR",
     `  agent["Agent (Claude Code, Codex)"]`,
-    `  matt["matt, in a terminal"]`,
+    `  owner["the owner, in a terminal"]`,
     `  shell["Bash / PowerShell / Monitor"]`,
     `  mcp["MCP server log: ${tools} command tools + saved flows"]`,
     `  bin["bin/log.ts"]`,
@@ -92,7 +92,7 @@ export function surfaceDiagram(entries: readonly CommandEntry[], hooks: readonly
     `  api["The platform's internal API: its answer decides (rule 73)"]`,
     `  twenty[("Twenty: socialAccounts.sessionState, refreshed cookies")]`,
     "  agent --> shell",
-    "  matt --> bin",
+    "  owner --> bin",
     "  shell --> bin",
     "  agent -->|mcp__log__tool| mcp",
     "  bin --> runCli",
@@ -119,13 +119,13 @@ export function hooksDiagram(hooks: readonly AgentHook[] = AGENT_HOOKS): Diagram
   const note = (event: string) => by(event).map((h) => `  Note over Hook: ${label(h.why)}`);
   const lines = [
     "sequenceDiagram",
-    "  participant matt",
+    "  participant owner as the owner",
     "  participant Agent",
     "  participant Hook as log-cli hooks",
     "  participant Tool as Bash / PowerShell / Monitor / mcp__log__*",
     "  Agent->>Hook: SessionStart",
     ...note("SessionStart"),
-    "  matt->>Agent: a prompt",
+    "  owner->>Agent: a prompt",
     "  Agent->>Hook: UserPromptSubmit",
     ...note("UserPromptSubmit"),
     "  loop each tool call",
@@ -145,7 +145,7 @@ export function hooksDiagram(hooks: readonly AgentHook[] = AGENT_HOOKS): Diagram
     "  alt a browser sits on a state log-cli clears",
     "    Hook-->>Agent: decision block, with the state's resolver",
     "  else nothing to clear, or a person's state",
-    "    Agent-->>matt: the answer",
+    "    Agent-->>owner: the answer",
     "  end",
   ];
   return { name: "hooks", title: "The hooks in one turn", about: "Written from `AGENT_HOOKS` (`src/agentHooks/registry`); the same list gives Claude Code's `.claude/settings.json` and Codex's `.codex/hooks.json`.", mermaid: lines.join("\n") };
@@ -158,7 +158,7 @@ export function resolverStep(resolve: string): string {
 }
 
 export function pageStatesDiagram(): Diagram {
-  const lines = ["flowchart LR", `  page["A step lands on a page"]`, `  person["Stop the account, tell matt"]`];
+  const lines = ["flowchart LR", `  page["A step lands on a page"]`, `  person["Stop the account, tell the owner"]`];
   for (const s of PAGE_STATES) {
     lines.push(`  ${s.id}["${label(s.id)}: ${label(s.what)}"]`);
     lines.push(`  page --> ${s.id}`);

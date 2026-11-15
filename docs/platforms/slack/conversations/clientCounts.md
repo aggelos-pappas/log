@@ -13,7 +13,7 @@ Content-Disposition: form-data; name`, `------WebKitFormBoundaryHqp8uZ6lB21nDPhx
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryJIvuj0Foq8HPDwjY
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `threads.has_unreads`, `threads.mention_count`, `threads.vip_count`, `threads.mention_count_by_channel`, `threads.unread_count_by_channel`, `channels`, `mpims`, `ims`, `file_channels.quip`, `file_channels.list`, `activity_v2.at_user` and 28 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script29.js:146 bvjQ`, `runs/inspect/20261103T065639_mattSlack/script3.js:2954 bvjQ`, `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script29.js:146 bvjQ`, `runs/inspect/20261103T065639_slackAccount/script3.js:2954 bvjQ`, `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_a86fe74a91fad953021f06e73c8039c1c3b2b4c52523fba8841e4164ca4de847` |
 
 Seen 3 time(s) in 1 run(s).
@@ -28,7 +28,7 @@ Seen 3 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 560 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 560 ms
 
 Sent:
 
@@ -204,7 +204,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 316 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 316 ms
 
 Sent:
 
@@ -380,7 +380,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 7: pageText: 200, 339 ms
+**runs/inspect/20261103T065639_slackAccount**, step 7: pageText: 200, 339 ms
 
 Sent:
 

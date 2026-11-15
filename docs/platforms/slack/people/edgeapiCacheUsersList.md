@@ -10,7 +10,7 @@
 | Path | `edgeapi.slack.com/cache/users/list` |
 | Sends | — |
 | Reads | `results`, `ok` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script38.js:771 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script38.js:771 anonymous` |
 | rea | `ev_c768a8dd3a32ade2e987e251d0627a66b7d798dc007c87a92e41828826c7a8e2` |
 
 Seen 2 time(s) in 1 run(s).
@@ -23,7 +23,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 133 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 133 ms
 
 Sent:
 

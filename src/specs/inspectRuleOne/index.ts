@@ -116,7 +116,7 @@ export const inspectRuleOne = {
     'REQ-INSPECT-16': noul('Does the inspect finding subcommand refuse a finding without both --point and --explain, and take the evidence from evidenceOf on the reading of the step plus any --evidence given?'),
     'REQ-INSPECT-17': noul('When the goal status is reached and some findings have no fix, does goalLine return blocks true asking for the fix of each unfixed finding?'),
     'REQ-INSPECT-18': noul('Does addGoalEvent append each finding or fix to GOAL_EVENTS_FILE and rewrite GOAL_FINDINGS_FILE with peeMarkdown, and does inspect goal print peeMarkdown?'),
-    'REQ-INSPECT-19': noul('When the personNeeded answer of the latest reading is at least PERSON_AT, does goalLine return blocks false with a line saying to stop the account and tell matt?'),
+    'REQ-INSPECT-19': noul('When the personNeeded answer of the latest reading is at least PERSON_AT, does goalLine return blocks false with a line saying to stop the account and tell the owner?'),
     'REQ-INSPECT-20': noul('On the Stop event, when stopHookActive is true and memory.stopBlocked equals the current marks, does hookReply return no output so the turn can end?'),
     unspecifiedBehavior: noul('Does the inspect reading or the goal hook decide a step, reach a goal or release the turn by a route the specification does not describe, such as deciding on a timer or the page loading alone?'),
   },

@@ -29,7 +29,7 @@ describe("X's live client state in the agent context, per Claude session (rule 1
     push(reply)
     const text = xLiveContext(newLiveEvents(root, `one${account}`))!
     expect(text).toContain('@sam: 2026-11-01T20:14:00Z they replied to your post ("yc deadline is tomorrow"): "this is sick"')
-    expect(text).toContain('tell matt now, first thing in your reply')
+    expect(text).toContain('tell the owner now, first thing in your reply')
     expect(text).toContain('answer when it fits')
     push(badge(0).replace('20:12:16', '20:15:00'))
     expect(xLiveContext(newLiveEvents(root, `one${account}`))).toBeNull()

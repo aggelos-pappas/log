@@ -13,7 +13,7 @@ Content-Disposition: form-data; name`, `------WebKitFormBoundaryJLcFTxbDgbQ8a32v
 Content-Disposition: form-data; name`, `_gl`, `------WebKitFormBoundaryFnfL35CR3Se9OCk5
 Content-Disposition: form-data; name` |
 | Reads | — |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script125.js:37 anonymous`, `runs/inspect/20261103T065639_mattSlack/script125.js:102 setLocalePreference`, `runs/inspect/20261103T065639_mattSlack/script3.js:2878 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:200 mHed` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script125.js:37 anonymous`, `runs/inspect/20261103T065639_slackAccount/script125.js:102 setLocalePreference`, `runs/inspect/20261103T065639_slackAccount/script3.js:2878 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:200 mHed` |
 | rea | `ev_bdfab10512b46ded775d22e8102fdb497797c1e0af64f1c1366855e7e9a17cfd` |
 
 Seen 3 time(s) in 2 run(s).
@@ -28,7 +28,7 @@ Seen 3 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, scroll: +414px in 10 wheel steps, 375 ms: 200, 285 ms
+**runs/inspect/20261103T065639_slackAccount**, scroll: +414px in 10 wheel steps, 375 ms: 200, 285 ms
 
 Sent:
 
@@ -44,7 +44,7 @@ Answered:
 "R0lGODlhAQABAAAAACwAAAAAAQABAAACAkwBADs="
 ```
 
-**runs/inspect/20261103T065218_mattSlack**, step 3: click e536: 200, 355 ms
+**runs/inspect/20261103T065218_slackAccount**, step 3: click e536: 200, 355 ms
 
 Sent:
 
@@ -61,7 +61,7 @@ Answered:
 null
 ```
 
-**runs/inspect/20261103T065218_mattSlack**, step 4: saveState: 200, 384 ms
+**runs/inspect/20261103T065218_slackAccount**, step 4: saveState: 200, 384 ms
 
 Sent:
 

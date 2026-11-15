@@ -89,9 +89,9 @@ describe("logGet", () => {
     expect(answer.text).toContain("rules: rules ");
   });
 
-  test("a terminal-only command says matt runs it in a terminal", () => {
+  test("a terminal-only command says the owner runs it in a terminal", () => {
     const answer = getAnswer(entries, { id: "twitter.cookies.save" });
-    expect(answer.text).toContain("run by matt in a terminal");
+    expect(answer.text).toContain("run by the owner in a terminal");
     expect(answer.text).toContain("log twitter cookies save --account yourAccount");
   });
 

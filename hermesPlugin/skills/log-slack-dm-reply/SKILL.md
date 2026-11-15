@@ -1,7 +1,7 @@
 ---
 name: log-slack-dm-reply
 description: "Reading and answering a Slack DM. A log play (docs/useCases/slack/dmReply.md): Read what someone wrote to the account on Slack and answer it in the owner's voice, on the account's own session, with no browser."
-when_to_use: "Use when matt asks for this, in words like: \"read the messages with <someone> on slack\", \"reply to <someone> on slack\", \"what did <someone> say in <workspace>\""
+when_to_use: "Use when the owner asks for this, in words like: \"read the messages with <someone> on slack\", \"reply to <someone> on slack\", \"what did <someone> say in <workspace>\""
 metadata:
   summary: "Reading and answering a Slack DM"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `slack/dmReply`. Before anything else, call the log MCP tool `getGuide({ useCase: "slack/dmReply" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Read what someone wrote to the account on Slack and answer it in the owner's voice, on the account's own session, with no browser.
 

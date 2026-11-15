@@ -72,7 +72,7 @@ export const pageStates = {
     'REQ-STATE-06': noul('Is the loginForm resolver in RESOLVE_CALLS a live signIn step and the twoStepCode resolver a live code step?'),
     'REQ-STATE-07': noul('Is the automatedBehaviour resolver in RESOLVE_CALLS a live click on the ref, found with refOf, of its Dismiss or Continue control?'),
     'REQ-STATE-08': noul('Is the last PAGE_STATES entry, checkpoint, matched on any /checkpoint URL with person set to true and a null resolver in RESOLVE_CALLS, while twoStepCode, which also matches a /checkpoint URL, comes before it in the list?'),
-    'REQ-STATE-09': noul('Are the disabled, videoSelfie and identityVerificationHold entries in PAGE_STATES marked person true, does resolveCallOf return null for a person state, and does findingOf give such a state a line saying to stop the account and tell matt with resolvable false?'),
+    'REQ-STATE-09': noul('Are the disabled, videoSelfie and identityVerificationHold entries in PAGE_STATES marked person true, does resolveCallOf return null for a person state, and does findingOf give such a state a line saying to stop the account and tell the owner with resolvable false?'),
     'REQ-STATE-10': noul('For a state with needsNothing set, such as groupMembersList, does resolveCallOf return null and does findingOf return resolvable false?'),
     'REQ-STATE-11': noul('Does AGENT_HOOKS register the PAGE_STATE script on SessionStart, on UserPromptSubmit, on PostToolUse with TOOL_MATCHER (Bash, PowerShell, Monitor and every mcp__log__ tool), and on Stop?'),
     'REQ-STATE-12': noul('On SessionStart and UserPromptSubmit, does hookReply include the line of every finding, including findings of kind clear?'),

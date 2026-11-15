@@ -317,9 +317,9 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 - **Rule 26.** Stream progress while work runs, one meaningful line per stage, with the run log retained.
 - **Rule 30.** Complete the authorized task.
 - **Rule 35.** Browser work uses one account browser through its active day, with actions as tabs/steps; close only for a logged lifecycle reason.
-- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless the owner raises them.
-- **Rule 39.** Use only the scope, options and intent the owner stated or implied.
-- **Rule 40.** Do not propose physical infrastructure unless the owner asks.
+- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless The owner raises them.
+- **Rule 39.** Use only the scope, options and intent The owner stated or implied.
+- **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
 - **Rule 66.** Prune recordings only through the existing evidence-aware routine after analysis and documentation requirements are satisfied.
 - **Rule 73.** For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence.

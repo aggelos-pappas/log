@@ -38,8 +38,8 @@ The hooks and the MCP read the open browsers the same way:
 `readOpenBrowsers` and `browserView` (`src/browser/inspect/helpers/browserStates.ts`).
 So a client without hooks (a claude.ai connector) gets the same thing in
 every tool result: `browsers` (each open browser's step, page and known state),
-`next` (the call that resolves it: make it, do not stop), `needsMatt`
-(what only matt clears) and `progress` (every streamed line, timed), with the
+`next` (the call that resolves it: make it, do not stop), `needsOwner`
+(what only the owner clears) and `progress` (every streamed line, timed), with the
 first lines of its text saying the same. `log browsers` (tool `browsers`) reads
 them on demand.
 
@@ -91,4 +91,4 @@ On Claude Code, every hook that only adds context (prompt, after a tool, stop) i
 - **Is it up?** `curl -s http://127.0.0.1:47317/health`. If it isn't, the http hooks add nothing (they never block). The next session start, or the next shell call's `liveLogs` hook, starts it (`scripts/contextLayer/service.ts`, its log at `~/.logCli/contextLayer/service.log`).
 - **How fast is it, and what did it decide?** One line per hook run in `~/.logCli/contextLayer/timings.jsonl`: event, provider, ms, chars and outcome.
 - **Did a router change make it better or worse?** Run `bun scripts/useCases/benchRouter.ts`, add `--fit` to write the threshold, and compare plays caught, wrong fires and p95 with the last bench run.
-- **A new play or a new way matt asks** goes into the page's "How the owner asks for it", or as a labelled prompt in `~/.logCli/contextLayer/labelledPrompts.json`, kept on matt's machine and never committed because the repo is public. The service reloads by itself.
+- **A new play or a new way the owner asks** goes into the page's "How the owner asks for it", or as a labelled prompt in `~/.logCli/contextLayer/labelledPrompts.json`, kept on the owner's machine and never committed because the repo is public. The service reloads by itself.

@@ -23,7 +23,7 @@ function callAt(text: string, at: number): string {
 }
 
 describe("background processes never open a console window", () => {
-  test("every process log starts passes windowsHide, so nothing pops up on matt's screen", () => {
+  test("every process log starts passes windowsHide, so nothing pops up on the owner's screen", () => {
     const open: string[] = [];
     for (const file of codeFiles(join(root, "src"))) {
       const text = readFileSync(file, "utf8");

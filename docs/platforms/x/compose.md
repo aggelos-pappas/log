@@ -21,7 +21,7 @@ What X's own signed-in web client does when someone replies, quotes or posts, re
 | The inbox poll | the inbox, newest first | every 4 to 8 minutes |
 | `twitterDms`, `twitterNotifications`, `voice` | reads, 0.8 to 2.5 s apart (rule 110) | when an agent reads someone's context |
 
-On 2026-11-02 matthewsoldit had 30 session starts and 67 chat socket reconnects in an evening, nearly all from the watcher being restarted on code edits, then X answered 226 on a reply to someone the account had never talked to.
+On 2026-11-02 xAccount had 30 session starts and 67 chat socket reconnects in an evening, nearly all from the watcher being restarted on code edits, then X answered 226 on a reply to someone the account had never talked to.
 
 ## X's composer (read 2026-11-02 from `main.1e03d4dd38cf6a4fa.js`)
 

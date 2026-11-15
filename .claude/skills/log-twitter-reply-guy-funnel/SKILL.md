@@ -1,7 +1,7 @@
 ---
 name: log-twitter-reply-guy-funnel
 description: "Reply guy, then the DM, then the ask. A log play (docs/useCases/twitter/replyGuyFunnel.md): The owner's way of getting new people to do something for him (share a post, try a tool): like a run of their posts, reply to them in public, then open a DM on their own post, build on what they say, and only then the ask. In his words: \"you're meant to reply guy them first and foremost. You go on, like a tweet, send a meme to the tweet, and then we're gonna forward the tweet to them as an opener, talking and building on top of it, and then you wait for the reply, and then you say something that's in context that then build on top of the conversation that then funnel them into doing an action.\""
-when_to_use: "Use when matt asks for this, in words like: \"reply guy them first and foremost\", \"send a meme to the tweet then forward the tweet to them as an opener\", \"message the people who are new to following me\", \"get it in front of them\", \"funnel them into doing an action\"."
+when_to_use: "Use when the owner asks for this, in words like: \"reply guy them first and foremost\", \"send a meme to the tweet then forward the tweet to them as an opener\", \"message the people who are new to following me\", \"get it in front of them\", \"funnel them into doing an action\"."
 metadata:
   summary: "Reply guy, then the DM, then the ask"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/replyGuyFunnel`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/replyGuyFunnel" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 The owner's way of getting new people to do something for him (share a post, try a tool): like a run of their posts, reply to them in public, then open a DM on their own post, build on what they say, and only then the ask. In his words: "you're meant to reply guy them first and foremost. You go on, like a tweet, send a meme to the tweet, and then we're gonna forward the tweet to them as an opener, talking and building on top of it, and then you wait for the reply, and then you say something that's in context that then build on top of the conversation that then funnel them into doing an action."
 
@@ -84,3 +84,5 @@ stateDiagram-v2
 - **No two messages alike.** A reply, opener or ask that repeats another one the account sent in the last 24 hours is refused with `sameAsSent` (rule 157). A template with a different first line is still a template.
 - **One play at a time.** Loading this page makes it the session's play, and every log tool's answer says which step it is and what comes next.
 - Every send counts against the account's writes for the day, and X's own daily limit (344) can come at around 40; spread the people over days. Any refusal stops the run (rule 94).
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

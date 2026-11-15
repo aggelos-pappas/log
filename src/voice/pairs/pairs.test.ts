@@ -6,7 +6,7 @@ import { hashEmbedder } from '../../search/conversations/index'
 import type { Conversation } from '../../search/conversations/index'
 import { buildVoiceIndex, nearestPairs, openVoiceIndex, pairsOf, offProfile, profileFor, profilesOf, splitPlan, startRatesOf } from './index'
 
-const msg = (id: string, fromMe: boolean, text: string, from = fromMe ? 'matt' : 'them') => ({ id, at: `2026-10-28T08:${id.padStart(2, '0')}:00Z`, from, fromMe, text })
+const msg = (id: string, fromMe: boolean, text: string, from = fromMe ? 'the owner' : 'them') => ({ id, at: `2026-10-28T08:${id.padStart(2, '0')}:00Z`, from, fromMe, text })
 
 const LOG_GROUP: Conversation = {
   platform: 'discord',
@@ -44,8 +44,8 @@ beforeEach(() => {
 })
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
-describe('matt\'s voice, per person and per chat', () => {
-  test('a pair is what they said just before, with matt\'s reply, his back-to-back messages joined', () => {
+describe('the owner\'s voice, per person and per chat', () => {
+  test('a pair is what they said just before, with the owner\'s reply, his back-to-back messages joined', () => {
     const pairs = pairsOf([LOG_GROUP])
     expect(pairs).toHaveLength(2)
     expect(pairs[0]).toMatchObject({ chat: 'log', kind: 'group', saidBy: 'Kira', reply: 'thats the next bit lad it pulls the whole history with them\nso the stalking is done for you' })

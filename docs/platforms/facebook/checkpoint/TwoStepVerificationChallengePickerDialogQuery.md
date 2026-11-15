@@ -150,7 +150,7 @@ When the user takes "Try another way" on a two-step prompt, Facebook fetches the
 
 ## What our machine does with it
 
-Our sign-in (host, flow and inspect) reads the answer to confirm the authentication app (TOTP) is among the methods (`authAppOffered`) before choosing it; the state is `twoStepMethodPicker`. If TOTP is absent it raises `twoStepNoAuthApp` and stops for matt, since log-cli holds a TOTP secret, not a passkey.
+Our sign-in (host, flow and inspect) reads the answer to confirm the authentication app (TOTP) is among the methods (`authAppOffered`) before choosing it; the state is `twoStepMethodPicker`. If TOTP is absent it raises `twoStepNoAuthApp` and stops for the owner, since log-cli holds a TOTP secret, not a passkey.
 
 ## What can go wrong
 

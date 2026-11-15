@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryFMxXWFxA3yAyd2Hd
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `is_allowed`, `error` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script3.js:2895 statement`, `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script3.js:2895 statement`, `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_edb2eb822fc0e6f3b5ece5b0154145b1fb85ac6e241192c0f8691b7d79cb39b7` |
 
 Seen 2 time(s) in 1 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 14: press Enter: 200, 327 ms
+**runs/inspect/20261103T065639_slackAccount**, step 14: press Enter: 200, 327 ms
 
 Sent:
 
@@ -59,7 +59,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 17: press Backspace: 200, 343 ms
+**runs/inspect/20261103T065639_slackAccount**, step 17: press Backspace: 200, 343 ms
 
 Sent:
 

@@ -43,7 +43,7 @@ function usageOf(shape: ReactShape): string {
   return [
     `Usage: log ${shape.platform} react --account <accountName> --${shape.chat.name} <${shape.chat.name}> --${shape.message.name} <id> --emoji <emoji>${shape.extra.map((f) => ` [--${f.name} <${f.name}>]`).join("")} [--remove] [--approvedBy <who>] [--live] [--json]`,
     `Reacts to one message with an emoji, on the direct-API engine (${shape.engine}, no browser), or takes the account's own reaction off with --remove. ${shape.emoji}`,
-    `Without --live it is a dry run and nothing is contacted. --live reacts, only when matt asked, and needs --approvedBy (rule 8). The chat is claimed first, as for a send, and released once it is done (rule 133). The platform's own answer decides (rule 73), the governor counts it as a write, and a refusal stops with nothing retried (rule 94).`,
+    `Without --live it is a dry run and nothing is contacted. --live reacts, only when the owner asked, and needs --approvedBy (rule 8). The chat is claimed first, as for a send, and released once it is done (rule 133). The platform's own answer decides (rule 73), the governor counts it as a write, and a refusal stops with nothing retried (rule 94).`,
   ].join("\n");
 }
 

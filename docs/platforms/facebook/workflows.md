@@ -79,7 +79,7 @@ Live set: `LIVE_ACTIONS` in `src/browser/inspect/helpers/parseInspectAction.ts`;
 ### Marketplace
 - **Publish:** the live run ended `noListingId`; the id capture needs fixing from that run's recording (`src/facebook/marketplace/publish/machine.ts`). Not on the driver (`OPENER_ACTIONS`, `src/browser/run`), and still a launch per action (rule 35, [#42](https://github.com/matthewdonsemail-lab/log/issues/42)); the recorded flow `marketplaceListingPublish` publishes from the open browser instead (rule 68).
 - **Scan, status, watch, campaign:** Camoufox-only, no runs in `~/.logCli`; no tab-in-host versions.
-- **Delete:** `log facebook listing remove <id> --live` (flow `marketplaceListingDelete`). **Edit, mark sold, renew:** none, by design until matt asks (rule 8).
+- **Delete:** `log facebook listing remove <id> --live` (flow `marketplaceListingDelete`). **Edit, mark sold, renew:** none, by design until the owner asks (rule 8).
 - **Browse listings:** only `openAny` in stages; no reader.
 
 ### Messages

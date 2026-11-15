@@ -84,7 +84,8 @@ describe("guides and names", () => {
   });
 
   test("the owner's name is counted per file, never inside an identifier", () => {
-    expect(ownerNameIn([{ path: "a", text: "Ask Matt, then matt's call" }, { path: "b", text: "needsMatt and mattsWords" }])).toEqual(["a (2)"]);
+    expect(ownerNameIn([{ path: "a", text: "Ask Sam, then sam's call" }, { path: "b", text: "needsSam and samsWords" }], ["sam"])).toEqual(["a (2)"]);
+    expect(ownerNameIn([{ path: "a", text: "Ask Sam" }])).toEqual([]);
   });
 
   test("check:platformNeutral fails on any of its numbers above zero, naming why", () => {
@@ -192,7 +193,8 @@ const input = (overrides: Partial<ScorecardInput> = {}): ScorecardInput => ({
   useCases: [],
   guides: { xSending: "x".repeat(60_000), discord: "d".repeat(10) },
   serverInstructions: "Load the guide.",
-  hostedInstructions: "Ask the owner, not Matt.",
+  hostedInstructions: "Ask the owner, not Sam.",
+  ownerNames: ["sam"],
   hookTypes: 'export type HookHost = "claudeCode" | "codex";',
   ruleIds: new Set([8]),
   useCaseFiles: [],

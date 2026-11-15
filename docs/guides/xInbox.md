@@ -60,7 +60,7 @@ replies show up the second they land and no inbox read ever hits X's 429.
    <a> --with <handle>` (the old DM thread and X Chat are one conversation,
    rule 89).
 3. **Draft from the owner's guide, with the owner's facts only.** Read
-   `C:/Users/tester/.buzz/GUIDES/MATT_WRITING_STYLE.md` before drafting. Lowercase,
+   `C:/Users/tester/.buzz/GUIDES/OWNER_WRITING_STYLE.md` before drafting. Lowercase,
    no commas or full stops, the owner's words, almost never end on a question, no
    praise-then-pitch, nothing the owner didn't say (rules 39-41).
 4. **Gate every draft:** `log voice --to <handle> --text "<draft>"
@@ -73,13 +73,13 @@ replies show up the second they land and no inbox read ever hits X's 429.
 
 ```bash
 ## who wrote: the hook says it, pushed by X. To watch by hand:
-log twitter chat watch --account matthewsoldit --seconds 600
+log twitter chat watch --account xAccount --seconds 600
 ## read them
-log twitter dms --account matthewsoldit --with <handle>
+log twitter dms --account xAccount --with <handle>
 ## gate the draft
 log voice --to <handle> --text "<draft>" --context "<what they said>"
 ## send, once the owner says
-log twitter dm --account matthewsoldit --userId <id> --text "<draft>" --approvedBy <owner> --live
+log twitter dm --account xAccount --userId <id> --text "<draft>" --approvedBy <owner> --live
 ```
 
 ### When it goes wrong
@@ -99,9 +99,9 @@ log twitter dm --account matthewsoldit --userId <id> --text "<draft>" --approved
 Each by its number and first line. The full text is in AGENTS.md (`log://agents`); the core rules are in full in `getGuide({ topic: "logMcpInstructions" })`.
 
 - **Rule 30.** Complete the authorized task.
-- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless the owner raises them.
-- **Rule 39.** Use only the scope, options and intent the owner stated or implied.
-- **Rule 40.** Do not propose physical infrastructure unless the owner asks.
+- **Rule 38.** Do not introduce discussions of Meta/Facebook rules, terms, eligibility or account ownership unless The owner raises them.
+- **Rule 39.** Use only the scope, options and intent The owner stated or implied.
+- **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
 - **Rule 73.** For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence.
 - **Rule 89.** Find conversational context by scoped search and existing private records.

@@ -13,7 +13,7 @@ Content-Disposition: form-data; name`, `------WebKitFormBoundaryp6cSJxAhR2FMhpZV
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryW4eEfk2QZRt46dFF
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `prefs.can_huddle`, `prefs.can_upload_files`, `prefs.enable_at_channel`, `prefs.space_icon`, `prefs.channel_canvas_summary`, `prefs.space_is_primary`, `prefs.space_file_id`, `prefs.space_open_by_default`, `prefs.who_can_post`, `prefs.can_thread`, `prefs.canvas_share_status` and 3 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_ece15874928453e39fcf14aae0aedbc39be3079aa0487749047b787f47d63b8f` |
 
 Seen 3 time(s) in 1 run(s).
@@ -28,7 +28,7 @@ Seen 3 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 305 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 305 ms
 
 Sent:
 
@@ -82,7 +82,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:2>: 200, 291 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:2>: 200, 291 ms
 
 Sent:
 
@@ -138,7 +138,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 16: press Control+a: 200, 332 ms
+**runs/inspect/20261103T065639_slackAccount**, step 16: press Control+a: 200, 332 ms
 
 Sent:
 

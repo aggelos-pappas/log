@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { batchSameness, samenessOf } from './client'
 
-const LINK = 'https://x.com/matthewsoldit/status/2118876082409725989'
+const LINK = 'https://x.com/xAccount/status/2118876082409725989'
 
 describe('samenessOf', () => {
   test('the share-asks sent on 2026-11-07 with only the opener changed are refused', () => {

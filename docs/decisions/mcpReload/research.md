@@ -11,7 +11,7 @@
   - #62844 (headless stream-json, May 2026): not honoured.
   - #77314 (2.1.198, Windows, HTTP, Jul 2026): new tools didn't show in ToolSearch, and /mcp reconnect wasn't enough.
   - #79826 (2.1.215, Windows 11, Jul 2026): closed as a duplicate.
-- matt runs Claude Code 2.1.305 on Windows, inside T3 Code. Nothing found covers 2.1.305 either way.
+- the owner runs Claude Code 2.1.305 on Windows, inside T3 Code. Nothing found covers 2.1.305 either way.
 - In #50515 a user worked around the frozen list with one tool registered at startup that runs any action by name. log already has this: logSearch, logGet and logCall (rule 163).
 
 ## The pattern that works

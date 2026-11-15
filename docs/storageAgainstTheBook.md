@@ -1,6 +1,6 @@
 # Storage against the book: what Designing Data-Intensive Applications says about the unifyStorage work
 
-matt, 2026-11-08: the book (Kleppmann, *Designing Data-Intensive Applications*) is the basis for log's data modelling from here on. This page checks what the `unifyStorage` branch has built so far (#96, #97, PR #98) against it. For each point it gives the book's section, what log does today, and what has to change. Chapters 1 to 4, 7 and 11 to 12 were read in full; chapters 8 and 9 for what applies to several processes sharing one machine.
+the owner, 2026-11-08: the book (Kleppmann, *Designing Data-Intensive Applications*) is the basis for log's data modelling from here on. This page checks what the `unifyStorage` branch has built so far (#96, #97, PR #98) against it. For each point it gives the book's section, what log does today, and what has to change. Chapters 1 to 4, 7 and 11 to 12 were read in full; chapters 8 and 9 for what applies to several processes sharing one machine.
 
 `docs/unifyStorage.md` is the plan. This page is the correction to it.
 

@@ -17,7 +17,7 @@ export function renderBrowsers(views: BrowserView[]): string {
         `${v.account}  step ${v.step}  ${v.url || "no url yet"}`,
         `  State      ${v.state ? `${v.state.id}: ${v.state.what}` : v.failed ? `its last step failed: ${v.failed.slice(0, 200)}` : "no known blocking state"}`,
         ...(v.next ? [`  Next       ${v.next.tool} ${JSON.stringify(v.next.input)}`] : []),
-        ...(v.needsMatt ? [`  Needs matt ${v.needsMatt}`] : []),
+        ...(v.needsOwner ? [`  Needs the owner ${v.needsOwner}`] : []),
       ].join("\n"),
     )
     .join("\n\n");

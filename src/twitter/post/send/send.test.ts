@@ -7,8 +7,8 @@ const POST = 'https://x.com/someone/status/1900000000000000000'
 describe('planSend', () => {
   test('a reply with house-style copy plans the engine spec, live only when asked', () => {
     expect(planSend({ action: 'reply', tweetUrl: POST, text: 'love this', live: false })).toMatchObject({ ok: true, target: POST, watermark: { level: 'clean', statistical: 'unknown' }, spec: { action: 'reply', live: false, approvedBy: undefined, tweetUrl: POST, text: 'love this' } })
-    const live = planSend({ action: 'reply', tweetUrl: POST, text: 'love this', approvedBy: 'matt', live: true })
-    expect(live.ok && live.spec).toMatchObject({ live: true, approvedBy: 'matt' })
+    const live = planSend({ action: 'reply', tweetUrl: POST, text: 'love this', approvedBy: 'the owner', live: true })
+    expect(live.ok && live.spec).toMatchObject({ live: true, approvedBy: 'the owner' })
   })
 
   test('live needs who approved it; a dry run does not', () => {

@@ -1,7 +1,7 @@
 ---
 name: log-linkedin-network
 description: "Growing a LinkedIn network, and reading and answering its inbox. A log play (docs/useCases/linkedin/network.md): Invite the people LinkedIn suggests on My Network, slowly, and read and answer the account's conversations, from its own session with no browser."
-when_to_use: "Use when matt asks for this, in words like: \"connect with people on linkedin\", \"who does linkedin suggest\", \"read my linkedin messages\", \"what did <someone> say on linkedin\", \"reply to <someone> on linkedin\""
+when_to_use: "Use when the owner asks for this, in words like: \"connect with people on linkedin\", \"who does linkedin suggest\", \"read my linkedin messages\", \"what did <someone> say on linkedin\", \"reply to <someone> on linkedin\""
 metadata:
   summary: "Growing a LinkedIn network, and reading and answering its inbox"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `linkedin/network`. Before anything else, call the log MCP tool `getGuide({ useCase: "linkedin/network" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Invite the people LinkedIn suggests on My Network, slowly, and read and answer the account's conversations, from its own session with no browser.
 

@@ -137,7 +137,7 @@ A command on the direct-API engine calls the platform's internal API with the ac
 - `log twitter dm`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.send_dm for the dm; no browser and no proxy: X accounts call X directly, rule 80).
 - `log twitter react`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.add_reaction_to_message for the react --live (--remove takes it off); no browser and no proxy: X accounts call X directly, rule 80).
 - `log twitter queue`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.create_tweet for the queue run --live (each like and reply); no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter voice`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.SendMessageCreateMutation for the voice --live (a voice note in the voice cloned from matt, encrypted with chat-xdk and sent as an X Chat AUDIO attachment); no browser and no proxy: X accounts call X directly, rule 80).
+- `log twitter voice`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.SendMessageCreateMutation for the voice --live (a voice note in the voice cloned from the owner, encrypted with chat-xdk and sent as an X Chat AUDIO attachment); no browser and no proxy: X accounts call X directly, rule 80).
 
 **Reddit.** Reddit's own answer decides. Each account has its own governor under ~/.logCli/reddit/<account>, refreshed cookies are merged back into its Twenty row, and the session state is written to socialAccounts.sessionState.
 
@@ -161,7 +161,7 @@ A command on the direct-API engine calls the platform's internal API with the ac
 - `log discord send`: the direct-API engine only (endcord, vendored in vendor/endcord, messages.send_message for the send --live; no browser).
 - `log discord delete`: the direct-API engine only (endcord, vendored in vendor/endcord, messages.delete_message for the delete --live (only the account own messages, each read first); no browser).
 - `log discord react`: the direct-API engine only (endcord, vendored in vendor/endcord, messages.send_reaction for the react --live (--remove takes it off); no browser).
-- `log discord voice`: the direct-API engine only (endcord, vendored in vendor/endcord, messages.send_voice_message for the voice --live (a voice note in the voice cloned from matt, flags 8192); no browser).
+- `log discord voice`: the direct-API engine only (endcord, vendored in vendor/endcord, messages.send_voice_message for the voice --live (a voice note in the voice cloned from the owner, flags 8192); no browser).
 
 **LinkedIn.** LinkedIn's own answer decides. Each account has its own governor under ~/.logCli/linkedin/<account>, refreshed cookies are merged back into its Twenty row, and the session state is written to socialAccounts.sessionState.
 
@@ -187,7 +187,7 @@ A command on the direct-API engine calls the platform's internal API with the ac
 - `log slack send`: the direct-API engine only (gabrielSlack, vendored in vendor/gabrielSlack, messages.chat.postMessage for the send --live; no browser).
 - `log slack cookies`: the direct-API engine only (gabrielSlack, vendored in vendor/gabrielSlack, account.exchange_cookie for the cookies save (the d cookie is checked with Slack before it is saved); no browser).
 - `log slack react`: the direct-API engine only (gabrielSlack, vendored in vendor/gabrielSlack, messages.reactions.add for the react --live (--remove takes it off); no browser).
-- `log slack voice`: the direct-API engine only (gabrielSlack, vendored in vendor/gabrielSlack, messages.files.completeUploadExternal for the voice --live (a voice note in the voice cloned from matt, uploaded then shared); no browser).
+- `log slack voice`: the direct-API engine only (gabrielSlack, vendored in vendor/gabrielSlack, messages.files.completeUploadExternal for the voice --live (a voice note in the voice cloned from the owner, uploaded then shared); no browser).
 
 **Instagram.** Instagram's own answer decides. Each account has its own governor under ~/.logCli/instagram/<account>, refreshed cookies are merged back into its Twenty row, and the session state is written to socialAccounts.sessionState.
 
@@ -196,7 +196,7 @@ A command on the direct-API engine calls the platform's internal API with the ac
 - `log instagram send`: the direct-API engine only (instagrapi, vendored in vendor/instagrapi, messages.direct_send for the send --live (text one message per line, and --photo through direct_send_photo); no browser).
 - `log instagram watch`: the direct-API engine only (instagrapi, vendored in vendor/instagrapi, websocket.realtime_connect for the watch (Instagram pushes each DM over its realtime MQTT, edge-mqtt.facebook.com, nothing polled); no browser).
 - `log instagram react`: the direct-API engine only (instagrapi, vendored in vendor/instagrapi, messages.direct_send_reaction for the react --live (--remove takes it off); no browser).
-- `log instagram voice`: the direct-API engine only (instagrapi, vendored in vendor/instagrapi, messages.direct_send_voice for the voice --live (a voice note in the voice cloned from matt, its upload on curl_cffi); no browser).
+- `log instagram voice`: the direct-API engine only (instagrapi, vendored in vendor/instagrapi, messages.direct_send_voice for the voice --live (a voice note in the voice cloned from the owner, its upload on curl_cffi); no browser).
 
 ### How a call reaches log-cli
 
@@ -205,7 +205,7 @@ From a shell or over MCP, both run the same commands through `runCli`, write the
 ```mermaid
 flowchart LR
   agent["Agent (Claude Code, Codex)"]
-  matt["matt, in a terminal"]
+  owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
   mcp["MCP server log: 264 command tools + saved flows"]
   bin["bin/log.ts"]
@@ -217,7 +217,7 @@ flowchart LR
   api["The platform's internal API: its answer decides (rule 73)"]
   twenty[("Twenty: socialAccounts.sessionState, refreshed cookies")]
   agent --> shell
-  matt --> bin
+  owner --> bin
   shell --> bin
   agent -->|mcp__log__tool| mcp
   bin --> runCli
@@ -362,7 +362,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log discord send`](#log-discord-send) | Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channelId|chat name>` `--text <text>` `[--approvedBy <who>]` `[--file <value,…>]` `[--brief]` `[--asOne]` `[--overGate]` `[--live]` `[--json]` | direct API only | none | `discordSend`, `discordSendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 90, 94, 105, 133, 134, 109, 137, 138, 30, 38, 39, 40, 41 |
 | [`log discord delete`](#log-discord-delete) | Delete the account's own Discord messages by id, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channelId|chat name>` `--message <messageId,…>` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordDelete`, `discordDeleteLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord react`](#log-discord-react) | React to a Discord message with an emoji, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channel>` `--message <id>` `--emoji <emoji>` `[--remove]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordReact`, `discordReactLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 30, 38, 39, 40, 41 |
-| [`log discord voice`](#log-discord-voice) | Send a voice note in the owner's cloned voice as Discord's own voice note, from text; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channel>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--mattsWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordVoice`, `discordVoiceLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
+| [`log discord voice`](#log-discord-voice) | Send a voice note in the owner's cloned voice as Discord's own voice note, from text; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channel>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordVoice`, `discordVoiceLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log linkedin session`](#log-linkedin-session) | Check that LinkedIn still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `linkedin` first | `--account <accountName>` `[--json]` | direct API only | none | `linkedinSessionCheck`, `linkedinSessionScripts` | PreToolUse, PostToolUse · PostToolUse | no | 73, 30, 38, 39, 40, 41 |
 | [`log linkedin cookies`](#log-linkedin-cookies) | Add or refresh a LinkedIn account in Twenty: every cookie and the browser's headers from a request copied as cURL, checked against LinkedIn | `linkedin` first | `--account <publicId>` `[--name <label>]` `[--har <file>]` | direct API only | none | terminal only: asks for a LinkedIn account's session cookies in a Clack prompt (masked) and checks them with LinkedIn before saving. Run `log linkedin cookies save --account <publicId>` in a terminal. | PreToolUse, PostToolUse · n/a | no | 35, 73, 30, 38, 39, 40, 41 |
 | [`log linkedin post`](#log-linkedin-post) | Post to the account's LinkedIn feed, with an optional image, on the direct-API engine; a dry run unless --live | `linkedin` first | `--account <accountName>` `--text <text>` `[--image <path>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `linkedinPost`, `linkedinPostLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 137, 30, 38, 39, 40, 41 |
@@ -382,14 +382,14 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log slack send`](#log-slack-send) | Send a message to a Slack DM, group or channel, on the direct-API engine; a dry run unless --live | `slack` first | `--account <accountName>` `--chat <chatId|who it is with>` `--text <text>` `[--workspace <domain>]` `[--approvedBy <who>]` `[--asOne]` `[--live]` `[--json]` | direct API only | none | `slackSend`, `slackSendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 90, 94, 137, 105, 133, 134, 109, 138, 30, 38, 39, 40, 41 |
 | [`log slack cookies`](#log-slack-cookies) | Add or refresh a Slack account locally: its d cookie from a masked prompt, checked against Slack | `slack` first | `--account <accountName>` `[--name <label>]` `[--workspace <domain>]` | direct API only | none | terminal only: asks for a Slack account's session cookie (d) in a Clack prompt (masked) and checks it with Slack before saving. Run `log slack cookies save --account <name>` in a terminal. | PreToolUse, PostToolUse · n/a | no | 35, 73, 30, 38, 39, 40, 41 |
 | [`log slack react`](#log-slack-react) | React to a Slack message with an emoji, on the direct-API engine; a dry run unless --live | `slack` first | `--account <accountName>` `--chat <chat>` `--message <id>` `--emoji <emoji>` `[--workspace <workspace>]` `[--remove]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `slackReact`, `slackReactLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 30, 38, 39, 40, 41 |
-| [`log slack voice`](#log-slack-voice) | Send a voice note in the owner's cloned voice as Slack's own voice note, from text; a dry run unless --live | `slack` first | `--account <accountName>` `--chat <chat>` `--text <text>` `[--workspace <workspace>]` `[--provider <inworld|fishAudio>]` `[--mattsWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `slackVoice`, `slackVoiceLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
+| [`log slack voice`](#log-slack-voice) | Send a voice note in the owner's cloned voice as Slack's own voice note, from text; a dry run unless --live | `slack` first | `--account <accountName>` `--chat <chat>` `--text <text>` `[--workspace <workspace>]` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `slackVoice`, `slackVoiceLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log instagram session`](#log-instagram-session) | Check that Instagram still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `instagram` first | `--account <accountName>` `[--json]` | direct API only | none | `instagramSessionCheck` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 105, 30, 38, 39, 40, 41 |
 | [`log instagram dms`](#log-instagram-dms) | Read an Instagram account's DMs: its threads, or one thread's messages with --with, on the direct-API engine, sending nothing | `instagram` first | `--account <accountName>` `[--with <handle|thread name|thread id>]` `[--limit <integer 1..200>]` `[--json]` | direct API only | none | `instagramDms` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 138, 105, 30, 38, 39, 40, 41 |
 | [`log instagram send`](#log-instagram-send) | Send text and a photo to an Instagram DM, on the direct-API engine; a dry run unless --live | `instagram` first | `--account <accountName>` `--with <handle|thread name|thread id>` `[--text <text>]` `[--photo <file>]` `[--asOne]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `instagramSend`, `instagramSendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 90, 94, 137, 105, 133, 109, 138, 30, 38, 39, 40, 41 |
 | [`log instagram watch`](#log-instagram-watch) | Watch an Instagram account's DMs as Instagram's realtime connection pushes them, nothing polled, sending nothing | `instagram` first | `--account <accountName>` `[--seconds <number 0..>]` `[--inbox]` `[--json]` | direct API only | Camoufox only | `instagramWatch` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | yes: watch it | 26, 73, 94, 123, 105, 30, 38, 39, 40, 41 |
 | [`log instagram react`](#log-instagram-react) | React to a Instagram message with an emoji, on the direct-API engine; a dry run unless --live | `instagram` first | `--account <accountName>` `--thread <thread>` `--message <id>` `--emoji <emoji>` `[--remove]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `instagramReact`, `instagramReactLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 105, 133, 30, 38, 39, 40, 41 |
-| [`log instagram voice`](#log-instagram-voice) | Send a voice note in the owner's cloned voice as Instagram's own voice note, from text; a dry run unless --live | `instagram` first | `--account <accountName>` `--with <with>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--mattsWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `instagramVoice`, `instagramVoiceLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 105, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
-| [`log twitter voice`](#log-twitter-voice) | Send a voice note in the owner's cloned voice as Twitter's own voice note, from text; a dry run unless --live | `twitter` first | `--account <accountName>` `--with <with>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--mattsWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `twitterVoice`, `twitterVoiceLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 89, 94, 105, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
+| [`log instagram voice`](#log-instagram-voice) | Send a voice note in the owner's cloned voice as Instagram's own voice note, from text; a dry run unless --live | `instagram` first | `--account <accountName>` `--with <with>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `instagramVoice`, `instagramVoiceLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 105, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
+| [`log twitter voice`](#log-twitter-voice) | Send a voice note in the owner's cloned voice as Twitter's own voice note, from text; a dry run unless --live | `twitter` first | `--account <accountName>` `--with <with>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `twitterVoice`, `twitterVoiceLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 89, 94, 105, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 
 ### Saved flows: MCP tools of their own (rule 31)
 
@@ -945,7 +945,7 @@ Written from `AGENT_HOOKS` (`src/agentHooks/registry`); the same list gives Clau
 
 ```mermaid
 sequenceDiagram
-  participant matt
+  participant owner as the owner
   participant Agent
   participant Hook as log-cli hooks
   participant Tool as Bash / PowerShell / Monitor / mcp__log__*
@@ -958,7 +958,7 @@ sequenceDiagram
   Note over Hook: what every account's queue did since the last look (held, sent, cooling off, stopped), so a queue is never running out of the agent's sight (rule 109)
   Note over Hook: the play this session loaded, read from its own transcript, put back with the step it reached when the session comes back from compaction or resumes, and the context layer service started (rule 158)
   Note over Hook: what X's own client shows on each X account right now (its unread notifications, DMs and X Chat, read through the account's one session the way x.com polls it), and every new like, retweet, reply, quote, mention or follow since this Claude session last looked (rule 109)
-  matt->>Agent: a prompt
+  owner->>Agent: a prompt
   Agent->>Hook: UserPromptSubmit
   Note over Hook: where every open browser is, with each of the owner's prompts
   Note over Hook: the same storage check with each of the owner's prompts (measured at most every 15 minutes)
@@ -988,7 +988,7 @@ sequenceDiagram
   alt a browser sits on a state log-cli clears
     Hook-->>Agent: decision block, with the state's resolver
   else nothing to clear, or a person's state
-    Agent-->>matt: the answer
+    Agent-->>owner: the answer
   end
 ```
 
@@ -1001,7 +1001,7 @@ From `PAGE_STATES` (`src/browser/flow/helpers/pageState.ts`), first match wins. 
 ```mermaid
 flowchart LR
   page["A step lands on a page"]
-  person["Stop the account, tell matt"]
+  person["Stop the account, tell the owner"]
   disabled["disabled: the account is disabled"]
   page --> disabled
   disabled --> person
@@ -1300,11 +1300,11 @@ Without --live, on a numeric group id, it runs on the direct-API engine first (f
 --scrolls: feed scrolls at most (default 6). --commentPosts: posts whose comments are read at most (default 5; 0 reads none).
 --worker (OpenMagpie's call) is refused here: it became its own command, log facebook poll (its usage).
 --live: each post's comments are switched to Newest first (two clicks, rule 8); without it nothing is clicked and the page's Most relevant comments are read.
-Every step in the browser runs inside the account's local hours (rule 18); --bypass skips that for one run, only when matt asked (rule 20).
+Every step in the browser runs inside the account's local hours (rule 18); --bypass skips that for one run, only when the owner asked (rule 20).
 On the browser path the account's browser must be open (log inspect start --account <a>, or log facebook host start): a read is a step in it (rule 35).
 log facebook read members --account <accountName> --group <group url or id> --count <n> [--secondsPerScroll <s>] [--maxScrolls <n>] [--owners] [--bypass] [--json]
 Reads the group's newest members from its People tab (/groups/<g>/members) in the account's open browser: the page's first 10, then a scroll at a time, each scroll's GroupsCometMembersPageNewMembersSectionRefetchQuery answers (about 10 members each, 2 a scroll). Nothing is clicked (rule 8).
---count: members to read (1-5000). --secondsPerScroll: the wait before each scroll (default 15; matt: the time 40 scrolls take is a variable). --maxScrolls: scrolls at most (default twice the plan's, plus 2). It says up front: count N → ~S scrolls, ~M min at Xs per scroll.
+--count: members to read (1-5000). --secondsPerScroll: the wait before each scroll (default 15; the owner: the time 40 scrolls take is a variable). --maxScrolls: scrolls at most (default twice the plan's, plus 2). It says up front: count N → ~S scrolls, ~M min at Xs per scroll.
 It stops at --count members, when the list ends (has_next_page false) or at --maxScrolls. --owners keeps only owners: a bio naming owner, co-owner, founder, CEO, president, proprietor or self-employed, or a page (a category set).
 The members go to ~/.logCli/members/<group>/<run time>.tsv and .json, never to Twenty; it prints how many, how many with a bio, owners and pages, and the files. --json gives them.
 ```
@@ -1317,7 +1317,7 @@ Poll a Facebook group from one account, in its open browser, for a time or once:
 log facebook poll <group url or id> <accountName> [<how long to poll: 30m, 2h>] [--bypass]
 log facebook poll --request <request json>   (OpenMagpie's facebook_group worker: groups.search in, post records out as one JSON line; python/openMagpie/facebookWorker.py calls it)
 One poll reads the group once in the account's open browser, posts only, nothing clicked, and prints one JSON line: the posts it saw, as OpenMagpie's records. With a time it polls every 5 minutes until the time is up, a line each.
-Every poll runs inside the account's local hours (rule 18); --bypass skips that, only when matt asked (rule 20). --request never skips it.
+Every poll runs inside the account's local hours (rule 18); --bypass skips that, only when the owner asked (rule 20). --request never skips it.
 The account's browser must be open (log inspect start for that account, or log facebook host start): a poll is a step in it (rule 35).
 ```
 
@@ -1486,7 +1486,7 @@ log inbox actions [--platform <p>] [--account <a>] [--chat <conversationId|handl
 log inbox waiting [--platform <p>] [--account <a>] [--limit <n>] [--oldest] [--json]
 log inbox pending --reader <name> [--json]
 pending is what the account watchers heard since this reader last asked, with what to do next for each message: the one delivery every harness reads, the prompt hook's included. A reader is one name per session or harness; a new one starts from now.
-Only the session that claims a chat acts on it (rule 133). Every message the push channels bring in has an event id (shown in >>> NEW MESSAGE). claim takes the chat for this session for 10 minutes before you draft or send; a second session is refused (chatClaimedElsewhere). Every send claims the chat itself and releases it once it is sent, interrupted or failed, so two sessions never answer the same chat. A claim held by a session that ended frees itself. resume is matt's go-ahead after a refused catch-up (rule 94): the account's gap opens again and its owner catches up through its own session within 30 s; only when the owner says so. claims lists who holds what; actions is the log of every claim, refusal, send and release, oldest first, to search what was already done in a chat before acting. waiting is who wrote last on every platform, read from log.db and nothing else: each chat's messages in time order (never the order they were stored in, since a backfill stores older messages later), one person's chats judged together (an X user's old DM and X Chat), a message mirrored into the other side counted once as whoever sent it first, reactions, read markers and call notices never counted as the last word. It lists the people waiting on a reply, then apart the ones who reacted to your last message (a follow-up), newest first unless --oldest.
+Only the session that claims a chat acts on it (rule 133). Every message the push channels bring in has an event id (shown in >>> NEW MESSAGE). claim takes the chat for this session for 10 minutes before you draft or send; a second session is refused (chatClaimedElsewhere). Every send claims the chat itself and releases it once it is sent, interrupted or failed, so two sessions never answer the same chat. A claim held by a session that ended frees itself. resume is the owner's go-ahead after a refused catch-up (rule 94): the account's gap opens again and its owner catches up through its own session within 30 s; only when the owner says so. claims lists who holds what; actions is the log of every claim, refusal, send and release, oldest first, to search what was already done in a chat before acting. waiting is who wrote last on every platform, read from log.db and nothing else: each chat's messages in time order (never the order they were stored in, since a backfill stores older messages later), one person's chats judged together (an X user's old DM and X Chat), a message mirrored into the other side counted once as whoever sent it first, reactions, read markers and call notices never counted as the last word. It lists the people waiting on a reply, then apart the ones who reacted to your last message (a follow-up), newest first unless --oldest.
 ```
 
 #### log media
@@ -1590,7 +1590,7 @@ Read whether handles follow an X account and it follows them, on the direct-API 
 ```text
 log twitter follows --account <accountName> --handles <handle,handle…> [--json]
 Reads, for each handle, whether it follows the account and whether the account follows it, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80). Sends nothing.
-X's own answer decides: one friendships/show read per handle, 1.5 s apart, after the session check. Handles come from treg research or matt, never a guess (rule 53).
+X's own answer decides: one friendships/show read per handle, 1.5 s apart, after the session check. Handles come from treg research or the owner, never a guess (rule 53).
 ```
 
 #### log twitter dms
@@ -1682,7 +1682,7 @@ log memelord template <id> [--json]   (one template: its name, media url, text s
 log memelord trending [--limit <n>] [--media image|video] [--json]   (what is trending now, with its cultural context)
 log memelord tools [--category imageToImage|imageTextToImage|textToImage] [--json]   (the catalog of one-shot image tools; log never runs them)
 log memelord taste [--build --from <posts.json>] [--json]   (the owner's meme taste: the styles they named and the memes they have sent, each read by SubQ from its picture; --build reads a file of their X media posts)
-Search ranks what it finds by matt's taste (--noTaste turns it off): SubQ reads each template's picture against the styles he named (deep fried, larping, streamer reacts like FlightReacts, Zias and Bloo, shitposts) and the memes he has sent, and the taste line leads the answer.
+Search ranks what it finds by the owner's taste (--noTaste turns it off): SubQ reads each template's picture against the styles he named (deep fried, larping, streamer reacts like FlightReacts, Zias and Bloo, shitposts) and the memes he has sent, and the taste line leads the answer.
 Memelord is an extension (docs/extensions/memelord.md): only its four free discovery tools are reachable from log, so nothing here spends money (rule 41). The key is MEMELORD_API_KEY in .env.local. A meme goes out on Discord as its media url on a line of its own, which Discord shows inline.
 ```
 
@@ -1694,7 +1694,7 @@ The treg extension: find an endpoint by the job, read it, and call it with the k
 log treg search "<what you want done>" [--limit <n>] [--json]   (treg's catalog, found by the job: each endpoint's id, what it does and its price)
 log treg get <endpointId> [--json]   (one endpoint in full: its price, its params and a call that works)
 log treg call <endpointId> [--params '<json object>'] [--path <path>] [--method <GET|POST>] [--data '<body>'] [--await] [--maxItems <n>] [--fields <a,b>] [--where <key=value>] [--raw] [--approvedBy <who>] [--live] [--json]   (calls it through treg, the key injected server-side: a free endpoint runs; a priced one is a dry run that says its price unless --live with --approvedBy; the answer drops treg's raw copy unless --raw, and --maxItems, --fields and --where trim every list in it)
-treg is an extension (docs/extensions/treg.md): every lookup comes from an external source through it (rule 53), and nothing that costs money runs unless matt asked (rule 41). It runs the treg CLI on this machine (TREG_BIN moves it); treg's balance is in log balance.
+treg is an extension (docs/extensions/treg.md): every lookup comes from an external source through it (rule 53), and nothing that costs money runs unless the owner asked (rule 41). It runs the treg CLI on this machine (TREG_BIN moves it); treg's balance is in log balance.
 ```
 
 #### log balance
@@ -1705,7 +1705,7 @@ Every paid provider log calls, with what is left and which are out of credit MCP
 log balance [--provider <name>] [--json]
 Every paid provider log calls, with what is left: subq, jina, inworld, fishAudio, assemblyAi, parallel, treg, twoCaptcha, byteful.
 A provider with a balance API (Jina, Fish Audio, treg, 2Captcha, Byteful) is read from it. One without one (SubQ, Inworld, AssemblyAI, Parallel) shows its last answer to a real call, which log keeps for every call (the ledger table in ~/.logCli/log.db (kind providerAnswer)). A provider that answered it is out of credit shows outOfCredit, so a failing voice note or gate is seen as money, not a bug.
-Reading balances spends nothing (rule 41). Topping up is matt's: never done from log.
+Reading balances spends nothing (rule 41). Topping up is the owner's: never done from log.
 ```
 
 #### log governor
@@ -1715,7 +1715,7 @@ Read every platform account's governor count, and put one back to 0 when the own
 ```text
 log governor show [--platform <p>] [--json]
 log governor reset --platform <p> --account <accountName|all> --by <who> [--reason <text>] [--json]
-Every platform account's governor counts what it sent X, Discord, Slack, Instagram, Reddit, LinkedIn or Facebook today: requests (500 a day), writes and this hour's requests. show reads them. reset puts an account's requests, writes and hour count back to 0, only when the owner says so (rule 168): the count is written back, read again to prove it holds, and the reset is a row in log.db's ledger (kind governorReset) with who said it and what the count was. A cooldown after a block is kept: nothing resumes on a blocked account until matt says so (rule 94), and the platform's own answer still decides (rule 73).
+Every platform account's governor counts what it sent X, Discord, Slack, Instagram, Reddit, LinkedIn or Facebook today: requests (500 a day), writes and this hour's requests. show reads them. reset puts an account's requests, writes and hour count back to 0, only when the owner says so (rule 168): the count is written back, read again to prove it holds, and the reset is a row in log.db's ledger (kind governorReset) with who said it and what the count was. A cooldown after a block is kept: nothing resumes on a blocked account until the owner says so (rule 94), and the platform's own answer still decides (rule 73).
 ```
 
 #### log sessions
@@ -1789,7 +1789,7 @@ the owner's voice, cloned once per provider (Inworld or Fish Audio) from their o
 ```text
 log clone voice [--provider inworld|fishAudio] [--from <file>[,<file>]] [--apply] [--replace] [--json]   (the owner's voice, cloned once per provider from their own voice notes, or from recordings of their own they name with --from, each one's words read from a .txt beside it; without --apply it lists the recordings it would use; --replace makes it again and keeps the old voice id under previous)
 log clone speak --text "<words>" [--provider inworld|fishAudio] [--model <model>] [--format mp3|wav] [--json]   (the words in his cloned voice, to a file under ~/.logCli/voiceNotes; nothing is played or sent)
-Voice cloning is provider-agnostic (docs/extensions/voiceClone.md): the provider is --provider, else LOG_VOICE_PROVIDER in .env.local, else inworld. Each provider is an extension of its own (src/extensions/inworld, src/extensions/fishAudio) behind one interface (src/extensions/voiceClone). The clone is made only from the voice notes matt sent himself (fromMe in the conversation store or his ownMessage in the .db), the shortest first, within the provider's limit (Inworld 3 to 30 s, Fish 10 to 60 s). Each provider's voice id is kept in log.db. A clone speaks with the provider's preferred model (Inworld inworld-tts-2, which takes emotion tags), else its cheapest, unless --model says otherwise, at LOG_VOICE_SPEED (default 1.15). The clone is made in matt's accent: LOG_VOICE_ACCENT (default Irish) as its description and LOG_VOICE_LANGUAGE (default en-IE, en-GB when Inworld refuses it) as its language, with each sample's AssemblyAI transcript when ~/.logCli/transcripts has one; no accent instruction is sent with the text. Every spoken file is shaped like matt's own voice notes (his room tone from his notes, phone squash, mic drift, saturation; breaths on inworld-tts-2) and listened back with AssemblyAI: a lexicon word said wrong is refused spokenMismatch, an acronym not in the lexicon pronunciationUnknown. A voice note goes out only when matt asks for one: log discord voice, log instagram voice or log slack voice (rules 142, 143, 145, 146, 147).
+Voice cloning is provider-agnostic (docs/extensions/voiceClone.md): the provider is --provider, else LOG_VOICE_PROVIDER in .env.local, else inworld. Each provider is an extension of its own (src/extensions/inworld, src/extensions/fishAudio) behind one interface (src/extensions/voiceClone). The clone is made only from the voice notes the owner sent himself (fromMe in the conversation store or his ownMessage in the .db), the shortest first, within the provider's limit (Inworld 3 to 30 s, Fish 10 to 60 s). Each provider's voice id is kept in log.db. A clone speaks with the provider's preferred model (Inworld inworld-tts-2, which takes emotion tags), else its cheapest, unless --model says otherwise, at LOG_VOICE_SPEED (default 1.15). The clone is made in the owner's accent: LOG_VOICE_ACCENT (default Irish) as its description and LOG_VOICE_LANGUAGE (default en-IE, en-GB when Inworld refuses it) as its language, with each sample's AssemblyAI transcript when ~/.logCli/transcripts has one; no accent instruction is sent with the text. Every spoken file is shaped like the owner's own voice notes (his room tone from his notes, phone squash, mic drift, saturation; breaths on inworld-tts-2) and listened back with AssemblyAI: a lexicon word said wrong is refused spokenMismatch, an acronym not in the lexicon pronunciationUnknown. A voice note goes out only when the owner asks for one: log discord voice, log instagram voice or log slack voice (rules 142, 143, 145, 146, 147).
 ```
 
 #### log transcribe
@@ -1832,7 +1832,7 @@ Reply to one post on X with approved copy, on the direct-API engine; a dry run u
 ```text
 log twitter reply --account <accountName> --tweet <postUrl> --text "<copy>" [--media <file>[,<file>]] [--approvedBy <who>] [--skipStyleCheck] [--force] [--live] [--json]
 Reply to one post on X with approved copy, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
-Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when matt asked (rule 86): X still answers, and its answer still decides.
+Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's create answer decides: a tweet id is sent, an empty result is a drop (nothing posted, usually the author's reply limits). Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
 
@@ -1843,7 +1843,7 @@ Quote one post on X with approved copy, on the direct-API engine; a dry run unle
 ```text
 log twitter quote --account <accountName> --tweet <postUrl> --text "<copy>" [--approvedBy <who>] [--skipStyleCheck] [--force] [--live] [--json]
 Quote one post on X with approved copy, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
-Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when matt asked (rule 86): X still answers, and its answer still decides.
+Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's create answer decides: a tweet id is sent, an empty result is a drop. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
 
@@ -1854,7 +1854,7 @@ Make one original post on X with approved copy and optional media (a video, a gi
 ```text
 log twitter post --account <accountName> --text "<copy>" [--media <file>[,<file>]] [--approvedBy <who>] [--skipStyleCheck] [--force] [--live] [--json]
 Make one original post on X with approved copy and optional media (a video, a gif or up to 4 images), on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
-Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when matt asked (rule 86): X still answers, and its answer still decides.
+Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 Each file is uploaded first (a video in chunks, then X's own processing status must say succeeded before the post is made), then the post is created with the media ids. X's create answer decides: a tweet id is sent, an empty result is a drop and nothing was posted. A file X refuses stops it before anything is posted. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
 
@@ -1865,7 +1865,7 @@ Like one post on X, on the direct-API engine; a dry run unless --live MCP tools:
 ```text
 log twitter like --account <accountName> --tweet <postUrl> [--approvedBy <who>] [--force] [--live] [--json]
 Like one post on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
-Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when matt asked (rule 86): X still answers, and its answer still decides.
+Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's favorite answer decides: Done (or already liked, code 139) is sent. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
 
@@ -1887,7 +1887,7 @@ Repost one post on X, on the direct-API engine; a dry run unless --live MCP tool
 ```text
 log twitter repost --account <accountName> --tweet <postUrl> [--approvedBy <who>] [--force] [--live] [--json]
 Repost one post on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
-Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when matt asked (rule 86): X still answers, and its answer still decides.
+Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's retweet answer decides: a created retweet (or already reposted, code 327) is sent. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
 
@@ -1898,7 +1898,7 @@ Follow one person on X, on the direct-API engine; a dry run unless --live MCP to
 ```text
 log twitter follow --account <accountName> --userId <id> [--approvedBy <who>] [--force] [--live] [--json]
 Follow one person on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
-Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when matt asked (rule 86): X still answers, and its answer still decides.
+Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's follow answer decides: the followed user back is sent, already following is sent too. Follow before a cold dm: nobody gets a cold message from an account that doesn't follow them. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
 
@@ -1909,8 +1909,8 @@ Send one approved direct message on X, on the direct-API engine; a dry run unles
 ```text
 log twitter dm --account <accountName> --userId <id> --text "<copy>" [--media <file|url>] [--approvedBy <who>] [--skipStyleCheck] [--asOne] [--overGate] [--force] [--live] [--json]
 Send one approved direct message on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
-Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when matt asked (rule 86): X still answers, and its answer still decides.
-A draft written on several lines goes out one message per line, and a one-line draft is split the way matt writes in that chat (log voice index), with his usual gap between them; --asOne sends it as one, only when matt asked (rule 90). X's answer decides: a conversation id is sent, none is a drop, and a drop stops the rest: what was sent stays sent, nothing is retried (rule 94). An old DM thread (<a>-<b>) and its X Chat thread (<a>:<b>) with one person are one conversation: X shows them in the same place, and a dm sent through the old DM API shows in their X Chat too. A sent answer is delivered whichever conversation id it names: never resend it and never call it the wrong inbox. A refusal before X is called (styleFailed, a dry run) sent nothing, so that dm is sent once its copy is fixed. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
+Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
+A draft written on several lines goes out one message per line, and a one-line draft is split the way the owner writes in that chat (log voice index), with his usual gap between them; --asOne sends it as one, only when the owner asked (rule 90). X's answer decides: a conversation id is sent, none is a drop, and a drop stops the rest: what was sent stays sent, nothing is retried (rule 94). An old DM thread (<a>-<b>) and its X Chat thread (<a>:<b>) with one person are one conversation: X shows them in the same place, and a dm sent through the old DM API shows in their X Chat too. A sent answer is delivered whichever conversation id it names: never resend it and never call it the wrong inbox. A refusal before X is called (styleFailed, a dry run) sent nothing, so that dm is sent once its copy is fixed. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
 
 #### log twitter react
@@ -1920,7 +1920,7 @@ React to a X message with an emoji, on the direct-API engine; a dry run unless -
 ```text
 log twitter react --account <accountName> --chat <chat> --message <id> --emoji <emoji> [--remove] [--approvedBy <who>] [--live] [--json]
 Reacts to one message with an emoji, on the direct-API engine (vendor/twikit, no browser), or takes the account's own reaction off with --remove. X takes any emoji; a name (joy, fire, eyes) is turned into it. It goes through X's own DM reaction mutation (twikit's add_reaction_to_message), so a message only X Chat holds may be refused, and X's answer says so.
-Without --live it is a dry run and nothing is contacted. --live reacts, only when matt asked, and needs --approvedBy (rule 8). The chat is claimed first, as for a send, and released once it is done (rule 133). The platform's own answer decides (rule 73), the governor counts it as a write, and a refusal stops with nothing retried (rule 94).
+Without --live it is a dry run and nothing is contacted. --live reacts, only when the owner asked, and needs --approvedBy (rule 8). The chat is claimed first, as for a send, and released once it is done (rule 133). The platform's own answer decides (rule 73), the governor counts it as a write, and a refusal stops with nothing retried (rule 94).
 ```
 
 #### log twitter queue
@@ -1940,7 +1940,7 @@ log twitter queue nudge <queue.json> [--replies <n>]
 log twitter queue edit <queue.json> --n <n> --text "<new copy>" --by <who> [--window <30m>]
 A queue of approved X replies, quotes or dms, sent one at a time at random moments inside a window, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80). Targets come from treg research, never from X (rule 53).
 build pairs each target with one unique line from the variations, shuffled; a target that carries its own text (written for that person's post) keeps it. show and status read it; check runs every pending item through the house style and target checks and contacts nothing. approve records who approved it as it stands: a fingerprint of the account and every item's action, target and copy, and any edit afterwards voids it. plan draws every like and reply a time with the system random source, at least --minGap apart (with --like, each post may get a like before or after its reply). nudge tells a running run to send the next replies now. One account has one queue: add puts more in (dms, replies, quotes together), even while it runs, each fitted between what is planned at least minGap apart, and the run takes them in as it waits; run --keepOpen stays running for more, so all of an account's sending is one run through its one X session (rule 105). Right before each send the run reads that person's full context again (their dm thread and X Chat, and what they did on the account's posts from its notifications) and holds the item when anything happened since it was drafted: a message either way, a like, retweet, reply, quote, mention or follow (rule 109). edit puts new copy on a pending or held item (no queue file is ever edited by hand), plans a held one again inside --window, and approves the queue as it then stands.
-run walks the plan as an XState machine (planned, waiting, liking, replying, retrying, finished, halted), every transition on the live log: without --live a dry run lists what it would send and when; --live sends, only when matt asked (rule 8). Each answer is X's own event: any refusal (a 429, 226 looks automated, 344 daily limit, a soft block, the governor, a dead session) stops the run at once with X's answer and the time, the item stays pending, and nothing goes out on that account until matt starts a run again (rule 94); with --alertChannel it tags matt in buzz. A deleted post or replies off (385/433) is skipped. A dropped connection with no answer from X is tried again after 1 to 3 min, at most 3 drops in a row. It saves after every step, so running it again resumes. --force sends every event past the account's governor (its pause and caps), only when matt asked (rule 86); X's answers still stop the run.
+run walks the plan as an XState machine (planned, waiting, liking, replying, retrying, finished, halted), every transition on the live log: without --live a dry run lists what it would send and when; --live sends, only when the owner asked (rule 8). Each answer is X's own event: any refusal (a 429, 226 looks automated, 344 daily limit, a soft block, the governor, a dead session) stops the run at once with X's answer and the time, the item stays pending, and nothing goes out on that account until the owner starts a run again (rule 94); with --alertChannel it tags the owner in buzz. A deleted post or replies off (385/433) is skipped. A dropped connection with no answer from X is tried again after 1 to 3 min, at most 3 drops in a row. It saves after every step, so running it again resumes. --force sends every event past the account's governor (its pause and caps), only when the owner asked (rule 86); X's answers still stop the run.
 ```
 
 #### log new
@@ -2097,9 +2097,9 @@ Send one message to a Discord DM, group or channel, on the direct-API engine; a 
 ```text
 log discord send --account <accountName> --channel <channelId|chat name> --text "<message>" [--asOne] [--overGate] [--approvedBy <who>] [--live] [--json]
 Sends one message to a DM, a group DM (by its id or its name, from log discord chats) or a server channel (by its id), on the direct-API engine (no browser).
---brief says the message hands someone a task, not a casual reply: the gate reads it as a brief instead of matt's chat voice (rule 162), asking SubQ whether it says clearly what to do, why, what done looks like and by when, kindly, and how to ask when stuck, with the attached files read beside it. The sameness, AI artifact and scrambler checks still run.
+--brief says the message hands someone a task, not a casual reply: the gate reads it as a brief instead of the owner's chat voice (rule 162), asking SubQ whether it says clearly what to do, why, what done looks like and by when, kindly, and how to ask when stuck, with the attached files read beside it. The sameness, AI artifact and scrambler checks still run.
 --file attaches files (a guide, a spreadsheet) to the last message, uploaded through the account's own session: only files under OUTBOX or ~/.logCli, at most 10 MB each, refused before anything is sent otherwise (fileRefused).
-A draft written on several lines goes out one message per line, wherever it is sent (matt, 2026-10-28: stop sending as one). A one-line draft is split the way matt writes in that chat, from his own messages there (log voice index): how many he sends in a row and how many words each runs to, cut at the draft's own line breaks or punctuation, else the nearest space, and sent with his usual gap between them; a chat where he mostly sends one gets one. --asOne always sends one. Without --live it is a dry run and Discord is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). Discord's answer decides: a message id is sent, none is a drop. The account's governor counts it as a write. Before anything is sent, dry run or --live, the copy is read for what AI chat interfaces leave in text (rule 111): hidden characters, odd spaces or pasted Claude HTML refuse it with aiArtifacts, and the reading is printed and kept in --json. --overGate sends it over the voice gate's refusal when matt said to send that exact message: the gate's SubQ read is skipped and the AI artifact check still runs (rule 152). A link to an X post (x.com or twitter.com) is sent as fixupx.com, so Discord embeds the post with its video (matt, 2026-11-13).
+A draft written on several lines goes out one message per line, wherever it is sent (the owner, 2026-10-28: stop sending as one). A one-line draft is split the way the owner writes in that chat, from his own messages there (log voice index): how many he sends in a row and how many words each runs to, cut at the draft's own line breaks or punctuation, else the nearest space, and sent with his usual gap between them; a chat where he mostly sends one gets one. --asOne always sends one. Without --live it is a dry run and Discord is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). Discord's answer decides: a message id is sent, none is a drop. The account's governor counts it as a write. Before anything is sent, dry run or --live, the copy is read for what AI chat interfaces leave in text (rule 111): hidden characters, odd spaces or pasted Claude HTML refuse it with aiArtifacts, and the reading is printed and kept in --json. --overGate sends it over the voice gate's refusal when the owner said to send that exact message: the gate's SubQ read is skipped and the AI artifact check still runs (rule 152). A link to an X post (x.com or twitter.com) is sent as fixupx.com, so Discord embeds the post with its video (the owner, 2026-11-13).
 ```
 
 #### log discord delete
@@ -2108,7 +2108,7 @@ Delete the account's own Discord messages by id, on the direct-API engine; a dry
 
 ```text
 log discord delete --account <accountName> --channel <channelId|chat name> --message <messageId>[,<messageId>...] [--approvedBy <who>] [--live] [--json]
-Deletes the account's own messages by id (from log discord read) in a DM, group DM or server channel, on the direct-API engine (no browser): a duplicate or a mistake. Each message is read first and only deleted when the account sent it; someone else's is refused with notOwnMessage. Without --live it is a dry run that reads each message and deletes nothing. --live deletes, only when matt asked, and needs --approvedBy (rule 8). Discord's answer decides (204 is deleted). Each delete counts as a write, they go 4 s apart, and the first refusal stops the run with nothing retried (rule 94).
+Deletes the account's own messages by id (from log discord read) in a DM, group DM or server channel, on the direct-API engine (no browser): a duplicate or a mistake. Each message is read first and only deleted when the account sent it; someone else's is refused with notOwnMessage. Without --live it is a dry run that reads each message and deletes nothing. --live deletes, only when the owner asked, and needs --approvedBy (rule 8). Discord's answer decides (204 is deleted). Each delete counts as a write, they go 4 s apart, and the first refusal stops the run with nothing retried (rule 94).
 ```
 
 #### log discord react
@@ -2118,7 +2118,7 @@ React to a Discord message with an emoji, on the direct-API engine; a dry run un
 ```text
 log discord react --account <accountName> --channel <channel> --message <id> --emoji <emoji> [--remove] [--approvedBy <who>] [--live] [--json]
 Reacts to one message with an emoji, on the direct-API engine (vendor/endcord, no browser), or takes the account's own reaction off with --remove. Discord takes any emoji, a name (joy, fire, eyes) turned into it, or a server's own emoji as name:id.
-Without --live it is a dry run and nothing is contacted. --live reacts, only when matt asked, and needs --approvedBy (rule 8). The chat is claimed first, as for a send, and released once it is done (rule 133). The platform's own answer decides (rule 73), the governor counts it as a write, and a refusal stops with nothing retried (rule 94).
+Without --live it is a dry run and nothing is contacted. --live reacts, only when the owner asked, and needs --approvedBy (rule 8). The chat is claimed first, as for a send, and released once it is done (rule 133). The platform's own answer decides (rule 73), the governor counts it as a write, and a refusal stops with nothing retried (rule 94).
 ```
 
 #### log discord voice
@@ -2126,11 +2126,11 @@ Without --live it is a dry run and nothing is contacted. --live reacts, only whe
 Send a voice note in the owner's cloned voice as Discord's own voice note, from text; a dry run unless --live MCP tools: `discordVoice`, `discordVoiceLive`, one per form, with named fields.
 
 ```text
-log discord voice --account <accountName> --channel <channel> --text "<what the owner says>" [--provider inworld|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]
+log discord voice --account <accountName> --channel <channel> --text "<what the owner says>" [--provider inworld|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]
 Sends a voice note in the owner's cloned voice (the voice provider, log clone voice) as discord's own voice note: a voice message (flags 8192, its waveform and duration), the bubble Discord's own app records. It takes text only, never an audio file: the words are said in his voice, converted with ffmpeg to ogg/opus and uploaded on the direct-API engine through the account's one session (vendor/endcord, no browser).
-A voice note goes out only when matt asks for one (rule 142). The provider is --provider, else LOG_VOICE_PROVIDER, else inworld; the command only ever calls the shared voice layer (rule 143). Without --live it is a dry run: nothing is generated and nothing is contacted. --live needs --approvedBy (rule 8). It says and converts the note while the account catches up (rule 135) and the text goes through the voice gate every send runs (rule 137), so a note that passes goes out without waiting for it to be made; one the gate refuses is never sent. It then claims the chat (rule 133) and releases it after. The governor counts it as a write, the platform's answer decides (rule 73), and a refusal stops with nothing retried (rule 94).
---mattsWords says the text is matt's own words, dictated by him for this voice note: the voice gate's read is skipped, since it grades speech as typed text and as a reply, while the AI artifact check still runs and refuses aiArtifacts (rule 144).
---translationOf "<what it translates>" says the text is a translation, only when matt asked for one: the voice gate grades those original words (his own language, which the gate reads) instead of the translation, which it can't match to his writing; both are read for AI artifacts. --language <code> (zh-CN, es-ES ...) is the language the clone speaks it in, instead of the clone's own, and it is needed with --translationOf (rule 148).
+A voice note goes out only when the owner asks for one (rule 142). The provider is --provider, else LOG_VOICE_PROVIDER, else inworld; the command only ever calls the shared voice layer (rule 143). Without --live it is a dry run: nothing is generated and nothing is contacted. --live needs --approvedBy (rule 8). It says and converts the note while the account catches up (rule 135) and the text goes through the voice gate every send runs (rule 137), so a note that passes goes out without waiting for it to be made; one the gate refuses is never sent. It then claims the chat (rule 133) and releases it after. The governor counts it as a write, the platform's answer decides (rule 73), and a refusal stops with nothing retried (rule 94).
+--ownersWords says the text is the owner's own words, dictated by him for this voice note: the voice gate's read is skipped, since it grades speech as typed text and as a reply, while the AI artifact check still runs and refuses aiArtifacts (rule 144).
+--translationOf "<what it translates>" says the text is a translation, only when the owner asked for one: the voice gate grades those original words (his own language, which the gate reads) instead of the translation, which it can't match to his writing; both are read for AI artifacts. --language <code> (zh-CN, es-ES ...) is the language the clone speaks it in, instead of the clone's own, and it is needed with --translationOf (rule 148).
 ```
 
 #### log linkedin session
@@ -2299,7 +2299,7 @@ Send a message to a Slack DM, group or channel, on the direct-API engine; a dry 
 ```text
 log slack send --account <accountName> --chat <chatId|who it is with> --text "<message>" [--workspace <domain>] [--asOne] [--approvedBy <who>] [--live] [--json]
 Sends a message to a Slack DM, group DM or channel (by its id, or who it is with from log slack chats), on the direct-API engine (vendor/gabrielSlack, chat.postMessage, no browser).
-A draft written on several lines goes out one message per line (rule 90); a one-line draft is split the way matt writes in that chat (log voice index), and --asOne always sends one. Without --live it is a dry run and Slack is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). Slack's answer decides: a ts is sent, anything else stops the run with nothing retried (rule 94). The governor counts each message as a write. The copy is read for what AI chat interfaces leave in text first (rule 111): hidden characters, odd spaces or pasted Claude HTML refuse it with aiArtifacts.
+A draft written on several lines goes out one message per line (rule 90); a one-line draft is split the way the owner writes in that chat (log voice index), and --asOne always sends one. Without --live it is a dry run and Slack is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). Slack's answer decides: a ts is sent, anything else stops the run with nothing retried (rule 94). The governor counts each message as a write. The copy is read for what AI chat interfaces leave in text first (rule 111): hidden characters, odd spaces or pasted Claude HTML refuse it with aiArtifacts.
 ```
 
 #### log slack cookies
@@ -2319,7 +2319,7 @@ React to a Slack message with an emoji, on the direct-API engine; a dry run unle
 ```text
 log slack react --account <accountName> --chat <chat> --message <id> --emoji <emoji> [--workspace <workspace>] [--remove] [--approvedBy <who>] [--live] [--json]
 Reacts to one message with an emoji, on the direct-API engine (vendor/gabrielSlack, reactions.add and reactions.remove, no browser), or takes the account's own reaction off with --remove. Slack reacts by name (joy, fire, eyes, or a workspace's own); the common emoji are turned into their names, and one it doesn't know is refused with reactInvalid, so give its name. Already reacted counts as done.
-Without --live it is a dry run and nothing is contacted. --live reacts, only when matt asked, and needs --approvedBy (rule 8). The chat is claimed first, as for a send, and released once it is done (rule 133). The platform's own answer decides (rule 73), the governor counts it as a write, and a refusal stops with nothing retried (rule 94).
+Without --live it is a dry run and nothing is contacted. --live reacts, only when the owner asked, and needs --approvedBy (rule 8). The chat is claimed first, as for a send, and released once it is done (rule 133). The platform's own answer decides (rule 73), the governor counts it as a write, and a refusal stops with nothing retried (rule 94).
 ```
 
 #### log slack voice
@@ -2327,11 +2327,11 @@ Without --live it is a dry run and nothing is contacted. --live reacts, only whe
 Send a voice note in the owner's cloned voice as Slack's own voice note, from text; a dry run unless --live MCP tools: `slackVoice`, `slackVoiceLive`, one per form, with named fields.
 
 ```text
-log slack voice --account <accountName> --chat <chat> --text "<what the owner says>" [--workspace <workspace>] [--provider inworld|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]
+log slack voice --account <accountName> --chat <chat> --text "<what the owner says>" [--workspace <workspace>] [--provider inworld|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]
 Sends a voice note in the owner's cloned voice (the voice provider, log clone voice) as slack's own voice note: an audio file shared into the chat through Slack's own upload (files.getUploadURLExternal, the bytes, files.completeUploadExternal), which Slack plays inline. It takes text only, never an audio file: the words are said in his voice, converted with ffmpeg to AAC in .m4a and uploaded on the direct-API engine through the account's one session (vendor/gabrielSlack on curl_cffi, no browser).
-A voice note goes out only when matt asks for one (rule 142). The provider is --provider, else LOG_VOICE_PROVIDER, else inworld; the command only ever calls the shared voice layer (rule 143). Without --live it is a dry run: nothing is generated and nothing is contacted. --live needs --approvedBy (rule 8). It says and converts the note while the account catches up (rule 135) and the text goes through the voice gate every send runs (rule 137), so a note that passes goes out without waiting for it to be made; one the gate refuses is never sent. It then claims the chat (rule 133) and releases it after. The governor counts it as a write, the platform's answer decides (rule 73), and a refusal stops with nothing retried (rule 94).
---mattsWords says the text is matt's own words, dictated by him for this voice note: the voice gate's read is skipped, since it grades speech as typed text and as a reply, while the AI artifact check still runs and refuses aiArtifacts (rule 144).
---translationOf "<what it translates>" says the text is a translation, only when matt asked for one: the voice gate grades those original words (his own language, which the gate reads) instead of the translation, which it can't match to his writing; both are read for AI artifacts. --language <code> (zh-CN, es-ES ...) is the language the clone speaks it in, instead of the clone's own, and it is needed with --translationOf (rule 148).
+A voice note goes out only when the owner asks for one (rule 142). The provider is --provider, else LOG_VOICE_PROVIDER, else inworld; the command only ever calls the shared voice layer (rule 143). Without --live it is a dry run: nothing is generated and nothing is contacted. --live needs --approvedBy (rule 8). It says and converts the note while the account catches up (rule 135) and the text goes through the voice gate every send runs (rule 137), so a note that passes goes out without waiting for it to be made; one the gate refuses is never sent. It then claims the chat (rule 133) and releases it after. The governor counts it as a write, the platform's answer decides (rule 73), and a refusal stops with nothing retried (rule 94).
+--ownersWords says the text is the owner's own words, dictated by him for this voice note: the voice gate's read is skipped, since it grades speech as typed text and as a reply, while the AI artifact check still runs and refuses aiArtifacts (rule 144).
+--translationOf "<what it translates>" says the text is a translation, only when the owner asked for one: the voice gate grades those original words (his own language, which the gate reads) instead of the translation, which it can't match to his writing; both are read for AI artifacts. --language <code> (zh-CN, es-ES ...) is the language the clone speaks it in, instead of the clone's own, and it is needed with --translationOf (rule 148).
 ```
 
 #### log instagram session
@@ -2361,7 +2361,7 @@ Send text and a photo to an Instagram DM, on the direct-API engine; a dry run un
 ```text
 log instagram send --account <accountName> --with <handle|thread name|thread id> [--text "<message>"] [--photo <file>] [--asOne] [--approvedBy <who>] [--live] [--json]
 Sends to an Instagram DM on the direct-API engine (vendor/instagrapi, no browser): --with is matched to one thread by handle, name or id, or to a new DM with that handle. --photo sends a picture first (direct_send_photo), then the text one message per line (rule 90), --asOne as one message.
-Without --live it is a dry run and Instagram is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). Instagram's answer decides: each message comes back with its id, anything else stops the run with nothing retried (rule 94). The copy is read for what AI chat interfaces leave in text first (rule 111).
+Without --live it is a dry run and Instagram is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). Instagram's answer decides: each message comes back with its id, anything else stops the run with nothing retried (rule 94). The copy is read for what AI chat interfaces leave in text first (rule 111).
 ```
 
 #### log instagram watch
@@ -2380,7 +2380,7 @@ React to a Instagram message with an emoji, on the direct-API engine; a dry run 
 ```text
 log instagram react --account <accountName> --thread <thread> --message <id> --emoji <emoji> [--remove] [--approvedBy <who>] [--live] [--json]
 Reacts to one message with an emoji, on the direct-API engine (vendor/instagrapi, no browser), or takes the account's own reaction off with --remove. Instagram takes any emoji; a name (joy, fire, heart) is turned into it. It goes through instagrapi's direct_send_reaction (direct_delete_reaction with --remove) in the account's one session (rule 129).
-Without --live it is a dry run and nothing is contacted. --live reacts, only when matt asked, and needs --approvedBy (rule 8). The chat is claimed first, as for a send, and released once it is done (rule 133). The platform's own answer decides (rule 73), the governor counts it as a write, and a refusal stops with nothing retried (rule 94).
+Without --live it is a dry run and nothing is contacted. --live reacts, only when the owner asked, and needs --approvedBy (rule 8). The chat is claimed first, as for a send, and released once it is done (rule 133). The platform's own answer decides (rule 73), the governor counts it as a write, and a refusal stops with nothing retried (rule 94).
 ```
 
 #### log instagram voice
@@ -2388,11 +2388,11 @@ Without --live it is a dry run and nothing is contacted. --live reacts, only whe
 Send a voice note in the owner's cloned voice as Instagram's own voice note, from text; a dry run unless --live MCP tools: `instagramVoice`, `instagramVoiceLive`, one per form, with named fields.
 
 ```text
-log instagram voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]
+log instagram voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]
 Sends a voice note in the owner's cloned voice (the voice provider, log clone voice) as instagram's own voice note: a voice clip (instagrapi's direct_send_voice: the audio uploaded to rupload.facebook.com/messenger_audio, then sent as a voice_attachment with its waveform). It takes text only, never an audio file: the words are said in his voice, converted with ffmpeg to AAC in .m4a and uploaded on the direct-API engine through the account's one session (vendor/instagrapi, in the account's one session, no browser).
-A voice note goes out only when matt asks for one (rule 142). The provider is --provider, else LOG_VOICE_PROVIDER, else inworld; the command only ever calls the shared voice layer (rule 143). Without --live it is a dry run: nothing is generated and nothing is contacted. --live needs --approvedBy (rule 8). It says and converts the note while the account catches up (rule 135) and the text goes through the voice gate every send runs (rule 137), so a note that passes goes out without waiting for it to be made; one the gate refuses is never sent. It then claims the chat (rule 133) and releases it after. The governor counts it as a write, the platform's answer decides (rule 73), and a refusal stops with nothing retried (rule 94).
---mattsWords says the text is matt's own words, dictated by him for this voice note: the voice gate's read is skipped, since it grades speech as typed text and as a reply, while the AI artifact check still runs and refuses aiArtifacts (rule 144).
---translationOf "<what it translates>" says the text is a translation, only when matt asked for one: the voice gate grades those original words (his own language, which the gate reads) instead of the translation, which it can't match to his writing; both are read for AI artifacts. --language <code> (zh-CN, es-ES ...) is the language the clone speaks it in, instead of the clone's own, and it is needed with --translationOf (rule 148).
+A voice note goes out only when the owner asks for one (rule 142). The provider is --provider, else LOG_VOICE_PROVIDER, else inworld; the command only ever calls the shared voice layer (rule 143). Without --live it is a dry run: nothing is generated and nothing is contacted. --live needs --approvedBy (rule 8). It says and converts the note while the account catches up (rule 135) and the text goes through the voice gate every send runs (rule 137), so a note that passes goes out without waiting for it to be made; one the gate refuses is never sent. It then claims the chat (rule 133) and releases it after. The governor counts it as a write, the platform's answer decides (rule 73), and a refusal stops with nothing retried (rule 94).
+--ownersWords says the text is the owner's own words, dictated by him for this voice note: the voice gate's read is skipped, since it grades speech as typed text and as a reply, while the AI artifact check still runs and refuses aiArtifacts (rule 144).
+--translationOf "<what it translates>" says the text is a translation, only when the owner asked for one: the voice gate grades those original words (his own language, which the gate reads) instead of the translation, which it can't match to his writing; both are read for AI artifacts. --language <code> (zh-CN, es-ES ...) is the language the clone speaks it in, instead of the clone's own, and it is needed with --translationOf (rule 148).
 ```
 
 #### log twitter voice
@@ -2400,11 +2400,11 @@ A voice note goes out only when matt asks for one (rule 142). The provider is --
 Send a voice note in the owner's cloned voice as Twitter's own voice note, from text; a dry run unless --live MCP tools: `twitterVoice`, `twitterVoiceLive`, one per form, with named fields.
 
 ```text
-log twitter voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]
+log twitter voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]
 Sends a voice note in the owner's cloned voice (the voice provider, log clone voice) as twitter's own voice note: an X Chat voice message: the m4a encrypted with the conversation key (chat-xdk encrypt_stream), uploaded to the conversation's media store (InitializeXChatMediaUploadMutation, the parts POSTed to ton.x.com, FinalizeXChatMediaUploadMutation) and sent as the message's one AUDIO attachment with its duration (SendMessageCreateMutation), as X Chat's own recorder sends it. It takes text only, never an audio file: the words are said in his voice, converted with ffmpeg to AAC in .m4a (audio/mp4, as X Chat records) and uploaded on the direct-API engine through the account's one session (vendor/twikit with vendor/chatXdk, in the account's one X session, X Chat opened with the saved PIN, no browser).
-A voice note goes out only when matt asks for one (rule 142). The provider is --provider, else LOG_VOICE_PROVIDER, else inworld; the command only ever calls the shared voice layer (rule 143). Without --live it is a dry run: nothing is generated and nothing is contacted. --live needs --approvedBy (rule 8). It says and converts the note while the account catches up (rule 135) and the text goes through the voice gate every send runs (rule 137), so a note that passes goes out without waiting for it to be made; one the gate refuses is never sent. It then claims the chat (rule 133) and releases it after. The governor counts it as a write, the platform's answer decides (rule 73), and a refusal stops with nothing retried (rule 94).
---mattsWords says the text is matt's own words, dictated by him for this voice note: the voice gate's read is skipped, since it grades speech as typed text and as a reply, while the AI artifact check still runs and refuses aiArtifacts (rule 144).
---translationOf "<what it translates>" says the text is a translation, only when matt asked for one: the voice gate grades those original words (his own language, which the gate reads) instead of the translation, which it can't match to his writing; both are read for AI artifacts. --language <code> (zh-CN, es-ES ...) is the language the clone speaks it in, instead of the clone's own, and it is needed with --translationOf (rule 148).
+A voice note goes out only when the owner asks for one (rule 142). The provider is --provider, else LOG_VOICE_PROVIDER, else inworld; the command only ever calls the shared voice layer (rule 143). Without --live it is a dry run: nothing is generated and nothing is contacted. --live needs --approvedBy (rule 8). It says and converts the note while the account catches up (rule 135) and the text goes through the voice gate every send runs (rule 137), so a note that passes goes out without waiting for it to be made; one the gate refuses is never sent. It then claims the chat (rule 133) and releases it after. The governor counts it as a write, the platform's answer decides (rule 73), and a refusal stops with nothing retried (rule 94).
+--ownersWords says the text is the owner's own words, dictated by him for this voice note: the voice gate's read is skipped, since it grades speech as typed text and as a reply, while the AI artifact check still runs and refuses aiArtifacts (rule 144).
+--translationOf "<what it translates>" says the text is a translation, only when the owner asked for one: the voice gate grades those original words (his own language, which the gate reads) instead of the translation, which it can't match to his writing; both are read for AI artifacts. --language <code> (zh-CN, es-ES ...) is the language the clone speaks it in, instead of the clone's own, and it is needed with --translationOf (rule 148).
 ```
 
 <!-- surface:end -->

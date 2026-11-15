@@ -44,5 +44,5 @@ export function speedOf(said: string | null): number {
 }
 
 export function accentDescriptionOf(accent: string): string {
-  return `matt's own voice, a ${accent} accent`
+  return `the owner's own voice, a ${accent} accent`
 }

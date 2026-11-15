@@ -249,7 +249,7 @@ export const inspectCommand: Command = {
       const action = parseInspectAction(rest);
       if (!action.ok) return { code: 1, stderr: `log inspect: ${action.error}\n${INSPECT_USAGE}` };
       if (LIVE_ACTIONS.includes(action.action) && !parsed.flags["live"]) {
-        return { code: 1, stderr: `log inspect: ${action.action} acts on the platform: add --live when matt asked for it (rule 8)` };
+        return { code: 1, stderr: `log inspect: ${action.action} acts on the platform: add --live when the owner asked for it (rule 8)` };
       }
       const open = openInspects();
       const wanted = typeof parsed.flags["account"] === "string" ? parsed.flags["account"] : undefined;

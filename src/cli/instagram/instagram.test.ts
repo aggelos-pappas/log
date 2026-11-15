@@ -135,7 +135,7 @@ describe("log instagram send", () => {
   });
 
   test("--live sends through the engine and reports each message's id", async () => {
-    const r = await run(["instagram", "send", "--account", "instagramOne", "--with", "someone", "--text", "yo", "--photo", "meme.jpg", "--live", "--approvedBy", "matt"], { answer: { ok: true, loginState: "loggedIn", sent: [{ id: "p1", kind: "photo" }, { id: "t1", kind: "text", text: "yo" }] }, refreshed: null });
+    const r = await run(["instagram", "send", "--account", "instagramOne", "--with", "someone", "--text", "yo", "--photo", "meme.jpg", "--live", "--approvedBy", "the owner"], { answer: { ok: true, loginState: "loggedIn", sent: [{ id: "p1", kind: "photo" }, { id: "t1", kind: "text", text: "yo" }] }, refreshed: null });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["instagramOne:send"]);
     expect(r.out).toContain("sent 2 message(s)");
@@ -178,7 +178,7 @@ describe("log instagram watch", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({ sessionid: "x".repeat(40) }));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "send", with: "someone", live: true, approvedBy: "matt", account: "instagramOne", platform: "instagram", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "send", with: "someone", live: true, approvedBy: "the owner", account: "instagramOne", platform: "instagram", stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [INSTAGRAM_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "nothingToSend" });
