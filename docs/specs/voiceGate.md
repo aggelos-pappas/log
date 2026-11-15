@@ -149,3 +149,29 @@ Checked by: code and SubQ
 `gateSend` in `src/cli/twitter/helpers/voice.ts` passes a room to `gateReading`: the one given (`room`), the one its `readRoom` reads, or one built with `roomOf` from the chat in the .db. `roomOf` in `src/voice/room/index.ts` gives the chat's kind, who else spoke in the last 24 hours, the last of them and how many days ago, how many of the owner's messages end the chat, whether nobody else has spoken lately, and `addressTo`, which for a channel or group with nobody else lately says to talk to it as a whole. `readVoice` in `src/twitter/copy/voice/client.ts` gives it to SubQ as `theRoom` and asks `fitsTheRoom`, and a draft scoring under `CONTEXT_PASS` fails. The Discord send and voice note pass a `readRoom` that reads the chat's last 20 messages through the engine with `roomFromRead`. When nobody else has spoken lately in a channel or group (`nobodyToAnswer`), there is nothing to answer, so `inContext` doesn't count towards the pass and isn't named in a refusal; `fitsTheRoom`, `buildsOn` and the voice still do. In a direct message where the owner sent the latest messages and they haven't answered yet, `fitsTheRoom` counts a follow-up that carries on from what the owner just sent them (a question about their own post he just shared) as addressed to them as the chat really is, and fails it only when it acts as if they had replied. Rules 155, 156.
 
 Checked by: code and SubQ
+
+## The conversation card
+
+### REQ-VOICE-23: Every chat the owner sends to has one card, built only from that chat
+
+`cardFor` in `src/inbox/card/client.ts` builds a card from the `messages` rows of the chats `chatsFor` finds, and an X dm kept under both of its ids (`A:B` and `A-B`) is one card. It holds who the chat is with, how it started, whose turn it is (`waitingOn`), what they said that the owner hasn't answered, what the owner asked that they haven't, his last lines there and the last lines either side. It is stored in `conversationCards` (migration 20) with the message `throughSeq` it was built through, and rebuilt only when a newer message exists. `appendEvent` calls `refreshWorkedCards`, which rebuilds only a chat that already has a card or is claimed, so no other chat costs anything.
+
+Checked by: code and SubQ
+
+### REQ-VOICE-24: The writer and the gate read the card first
+
+`voice` with a chat and no text shows `renderCard` first, then how the owner writes there and at most four of his real replies, and tells the writer to answer only what is open in one or two short lines, never a list of questions, never what he already asked, nothing from another conversation. `readVoice` gives the rendered card to SubQ as `thisConversation`. The owner, 12 November: "it keeps scoring really low on the gate and it's because it's a mountain wall of text".
+
+Checked by: code and SubQ
+
+### REQ-VOICE-25: An answer is owed only when the card says it waits on the owner, and their line is under a day old
+
+When a card is known and the owner has spoken in the chat, `inContext` gates only when `answerOwed` is true: the card waits on the owner and their last line is under `ANSWER_OWED_MS` (a day) old. Otherwise the chat's own facts decide, not a guess from ranked moments.
+
+Checked by: code
+
+### REQ-VOICE-26: A chat with history is judged on that history
+
+With `OWN_CHAT_MESSAGES` (5) or more of the owner's messages in the chat (`scopedToThisChat`), `gateReading` does not read his replies from other conversations (`evidenceAnywhere`), so a draft to one person is never graded against a chat with someone else.
+
+Checked by: code

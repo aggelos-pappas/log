@@ -282,6 +282,16 @@ export const MIGRATIONS: readonly Migration[] = [
       for (const statement of IDENTITY_PROFILE_TABLES) handle.exec(statement)
     },
   },
+  {
+    version: 20,
+    name: 'conversationCards',
+    apply(handle) {
+      if (!hasColumn(handle, 'conversationCards', 'throughSeq')) handle.exec('DROP TABLE IF EXISTS conversationCards')
+      handle.exec('CREATE TABLE IF NOT EXISTS conversationCards (key TEXT PRIMARY KEY, platform TEXT NOT NULL, account TEXT NOT NULL, throughSeq INTEGER NOT NULL, card TEXT NOT NULL, builtAt TEXT NOT NULL) WITHOUT ROWID')
+      handle.exec('DELETE FROM conversationCards')
+      handle.exec('CREATE INDEX IF NOT EXISTS conversationCardsByAccount ON conversationCards (platform, account)')
+    },
+  },
 ]
 
 export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version

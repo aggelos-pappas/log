@@ -34,7 +34,7 @@ const fakeFollower = { userId: "9001", handle: "fakeBird", name: "Fake Bird", bi
 describe("migration 19 adds identityProfiles", () => {
   test("a fresh database ends at version 19 with the table and its index", () => {
     const handle = fresh();
-    expect(SCHEMA_VERSION).toBe(19);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(19);
     const names = (handle.prepare("SELECT name FROM sqlite_master WHERE name LIKE 'identityProfiles%'").all() as { name: string }[]).map((r) => r.name).sort();
     expect(names).toEqual(["identityProfiles", "identityProfilesByFetchedAt"]);
     const columns = (handle.prepare("PRAGMA table_info(identityProfiles)").all() as { name: string; pk: number }[]).map((c) => [c.name, c.pk]);
@@ -48,8 +48,8 @@ describe("migration 19 adds identityProfiles", () => {
     insertEventRow(handle, { platform: "discord", account: "fakeGuild", conversationId: "c1", type: "message", with: "jd", text: "hi", box: "dm", payload: { id: "1", senderId: "42" }, sourceAt: "2026-11-08T01:00:00Z", receivedAt: "2026-11-08T01:00:01Z", source: "live" });
     const count = (table: string) => (handle.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;
     const before = ["events", "messages", "identities", "chats"].map(count);
-    expect(migrate(handle).map((m) => m.version)).toEqual([19]);
-    expect((handle.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(19);
+    expect(migrate(handle).map((m) => m.version)).toEqual(MIGRATIONS.filter((m) => m.version > 18).map((m) => m.version));
+    expect((handle.prepare("PRAGMA user_version").get() as { user_version: number }).user_version).toBe(SCHEMA_VERSION);
     expect(["events", "messages", "identities", "chats"].map(count)).toEqual(before);
     expect(before[0]).toBe(1);
     expect(count("identityProfiles")).toBe(0);
