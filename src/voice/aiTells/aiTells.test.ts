@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { aiPhrases, buildAiIndex, chunksOf, mattsOwnPhrases, mutedRules, openAiIndex, percentile, readAiTells, ruleHits, valeRules } from './index'
+import { aiPhrases, buildAiIndex, chunksOf, ownersOwnPhrases, mutedRules, openAiIndex, percentile, readAiTells, ruleHits, valeRules } from './index'
 import type { AiEmbedder } from './index'
 
 const VOCAB = ['delve', 'tapestry', 'hope', 'helps', 'lad', 'tool', 'free', 'yo', 'filmed', 'game', 'changer', 'landscape']
@@ -37,7 +37,7 @@ describe('AI tells: vale-ai-tells and the other lists, read against a draft (rul
   test('a phrase vale flags that the owner says himself in 5 or more messages is his voice and never fails a draft', () => {
     const rules = valeRules()
     const replies = [...Array.from({ length: 6 }, () => 'to be honest lad'), 'yo']
-    const mine = mattsOwnPhrases(replies, rules)
+    const mine = ownersOwnPhrases(replies, rules)
     expect(mine).toContain('to be honest')
     expect(ruleHits('to be honest lad', rules, new Set(mine))).toEqual([])
     expect(ruleHits('great question lad', rules, new Set(mine)).length).toBeGreaterThan(0)

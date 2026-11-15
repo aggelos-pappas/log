@@ -55,6 +55,6 @@ describe('governor reset', () => {
   })
 
   test('the old hand resets import as governorReset rows', () => {
-    expect(fromOldLine('governorResets', { at: '2026-11-03T08:39:32Z', account: 'twitter matthewsoldit', dayCountBefore: 486, by: 'the owner', reason: 'reset' })).toMatchObject({ kind: 'governorReset', platform: 'twitter', account: 'matthewsoldit', amount: 486, subject: 'the owner' })
+    expect(fromOldLine('governorResets', { at: '2026-11-03T08:39:32Z', account: 'twitter xAccount', dayCountBefore: 486, by: 'the owner', reason: 'reset' })).toMatchObject({ kind: 'governorReset', platform: 'twitter', account: 'xAccount', amount: 486, subject: 'the owner' })
   })
 })

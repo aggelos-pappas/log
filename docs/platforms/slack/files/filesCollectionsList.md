@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryhaL9E5FkqfRpLBCW
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `collections` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_f05c61f401ab56ba3699a78c0655e8f6ebc87a000b70cc91d182848f77e516a0` |
 
 Seen 2 time(s) in 1 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 357 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 357 ms
 
 Sent:
 
@@ -71,7 +71,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 416 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 416 ms
 
 Sent:
 

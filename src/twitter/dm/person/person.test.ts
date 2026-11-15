@@ -49,7 +49,7 @@ describe('one conversation per person', () => {
   })
 
   test('search indexes the pair as one conversation, so one hit', () => {
-    const base = { platform: 'twitter', account: 'matthewsoldit', with: ['tester_t'], box: 'inbox' }
+    const base = { platform: 'twitter', account: 'xAccount', with: ['tester_t'], box: 'inbox' }
     const said = { id: 'a', at: '2026-10-26T08:00:00Z', from: 'tester_t', fromMe: false, text: 'affiliate program referral fee' }
     const merged = onePerPerson([
       { ...base, conversationId: '1-2', messages: [said] },
@@ -64,9 +64,9 @@ describe('one conversation per person', () => {
     const now = new Date('2026-10-27T00:00:00Z')
     const reply = { with: 'handle_b1', lastAt: '2026-10-26T20:39:56Z', lastFromMe: false, lastText: 'news processing' }
     const seen = { '1-2': '2026-10-26T00:00:00Z' }
-    const first = newMessages('twitter', 'matthewsoldit', [{ ...reply, conversationId: '1:2', box: 'xchat' }, { ...reply, conversationId: '1-2', box: 'inbox' }], seen, now)
+    const first = newMessages('twitter', 'xAccount', [{ ...reply, conversationId: '1:2', box: 'xchat' }, { ...reply, conversationId: '1-2', box: 'inbox' }], seen, now)
     expect(first.messages).toHaveLength(1)
-    const again = newMessages('twitter', 'matthewsoldit', [{ ...reply, conversationId: '1-2', box: 'inbox' }], first.seen, now)
+    const again = newMessages('twitter', 'xAccount', [{ ...reply, conversationId: '1-2', box: 'inbox' }], first.seen, now)
     expect(again.messages).toHaveLength(0)
   })
 })

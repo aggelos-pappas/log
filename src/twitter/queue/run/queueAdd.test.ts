@@ -7,7 +7,7 @@ import type { RunDeps } from './types'
 const START = Date.parse('2026-11-01T16:00:00Z')
 
 function dmQueue(): Queue {
-  const queue = buildQueue({ account: 'matthewsoldit', action: 'dm', targets: [{ handle: 'a', userId: '1', text: 'yo a' }, { handle: 'b', userId: '2', text: 'yo b' }], lines: [], sources: [], seed: 1, now: new Date(START) })
+  const queue = buildQueue({ account: 'xAccount', action: 'dm', targets: [{ handle: 'a', userId: '1', text: 'yo a' }, { handle: 'b', userId: '2', text: 'yo b' }], lines: [], sources: [], seed: 1, now: new Date(START) })
   queue.randomRun = { planned: new Date(START).toISOString(), window: '1h', minGap: 300, events: [{ n: 1, kind: 'reply', at: new Date(START + 600_000).toISOString() }, { n: 2, kind: 'reply', at: new Date(START + 1_800_000).toISOString() }] }
   return approveQueue(queue, 'the owner', new Date(START))
 }
@@ -32,7 +32,7 @@ describe('one queue per account: what is added is fitted into the same plan', ()
   })
 
   test('a reply added with a short window lands inside it, and what was planned after it moves back to keep the gap (rule 108)', () => {
-    const queue = buildQueue({ account: 'matthewsoldit', action: 'dm', targets: ['a', 'b', 'c', 'd'].map((h, i) => ({ handle: h, userId: String(i + 1), text: `yo ${h}` })), lines: [], sources: [], seed: 1, now: new Date(START) })
+    const queue = buildQueue({ account: 'xAccount', action: 'dm', targets: ['a', 'b', 'c', 'd'].map((h, i) => ({ handle: h, userId: String(i + 1), text: `yo ${h}` })), lines: [], sources: [], seed: 1, now: new Date(START) })
     queue.randomRun = { planned: new Date(START).toISOString(), window: '1h', minGap: 420, events: [1, 2, 3, 4].map((n) => ({ n, kind: 'reply' as const, at: new Date(START + n * 450_000).toISOString() })) }
     approveQueue(queue, 'the owner', new Date(START))
     const [added] = addToQueue(queue, { action: 'dm', targets: [{ handle: 'shaw', userId: '9', text: 'cheers lad' }], approvedBy: 'the owner', window: '15m', at: new Date(START).toISOString() }, seededRandom(3), new Date(START))
@@ -48,7 +48,7 @@ describe('one queue per account: what is added is fitted into the same plan', ()
   })
 
   test('the run never sends two things closer than the gap, whatever the plan says', async () => {
-    const built = buildQueue({ account: 'matthewsoldit', action: 'dm', targets: ['a', 'b', 'c'].map((h, i) => ({ handle: h, userId: String(i + 1), text: `yo ${h}` })), lines: [], sources: [], seed: 1, now: new Date(START) })
+    const built = buildQueue({ account: 'xAccount', action: 'dm', targets: ['a', 'b', 'c'].map((h, i) => ({ handle: h, userId: String(i + 1), text: `yo ${h}` })), lines: [], sources: [], seed: 1, now: new Date(START) })
     built.randomRun = { planned: new Date(START).toISOString(), window: '1h', minGap: 300, events: [1, 2, 3].map((n) => ({ n, kind: 'reply' as const, at: new Date(START + n * 20_000).toISOString() })) }
     const queue = approveQueue(built, 'the owner', new Date(START))
     const clock = { now: START }
@@ -144,10 +144,10 @@ describe('a running queue takes in what is added and sends it all through one ru
 describe('a reply can carry a meme', () => {
   test('a target with media keeps it on its item, a quote never does, and an item without media keeps its old fingerprint', () => {
     const now = new Date(START)
-    const replies = buildQueue({ account: 'matthewsoldit', action: 'reply', targets: [{ handle: 'a', tweetUrl: 'https://x.com/a/status/1', text: 'son im crine', media: 'https://memes.example/fries.webp' }, { handle: 'b', tweetUrl: 'https://x.com/b/status/2', text: 'real' }], lines: [], sources: [], seed: 1, now })
+    const replies = buildQueue({ account: 'xAccount', action: 'reply', targets: [{ handle: 'a', tweetUrl: 'https://x.com/a/status/1', text: 'son im crine', media: 'https://memes.example/fries.webp' }, { handle: 'b', tweetUrl: 'https://x.com/b/status/2', text: 'real' }], lines: [], sources: [], seed: 1, now })
     expect(replies.items[0].media).toEqual(['https://memes.example/fries.webp'])
     expect(replies.items[1].media).toBeUndefined()
-    const quotes = buildQueue({ account: 'matthewsoldit', action: 'quote', targets: [{ handle: 'a', tweetUrl: 'https://x.com/a/status/1', text: 'real', media: ['x.webp'] }], lines: [], sources: [], seed: 1, now })
+    const quotes = buildQueue({ account: 'xAccount', action: 'quote', targets: [{ handle: 'a', tweetUrl: 'https://x.com/a/status/1', text: 'real', media: ['x.webp'] }], lines: [], sources: [], seed: 1, now })
     expect(quotes.items[0].media).toBeUndefined()
     const approved = approveQueue(replies, 'the owner', now)
     const plain = approveQueue({ ...replies, items: replies.items.map(({ media, ...rest }) => rest) }, 'the owner', now)

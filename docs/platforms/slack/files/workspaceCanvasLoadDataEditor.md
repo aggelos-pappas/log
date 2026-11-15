@@ -23,7 +23,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 14: press Enter: 200, 397 ms
+**runs/inspect/20261103T065639_slackAccount**, step 14: press Enter: 200, 397 ms
 
 Sent:
 

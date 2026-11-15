@@ -7,9 +7,9 @@ import type { ProviderClone, SpeakFormat, SpokenReading, SpokenWord, VoiceNote, 
 import { AUDIO_TOOLS, convertFor, discordWaveform, encodeTo, instagramLevels, samplesOf } from './audio'
 import type { AudioTools } from './audio'
 import { voiceSettingsOf } from './provider'
-import { processLikeMatt, seeded } from './realism'
+import { processLikeOwner, seeded } from './realism'
 import type { Done } from './realism'
-import { mattsRecordings } from './recordings'
+import { ownersRecordings } from './recordings'
 import { readSpoken, speakableText, unknownAcronyms } from './spoken'
 import { readClone, stampOf, voiceNotesDir } from './store'
 
@@ -35,7 +35,7 @@ export async function listenTo(path: string): Promise<Listened> {
 }
 
 export const voiceSteps: VoiceSteps = {
-  process: (from, to, seed) => processLikeMatt(from, to, mattsRecordings().map((r) => r.path), seed),
+  process: (from, to, seed) => processLikeOwner(from, to, ownersRecordings().map((r) => r.path), seed),
   listen: listenTo,
   encode: (from, to) => encodeTo(from, to),
 }

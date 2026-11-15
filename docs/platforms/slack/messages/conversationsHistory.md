@@ -14,7 +14,7 @@ Content-Disposition: form-data; name`, `------WebKitFormBoundarykfxmrMKFyyOWMb1v
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryoeyA1epMYZr6M9G2
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `latest_updates`, `unchanged_messages`, `oldest`, `messages`, `has_more`, `pin_count`, `channel_actions_ts`, `channel_actions_count`, `date_joined`, `latest_updates.1793689024.177609`, `latest_updates.1793688985.380489` and 28 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script29.js:146 "/4ak"`, `runs/inspect/20261103T065639_mattSlack/script3.js:2954 "/4ak"`, `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script29.js:146 "/4ak"`, `runs/inspect/20261103T065639_slackAccount/script3.js:2954 "/4ak"`, `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_11ed74c75a76c1fe765d328b3636a7ee87faefb6d6d67305edf8e854a4df3fb4` |
 
 Seen 4 time(s) in 1 run(s).
@@ -29,7 +29,7 @@ Seen 4 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 305 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 305 ms
 
 Sent:
 
@@ -71,7 +71,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, POST 0 /clog/track/ (0 ms): 200, 317 ms
+**runs/inspect/20261103T065639_slackAccount**, POST 0 /clog/track/ (0 ms): 200, 317 ms
 
 Sent:
 
@@ -301,7 +301,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:2>: 200, 316 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:2>: 200, 316 ms
 
 Sent:
 

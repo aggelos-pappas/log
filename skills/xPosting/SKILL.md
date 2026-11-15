@@ -1,6 +1,6 @@
 ---
 name: xPosting
-description: Run an X account the way the owner runs @matthewsoldit, from any account. Add the account to Twenty with `log twitter cookies save` (masked prompt, checked with X), give it a copy style, then post originals by the social posting playbook (Cap, Parakeet, FilmCraft, the X discipline) and reach people through `log twitter` replies, quotes, likes, dms and the queue. Use to set up an X account, to post or reply on X, and when adding a new X workflow, copy style or editing rule.
+description: Run an X account the way the owner runs @xAccount, from any account. Add the account to Twenty with `log twitter cookies save` (masked prompt, checked with X), give it a copy style, then post originals by the social posting playbook (Cap, Parakeet, FilmCraft, the X discipline) and reach people through `log twitter` replies, quotes, likes, dms and the queue. Use to set up an X account, to post or reply on X, and when adding a new X workflow, copy style or editing rule.
 ---
 
 # xPosting
@@ -117,7 +117,7 @@ The parts every page uses:
   `--force` goes past it only when the owner says so (rule 86). See
   [docs/specs/writeBudgets.md](../../docs/specs/writeBudgets.md).
 
-## 3b. The growth loop (how the owner grows @matthewsoldit)
+## 3b. The growth loop (how the owner grows @xAccount)
 
 What worked for the owner (`log kb show memory:-buzz/listeningkit-real-state`): a
 text post about treg ("$10 -> 30 conversations") did 205K views and 1,182

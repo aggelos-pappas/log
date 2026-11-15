@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://x.com/matthewsoldit/status/2120938715820474690"><img src="media/readme/hermesIntro.gif" alt="Introducing log by ListeningKit, in collaboration with Hermes Agent: Hermes asks who is waiting for a reply, log reads every inbox, and the answer lands on Discord in your own voice" width="100%" /></a>
-  <br><sub>Introducing log, in collaboration with Hermes Agent. <a href="https://x.com/matthewsoldit/status/2120938715820474690">Watch the launch video with sound on X →</a></sub>
+  <a href="https://x.com/xAccount/status/2120938715820474690"><img src="media/readme/hermesIntro.gif" alt="Introducing log by ListeningKit, in collaboration with Hermes Agent: Hermes asks who is waiting for a reply, log reads every inbox, and the answer lands on Discord in your own voice" width="100%" /></a>
+  <br><sub>Introducing log, in collaboration with Hermes Agent. <a href="https://x.com/xAccount/status/2120938715820474690">Watch the launch video with sound on X →</a></sub>
 </p>
 
 <h3 align="center">One command for every social account you run.</h3>

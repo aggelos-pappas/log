@@ -38,7 +38,7 @@ The hooks and the MCP read the open browsers the same way:
 `readOpenBrowsers` and `browserView` (`src/browser/inspect/helpers/browserStates.ts`).
 So a client without hooks (a claude.ai connector) gets the same thing in
 every tool result: `browsers` (each open browser's step, page and known state),
-`next` (the call that resolves it: make it, do not stop), `needsMatt`
+`next` (the call that resolves it: make it, do not stop), `needsOwner`
 (what only the owner clears) and `progress` (every streamed line, timed), with the
 first lines of its text saying the same. `log browsers` (tool `browsers`) reads
 them on demand.

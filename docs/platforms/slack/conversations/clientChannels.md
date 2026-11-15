@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryECI1JUjgnOTowPBr
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `channels.has_more_mpdms`, `channels.channels`, `channels.ims`, `channels.mpims`, `channels.is_open`, `channels.channels_priority`, `sections.channel_sections`, `sections.entities`, `sections.checksum`, `channels.unchanged_channel_ids` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script289.js:1371 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:168 statement`, `runs/inspect/20261103T065639_mattSlack/script3.js:2976 statement`, `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script289.js:1371 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:168 statement`, `runs/inspect/20261103T065639_slackAccount/script3.js:2976 statement`, `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_785fbb3fccac7189d193fb23f8d798decd1eed93c410adce714e423f355e75f4` |
 
 Seen 2 time(s) in 1 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 852 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 852 ms
 
 Sent:
 
@@ -373,7 +373,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 305 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 305 ms
 
 Sent:
 
@@ -591,7 +591,7 @@ Answered:
 
 ## What it does
 
-Slack's web client asks for the viewer's channel list and sidebar sections in one call (`channels.channels`, `channels.ims`, `channels.mpims`, `sections.channel_sections`, `sections.checksum`, `unchanged_channel_ids`): it fired 3.2 s into step 4 (goto /client, 852 ms) and again 2.3 s into step 6 (305 ms), both 200, on account mattSlack (run 20261103T065639).
+Slack's web client asks for the viewer's channel list and sidebar sections in one call (`channels.channels`, `channels.ims`, `channels.mpims`, `sections.channel_sections`, `sections.checksum`, `unchanged_channel_ids`): it fired 3.2 s into step 4 (goto /client, 852 ms) and again 2.3 s into step 6 (305 ms), both 200, on account slackAccount (run 20261103T065639).
 
 ## What our machine does with it
 

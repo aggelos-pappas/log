@@ -32,6 +32,6 @@ describe("X Chat live lines", () => {
 
   test("a message opened late keeps how long it waited and why", () => {
     const late = { tries: 5, waitedSeconds: 2600, firstError: "no matching key" };
-    expect(inboxMessageOf("matthewsoldit", { ...message, openedLate: late }, new Date("2026-11-07T16:09:13Z")).openedLate).toEqual(late);
+    expect(inboxMessageOf("xAccount", { ...message, openedLate: late }, new Date("2026-11-07T16:09:13Z")).openedLate).toEqual(late);
   });
 });

@@ -46,7 +46,7 @@ const ID_KEYS = new Map(
 )
 const KEEP_NAME = /^(content-disposition|content-type|accept|general|random|log|slack|discord|facebook|reddit|instagram|x|twitter|linkedin|marketplace|[a-z]+_[a-z_]+)$/i
 const SAFE_NUMBER_CONTEXT = /(doc_?[iI][dD]|query_?[iI][dD]|queryID|app_?[iI][dD]|application_?[iI][dD]|client_?[iI][dD]|qpl|rev|__spin_r|__hs|version|build|experiment|config|hash)["'\s:=|`]*$/i
-const STOP_NAMES = new Set(['matt', 'Matt', 'admin', 'Admin', 'user', 'User', 'test', 'Test', 'none', 'None', 'null', 'true', 'false', 'Facebook', 'Marketplace', 'Slack', 'Discord', 'Reddit', 'Instagram', 'LinkedIn', 'Twitter', 'general', 'random', 'Log', 'You', 'you', 'Anonymous', 'Deleted', 'deleted'])
+const STOP_NAMES = new Set(['owner', 'Owner', 'admin', 'Admin', 'user', 'User', 'test', 'Test', 'none', 'None', 'null', 'true', 'false', 'Facebook', 'Marketplace', 'Slack', 'Discord', 'Reddit', 'Instagram', 'LinkedIn', 'Twitter', 'general', 'random', 'Log', 'You', 'you', 'Anonymous', 'Deleted', 'deleted'])
 const MEDIA_HOSTS = /https?:\/\/(?:avatars\.slack-edge\.com|secure\.gravatar\.com|[a-z0-9.-]*gravatar\.com|cdn\.discordapp\.com\/(?:avatars|attachments|banners|guilds)|media\.discordapp\.net\/attachments|files\.slack\.com|[a-z0-9-]+\.slack-files\.com|slack-files\.com|scontent[a-z0-9.-]*\.(?:fbcdn\.net|cdninstagram\.com)|[a-z0-9-]+\.cdninstagram\.com|[a-z0-9-]+\.fbcdn\.net|pbs\.twimg\.com\/profile_(?:images|banners)|styles\.redditmedia\.com|preview\.redd\.it|i\.redd\.it)[^\s"'`)<>\]|\\]*/g
 const SLACK_ID = /(?<=^|[^A-Za-z0-9]|\\[rnt])([TUWCDGEBF])0[A-Z0-9]{7,11}(?![A-Za-z0-9])/g
 const SLACK_KIND = { T: 'teamId', E: 'teamId', U: 'userId', W: 'userId', B: 'userId', C: 'channelId', D: 'channelId', G: 'channelId', F: 'fileId' }

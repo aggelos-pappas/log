@@ -30,7 +30,7 @@ export interface AiBaseline {
   p50: number
   p99: number
   mutedRules: string[]
-  mattsPhrases?: string[]
+  ownersPhrases?: string[]
 }
 
 export interface AiIndexMeta {
@@ -67,8 +67,8 @@ export interface AiReading {
 export const JINA_EMBED_MODEL = 'jina-embeddings-v5-omni-small'
 export const JINA_RERANK_MODEL = 'jina-reranker-v3.5'
 export const JINA_DIMENSIONS = 1024
-export const MUTE_IF_MATT_USES = 0.02
-export const MATT_SAYS_IT_TIMES = 5
+export const MUTE_IF_OWNER_USES = 0.02
+export const OWNER_SAYS_IT_TIMES = 5
 export const X_COMPLAINT = 'xComplaint'
 export const X_COMPLAINT_KEEP = 0.6
 export const BASELINE_SAMPLE = 500

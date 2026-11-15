@@ -16,11 +16,11 @@ beforeEach(() => {
 describe("one watcher per account, never two (rule 131)", () => {
   test("the first watcher takes the account and a second one is refused loudly while the first lives", () => {
     const alive = (pid: number) => pid === 111 || pid === 222;
-    expect(claimWatcher("twitter", "matthewsoldit", 111, alive)).toMatchObject({ ok: true });
-    expect(watchHolder("twitter", "matthewsoldit", alive)).toBe(111);
-    expect(claimWatcher("twitter", "matthewsoldit", 222, alive)).toEqual({ ok: false, holder: 111 });
+    expect(claimWatcher("twitter", "xAccount", 111, alive)).toMatchObject({ ok: true });
+    expect(watchHolder("twitter", "xAccount", alive)).toBe(111);
+    expect(claimWatcher("twitter", "xAccount", 222, alive)).toEqual({ ok: false, holder: 111 });
     const alerts = takeAlerts("sessionA");
-    expect(alerts.join("\n")).toContain("DUPLICATEWATCHER twitter matthewsoldit");
+    expect(alerts.join("\n")).toContain("DUPLICATEWATCHER twitter xAccount");
     expect(alerts.join("\n")).toContain("pid 222");
   });
 
@@ -35,10 +35,10 @@ describe("one watcher per account, never two (rule 131)", () => {
 
   test("the hook never starts a second watcher while one holds the account", () => {
     const alive = (pid: number) => pid === 111;
-    expect(claimWatcher("slack", "mattSlack", 111, alive)).toMatchObject({ ok: true });
-    rmSync(join(process.env.LOG_INBOX_STATE!, "slack", "mattSlack", "watch.pid"), { force: true });
+    expect(claimWatcher("slack", "slackAccount", 111, alive)).toMatchObject({ ok: true });
+    rmSync(join(process.env.LOG_INBOX_STATE!, "slack", "slackAccount", "watch.pid"), { force: true });
     let started = 0;
-    expect(ensureLiveWatchers("slack", ["mattSlack"], () => ++started, alive)).toEqual([]);
+    expect(ensureLiveWatchers("slack", ["slackAccount"], () => ++started, alive)).toEqual([]);
     expect(started).toBe(0);
   });
 });
@@ -100,7 +100,7 @@ describe("inbox watch", () => {
   });
   test("a Discord message pushed by the gateway is told with the Discord steps, beside X's", () => {
     addPending([{ platform: "discord", account: "myDiscordName", conversationId: "1316963626611118161", with: "VIBE BOT", text: "look beyond x", at: "2026-10-28T08:48:50Z", box: "reply", seenAt: "2026-10-28T08:48:51Z" }]);
-    addPending([{ platform: "twitter", account: "matthewsoldit", conversationId: "1-2", with: "alice", text: "hey", at: "2026-10-28T08:49:00Z", box: "xchat", seenAt: "2026-10-28T08:49:01Z" }]);
+    addPending([{ platform: "twitter", account: "xAccount", conversationId: "1-2", with: "alice", text: "hey", at: "2026-10-28T08:49:00Z", box: "xchat", seenAt: "2026-10-28T08:49:01Z" }]);
     const text = inboxContext(takePending())!;
     expect(text).toContain(">>> NEW MESSAGE (1)");
     expect(text).toContain(">>> NEW DISCORD MESSAGE (1)");
@@ -109,12 +109,12 @@ describe("inbox watch", () => {
   });
 
   test("a Slack message pushed by the workspace's websocket is told with the Slack steps", () => {
-    addPending([{ platform: "slack", account: "mattSlack", conversationId: "D0EXAMPLE01", with: "Sam", text: "yo hows it going", at: "2026-11-03T07:00:00Z", box: "dm", seenAt: "2026-11-03T07:00:01Z", workspace: "acme" }]);
+    addPending([{ platform: "slack", account: "slackAccount", conversationId: "D0EXAMPLE01", with: "Sam", text: "yo hows it going", at: "2026-11-03T07:00:00Z", box: "dm", seenAt: "2026-11-03T07:00:01Z", workspace: "acme" }]);
     const text = inboxContext(takePending())!;
     expect(text).toContain(">>> NEW SLACK MESSAGE (1)");
-    expect(text).toContain("Sam on slack mattSlack in acme (DM)");
+    expect(text).toContain("Sam on slack slackAccount in acme (DM)");
     expect(text).toContain("(chat D0EXAMPLE01)");
-    expect(text).toContain("`slackSendLive` { account: \"mattSlack\"");
+    expect(text).toContain("`slackSendLive` { account: \"slackAccount\"");
   });
 });
 

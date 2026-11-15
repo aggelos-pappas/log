@@ -69,7 +69,7 @@ describe("treg extension", () => {
 
   test("a priced endpoint is a dry run with its price unless live", async () => {
     const seen = fake(PRICED);
-    const out = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--params", '{"user":"matthewsoldit"}']);
+    const out = await tregCommand.run(context().ctx, ["call", "tikhub.x.user-tweets", "--params", '{"user":"xAccount"}']);
     expect(out.code).toBe(0);
     expect(out.stdout).toContain("dry run, nothing called or spent");
     expect(out.stdout).toContain("$0.001/call");

@@ -49,9 +49,9 @@ if (values.approve) {
   process.exit(0)
 }
 
-const mattExamples = existsSync(values.examples) ? readdirSync(values.examples).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).slice(0, 2).map((f) => join(values.examples, f)) : []
+const ownerExamples = existsSync(values.examples) ? readdirSync(values.examples).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).slice(0, 2).map((f) => join(values.examples, f)) : []
 const referenceRecord = saved.find((r) => r.styleReference && r.profilePicture) ?? null
-log(`style examples for SubQ: ${mattExamples.length} of the owner's${referenceRecord ? `, ${referenceRecord.personaId} as the best one` : ''}`)
+log(`style examples for SubQ: ${ownerExamples.length} of the owner's${referenceRecord ? `, ${referenceRecord.personaId} as the best one` : ''}`)
 let records: PersonaRecord[] = saved
 let todo: PersonaRecord[]
 const othersOf = (record: PersonaRecord) => {
@@ -59,7 +59,7 @@ const othersOf = (record: PersonaRecord) => {
   const near = record.account ? withPicture.filter((r) => r.account?.homeCountry === record.account!.homeCountry).slice(-3) : withPicture
   return near.map((r) => imageOf(join(personasDir(), r.profilePicture!)))
 }
-const deps = { ...liveDeps({ examples: mattExamples.map(imageOf), reference: referenceRecord ? imageOf(join(personasDir(), referenceRecord.profilePicture!)) : null, others: othersOf, log }), usedBackgrounds: (record: PersonaRecord) => records.filter((r) => r !== record).map((r) => r.characteristics.background).filter((b): b is string => Boolean(b)) }
+const deps = { ...liveDeps({ examples: ownerExamples.map(imageOf), reference: referenceRecord ? imageOf(join(personasDir(), referenceRecord.profilePicture!)) : null, others: othersOf, log }), usedBackgrounds: (record: PersonaRecord) => records.filter((r) => r !== record).map((r) => r.characteristics.background).filter((b): b is string => Boolean(b)) }
 
 async function linkInTwenty(twenty: ReturnType<typeof createTwentyClient>, accountId: string, record: PersonaRecord) {
   if (!record.matched || !record.profilePicture) {

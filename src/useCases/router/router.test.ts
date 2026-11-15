@@ -8,6 +8,8 @@ import { listUseCases } from '../../mcp/server/helpers/guides.ts'
 import { contentWords, folderOf, isPlatformFolder, outcomeOf, phrasesOf, platformsOf, playMatchText, route } from './client'
 import { GOLDEN_FILE } from './types'
 import type { GoldenPrompt } from './types'
+import { loadDenylist } from '../../privacy/scan/client.ts';
+import { ownerNameIn } from '../../surface/scorecard/helpers/measure.ts';
 
 const useCases = listUseCases()
 const golden = JSON.parse(readFileSync(join(import.meta.dir, 'fixtures', GOLDEN_FILE), 'utf8')) as GoldenPrompt[]
@@ -125,6 +127,6 @@ describe('the router text', () => {
     const menu = playMatchText([], decide('reply to her').menu)
     expect(menu).toContain('>>> MAYBE A PLAY')
     expect(menu).toContain('none of them is a clear match')
-    expect(text).not.toContain('matt')
+    expect(ownerNameIn([{ path: 'router', text }], loadDenylist().filter((term) => /^[A-Za-z]+$/.test(term)))).toEqual([])
   })
 })

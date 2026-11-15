@@ -34,7 +34,7 @@ Why: `log twitter dms` (twikit, X's older `dm/inbox_initial_state`) never shows 
 | GetPublicKeysQuery | C-YphxeIcPLOGtFNGhkuOw |
 | XChatInitiatePasscodeRetrievalMutation | nTsYB72LJ1it6qlLt0EexQ |
 
-## What a read returns (live, matthewsoldit, GetInitialXChatPageQuery with `{}`: HTTP 200)
+## What a read returns (live, xAccount, GetInitialXChatPageQuery with `{}`: HTTP 200)
 
 - `get_initial_chat_page.items[]`: one per conversation (`conversation_detail.conversation_id` like `<theirId>:<ourId>`, participants with screen names), `latest_message_events[]`, `latest_conversation_key_change_events[]`, `latest_read_events_per_participant`, plus `inboxCursor` for paging and `message_requests_count`.
 - Each message event is a base64 Thrift struct: event id, conversation id, sender id, timestamp (ms), and either plain text (messages sent through the old DM API show in clear) or an encrypted payload with a JWT naming the sender (`requestingUser`) and recipient.
@@ -71,7 +71,7 @@ query GetMessageEventsPageQuery($continue_cursor: XChatGetMessageEventsPageConti
 # answer: encoded_message_events, message_requests_count
 ```
 
-`continue_cursor.max_local_sequence_id` is the newest event the client holds; an event's sequence id is its event id (Thrift field 1). Checked live on matthewsoldit (2026-10-30): from the newest event kept on 29 Oct 04:22 UTC, one call answered 61 events across 16 conversations in 1.4 s with `pull_finished: true`; with nothing new, one call answers none.
+`continue_cursor.max_local_sequence_id` is the newest event the client holds; an event's sequence id is its event id (Thrift field 1). Checked live on xAccount (2026-10-30): from the newest event kept on 29 Oct 04:22 UTC, one call answered 61 events across 16 conversations in 1.4 s with `pull_finished: true`; with nothing new, one call answers none.
 
 rea read the whole bundle (`rea analyze-javascript-application`, Evidence `ev_a5489f350157a3fa307746e0ac39e035c95c93ca11b9d8472524771c3d440928`). Its semantic graph is partial on this minified Kotlin build: it stopped at its 20,000-node ceiling, with 117,370 dynamic calls and 336,952 ambiguous object flows left unresolved, before it reached the pull code. The query text, the cursor types and the pull log lines above are the bundle's own bytes.
 
@@ -82,7 +82,7 @@ What log does now (`client.get_xchat_updates`, `client.open_xchat_events` in `ve
 3. Something new: unlock once, read only those conversations' keys and participants (`GetInboxPageConversationDataQuery`, up to 20 ids a call), decrypt only the new events. Each event is kept once by its id.
 4. The conversations that changed are saved for `log search`, and the index embeds only the chunks that are new or changed (`updateIndex`).
 
-Measured on matthewsoldit, 2026-10-30, six reads 10 s apart with nothing new: the engine took p50 1.27 s, max 1.44 s (2 requests); the whole command p50 6.4 s, max 9.1 s, the rest being Bun and Python start-up and the Twenty lookups. The first read, which fills the store, took 21.7 s once.
+Measured on xAccount, 2026-10-30, six reads 10 s apart with nothing new: the engine took p50 1.27 s, max 1.44 s (2 requests); the whole command p50 6.4 s, max 9.1 s, the rest being Bun and Python start-up and the Twenty lookups. The first read, which fills the store, took 21.7 s once.
 
 ### Start-up cut (2026-10-30)
 
@@ -98,7 +98,7 @@ Six reads with nothing new, 10 s apart: the whole command p50 4.6 s, max 6.5 s (
 
 ## Messages that "could not be decrypted" (2026-10-30)
 
-The saved PIN was never the problem. On matthewsoldit 242 of 1,964 stored X Chat messages showed as "(could not decrypt)", among them one contact's three replies, another's latest, a third's first line and all 53 of a five-person group chat. Four causes, each read from chat-xdk's own answer:
+The saved PIN was never the problem. On xAccount 242 of 1,964 stored X Chat messages showed as "(could not decrypt)", among them one contact's three replies, another's latest, a third's first line and all 53 of a five-person group chat. Four causes, each read from chat-xdk's own answer:
 
 - **The key change wasn't in the batch.** chat-xdk said so itself: "Message encrypted with key version '1793245813830' but no matching key found. Available versions: []. Include the conversation's KeyChange events in the batch". A catch-up read (`GetMessageEventsPageQuery`) brings new messages but not the key changes that open them. Now a failure like that is answered the way X's app does it: `GetConversationPageQuery` from the failing message's sequence id and the oldest key version held, taking its `missing_conversation_key_change_events`, then decrypting again (`_xchat_missing_keys`, `_xchat_fetch_key_changes`).
 - **The key change was there but its signer's key wasn't.** Since sequence `<id:1>` chat-xdk keeps a key change only when it can verify its sender's signature (`enforce_ckey_signatures`, `vendor/chatXdk/crates/core/src/core.rs`). In a group the member who rotated the key isn't always a current participant, so their signing key was never fetched and every key was dropped: `extract_conversation_keys` opened 20 versions of the group's key, `decrypt_events` kept none. Every event's sender is now in the public-key lookup. The group: 141 of 142 open; the one left (12 July) is under a key older than the oldest page X answers.

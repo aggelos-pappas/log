@@ -3,6 +3,8 @@ import { COMMANDS } from "../../cli/runner/index.ts";
 import { actingAsOwnerTools, guardCall, withoutHandle, activePlay, clearActivePlay, gatedToolOf, listUseCases, namedByPlay, platformOfTool, PLAY_GATED_ON_MAIN, playGateMode, stepToolsOf, unnamedActingTools, guideAnswer, hostedPlayOwner, mintPlayHandle, PLAY_HANDLE_PATTERN, PLAY_IDLE_MS, playCovers, playFooter, playRefusal, playRequiredTools, playScope, processPlayScope, readUseCase, setActivePlay, stepsOf, toolsFromCommands, toolsFromFlows, withPlayFooter } from "./helpers/index.ts";
 import type { ActivePlay } from "./helpers/index.ts";
 import { runToolCall, savedFlows, withCallFooter } from "./index.ts";
+import { loadDenylist } from "../../privacy/scan/client.ts";
+import { ownerNameIn } from "../../surface/scorecard/helpers/measure.ts";
 
 afterEach(() => clearActivePlay());
 
@@ -175,7 +177,7 @@ describe("a play unlocks only the sends it covers", () => {
     const refusal = playRefusal("twitterDmLive", { mode: "required", useCases: ["twitter/followUps", "twitter/networkMaxing"], play: null });
     expect(refusal).toContain("playMissing");
     expect(refusal).toContain('getGuide({ useCase: "twitter/networkMaxing" })');
-    expect(refusal).not.toContain("matt");
+    expect(ownerNameIn([{ path: "refusal", text: String(refusal) }], loadDenylist().filter((term) => /^[A-Za-z]+$/.test(term)))).toEqual([]);
   });
 
   test("naming the dry run covers its live twin, and reads are never refused", () => {

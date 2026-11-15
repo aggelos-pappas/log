@@ -218,11 +218,7 @@ export interface GuideInput {
 }
 
 export function ownerNeutral(text: string): string {
-  return text
-    .replace(/\bMatt's\b/g, "the owner's")
-    .replace(/\bmatt's\b/g, "the owner's")
-    .replace(/(^|[.!?]\s+|\n[-*]?\s*)Matt\b/g, "$1The owner")
-    .replace(/\b[Mm]att\b/g, "the owner");
+  return text.replace(/(^|[.!?]\s+|\n[-*]?\s*)the owner\b/g, "$1The owner");
 }
 
 export function ruleText(text: string): string {

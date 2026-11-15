@@ -17,9 +17,9 @@ describe('the voice gate', () => {
     const reading = await readVoice({ to: 'handle_l1', text: 'yeah lets chop it up lad', context: 'we should chop it up some time' }, 'GUIDE', decide)
     expect(reading.pass).toBe(true)
     const state = asked[0].state as Record<string, unknown>
-    expect(state.howMattWrites).toBe('GUIDE')
+    expect(state.howOwnerWrites).toBe('GUIDE')
     expect(state.whatTheySaid).toBe('we should chop it up some time')
-    expect((state.dmsMattWroteHimself as string[]).length).toBeGreaterThan(0)
+    expect((state.dmsOwnerWroteHimself as string[]).length).toBeGreaterThan(0)
   })
 
   test('a voice note is graded as spoken, never on length, and must build on the conversation instead of repeating it (rule 149)', async () => {
@@ -29,12 +29,12 @@ describe('the voice gate', () => {
       return { model: 'subq-snap-1.1', answers: { voice: { type: 'noul' as const, noul: 0.9 }, inContext: { type: 'noul' as const, noul: 0.9 }, friendLike: { type: 'noul' as const, noul: 0.9 }, openerOnly: { type: 'noul' as const, noul: 1 }, buildsOn: { type: 'noul' as const, noul: buildsOn } }, usage: { input_tokens: 1, output_tokens: 1 } }
     }
     const said = 'ye the trending niches bit is a good shout and it ties into what you said about the api'
-    const builds = await readVoice({ to: 'bea', text: said, context: 'it auto posts in trending niches', spoken: true, howMattTalks: ['I think so, to be honest, mate'] }, 'GUIDE', decideWith(0.9))
-    expect((asked[0].state as Record<string, unknown>).howMattTalksInHisOwnVoiceNotes).toEqual(['I think so, to be honest, mate'])
+    const builds = await readVoice({ to: 'bea', text: said, context: 'it auto posts in trending niches', spoken: true, howOwnerTalks: ['I think so, to be honest, mate'] }, 'GUIDE', decideWith(0.9))
+    expect((asked[0].state as Record<string, unknown>).howOwnerTalksInHisOwnVoiceNotes).toEqual(['I think so, to be honest, mate'])
     expect(builds.pass).toBe(true)
     expect(builds.buildsOn).toBe(0.9)
     const questions = asked[0].questions as Record<string, { instructions: string }>
-    expect(questions.voice.instructions).toContain('howMattTalksInHisOwnVoiceNotes')
+    expect(questions.voice.instructions).toContain('howOwnerTalksInHisOwnVoiceNotes')
     expect(questions.voice.instructions).toContain('never count against it')
     expect(questions.buildsOn.instructions).toContain('rather than repeating')
     const repeats = await readVoice({ to: 'bea', text: said, context: 'it auto posts in trending niches', spoken: true }, 'GUIDE', decideWith(0.3))
@@ -102,10 +102,10 @@ describe('the voice gate', () => {
     await readVoice({ to: 'b', text: 'yo lad', evidence: chat, everywhere }, 'GUIDE', decide)
     for (const request of asked) {
       const state = request.state as Record<string, unknown>
-      expect(state.howMattWrites).toBe('GUIDE')
-      expect(state.mattsRealRepliesEverywhere).toEqual(everywhere.replies)
+      expect(state.howOwnerWrites).toBe('GUIDE')
+      expect(state.ownersRealRepliesEverywhere).toEqual(everywhere.replies)
     }
-    expect((asked[1].state as Record<string, unknown>).mattsRealRepliesHere).toEqual(chat.replies)
+    expect((asked[1].state as Record<string, unknown>).ownersRealRepliesHere).toEqual(chat.replies)
   })
 })
 

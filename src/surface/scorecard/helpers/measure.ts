@@ -16,11 +16,14 @@ const FALLBACKS: readonly RegExp[] = [/\?\?\s*(["'`])(?:facebook|Facebook|FACEBO
 
 const where = (command: ScoredCommand): string => commandKey(command);
 const SUPPORT_LINE = /^\s*Platforms:/;
-const OWNER_NAME = /\bmatt\b/gi;
+const escaped = (name: string) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-export function ownerNameIn(files: readonly SourceText[]): string[] {
+export function ownerNameIn(files: readonly SourceText[], names: readonly string[] = []): string[] {
+  const words = names.filter((name) => /^[A-Za-z]+$/.test(name));
+  if (!words.length) return [];
+  const pattern = new RegExp(`(?<![A-Za-z])(?:${words.map(escaped).join("|")})(?![a-z])`, "gi");
   return files.flatMap((file) => {
-    const n = [...file.text.matchAll(OWNER_NAME)].length;
+    const n = [...file.text.matchAll(pattern)].length;
     return n ? [`${file.path} (${n})`] : [];
   });
 }
@@ -164,7 +167,7 @@ export function measure(input: ScorecardInput): Metric[] {
     out.push(count(`ruleCitations.${key}`, `Rule citations in ${label}`, "info", found.citations));
     out.push(count(`deadRuleCitations.${key}`, `Dead rule citations in ${label}`, "lower", found.dead, found.worst.map((w) => `${w.path} (${w.dead})`)));
   }
-  out.push(count("ownerNameInServedText", "The owner's name in served text (tool descriptions, guides, instructions, use cases)", "lower", ownerNameIn(servedText(input)).reduce((n, d) => n + Number(/\((\d+)\)$/.exec(d)?.[1] ?? 0), 0), ownerNameIn(servedText(input))));
+  out.push(count("ownerNameInServedText", "The owner's name in served text (tool descriptions, guides, instructions, use cases)", "lower", ownerNameIn(servedText(input), input.ownerNames ?? []).reduce((n, d) => n + Number(/\((\d+)\)$/.exec(d)?.[1] ?? 0), 0), ownerNameIn(servedText(input), input.ownerNames ?? [])));
   out.push(metric("stringFlagReparses", "Flags declared string that a command reads through Number(...) or .split(\",\")", "lower", stringFlagReparses(input.codeFiles, input.declaredFlags)));
   out.push(metric("uncodedRefusals", "Command refusals in src/cli/ that return stderr with no catalog code field (they reach a caller as commandFailed)", "lower", uncodedRefusals(input.codeFiles)));
   out.push(metric("platformFallbacks", "Hard-coded Facebook fallbacks in src/ and scripts/", "lower", platformFallbacks(input.codeFiles)));

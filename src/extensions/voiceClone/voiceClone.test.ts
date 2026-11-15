@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 import { saveConversations } from '../../search/conversations/index'
 import { defaultDbPath } from '../../storage/schema'
-import { discordWaveform, providerOf, insideVoiceNotes, instagramLevels, mattsRecordings, pickReferences, quietPieces, readSpoken, REALISM, rmsLevels, seeded, sentByMatt, shapeLikeMatt, speakableText, textOnlyProblem, unknownAcronyms, voiceNotesDir, withBreaths, wordsOf, paceOf, mattsOwnVoiceNotes, recordedAt, firstClonedAt } from './index'
+import { discordWaveform, providerOf, insideVoiceNotes, instagramLevels, ownersRecordings, pickReferences, quietPieces, readSpoken, REALISM, rmsLevels, seeded, sentByOwner, shapeLikeOwner, speakableText, textOnlyProblem, unknownAcronyms, voiceNotesDir, withBreaths, wordsOf, paceOf, ownersOwnVoiceNotes, recordedAt, firstClonedAt } from './index'
 import type { Recording } from './index'
 
 const rec = (messageId: string, seconds: number): Recording => ({ path: `/x/${messageId}`, platform: 'discord', account: 'a', conversationId: '1', messageId, seconds })
@@ -14,12 +14,12 @@ describe('fishAudio helpers', () => {
   })
 
   test('only recordings the owner sent are kept', () => {
-    saveConversations([{ platform: 'discord', account: 'mattDiscord', conversationId: '77', box: 'dm', with: ['someone'], messages: [{ id: '1', at: '2026-11-01T00:00:00Z', from: 'mattDiscord', fromMe: true, text: 'one' }, { id: '2', at: '2026-11-01T00:01:00Z', from: 'someone', fromMe: false, text: 'two' }] }], defaultDbPath())
-    const base = { platform: 'discord', account: 'mattDiscord', conversationId: '77' }
-    expect(sentByMatt({ ...base, messageId: '1' })).toBe(true)
-    expect(sentByMatt({ ...base, messageId: '2' })).toBe(false)
-    expect(sentByMatt({ ...base, messageId: '3' })).toBe(false)
-    const kept = mattsRecordings({ files: () => [{ ...base, messageId: '1', path: '/one' }, { ...base, messageId: '2', path: '/two' }], seconds: () => 12.345 })
+    saveConversations([{ platform: 'discord', account: 'discordAccount', conversationId: '77', box: 'dm', with: ['someone'], messages: [{ id: '1', at: '2026-11-01T00:00:00Z', from: 'discordAccount', fromMe: true, text: 'one' }, { id: '2', at: '2026-11-01T00:01:00Z', from: 'someone', fromMe: false, text: 'two' }] }], defaultDbPath())
+    const base = { platform: 'discord', account: 'discordAccount', conversationId: '77' }
+    expect(sentByOwner({ ...base, messageId: '1' })).toBe(true)
+    expect(sentByOwner({ ...base, messageId: '2' })).toBe(false)
+    expect(sentByOwner({ ...base, messageId: '3' })).toBe(false)
+    const kept = ownersRecordings({ files: () => [{ ...base, messageId: '1', path: '/one' }, { ...base, messageId: '2', path: '/two' }], seconds: () => 12.345 })
     expect(kept).toEqual([{ ...base, messageId: '1', path: '/one', seconds: 12.35 }])
   })
 
@@ -107,12 +107,12 @@ describe("spoken words and realism (rule 147)", () => {
     expect(paceOf(1.5, "yo")).toBeLessThanOrEqual(1.5)
   })
 
-  test("shapeLikeMatt lays the owner's own room tone under the voice at the measured level, and is the same for the same seed", () => {
+  test("shapeLikeOwner lays the owner's own room tone under the voice at the measured level, and is the same for the same seed", () => {
     const rate = REALISM.rate;
     const voice = new Float32Array(rate).map((_, i) => (i % 9600 < 4800 ? 0.3 * Math.sin((2 * Math.PI * 220 * i) / rate) : 0));
     const room = [new Float32Array(rate / 2).map((_, i) => 0.001 * Math.sin(i))]
-    const a = shapeLikeMatt(voice, room, seeded(5))
-    const b = shapeLikeMatt(voice, room, seeded(5))
+    const a = shapeLikeOwner(voice, room, seeded(5))
+    const b = shapeLikeOwner(voice, room, seeded(5))
     expect(Array.from(a.slice(0, 50))).toEqual(Array.from(b.slice(0, 50)));
     const quiet = a.slice(6000, 9000).reduce((s, v) => s + Math.abs(v), 0);
     expect(quiet).toBeGreaterThan(0);
@@ -128,7 +128,7 @@ describe("how the owner talks, for the spoken gate (rule 149)", () => {
     const after = { ...before, path: "/b", messageId: at("2026-11-05T10:40:55Z") }
     const other = { ...before, path: "/c", platform: "instagram", messageId: "voice_1" }
     const clonedAt = Date.parse("2026-11-05T07:37:20Z")
-    expect(mattsOwnVoiceNotes([before, after, other], clonedAt).map((r) => r.path)).toEqual(["/a", "/c"])
+    expect(ownersOwnVoiceNotes([before, after, other], clonedAt).map((r) => r.path)).toEqual(["/a", "/c"])
     expect(recordedAt(before)).toBe(Date.parse("2026-11-01T08:04:01Z"))
     expect(firstClonedAt({ clones: { inworld: { provider: "inworld", voiceId: "v2", title: "m", model: "x", createdAt: "2026-11-05T09:05:00Z", state: null, references: [], previous: [{ provider: "inworld", voiceId: "v1", title: "m", model: "x", createdAt: "2026-11-05T07:37:20Z", state: null, references: [] }] } } })).toBe(clonedAt)
   })

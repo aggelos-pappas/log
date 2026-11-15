@@ -410,9 +410,9 @@ describe("reads keep the chat's history in the .db as backfill, for the gate ins
   test("an X thread read stores each message under its own conversation", () => {
     const conversation = `1974596626342686720:${Date.now()}`;
     const messages = [{ id: "a", conversationId: conversation, time: "2026-11-04T01:53:30Z", senderId: "2084617266310909952", text: "im in ecom rn" }, { id: "b", conversationId: conversation, time: "2026-11-04T01:54:00Z", senderId: "1974596626342686720", text: "yeah", fromMe: true }];
-    expect(backfillThread("matthewsoldit", messages, new Date())).toBe(2);
-    expect(backfillThread("matthewsoldit", messages, new Date())).toBe(0);
-    expect(chatEvents("twitter", "matthewsoldit", (id) => id === conversation).map((e) => [e.type, e.withWho])).toEqual([["message", "2084617266310909952"], ["ownMessage", "me"]]);
+    expect(backfillThread("xAccount", messages, new Date())).toBe(2);
+    expect(backfillThread("xAccount", messages, new Date())).toBe(0);
+    expect(chatEvents("twitter", "xAccount", (id) => id === conversation).map((e) => [e.type, e.withWho])).toEqual([["message", "2084617266310909952"], ["ownMessage", "me"]]);
   });
 });
 

@@ -8,7 +8,7 @@ import { NOT_SAID, REACTION } from "../../../inbox/lastWord/index.ts";
 import { join } from "node:path";
 import { storedEmbedder, ownTextsSince, personOf } from "../../../inbox/store/index.ts";
 import { SAMENESS_WINDOW_HOURS, samenessLine, samenessOf } from "../../../voice/sameness/index.ts";
-import { firstClonedAt, mattsOwnVoiceNotes, mattsRecordings } from "../../../extensions/voiceClone/index.ts";
+import { firstClonedAt, ownersOwnVoiceNotes, ownersRecordings } from "../../../extensions/voiceClone/index.ts";
 import { hashOf, readTranscript } from "../../../media/voiceNotes/index.ts";
 import { chatContextOf } from "../../../inbox/context/index.ts";
 import { watermarkLine } from "../../../twitter/copy/watermark/index.ts";
@@ -77,7 +77,7 @@ export const VOICE_INPUT: CommandInput = {
 
 let warmEmbedder: Embedder | null = null;
 
-export const voiceDeps: { decisions: () => DecisionsClient; embedder: () => Embedder; aiEmbedder: () => AiEmbedder; scrambler: (text: string) => ScramblerReading; howMattTalks: () => string[] } = { decisions: () => createDecisionsClient(), embedder: () => (warmEmbedder ??= storedEmbedder(localEmbedder(), "voice")), aiEmbedder: () => jinaEmbedder(), scrambler: (text) => scramblerReadingOf(text), howMattTalks: () => howMattTalks() };
+export const voiceDeps: { decisions: () => DecisionsClient; embedder: () => Embedder; aiEmbedder: () => AiEmbedder; scrambler: (text: string) => ScramblerReading; howOwnerTalks: () => string[] } = { decisions: () => createDecisionsClient(), embedder: () => (warmEmbedder ??= storedEmbedder(localEmbedder(), "voice")), aiEmbedder: () => jinaEmbedder(), scrambler: (text) => scramblerReadingOf(text), howOwnerTalks: () => howOwnerTalks() };
 
 export function renderVoice(reading: VoiceReading & { notHere?: string[]; aiTells?: AiReading; phrases?: PhraseReading; scrambler?: ScramblerReading }): string {
   const scores = `voice ${reading.voice.toFixed(2)} · answers them ${reading.inContext.toFixed(2)} · reads like a mate ${reading.friendLike.toFixed(2)} · opener only ${reading.openerOnly.toFixed(2)}${reading.toThem === null ? "" : ` · like his replies there ${reading.toThem.toFixed(2)}`}${reading.buildsOn === null || reading.buildsOn === undefined ? "" : ` · builds on the chat ${reading.buildsOn.toFixed(2)}`}`;
@@ -215,7 +215,7 @@ export const voiceCommand: Command = {
         if (!replies.length) context.err("voice aiIndex: no voice index yet, so there is no baseline of the owner's own messages: build it with `log voice index` first");
         const started = Date.now();
         const meta = await buildAiIndex(voiceDeps.aiEmbedder(), replies, aiIndexDir(), undefined, undefined, (line) => context.err(line));
-        const line = `log voice aiIndex: ${meta.phrases.length} AI phrases embedded with ${meta.model}; the owner's own ${meta.baseline.messages} messages sit at p50 ${meta.baseline.p50.toFixed(3)}, p99 ${meta.baseline.p99.toFixed(3)} from them; ${meta.baseline.mutedRules.length} vale rules muted because he uses them himself (${meta.baseline.mutedRules.join(", ") || "none"}); ${meta.baseline.mattsPhrases?.length ?? 0} phrases vale flags that he says himself in 5 or more messages, never held against a draft; ${((Date.now() - started) / 1000).toFixed(1)} s at ${aiIndexDir()}`;
+        const line = `log voice aiIndex: ${meta.phrases.length} AI phrases embedded with ${meta.model}; the owner's own ${meta.baseline.messages} messages sit at p50 ${meta.baseline.p50.toFixed(3)}, p99 ${meta.baseline.p99.toFixed(3)} from them; ${meta.baseline.mutedRules.length} vale rules muted because he uses them himself (${meta.baseline.mutedRules.join(", ") || "none"}); ${meta.baseline.ownersPhrases?.length ?? 0} phrases vale flags that he says himself in 5 or more messages, never held against a draft; ${((Date.now() - started) / 1000).toFixed(1)} s at ${aiIndexDir()}`;
         return { code: 0, stdout: parsed.flags["json"] ? JSON.stringify({ phrases: meta.phrases.length, model: meta.model, baseline: meta.baseline }, null, 2) : line };
       } catch (error) {
         return refuseError("voice aiIndex", error);
@@ -309,7 +309,7 @@ export async function gateReading(context: CommandContext, draft: { to: string; 
   if (!phraseIndex) context.err("voice: no voice index yet, so the owner's own phrasing isn't measured: build it with `log voice index`");
   const phrases = phraseIndex ? readPhrases(text, phraseIndex, said) : undefined;
   const scrambler = voiceDeps.scrambler(text);
-  const scored = await readVoice({ to, text, ...(said ? { context: said } : {}), ...(evidence ? { evidence } : {}), ...(everywhere ? { everywhere } : {}), ...(phrases ? { phrasesNewToMatt: phrases.newPhrasing } : {}), ...(ranked.length ? { conversation: ranked } : {}), ...(draft.spoken ? { spoken: true, howMattTalks: voiceDeps.howMattTalks() } : {}), ...(draft.room ? { room: draft.room } : {}), ...(scrambler.ran ? { scrambler: { suspicious: scrambler.suspicious, kinds: [...new Set(scrambler.hits.map((h) => h.kind))] } } : {}) }, guide, voiceDeps.decisions());
+  const scored = await readVoice({ to, text, ...(said ? { context: said } : {}), ...(evidence ? { evidence } : {}), ...(everywhere ? { everywhere } : {}), ...(phrases ? { phrasesNewToOwner: phrases.newPhrasing } : {}), ...(ranked.length ? { conversation: ranked } : {}), ...(draft.spoken ? { spoken: true, howOwnerTalks: voiceDeps.howOwnerTalks() } : {}), ...(draft.room ? { room: draft.room } : {}), ...(scrambler.ran ? { scrambler: { suspicious: scrambler.suspicious, kinds: [...new Set(scrambler.hits.map((h) => h.kind))] } } : {}) }, guide, voiceDeps.decisions());
   const notHere = evidence && !draft.spoken ? offProfile(text, evidence.profile as VoiceProfile | null) : [];
   const aiReady = await ensureAiIndex(context);
   const aiIndex = openAiIndex(aiIndexDir(), JINA_EMBED_MODEL);
@@ -318,8 +318,8 @@ export async function gateReading(context: CommandContext, draft: { to: string; 
   return { ...scored, notHere, ...(aiTells ? { aiTells } : {}), ...(phrases ? { phrases } : {}), scrambler, ranked, ...(draft.room ? { room: draft.room } : {}), pass: scored.pass && !notHere.length && (aiTells?.pass ?? true) && (phrases?.pass ?? true) && scrambler.suspicious === 0 };
 }
 
-export function howMattTalks(): string[] {
-  return mattsOwnVoiceNotes(mattsRecordings(), firstClonedAt()).flatMap((r) => {
+export function howOwnerTalks(): string[] {
+  return ownersOwnVoiceNotes(ownersRecordings(), firstClonedAt()).flatMap((r) => {
     if (!existsSync(r.path)) return [];
     const text = readTranscript(hashOf(new Uint8Array(readFileSync(r.path))))?.text?.trim();
     return text ? [text.slice(0, 1500)] : [];
@@ -418,7 +418,7 @@ export async function gateBrief(send: { platform: string; account: string; to: s
   const room = send.room ?? send.readRoom?.() ?? roomOf(send.to, roomKindOf(send), held.map((m) => ({ from: m.fromMe ? "the owner" : String(m.senderId ?? "them"), fromMe: !!m.fromMe, at: String(m.time ?? "") })));
   const conversation = await timed("voice.rankedContext", () => rankedContext(send.platform, send.account, who, [momentAnswered(held), send.text].filter((t) => t.trim()).join("\n"))).catch(() => []);
   const guide = readGuide();
-  const reading = await timed("voice.briefReading", () => readBrief({ to: send.to, text: send.text, conversation, ...(room ? { room } : {}), attached: attachedOf(send.files ?? []), ...(guide ? { howMattWrites: guide } : {}) }, voiceDeps.decisions()));
+  const reading = await timed("voice.briefReading", () => readBrief({ to: send.to, text: send.text, conversation, ...(room ? { room } : {}), attached: attachedOf(send.files ?? []), ...(guide ? { howOwnerWrites: guide } : {}) }, voiceDeps.decisions()));
   if (reading.pass) return { ok: true, line: briefLine(reading) };
   return { ok: false, refused: [`>>> BRIEF GATE FAILED for ${send.to}, nothing was sent; a task has to say what to do, why, what done looks like and by when, kindly, and how to ask when stuck (rule 162):`, ...briefFailedParts(reading).map((p) => `  - ${p}`)].join("\n") };
 }

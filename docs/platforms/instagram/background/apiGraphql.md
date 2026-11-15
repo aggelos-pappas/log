@@ -10,7 +10,7 @@
 | Path | `/api/graphql` |
 | Sends | `device_id_for_iris_subscription`, `folder`, `__relay_internal__pv__IGDMetaAIThreadingEnabledGKrelayprovider`, `__relay_internal__pv__IGDIsProfessionalAccountGKrelayprovider`, `__relay_internal__pv__IGDPinnedThreadsRenderEnabledGKrelayprovider`, `__relay_internal__pv__IGDMaxUnreadMessagesCountrelayprovider`, `__relay_internal__pv__IGDThreadListActionsEnabledGKrelayprovider`, `newer_than_timestamp_ms`, `min_uq_seq_id`, `thread_fbid`, `__relay_internal__pv__IGDEnableOffMsysChatThemesQErelayprovider`, `__relay_internal__pv__IGDInitialMessagePageCountrelayprovider`, `data`, `scale`, `surface_nux_ids`, `trigger_context`, `_request_data`, `payload`, `metadata`, `attachment_fbid`, `thread_id`, `offline_threading_id`, `reply_to_message_id`, `forwarded_from_thread_id`, `is_forwarded_from_own_message`, `input`, `render_succeeded`, `encrypted_context`, `failure_reason`, `device_id`, `captcha_response`, `ig_thread_igid`, `recipient_igids`, `replied_to_client_context`, `replied_to_item_id`, `sampled`, `text`, `mentions`, `mentioned_user_ids`, `commands`, `send_attribution` |
 | Reads | `data.xdt_get_igd_automatic_previews_disabled`, `extensions.server_metadata`, `extensions.is_final`, `data.polling_intervals__`, `data.xfb_ix_ig_account_status_web`, `data.xfb_feature_limits`, `extensions.live_query`, `data.get_slide_mailbox_for_iris_subscription`, `data.xdt_api__v1__get__presence__disabled`, `data.xfb_viewer`, `data.viewer`, `data.get_slide_thread_nullable` and 17 more |
-| Called from | `runs/inspect/20261103T185330_mattinferencesaver/script2.js:87 anonymous`, `runs/inspect/20261103T185330_mattinferencesaver/script4.js:1309 anonymous`, `runs/inspect/20261103T185330_mattinferencesaver/script4.js:371 m` |
+| Called from | `runs/inspect/20261103T185330_instagramAccount/script2.js:87 anonymous`, `runs/inspect/20261103T185330_instagramAccount/script4.js:1309 anonymous`, `runs/inspect/20261103T185330_instagramAccount/script4.js:371 m` |
 | rea | `ev_27eceaba6115086f4af94c2fc0c0d7947c1495c9588392e6a8d948ff7f80c47b` |
 
 Seen 113 time(s) in 2 run(s).
@@ -33,7 +33,7 @@ Seen 113 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T185330_mattinferencesaver**, step 1: goto /direct/t/<id>/: 200, 199 ms
+**runs/inspect/20261103T185330_instagramAccount**, step 1: goto /direct/t/<id>/: 200, 199 ms
 
 Sent:
 
@@ -67,7 +67,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T185330_mattinferencesaver**, upload: paulie.jpg handed to the file chooser: 200, 284 ms
+**runs/inspect/20261103T185330_instagramAccount**, upload: paulie.jpg handed to the file chooser: 200, 284 ms
 
 Sent:
 
@@ -148,7 +148,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T185330_mattinferencesaver**, step 4: click e783: 200, 184 ms
+**runs/inspect/20261103T185330_instagramAccount**, step 4: click e783: 200, 184 ms
 
 Sent:
 

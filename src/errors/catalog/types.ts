@@ -228,7 +228,7 @@ export const ERROR_CATALOG = {
   },
   voiceGuideMissing: {
     layer: 'twitter',
-    meaning: "The owner's writing guide (GUIDES/MATT_WRITING_STYLE.md) isn't where log voice looks, so a draft can't be gated against it.",
+    meaning: "The owner's writing guide (GUIDES/OWNER_WRITING_STYLE.md) isn't where log voice looks, so a draft can't be gated against it.",
     retryable: false,
     raisedIn: ['cli/twitter/voice', 'cli/voice'],
     action: 'Put the guide back in the Buzz workspace GUIDES folder, or point LOG_VOICE_GUIDE at it.'

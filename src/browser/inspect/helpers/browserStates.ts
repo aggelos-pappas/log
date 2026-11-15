@@ -59,10 +59,10 @@ export function browserView(at: BrowserAt): BrowserView {
       ...base,
       state: { id: state.id, what: state.what, person: state.person },
       next: resolveCallOf(state, at),
-      needsMatt: state.person ? `${at.account}: ${state.what}. ${state.resolve}` : null
+      needsOwner: state.person ? `${at.account}: ${state.what}. ${state.resolve}` : null
     }
   }
-  return { ...base, state: null, next: at.failed ? snapshotCall(at.account) : null, needsMatt: null }
+  return { ...base, state: null, next: at.failed ? snapshotCall(at.account) : null, needsOwner: null }
 }
 
 export function browserViews(read: () => BrowserAt[] = readOpenBrowsers): BrowserView[] {

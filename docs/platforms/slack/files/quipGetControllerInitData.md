@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundaryfXCqttnwvuT6AAtY
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `init_options`, `preserialized`, `js_initializer.web_browser_id_cookie`, `js_initializer.staging_server`, `js_initializer.edge_resources_cookie`, `js_initializer.edge_resources_cookie_latest_val`, `js_initializer.js_autoreload`, `js_initializer.js_autoreload_frequency`, `js_initializer.css_autoreload`, `js_initializer.css_autoreload_frequency`, `js_initializer.live_apps_request_pool_timeout` and 28 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_a47771702afcf6462bd855c398bf3b93af40c68eaaf29daf82d7f8e230768ee1` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 14: press Enter: 200, 407 ms
+**runs/inspect/20261103T065639_slackAccount**, step 14: press Enter: 200, 407 ms
 
 Sent:
 

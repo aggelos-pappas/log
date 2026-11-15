@@ -68,8 +68,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `twitterQueueAdd` | Add approved dms, replies or quotes to an account's queue, even while… | `log twitter queue add <queue.json> --targets <targets.json> --by <who> [--action reply\|quote\|dm\|voice] [--window <2h\|90m>] [--minGap <s>]` |
 | `twitterQueueNudge` | Tell a running queue to send its next replies now | `log twitter queue nudge <queue.json> [--replies <n>]` |
 | `twitterQueueEdit` | Put new copy on a pending or held queue item | `log twitter queue edit <queue.json> --n <n> --text "<new copy>" --by <who> [--window <30m>]` |
-| `twitterVoice` | Send a voice note in the owner's cloned voice as Twitter's own voice… | `log twitter voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
-| `twitterVoiceLive` | Send a voice note in the owner's cloned voice as…, live on X | `log twitter voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
+| `twitterVoice` | Send a voice note in the owner's cloned voice as Twitter's own voice… | `log twitter voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
+| `twitterVoiceLive` | Send a voice note in the owner's cloned voice as…, live on X | `log twitter voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
 
 ## The work, step by step: xPosting
 
@@ -189,7 +189,7 @@ The parts every page uses:
   `--force` goes past it only when the owner says so (rule 86). See
   [docs/specs/writeBudgets.md](../../docs/specs/writeBudgets.md).
 
-### 3b. The growth loop (how the owner grows @matthewsoldit)
+### 3b. The growth loop (how the owner grows @xAccount)
 
 What worked for the owner (`log kb show memory:-buzz/listeningkit-real-state`): a
 text post about treg ("$10 -> 30 conversations") did 205K views and 1,182

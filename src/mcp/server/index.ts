@@ -62,14 +62,14 @@ export function browserLines(views: BrowserView[]): string[] {
   const where = views.length
     ? `Browsers: ${views.map((v) => `${v.account} on ${v.url || "a page"} (step ${v.step})${v.state ? `, page state ${v.state.id}: ${v.state.what}` : v.failed ? ", its last step failed" : ", no known blocking state"}`).join("; ")}.`
     : "Browsers: none open.";
-  const owner = views.find((v) => v.needsMatt)?.needsMatt;
+  const owner = views.find((v) => v.needsOwner)?.needsOwner;
   const next = views.find((v) => v.next)?.next;
   return [where, ...(owner ? [`Needs the owner: ${owner}`] : []), ...(next ? [`Next: call \`${next.tool}\` ${JSON.stringify(next.input)} (rule 79: a known state is resolved, never a reason to stop).`] : [])];
 }
 
-function withBrowsers(base: Omit<ToolResult, "browsers" | "next" | "needsMatt">, body: string, isError: boolean, read: ReadBrowsers, images: readonly ToolImage[] = []): CallToolResult {
+function withBrowsers(base: Omit<ToolResult, "browsers" | "next" | "needsOwner">, body: string, isError: boolean, read: ReadBrowsers, images: readonly ToolImage[] = []): CallToolResult {
   const views = safeViews(read);
-  const result: ToolResult = { ...base, browsers: views, next: views.find((v) => v.next)?.next ?? null, needsMatt: views.find((v) => v.needsMatt)?.needsMatt ?? null };
+  const result: ToolResult = { ...base, browsers: views, next: views.find((v) => v.next)?.next ?? null, needsOwner: views.find((v) => v.needsOwner)?.needsOwner ?? null };
   return { isError, content: [{ type: "text", text: [...browserLines(views), "", body].join("\n") }, ...images.map((image) => ({ type: "image" as const, data: image.data, mimeType: image.mimeType }))], structuredContent: result as unknown as Record<string, unknown> };
 }
 
@@ -111,7 +111,7 @@ export class JobCancelled extends Error {
 }
 
 interface Ran {
-  base: Omit<ToolResult, "browsers" | "next" | "needsMatt">;
+  base: Omit<ToolResult, "browsers" | "next" | "needsOwner">;
   text: string;
   cancelled: boolean;
   images: ToolImage[];

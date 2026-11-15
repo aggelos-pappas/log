@@ -10,7 +10,7 @@
 | Path | `/api/discover/web/explore_grid` |
 | Sends | — |
 | Reads | `sectional_items`, `rank_token`, `auto_load_more_enabled`, `more_available`, `next_max_id`, `max_id`, `session_paging_token`, `clusters`, `debug_info`, `grid_overlay_debug_info`, `overlay_info`, `interests` and 4 more |
-| Called from | `runs/inspect/20261103T185330_mattinferencesaver/script3.js:1299 anonymous`, `runs/inspect/20261103T185330_mattinferencesaver/script4.js:1828 anonymous`, `runs/inspect/20261103T185330_mattinferencesaver/script4.js:1565 d`, `runs/inspect/20261103T185330_mattinferencesaver/script51.js:1 statement` |
+| Called from | `runs/inspect/20261103T185330_instagramAccount/script3.js:1299 anonymous`, `runs/inspect/20261103T185330_instagramAccount/script4.js:1828 anonymous`, `runs/inspect/20261103T185330_instagramAccount/script4.js:1565 d`, `runs/inspect/20261103T185330_instagramAccount/script51.js:1 statement` |
 | rea | `ev_81f93ca399ab17c211a4b7ac3fce16f7251a1535a1bbceb4efcb3b68ac1d0cd5` |
 
 Seen 1 time(s) in 1 run(s).
@@ -23,7 +23,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 10: wait 40s: 200, 2441 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 10: wait 40s: 200, 2441 ms
 
 Sent:
 

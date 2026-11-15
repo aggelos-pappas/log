@@ -10,7 +10,7 @@ test('a channel where only the owner has spoken lately is talked to as a whole, 
     { from: 'the owner', fromMe: true, at: '2026-11-05T15:05:10Z' },
   ], now)
   expect(room.nobodyElseLately).toBe(true)
-  expect(room.mattsInARowAtTheEnd).toBe(2)
+  expect(room.ownersInARowAtTheEnd).toBe(2)
   expect(room.lastFromOthers?.who).toBe('pennyserver')
   expect(room.lastFromOthers?.daysAgo).toBe(25)
   expect(room.addressTo).toContain('the channel as a whole')

@@ -8,7 +8,7 @@ How the owner asks for it: "get me all them people who liked it ... yo cool to s
 
 ## Run it from a fresh context
 
-Say: **"go on docs/useCases/twitter/getTheAction.md"**, with the action and its link (for example: retweet https://x.com/matthewsoldit/status/2116868115028120050). The agent reads this page and [README.md](README.md), loads `getGuide({ topic: "xSending" })`, and runs the steps.
+Say: **"go on docs/useCases/twitter/getTheAction.md"**, with the action and its link (for example: retweet https://x.com/xAccount/status/2116868115028120050). The agent reads this page and [README.md](README.md), loads `getGuide({ topic: "xSending" })`, and runs the steps.
 
 ## The steps
 

@@ -3,7 +3,7 @@ import { aiIndexOf, saveAiIndex, saveVectors, vectorsFor } from '../../inbox/sto
 import { homedir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { BASELINE_SAMPLE, MATT_SAYS_IT_TIMES, MUTE_IF_MATT_USES, X_COMPLAINT, X_COMPLAINT_KEEP } from './types'
+import { BASELINE_SAMPLE, OWNER_SAYS_IT_TIMES, MUTE_IF_OWNER_USES, X_COMPLAINT, X_COMPLAINT_KEEP } from './types'
 import type { AiBaseline, AiCloseMatch, AiEmbedder, AiIndex, AiIndexMeta, AiPhrase, AiReading, AiTellHit, AiTellRule } from './types'
 
 const REGEX_CHARS = /[\\()[\]{}^$*+?|.]/
@@ -148,12 +148,12 @@ function bestPerChunk(chunkVectors: number[][], index: Pick<AiIndex, 'vectors'>)
   })
 }
 
-export function mutedRules(replies: readonly string[], rules: readonly AiTellRule[], share = MUTE_IF_MATT_USES): string[] {
+export function mutedRules(replies: readonly string[], rules: readonly AiTellRule[], share = MUTE_IF_OWNER_USES): string[] {
   if (!replies.length) return []
   return rules.filter((rule) => replies.filter((r) => ruleHits(r, [rule]).length).length / replies.length > share).map((r) => r.name)
 }
 
-export function mattsOwnPhrases(replies: readonly string[], rules: readonly AiTellRule[], atLeast = MATT_SAYS_IT_TIMES): string[] {
+export function ownersOwnPhrases(replies: readonly string[], rules: readonly AiTellRule[], atLeast = OWNER_SAYS_IT_TIMES): string[] {
   const counts = new Map<string, number>()
   for (const reply of replies) for (const match of new Set(ruleHits(reply, rules).map((h) => h.match.toLowerCase()))) counts.set(match, (counts.get(match) ?? 0) + 1)
   return [...counts].filter(([, n]) => n >= atLeast).map(([match]) => match).sort()
@@ -179,7 +179,7 @@ export async function buildAiIndex(embedder: AiEmbedder, replies: readonly strin
     at += chunks.length
     scores.push(Math.max(...bestPerChunk(mine, index).map((b) => b.cosine)))
   }
-  const baseline: AiBaseline = { messages: scores.length, p50: percentile(scores, 50), p99: percentile(scores, 99), mutedRules: mutedRules(replies, rules), mattsPhrases: mattsOwnPhrases(replies, rules) }
+  const baseline: AiBaseline = { messages: scores.length, p50: percentile(scores, 50), p99: percentile(scores, 99), mutedRules: mutedRules(replies, rules), ownersPhrases: ownersOwnPhrases(replies, rules) }
   const meta: AiIndexMeta = { model: embedder.model, dimensions: embedder.dimensions, builtAt: new Date().toISOString(), phrases, baseline }
   saveVectors(embedder.model, embedder.dimensions, phrases.map((p, i) => ({ text: p.text, vector: vectors[i], kind: 'aiPhrase' })))
   saveAiIndex(dir, embedder.model, meta)
@@ -197,7 +197,7 @@ export function openAiIndex(dir = aiIndexDir(), model: string | null = null): Ai
 }
 
 export async function readAiTells(text: string, index: AiIndex, embedder: AiEmbedder, rules = valeRules(), words = overusedWords(), top = 8): Promise<AiReading> {
-  const hits = ruleHits(text, rules, new Set([...index.baseline.mutedRules, ...(index.baseline.mattsPhrases ?? [])]))
+  const hits = ruleHits(text, rules, new Set([...index.baseline.mutedRules, ...(index.baseline.ownersPhrases ?? [])]))
   const overused = [...new Set(text.toLowerCase().match(/[a-z]+/g) ?? [])].filter((w) => words.has(w)).map((w) => ({ word: w, ratio: words.get(w)! }))
   const chunks = chunksOf(text)
   const best = chunks.length ? bestPerChunk(await embedder.embed(chunks), index) : []

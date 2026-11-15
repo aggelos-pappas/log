@@ -1,6 +1,6 @@
 ---
 name: log-twitter-manager-maxxing
-description: "Manager maxxing: the managers of the biggest Kick streamers. A log play (docs/useCases/twitter/managerMaxxing.md): The owner's go-to-market, in his words (https://x.com/matthewsoldit/status/2118285429674017268): \"find every single kick streamers managers on twitter, reply guy them for a few days then cold dm them to use log and show claviculars twitter\". The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck."
+description: "Manager maxxing: the managers of the biggest Kick streamers. A log play (docs/useCases/twitter/managerMaxxing.md): The owner's go-to-market, in his words (https://x.com/xAccount/status/2118285429674017268): \"find every single kick streamers managers on twitter, reply guy them for a few days then cold dm them to use log and show claviculars twitter\". The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck."
 when_to_use: "Use when the owner asks for this, in words like: \"manager maxxing\", \"find every kick streamer's manager on twitter\", \"reply guy the kick managers with memes\", \"the managers that engaged, send them their tweet, a message and a voice note\"."
 metadata:
   summary: "Manager maxxing: the managers of the biggest Kick streamers"
@@ -12,7 +12,7 @@ This is the log play `twitter/managerMaxxing`. Before anything else, call the lo
 
 Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
-The owner's go-to-market, in his words (https://x.com/matthewsoldit/status/2118285429674017268): "find every single kick streamers managers on twitter, reply guy them for a few days then cold dm them to use log and show claviculars twitter". The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck.
+The owner's go-to-market, in his words (https://x.com/xAccount/status/2118285429674017268): "find every single kick streamers managers on twitter, reply guy them for a few days then cold dm them to use log and show claviculars twitter". The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck.
 
 The people this is for (the ICP) are the managers of Kick streamers, category by category, starting with the streamers with the most viewers. It runs on the network-maxing logic ([networkMaxing.md](../log-twitter-network-maxing/SKILL.md)): every touch is about them and what they're doing, and the ask comes only once they're talking.
 

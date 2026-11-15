@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { buildPhraseIndex, phrasesLine, readPhrases, wordPairsOf, wordsOf } from './index'
 
-const MATT = [
+const OWNER = [
   'yo lad whats the craic with that',
   'haha nah lad thats mad',
   'yo lad whats the craic',
@@ -19,7 +19,7 @@ describe('the owner phrasing', () => {
   })
 
   test('a draft in his own word pairs passes and one in pairs he never wrote fails', () => {
-    const index = buildPhraseIndex(MATT)
+    const index = buildPhraseIndex(OWNER)
     expect(readPhrases('yo lad whats the craic thats mad', index).pass).toBe(true)
     const foreign = readPhrases('a pageant in the same week is wild win or lose', index)
     expect(foreign.pass).toBe(false)
@@ -28,14 +28,14 @@ describe('the owner phrasing', () => {
   })
 
   test('words they wrote themselves are not held against the draft, and a short draft is not measured', () => {
-    const index = buildPhraseIndex(MATT)
+    const index = buildPhraseIndex(OWNER)
     expect(readPhrases('pageant week wild', index).familiarity).toBeNull()
     const echoed = readPhrases('yo lad whats the craic with the pageant thing', index, 'pageant thing')
     expect(echoed.unfamiliar.some((pair) => pair.includes('pageant'))).toBe(false)
   })
 
   test('their everyday words are still his: a long message from them never strips the draft down to its rare pairs', () => {
-    const index = buildPhraseIndex([...MATT, ...MATT, ...MATT])
+    const index = buildPhraseIndex([...OWNER, ...OWNER, ...OWNER])
     const draft = 'yo lad whats the craic what are you building'
     const alone = readPhrases(draft, index)
     const answering = readPhrases(draft, index, 'what are you building lad, whats the craic with the pageant thing')
@@ -43,7 +43,7 @@ describe('the owner phrasing', () => {
   })
 
   test('a new subject is named apart from phrasing he never uses, so its words are not read as his voice (the owner, 2026-11-12)', () => {
-    const index = buildPhraseIndex([...MATT, ...MATT, ...MATT])
+    const index = buildPhraseIndex([...OWNER, ...OWNER, ...OWNER])
     const reading = readPhrases('yo lad the craic is in the datamart what are you building', index)
     expect(reading.newWords).toContain('the datamart')
     expect(reading.newPhrasing).not.toContain('the datamart')

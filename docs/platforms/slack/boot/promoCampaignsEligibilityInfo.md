@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundaryHsWD6Y1ZrBXrgLeY
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `is_eligible` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script3.js:2977 GSOB` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script3.js:2977 GSOB` |
 | rea | `ev_30d1b73f84d4a18cd2ef1b4bb78339644d7b1314b12c79a724547f1d9d21ac17` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 296 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 296 ms
 
 Sent:
 

@@ -10,7 +10,7 @@
 | Path | `/api/web/fxcal/ig_sso_users` |
 | Sends | — |
 | Reads | `fbAccount.obfuscated_account_id`, `fbAccount.profile_pic_url`, `fbAccount.display_name`, `fbAccount.sso_login_available`, `fbAccount.is_sso_enabled`, `status` |
-| Called from | `runs/inspect/20261103T185330_mattinferencesaver/script4.js:1203 anonymous` |
+| Called from | `runs/inspect/20261103T185330_instagramAccount/script4.js:1203 anonymous` |
 | rea | `ev_0a57ebc56fb777bb1746dc7dd547957fa8c816b670a11954dd078f19a4f83801` |
 
 Seen 4 time(s) in 2 run(s).
@@ -26,7 +26,7 @@ Seen 4 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T185330_mattinferencesaver**, step 1: goto /direct/t/<id>/: 200, 315 ms
+**runs/inspect/20261103T185330_instagramAccount**, step 1: goto /direct/t/<id>/: 200, 315 ms
 
 Sent:
 
@@ -49,7 +49,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 2: snapshot: 200, 443 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 2: snapshot: 200, 443 ms
 
 Sent:
 
@@ -72,7 +72,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 3: goto /direct/inbox/: 200, 234 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 3: goto /direct/inbox/: 200, 234 ms
 
 Sent:
 

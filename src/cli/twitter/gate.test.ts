@@ -41,8 +41,8 @@ describe("the voice gate inside every send (rule 137)", () => {
 
 describe("the gate inside a send finds the chat's real replies by what the send knows", () => {
   const conversations = [
-    { platform: "twitter", account: "matthewsoldit", conversationId: "1491032180553920513:1974596626342686720", with: ["SalesPsych0"], box: "xchat", messages: [] },
-    { platform: "twitter", account: "matthewsoldit", conversationId: "1663390258099101696-1974596626342686720", with: ["sage_gtm"], box: "dm", messages: [] },
+    { platform: "twitter", account: "xAccount", conversationId: "1491032180553920513:1974596626342686720", with: ["SalesPsych0"], box: "xchat", messages: [] },
+    { platform: "twitter", account: "xAccount", conversationId: "1663390258099101696-1974596626342686720", with: ["sage_gtm"], box: "dm", messages: [] },
     { platform: "discord", account: "myDiscordName", conversationId: "1565734133609668780", with: ["handle_r1"], box: "dm", messages: [] },
   ] as never[];
 

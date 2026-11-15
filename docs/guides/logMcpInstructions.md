@@ -113,9 +113,9 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 - Runs for seconds to minutes: start a Monitor on `tail -f ~/.logCli/mcp/<day>.log` before calling, so the owner watches it live (rule 26). A run that outlasts the call's wait (`waitMs`, default 20 s, at most 50 s) comes back as a job (`exit` -1, `job.id`): follow it with `jobStatus` { jobId, afterLine }, stop it at its next browser step with `jobCancel`.
 <!-- /shell -->
 <!-- noShell -->
-- Runs for seconds to minutes: every line it streams comes back in the result's `progress` (with its time), and the result says where every open browser is (`browsers`, `next`, `needsMatt`) (rules 26, 35). A run that outlasts the call's wait (`waitMs`, default 20 s, at most 50 s) comes back as a job (`exit` -1, `job.id`): follow it with `jobStatus` { jobId, afterLine }, stop it at its next browser step with `jobCancel`.
+- Runs for seconds to minutes: every line it streams comes back in the result's `progress` (with its time), and the result says where every open browser is (`browsers`, `next`, `needsOwner`) (rules 26, 35). A run that outlasts the call's wait (`waitMs`, default 20 s, at most 50 s) comes back as a job (`exit` -1, `job.id`): follow it with `jobStatus` { jobId, afterLine }, stop it at its next browser step with `jobCancel`.
 <!-- /noShell -->
-- Every result also says where every open browser is (`browsers`), the call that resolves its known page state (`next`: make it, don't stop, rule 79) and what only the owner can clear (`needsMatt`).
+- Every result also says where every open browser is (`browsers`), the call that resolves its known page state (`next`: make it, don't stop, rule 79) and what only the owner can clear (`needsOwner`).
 - A refusal names its error code; the `errors` tool says what each one means and what to do.
 
 ## The work, step by step: logCli

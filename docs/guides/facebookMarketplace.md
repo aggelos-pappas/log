@@ -51,7 +51,7 @@ From `skills/accountToDryRun/SKILL.md`.
 Every step is an `mcp__log__*` tool (the `log` MCP server, `bun run mcp`).
 The same thing works in a terminal as `log <command> <args>`.
 Nothing here posts to Facebook. Going live is the last step, and only when
-the owner says so.
+The owner says so.
 
 ### Hard boundaries
 

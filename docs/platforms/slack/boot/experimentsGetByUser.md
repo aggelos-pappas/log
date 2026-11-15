@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundarywoL1HkX4msIzF62m
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `assignments.slackbot_skills_admin_page_redirect`, `assignments.slackbot_skill_set_admin_page`, `assignments.slackbot_skills_admin_edit_access`, `assignments.slackbot_skill_share_dialog_v2`, `assignments.dunning_churn_reduction`, `assignments.code_channels_ghes_provider`, `assignments.new_team_ai_app_invites`, `assignments.canvas_readtime`, `assignments.canvas_permalink_icon`, `assignments.canvas_navigable_callout`, `assignments.canvas_header_image` and 28 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_c1f0045fb8d971ed590cc6de38e0a27b19246d205b6e190ed91fac4cabfedbae` |
 
 Seen 2 time(s) in 1 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 556 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 556 ms
 
 Sent:
 
@@ -58,7 +58,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 341 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 341 ms
 
 Sent:
 

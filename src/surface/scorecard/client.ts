@@ -11,6 +11,7 @@ import { agentsRules, commandTools, HOSTED_INSTRUCTIONS_FILE, GUIDE_TOPICS, guid
 import { NOTES } from "../../mcp/server/helpers/toolsFromCommands.ts";
 import { hasMachine, measure } from "./helpers/index.ts";
 import type { Metric, ScoredCommand, ScorecardInput, SourceText, ToolText } from "./types.ts";
+import { loadDenylist } from "../../privacy/scan/client.ts";
 
 export const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 export const BASELINE_PATH = "scripts/checks/agnosticBaseline.json";
@@ -64,6 +65,7 @@ export function repoInput(root: string = REPO_ROOT): ScorecardInput {
     guides,
     serverInstructions: SERVER_INSTRUCTIONS,
     hostedInstructions: existsSync(join(root, HOSTED_INSTRUCTIONS_FILE)) ? text(join(root, HOSTED_INSTRUCTIONS_FILE)) : "",
+    ownerNames: loadDenylist().filter((term) => /^[A-Za-z]+$/.test(term)),
     hookTypes: text(join(root, "src/agentHooks/harness/types.ts")),
     ruleIds: new Set(agentsRules(text(join(root, "AGENTS.md"))).keys()),
     useCaseFiles: filesIn(root, "docs/useCases", [".md"]),

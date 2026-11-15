@@ -33,7 +33,7 @@ One real example, 28 Oct 05:49:45 UTC: @<name:1> typed "Ok wait let ai reply now
 | Runner | `src/twitter/account/session/client.ts` `runTwitterEngineLive` | Spawns the engine and calls back on each `liveEvent` line, so the command can print it the moment it comes (rule 26) |
 | Command | `log twitter chat watch --account <a> [--seconds <n>] [--inbox] [--json]` | Prints each message as X pushes it; `--inbox` hands each new message from someone else to the inbox hook |
 | Hook | `scripts/hooks/inbox.ts`, `src/inbox/watch` `ensureLiveWatchers` | Keeps one `chat watch --inbox` running per signed-in X account (pid in `~/.logCli/inbox/twitter/<a>/watch.pid`, its log in `watch.log`) and puts each new message in front of the agent with what to do: read the thread, draft from the owner's guide, `log voice`, show the owner, send only when he says |
-| Voice gate | `log voice --to <h> --text "<draft>" [--context "<what they said>"]`, `src/twitter/copy/voice` | SubQ reads the draft against the owner's writing across all his conversations, with `GUIDES/MATT_WRITING_STYLE.md` behind it; a phrase he never says, AI artifacts or AI phrasing fail it outright ([docs/specs/voiceGate.md](../../../specs/voiceGate.md)) |
+| Voice gate | `log voice --to <h> --text "<draft>" [--context "<what they said>"]`, `src/twitter/copy/voice` | SubQ reads the draft against the owner's writing across all his conversations, with `GUIDES/OWNER_WRITING_STYLE.md` behind it; a phrase he never says, AI artifacts or AI phrasing fail it outright ([docs/specs/voiceGate.md](../../../specs/voiceGate.md)) |
 
 ## What we saw live
 

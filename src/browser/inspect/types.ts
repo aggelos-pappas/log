@@ -115,7 +115,7 @@ export interface BrowserView {
   failed: string | null
   state: { id: string; what: string; person: boolean } | null
   next: { tool: string; input: Record<string, unknown> } | null
-  needsMatt: string | null
+  needsOwner: string | null
 }
 
 export interface GoalFinding {

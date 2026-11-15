@@ -108,10 +108,10 @@ export function tasteSummary(index: TasteIndex | null): string {
 export async function tasteFit(decide: DecisionsClient, index: TasteIndex | null, template: { name: string; description: string }, image: DecisionImage, ratings: readonly TasteRating[] = []): Promise<TasteFit> {
   const rated = ratings.filter((r) => r.name).slice(-80)
   const response = await decide({
-    state: { mattsTaste: tasteSummary(index), styles: TASTE_STYLES, examplesHeSent: (index?.memes ?? []).slice(0, 25).map((m) => ({ style: m.style, line: m.text.slice(0, 120) })), memesHePicked: rated.filter((r) => r.good).map((r) => `${r.name} (for: ${r.word})`), memesHePassedOn: rated.filter((r) => !r.good).flatMap((r) => (r.shown?.length ? r.shown : r.name ? [r.name] : []).map((n) => `${n} (for: ${r.word})`)).slice(-60), whatHeWouldSendInstead: rated.filter((r) => r.other).map((r) => `${r.other} (for: ${r.word})`), candidate: template },
+    state: { ownersTaste: tasteSummary(index), styles: TASTE_STYLES, examplesHeSent: (index?.memes ?? []).slice(0, 25).map((m) => ({ style: m.style, line: m.text.slice(0, 120) })), memesHePicked: rated.filter((r) => r.good).map((r) => `${r.name} (for: ${r.word})`), memesHePassedOn: rated.filter((r) => !r.good).flatMap((r) => (r.shown?.length ? r.shown : r.name ? [r.name] : []).map((n) => `${n} (for: ${r.word})`)).slice(-60), whatHeWouldSendInstead: rated.filter((r) => r.other).map((r) => `${r.other} (for: ${r.word})`), candidate: template },
     images: [image],
     questions: {
-      fit: { type: 'noul', instructions: 'Going by mattsTaste, the styles, the examples he has sent and the memes he picked, passed on or would send instead, is the attached meme his kind of meme, one he would send himself?', criteria: { true: 'His kind: deep fried, larping, a streamer reacting or a shitpost, like what he sends', false: 'A clean, mainstream or corporate meme he would not send' } },
+      fit: { type: 'noul', instructions: 'Going by ownersTaste, the styles, the examples he has sent and the memes he picked, passed on or would send instead, is the attached meme his kind of meme, one he would send himself?', criteria: { true: 'His kind: deep fried, larping, a streamer reacting or a shitpost, like what he sends', false: 'A clean, mainstream or corporate meme he would not send' } },
       style: { type: 'choice', instructions: 'Which kind of meme is the attached picture?', criteria: styleCriteria() },
     },
   })

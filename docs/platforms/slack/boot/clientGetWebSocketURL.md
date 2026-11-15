@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundary7CeHsXHg0E6AeAEi
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `primary_websocket_url`, `fallback_websocket_url`, `ttl_seconds`, `routing_context` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script289.js:1370 socketUrl` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script289.js:1370 socketUrl` |
 | rea | `ev_51ccc56eec661692e09ef6bbff958d9df505a7e706f58b323b19ae855768c702` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 556 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 556 ms
 
 Sent:
 

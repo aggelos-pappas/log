@@ -28,7 +28,7 @@ Enable the plugin and Hermes's dashboard gets a **log** tab: who is waiting on a
 
 ![The log tab in the Hermes dashboard, shown with sample data](docs/screenshots/dashboard.png)
 
-Watch the launch video: [log on X](https://x.com/matthewsoldit/status/2120938715820474690).
+Watch the launch video: [log on X](https://x.com/xAccount/status/2120938715820474690).
 
 ## What's inside
 

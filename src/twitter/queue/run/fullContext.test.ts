@@ -9,7 +9,7 @@ import type { TwitterNotification } from '../../notification/feed/index'
 const START = Date.parse('2026-11-01T16:00:00Z')
 
 function queueOf(): Queue {
-  const queue = buildQueue({ account: 'matthewsoldit', action: 'dm', targets: [{ handle: 'tester_m', userId: '1', text: 'yo tester_m made a new free tool' }, { handle: 'gabe', userId: '2', text: 'yo gabe made a new free tool' }], lines: [], sources: [], seed: 1, now: new Date(START) })
+  const queue = buildQueue({ account: 'xAccount', action: 'dm', targets: [{ handle: 'tester_m', userId: '1', text: 'yo tester_m made a new free tool' }, { handle: 'gabe', userId: '2', text: 'yo gabe made a new free tool' }], lines: [], sources: [], seed: 1, now: new Date(START) })
   queue.randomRun = { planned: new Date(START).toISOString(), window: '1h', minGap: 300, events: [{ n: 1, kind: 'reply', at: new Date(START + 600_000).toISOString() }, { n: 2, kind: 'reply', at: new Date(START + 1_200_000).toISOString() }] }
   return approveQueue(queue, 'the owner', new Date(START))
 }

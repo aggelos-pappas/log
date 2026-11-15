@@ -74,7 +74,7 @@ tools, so nothing here costs money (rule 41).
 3. Search: `memelordSearch` { query: [the moment in a few words] }. The
    answer leads with the owner's taste and ranks by it (deep fried, larping,
    streamer reacts like FlightReacts, Zias and Bloo, shitposts, and the memes
-   the owner has sent): pick from the top, a clean corporate meme is never the owner's. Short
+   The owner has sent): pick from the top, a clean corporate meme is never the owner's. Short
    queries match best: a long sentence often returns one result or none. Use
    `method: "combined"` to add keyword matching, `type: "meme"` for a still
    image, `"video"` for a clip. `memelordTrending` gives what is current, each

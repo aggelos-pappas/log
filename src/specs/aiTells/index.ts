@@ -52,12 +52,12 @@ export const aiTells = {
     'REQ-AITELLS-06': [{ kind: 'value', file: TYPES, name: 'X_COMPLAINT_KEEP', equals: 0.6 }],
     'REQ-AITELLS-07': [{ kind: 'symbol', file: TELLS, name: 'percentile' }],
     'REQ-AITELLS-08': [
-      { kind: 'value', file: TYPES, name: 'MUTE_IF_MATT_USES', equals: 0.02 },
+      { kind: 'value', file: TYPES, name: 'MUTE_IF_OWNER_USES', equals: 0.02 },
       { kind: 'symbol', file: TELLS, name: 'mutedRules' },
     ],
     'REQ-AITELLS-09': [
-      { kind: 'value', file: TYPES, name: 'MATT_SAYS_IT_TIMES', equals: 5 },
-      { kind: 'symbol', file: TELLS, name: 'mattsOwnPhrases' },
+      { kind: 'value', file: TYPES, name: 'OWNER_SAYS_IT_TIMES', equals: 5 },
+      { kind: 'symbol', file: TELLS, name: 'ownersOwnPhrases' },
     ],
     'REQ-AITELLS-10': [
       { kind: 'symbol', file: TELLS, name: 'chunksOf' },
@@ -81,8 +81,8 @@ export const aiTells = {
     'REQ-AITELLS-05': noul('Does aiPhrases add the tokens of the vale-ai-tells rules before it reads feedHive and the other lists, does buildAiIndex call embedder.embed on the text of every phrase, and does voiceDeps in the voice command make aiEmbedder return jinaEmbedder()?'),
     'REQ-AITELLS-06': noul('Does buildAiIndex keep an X_COMPLAINT phrase only when its best cosine to a curated phrase is at least X_COMPLAINT_KEEP, and drop it otherwise?'),
     'REQ-AITELLS-07': noul("Does buildAiIndex measure the owner's own replies against the phrase vectors and store their p50 and p99 with percentile in the baseline?"),
-    'REQ-AITELLS-08': noul('Does mutedRules mute a rule that hits in more than MUTE_IF_MATT_USES of the replies, and does readAiTells skip the muted rules?'),
-    'REQ-AITELLS-09': noul('Does mattsOwnPhrases count, for each vale rule match, how many of the replies contain it and keep the matches with at least MATT_SAYS_IT_TIMES, does buildAiIndex store them as baseline.mattsPhrases, and does readAiTells put index.baseline.mattsPhrases into the muted set it passes to ruleHits?'),
+    'REQ-AITELLS-08': noul('Does mutedRules mute a rule that hits in more than MUTE_IF_OWNER_USES of the replies, and does readAiTells skip the muted rules?'),
+    'REQ-AITELLS-09': noul('Does ownersOwnPhrases count, for each vale rule match, how many of the replies contain it and keep the matches with at least OWNER_SAYS_IT_TIMES, does buildAiIndex store them as baseline.ownersPhrases, and does readAiTells put index.baseline.ownersPhrases into the muted set it passes to ruleHits?'),
     'REQ-AITELLS-10': noul('Does readAiTells cut the text with chunksOf into lines and word windows, find each chunk\'s best phrase by cosine, and rerank the closest with embedder.rerank?'),
     'REQ-AITELLS-11': noul("Does readAiTells set flagged when the closest cosine score is above the baseline p99, and pass only when there are no hits and it is not flagged?"),
     'REQ-AITELLS-12': noul('Does gateReading call ensureAiIndex, which builds the index when aiIndexStale finds it missing, made with another model than JINA_EMBED_MODEL, or older than pairs.json, and does reading.pass require aiTells.pass?'),

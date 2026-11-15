@@ -29,8 +29,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `instagramWatch` | Every Instagram DM as Instagram's realtime connection pushes it… | `log instagram watch --account <accountName> [--seconds <s>] [--inbox] [--json]` |
 | `instagramReact` | React to a Instagram message with an emoji, on the direct-API engine | `log instagram react --account <accountName> --thread <thread> --message <id> --emoji <emoji> [--remove] [--approvedBy <who>] [--live] [--json]` |
 | `instagramReactLive` | React to a Instagram message with an emoji, on the…, live on Instagram | `log instagram react --account <accountName> --thread <thread> --message <id> --emoji <emoji> [--remove] [--approvedBy <who>] [--live] [--json]` |
-| `instagramVoice` | Send a voice note in the owner's cloned voice as Instagram's own… | `log instagram voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
-| `instagramVoiceLive` | Send a voice note in the owner's cloned voice as…, live on Instagram | `log instagram voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--mattsWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
+| `instagramVoice` | Send a voice note in the owner's cloned voice as Instagram's own… | `log instagram voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
+| `instagramVoiceLive` | Send a voice note in the owner's cloned voice as…, live on Instagram | `log instagram voice --account <accountName> --with <with> --text "<what the owner says>" [--provider inworld\|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
 
 ## The work, step by step: instagram
 

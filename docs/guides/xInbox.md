@@ -60,7 +60,7 @@ replies show up the second they land and no inbox read ever hits X's 429.
    <a> --with <handle>` (the old DM thread and X Chat are one conversation,
    rule 89).
 3. **Draft from the owner's guide, with the owner's facts only.** Read
-   `C:/Users/tester/.buzz/GUIDES/MATT_WRITING_STYLE.md` before drafting. Lowercase,
+   `C:/Users/tester/.buzz/GUIDES/OWNER_WRITING_STYLE.md` before drafting. Lowercase,
    no commas or full stops, the owner's words, almost never end on a question, no
    praise-then-pitch, nothing the owner didn't say (rules 39-41).
 4. **Gate every draft:** `log voice --to <handle> --text "<draft>"
@@ -73,13 +73,13 @@ replies show up the second they land and no inbox read ever hits X's 429.
 
 ```bash
 ## who wrote: the hook says it, pushed by X. To watch by hand:
-log twitter chat watch --account matthewsoldit --seconds 600
+log twitter chat watch --account xAccount --seconds 600
 ## read them
-log twitter dms --account matthewsoldit --with <handle>
+log twitter dms --account xAccount --with <handle>
 ## gate the draft
 log voice --to <handle> --text "<draft>" --context "<what they said>"
 ## send, once the owner says
-log twitter dm --account matthewsoldit --userId <id> --text "<draft>" --approvedBy <owner> --live
+log twitter dm --account xAccount --userId <id> --text "<draft>" --approvedBy <owner> --live
 ```
 
 ### When it goes wrong

@@ -60,7 +60,7 @@ export function collectRules(repo: string): KbArticle[] {
   const rulesText = hard >= 0 ? text.slice(hard, text.indexOf('\n## ', hard + 5) > 0 ? text.indexOf('\n## ', hard + 5) : undefined) : ''
   for (const m of rulesText.matchAll(/^(\d+)\. (\d{4}-\d{2}-\d{2}) · ([\s\S]*?)(?=^\d+\. \d{4}-\d{2}-\d{2} · |(?![\s\S]))/gm)) {
     const body = m[3].replace(/\n\s+/g, '\n').trim()
-    out.push(article(`rule:${m[1]}`, 'rule', `Rule ${m[1]}: ${firstSentence(body.replace(/^(?:matt|the owner):\s*/i, '').replace(/^\(replaced[^)]*\)\s*/i, ''))}`, `Rule ${m[1]} (${m[2]})\n\n${body}`, `AGENTS.md#rule${m[1]}`, ['agentsRule', m[2]]))
+    out.push(article(`rule:${m[1]}`, 'rule', `Rule ${m[1]}: ${firstSentence(body.replace(/^(?:owner|the owner):\s*/i, '').replace(/^\(replaced[^)]*\)\s*/i, ''))}`, `Rule ${m[1]} (${m[2]})\n\n${body}`, `AGENTS.md#rule${m[1]}`, ['agentsRule', m[2]]))
   }
   for (const m of text.matchAll(/^## (.+)\n([\s\S]*?)(?=^## |(?![\s\S]))/gm)) {
     if (/^Hard rules/.test(m[1])) continue
@@ -120,7 +120,7 @@ export function collectPageStates(): KbArticle[] {
       `Page state ${s.id}: ${firstSentence(s.what, 140)}`,
       [`State: ${s.id}`, `What it is: ${s.what}`, `How it is resolved: ${s.resolve}`, `Needs a person: ${s.person ? 'yes, only the owner can clear it' : 'no, log-cli resolves it'}`, s.needsNothing ? 'Needs nothing: it is a normal page, nothing to resolve' : ''].filter(Boolean).join('\n'),
       'src/browser/flow/helpers/pageState.ts',
-      ['pageState', s.person ? 'needsMatt' : 'resolvable'],
+      ['pageState', s.person ? 'needsOwner' : 'resolvable'],
     ),
   )
 }

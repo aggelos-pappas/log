@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { basename } from "node:path";
-import { CLONE_TITLE, clonePath, mattsRecordings, pickReferences, providerOf, readClone, replacedClone, secondsOf, SPEAK_FORMATS, speakToFile, VOICE_PROVIDERS, voiceProvider, voiceSettingsOf, wavOf, writeClone } from "../../extensions/voiceClone/index.ts";
+import { CLONE_TITLE, clonePath, ownersRecordings, pickReferences, providerOf, readClone, replacedClone, secondsOf, SPEAK_FORMATS, speakToFile, VOICE_PROVIDERS, voiceProvider, voiceSettingsOf, wavOf, writeClone } from "../../extensions/voiceClone/index.ts";
 import { hashOf, readTranscript } from "../../media/voiceNotes/index.ts";
 import type { ReferenceAudio, Recording, SpeakFormat, VoiceProvider, VoiceProviderClient } from "../../extensions/voiceClone/index.ts";
 import { JSON_FLAG, listOf, parseArgs, parserSpecOf, refuse } from "../runner/helpers/index.ts";
@@ -40,7 +40,7 @@ export const CLONE_INPUT: CommandInput = {
 
 export const cloneDeps: { provider: (provider: VoiceProvider) => VoiceProviderClient; recordings: () => Recording[]; read: (path: string) => Uint8Array; wav: (path: string) => Uint8Array | null; transcript: (bytes: Uint8Array) => string | null; sidecar: (path: string) => string | null; seconds: (path: string) => number | null } = {
   provider: (provider) => voiceProvider(provider),
-  recordings: () => mattsRecordings(),
+  recordings: () => ownersRecordings(),
   read: (path) => readFileSync(path),
   wav: (path) => wavOf(path),
   transcript: (bytes) => readTranscript(hashOf(bytes))?.text?.trim() || null,
@@ -56,7 +56,7 @@ export function namedRecordings(paths: readonly string[], seconds: (path: string
   for (const path of paths) {
     const length = seconds(path);
     if (length === null) return `${path} isn't an audio file ffprobe can read`;
-    out.push({ path, platform: "file", account: "matt", conversationId: "", messageId: basename(path), seconds: length });
+    out.push({ path, platform: "file", account: "owner", conversationId: "", messageId: basename(path), seconds: length });
   }
   return out;
 }
