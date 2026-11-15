@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 50 domains, 566 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 50 domains, 570 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -483,6 +483,10 @@ Every message log sends as the owner passes the voice gate first (`log voice`, M
 - **REQ-VOICE-17** A refused draft says where to look before it is rewritten
 - **REQ-VOICE-16** No two messages read alike
 - **REQ-VOICE-15** Every send and voice note is gated against the room it goes to
+- **REQ-VOICE-23** Every chat the owner sends to has one card, built only from that chat
+- **REQ-VOICE-24** The writer and the gate read the card first
+- **REQ-VOICE-25** An answer is owed only when the card says it waits on the owner, and their line is under a day old
+- **REQ-VOICE-26** A chat with history is judged on that history
 
 ## [AI tells and watermark](./aiTells.md)
 

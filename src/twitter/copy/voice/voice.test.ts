@@ -136,3 +136,17 @@ describe('a message to someone the owner already talks to, with nothing of their
     expect(nothingWaiting({ conversation: [said('vladFriend', '2026-11-10T09:05:00Z')] }, now)).toBe(false)
   })
 })
+
+describe('the conversation card in the gate', () => {
+  test('the card goes to SubQ first, and decides whether an answer is owed', async () => {
+    const { asked, decide } = answering(0.95, 0.2)
+    const share = { to: 'vladFriend', text: 'bro dropped the new one', context: 'how much does it cost', card: 'this conversation: vladFriend (twitter dm); the owner wrote last, so it is waiting on them' }
+    const nothingOwed = await readVoice({ ...share, cardAnswerOwed: false }, 'GUIDE', decide)
+    expect(nothingOwed.pass).toBe(true)
+    expect(nothingOwed.answerRequired).toBe(false)
+    expect((asked[0].state as Record<string, unknown>).thisConversation).toBe(share.card)
+    const owed = await readVoice({ ...share, cardAnswerOwed: true }, 'GUIDE', decide)
+    expect(owed.pass).toBe(false)
+    expect(owed.answerRequired).toBe(true)
+  })
+})

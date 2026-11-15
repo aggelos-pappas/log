@@ -21,6 +21,8 @@ export interface VoiceDraft {
   spoken?: boolean
   howOwnerTalks?: string[]
   room?: import('../../../voice/room/index').Room
+  card?: string
+  cardAnswerOwed?: boolean
 }
 
 export interface VoiceReading {
