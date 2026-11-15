@@ -16,7 +16,7 @@ const check = process.argv.includes("--check");
 const problems = [];
 const LISTING_MAX = 1500;
 const PLAY_PREFIX = "log-";
-const NOT_IN_HERMES = new Set(["log-facebook-marketplace-listings"]);
+const NOT_IN_HERMES = new Set(["facebook/marketplaceListings"]);
 const REFERRAL_LINK = /\]\(https?:\/\/[^)\s]*[?&](?:ref|aff)=[^)\s]*\)/;
 const REFERRAL_NOTE = "Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.";
 
@@ -149,7 +149,7 @@ for (const platform of platforms) {
   }
 }
 files.set("index.json", `${JSON.stringify(index, null, 2)}\n`);
-const hermesFiles = new Map([...repoFiles].filter(([path]) => !NOT_IN_HERMES.has(path.split(/[\\/]/)[0])));
+const hermesFiles = new Map([...repoFiles].filter(([path]) => !NOT_IN_HERMES.has(String(sources.get(path)).replace(/^docs\/useCases\//, "").replace(/\.md$/, ""))));
 
 const privacy = { allowlist: loadAllowlist(join(root, "scripts", "privacy", "allowlist.json")), denylist: loadDenylist() };
 const stagedOnly = process.argv.includes("--staged");
