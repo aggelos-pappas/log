@@ -6,7 +6,7 @@ import { appendEvent } from "../../inbox/store/index.ts";
 import { chatIdFor, momentAnswered, failedParts, rankedContext, voiceDeps } from "./helpers/voice.ts";
 import type { GateReading } from "./helpers/voice.ts";
 
-const passing: GateReading = { to: "@x", voice: 0.95, inContext: 0.9, friendLike: 0.9, openerOnly: 1, toThem: null, buildsOn: null, neverSays: [], watermark: { level: "clean", findings: [] } as unknown as GateReading["watermark"], pass: true, model: "m", notHere: [], scrambler: { ran: true, suspicious: 0, hits: [] } as unknown as GateReading["scrambler"], ranked: [] };
+const passing: GateReading = { to: "@x", voice: 0.95, inContext: 0.9, answerRequired: true, friendLike: 0.9, openerOnly: 1, toThem: null, buildsOn: null, neverSays: [], watermark: { level: "clean", findings: [] } as unknown as GateReading["watermark"], pass: true, model: "m", notHere: [], scrambler: { ran: true, suspicious: 0, hits: [] } as unknown as GateReading["scrambler"], ranked: [] };
 
 describe("the voice gate inside every send (rule 137)", () => {
   test("a pass names nothing, and a fail names only what failed", () => {

@@ -285,7 +285,9 @@ export async function rankedContext(platform: string, account: string, who: { co
   const [query, ...vectors] = await embedder.embed([moment, ...lines.map((l) => l.text)]);
   const byMeaning = lines.map((l, i) => ({ l, c: cosineOf(query, vectors[i]) })).sort((a, b) => b.c - a.c).slice(0, RANKED_SHORTLIST).map((x) => x.l);
   const scores = await embedder.rerank(moment, byMeaning.map((l) => `${l.from}: ${l.text}`));
-  return byMeaning.map((l, i) => ({ l, s: scores[i] ?? 0 })).sort((a, b) => b.s - a.s).slice(0, top).map((x) => x.l).sort((a, b) => a.at.localeCompare(b.at));
+  const picked = byMeaning.map((l, i) => ({ l, s: scores[i] ?? 0 })).sort((a, b) => b.s - a.s).slice(0, top).map((x) => x.l);
+  const latest = lines.reduce((a, b) => (b.at.localeCompare(a.at) > 0 ? b : a));
+  return (picked.includes(latest) || top < 2 ? picked : [...picked.slice(0, top - 1), latest]).sort((a, b) => a.at.localeCompare(b.at));
 }
 
 function cosineOf(a: ArrayLike<number>, b: ArrayLike<number>): number {
@@ -333,7 +335,7 @@ export function failedParts(reading: GateReading): string[] {
   if (reading.voice < VOICE_PASS) out.push(`doesn't sound like the owner ${reading.buildsOn === null ? "typed" : "said"} it (voice ${reading.voice.toFixed(2)}, needs ${VOICE_PASS})`);
   if (reading.fitsTheRoom !== null && reading.fitsTheRoom !== undefined && reading.fitsTheRoom < CONTEXT_PASS) out.push(`talks to someone who isn't there, or as if the chat were live when it isn't (fitsTheRoom ${reading.fitsTheRoom.toFixed(2)})`);
   if (reading.buildsOn !== null && reading.buildsOn < CONTEXT_PASS) out.push(`repeats what the owner already said instead of building on what they're talking about (buildsOn ${reading.buildsOn.toFixed(2)})`);
-  if (reading.inContext < CONTEXT_PASS && !nobodyToAnswer({ room: reading.room })) out.push(`doesn't answer what they said (inContext ${reading.inContext.toFixed(2)})`);
+  if (reading.inContext < CONTEXT_PASS && reading.answerRequired !== false && !nobodyToAnswer({ room: reading.room })) out.push(`doesn't answer what they said (inContext ${reading.inContext.toFixed(2)})`);
   if (reading.friendLike < CONTEXT_PASS) out.push(`reads like a template or a pitch (friendLike ${reading.friendLike.toFixed(2)})`);
   if (reading.openerOnly < CONTEXT_PASS) out.push(`a first message with an ask in it (openerOnly ${reading.openerOnly.toFixed(2)})`);
   if (reading.toThem !== null && reading.toThem < CONTEXT_PASS) out.push(`not how the owner writes in this chat (toThem ${reading.toThem.toFixed(2)})`);

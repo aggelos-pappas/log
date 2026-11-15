@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { DecisionsClient } from '../../../subq/decisions/index'
-import { CONTEXT_PASS, OWNER_DMS, NEVER_SAYS, VOICE_MODEL, VOICE_PASS } from './types'
+import { ANSWER_WINDOW_MS, CONTEXT_PASS, OWNER_DMS, NEVER_SAYS, VOICE_MODEL, VOICE_PASS } from './types'
 import type { VoiceDraft, VoiceReading } from './types'
 import { watermarkReadingOf } from '../watermark/index'
 
@@ -40,6 +40,15 @@ export function alreadyTalkedIn(draft: Pick<VoiceDraft, 'evidence' | 'conversati
   if ((draft.evidence?.recent?.length ?? 0) > 0) return true
   if ((draft.conversation ?? []).some((m) => m.from === 'the owner')) return true
   return (draft.evidence?.replies ?? []).some((r) => r.tier === 'sameChat' || r.tier === 'samePerson')
+}
+
+export function nothingWaiting(draft: Pick<VoiceDraft, 'evidence' | 'conversation' | 'context'>, now = Date.now()): boolean {
+  if (!alreadyTalkedIn(draft)) return false
+  const moments = [...(draft.conversation ?? [])].sort((a, b) => a.at.localeCompare(b.at))
+  const last = moments.at(-1)
+  if (!last) return !draft.context
+  if (last.from === 'the owner') return true
+  return now - Date.parse(last.at) > ANSWER_WINDOW_MS
 }
 
 export function nobodyToAnswer(draft: Pick<VoiceDraft, 'room'>): boolean {
@@ -91,5 +100,6 @@ export async function readVoice(draft: VoiceDraft, guide: string, decide: Decisi
   const buildsOn = draft.spoken ? answers.buildsOn?.noul ?? 0 : null
   const fitsTheRoom = draft.room ? answers.fitsTheRoom?.noul ?? 0 : null
   const watermark = watermarkReadingOf(draft.text)
-  return { to: draft.to, voice, inContext, friendLike, openerOnly, toThem, buildsOn, fitsTheRoom, neverSays, watermark, pass: !neverSays.length && watermark.level !== 'artifacts' && voice >= VOICE_PASS && (nobodyToAnswer(draft) || inContext >= CONTEXT_PASS) && friendLike >= CONTEXT_PASS && openerOnly >= CONTEXT_PASS && (toThem === null || toThem >= CONTEXT_PASS) && (buildsOn === null || buildsOn >= CONTEXT_PASS) && (fitsTheRoom === null || fitsTheRoom >= CONTEXT_PASS), model: response.model ?? null }
+  const answerRequired = !nobodyToAnswer(draft) && !nothingWaiting(draft)
+  return { to: draft.to, voice, inContext, answerRequired, friendLike, openerOnly, toThem, buildsOn, fitsTheRoom, neverSays, watermark, pass: !neverSays.length && watermark.level !== 'artifacts' && voice >= VOICE_PASS && (!answerRequired || inContext >= CONTEXT_PASS) && friendLike >= CONTEXT_PASS && openerOnly >= CONTEXT_PASS && (toThem === null || toThem >= CONTEXT_PASS) && (buildsOn === null || buildsOn >= CONTEXT_PASS) && (fitsTheRoom === null || fitsTheRoom >= CONTEXT_PASS), model: response.model ?? null }
 }

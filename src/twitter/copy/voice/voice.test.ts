@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { DecisionRequest } from '../../../subq/decisions/index'
-import { alreadyTalkedIn, neverSaysIn, readVoice } from './index'
+import { alreadyTalkedIn, neverSaysIn, nothingWaiting, readVoice } from './index'
 
 const answering = (voice: number, inContext = 0.95, friendLike = 0.95, openerOnly = 0.95) => {
   const asked: DecisionRequest[] = []
@@ -121,3 +121,18 @@ describe("the opener rule only reads a first message (rule 98)", () => {
     expect(alreadyTalkedIn({})).toBe(false);
   });
 });
+
+describe('a message to someone the owner already talks to, with nothing of theirs waiting, answers nothing', () => {
+  const now = Date.parse('2026-11-15T22:00:00Z')
+  const said = (from: string, at: string) => ({ from, text: 'x', at })
+
+  test('the owner spoke last, or what they said is over a day old: nothing is waiting, so the post share is not held for not answering', () => {
+    expect(nothingWaiting({ conversation: [said('vladFriend', '2026-11-15T16:50:00Z'), said('the owner', '2026-11-15T16:56:19Z')] }, now)).toBe(true)
+    expect(nothingWaiting({ conversation: [said('the owner', '2026-11-12T09:00:00Z'), said('vladFriend', '2026-11-12T09:05:00Z')] }, now)).toBe(true)
+  })
+
+  test('they wrote last today, or the owner has never talked with them: an answer is still owed', () => {
+    expect(nothingWaiting({ conversation: [said('the owner', '2026-11-15T20:00:00Z'), said('vladFriend', '2026-11-15T21:30:00Z')] }, now)).toBe(false)
+    expect(nothingWaiting({ conversation: [said('vladFriend', '2026-11-10T09:05:00Z')] }, now)).toBe(false)
+  })
+})
