@@ -1,7 +1,7 @@
 import type { WatermarkReading } from '../../copy/watermark/types'
 import type { TwitterEngineSpec } from '../../account/session/index'
 
-export type SendAction = 'reply' | 'quote' | 'like' | 'repost' | 'dm' | 'follow' | 'post'
+export type SendAction = 'reply' | 'quote' | 'like' | 'repost' | 'delete' | 'dm' | 'follow' | 'post'
 
 export interface SendRequest {
   action: SendAction

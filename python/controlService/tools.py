@@ -48,6 +48,7 @@ WRITE_TOOLS = frozenset({
     "twitterLikeLive",
     "twitterFollowLive",
     "twitterRepostLive",
+    "twitterDeleteLive",
     "discordSendLive",
     "linkedinPostLive",
     "linkedinDeleteLive",

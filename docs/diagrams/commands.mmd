@@ -89,6 +89,7 @@ flowchart TB
     c_twitterLike["like"]
     c_twitterList["list"]
     c_twitterRepost["repost"]
+    c_twitterDelete["delete"]
     c_twitterFollow["follow"]
     c_twitterDm["dm"]
     c_twitterReact["react"]
@@ -320,6 +321,8 @@ flowchart TB
   mcp --> c_twitterList
   cli --> c_twitterRepost
   mcp --> c_twitterRepost
+  cli --> c_twitterDelete
+  mcp --> c_twitterDelete
   cli --> c_twitterFollow
   mcp --> c_twitterFollow
   cli --> c_twitterDm

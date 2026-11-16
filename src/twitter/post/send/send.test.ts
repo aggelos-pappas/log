@@ -18,6 +18,12 @@ describe('planSend', () => {
     expect(planSend({ action: 'repost', tweetUrl: POST, live: false }).ok).toBe(true)
   })
 
+  test('a delete names the post, takes no text and needs who approved it to go live', () => {
+    expect(planSend({ action: 'delete', live: false })).toMatchObject({ ok: false, problem: { code: 'targetMissing' } })
+    expect(planSend({ action: 'delete', tweetUrl: POST, live: true })).toMatchObject({ ok: false, problem: { code: 'notApproved' } })
+    expect(planSend({ action: 'delete', tweetUrl: POST, approvedBy: 'the owner', live: true })).toMatchObject({ ok: true, target: POST, spec: { action: 'delete', tweetUrl: POST, live: true } })
+  })
+
   test('the target, the text and the style are checked before X is called', () => {
     expect(planSend({ action: 'quote', text: 'yes', live: false })).toMatchObject({ ok: false, problem: { code: 'targetMissing' } })
     expect(planSend({ action: 'reply', tweetUrl: 'https://example.com/x', text: 'yes', live: false })).toMatchObject({ ok: false, problem: { code: 'tweetUrlInvalid' } })

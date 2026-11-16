@@ -23,7 +23,7 @@ from platformKit import timing
 
 SECRET_KEYS = ("auth_token", "ct0", "twid", "kdt", "att", "password", "cookie")
 READS = ("ping", "follows", "inbox", "followers", "notifications", "postEngagers", "webClient", "xchatContacts", "xchatUnlock", "xchatWatch", "lists")
-WRITES = ("reply", "quote", "like", "repost", "dm", "follow", "post", "react", "listCreate", "listAdd", "xchatVoice")
+WRITES = ("reply", "quote", "like", "repost", "delete", "dm", "follow", "post", "react", "listCreate", "listAdd", "xchatVoice")
 ACTIONS = READS + WRITES
 
 
@@ -1508,6 +1508,15 @@ async def send(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
         if errors or not ((data or {}).get("data") or {}).get("create_retweet"):
             raise RuntimeError(f"x did not repost the post: {json.dumps(data)[:300]}")
         return {"ok": True, "event": "sent", "reposted": True, "tweetId": tweet_id}
+    if action == "delete":
+        tweet_id = tweet_id_from_url(spec["tweetUrl"])
+        data, _ = await client.gql.delete_tweet(tweet_id)
+        errors = data.get("errors") if isinstance(data, dict) else None
+        if errors and any(e.get("code") == 144 for e in errors):
+            return {"ok": True, "event": "sent", "deleted": True, "already": True, "tweetId": tweet_id}
+        if errors or "delete_tweet" not in ((data or {}).get("data") or {}):
+            raise RuntimeError(f"x did not delete the post: {json.dumps(data)[:300]}")
+        return {"ok": True, "event": "sent", "deleted": True, "tweetId": tweet_id}
     if action == "react":
         return await react(client, spec)
     if action == "xchatVoice":
@@ -1728,7 +1737,7 @@ def refusal_of(spec: dict[str, Any]) -> dict[str, Any] | None:
         return {"ok": False, "code": "notLive", "detail": f"{action} sends on X: the engine only sends with live set (rule 8)"}
     if action in WRITES and not str(spec.get("approvedBy") or "").strip():
         return {"ok": False, "code": "notApproved", "detail": f"{action} needs the name of who approved it"}
-    if action in ("reply", "quote", "like", "repost") and not spec.get("tweetUrl"):
+    if action in ("reply", "quote", "like", "repost", "delete") and not spec.get("tweetUrl"):
         return {"ok": False, "code": "targetMissing", "detail": f"{action} needs the post's url"}
     if action == "react" and not (spec.get("conversationId") and spec.get("messageId") and reactions.unicode_of(str(spec.get("emoji") or ""))):
         return {"ok": False, "code": "reactInvalid", "detail": "react needs the conversation id, the message id and an emoji"}

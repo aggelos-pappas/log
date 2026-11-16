@@ -5,7 +5,7 @@ Generated from the code by `bun run docs:build`, so it always matches what `log`
 <!-- surface:start · written by `bun run docs:build` from the code. Not edited by hand. -->
 ## Commands, MCP tools and hooks
 
-log-cli is platform-agnostic: 7 platforms so far, Facebook (22 commands of its own), X (18 commands of its own), Reddit (5 commands of its own), Discord (13 commands of its own), LinkedIn (11 commands of its own), Slack (9 commands of its own), Instagram (6 commands of its own), and a new one is made by `log new platform <name>` (rule 83). A command that acts on one platform names it first, `log <platform> <command> …` (`log facebook listings`, `log twitter session`, `log reddit session`, `log discord session`, `log linkedin session`, `log slack session`, `log instagram session`), in every form; one that works on any platform takes none (the Platform column, rule 63).
+log-cli is platform-agnostic: 7 platforms so far, Facebook (22 commands of its own), X (19 commands of its own), Reddit (5 commands of its own), Discord (13 commands of its own), LinkedIn (11 commands of its own), Slack (9 commands of its own), Instagram (6 commands of its own), and a new one is made by `log new platform <name>` (rule 83). A command that acts on one platform names it first, `log <platform> <command> …` (`log facebook listings`, `log twitter session`, `log reddit session`, `log discord session`, `log linkedin session`, `log slack session`, `log instagram session`), in every form; one that works on any platform takes none (the Platform column, rule 63).
 Each command runs on the platform's direct API first where it has one, and on the account's browser otherwise (the Engine and Browser columns). log-cli is browser-agnostic too: each account's browser is a driver (AdsPower first, Camoufox kept, more browser providers to come), and every driver opens through the same gates.
 Every command is a CLI command (`log [<platform>] <command>`) and, unless it only works in a terminal, an MCP tool on the `log` server (Facebook's take the command's name, every other platform's start with the platform: `twitterReply`, `redditSessionCheck`).
 The same hooks fire whether it runs from a shell or over MCP, and both write the same live log, `~/.logCli/mcp/<day>.log`.
@@ -27,9 +27,9 @@ flowchart LR
   e_fbk --> api
   p_facebook -->|"browser: facebook doctor, facebook connect, facebook profile, facebook host, facebook join, facebook read, facebook poll, facebook check, facebook scan, facebook status, facebook watch, facebook publish, facebook campaign"| b_facebook["Facebook's browser path: its proxy in the account's home country (rule 12)"]
   b_facebook --> drivers
-  p_twitter["X (TWITTER): 18 commands of its own"]
+  p_twitter["X (TWITTER): 19 commands of its own"]
   twenty --> p_twitter
-  p_twitter -->|"direct API: twitter session, twitter follows, twitter dms, twitter chat, twitter cookies, twitter followers, twitter notifications, twitter reply, twitter quote, twitter post, twitter like, twitter list, twitter repost, twitter follow, twitter dm, twitter react, twitter queue, twitter voice"| e_twikit["twikit (vendor/twikit): the saved session, a governor per account"]
+  p_twitter -->|"direct API: twitter session, twitter follows, twitter dms, twitter chat, twitter cookies, twitter followers, twitter notifications, twitter reply, twitter quote, twitter post, twitter like, twitter list, twitter repost, twitter delete, twitter follow, twitter dm, twitter react, twitter queue, twitter voice"| e_twikit["twikit (vendor/twikit): the saved session, a governor per account"]
   e_twikit --> api
   p_twitter -.->|"no browser path (rule 80)"| nob_twitter["X runs on its direct API only"]
   p_reddit["Reddit (REDDIT): 5 commands of its own"]
@@ -105,14 +105,14 @@ Source: [`docs/diagrams/browsers.mmd`](diagrams/browsers.mmd).
 
 - **The account's browser, through the driver:** `facebook host`, `inspect`, `flow`, `<platform> warmup`, `facebook join`, `facebook read`, `facebook poll`, `facebook check`, `reddit read`, `discord read`, `slack read`. They run on whichever browser the account uses: AdsPower when it has a linked profile (`socialAccounts.adsPowerProfileId`), Camoufox otherwise, or what `socialAccounts.browserDriver` says.
 - **Camoufox only, not on the driver yet:** `facebook doctor`, `facebook connect`, `facebook profile`, `facebook scan`, `facebook status`, `facebook watch`, `facebook publish`, `facebook campaign`, `discord watch`, `linkedin connect`, `slack watch`, `instagram watch`. They launch Camoufox themselves (facebook-camofox-client's worker, or the publish, connect and profile sessions), so on an AdsPower account they don't open its AdsPower profile. Moving one onto the driver is moving it into `OPENER_ACTIONS` (`src/browser/run`).
-- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `runs`, `storage`, `timing`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`.
+- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `runs`, `storage`, `timing`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`.
 - **No browser path at all:** X. Its accounts run on the direct API only (rule 80).
 
 Each browser's capabilities, built or not: [`docs/browsers.md`](browsers.md) (generated, `bun run check:browsers`). AdsPower's setup: [`docs/adsPower.md`](adsPower.md).
 
 ### Engines: the direct API first, the browser behind it
 
-A command on the direct-API engine calls the platform's internal API with the account's saved session, paced by its own governor, and opens no browser. Each platform has its own vendored client: Facebook through fbk (`vendor/fbk`), X through twikit (`vendor/twikit`), Reddit through reverseChud (`vendor/reverseChud`), Discord through endcord (`vendor/endcord`), LinkedIn through openLinkedinApi (`vendor/openLinkedinApi`), Slack through gabrielSlack (`vendor/gabrielSlack`), Instagram through instagrapi (`vendor/instagrapi`). Every one reaches the network through one pinned browser-impersonating session: curl_cffi for the Python clients (`check:twikitTransport`), wreq-js for reverseChud (`check:reverseChudTransport`). Which engine runs each command is code (`DIRECT_ROUTES` and `commandEngine` in `src/directApi/engine`), and this section, the Engine column and every MCP tool's description are generated from it (7 clients, 63 commands).
+A command on the direct-API engine calls the platform's internal API with the account's saved session, paced by its own governor, and opens no browser. Each platform has its own vendored client: Facebook through fbk (`vendor/fbk`), X through twikit (`vendor/twikit`), Reddit through reverseChud (`vendor/reverseChud`), Discord through endcord (`vendor/endcord`), LinkedIn through openLinkedinApi (`vendor/openLinkedinApi`), Slack through gabrielSlack (`vendor/gabrielSlack`), Instagram through instagrapi (`vendor/instagrapi`). Every one reaches the network through one pinned browser-impersonating session: curl_cffi for the Python clients (`check:twikitTransport`), wreq-js for reverseChud (`check:reverseChudTransport`). Which engine runs each command is code (`DIRECT_ROUTES` and `commandEngine` in `src/directApi/engine`), and this section, the Engine column and every MCP tool's description are generated from it (7 clients, 64 commands).
 
 **Facebook.** Facebook's own page decides, not accountStatus: loggedIn reads; checkpoint stops and deactivates the account; loggedOut or accountWarning hands over to the browser path. Each account has its own governor (gaps of 4 s or more, 120 an hour, 500 a day, 40 writes a day, a 15-minute pause on a soft block, 6 hours on a checkpoint) and its result is written to socialAccounts.sessionState.
 
@@ -133,6 +133,7 @@ A command on the direct-API engine calls the platform's internal API with the ac
 - `log twitter like`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.favorite_tweet for the like; no browser and no proxy: X accounts call X directly, rule 80).
 - `log twitter list`: the direct-API engine only (twikit, vendored in vendor/twikit, lists.get_lists, create_list, add_list_member for the list show, list create --live, list add --live; no browser and no proxy: X accounts call X directly, rule 80).
 - `log twitter repost`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.retweet for the repost; no browser and no proxy: X accounts call X directly, rule 80).
+- `log twitter delete`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.delete_tweet for the delete; no browser and no proxy: X accounts call X directly, rule 80).
 - `log twitter follow`: the direct-API engine only (twikit, vendored in vendor/twikit, users.follow_user for the follow; no browser and no proxy: X accounts call X directly, rule 80).
 - `log twitter dm`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.send_dm for the dm; no browser and no proxy: X accounts call X directly, rule 80).
 - `log twitter react`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.add_reaction_to_message for the react --live (--remove takes it off); no browser and no proxy: X accounts call X directly, rule 80).
@@ -207,9 +208,9 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 264 command tools + saved flows"]
+  mcp["MCP server log: 266 command tools + saved flows"]
   bin["bin/log.ts"]
-  runCli["runCli: 126 commands (COMMANDS)"]
+  runCli["runCli: 127 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
   engine{"commandEngine: DIRECT_ROUTES"}
   direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi (vendor/), the account's saved session, a governor per account"]
@@ -340,6 +341,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log twitter like`](#log-twitter-like) | Like one post on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--tweet <postUrl>` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterLike`, `twitterLikeLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 53, 73, 86, 94, 105, 30, 38, 39, 40, 41 |
 | [`log twitter list`](#log-twitter-list) | The X account's own lists: show them, make one, put someone on one; changes are dry runs unless --live | `twitter` first | `--account <accountName>` `[--json]` `--name <name>` `[--description <text>]` `[--private]` `[--approvedBy <who>]` `[--live]` `--list <name|id>` `[--handle <handle>]` `[--userId <id>]` | direct API only | none | `twitterListShow`, `twitterListCreate`, `twitterListCreateLive`, `twitterListAdd`, `twitterListAddLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 105, 30, 38, 39, 40, 41 |
 | [`log twitter repost`](#log-twitter-repost) | Repost one post on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--tweet <postUrl>` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterRepost`, `twitterRepostLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 53, 73, 86, 94, 105, 30, 38, 39, 40, 41 |
+| [`log twitter delete`](#log-twitter-delete) | Delete one of the account's own posts on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--tweet <postUrl>` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterDelete`, `twitterDeleteLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 86, 94, 105, 30, 38, 39, 40, 41 |
 | [`log twitter follow`](#log-twitter-follow) | Follow one person on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--userId <id>` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterFollow`, `twitterFollowLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 53, 73, 86, 94, 105, 30, 38, 39, 40, 41 |
 | [`log twitter dm`](#log-twitter-dm) | Send one approved direct message on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--userId <id>` `--text <text>` `[--skipStyleCheck]` `[--media <file|url,…>]` `[--asOne]` `[--overGate]` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterDm`, `twitterDmLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 53, 73, 86, 94, 109, 105, 137, 133, 138, 30, 38, 39, 40, 41 |
 | [`log twitter react`](#log-twitter-react) | React to a X message with an emoji, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--chat <chat>` `--message <id>` `--emoji <emoji>` `[--remove]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `twitterReact`, `twitterReactLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 105, 133, 30, 38, 39, 40, 41 |
@@ -509,6 +511,7 @@ flowchart TB
     c_twitterLike["like"]
     c_twitterList["list"]
     c_twitterRepost["repost"]
+    c_twitterDelete["delete"]
     c_twitterFollow["follow"]
     c_twitterDm["dm"]
     c_twitterReact["react"]
@@ -740,6 +743,8 @@ flowchart TB
   mcp --> c_twitterList
   cli --> c_twitterRepost
   mcp --> c_twitterRepost
+  cli --> c_twitterDelete
+  mcp --> c_twitterDelete
   cli --> c_twitterFollow
   mcp --> c_twitterFollow
   cli --> c_twitterDm
@@ -1889,6 +1894,17 @@ log twitter repost --account <accountName> --tweet <postUrl> [--approvedBy <who>
 Repost one post on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
 Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's retweet answer decides: a created retweet (or already reposted, code 327) is sent. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
+```
+
+#### log twitter delete
+
+Delete one of the account's own posts on X, on the direct-API engine; a dry run unless --live MCP tools: `twitterDelete`, `twitterDeleteLive`, one per form, with named fields.
+
+```text
+log twitter delete --account <accountName> --tweet <postUrl> [--approvedBy <who>] [--force] [--live] [--json]
+Delete one of the account's own posts on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
+Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
+X's DeleteTweet answer decides: a deleted post is sent, and a post X no longer has (code 144) is sent too, as already gone. X refuses a post the account didn't write. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
 
 #### log twitter follow

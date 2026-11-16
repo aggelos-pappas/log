@@ -11,7 +11,7 @@ export interface TwitterGovernor {
   cooldown_remaining_s: number
 }
 
-export type TwitterAction = 'ping' | 'follows' | 'inbox' | 'followers' | 'notifications' | 'postEngagers' | 'webClient' | 'xchatContacts' | 'xchatUnlock' | 'xchatWatch' | 'reply' | 'quote' | 'like' | 'repost' | 'dm' | 'follow' | 'post' | 'react' | 'lists' | 'listCreate' | 'listAdd'
+export type TwitterAction = 'ping' | 'follows' | 'inbox' | 'followers' | 'notifications' | 'postEngagers' | 'webClient' | 'xchatContacts' | 'xchatUnlock' | 'xchatWatch' | 'reply' | 'quote' | 'like' | 'repost' | 'delete' | 'dm' | 'follow' | 'post' | 'react' | 'lists' | 'listCreate' | 'listAdd'
 
 export const TWITTER_WRITES: readonly TwitterAction[] = ['reply', 'quote', 'like', 'dm', 'follow', 'post', 'react', 'listCreate', 'listAdd']
 
@@ -173,6 +173,7 @@ export interface TwitterSessionAnswer {
   mode?: string
   liked?: boolean
   reposted?: boolean
+  deleted?: boolean
   followed?: boolean
   handle?: string
   already?: boolean
