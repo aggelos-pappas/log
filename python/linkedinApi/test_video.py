@@ -34,7 +34,10 @@ class FakeSession:
 
     def put(self, url, data=None, **kwargs):
         self.sent.append(("PUT", url, len(data)))
-        return answered("", 201)
+        part = url.rsplit("pn=", 1)[-1].split("&", 1)[0]
+        res = answered("", 201)
+        res.headers = Headers({"Location": f"/ambry-video/signedId/part{part}.bin", "X-Li-Uuid": "u"})
+        return res
 
 
 def mp4(path, seconds, pad=0):
@@ -47,12 +50,13 @@ def mp4(path, seconds, pad=0):
 
 
 PREFIX = "https://www.linkedin.com/dms-uploads/mp/v2/D00TEST/uploadedVideo/X-?sau=a&pn="
+FINALIZE = "https://www.linkedin.com/dms-uploads/finalizemp/v2/D00TEST/uploadedVideo/X-?sync=0"
 
 
 def register_answer(size):
     half = size // 2
     parts = [{"uploadUrlSuffix": f"{n}&sync=0", "byteRange": {"start": f"$n{a}", "end": f"$n{b}"}} for n, (a, b) in enumerate([(0, half - 1), (half, size - 1)], 1)]
-    instr = json.dumps({"assetUrn": "D00TEST", "uploadUrlPrefix": "$1", "partUploadRequests": parts}, separators=(",", ":"))
+    instr = json.dumps({"assetUrn": "D00TEST", "uploadUrlPrefix": "$1", "partUploadRequests": parts, "finalizeUrl": FINALIZE}, separators=(",", ":"))
     return f"1:T{len(PREFIX):x},{PREFIX}2:[]\n0:{instr}"
 
 
@@ -100,6 +104,12 @@ def test_a_video_post_uploads_every_part_then_waits_for_linkedin_to_finish_proce
     order = ["DispatchPostCreateWithDetour", "StartBackgroundVideoUpload", "registerMediaUpload", "ReportControlArmVideoRegistered", "ReportCrossScreenVideoUploadCompleted", "CreatePost"]
     assert [n for n in names if n in order] == order
     assert polls == [1, 2, 3]
+    at = {s[1]: i for i, s in enumerate(session.sent)}
+    finish = next(s[2] for s in session.sent if s[1] == FINALIZE)
+    assert [p["headers"]["location"] for p in finish["completeUploadRequest"]["partUploadResponses"]] == ["/ambry-video/signedId/part1.bin", "/ambry-video/signedId/part2.bin"]
+    assert all(p["httpStatusCode"] == 201 for p in finish["completeUploadRequest"]["partUploadResponses"])
+    created_at = next(i for i, s in enumerate(session.sent) if s[1].endswith("CreatePost"))
+    assert at[PREFIX + "2&sync=0"] < at[FINALIZE] < created_at
     created = next(s[2] for s in session.sent if s[0] == "POST" and s[1].endswith("CreatePost"))
     text = json.dumps(created)
     assert "{{" not in text and "urn:li:shareboxSession:SESSION==" in text and "D00TEST" in text

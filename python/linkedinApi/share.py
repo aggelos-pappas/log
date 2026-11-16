@@ -119,17 +119,24 @@ def video_of(path: str) -> dict[str, Any]:
     return {"path": str(file), "fileName": file.name, "mimeType": mime, "size": str(size), "videoDuration": str(duration)}
 
 
+def rsc_value(answer: str, key: str) -> str:
+    found = re.search(r'"' + key + r'":"([^"]*)"', answer)
+    if not found:
+        return ""
+    value = found.group(1)
+    if value.startswith("$"):
+        raw = answer.encode("utf-8")
+        rows = {m.group(1).decode(): raw[m.end():m.end() + int(m.group(2), 16)].decode("utf-8", "replace") for m in re.finditer(rb"(?:^|\n|\])([0-9a-f]+):T([0-9a-f]+),", raw)}
+        value = rows.get(value[1:], "")
+    return value.encode().decode("unicode_escape")
+
+
 def upload_parts(answer: str) -> tuple[str, list[tuple[str, int, int]]]:
-    raw = answer.encode("utf-8")
-    rows = {m.group(1).decode(): raw[m.end():m.end() + int(m.group(2), 16)].decode("utf-8", "replace") for m in re.finditer(rb"(?:^|\n|\])([0-9a-f]+):T([0-9a-f]+),", raw)}
-    prefix = re.search(r'"uploadUrlPrefix":"([^"]*)"', answer)
-    if not prefix:
+    base = rsc_value(answer, "uploadUrlPrefix")
+    if not base:
         return "", []
-    base = prefix.group(1)
-    if base.startswith("$"):
-        base = rows.get(base[1:], "")
     parts = [(suffix, int(start), int(end)) for suffix, start, end in re.findall(r'"uploadUrlSuffix":"([^"]+)".*?"start":"\$n(\d+)","end":"\$n(\d+)"', answer)]
-    return base.encode().decode("unicode_escape"), parts
+    return base, parts
 
 
 def set_states(body: dict[str, Any], key: str, value: Any) -> None:
@@ -392,20 +399,31 @@ class Composer:
         answer = self.server_request("com.linkedin.sdui.requests.media.registerMediaUpload", fill(template("registerVideoUpload"), values))
         asset = re.search(r'"assetUrn":"(D[0-9A-Za-z_\-]+)"', answer)
         base, parts = upload_parts(answer)
-        if not asset or not base or not parts:
-            raise ShareRefused("templateStale", "LinkedIn's registerMediaUpload answer for the video had no asset or upload parts")
+        finalize = rsc_value(answer, "finalizeUrl")
+        if not asset or not base or not parts or not finalize:
+            raise ShareRefused("templateStale", "LinkedIn's registerMediaUpload answer for the video had no asset, upload parts or finalize URL")
         if parts[0][1] != 0 or parts[-1][2] + 1 != int(video["size"]):
             raise ShareRefused("templateStale", f"LinkedIn's upload parts cover bytes {parts[0][1]} to {parts[-1][2]}, not the video's {video['size']}")
         self.server_request("com.linkedin.sdui.requests.sharing.ReportControlArmVideoRegistered", template("reportControlArmVideoRegistered"))
         headers = self.base_headers()
         headers.update({"accept": "*/*", "content-type": "application/octet-stream", "origin": ORIGIN, "referer": f"{ORIGIN}/feed/", "sec-fetch-dest": "empty", "sec-fetch-mode": "cors", "sec-fetch-site": "same-origin"})
+        answered = []
         with open(video["path"], "rb") as f:
             for number, (suffix, start, end) in enumerate(parts, 1):
                 f.seek(start)
                 chunk = f.read(end - start + 1)
-                self.check("videoUpload", self.session.put(base + suffix, headers=headers, data=chunk, allow_redirects=False))
+                res = self.session.put(base + suffix, headers=headers, data=chunk, allow_redirects=False)
+                self.check("videoUpload", res)
+                answered.append({"headers": {str(k).lower(): str(v) for k, v in res.headers.items()}, "httpStatusCode": res.status_code})
                 if number % 8 == 0 or number == len(parts):
                     self.log(f"linkedin video upload {number}/{len(parts)} parts")
+        if not all(a["headers"].get("location") for a in answered):
+            raise ShareRefused("templateStale", "a video part's answer had no location header, so the upload can't be finalized; nothing was posted")
+        finish = dict(headers)
+        finish["content-type"] = "application/json; charset=UTF-8"
+        body = json.dumps({"completeUploadRequest": {"partUploadResponses": answered}}, separators=(",", ":")).encode("utf-8")
+        self.check("videoFinalize", self.session.post(finalize, headers=finish, data=body, allow_redirects=False))
+        self.log("linkedin video upload finalized")
         self.server_request("com.linkedin.sdui.requests.sharing.ReportCrossScreenVideoUploadCompleted", template("reportVideoUploadCompleted"))
         return asset.group(1)
 

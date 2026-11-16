@@ -63,8 +63,18 @@ export async function openAccount(context: CommandContext, name: string, ref: st
   return { ok: true, account };
 }
 
+export function callRuns(calls: string[]): string {
+  const runs: { call: string; times: number }[] = [];
+  for (const call of calls) {
+    const last = runs[runs.length - 1];
+    if (last && last.call === call) last.times += 1;
+    else runs.push({ call, times: 1 });
+  }
+  return runs.map((r) => (r.times > 1 ? `${r.call} ×${r.times}` : r.call)).join(", ");
+}
+
 export function failed(name: string, run: PlatformEngineRun): CommandResult {
-  const calls = Array.isArray(run.answer["calls"]) ? (run.answer["calls"] as { call: string; httpStatus: number }[]).map((c) => `${c.call} ${c.httpStatus}`).join(", ") : "";
+  const calls = Array.isArray(run.answer["calls"]) ? callRuns((run.answer["calls"] as { call: string; httpStatus: number }[]).map((c) => `${c.call} ${c.httpStatus}`)) : "";
   return { code: 1, error: isErrorCode(run.answer.code) ? run.answer.code : "commandFailed", stderr: `log linkedin ${name}: ${run.answer.code}: ${run.answer.detail ?? ""}${calls ? ` (calls: ${calls})` : ""}. Nothing is retried (rule 94).` };
 }
 
