@@ -63,6 +63,8 @@ from ..x_client_transaction import ClientTransaction
 from .gql import GQLClient
 from .v11 import V11Client
 
+APPENDS_IN_FLIGHT = 4
+
 
 class Client:
     """
@@ -964,7 +966,8 @@ class Client:
         status_check_interval: float | None = None,
         media_type: str | None = None,
         media_category: str | None = None,
-        is_long_video: bool = False
+        is_long_video: bool = False,
+        video_duration_ms: int | None = None
     ) -> str:
         """
         Uploads media to twitter.
@@ -1045,7 +1048,7 @@ class Client:
 
         # ============ INIT =============
         response, _ = await self.v11.upload_media_init(
-            media_type, total_bytes, media_category, is_long_video
+            media_type, total_bytes, media_category, is_long_video, video_duration_ms
         )
         media_id = response['media_id']
         # =========== APPEND ============
@@ -1054,12 +1057,20 @@ class Client:
         MAX_SEGMENT_SIZE = 8 * 1024 * 1024  # The maximum segment size is 8 MB
         append_tasks = []
         chunk_streams: list[io.BytesIO] = []
+        in_flight = asyncio.Semaphore(APPENDS_IN_FLIGHT)
+
+        async def sent_one(coro):
+            async with in_flight:
+                return await coro
 
         while bytes_sent < total_bytes:
             chunk = binary[bytes_sent:bytes_sent + MAX_SEGMENT_SIZE]
             chunk_stream = io.BytesIO(chunk)
-            coro = self.v11.upload_media_append(is_long_video, media_id, segment_index, chunk_stream)
-            append_tasks.append(asyncio.create_task(coro))
+            if video_duration_ms is not None and is_long_video:
+                coro = self.v11.upload_media_append_multi(media_id, segment_index, chunk, MAX_SEGMENT_SIZE)
+            else:
+                coro = self.v11.upload_media_append(is_long_video, media_id, segment_index, chunk_stream)
+            append_tasks.append(asyncio.create_task(sent_one(coro)))
             chunk_streams.append(chunk_stream)
 
             segment_index += 1

@@ -471,16 +471,30 @@ def event_of(error: Exception) -> str:
 
 MEDIA_CATEGORIES = {".mp4": "tweet_video", ".mov": "tweet_video", ".gif": "tweet_gif"}
 MEDIA_PROCESSING_SECONDS = 300
+LONG_VIDEO_MS = 140_000
+LONG_VIDEO_CATEGORY = "amplify_video"
+LONG_VIDEO_PROCESSING_SECONDS = 1800
+
+
+def video_upload_plan(path: str) -> dict[str, Any]:
+    category = MEDIA_CATEGORIES.get(Path(path).suffix.lower(), "tweet_image")
+    if category != "tweet_video":
+        return {"media_category": category, "timeout": MEDIA_PROCESSING_SECONDS}
+    duration = media_kit.mp4_duration_ms(path)
+    if duration is not None and duration > LONG_VIDEO_MS:
+        return {"media_category": LONG_VIDEO_CATEGORY, "is_long_video": True, "video_duration_ms": duration, "timeout": LONG_VIDEO_PROCESSING_SECONDS}
+    return {"media_category": category, "timeout": MEDIA_PROCESSING_SECONDS}
 
 
 async def upload_post_media(client: Any, paths: list[str]) -> list[str]:
     ids = []
     for path in paths:
-        category = MEDIA_CATEGORIES.get(Path(path).suffix.lower(), "tweet_image")
-        moving = category != "tweet_image"
+        plan = video_upload_plan(path)
+        timeout = plan.pop("timeout")
+        moving = plan["media_category"] != "tweet_image"
         media_id = await asyncio.wait_for(
-            client.upload_media(path, wait_for_completion=moving, media_category=category),
-            timeout=MEDIA_PROCESSING_SECONDS,
+            client.upload_media(path, wait_for_completion=moving, **plan),
+            timeout=timeout,
         )
         if not str(media_id or ""):
             raise RuntimeError(f"x gave no media id for {Path(path).name}: nothing was posted")

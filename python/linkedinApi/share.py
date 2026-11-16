@@ -17,11 +17,18 @@ ORIGIN = "https://www.linkedin.com"
 ACTIONS = f"{ORIGIN}/flagship-web/rsc-action/actions/"
 COMPOSE_REFERER = f"{ORIGIN}/sharing/compose"
 PAGE_KEY = "p_mwlite_feed_share_v2"
-VERSION = re.compile(r"^0\.2\.\d{3,6}\.\d+$")
+VERSION = re.compile(r"^0\.2\.\d{3,6}(?:\.\d+)?$")
+PAGE_VERSION = re.compile(r"(?:appVersion|serviceVersion|clientVersion)(?:\\?&quot;|\\?\")\s*:\s*(?:\\?&quot;|\\?\")(0\.2\.\d{3,6}(?:\.\d+)?)\b")
 VERSION_HEADER = "x-li-application-version"
 MENTION = re.compile(r"@\[([^\]\n|]{1,100})(?:\|([A-Za-z0-9_-]{1,64}))?\]")
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif"}
 IMAGE_MAX_BYTES = 20 * 1024 * 1024
+VIDEO_TYPES = {".mp4": "video/mp4", ".mov": "video/quicktime"}
+VIDEO_MAX_BYTES = 5 * 1024 * 1024 * 1024
+VIDEO_MIN_MS = 3_000
+VIDEO_MAX_MS = 15 * 60 * 1000
+VIDEO_POLL_SECONDS = 3.0
+VIDEO_POLL_ATTEMPTS = 200
 TEXT_MAX = 3000
 PLACEHOLDER = re.compile(r"\{\{(\w+)\}\}")
 
@@ -90,6 +97,46 @@ def image_of(path: str) -> dict[str, Any]:
     with Image.open(file) as img:
         width, height = img.size
     return {"data": data, "fileName": file.name, "mimeType": mime, "size": str(len(data)), "width": width, "height": height}
+
+
+def video_of(path: str) -> dict[str, Any]:
+    from platformKit.media import mp4_duration_ms
+
+    file = Path(path)
+    if not file.is_file():
+        raise ShareRefused("fileRefused", f"{path} isn't a file")
+    mime = VIDEO_TYPES.get(file.suffix.lower())
+    if not mime:
+        raise ShareRefused("fileRefused", f"{file.name} isn't an MP4 or MOV video")
+    size = file.stat().st_size
+    if size > VIDEO_MAX_BYTES:
+        raise ShareRefused("fileRefused", f"{file.name} is over 5 GB")
+    duration = mp4_duration_ms(str(file))
+    if duration is None:
+        raise ShareRefused("fileRefused", f"{file.name} has no readable duration in its header")
+    if not VIDEO_MIN_MS <= duration <= VIDEO_MAX_MS:
+        raise ShareRefused("fileRefused", f"{file.name} runs {duration / 1000:.1f} s: LinkedIn takes 3 s to 15 min")
+    return {"path": str(file), "fileName": file.name, "mimeType": mime, "size": str(size), "videoDuration": str(duration)}
+
+
+def upload_parts(answer: str) -> tuple[str, list[tuple[str, int, int]]]:
+    raw = answer.encode("utf-8")
+    rows = {m.group(1).decode(): raw[m.end():m.end() + int(m.group(2), 16)].decode("utf-8", "replace") for m in re.finditer(rb"(?:^|\n|\])([0-9a-f]+):T([0-9a-f]+),", raw)}
+    prefix = re.search(r'"uploadUrlPrefix":"([^"]*)"', answer)
+    if not prefix:
+        return "", []
+    base = prefix.group(1)
+    if base.startswith("$"):
+        base = rows.get(base[1:], "")
+    parts = [(suffix, int(start), int(end)) for suffix, start, end in re.findall(r'"uploadUrlSuffix":"([^"]+)".*?"start":"\$n(\d+)","end":"\$n(\d+)"', answer)]
+    return base.encode().decode("unicode_escape"), parts
+
+
+def set_states(body: dict[str, Any], key: str, value: Any) -> None:
+    set_state(body, key, value)
+    for state in (body.get("requestedArguments") or {}).get("states") or []:
+        if state.get("key") == key:
+            state["value"] = value
 
 
 def text_model(text: str, attributes: list[dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -245,9 +292,9 @@ class Composer:
         if self.version:
             self.log(f"linkedin app version {self.version}, from the feed's {VERSION_HEADER} header")
             return
-        found = re.findall(r"\b0\.2\.\d{3,6}\.\d+\b", html)
+        found = PAGE_VERSION.findall(html) or re.findall(r"\b0\.2\.\d{3,6}\.\d+\b", html)
         if not found:
-            raise ShareRefused("appVersionUnknown", f"LinkedIn's feed page gave no {VERSION_HEADER} header and no 0.2.x.y version, so nothing was sent: an old version would mark every call")
+            raise ShareRefused("appVersionUnknown", f"LinkedIn's feed page gave no {VERSION_HEADER} header and no 0.2.x version, so nothing was sent: an old version would mark every call")
         self.version = max(set(found), key=found.count)
         self.log(f"linkedin app version {self.version}, from the feed page")
 
@@ -338,7 +385,50 @@ class Composer:
         self.server_request("com.linkedin.sdui.requests.mediaproduct.RegisterImageMedia", fill(template("registerImageMedia"), values))
         return asset.group(1)
 
-    def post(self, text: str, image: dict[str, Any] | None) -> dict[str, Any]:
+    def upload_video(self, video: dict[str, Any]) -> str:
+        self.server_request("com.linkedin.sdui.requests.sharing.StartBackgroundVideoUpload", template("startBackgroundVideoUpload"))
+        values = {k: video[k] for k in ("fileName", "mimeType", "size", "videoDuration")}
+        values["filePointer"] = str(uuid.uuid4())
+        answer = self.server_request("com.linkedin.sdui.requests.media.registerMediaUpload", fill(template("registerVideoUpload"), values))
+        asset = re.search(r'"assetUrn":"(D[0-9A-Za-z_\-]+)"', answer)
+        base, parts = upload_parts(answer)
+        if not asset or not base or not parts:
+            raise ShareRefused("templateStale", "LinkedIn's registerMediaUpload answer for the video had no asset or upload parts")
+        if parts[0][1] != 0 or parts[-1][2] + 1 != int(video["size"]):
+            raise ShareRefused("templateStale", f"LinkedIn's upload parts cover bytes {parts[0][1]} to {parts[-1][2]}, not the video's {video['size']}")
+        self.server_request("com.linkedin.sdui.requests.sharing.ReportControlArmVideoRegistered", template("reportControlArmVideoRegistered"))
+        headers = self.base_headers()
+        headers.update({"accept": "*/*", "content-type": "application/octet-stream", "origin": ORIGIN, "referer": f"{ORIGIN}/feed/", "sec-fetch-dest": "empty", "sec-fetch-mode": "cors", "sec-fetch-site": "same-origin"})
+        with open(video["path"], "rb") as f:
+            for number, (suffix, start, end) in enumerate(parts, 1):
+                f.seek(start)
+                chunk = f.read(end - start + 1)
+                self.check("videoUpload", self.session.put(base + suffix, headers=headers, data=chunk, allow_redirects=False))
+                if number % 8 == 0 or number == len(parts):
+                    self.log(f"linkedin video upload {number}/{len(parts)} parts")
+        self.server_request("com.linkedin.sdui.requests.sharing.ReportCrossScreenVideoUploadCompleted", template("reportVideoUploadCompleted"))
+        return asset.group(1)
+
+    def wait_processed(self, created: str) -> tuple[str, str]:
+        ugc = re.search(r'"ugcId":"(\d+)"', created)
+        if not ugc:
+            raise ShareRefused("postUnconfirmed", "LinkedIn answered CreatePost for the video without its ugcId, so it isn't known to be live; check the profile before posting again")
+        for attempt in range(1, VIDEO_POLL_ATTEMPTS + 1):
+            self.pause(VIDEO_POLL_SECONDS, VIDEO_POLL_SECONDS + 0.3)
+            answer = self.server_request("com.linkedin.sdui.requests.sharing.PollShareObjectByUgcPost", fill(template("pollShareObject"), {"ugcId": ugc.group(1), "pollAttempt": attempt}))
+            activity = re.search(r'"activityId":"(\d+)"', answer)
+            if activity:
+                self.log(f"linkedin video processed after {attempt} polls")
+                return activity.group(1), answer
+            if re.search(r'"stringValue":"(Failed|Error)"', answer):
+                raise ShareRefused("linkedinRefused", f"LinkedIn said the video post {ugc.group(1)} failed while processing", ugcId=ugc.group(1))
+            if attempt % 10 == 0:
+                self.log(f"linkedin video still processing, poll {attempt}")
+        raise ShareRefused("postUnconfirmed", f"LinkedIn was still processing the video post {ugc.group(1)} after {VIDEO_POLL_ATTEMPTS} polls; check the profile before posting again", ugcId=ugc.group(1))
+
+    def post(self, text: str, image: dict[str, Any] | None, video: dict[str, Any] | None = None) -> dict[str, Any]:
+        if video:
+            return self.post_video(text, video)
         self.version_from_feed()
         session_urn = self.open_composer()
         self.pause(0.6, 1.2)
@@ -366,6 +456,29 @@ class Composer:
             raise ShareRefused("postUnconfirmed", "LinkedIn answered CreatePost without the new post's activityId, so it isn't known to be live; check the profile before posting again")
         self.follow_ups(answer, session_urn, activity.group(1))
         out = {"activityId": activity.group(1), "url": f"{ORIGIN}/feed/update/urn:li:activity:{activity.group(1)}/", "image": bool(image), "assetId": asset or None, "mentions": picks}
+        if self.follow_up_stopped:
+            out["followUpStopped"] = self.follow_up_stopped
+        return out
+
+    def post_video(self, text: str, video: dict[str, Any]) -> dict[str, Any]:
+        self.version_from_feed()
+        session_urn = self.open_composer()
+        self.pause(0.6, 1.2)
+        self.server_request("com.linkedin.sdui.requests.mediaproduct.media.restoreTagPills", template("restoreTagPills"))
+        self.server_request("com.linkedin.sdui.requests.sharing.DispatchUpdateDetourPreview", template("dispatchUpdateDetourPreview"))
+        text, attributes, picks = self.mentions(text)
+        typing = min(30.0, 3.0 + 0.04 * len(text))
+        self.pause(typing * 0.8, typing * 1.2)
+        dispatch = template("dispatchPostCreate")
+        set_state(dispatch, "ShareBoxdetourType", "Video")
+        self.server_request("com.linkedin.sdui.requests.sharing.DispatchPostCreateWithDetour", dispatch)
+        asset = self.upload_video(video)
+        body = fill(template("createPostVideo"), {"sessionUrn": session_urn, "assetId": asset, "text": text})
+        set_states(body, "sharing-bg-compositionrichCommentary", text_model(text, attributes))
+        created = self.server_request("com.linkedin.sdui.requests.sharing.CreatePost", body)
+        activity, answer = self.wait_processed(created)
+        self.follow_ups(answer, session_urn, activity)
+        out = {"activityId": activity, "url": f"{ORIGIN}/feed/update/urn:li:activity:{activity}/", "image": False, "video": True, "assetId": asset, "mentions": picks}
         if self.follow_up_stopped:
             out["followUpStopped"] = self.follow_up_stopped
         return out
