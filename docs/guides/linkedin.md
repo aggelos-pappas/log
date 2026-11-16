@@ -1,6 +1,6 @@
 # linkedin
 
-A LinkedIn account: saving its cookies, checking its session, posting or deleting its own posts, inviting people LinkedIn suggests, liking and reposting posts, and reading and writing in its conversations.
+A LinkedIn account: saving its cookies, checking its session, posting or deleting its own posts, inviting people LinkedIn suggests, liking and reposting posts, seeing how its own posts are doing, and reading and writing in its conversations.
 
 Written by `bun run docs:build` from the code, the skills and AGENTS.md. Not edited by hand: change the command's usage, its skill or the rule, and rebuild.
 
@@ -35,6 +35,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `linkedinMessage` | Write in one LinkedIn conversation, one message per line | `log linkedin message --account <accountName> (--with <name\|profileId> \| --conversation <urn>) --text <text> [--asOne] [--approvedBy <who>] [--live] [--json]` |
 | `linkedinMessageLive` | Write in one LinkedIn conversation, one message per…, live on LinkedIn | `log linkedin message --account <accountName> (--with <name\|profileId> \| --conversation <urn>) --text <text> [--asOne] [--approvedBy <who>] [--live] [--json]` |
 | `linkedinInbox` | List the account's newest LinkedIn conversations | `log linkedin inbox --account <accountName> [--json]` |
+| `linkedinPosts` | List the account's own recent LinkedIn posts with their reactions… | `log linkedin posts --account <accountName> [--limit <n>] [--json]` |
 | `linkedinMessages` | Read one LinkedIn conversation in full | `log linkedin messages --account <accountName> (--with <name\|profileId\|publicId> \| --conversation <urn>) [--json]` |
 
 ## The rules these tools fall under

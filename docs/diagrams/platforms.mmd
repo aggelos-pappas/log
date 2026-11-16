@@ -10,9 +10,9 @@ flowchart LR
   e_fbk --> api
   p_facebook -->|"browser: facebook doctor, facebook connect, facebook profile, facebook host, facebook join, facebook read, facebook poll, facebook check, facebook scan, facebook status, facebook watch, facebook publish, facebook campaign"| b_facebook["Facebook's browser path: its proxy in the account's home country (rule 12)"]
   b_facebook --> drivers
-  p_twitter["X (TWITTER): 19 commands of its own"]
+  p_twitter["X (TWITTER): 20 commands of its own"]
   twenty --> p_twitter
-  p_twitter -->|"direct API: twitter session, twitter follows, twitter dms, twitter chat, twitter cookies, twitter followers, twitter notifications, twitter reply, twitter quote, twitter post, twitter like, twitter list, twitter repost, twitter delete, twitter follow, twitter dm, twitter react, twitter queue, twitter voice"| e_twikit["twikit (vendor/twikit): the saved session, a governor per account"]
+  p_twitter -->|"direct API: twitter session, twitter follows, twitter dms, twitter chat, twitter cookies, twitter followers, twitter posts, twitter notifications, twitter reply, twitter quote, twitter post, twitter like, twitter list, twitter repost, twitter delete, twitter follow, twitter dm, twitter react, twitter queue, twitter voice"| e_twikit["twikit (vendor/twikit): the saved session, a governor per account"]
   e_twikit --> api
   p_twitter -.->|"no browser path (rule 80)"| nob_twitter["X runs on its direct API only"]
   p_reddit["Reddit (REDDIT): 5 commands of its own"]
@@ -27,9 +27,9 @@ flowchart LR
   e_endcord --> api
   p_discord -->|"browser: the any-platform commands"| b_discord["Discord's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_discord --> drivers
-  p_linkedin["LinkedIn (LINKEDIN): 11 commands of its own"]
+  p_linkedin["LinkedIn (LINKEDIN): 12 commands of its own"]
   twenty --> p_linkedin
-  p_linkedin -->|"direct API: linkedin session, linkedin cookies, linkedin post, linkedin delete, linkedin suggestions, linkedin connect, linkedin like, linkedin repost, linkedin message, linkedin inbox, linkedin messages"| e_openLinkedinApi["openLinkedinApi (vendor/openLinkedinApi): the saved session, a governor per account"]
+  p_linkedin -->|"direct API: linkedin session, linkedin cookies, linkedin post, linkedin delete, linkedin suggestions, linkedin connect, linkedin like, linkedin repost, linkedin message, linkedin inbox, linkedin posts, linkedin messages"| e_openLinkedinApi["openLinkedinApi (vendor/openLinkedinApi): the saved session, a governor per account"]
   e_openLinkedinApi --> api
   p_linkedin -->|"browser: the any-platform commands"| b_linkedin["LinkedIn's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_linkedin --> drivers

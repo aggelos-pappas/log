@@ -83,4 +83,4 @@ export const sessionCommand: Command = {
   },
 };
 
-export { chatCommand, cookiesCommand, dmCommand, dmsCommand, followersCommand, followCommand, followsCommand, likeCommand, listCommand, notificationsCommand, postCommand, repostCommand, deleteCommand, queueCommand, quoteCommand, replyCommand, voiceCommand } from "./helpers/index.ts";
+export { chatCommand, cookiesCommand, dmCommand, dmsCommand, followersCommand, followCommand, followsCommand, likeCommand, listCommand, notificationsCommand, postCommand, postsCommand, repostCommand, deleteCommand, queueCommand, quoteCommand, replyCommand, voiceCommand } from "./helpers/index.ts";
