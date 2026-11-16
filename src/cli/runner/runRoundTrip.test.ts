@@ -250,7 +250,7 @@ describe("every form tool, driven through its command's own run", () => {
     const live = toolsFromCommands(COMMANDS).filter((t) => t.name.endsWith("Live"));
     const entries = commandTools(COMMANDS).filter((t) => t.live && t.form);
     const approving = entries.filter((t) => t.form!.flags.some((f) => f.approval));
-    expect(approving.length).toBe(27);
+    expect(approving.length).toBe(28);
     for (const entry of approving) {
       const schema = live.find((t) => t.name === entry.tool)!.inputSchema as { required: string[] };
       expect(schema.required).toContain("approvedBy");

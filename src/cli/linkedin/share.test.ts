@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { activityOf, hasMentions, imageOf } from "./helpers/share.ts";
+import { activityOf, callRuns, hasMentions, imageOf, videoOf } from "./helpers/share.ts";
 
 describe("linkedin post and delete inputs", () => {
   test("activityOf takes an id, an activity urn or a post url", () => {
@@ -32,5 +32,24 @@ describe("linkedin post and delete inputs", () => {
     expect(imageOf(join(root, "a.txt"), [root]).ok).toBe(false);
     expect(imageOf(join(root, "missing.jpg"), [root]).ok).toBe(false);
     expect(imageOf(join(other, "b.png"), [root]).ok).toBe(false);
+  });
+
+  test("callRuns folds repeated calls into one count", () => {
+    expect(callRuns(["feed 200", "videoUpload 201", "videoUpload 201", "CreatePost 200", "Poll 200", "Poll 200", "Poll 200"])).toBe("feed 200, videoUpload 201 ×2, CreatePost 200, Poll 200 ×3");
+    expect(callRuns([])).toBe("");
+  });
+
+  test("videoOf keeps MP4 and MOV videos under the allowed roots and refuses the rest", () => {
+    const root = mkdtempSync(join(tmpdir(), "liOutbox"));
+    const other = mkdtempSync(join(tmpdir(), "liElsewhere"));
+    writeFileSync(join(root, "film.mp4"), "x");
+    writeFileSync(join(root, "clip.MOV"), "x");
+    writeFileSync(join(root, "a.jpg"), "x");
+    writeFileSync(join(other, "film.mp4"), "x");
+    expect(videoOf("", [root])).toEqual({ ok: true, path: null });
+    expect(videoOf(join(root, "film.mp4"), [root])).toEqual({ ok: true, path: join(root, "film.mp4") });
+    expect(videoOf(join(root, "clip.MOV"), [root]).ok).toBe(true);
+    expect(videoOf(join(root, "a.jpg"), [root]).ok).toBe(false);
+    expect(videoOf(join(other, "film.mp4"), [root]).ok).toBe(false);
   });
 });

@@ -70,8 +70,9 @@ const SHAPES: Record<SendAction, SendShape> = {
   quote: { action: "quote", verb: "quote", target: "tweet", text: true, summary: "Quote one post on X with approved copy, on the direct-API engine; a dry run unless --live", says: "X's create answer decides: a tweet id is sent, an empty result is a drop" },
   like: { action: "like", verb: "like", target: "tweet", text: false, summary: "Like one post on X, on the direct-API engine; a dry run unless --live", says: "X's favorite answer decides: Done (or already liked, code 139) is sent" },
   repost: { action: "repost", verb: "repost", target: "tweet", text: false, summary: "Repost one post on X, on the direct-API engine; a dry run unless --live", says: "X's retweet answer decides: a created retweet (or already reposted, code 327) is sent" },
+  delete: { action: "delete", verb: "delete", target: "tweet", text: false, summary: "Delete one of the account's own posts on X, on the direct-API engine; a dry run unless --live", says: "X's DeleteTweet answer decides: a deleted post is sent, and a post X no longer has (code 144) is sent too, as already gone. X refuses a post the account didn't write" },
   follow: { action: "follow", verb: "follow", target: "userId", text: false, summary: "Follow one person on X, on the direct-API engine; a dry run unless --live", says: "X's follow answer decides: the followed user back is sent, already following is sent too. Follow before a cold dm: nobody gets a cold message from an account that doesn't follow them" },
-  post: { action: "post", verb: "post", target: "none", text: true, summary: "Make one original post on X with approved copy and optional media (a video, a gif or up to 4 images), on the direct-API engine; a dry run unless --live", says: "Each file is uploaded first (a video in chunks, then X's own processing status must say succeeded before the post is made), then the post is created with the media ids. X's create answer decides: a tweet id is sent, an empty result is a drop and nothing was posted. A file X refuses stops it before anything is posted" },
+  post: { action: "post", verb: "post", target: "none", text: true, summary: "Make one original post on X with approved copy and optional media (a video, a gif or up to 4 images), on the direct-API engine; a dry run unless --live", says: "Each file is uploaded first (a video in chunks, then X's own processing status must say succeeded before the post is made; a video over 2:20 goes up the way x.com sends a long video, as amplify_video with its length from its own header in 8 MB APPENDMULTI parts, which X takes from an account that may post long video), then the post is created with the media ids. X's create answer decides: a tweet id is sent, an empty result is a drop and nothing was posted. A file X refuses stops it before anything is posted" },
   dm: { action: "dm", verb: "dm", target: "userId", text: true, summary: "Send one approved direct message on X, on the direct-API engine; a dry run unless --live", says: `A draft written on several lines goes out one message per line, and a one-line draft is split the way the owner writes in that chat (log voice index), with his usual gap between them; --asOne sends it as one, only when the owner asked (rule 90). X's answer decides: a conversation id is sent, none is a drop, and a drop stops the rest: what was sent stays sent, nothing is retried (rule 94). ${ONE_INBOX_NOTE} A refusal before X is called (styleFailed, a dry run) sent nothing, so that dm is sent once its copy is fixed` },
 };
 
@@ -95,6 +96,7 @@ function inputOf(shape: SendShape): CommandInput {
 export function renderSent(label: string, account: string, answer: TwitterSessionAnswer): string {
   if (answer.ok && answer.event === "sent") {
     if (answer.liked) return `log ${label}: ${account} liked ${answer.tweetId}${answer.already ? " (it was already liked)" : ""}.`;
+    if (answer.deleted) return `log ${label}: ${account} deleted ${answer.tweetId}${answer.already ? " (X no longer had it)" : ""}.`;
     if (answer.reposted) return `log ${label}: ${account} reposted ${answer.tweetId}${answer.already ? " (it was already reposted)" : ""}.`;
     if (answer.followed) return `log ${label}: ${account} follows ${answer.handle ? `@${answer.handle}` : answer.userId}${answer.already ? " (already did)" : ""}.`;
     if (answer.conversationId) return `log ${label}: ${account} sent the dm (conversation ${answer.conversationId}): delivered, it shows in their X Chat too, so it is never resent.`;
@@ -285,6 +287,7 @@ export const replyCommand = sendCommand(SHAPES.reply);
 export const quoteCommand = sendCommand(SHAPES.quote);
 export const likeCommand = sendCommand(SHAPES.like);
 export const repostCommand = sendCommand(SHAPES.repost);
+export const deleteCommand = sendCommand(SHAPES.delete);
 export const followCommand = sendCommand(SHAPES.follow);
 export const dmCommand = sendCommand(SHAPES.dm);
 export const postCommand = sendCommand(SHAPES.post);

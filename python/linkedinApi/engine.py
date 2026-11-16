@@ -213,7 +213,7 @@ def identity_missing(cookies: dict[str, str], browser: dict[str, str]) -> dict[s
 
 
 async def post(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:
-    from linkedinApi.share import TEXT_MAX, ShareRefused, image_of
+    from linkedinApi.share import TEXT_MAX, ShareRefused, image_of, video_of
 
     browser = browser_of(spec)
     missing = identity_missing(cookies, browser)
@@ -224,11 +224,14 @@ async def post(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:
         return {"ok": False, "code": "invalidArgs", "detail": "a post needs its text"}
     if len(text) > TEXT_MAX:
         return {"ok": False, "code": "invalidArgs", "detail": f"LinkedIn posts hold at most {TEXT_MAX} characters, this one has {len(text)}"}
+    if spec.get("image") and spec.get("video"):
+        return {"ok": False, "code": "invalidArgs", "detail": "a post carries an image or a video, not both"}
     try:
         image = image_of(str(spec["image"])) if spec.get("image") else None
+        video = video_of(str(spec["video"])) if spec.get("video") else None
     except ShareRefused as refused:
         return {"ok": False, "code": refused.code, "detail": refused.detail}
-    return await asyncio.to_thread(share_run, cookies, browser, lambda c: c.post(text, image))
+    return await asyncio.to_thread(share_run, cookies, browser, lambda c: c.post(text, image, video))
 
 
 async def delete_post(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:

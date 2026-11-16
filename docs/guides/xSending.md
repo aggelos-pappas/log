@@ -1,6 +1,6 @@
 # xSending
 
-Sending as an X account: original posts with a video or images, dms one message per line, replies, quotes, likes, follows, lists, queues and voice notes.
+Sending as an X account: original posts with a video or images, dms one message per line, replies, quotes, likes, deleting a post, follows, lists, queues and voice notes.
 
 Load next, when the work needs it: getGuide({ topic: "voiceGate" }) (The voice gate every send as the owner passes on every platform: a draft checked against the owner's own writing before it goes out, and the voice and AI-tells indexes behind it); getGuide({ topic: "inbox" }) (Every platform's chats as one inbox: listing, reading and watching them, sending, reacting and voice notes, who waits on a reply, claiming a chat before acting in it, and every action's log); getGuide({ topic: "xInbox" }) (Reading an X account's DMs and X Chat as one inbox, synced by sequence id, and watching X Chat live).
 
@@ -51,6 +51,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `twitterListAddLive` | Put one person on one of the account's X lists, live on X | `log twitter list add --account <accountName> --list <name\|id> --handle <handle>\|--userId <id> [--approvedBy <who>] [--live] [--json]` |
 | `twitterRepost` | Repost one post on X, on the direct-API engine | `log twitter repost --account <accountName> --tweet <postUrl> [--approvedBy <who>] [--force] [--live] [--json]` |
 | `twitterRepostLive` | Repost one post on X, on the direct-API engine, live on X | `log twitter repost --account <accountName> --tweet <postUrl> [--approvedBy <who>] [--force] [--live] [--json]` |
+| `twitterDelete` | Delete one of the account's own posts on X, on the direct-API engine | `log twitter delete --account <accountName> --tweet <postUrl> [--approvedBy <who>] [--force] [--live] [--json]` |
+| `twitterDeleteLive` | Delete one of the account's own posts on X, on the…, live on X | `log twitter delete --account <accountName> --tweet <postUrl> [--approvedBy <who>] [--force] [--live] [--json]` |
 | `twitterFollow` | Follow one person on X, on the direct-API engine | `log twitter follow --account <accountName> --userId <id> [--approvedBy <who>] [--force] [--live] [--json]` |
 | `twitterFollowLive` | Follow one person on X, on the direct-API engine, live on X | `log twitter follow --account <accountName> --userId <id> [--approvedBy <who>] [--force] [--live] [--json]` |
 | `twitterDm` | Send one approved direct message on X, on the direct-API engine | `log twitter dm --account <accountName> --userId <id> --text "<copy>" [--media <file\|url>] [--approvedBy <who>] [--skipStyleCheck] [--asOne] [--overGate] [--force] [--live] [--json]` |

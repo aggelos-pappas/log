@@ -38,6 +38,7 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   twitterReact: { platform: 'twitter', library: 'twikit', only: true, surface: 'messages', method: 'add_reaction_to_message', when: 'react --live (--remove takes it off)', seam: 'directTwitter' },
   twitterLike: { platform: 'twitter', library: 'twikit', only: true, surface: 'tweets', method: 'favorite_tweet', when: 'like', seam: 'directTwitter' },
   twitterRepost: { platform: 'twitter', library: 'twikit', only: true, surface: 'tweets', method: 'retweet', when: 'repost', seam: 'directTwitter' },
+  twitterDelete: { platform: 'twitter', library: 'twikit', only: true, surface: 'tweets', method: 'delete_tweet', when: 'delete', seam: 'directTwitter' },
   twitterFollow: { platform: 'twitter', library: 'twikit', only: true, surface: 'users', method: 'follow_user', when: 'follow', seam: 'directTwitter' },
   twitterDm: { platform: 'twitter', library: 'twikit', only: true, surface: 'messages', method: 'send_dm', when: 'dm', seam: 'directTwitter' },
   twitterQueue: { platform: 'twitter', library: 'twikit', only: true, surface: 'tweets', method: 'create_tweet', when: 'queue run --live (each like and reply)', seam: 'directTwitter' },

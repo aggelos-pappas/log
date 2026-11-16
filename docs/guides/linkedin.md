@@ -21,8 +21,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 |---|---|---|
 | `linkedinSessionCheck` | Check that LinkedIn still accepts one account's saved session… | `log linkedin session check --account <accountName> [--json]` |
 | `linkedinSessionScripts` | Read the signed-in feed page once and save the LinkedIn app's bundle… | `log linkedin session scripts --account <accountName> [--json]` |
-| `linkedinPost` | Post to the account's LinkedIn feed, with an optional image | `log linkedin post --account <accountName> --text "<post>" [--image <path>] [--approvedBy <who>] [--live] [--json]` |
-| `linkedinPostLive` | Post to the account's LinkedIn feed, with an optional…, live on LinkedIn | `log linkedin post --account <accountName> --text "<post>" [--image <path>] [--approvedBy <who>] [--live] [--json]` |
+| `linkedinPost` | Post to the account's LinkedIn feed, with an optional image or video | `log linkedin post --account <accountName> --text "<post>" [--image <path> \| --video <path>] [--approvedBy <who>] [--live] [--json]` |
+| `linkedinPostLive` | Post to the account's LinkedIn feed, with an optional…, live on LinkedIn | `log linkedin post --account <accountName> --text "<post>" [--image <path> \| --video <path>] [--approvedBy <who>] [--live] [--json]` |
 | `linkedinDelete` | Delete one of the account's own LinkedIn posts | `log linkedin delete --account <accountName> --activity <activityId\|post url> [--approvedBy <who>] [--live] [--json]` |
 | `linkedinDeleteLive` | Delete one of the account's own LinkedIn posts, live on LinkedIn | `log linkedin delete --account <accountName> --activity <activityId\|post url> [--approvedBy <who>] [--live] [--json]` |
 | `linkedinSuggestions` | List the people LinkedIn suggests on the account's My Network page | `log linkedin suggestions --account <accountName> [--json]` |
