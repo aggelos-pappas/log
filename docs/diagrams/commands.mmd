@@ -82,6 +82,7 @@ flowchart TB
     c_twitterChat["chat"]
     c_twitterCookies["cookies"]
     c_twitterFollowers["followers"]
+    c_twitterPosts["posts"]
     c_twitterNotifications["notifications"]
     c_twitterReply["reply"]
     c_twitterQuote["quote"]
@@ -129,6 +130,7 @@ flowchart TB
     c_linkedinRepost["repost"]
     c_linkedinMessage["message"]
     c_linkedinInbox["inbox"]
+    c_linkedinPosts["posts"]
     c_linkedinMessages["messages"]
   end
   subgraph g_slack["Slack"]
@@ -307,6 +309,8 @@ flowchart TB
   mcp --> c_transcribe
   cli --> c_twitterFollowers
   mcp --> c_twitterFollowers
+  cli --> c_twitterPosts
+  mcp --> c_twitterPosts
   cli --> c_twitterNotifications
   mcp --> c_twitterNotifications
   cli --> c_twitterReply
@@ -393,6 +397,8 @@ flowchart TB
   mcp --> c_linkedinMessage
   cli --> c_linkedinInbox
   mcp --> c_linkedinInbox
+  cli --> c_linkedinPosts
+  mcp --> c_linkedinPosts
   cli --> c_linkedinMessages
   mcp --> c_linkedinMessages
   cli --> c_slackSession

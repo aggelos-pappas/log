@@ -11,7 +11,7 @@ export interface TwitterGovernor {
   cooldown_remaining_s: number
 }
 
-export type TwitterAction = 'ping' | 'follows' | 'inbox' | 'followers' | 'notifications' | 'postEngagers' | 'webClient' | 'xchatContacts' | 'xchatUnlock' | 'xchatWatch' | 'reply' | 'quote' | 'like' | 'repost' | 'delete' | 'dm' | 'follow' | 'post' | 'react' | 'lists' | 'listCreate' | 'listAdd'
+export type TwitterAction = 'ping' | 'follows' | 'inbox' | 'followers' | 'userPosts' | 'notifications' | 'postEngagers' | 'webClient' | 'xchatContacts' | 'xchatUnlock' | 'xchatWatch' | 'reply' | 'quote' | 'like' | 'repost' | 'delete' | 'dm' | 'follow' | 'post' | 'react' | 'lists' | 'listCreate' | 'listAdd'
 
 export const TWITTER_WRITES: readonly TwitterAction[] = ['reply', 'quote', 'like', 'dm', 'follow', 'post', 'react', 'listCreate', 'listAdd']
 
@@ -47,6 +47,8 @@ export interface TwitterEngineSpec {
   listId?: string
   postId?: string
   kind?: EngagerKind
+  user?: string
+  mediaOnly?: boolean
 }
 
 export interface TwitterInboxSync {
@@ -138,6 +140,28 @@ export interface TwitterDmMedia {
   error?: string
 }
 
+export interface TwitterPostMedia {
+  type: string
+  url?: string | null
+  videoUrl?: string | null
+  durationMs?: number | null
+}
+
+export interface TwitterPost {
+  id: string
+  url: string
+  createdAt: string | null
+  text: string
+  repostOf: string | null
+  isQuote: boolean
+  likes: number
+  reposts: number
+  replies: number
+  quotes: number
+  views: number
+  media: TwitterPostMedia[]
+}
+
 export interface TwitterFollower {
   userId: string
   handle?: string | null
@@ -187,6 +211,8 @@ export interface TwitterSessionAnswer {
   sync?: TwitterInboxSync
   forcedPast?: string
   followers?: TwitterFollower[]
+  user?: TwitterFollower
+  posts?: TwitterPost[]
   complete?: boolean
   contacts?: string[]
   storePath?: string

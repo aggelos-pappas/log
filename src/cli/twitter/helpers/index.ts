@@ -5,6 +5,7 @@ export * from "./dms.ts";
 export * from "./followers.ts";
 export * from "./follows.ts";
 export * from "./notifications.ts";
+export * from "./posts.ts";
 export * from "./queue.ts";
 export * from "./send.ts";
 export * from "./voice.ts";

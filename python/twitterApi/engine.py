@@ -22,7 +22,7 @@ from platformKit import reactions
 from platformKit import timing
 
 SECRET_KEYS = ("auth_token", "ct0", "twid", "kdt", "att", "password", "cookie")
-READS = ("ping", "follows", "inbox", "followers", "notifications", "postEngagers", "webClient", "xchatContacts", "xchatUnlock", "xchatWatch", "lists")
+READS = ("ping", "follows", "inbox", "followers", "userPosts", "notifications", "postEngagers", "webClient", "xchatContacts", "xchatUnlock", "xchatWatch", "lists")
 WRITES = ("reply", "quote", "like", "repost", "delete", "dm", "follow", "post", "react", "listCreate", "listAdd", "xchatVoice")
 ACTIONS = READS + WRITES
 
@@ -1144,6 +1144,65 @@ async def followers(client: Any, cookies: dict[str, str], limit: int) -> dict[st
     return {"ok": True, "loginState": "loggedIn", "userId": me, "pages": pages, "followers": out[:limit], "complete": len(out) < limit}
 
 
+def media_of(item: Any) -> dict[str, Any]:
+    data = getattr(item, "_data", None) or {}
+    kind = data.get("type") or type(item).__name__.lower()
+    out: dict[str, Any] = {"type": kind, "url": data.get("media_url_https")}
+    info = data.get("video_info") or {}
+    mp4 = [v for v in info.get("variants") or [] if str(v.get("content_type", "")).startswith("video/mp4")]
+    if mp4:
+        best = max(mp4, key=lambda v: int(v.get("bitrate") or 0))
+        out["videoUrl"] = best.get("url")
+        out["durationMs"] = info.get("duration_millis")
+    return out
+
+
+def post_of(tweet: Any, handle: str) -> dict[str, Any]:
+    reposted = getattr(tweet, "retweeted_tweet", None)
+    source = reposted or tweet
+    author = getattr(getattr(source, "user", None), "screen_name", None) or handle
+    return {
+        "id": str(tweet.id),
+        "url": f"https://x.com/{author}/status/{source.id}",
+        "createdAt": getattr(tweet, "created_at", None),
+        "text": getattr(source, "full_text", None) or getattr(source, "text", "") or "",
+        "repostOf": author if reposted else None,
+        "isQuote": bool(getattr(tweet, "is_quote_status", False)),
+        "likes": getattr(source, "favorite_count", 0) or 0,
+        "reposts": getattr(source, "retweet_count", 0) or 0,
+        "replies": getattr(source, "reply_count", 0) or 0,
+        "quotes": getattr(source, "quote_count", 0) or 0,
+        "views": int(getattr(source, "view_count", 0) or 0),
+        "media": [media_of(m) for m in (getattr(source, "media", None) or [])],
+    }
+
+
+async def user_posts(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
+    handle = str(spec.get("user") or "").strip().lstrip("@")
+    limit = max(1, min(int(spec.get("limit") or 20), 200))
+    kind = "Media" if spec.get("mediaOnly") else "Tweets"
+    user = await client.get_user_by_screen_name(handle)
+    profile = follower_of(user)
+    page = await client.get_user_tweets(user.id, kind, count=min(40, limit))
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    pages = 1
+    while True:
+        added = 0
+        for tweet in page:
+            row = post_of(tweet, handle)
+            if row["id"] not in seen:
+                seen.add(row["id"])
+                out.append(row)
+                added += 1
+        if len(out) >= limit or not added or not getattr(page, "next_cursor", None) or pages >= 10:
+            break
+        await asyncio.sleep(1.5)
+        page = await page.next()
+        pages += 1
+    return {"ok": True, "loginState": "loggedIn", "user": profile, "kind": kind, "pages": pages, "posts": out[:limit]}
+
+
 async def xchat_contacts(client: Any, cookies: dict[str, str]) -> dict[str, Any]:
     me = own_user_id(cookies) or ""
     convs = await client.get_xchat_conversations()
@@ -1777,6 +1836,10 @@ async def act(client: Any, cookies: dict[str, str], spec: dict[str, Any], govern
         return await follows(client, cookies, [h.strip().lstrip("@") for h in spec["handles"] if h.strip()])
     if action == "followers":
         return await followers(client, cookies, max(1, min(int(spec.get("limit") or 200), 4000)))
+    if action == "userPosts":
+        if not str(spec.get("user") or "").strip().lstrip("@"):
+            return {"ok": False, "code": "targetMissing", "detail": "userPosts needs the person's handle", "loginState": "loggedIn"}
+        return await user_posts(client, spec)
     if action == "notifications":
         return await notifications(client, cookies, spec, governor)
     if action == "postEngagers":

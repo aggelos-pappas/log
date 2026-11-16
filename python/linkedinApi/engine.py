@@ -386,7 +386,82 @@ async def messages(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, A
     return out
 
 
-ACTIONS = {"ping": ping, "scripts": scripts, "post": post, "deletePost": delete_post, "mentions": mentions, "suggestions": suggestions, "connectPace": connect_check, "connect": connect, "like": like, "repost": repost, "message": message, "inbox": inbox, "messages": messages}
+def stats_of(update: dict[str, Any]) -> dict[str, Any]:
+    meta = update.get("updateMetadata") or {}
+    urn = str(meta.get("urn") or (update.get("socialDetail") or {}).get("urn") or "")
+    activity = urn.rsplit(":", 1)[-1] if "activity" in urn else ""
+    social = update.get("socialDetail") or {}
+    counts = social.get("totalSocialActivityCounts") or {}
+    commentary = ((update.get("commentary") or {}).get("text") or {}).get("text") or ""
+    when = ((update.get("actor") or {}).get("subDescription") or {}).get("text") or ""
+    header = (((update.get("header") or {}).get("text") or {}).get("text") or "").lower()
+    reshared = bool(update.get("resharedUpdate") or update.get("*resharedUpdate") or "reposted" in header)
+    content = update.get("content") or {}
+    kind = next((k.rsplit(".", 1)[-1] for k in content if k.startswith("com.linkedin")), "") if isinstance(content, dict) else ""
+    return {
+        "activityId": activity or None,
+        "url": f"https://www.linkedin.com/feed/update/urn:li:activity:{activity}/" if activity else None,
+        "text": commentary,
+        "postedAgo": when.split("•")[0].strip() or None,
+        "repost": reshared,
+        "content": kind or None,
+        "reactions": int(counts.get("numLikes") or 0),
+        "comments": int(counts.get("numComments") or 0),
+        "reposts": int(counts.get("numShares") or 0),
+        "reactionTypes": {str(r.get("reactionType")): int(r.get("count") or 0) for r in counts.get("reactionTypeCounts") or []},
+    }
+
+
+def updates_of(data: dict[str, Any]) -> list[dict[str, Any]]:
+    if isinstance(data.get("elements"), list):
+        return data["elements"]
+    included = data.get("included") or []
+    by_urn = {str(x.get("entityUrn")): x for x in included if isinstance(x, dict)}
+    order = [str(u) for u in (data.get("data") or {}).get("*elements") or []]
+    updates = [by_urn[u] for u in order if u in by_urn] or [x for x in included if isinstance(x, dict) and str(x.get("$type", "")).endswith("UpdateV2")]
+    out = []
+    for x in updates:
+        row = dict(x)
+        social = by_urn.get(str(x.get("*socialDetail") or "")) or {}
+        counts = by_urn.get(str(social.get("*totalSocialActivityCounts") or "")) or {}
+        row["socialDetail"] = {**social, "totalSocialActivityCounts": counts}
+        out.append(row)
+    return out
+
+
+def my_posts_of(cookies: dict[str, str], browser: dict[str, str], limit: int) -> dict[str, Any]:
+    checked = check(cookies, browser)
+    if not checked.get("ok"):
+        return checked
+    me = checked.get("userId")
+    if not me:
+        return {"ok": False, "code": "sessionUnknown", "detail": "LinkedIn's /me answer named no profile, so the posts can't be read", "loginState": "unknown"}
+    api = session_of(cookies, browser)
+    params = {"count": min(limit, 50), "start": 0, "q": "memberShareFeed", "moduleKey": "member-shares:phone", "includeLongTermHistory": True, "profileUrn": f"urn:li:fsd_profile:{me}"}
+    res = api._fetch("/identity/profileUpdatesV2", params=params, evade=no_wait, allow_redirects=False)
+    if res.status_code in (999, 429):
+        return {"ok": False, "code": "rateLimited", "detail": f"LinkedIn answered HTTP {res.status_code} to profileUpdatesV2", "loginState": "unknown", "event": "throttled", "httpStatus": res.status_code}
+    if res.status_code != 200:
+        return {"ok": False, "code": "linkedinRefused", "detail": f"LinkedIn answered HTTP {res.status_code} to profileUpdatesV2", "loginState": "loggedIn", "httpStatus": res.status_code}
+    elements = updates_of(res.json())
+    posts = [stats_of(e) for e in elements if isinstance(e, dict) and e]
+    out = {"ok": True, "loginState": "loggedIn", "screenName": checked.get("screenName"), "posts": posts[:limit]}
+    refreshed = refreshed_of(api, cookies)
+    if refreshed:
+        out["refreshedCookies"] = refreshed
+    return out
+
+
+async def my_posts(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:
+    browser = browser_of(spec)
+    missing = identity_missing(cookies, browser)
+    if missing:
+        return missing
+    limit = max(1, min(int(spec.get("limit") or 10), 50))
+    return await asyncio.to_thread(my_posts_of, cookies, browser, limit)
+
+
+ACTIONS = {"myPosts": my_posts, "ping": ping, "scripts": scripts, "post": post, "deletePost": delete_post, "mentions": mentions, "suggestions": suggestions, "connectPace": connect_check, "connect": connect, "like": like, "repost": repost, "message": message, "inbox": inbox, "messages": messages}
 
 
 if __name__ == "__main__":

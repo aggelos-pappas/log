@@ -1,4 +1,4 @@
-import { chatCommand, cookiesCommand, dmCommand, dmsCommand, followersCommand, followCommand, followsCommand, likeCommand, listCommand, notificationsCommand, postCommand, repostCommand, deleteCommand, queueCommand, quoteCommand, replyCommand, sessionCommand, voiceCommand } from "../twitter/index.ts";
+import { chatCommand, cookiesCommand, dmCommand, dmsCommand, followersCommand, followCommand, followsCommand, likeCommand, listCommand, notificationsCommand, postCommand, postsCommand, repostCommand, deleteCommand, queueCommand, quoteCommand, replyCommand, sessionCommand, voiceCommand } from "../twitter/index.ts";
 import { accountCommand, accountsCommand } from "../account/index.ts";
 import { adsPowerCommand } from "../adsPower/index.ts";
 import { localAccountCommand } from "../localAccount/index.ts";
@@ -57,7 +57,7 @@ import { dispatchWith, runWith } from "./client.ts";
 import type { Command, CommandContext } from "./types.ts";
 import { redditPostCommand, redditReadCommand, redditReplyCommand, redditSessionCommand, redditVoteCommand } from "../reddit/index.ts";
 import { discordChannelsCommand, discordChatsCommand, discordDeleteCommand, discordPostsCommand, discordReadCommand, discordSearchCommand, discordSendCommand, discordServersCommand, discordSessionCommand, discordWatchCommand } from "../discord/index.ts";
-import { linkedinConnectCommand, linkedinCookiesCommand, linkedinDeleteCommand, linkedinInboxCommand, linkedinLikeCommand, linkedinMessageCommand, linkedinMessagesCommand, linkedinRepostCommand, linkedinPostCommand, linkedinSessionCommand, linkedinSuggestionsCommand } from "../linkedin/index.ts";
+import { linkedinConnectCommand, linkedinCookiesCommand, linkedinDeleteCommand, linkedinInboxCommand, linkedinPostsCommand, linkedinLikeCommand, linkedinMessageCommand, linkedinMessagesCommand, linkedinRepostCommand, linkedinPostCommand, linkedinSessionCommand, linkedinSuggestionsCommand } from "../linkedin/index.ts";
 import { slackChatsCommand, slackCookiesCommand, slackReadCommand, slackSendCommand, slackSessionCommand, slackWatchCommand, slackWorkspacesCommand } from "../slack/index.ts";
 import { instagramDmsCommand, instagramSendCommand, instagramSessionCommand, instagramWatchCommand } from "../instagram/index.ts";
 import { discordReactCommand, instagramReactCommand, slackReactCommand, twitterReactCommand } from "../react/index.ts";
@@ -136,6 +136,7 @@ export const COMMANDS: Command[] = [
   cloneCommand,
   transcribeCommand,
   followersCommand,
+  postsCommand,
   notificationsCommand,
   replyCommand,
   quoteCommand,
@@ -177,6 +178,7 @@ export const COMMANDS: Command[] = [
   linkedinRepostCommand,
   linkedinMessageCommand,
   linkedinInboxCommand,
+  linkedinPostsCommand,
   linkedinMessagesCommand,
   slackSessionCommand,
   slackWorkspacesCommand,
