@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import random
 import re
 import threading
 import time
@@ -288,7 +289,28 @@ def attached_files(client: Any, channel: str, paths: list[str]) -> tuple[list[di
     return out, None
 
 
-def send_of(token: str, channel: str, text: str, paths: list[str] | None = None) -> dict[str, Any]:
+TYPING_REFRESH_SECONDS = 8.0
+
+
+def typing_seconds(text: str) -> float:
+    return random.uniform(min(12.0, 1.5 + len(text) / 9), min(20.0, 3.0 + len(text) / 6))
+
+
+def typed(client: Any, channel: str, text: str, sleep: Any = time.sleep) -> dict[str, Any] | None:
+    left = typing_seconds(text)
+    while left > 0:
+        answer = client.send_typing(channel)
+        if answer is None:
+            return {"ok": False, "code": "platformError", "detail": f"Discord didn't answer the typing signal in channel {channel}, so nothing was sent", "loginState": "unknown", "event": "dropped", "channelId": channel}
+        if answer is False:
+            return {"ok": False, "code": "sendFailed", "detail": f"Discord refused the typing signal in channel {channel}, so nothing was sent; nothing is retried (rule 94)", "loginState": "loggedIn", "event": "throttled", "channelId": channel}
+        step = min(left, TYPING_REFRESH_SECONDS)
+        sleep(step)
+        left -= step
+    return None
+
+
+def send_of(token: str, channel: str, text: str, paths: list[str] | None = None, sleep: Any = time.sleep) -> dict[str, Any]:
     client, failed = open_client(token)
     if failed:
         return failed
@@ -307,7 +329,12 @@ def send_of(token: str, channel: str, text: str, paths: list[str] | None = None)
     documents, failed = attached_files(client, target, paths or [])
     if failed:
         return failed
-    sent = client.send_message(target, "" if files and not documents else text, attachments=(files + documents) or None)
+    content = "" if files and not documents else text
+    if content.strip():
+        refused = typed(client, target, content, sleep)
+        if refused:
+            return refused
+    sent = client.send_message(target, content, attachments=(files + documents) or None)
     if not sent:
         return {"ok": False, "code": "sendFailed", "detail": f"Discord didn't take the message in channel {target}", "loginState": "loggedIn", "event": "dropped", "channelId": target}
     return {"ok": True, "loginState": "loggedIn", "event": "sent", "channelId": sent["channel_id"], "messageId": sent["id"], "timestamp": sent["timestamp"], "content": sent["content"]}
