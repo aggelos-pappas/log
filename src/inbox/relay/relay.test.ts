@@ -105,6 +105,12 @@ describe("who stopped a catch-up", () => {
     expect(notThePlatform("CertificateVerifyError: Failed to perform, curl: (60) SSL: certificate subject name 'www.example.com' does not match target hostname 'api.x.com'")).toBe(true);
   });
 
+  test("log's own read cap is retried once its window opens, never parked as the platform refusing", () => {
+    expect(notThePlatform("reading 1156984415931600977: governorBlocked: hourly cap reached (120/h) — resume next hour")).toBe(true);
+    expect(notThePlatform("governorBlocked: daily cap reached (500/day) — resume tomorrow")).toBe(true);
+    expect(notThePlatform("governorBlocked: paused after 429: Too Many Requests")).toBe(false);
+  });
+
   test("a Python import that fails on this machine is our own error, not the platform", () => {
     expect(notThePlatform("reading 1156984415931600977: ImportError: DLL load failed while importing win32clipboard: The specified module could not be found.")).toBe(true);
     expect(notThePlatform("reading the inbox: ImportError: cannot import name 'ArgsKwargs' from 'pydantic_core._pydantic_core' (unknown location)")).toBe(true);

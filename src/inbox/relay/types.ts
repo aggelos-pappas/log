@@ -61,7 +61,9 @@ export interface CatchUpActors {
 
 export const NETWORK_FAILURE = /could not resolve host|curl: \(\d+\)|operation timed out|timed out|timeout|connection (reset|refused|aborted|closed|lost)|failed to connect|network is unreachable|getaddrinfo|econnreset|econnrefused|etimedout|enotfound|ssl|tls|certificate|handshake/i
 
-export const PLATFORM_REFUSAL = /\b(429|226|344)\b|soft.?block|rate.?limit|too many requests|governorBlocked|\bsuspended\b|\b(?:locked|lockout)\b/i
+export const PLATFORM_REFUSAL = /\b(429|226|344)\b|soft.?block|rate.?limit|too many requests|\bsuspended\b|\b(?:locked|lockout)\b/i
+
+export const OWN_GOVERNOR_CAP = /governorBlocked: (?:hourly|daily) cap reached/i
 
 export const CHAT_ACCESS_REFUSAL = /Missing Access|Missing Permissions|Unknown Channel|\b(?:50001|10003|50013)\b|\b403\b[^:]*\bchannel\b/i
 
