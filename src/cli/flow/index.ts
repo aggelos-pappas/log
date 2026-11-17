@@ -1,7 +1,7 @@
 import { recordAccountIssue } from "../../facebook/marketplace/replacement/index.ts";
 import { findAccount, toTwentyEnum } from "../../platformKit/socialAccount/index.ts";
 import { existsSync, readFileSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { createActor, fromPromise, toPromise } from "xstate";
 import { createFlowMachine, fillStep, flowFromRecording, listFlows, loadFlow, readRecordedCommands, flowToolName, saveFlow, writeFlowDoc } from "../../browser/flow/index.ts";
 import type { FlowActInput, FlowDefinition, FlowRunOutput, FlowStep, FlowStepResult } from "../../browser/flow/index.ts";
@@ -116,7 +116,12 @@ export async function runFlow(
   const { account, run } = opened;
   const runDir = dirname(run.captureDir!);
   return withRun(context, "flow", account, run, async () => {
-    const fileParams = flow.params.filter((p) => p.kind === "file");
+    const videos = flow.params.filter((p) => p.kind === "file" && isVideoFile(values[p.name] ?? ""));
+    for (const p of videos) {
+      if (!existsSync(values[p.name])) return { code: 1, stderr: `log flow: ${p.name}: no such video file ${values[p.name]}` };
+      filled[p.name] = resolve(values[p.name]);
+    }
+    const fileParams = flow.params.filter((p) => p.kind === "file" && !videos.includes(p));
     if (fileParams.length) {
       const prepared = await preparePhotos(fileParams.map((p) => values[p.name]), { dir: join(runDir, "photos"), proxy: fetchProxyUrl(account.proxy) });
       if (!prepared.ok) return { code: 1, stderr: `log flow: ${prepared.code} ${prepared.detail}` };
@@ -192,3 +197,7 @@ export const flowCommand: Command = {
     return { code: 1, error: "inputInvalid", stderr: `log flow: expected fromInspect, docs, list, show or run\n${FLOW_USAGE}` };
   },
 };
+
+const VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|webm|mkv|avi)$/i;
+
+export const isVideoFile = (path: string): boolean => VIDEO_EXTENSIONS.test(path);

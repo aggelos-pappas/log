@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { flowPlatform } from "../../browser/flow/index.ts";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { COMMANDS } from "../../cli/runner/index.ts";
@@ -37,7 +38,7 @@ describe("renamed Facebook tools keep their old names for one release", () => {
   });
 
   test("every flow tool keeps its old flow<Name> as an alias of its platform's name", () => {
-    const flows = savedFlows();
+    const flows = savedFlows().filter((f) => flowPlatform(f) === "facebook");
     const old = Object.fromEntries(flows.flatMap((f) => [false, true].map((live) => [`flow${f.name[0].toUpperCase()}${f.name.slice(1)}${live ? "Live" : ""}`, toolsFromFlows([f])[live ? 1 : 0].name])));
     expect(RENAMED_FLOW_TOOLS).toEqual(old);
     expect(RENAMED_FLOW_TOOLS.flowFacebookLanguageEnglish).toBe("facebookFlowLanguageEnglish");

@@ -54,7 +54,9 @@ const flowsDir = join(root, 'src', 'browser', 'flow', 'definitions');
 if (existsSync(flowsDir)) {
   for (const file of readdirSync(flowsDir).filter((f) => f.endsWith('.json'))) {
     const name = file.slice(0, -5);
-    if (!existsSync(join(docsDir, 'flows', `${name}.md`))) problems.push(`flow ${name}: no docs/platforms/facebook/flows/${name}.md (run \`log flow docs ${name}\`)`);
+    const declared = JSON.parse(readFileSync(join(flowsDir, file), 'utf8')).platform;
+    const platform = typeof declared === 'string' && declared ? declared : 'facebook';
+    if (!existsSync(join(root, 'docs', 'platforms', platform, 'flows', `${name}.md`))) problems.push(`flow ${name}: no docs/platforms/${platform}/flows/${name}.md (run \`log flow docs ${name}\`)`);
   }
 }
 

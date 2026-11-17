@@ -152,6 +152,9 @@ flowchart TB
     c_instagramReact["react"]
     c_instagramVoice["voice"]
   end
+  subgraph g_tiktok["TikTok"]
+    c_tiktokSession["session"]
+  end
   cli --> c_launch
   c_launch -.- terminal
   cli --> c_console
@@ -436,6 +439,8 @@ flowchart TB
   mcp --> c_instagramVoice
   cli --> c_twitterVoice
   mcp --> c_twitterVoice
+  cli --> c_tiktokSession
+  mcp --> c_tiktokSession
   f_deletePost["facebookFlowDeletePost: flow run deletePost"]
   mcp --> f_deletePost
   f_deletePost --> c_flow
@@ -478,6 +483,12 @@ flowchart TB
   f_profileSetup["facebookFlowProfileSetup: flow run profileSetup"]
   mcp --> f_profileSetup
   f_profileSetup --> c_flow
+  f_tiktokDelete["tiktokFlowDelete: flow run tiktokDelete"]
+  mcp --> f_tiktokDelete
+  f_tiktokDelete --> c_flow
+  f_tiktokPost["tiktokFlowPost: flow run tiktokPost"]
+  mcp --> f_tiktokPost
+  f_tiktokPost --> c_flow
   f_warmupCreateAccessCheck["facebookFlowWarmupCreateAccessCheck: flow run warmupCreateAccessCheck"]
   mcp --> f_warmupCreateAccessCheck
   f_warmupCreateAccessCheck --> c_flow

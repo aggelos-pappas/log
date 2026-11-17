@@ -2,6 +2,7 @@ export type FlowAction = 'goto' | 'click' | 'fill' | 'upload' | 'signIn' | 'code
   | 'setLocation'
   | 'scroll' | 'openAny' | 'clickAny' | 'dwell'
   | 'press' | 'scrollIn'
+  | 'rowMenu'
 
 export interface AnswerCheck {
   answer: string

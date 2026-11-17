@@ -62,6 +62,7 @@ export const PLATFORM_WORDS: Readonly<Record<string, string>> = {
   marketplace: 'facebook',
   messenger: 'facebook',
   linkedin: 'linkedin',
+  tiktok: 'tiktok',
 }
 
 export const PLATFORM_FOLDERS: ReadonlySet<string> = new Set(Object.values(PLATFORM_WORDS))

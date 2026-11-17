@@ -30,6 +30,7 @@ export function commandFor(step: FlowStep): { action: InspectAction; args: strin
     case "dwell":
     case "press":
     case "scrollIn":
+    case "rowMenu":
       return { action: step.action, args: step.args ?? [] };
     default:
       return { action: step.action, args: [] };
@@ -123,6 +124,7 @@ export async function runFlowInSession(
         if (problem) result = { ...result, ok: false, issue: problem.code, error: `${problem.code}: ${problem.detail}` };
         const wrong = result.ok && step.answers?.length && reply?.folder ? answersIssue(step.answers, stepExchangesAt(reply.folder), options.account ?? { uid: filled.uid }) : null;
         if (wrong) result = { ...result, ok: false, issue: wrong.code, error: `${wrong.code}: ${wrong.text}` };
+        if (result.ok && step.action === "upload") overlaysChecked = false;
         options.onStep?.(step, result);
         return result;
       }),

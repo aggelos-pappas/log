@@ -24,6 +24,9 @@ flowchart LR
   browserNotificationsNotice["browserNotificationsNotice: Facebook's browser-notifications notice over the page: its text covers its own Close, so nothing under it can be pressed (Hazleton, host 20261024T211541 steps 08-13)"]
   page --> browserNotificationsNotice
   browserNotificationsNotice -->|"press Escape"| nextbrowserNotificationsNotice(["next state"])
+  tiktokPreviewTip["tiktokPreviewTip: TikTok Studio's #quot;Preview your video on your phone#quot; tip over the post form after an upload: its backdrop takes every click (inspect 20261117T052642 step 04)"]
+  page --> tiktokPreviewTip
+  tiktokPreviewTip -->|"press Escape"| nexttiktokPreviewTip(["next state"])
   pastNoticeDialog["pastNoticeDialog: Facebook's #quot;What happened#quot; dialog about a limit on the account that has ended (#quot;Ended on #lt;date#gt;#quot;), over the page (Hazleton, host 20261024T211541 step 14)"]
   page --> pastNoticeDialog
   pastNoticeDialog -->|"press Escape"| nextpastNoticeDialog(["next state"])

@@ -1,0 +1,81 @@
+{
+  "name": "tiktokDelete",
+  "platform": "tiktok",
+  "summary": "Delete one of the account's own TikTok posts from TikTok Studio's content list: the post's row menu (found by its caption), Delete, then Delete in \"Delete post?\", wait for tiktokPostEditV1 (status_code 0 for the aweme_id sent). TikTok keeps it in Recently deleted for 30 days. Deletes on TikTok (--live).",
+  "effect": "delete",
+  "params": [
+    {
+      "name": "caption",
+      "kind": "text",
+      "description": "the post's caption as its row link shows it in TikTok Studio's content list"
+    }
+  ],
+  "steps": [
+    {
+      "id": "s01_gotoTiktokstudioContent",
+      "action": "goto",
+      "url": "https://www.tiktok.com/tiktokstudio/content",
+      "recorded": {
+        "step": "01_gotoHttpsWwwTiktok",
+        "ms": 12933,
+        "reaEvidenceId": null,
+        "requests": []
+      }
+    },
+    {
+      "id": "s02_rowMenuDelete",
+      "action": "rowMenu",
+      "args": [
+        "{caption}",
+        "Delete"
+      ],
+      "recorded": {
+        "step": "06_clickE943",
+        "ms": 10210,
+        "reaEvidenceId": "ev_49e37914780d5be2802f93ca4111bab10420f78f6fed6151e669c21cb7bfeade",
+        "requests": [
+          "tiktokCreatorManageItemListV1",
+          "apiV1PostDetail"
+        ]
+      }
+    },
+    {
+      "id": "s03_clickDelete",
+      "action": "click",
+      "role": "button",
+      "name": "Delete",
+      "within": "Delete post?",
+      "expect": "tiktokPostEditV1",
+      "answers": [
+        {
+          "call": "tiktokPostEditV1",
+          "says": [
+            {
+              "answer": "status_code",
+              "is": 0
+            },
+            {
+              "answer": "edit_diff.aweme_id",
+              "sent": "body.aweme_id"
+            }
+          ]
+        }
+      ],
+      "recorded": {
+        "step": "07_clickroleButtonDelete",
+        "ms": 7579,
+        "reaEvidenceId": "ev_a8d352dabf9c11e40d9e8b2ccb4806c42bedc28bc13292d2dabfce6bda72322a",
+        "requests": [
+          "tiktokCreatorManageItemListV1",
+          "tiktokCreatorEditorToolApiV1AsyncTasksIconInfo",
+          "tiktokPostEditV1"
+        ]
+      }
+    }
+  ],
+  "source": {
+    "runDir": "~/.logCli/runs/inspect/20261117T053323",
+    "account": "tiktokDelete",
+    "builtAt": "2026-11-17T05:45:00.000Z"
+  }
+}

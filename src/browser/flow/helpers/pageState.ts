@@ -75,6 +75,14 @@ export const PAGE_STATES: readonly StateRule[] = [
     person: false
   },
   {
+    id: 'tiktokPreviewTip',
+    url: /tiktok\.com\/tiktokstudio/,
+    text: /preview your video on your phone/i,
+    what: 'TikTok Studio\'s "Preview your video on your phone" tip over the post form after an upload: its backdrop takes every click (inspect 20261117T052642 step 04)',
+    resolve: 'press Escape (`log inspect do press Escape --live --account <a>`): it closes with no call, so the check is that the tip is gone (step 05). A flow clears it after its upload (rule 79)',
+    person: false
+  },
+  {
     id: 'pastNoticeDialog',
     text: /what happened[\s\S]{0,600}?\bended on\b/i,
     what: 'Facebook\'s "What happened" dialog about a limit on the account that has ended ("Ended on <date>"), over the page (Hazleton, host 20261024T211541 step 14)',
@@ -250,6 +258,7 @@ export const RESOLVE_CALLS: Readonly<Record<string, (at: StateAt) => ResolveCall
   automatedBehaviour: clickLabel(/(:\s*|")(Dismiss|Continue|تجاهل)"?\s*$/),
   browserNotificationsNotice: (at) => liveStep(at.account, 'press', ['Escape']),
   pastNoticeDialog: (at) => liveStep(at.account, 'press', ['Escape']),
+  tiktokPreviewTip: (at) => liveStep(at.account, 'press', ['Escape']),
   messengerPinCreate: (at) => (at.messengerPin ? { tool: 'facebookFlowMessengerPinCreateLive', input: { account: at.account, confirmLive: true } } : null),
   messengerPinEnter: (at) => (at.messengerPin ? liveStep(at.account, 'pin') : null),
   marketplacePartnerListings: clickLabel(/(:\s*|")Update"?\s*$/),

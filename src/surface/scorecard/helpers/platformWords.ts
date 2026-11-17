@@ -9,6 +9,7 @@ const WORDS: Readonly<Record<Platform, readonly RegExp[]>> = {
   linkedin: [/\blinkedin\b/i],
   slack: [/\bslack\b/i],
   instagram: [/\binstagram\b/i],
+  tiktok: [/\btiktok\b/i],
 };
 
 export function platformsNamed(text: string): Platform[] {

@@ -4,7 +4,7 @@ import type { BrowserDriverName } from '../driver/types'
 export const INSPECT_ACTIONS = [
   'goto', 'snapshot', 'click', 'type', 'press', 'solve', 'upload', 'signIn', 'code', 'back', 'wait', 'stop',
   'pin',
-  'clickRole', 'fillRole', 'uploadRole', 'waitRole',
+  'clickRole', 'fillRole', 'uploadRole', 'waitRole', 'rowMenu',
   'highlight',
   'scroll', 'scrollIn', 'openAny', 'clickAny',
   'closeTab',

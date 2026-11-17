@@ -1,0 +1,41 @@
+{
+  "platform": "tiktok",
+  "pages": [
+    {
+      "name": "login",
+      "signals": {
+        "url": "https://www.tiktok.com/login/phone-or-email/email",
+        "heading": "Log in",
+        "text": "Log in. Email or username. Password. Forgot password?",
+        "password": true,
+        "code": false,
+        "width": 1280,
+        "height": 800,
+        "historyLength": 1
+      },
+      "expect": {
+        "state": "tiktokLogin",
+        "blocked": false,
+        "inputAllowed": true
+      }
+    },
+    {
+      "name": "signedIn",
+      "signals": {
+        "url": "https://www.tiktok.com/tiktokstudio/upload",
+        "heading": "TikTok Studio",
+        "text": "Select video to upload",
+        "password": false,
+        "code": false,
+        "width": 1280,
+        "height": 800,
+        "historyLength": 1
+      },
+      "expect": {
+        "state": "unknown",
+        "blocked": false,
+        "inputAllowed": false
+      }
+    }
+  ]
+}

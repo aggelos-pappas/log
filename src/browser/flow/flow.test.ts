@@ -235,3 +235,30 @@ describe('flowWithParams', () => {
     expect(flow.steps.length).toBe(profileSetup.steps.length)
   })
 })
+
+describe('tiktokPost and tiktokDelete: TikTok Studio, recorded 2026-11-17', () => {
+  test('both are TikTok flows, run as tiktokFlowPost and tiktokFlowDelete', () => {
+    const post = loadFlow('tiktokPost')!
+    const remove = loadFlow('tiktokDelete')!
+    expect([flowPlatform(post), flowPlatform(remove)]).toEqual(['tiktok', 'tiktok'])
+    expect([flowToolName(post), flowToolName(remove)]).toEqual(['tiktokFlowPost', 'tiktokFlowDelete'])
+  })
+
+  test("Post is decided by TikTok's own answer: status_code 0 and an item_id", () => {
+    const post = loadFlow('tiktokPost')!.steps.at(-1)!
+    expect(post.expect).toBe('tiktokWebProjectPostV1')
+    expect(post.answers?.[0].says).toContainEqual({ answer: 'single_post_resp_list.0.item_id', present: true })
+  })
+
+  test('the caption box is found by the file name TikTok prefills, and the row menu by the caption', () => {
+    const [, , fill] = loadFlow('tiktokPost')!.steps
+    expect(fillStep(fill, { fileName: 'clip', caption: 'hello' })).toMatchObject({ action: 'fill', role: 'combobox', name: 'clip', value: 'hello' })
+    const row = loadFlow('tiktokDelete')!.steps[1]
+    expect(fillStep(row, { caption: 'hello' }).args).toEqual(['hello', 'Delete'])
+  })
+
+  test('a rowMenu recording keeps its arguments', () => {
+    const flow = flowFromRecording('rows', 's', [cmd('rowMenu', ['log test', 'Delete'], '06_rowMenu', '')], { runDir: 'r', account: 'a' })
+    expect(flow.steps[0]).toMatchObject({ action: 'rowMenu', args: ['log test', 'Delete'] })
+  })
+})
