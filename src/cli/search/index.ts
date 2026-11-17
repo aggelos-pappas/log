@@ -6,9 +6,11 @@ import type { Conversation, ConversationAttachment, Embedder, SearchHit } from "
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandInput } from "../runner/types.ts";
 import { openTwitterAccount } from "../twitter/helpers/account.ts";
+import { graphPriorFor } from "../../relate/graph/index.ts";
+import { chatIdOf } from "../../storage/platform/helpers/ids.ts";
 
 export const SEARCH_USAGE = [
-  "Usage: log search \"<query>\" [--limit <n>] [--platform <p>] [--account <a>] [--with <handle>] [--after <YYYY-MM-DD>] [--json]",
+  "Usage: log search \"<query>\" [--limit <n>] [--fusion <rrf|bayes>] [--platform <p>] [--account <a>] [--with <handle>] [--after <YYYY-MM-DD>] [--json]",
   "       log search index [--platform <twitter|discord>] [--account <a>] [--saved] [--rebuild]   (only the chunks that are new or changed are embedded, and the ones gone are removed, so the index stays deduplicated; --rebuild embeds everything again. --saved indexes the conversations already kept, reading nothing; otherwise reads every conversation through the platform's engine: X's DMs with X Chat decrypted with the saved PIN, and every Discord DM and group (its whole history, up to 20,000 messages each), keeps them in ~/.logCli/conversations, and builds the keyword and meaning indexes in ~/.logCli/search)",
   "       log search bench [--rounds <n>]   (times realistic queries on the built index, cold and warm, and prints p50, p95 and p99 beside a plain linear scan)",
   "Hybrid search across every conversation: BM25 keyword ranking (bm25s) and meaning ranking (verso-db HNSW over local all-MiniLM-L6-v2 embeddings) run in parallel and are fused with reciprocal rank fusion. Each hit names the conversation, who it was with, when, and the messages it covers.",
@@ -27,7 +29,7 @@ export const SEARCH_INPUT: CommandInput = {
       words: [],
       summary: "Search every conversation by keyword and meaning at once, fused with reciprocal rank fusion",
       positionals: [{ name: "query", kind: "string", required: true, description: "What to look for, in plain words" }],
-      flags: [{ name: "limit", kind: "integer", min: 1, max: 100, description: "How many hits, default 10, at most 100" }, ...FILTERS, JSON_FLAG],
+      flags: [{ name: "limit", kind: "integer", min: 1, max: 100, description: "How many hits, default 10, at most 100" }, { name: "fusion", kind: "string", description: "How the keyword and meaning lists are combined: rrf (reciprocal rank fusion, the default) or bayes (BayesRAG: Dempster-Shafer over keyword, meaning and a relationship retriever from the Relate graph, which votes for the chats of the people the query names and of the people near them)" }, ...FILTERS, JSON_FLAG],
     },
     {
       words: ["index"],
@@ -95,7 +97,8 @@ async function indexDiscord(context: CommandContext, only: string | undefined, l
 
 function hitLine(hit: SearchHit): string {
   const c = hit.chunk;
-  const ranks = [hit.keywordRank ? `keyword #${hit.keywordRank}` : null, hit.meaningRank ? `meaning #${hit.meaningRank}` : null].filter(Boolean).join(", ");
+  const belief = hit.likelihood === undefined ? null : `likelihood ${hit.likelihood.toFixed(2)} × prior ${(hit.prior ?? 1).toFixed(2)}${(hit.conflict ?? 0) > 0.2 ? `, conflict ${hit.conflict!.toFixed(2)}` : ""}`;
+  const ranks = [hit.keywordRank ? `keyword #${hit.keywordRank}` : null, hit.meaningRank ? `meaning #${hit.meaningRank}` : null, hit.relationRank ? `relationship #${hit.relationRank}` : null, belief].filter(Boolean).join(", ");
   return [`  ${hit.rank}. ${c.platform} ${c.account} with @${c.with.join(", @")} · ${c.at ?? "?"} · ${ranks} · conversation ${c.conversationId}`, ...c.text.split("\n").map((l) => `     ${l.slice(0, 220)}`)].join("\n");
 }
 
@@ -176,11 +179,17 @@ export const searchCommand: Command = {
         const limit = numberOf(parsed, "limit") ?? 10;
         const after = typeof parsed.flags["after"] === "string" ? parsed.flags["after"] : undefined;
         const pick = (name: string) => (typeof parsed.flags[name] === "string" ? (parsed.flags[name] as string) : undefined);
+        const fusion = pick("fusion") ?? "rrf";
+        if (fusion !== "rrf" && fusion !== "bayes") return refuseInput("search", `--fusion is rrf or bayes, not ${fusion}`, SEARCH_USAGE);
         const started = performance.now();
-        const hits = await search(index, query, { limit, platform: pick("platform"), account: pick("account"), with: pick("with"), after });
+        const graph = fusion === "bayes" ? graphPriorFor(query) : null;
+        const relation = graph ? (chunk: { platform: string; account: string; conversationId: string }) => graph.strength(chatIdOf(chunk.platform, chunk.account, chunk.conversationId)) : undefined;
+        const hits = await search(index, query, { limit, fusion, relation, platform: pick("platform"), account: pick("account"), with: pick("with"), after });
         const ms = performance.now() - started;
-        if (json) return { code: 0, stdout: JSON.stringify({ query, ms, hits }, null, 2) };
-        return { code: 0, stdout: [`log search "${query}": ${hits.length} hit${hits.length === 1 ? "" : "s"} in ${ms.toFixed(1)} ms (keyword + meaning, RRF)`, ...hits.map(hitLine)].join("\n") };
+        const priorOf = graph ? { people: graph.people.map((p) => `${p.platform} ${p.handle ?? p.key}`), behind: graph.behind } : null;
+        if (json) return { code: 0, stdout: JSON.stringify({ query, ms, fusion, relationship: priorOf, hits }, null, 2) };
+        const how = fusion === "bayes" ? `keyword + meaning, Dempster-Shafer${priorOf ? `, relationship retriever from ${priorOf.people.join(", ")}` : ", no one named so the relationship retriever abstains"}` : "keyword + meaning, RRF";
+        return { code: 0, stdout: [`log search "${query}": ${hits.length} hit${hits.length === 1 ? "" : "s"} in ${ms.toFixed(1)} ms (${how})`, ...hits.map(hitLine)].join("\n") };
       } finally {
         await index.close();
       }

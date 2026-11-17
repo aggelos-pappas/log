@@ -146,3 +146,11 @@ export interface GraphVerify {
   differs: string[]
   behind: number
 }
+
+export const PRIOR_KAPPA = 0.5
+
+export const PRIOR_FLOOR = 0.1
+
+export const PRIOR_WEIGHT_SPOKE = 3
+
+export const PRIOR_WEIGHT_NEAR = 1

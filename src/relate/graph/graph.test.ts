@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { openDatabase } from '../../storage/schema/index'
 import { getState, putState } from '../../storage/state/index'
 import { DEMO_NOW, seedDemoWorld } from './fixtures/demoWorld'
-import { buildGraph, graphDir, pointerOf, queryGraph, relateContext, verifyGraph, wantsRebuild, workspaceOf } from './index'
+import { buildGraph, edgePrior, graphDir, graphPriorFor, pointerOf, queryGraph, relateContext, verifyGraph, wantsRebuild, workspaceOf } from './index'
 import { mentionedTokens } from './helpers/index'
 import type { GraphPointer } from './index'
 
@@ -88,5 +88,27 @@ describe('the Relate graph projected from log.db', () => {
 
   test('reads @handles and bare words, and leaves common words out', () => {
     expect(mentionedTokens('ask @Linus_K. about reply to ada_codes with them')).toEqual({ tagged: ['linus_k'], bare: ['ada_codes'] })
+  })
+})
+
+describe('the graph prior for search (BayesRAG, appendix A.2.2)', () => {
+  test('rooms a named person is in get a high prior, rooms with no link to them keep the floor', () => {
+    const graph = graphPriorFor('what did @grace_ships say about the launch', built.path)
+    expect(graph).not.toBeNull()
+    const rooms = queryGraph("MATCH (p:Identity {handleLower: 'grace_ships'})-[:MEMBER_OF|SAID]->(r:Room) RETURN DISTINCT r.key AS room", {}, built.path).rows.map((r) => String(r.room))
+    expect(rooms.length).toBeGreaterThan(0)
+    for (const room of rooms) expect(graph!.prior(room)).toBeGreaterThan(0.75)
+    expect(graph!.prior('nowhere:none:0')).toBeCloseTo(0.1)
+  })
+
+  test('a query that names no one gives no prior, so search ranks on the retrievers alone', () => {
+    expect(graphPriorFor('what was said about the launch', built.path)).toBeNull()
+  })
+
+  test('the edge prior saturates: more links help less each time', () => {
+    expect(edgePrior(0)).toBeCloseTo(0.1)
+    expect(edgePrior(1)).toBeLessThan(edgePrior(3))
+    expect(edgePrior(6) - edgePrior(3)).toBeLessThan(edgePrior(3) - edgePrior(0))
+    expect(edgePrior(100)).toBeLessThanOrEqual(1)
   })
 })
