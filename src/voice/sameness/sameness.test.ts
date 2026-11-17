@@ -41,3 +41,18 @@ describe('batchSameness', () => {
     expect(batchSameness(items).map((f) => f.n)).toEqual([3])
   })
 })
+
+describe('one opener over and over', () => {
+  test('a third message opening the same way is refused, whatever follows', () => {
+    const sent = [{ to: 'a', text: 'https://x.com/a/status/1\nsaw this a crm in sheets is mad' }, { to: 'b', text: 'https://x.com/b/status/2\nsaw this da nang looks class' }]
+    const reading = samenessOf('https://x.com/c/status/3\nsaw this animal crossing over gta6 is bold', sent)
+    expect(reading.pass).toBe(false)
+    expect(reading.shared[0]).toContain('saw this')
+  })
+
+  test('openers that differ pass, and a batch flags the repeats', () => {
+    expect(samenessOf('mad that a crm fits in sheets', [{ to: 'a', text: 'saw this one' }, { to: 'b', text: 'saw this two' }]).pass).toBe(true)
+    const items = ['saw this one thing here', 'saw this two thing there', 'saw this three thing again', 'that coffee looks class'].map((text, i) => ({ n: i + 1, to: `p${i}`, text }))
+    expect(batchSameness(items).map((f) => f.n)).toEqual([3])
+  })
+})
