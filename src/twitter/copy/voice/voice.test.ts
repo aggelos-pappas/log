@@ -182,3 +182,11 @@ describe('a send the owner already made is never made twice', () => {
     expect(alreadyAnswered([], now)).toBeNull()
   })
 })
+
+describe('a chat the owner already wrote in is never a first message', () => {
+  test('the conversation card counting his messages is enough, even when the voice index has none of them yet', () => {
+    expect(alreadyTalkedIn({ ownerWroteHere: 6 })).toBe(true)
+    expect(alreadyTalkedIn({ ownerWroteHere: 0 })).toBe(false)
+    expect(alreadyTalkedIn({})).toBe(false)
+  })
+})

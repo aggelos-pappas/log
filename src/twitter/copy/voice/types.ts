@@ -12,6 +12,7 @@ export interface VoiceEvidence {
 export interface VoiceDraft {
   to: string
   text: string
+  ownerWroteHere?: number
   context?: string
   evidence?: VoiceEvidence
   everywhere?: VoiceEvidence
