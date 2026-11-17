@@ -62,6 +62,21 @@ describe('the voice gate', () => {
     expect(reading.openerOnly).toBe(1)
     expect(reading.pass).toBe(true)
     expect((asked[0].state as Record<string, unknown>).alreadyTalkedInThisChat).toBe(true)
+    expect(reading.firstContact).toBe(false)
+    expect((asked[0].state as Record<string, unknown>).neverMessagedBefore).toBeUndefined()
+  })
+
+  test('a person the owner has never messaged is told to the gate, and a failed first message names the cold way', async () => {
+    const asked: DecisionRequest[] = []
+    const decide = async (request: DecisionRequest) => {
+      asked.push(request)
+      return { model: 'subq-snap-1.1', answers: { voice: { type: 'noul' as const, noul: 0.5 }, inContext: { type: 'noul' as const, noul: 0.95 }, friendLike: { type: 'noul' as const, noul: 0.95 }, openerOnly: { type: 'noul' as const, noul: 0.95 } }, usage: { input_tokens: 1, output_tokens: 1 } }
+    }
+    const reading = await readVoice({ to: 'stranger', text: 'cheers for the like' }, 'GUIDE', decide)
+    expect(reading.firstContact).toBe(true)
+    expect(String((asked[0].state as Record<string, unknown>).neverMessagedBefore)).toContain('first message')
+    const { failedParts } = await import('../../../cli/twitter/helpers/voice')
+    expect(failedParts({ ...reading, notHere: [], scrambler: { ran: false, suspicious: 0, hits: [] }, ranked: [] } as never)[0]).toContain('twitterPosts { user: "stranger" }')
   })
 
   test('a draft that sounds like ai fails on voice', async () => {

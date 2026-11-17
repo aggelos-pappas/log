@@ -89,7 +89,7 @@ export function renderVoice(reading: VoiceReading & { notHere?: string[]; aiTell
   const ai = reading.aiTells ? `\n  ${aiTellsLine(reading.aiTells)}` : "";
   const phrases = reading.phrases ? `\n  ${phrasesLine(reading.phrases)}` : "";
   const scrambler = reading.scrambler ? `\n  ${scramblerLine(reading.scrambler)}` : "";
-  return `log voice: @${reading.to.replace(/^@/, "")} ${reading.pass ? "PASS" : "FAIL"}: ${scores}${never}${notHere}${watermark}${ai}${phrases}${scrambler}${reading.pass ? "" : "\n  rewrite it in the owner's words and gate it again"}`;
+  return `log voice: @${reading.to.replace(/^@/, "")} ${reading.pass ? "PASS" : "FAIL"}: ${scores}${never}${notHere}${watermark}${ai}${phrases}${scrambler}${reading.pass ? "" : `${reading.firstContact ? `\n  ${firstContactLine(reading.to)}` : ""}\n  rewrite it in the owner's words and gate it again`}`;
 }
 
 function chatsOf(conversations: readonly Conversation[]): (DiscordChat & { platform: string; account: string; conversationId: string; target: VoiceTarget })[] {
@@ -354,8 +354,14 @@ export function howOwnerTalks(): string[] {
   });
 }
 
+export function firstContactLine(to: string): string {
+  const them = to.replace(/^@/, "");
+  return `first message: the owner has never messaged @${them}, so this is a cold opener and there is no chat of theirs to answer. Open it the cold way (getGuide({ useCase: \"twitter/engagerDms\" }), how a cold DM opens): one of their own recent posts first (twitterPosts { user: \"${them}\" }), then one informal line about it, with no ask and no stock thanks`;
+}
+
 export function failedParts(reading: GateReading): string[] {
   const out: string[] = [];
+  if (reading.firstContact && !reading.pass) out.push(firstContactLine(reading.to));
   if (reading.neverSays.length) out.push(`phrases the owner never says: ${reading.neverSays.join(", ")}`);
   if (reading.watermark.level === "artifacts") out.push(`AI artifacts in the text: ${watermarkLine(reading.watermark)}`);
   if (reading.voice < VOICE_PASS) out.push(`doesn't sound like the owner ${reading.buildsOn === null ? "typed" : "said"} it (voice ${reading.voice.toFixed(2)}, needs ${VOICE_PASS})`);

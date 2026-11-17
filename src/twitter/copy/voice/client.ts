@@ -75,6 +75,7 @@ export async function readVoice(draft: VoiceDraft, guide: string, decide: Decisi
       ...(draft.scrambler ? { watermarkScramblerLayerA: draft.scrambler } : {}),
       recipient: draft.to,
       alreadyTalkedInThisChat: alreadyTalked,
+      ...(alreadyTalked ? {} : { neverMessagedBefore: `The owner has never messaged ${draft.to} before: this is his first message to them, so there is no chat of theirs to match. Judge it as his cold opener to a stranger (short, lowercase, about their post or what they did), not against how he banters in chats he already has.` }),
       whatTheySaid: draft.context ?? null,
       ...(draft.card ? { thisConversation: draft.card } : {}),
       ...(draft.conversation ? { thisConversationRankedForThisMoment: draft.conversation } : {}),
@@ -102,5 +103,5 @@ export async function readVoice(draft: VoiceDraft, guide: string, decide: Decisi
   const fitsTheRoom = draft.room ? answers.fitsTheRoom?.noul ?? 0 : null
   const watermark = watermarkReadingOf(draft.text)
   const answerRequired = !nobodyToAnswer(draft) && (draft.cardAnswerOwed ?? !nothingWaiting(draft))
-  return { to: draft.to, voice, inContext, answerRequired, friendLike, openerOnly, toThem, buildsOn, fitsTheRoom, neverSays, watermark, pass: !neverSays.length && watermark.level !== 'artifacts' && voice >= VOICE_PASS && (!answerRequired || inContext >= CONTEXT_PASS) && friendLike >= CONTEXT_PASS && openerOnly >= CONTEXT_PASS && (toThem === null || toThem >= CONTEXT_PASS) && (buildsOn === null || buildsOn >= CONTEXT_PASS) && (fitsTheRoom === null || fitsTheRoom >= CONTEXT_PASS), model: response.model ?? null }
+  return { firstContact: !alreadyTalked, to: draft.to, voice, inContext, answerRequired, friendLike, openerOnly, toThem, buildsOn, fitsTheRoom, neverSays, watermark, pass: !neverSays.length && watermark.level !== 'artifacts' && voice >= VOICE_PASS && (!answerRequired || inContext >= CONTEXT_PASS) && friendLike >= CONTEXT_PASS && openerOnly >= CONTEXT_PASS && (toThem === null || toThem >= CONTEXT_PASS) && (buildsOn === null || buildsOn >= CONTEXT_PASS) && (fitsTheRoom === null || fitsTheRoom >= CONTEXT_PASS), model: response.model ?? null }
 }

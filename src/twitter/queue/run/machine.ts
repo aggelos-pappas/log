@@ -139,7 +139,8 @@ export const queueRunMachine = setup({
       item!.result = `contextChanged: ${changed.length} new since the draft`
       event!.skipped = 'held'
       dropPost(todo, event!.n, 'held')
-      deps.alert(`HELD #${event!.n} ${who(context)}: something happened with them since the draft, so it wasn't sent. Redraft it from their full context (\`twitterDms\` { with }) and put it back with \`twitterQueueEdit\`. What changed: ${changed.join(' | ')}`, false)
+      const gateOnly = changed.length > 0 && changed.every((c) => c.startsWith('voice gate: '))
+      deps.alert(`HELD #${event!.n} ${who(context)}: ${gateOnly ? 'the voice gate refused the draft' : 'something happened with them since the draft'}, so it wasn't sent. Redraft it from their full context (\`twitterDms\` { with }) and put it back with \`twitterQueueEdit\`. What changed: ${changed.join(' | ')}`, false)
     },
     keepAnswer: assign(({ context }, answer: TwitterSessionAnswer) => ({ answer, answeredAt: new Date(context.deps.nowMs()).toISOString() })),
     markAttempt: ({ context }) => {

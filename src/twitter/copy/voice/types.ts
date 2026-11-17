@@ -39,6 +39,7 @@ export interface VoiceReading {
   watermark: WatermarkReading
   pass: boolean
   model: string | null
+  firstContact?: boolean
 }
 
 export const VOICE_PASS = 0.8
