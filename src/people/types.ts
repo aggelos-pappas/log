@@ -28,7 +28,7 @@ export const M_PROBABILITIES = {
   sharesOwnPosts: { fivePlus: 0.05, twoToFour: 0.1, once: 0.15, never: 0.7 },
 } as const
 
-export const BOT_NAMES: readonly string[] = ['mee6', 'dyno', 'carl-bot', 'vibe bot', 'vibebot', 'rythm', 'trebel music', 'watch together', 'probot', 'arcane', 'tatsu']
+export const BOT_NAMES: readonly string[] = ['mee6', 'dyno', 'carl bot', 'vibe bot', 'vibebot', 'rythm', 'trebel music', 'watch together', 'probot', 'arcane', 'tatsu']
 
 export const ASKS = /\b(like|rt|retweet|repost|share|support|boost|check (?:out )?my|my (?:post|tweet|thread|video|account|profile|twitter|x|insta|ig|channel))\b/i
 

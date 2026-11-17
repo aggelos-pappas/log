@@ -40,7 +40,7 @@ interface Shares {
 }
 
 const isBot = (row: Row): boolean => {
-  const text = `${row.handle ?? ''} ${row.displayName ?? ''}`.toLowerCase().trim()
+  const text = `${row.handle ?? ''} ${row.displayName ?? ''}`.toLowerCase().replace(/-/g, ' ').trim()
   return BOT_NAMES.some((b) => text === b || text.startsWith(`${b} `) || text.endsWith(` ${b}`)) || /(?:^|[\s_-])bot$/.test(row.handle?.toLowerCase() ?? '')
 }
 

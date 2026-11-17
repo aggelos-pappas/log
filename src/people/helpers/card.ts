@@ -80,7 +80,7 @@ export function renderCard(card: PersonCard, now: number = Date.now()): string {
     lines.push(`  last ${card.last.length}, across platforms in time order:`)
     for (const l of card.last) lines.push(`    [${l.platform}] ${l.at?.slice(0, 10) ?? '?'} ${l.fromOwner ? `owner (${l.account})` : 'them'}: "${clip(l.text, 110)}"`)
   }
-  const shown = card.chats.slice(0, CARD_CHATS).map((c) => `[${c.platform}] ${c.oneToOne ? 'one-to-one' : `group${c.name ? ` "${clip(c.name, 24)}"` : ''} (${c.others} others)`} on ${c.account}, last ${agoOf(c.lastAtMs, now)} by ${c.lastFrom}`)
+  const shown = card.chats.slice(0, CARD_CHATS).map((c) => `[${c.platform}] ${c.oneToOne ? 'one to one' : `group${c.name ? ` "${clip(c.name, 24)}"` : ''} (${c.others} others)`} on ${c.account}, last ${agoOf(c.lastAtMs, now)} by ${c.lastFrom}`)
   if (shown.length) lines.push(`  chats: ${shown.join('; ')}${card.chats.length > CARD_CHATS ? `; +${card.chats.length - CARD_CHATS} more` : ''}`)
   const text = lines.join('\n')
   return text.length > CARD_CHARS ? `${text.slice(0, CARD_CHARS - 1)}…` : text
