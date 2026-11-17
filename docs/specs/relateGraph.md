@@ -57,3 +57,11 @@ Checked by: code and SubQ
 `log relate query "<cypher>"` (MCP `relateQuery`) runs one statement on the current graph's read-only handle and returns at most 100 rows. `log relate ask "<text>"` returns the same context the hook injects.
 
 Checked by: code and SubQ
+
+### REQ-RELATE-09: The hook adds what was said, found by all three retrievers together
+
+When the prompt names someone the graph knows, the `relate` hook also runs one search over the conversations: keyword, meaning and relationship, fused as evidence (REQ-SEARCH-09, REQ-SEARCH-10). It adds up to 3 hits whose likelihood is at least 0.6 and that a text retriever found, under `>>> FROM THE CONVERSATIONS`, each with where it is, when, which retrievers found it and its likelihood, quoted and clipped, at most 1,500 characters.
+- A prompt that names no one, a missing search index or a missing graph runs no search and adds nothing.
+- The search gets 6 seconds; past that it is dropped, so the hook never hangs.
+
+Checked by: code and SubQ

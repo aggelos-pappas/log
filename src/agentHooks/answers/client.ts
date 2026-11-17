@@ -18,6 +18,8 @@ import { superviseLocalWatchers } from '../../platformKit/watcher/index'
 import { hookAnswer } from '../../contextLayer/hook/index'
 import type { HookInput } from '../../contextLayer/hook/index'
 import { refreshGraph, relateContext } from '../../relate/graph/index'
+import { connectedSearch } from '../../relate/search/index'
+import type { ConnectedSearch } from '../../relate/search/index'
 import { REFUSING_HOOKS } from './types'
 import type { EventAnswer, HookAnswer, HookTiming, RouteAsk } from './types'
 
@@ -145,14 +147,16 @@ export function promptOf(raw: string): string {
   }
 }
 
-export function relateAnswer(raw: string, repo: string): HookAnswer {
+export async function relateAnswer(raw: string, repo: string, searched: (prompt: string) => Promise<ConnectedSearch | null> = connectedSearch, dbPath?: string): Promise<HookAnswer> {
   const prompt = promptOf(raw)
   if (!prompt.trim() || prompt.trimStart().startsWith('<')) return {}
-  const answer = relateContext(prompt)
+  const answer = relateContext(prompt, dbPath)
+  const found = answer.outcome === 'answered' ? await searched(prompt).catch(() => null) : null
   try {
-    refreshGraph(repo)
+    if (!dbPath) refreshGraph(repo)
   } catch {}
-  return answer.text ? { context: answer.text } : {}
+  const text = [answer.text, found?.text ?? ''].filter(Boolean).join('\n')
+  return text ? { context: text } : {}
 }
 
 function toolOf(raw: string): string {

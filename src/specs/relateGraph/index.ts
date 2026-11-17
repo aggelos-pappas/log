@@ -9,6 +9,8 @@ const mentions = 'src/relate/graph/helpers/mentions.ts'
 const cli = 'src/cli/relate/index.ts'
 const answers = 'src/agentHooks/answers/client.ts'
 const registry = 'src/agentHooks/registry/index.ts'
+const searched = 'src/relate/search/client.ts'
+const searchedTypes = 'src/relate/search/types.ts'
 
 const anchors: RequirementAnchors = {
   'REQ-RELATE-01': [
@@ -60,6 +62,15 @@ const anchors: RequirementAnchors = {
     { kind: 'symbol', file: cli, name: 'relateCommand' },
     { kind: 'value', file: types, name: 'QUERY_ROWS', equals: 100 },
   ],
+  'REQ-RELATE-09': [
+    { kind: 'symbol', file: searched, name: 'connectedSearch' },
+    { kind: 'symbol', file: searched, name: 'renderSearched' },
+    { kind: 'value', file: searchedTypes, name: 'SEARCHED_HITS', equals: 3 },
+    { kind: 'value', file: searchedTypes, name: 'MIN_LIKELIHOOD', equals: 0.6 },
+    { kind: 'value', file: searchedTypes, name: 'SEARCH_BUDGET_MS', equals: 6000 },
+    { kind: 'value', file: searchedTypes, name: 'SEARCH_CHARS', equals: 1500 },
+    { kind: 'uses', file: answers, name: 'connectedSearch' },
+  ],
 }
 
 export const relateGraph = {
@@ -76,6 +87,7 @@ export const relateGraph = {
     'REQ-RELATE-06': noul('Does renderContext say, for each person, the talks, engagement, groups, introducers and same-orbit people from connectedContext, name throughSeq and how far behind log.db the graph is, and cut the text to CONTEXT_CHARS?'),
     'REQ-RELATE-07': noul('Does refreshGraph start log relate build as a detached hidden process only when a graph already exists and wantsRebuild says so (behind and built at least REFRESH_AFTER_MS ago), never when there is no pointer, and no build claim is fresh?'),
     'REQ-RELATE-08': noul('Does queryGraph run the statement on the current graph and return at most QUERY_ROWS rows with whether more were cut?'),
+    'REQ-RELATE-09': noul('When the prompt names someone the graph knows, does relateAnswer also run connectedSearch (keyword, meaning and relationship fused) and add up to SEARCHED_HITS hits with likelihood at least MIN_LIKELIHOOD that a text retriever found, under FROM THE CONVERSATIONS within SEARCH_CHARS, running nothing when no one is named, the index or graph is missing, and dropping a search past SEARCH_BUDGET_MS?'),
     unspecifiedBehavior: noul('Does the Relate graph code write to log.db anything other than its relateGraph pointer and its build claim, read a platform, or send anything off the machine?'),
   },
   assertions: {
@@ -87,6 +99,7 @@ export const relateGraph = {
     'REQ-RELATE-06': MET,
     'REQ-RELATE-07': MET,
     'REQ-RELATE-08': MET,
+    'REQ-RELATE-09': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

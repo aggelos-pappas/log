@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 51 domains, 580 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 51 domains, 581 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -592,7 +592,7 @@ Finding context in conversations is a search, never reading every thread. `log s
 - **REQ-SEARCH-06** The indexes survive restarts
 - **REQ-SEARCH-07** An update embeds only what changed
 - **REQ-SEARCH-08** The bench prints p50, p95 and p99, cold and warm, beside a linear scan
-- **REQ-SEARCH-09** `--fusion bayes` fuses keyword, meaning and relationship as evidence
+- **REQ-SEARCH-09** Search fuses keyword, meaning and relationship as evidence
 - **REQ-SEARCH-10** The relationship retriever votes from the Relate graph
 
 ## [Knowledge base](./knowledgeBase.md)
@@ -622,6 +622,7 @@ log keeps a Relate (Neo4j's embedded graph database) projection of log.db: the o
 - **REQ-RELATE-06** The context is what the graph connects, as facts
 - **REQ-RELATE-07** A graph behind log.db is rebuilt in the background
 - **REQ-RELATE-08** Agents can read the graph with Cypher
+- **REQ-RELATE-09** The hook adds what was said, found by all three retrievers together
 
 ## [Local accounts](./localAccounts.md)
 
