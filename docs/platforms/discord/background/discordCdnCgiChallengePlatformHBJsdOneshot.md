@@ -10,7 +10,7 @@
 | Path | `discord.com/cdn-cgi/challenge-platform/h/b/jsd/oneshot` |
 | Sends | — |
 | Reads | — |
-| Called from | `runs/inspect/20261114T184328_deepman2/script0.js:232 625075`, `runs/inspect/20261114T184328_deepman2/script0.js:124 559868`, `runs/inspect/20261114T184328_deepman2/script0.js:124 961943`, `runs/inspect/20261111T233723_deepman2/script1280.js:1 anonymous` |
+| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:232 625075`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 559868`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 961943`, `runs/inspect/20261111T233723_discordAccount/script1280.js:1 anonymous` |
 | rea | `ev_f6daff8038b4f477b27b852e31fc1f2f76f7dd725b1883891e74b824ed6f0ac3` |
 
 Seen 6 time(s) in 6 run(s).
@@ -23,7 +23,7 @@ Seen 6 time(s) in 6 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261114T184328_deepman2**, step 1: goto /login: 200, 33 ms
+**runs/inspect/20261114T184328_discordAccount**, step 1: goto /login: 200, 33 ms
 
 Sent:
 
