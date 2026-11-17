@@ -493,6 +493,9 @@ describe("the context read right before a send (rule 109)", () => {
       expect(held.messages.map((m) => m.text)).toEqual(["you about later"]);
       expect(held.activity).toHaveLength(1);
       expect(chatContextOf("twitter", "xTwo", { userId: "7", handle: "someoneelse" }, "2026-11-01T16:00:00Z").messages).toEqual([]);
+      appendEvent({ platform: "twitter", account: "xTwo", conversationId: "g555", type: "ownMessage", with: "oldfriend", text: "said in a group", sourceAt: "2026-11-01T16:07:00Z", receivedAt: "2026-11-01T16:07:01Z" });
+      appendEvent({ platform: "twitter", account: "xTwo", conversationId: "77:99", type: "ownMessage", with: "oldfriend", text: "said to someone else", sourceAt: "2026-11-01T16:08:00Z", receivedAt: "2026-11-01T16:08:01Z" });
+      expect(chatContextOf("twitter", "xTwo", { userId: "42", handle: "oldfriend" }, "2026-11-01T16:00:00Z").messages.map((m) => m.text)).toEqual(["you about later"]);
     } finally {
       process.env.LOG_INBOX_STATE = before;
     }

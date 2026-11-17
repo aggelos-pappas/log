@@ -17,6 +17,7 @@ function isTheirs(platform: string, row: StoredEvent, payload: Record<string, un
   if (row.type === 'notification') return (!!who.userId && String(payload.userId ?? '') === who.userId) || (!!handle && String(payload.handle ?? row.withWho).toLowerCase() === handle)
   if (who.conversationId && row.conversationId === who.conversationId) return true
   if (who.userId && partiesOf(platform, row.conversationId).includes(who.userId)) return true
+  if (row.type === 'ownMessage' && (who.userId || partiesOf(platform, row.conversationId).length !== 2)) return false
   return !!handle && row.withWho.replace(/^@/, '').toLowerCase() === handle
 }
 
