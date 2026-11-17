@@ -2,6 +2,7 @@ import json
 import os
 import re
 import shutil
+import sqlite3
 import subprocess
 import threading
 import time
@@ -13,6 +14,10 @@ PUSH_SCRIPT = ("scripts", "hooks", "push.ts")
 PUSH_RETRY_SECONDS = 10
 BUSY_LIMIT_SECONDS = 600
 PACKAGE = ("@listeningkit", "log")
+VIEW_TAG = re.compile(r'::logview\{id="([0-9a-f]{8})"\}')
+DRAWING_PLATFORMS = frozenset({"local", "desktop"})
+VIEW_TEXT_LIMIT = 3500
+VIEW_ELSEWHERE = "(a view that draws only in Hermes Desktop and the Hermes Webapp)"
 
 
 def has_event_script(root):
@@ -270,10 +275,54 @@ def post_llm_call(**kwargs):
     PUSH.end_turn()
 
 
+def log_db():
+    named = os.environ.get("LOG_DB", "").strip()
+    if named:
+        return Path(named)
+    state = os.environ.get("LOG_INBOX_STATE", "").strip()
+    return Path(state) / "log.db" if state else Path.home() / ".logCli" / "log.db"
+
+
+def stored_view(view_id, db=None):
+    path = db or log_db()
+    if not path.is_file():
+        return None
+    try:
+        handle = sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True, timeout=2)
+        try:
+            row = handle.execute("SELECT body FROM state WHERE scope = 'hermesView' AND key = ?", (view_id,)).fetchone()
+        finally:
+            handle.close()
+        return json.loads(row[0]) if row else None
+    except (sqlite3.Error, ValueError, OSError):
+        return None
+
+
+def view_text(view_id, db=None):
+    stored = stored_view(view_id, db)
+    text = stored.get("text") if isinstance(stored, dict) else None
+    if not isinstance(text, str) or not text.strip():
+        return VIEW_ELSEWHERE
+    return text if len(text) <= VIEW_TEXT_LIMIT else text[:VIEW_TEXT_LIMIT].rstrip() + " ..."
+
+
+def transform_llm_output(response_text="", platform="", **kwargs):
+    if not isinstance(response_text, str) or str(platform or "").strip().lower() in DRAWING_PLATFORMS:
+        return None
+    if not VIEW_TAG.search(response_text):
+        return None
+    try:
+        replaced = VIEW_TAG.sub(lambda match: view_text(match.group(1)), response_text)
+    except Exception:
+        return None
+    return replaced if replaced != response_text else None
+
+
 def register(ctx):
     PUSH.ctx = ctx
     ctx.register_hook("pre_llm_call", pre_llm_call)
     ctx.register_hook("transform_tool_result", transform_tool_result)
     ctx.register_hook("post_llm_call", post_llm_call)
+    ctx.register_hook("transform_llm_output", transform_llm_output)
     key, reader = PUSH.recall()
     PUSH.follow(key, reader)

@@ -22,6 +22,7 @@ export type StateScope =
   | 'pushQuiet'
   | 'inboxIgnore'
   | 'inboxLabels'
+  | 'hermesView'
 
 export interface StateRow<T> {
   body: T

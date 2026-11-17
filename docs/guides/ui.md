@@ -21,7 +21,7 @@ From `skills/report/SKILL.md`.
 
 `report` is log's generative UI. You decide what the person should see and write it as a small React view. log compiles it and draws it in the chat, with the data read from log.db in the same call.
 
-- **Where it draws:** an MCP Apps host (Claude, ChatGPT, Cursor) draws the view inline. Other hosts (Claude Code, Codex, Hermes) get it as text: show it as it is.
+- **Where it draws:** inline in an MCP Apps host (Claude, ChatGPT, Cursor), and in Hermes Desktop when the result ends with a `::logview{id="…"}` line: put it in your reply alone. Elsewhere (Claude Code, Codex) it is text: show it as it is.
 - **Why it looks the way it does:** the kit follows [Lynx](https://github.com/yakkomajuri/lynx)'s workspace kit (MIT): a quiet canvas, plain blocks, big light numbers, and Geist. It gives a general starting point that informs; the content is what makes it good.
 
 ### One call, no code
@@ -133,10 +133,10 @@ In an MCP Apps host the person already sees the view, so say what it means in a 
 - **Code:** `src/mcp/apps/report/view` holds:
   - the kit (`kit.tsx`, `kit.css`)
   - the widget that runs the view in the chat (`widget.tsx`)
-  - the server side that compiles with sucrase and renders the text version (`server.tsx`)
+  - the server side: the sucrase compile and the text version (`server.tsx`)
   - the starter views (`starters/`)
-- **Data:** the sources are one registry, `REPORT_SOURCES` in `src/mcp/apps/report/helpers/sources.ts`. A new source is one entry there: its input schema, its reader, its starter and its text.
-- **What the page loads:** the page is self-contained, with React, the kit and Geist inlined, so it loads nothing from the internet.
+- **Data:** the sources are one registry, `REPORT_SOURCES` in `src/mcp/apps/report/helpers/sources.ts`. A new source is one entry there (schema, reader, starter, text).
+- **What the page loads:** nothing from the internet; React, the kit and Geist are inlined.
 
 ## The rules these tools fall under
 

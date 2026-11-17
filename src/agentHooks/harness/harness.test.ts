@@ -148,7 +148,7 @@ describe("the native Hermes plugin's pre_llm_call", () => {
       const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot } });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout.trim()) as { names: string[]; first: { context: string }; later: { context: string } };
-      expect(out.names).toEqual(["post_llm_call", "pre_llm_call", "transform_tool_result"]);
+      expect(out.names).toEqual(["post_llm_call", "pre_llm_call", "transform_llm_output", "transform_tool_result"]);
       expect(out.first.context).toBe("SessionStart|--host hermes|check my x notifications\n\nUserPromptSubmit|--host hermes|check my x notifications");
       expect(out.later.context).toBe("UserPromptSubmit|--host hermes|hi");
     } finally {

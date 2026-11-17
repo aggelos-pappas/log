@@ -142,11 +142,12 @@ export function hermesPluginYaml(version: string): string {
   return [
     `name: ${HERMES_PLUGIN_NAME}`,
     `version: ${version}`,
-    `description: "log's hooks for Hermes. Before each model call, pre_llm_call puts the play the prompt asks for, pending inbox messages and browser states in front of the model, after each log tool transform_tool_result adds the messages that landed while it ran so a stale draft is steered before the next send, a message the account watchers hear between turns starts a turn in that chat through ctx.inject_message, and what they hear during a turn is held for that turn and post_llm_call hands any left over as one turn (needs plugins.entries.logHooks.allow_gateway_injection: true). Written from src/agentHooks/registry (bun run check:agentHooks --write)."`,
+    `description: "log's hooks for Hermes. Before each model call, pre_llm_call puts the play the prompt asks for, pending inbox messages and browser states in front of the model, after each log tool transform_tool_result adds the messages that landed while it ran so a stale draft is steered before the next send, a message the account watchers hear between turns starts a turn in that chat through ctx.inject_message, and what they hear during a turn is held for that turn and post_llm_call hands any left over as one turn (needs plugins.entries.logHooks.allow_gateway_injection: true). On chats that can't draw, transform_llm_output swaps a report view's ::logview line for its text. Written from src/agentHooks/registry (bun run check:agentHooks --write)."`,
     "provides_hooks:",
     "  - pre_llm_call",
     "  - transform_tool_result",
     "  - post_llm_call",
+    "  - transform_llm_output",
     "",
   ].join("\n");
 }

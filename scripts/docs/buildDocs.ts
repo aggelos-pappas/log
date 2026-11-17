@@ -11,6 +11,7 @@ import { renderSurface, withSurface } from "../../src/surface/readme/index.ts";
 import { withStepsDiagrams } from "../../src/surface/stepsDiagram/index.ts";
 import { SPEC_ORDER, specDomains, specsIndex, specSummary } from "../../src/specs/index.ts";
 import { REPORT_TOOL, reportTool } from "../../src/mcp/apps/index.ts";
+import { DESKTOP_BUNDLES, desktopBundle } from "../hermes/desktopBundles.ts";
 
 const SERVER_TOOLS: Record<string, { name: string; title: string; description: string }> = { [REPORT_TOOL]: reportTool() };
 
@@ -50,6 +51,8 @@ for (const file of readdirSync(diagramDir)) {
   const pages = (dir: string): string[] => readdirSync(join(root, dir)).flatMap((name) => (statSync(join(root, dir, name)).isDirectory() ? pages(`${dir}/${name}`) : name.endsWith(".md") ? [`${dir}/${name}`] : []));
   for (const rel of pages("docs/useCases")) put(rel, withStepsDiagrams(readFileSync(join(root, rel), "utf8")));
 }
+
+for (const bundle of DESKTOP_BUNDLES) put(bundle.out, await desktopBundle(bundle.entry));
 
 put("docs/specs/README.md", specsIndex(specDomains(root).filter((d) => existsSync(join(root, "docs/specs", `${d}.md`))).map((d) => specSummary(d, readFileSync(join(root, "docs/specs", `${d}.md`), "utf8"))), SPEC_ORDER));
 
