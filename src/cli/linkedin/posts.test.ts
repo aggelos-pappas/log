@@ -8,6 +8,11 @@ describe("log linkedin posts", () => {
     expect(line).toContain("urn:li:activity:1/");
   });
 
+  test("--views adds the post's impressions, reach and video line under its counts", () => {
+    const line = ownPostLine({ activityId: "1", url: "u", text: "", postedAgo: "1d", repost: false, content: null, reactions: 20, comments: 3, reposts: 1, reactionTypes: {}, views: { impressions: 486, membersReached: 249, inNetwork: "70%", outOfNetwork: "30%", videoViews: 175, watchTime: "56m 6s", averageWatchTime: "19s", profileViewers: 2, followersGained: 0 } }, 0);
+    expect(line).toContain("486 impressions · 249 reached · 70% in network, 30% out · 175 video views · 56m 6s watched (avg 19s) · 2 profile viewers · 0 followers gained");
+  });
+
   test("a repost says so, since its numbers are the original's", () => {
     expect(ownPostLine({ activityId: "2", url: null, text: "", postedAgo: "3d", repost: true, content: null, reactions: 2312, comments: 94, reposts: 12, reactionTypes: {} }, 1)).toContain("3d · repost · 2312 reactions");
   });

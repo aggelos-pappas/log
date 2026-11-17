@@ -35,7 +35,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `linkedinMessage` | Write in one LinkedIn conversation, one message per line | `log linkedin message --account <accountName> (--with <name\|profileId> \| --conversation <urn>) --text <text> [--asOne] [--approvedBy <who>] [--live] [--json]` |
 | `linkedinMessageLive` | Write in one LinkedIn conversation, one message per…, live on LinkedIn | `log linkedin message --account <accountName> (--with <name\|profileId> \| --conversation <urn>) --text <text> [--asOne] [--approvedBy <who>] [--live] [--json]` |
 | `linkedinInbox` | List the account's newest LinkedIn conversations | `log linkedin inbox --account <accountName> [--json]` |
-| `linkedinPosts` | List the account's own recent LinkedIn posts with their reactions… | `log linkedin posts --account <accountName> [--limit <n>] [--json]` |
+| `linkedinPosts` | List the account's own recent LinkedIn posts with their reactions… | `log linkedin posts --account <accountName> [--limit <n>] [--views] [--json]` |
 | `linkedinMessages` | Read one LinkedIn conversation in full | `log linkedin messages --account <accountName> (--with <name\|profileId\|publicId> \| --conversation <urn>) [--json]` |
 
 ## The rules these tools fall under
