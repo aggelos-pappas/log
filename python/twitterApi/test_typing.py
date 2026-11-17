@@ -52,8 +52,28 @@ def test_a_post_is_typed_before_x_gets_it(monkeypatch):
 
 
 def test_a_quote_is_typed_before_x_gets_it(monkeypatch):
-    out, order = run({"action": "quote", "text": "loud take", "tweetUrl": "https://x.com/a/status/5"}, monkeypatch, 4.2)
+    out, order = run({"action": "quote", "account": "typingTest", "text": "loud take", "tweetUrl": "https://x.com/a/status/5"}, monkeypatch, 4.2)
     assert order == [("typing", 4.2), "create"] and out["typedSeconds"] == 4.2
+
+
+def test_a_quote_carries_its_media_with_the_quoted_post(monkeypatch):
+    seen = {}
+
+    async def uploaded(client, paths):
+        return ["m1"] if paths else []
+
+    monkeypatch.setattr(engine, "upload_post_media", uploaded)
+    monkeypatch.setattr(engine, "media_links_out", lambda spec: (spec["text"], list(spec.get("media") or [])))
+    original = FakeClient.create_tweet
+
+    async def keep(self, **kwargs):
+        seen.update(kwargs)
+        return await original(self, **kwargs)
+
+    monkeypatch.setattr(FakeClient, "create_tweet", keep)
+    out, order = run({"action": "quote", "text": "look", "tweetUrl": "https://x.com/a/status/5", "media": ["shot.png"]}, monkeypatch, 3.0)
+    assert seen == {"text": "look", "media_ids": ["m1"], "attachment_url": "https://x.com/a/status/5"}
+    assert out["mediaIds"] == ["m1"] and order == [("typing", 3.0), "create"]
 
 
 def test_a_dm_is_typed_before_x_gets_it(monkeypatch):
