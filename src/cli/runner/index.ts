@@ -42,6 +42,7 @@ import { readCommand } from "../read/index.ts";
 import { runsCommand } from "../runs/index.ts";
 import { storageCommand } from "../storage/index.ts";
 import { relateCommand } from "../relate/index.ts";
+import { peopleCommand } from "../people/index.ts";
 import { timingCommand } from "../timing/index.ts";
 import { inboxCommand } from "../inbox/index.ts";
 import { mediaCommand } from "../media/index.ts";
@@ -106,6 +107,7 @@ export const COMMANDS: Command[] = [
   runsCommand,
   storageCommand,
   relateCommand,
+  peopleCommand,
   timingCommand,
   inboxCommand,
   mediaCommand,

@@ -93,6 +93,7 @@ const SOURCE_COMMAND_RULES: Readonly<Record<string, number[]>> = {
   search: [13, 26, 63, 64, 88, 89, 105],
   kb: [13, 26, 30, 93],
   relate: [89, 134, 154, 163],
+  people: [30, 89, 134, 154, 163],
   runtime: [26, 73, 171, 172, 175],
   memelord: [41, 94, 119, 120],
   treg: [41, 53, 106, 119, 166],

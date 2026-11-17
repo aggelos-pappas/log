@@ -159,10 +159,10 @@ export function verifyGraph(dbPath: string = defaultDbPath()): GraphVerify {
 export function findPeople(conn: Connection, prompt: string): PersonFound[] {
   const { tagged, bare } = mentionedTokens(prompt)
   if (!tagged.length && !bare.length) return []
-  const rows = conn.query('MATCH (i:Identity) WHERE NOT i.owner AND (i.handleLower IN $tagged OR i.handleLower IN $bare OR any(a IN coalesce(i.aliases, []) WHERE a IN $tagged OR a IN $bare)) OPTIONAL MATCH (i)-[e]-() WITH i, count(e) AS degree RETURN i.key AS key, i.platform AS platform, i.handle AS handle, coalesce(i.handleLower, head(i.aliases)) AS handleLower, i.name AS name, degree, (i.handleLower IN $tagged OR any(a IN coalesce(i.aliases, []) WHERE a IN $tagged)) AS tagged ORDER BY tagged DESC, degree DESC', { tagged, bare }).rows
+  const rows = conn.query('MATCH (i:Identity) WHERE (NOT i.owner OR i.personId IS NOT NULL) AND (i.handleLower IN $tagged OR i.handleLower IN $bare OR any(a IN coalesce(i.aliases, []) WHERE a IN $tagged OR a IN $bare) OR any(n IN coalesce(i.personNames, []) WHERE n IN $tagged OR n IN $bare)) OPTIONAL MATCH (i)-[e]-() WITH i, count(e) AS degree RETURN i.key AS key, i.platform AS platform, i.handle AS handle, coalesce(i.handleLower, head(i.aliases)) AS handleLower, i.name AS name, i.personId AS personId, degree, (i.handleLower IN $tagged OR any(a IN coalesce(i.aliases, []) WHERE a IN $tagged)) AS tagged ORDER BY tagged DESC, degree DESC', { tagged, bare }).rows
   const people = new Map<string, PersonFound>()
   for (const r of rows) {
-    const group = `${r.platform}:${r.handleLower ?? r.key}`
+    const group = r.personId ? `person:${r.personId}` : `${r.platform}:${r.handleLower ?? r.key}`
     const held = people.get(group)
     if (held) {
       held.keys.push(String(r.key))
@@ -171,7 +171,15 @@ export function findPeople(conn: Connection, prompt: string): PersonFound[] {
       continue
     }
     if (people.size >= MENTIONED_PEOPLE) continue
-    people.set(group, { key: String(r.key), keys: [String(r.key)], platform: String(r.platform), handle: (r.handle as string | null) ?? null, name: (r.name as string | null) ?? null })
+    people.set(group, { key: String(r.key), keys: [String(r.key)], personId: (r.personId as string | null) ?? null, platform: String(r.platform), handle: (r.handle as string | null) ?? null, name: (r.name as string | null) ?? null })
+  }
+  const linked = [...people.values()].filter((p) => p.personId)
+  if (linked.length) {
+    const more = conn.query('MATCH (j:Identity) WHERE j.personId IN $persons RETURN j.key AS key, j.personId AS personId', { persons: linked.map((p) => p.personId!) }).rows
+    for (const m of more) {
+      const person = linked.find((p) => p.personId === m.personId)
+      if (person && !person.keys.includes(String(m.key))) person.keys.push(String(m.key))
+    }
   }
   return [...people.values()]
 }
@@ -245,7 +253,7 @@ const clip = (text: string | null, n = 60): string => {
 export function renderContext(contexts: readonly ConnectedContext[], pointer: GraphPointer, behind: number, now: number = Date.now()): string {
   if (!contexts.length) return ''
   const blocks = contexts.map((c) => {
-    const who = `@${c.person.handle ?? c.person.key}${c.person.keys.length > 1 ? ` [${c.person.keys.length} ids merged by handle]` : ''}${c.person.name && c.person.name !== c.person.handle ? ` (${c.person.name})` : ''} on ${c.person.platform}`
+    const who = `@${c.person.handle ?? c.person.key}${c.person.keys.length > 1 ? (c.person.personId ? ` [one person across ${c.person.keys.length} identities, linked by the owner]` : ` [${c.person.keys.length} ids merged by handle]`) : ''}${c.person.name && c.person.name !== c.person.handle ? ` (${c.person.name})` : ''} on ${c.person.platform}`
     const lines = [who]
     if (c.talks.length) lines.push(`  talks: ${c.talks.map((t) => `${t.kind}${t.threads > 1 ? ` (${t.threads} threads)` : ''} on ${t.account}, they said ${t.theirs}, the owner said ${t.ours}, last ${ago(t.lastAtMs, now)}`).join('; ')}`)
     else lines.push('  talks: no chat with any of the owner\'s accounts in log.db')

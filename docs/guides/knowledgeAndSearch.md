@@ -1,6 +1,6 @@
 # knowledgeAndSearch
 
-Finding context: the knowledge base, the conversation search (keyword and meaning at once), the Relate graph of who connects to whom, and every voice note transcribed into it.
+Finding context: the knowledge base, the conversation search (keyword and meaning at once), the Relate graph of who connects to whom, one person across platforms (people), and every voice note transcribed into it.
 
 Written by `bun run docs:build` from the code, the skills and AGENTS.md. Not edited by hand: change the command's usage, its skill or the rule, and rebuild.
 
@@ -30,6 +30,12 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `relateVerify` | Compare every node and edge count in the Relate graph with what… | `log relate verify [--json]           (compares every node and edge count in the graph with what log.db derives now)` |
 | `relateAsk` | Show the connected context | `log relate ask "<text>" [--json]     (the connected context the hook injects for the people that text names, e.g. "@someone")` |
 | `relateQuery` | Run a read-only Cypher query on the current Relate graph | `log relate query "<cypher>" [--json] (a read-only Cypher query on the current graph, at most 100 rows)` |
+| `people` | List everyone linked across platforms, with each person's identities | `log people [--json]                                        (everyone linked across platforms: each person and their identities)` |
+| `peopleShow` | The person card for someone across every platform | `log people show <who> [--json]                             (the person card: every platform, one-to-one chats and groups, who is waiting, the last lines across platforms)` |
+| `peopleSuggest` | Identities on different platforms that are probably one person | `log people suggest [--limit <n>] [--json]                  (identities on different platforms that are probably one person, scored with Fellegi-Sunter record linkage, with the evidence)` |
+| `peopleLink` | Make these identities one person, after the owner says yes | `log people link <identity> <identity>... --approvedBy "<the owner's words>" [--name "<name>"] [--evidence "<why>"]   (one person across these identities, appended to log.db as events)` |
+| `peopleUnlink` | Take an identity out of its person, after the owner says so | `log people unlink <identity> --approvedBy "<the owner's words>"   (that identity is no longer part of its person; the link stays in the history)` |
+| `peopleDifferent` | Record that two identities are not the same person, after the owner… | `log people different <identity> <identity> --approvedBy "<the owner's words>"   (not the same person, so they are never suggested again)` |
 | `mediaDescriber` | Run the one media describer on this machine | `log media describer [--json]` |
 | `mediaDescribe` | Queue one local image or video for the describer and wait for its… | `log media describe <path> [--wait <seconds>] [--json]` |
 | `mediaStatus` | The media queue | `log media status [--json]` |

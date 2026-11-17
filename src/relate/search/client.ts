@@ -57,7 +57,7 @@ export async function connectedSearch(prompt: string, deps: ConnectedSearchDeps 
     })()
     const found = await within(run, deps.budgetMs ?? SEARCH_BUDGET_MS)
     if (!found) return null
-    const hits = found.filter((h) => (h.likelihood ?? 0) >= MIN_LIKELIHOOD && (h.keywordRank || h.meaningRank)).slice(0, SEARCHED_HITS)
+    const hits = found.filter((h) => (h.likelihood ?? 0) >= MIN_LIKELIHOOD && h.relationRank && (h.keywordRank || h.meaningRank)).slice(0, SEARCHED_HITS)
     return { people: graph.people, hits, text: renderSearched(hits), ms: performance.now() - started }
   } finally {
     embedder.stop?.()
