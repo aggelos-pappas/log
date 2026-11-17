@@ -27,9 +27,9 @@ export const SEARCH_INPUT: CommandInput = {
   forms: [
     {
       words: [],
-      summary: "Search every conversation by keyword and meaning at once, fused with reciprocal rank fusion",
+      summary: "Search every conversation by keyword, meaning and relationship at once, fused as evidence (BayesRAG)",
       positionals: [{ name: "query", kind: "string", required: true, description: "What to look for, in plain words" }],
-      flags: [{ name: "limit", kind: "integer", min: 1, max: 100, description: "How many hits, default 10, at most 100" }, { name: "fusion", kind: "string", description: "How the keyword and meaning lists are combined: rrf (reciprocal rank fusion, the default) or bayes (BayesRAG: Dempster-Shafer over keyword, meaning and a relationship retriever from the Relate graph, which votes for the chats of the people the query names and of the people near them)" }, ...FILTERS, JSON_FLAG],
+      flags: [{ name: "limit", kind: "integer", min: 1, max: 100, description: "How many hits, default 10, at most 100" }, { name: "fusion", kind: "string", description: "How the keyword and meaning lists are combined: bayes (the default) or rrf (reciprocal rank fusion, keyword and meaning only). bayes is BayesRAG: Dempster-Shafer over keyword, meaning and a relationship retriever from the Relate graph, which votes for the chats of the people the query names and of the people near them" }, ...FILTERS, JSON_FLAG],
     },
     {
       words: ["index"],
@@ -179,7 +179,7 @@ export const searchCommand: Command = {
         const limit = numberOf(parsed, "limit") ?? 10;
         const after = typeof parsed.flags["after"] === "string" ? parsed.flags["after"] : undefined;
         const pick = (name: string) => (typeof parsed.flags[name] === "string" ? (parsed.flags[name] as string) : undefined);
-        const fusion = pick("fusion") ?? "rrf";
+        const fusion = pick("fusion") ?? "bayes";
         if (fusion !== "rrf" && fusion !== "bayes") return refuseInput("search", `--fusion is rrf or bayes, not ${fusion}`, SEARCH_USAGE);
         const started = performance.now();
         const graph = fusion === "bayes" ? graphPriorFor(query) : null;
