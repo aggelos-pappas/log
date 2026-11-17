@@ -1,11 +1,16 @@
 import json
 import os
+import re
 import shutil
 import subprocess
+import threading
+import time
 from pathlib import Path
 
 HOOK_TIMEOUT_SECONDS = 20
 EVENT_SCRIPT = ("scripts", "hooks", "event.ts")
+PUSH_SCRIPT = ("scripts", "hooks", "push.ts")
+PUSH_RETRY_SECONDS = 10
 PACKAGE = ("@listeningkit", "log")
 
 
@@ -96,7 +101,107 @@ def ask_log(event, payload):
     return context if isinstance(context, str) else ""
 
 
+def reader_of(session_id):
+    return re.sub(r"[^A-Za-z0-9_-]", "", session_id or "")[:80]
+
+
+def push_state_path():
+    return Path(os.environ.get("LOG_INBOX_STATE", "").strip() or Path.home() / ".logCli" / "inbox") / "hermesPush.json"
+
+
+class Push:
+    def __init__(self):
+        self.ctx = None
+        self.key = ""
+        self.reader = ""
+        self.proc = None
+        self.lock = threading.Lock()
+
+    def remember(self, key, reader):
+        try:
+            path = push_state_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps({"sessionKey": key, "reader": reader}), encoding="utf-8")
+        except OSError:
+            pass
+
+    def recall(self):
+        try:
+            saved = json.loads(push_state_path().read_text(encoding="utf-8"))
+            return str(saved.get("sessionKey") or ""), str(saved.get("reader") or "")
+        except (OSError, ValueError):
+            return "", ""
+
+    def follow(self, key, reader):
+        if not self.ctx or not key or not reader or not hasattr(self.ctx, "inject_message"):
+            return
+        with self.lock:
+            if key == self.key and reader == self.reader and self.proc and self.proc.poll() is None:
+                return
+            self.key, self.reader = key, reader
+            self.remember(key, reader)
+            self.stop()
+            threading.Thread(target=self.run, args=(key, reader), daemon=True).start()
+
+    def stop(self):
+        proc, self.proc = self.proc, None
+        if proc and proc.poll() is None:
+            try:
+                proc.kill()
+            except OSError:
+                pass
+
+    def run(self, key, reader):
+        script = log_root().joinpath(*PUSH_SCRIPT)
+        while self.key == key and self.reader == reader and script.exists():
+            try:
+                proc = subprocess.Popen(
+                    [bun_command(), str(script), "--host", "hermes", "--reader", reader],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                    encoding="utf-8",
+                    cwd=str(log_root()),
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                )
+            except OSError:
+                time.sleep(PUSH_RETRY_SECONDS)
+                continue
+            with self.lock:
+                if self.key != key or self.reader != reader:
+                    proc.kill()
+                    return
+                self.proc = proc
+            for line in proc.stdout:
+                if self.key != key:
+                    break
+                try:
+                    batch = json.loads(line)
+                except ValueError:
+                    continue
+                context = batch.get("context") if isinstance(batch, dict) else None
+                if isinstance(context, str) and context.strip():
+                    try:
+                        self.ctx.inject_message(context, role="user", session_key=key)
+                    except Exception:
+                        pass
+            if self.key == key:
+                time.sleep(PUSH_RETRY_SECONDS)
+
+
+PUSH = Push()
+
+
+def bound_key():
+    try:
+        from gateway.session_context import bound_session_key
+        return bound_session_key() or ""
+    except Exception:
+        return ""
+
+
 def pre_llm_call(session_id="", user_message="", conversation_history=None, is_first_turn=False, **kwargs):
+    PUSH.follow(bound_key(), reader_of(session_id))
     events = (["SessionStart"] if is_first_turn else []) + ["UserPromptSubmit"]
     payload = {"session_id": session_id or "", "prompt": user_message or "", "source": "startup"}
     texts = [ask_log(event, payload) for event in events]
@@ -105,4 +210,7 @@ def pre_llm_call(session_id="", user_message="", conversation_history=None, is_f
 
 
 def register(ctx):
+    PUSH.ctx = ctx
     ctx.register_hook("pre_llm_call", pre_llm_call)
+    key, reader = PUSH.recall()
+    PUSH.follow(key, reader)
