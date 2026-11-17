@@ -165,3 +165,20 @@ describe('the conversation card in the gate', () => {
     expect(owed.answerRequired).toBe(true)
   })
 })
+
+describe('a send the owner already made is never made twice', () => {
+  test('the owner spoke last within the window: refused, with what went out', async () => {
+    const { alreadyAnswered } = await import('../../../cli/twitter/helpers/voice')
+    const now = Date.parse('2026-11-17T16:40:00Z')
+    const chat = [{ fromMe: false, time: '2026-11-17T16:23:00Z', text: 'leads_25.tsv' }, { fromMe: true, time: '2026-11-17T16:30:00Z', text: 'finish these 5 first' }]
+    expect(alreadyAnswered(chat, now)).toEqual({ at: '2026-11-17T16:30:00Z', text: 'finish these 5 first' })
+  })
+
+  test('they wrote after the owner, or the owner last spoke hours ago: allowed', async () => {
+    const { alreadyAnswered } = await import('../../../cli/twitter/helpers/voice')
+    const now = Date.parse('2026-11-17T16:40:00Z')
+    expect(alreadyAnswered([{ fromMe: true, time: '2026-11-17T16:30:00Z', text: 'x' }, { fromMe: false, time: '2026-11-17T16:35:00Z', text: 'y' }], now)).toBeNull()
+    expect(alreadyAnswered([{ fromMe: true, time: '2026-11-15T10:00:00Z', text: 'old nudge' }], now)).toBeNull()
+    expect(alreadyAnswered([], now)).toBeNull()
+  })
+})

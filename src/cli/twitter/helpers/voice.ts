@@ -421,7 +421,21 @@ export function gateSend(context: CommandContext, send: GateSend): Promise<{ ok:
   }, { platform: send.platform, brief: send.brief === true, spoken: send.spoken === true });
 }
 
+export const ALREADY_ANSWERED_MS = 3 * 60 * 60 * 1000;
+
+export function alreadyAnswered(messages: readonly { fromMe?: boolean; time?: string | null; text?: string | null }[], nowMs: number = Date.now()): { at: string; text: string } | null {
+  const timed = messages.filter((m) => !Number.isNaN(Date.parse(String(m.time ?? "")))).sort((a, b) => Date.parse(String(a.time)) - Date.parse(String(b.time)));
+  const lastTheirs = [...timed].reverse().find((m) => !m.fromMe);
+  const lastMine = [...timed].reverse().find((m) => m.fromMe);
+  if (!lastMine) return null;
+  const mineAt = Date.parse(String(lastMine.time));
+  if (lastTheirs && Date.parse(String(lastTheirs.time)) > mineAt) return null;
+  return nowMs - mineAt <= ALREADY_ANSWERED_MS ? { at: String(lastMine.time), text: String(lastMine.text ?? "") } : null;
+}
+
 async function gateSendNow(context: CommandContext, send: GateSend): Promise<{ ok: true; line: string } | { ok: false; refused: string }> {
+  const answered = alreadyAnswered(saidOnly(chatContextOf(send.platform, send.account, { conversationId: send.conversationId ?? null, handle: send.handle ?? null, userId: send.userId ?? null }).messages));
+  if (answered) return { ok: false, refused: `>>> ALREADY ANSWERED in ${send.to}: the owner's message "${answered.text.slice(0, 120)}" went out at ${answered.at} and they haven't written since, so this one wasn't sent. Another session or an earlier send already answered them: read the chat (inboxActions { chat }) and send only what the owner asks for on top of it.` };
   const same = timedSync("voice.sameness", () => gateDeps.same({ platform: send.platform, account: send.account, to: send.to, text: send.text }));
   if (!same.ok) return { ok: false, refused: same.refused };
   if (send.brief) return gateBrief(send);
