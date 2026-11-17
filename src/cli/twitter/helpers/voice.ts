@@ -411,7 +411,7 @@ export function roomKindOf(send: { platform: string; conversationId?: string | n
   return send.conversationId || send.handle || send.userId ? "dm" : "unknown";
 }
 
-type GateSend = { platform: string; account: string; to: string; text: string; conversationId?: string | null; handle?: string | null; userId?: string | null; said?: string; spoken?: boolean; room?: Room; readRoom?: () => Room | undefined; brief?: boolean; files?: readonly string[] };
+type GateSend = { platform: string; account: string; to: string; text: string; conversationId?: string | null; handle?: string | null; userId?: string | null; said?: string; spoken?: boolean; room?: Room; readRoom?: () => Room | undefined; brief?: boolean; files?: readonly string[]; followUp?: boolean };
 
 export function gateSend(context: CommandContext, send: GateSend): Promise<{ ok: true; line: string } | { ok: false; refused: string }> {
   return timed("voice.gate", async (span) => {
@@ -434,8 +434,8 @@ export function alreadyAnswered(messages: readonly { fromMe?: boolean; time?: st
 }
 
 async function gateSendNow(context: CommandContext, send: GateSend): Promise<{ ok: true; line: string } | { ok: false; refused: string }> {
-  const answered = alreadyAnswered(saidOnly(chatContextOf(send.platform, send.account, { conversationId: send.conversationId ?? null, handle: send.handle ?? null, userId: send.userId ?? null }).messages));
-  if (answered) return { ok: false, refused: `>>> ALREADY ANSWERED in ${send.to}: the owner's message "${answered.text.slice(0, 120)}" went out at ${answered.at} and they haven't written since, so this one wasn't sent. Another session or an earlier send already answered them: read the chat (inboxActions { chat }) and send only what the owner asks for on top of it.` };
+  const answered = send.followUp ? null : alreadyAnswered(saidOnly(chatContextOf(send.platform, send.account, { conversationId: send.conversationId ?? null, handle: send.handle ?? null, userId: send.userId ?? null }).messages));
+  if (answered) return { ok: false, refused: `>>> ALREADY ANSWERED in ${send.to}: the owner's message "${answered.text.slice(0, 120)}" went out at ${answered.at} and they haven't written since, so this one wasn't sent. Another session or an earlier send already answered them: read the chat (inboxActions { chat }) and send only what the owner asks for on top of it; when he asked for a follow-up on top of it, send again with followUp.` };
   const same = timedSync("voice.sameness", () => gateDeps.same({ platform: send.platform, account: send.account, to: send.to, text: send.text }));
   if (!same.ok) return { ok: false, refused: same.refused };
   if (send.brief) return gateBrief(send);

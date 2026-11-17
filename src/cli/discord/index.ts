@@ -529,7 +529,7 @@ export function filesOf(given: readonly string[] | undefined, roots = fileRoots(
 }
 
 export const DISCORD_SEND_USAGE = [
-  'Usage: log discord send --account <accountName> --channel <channelId|chat name> --text "<message>" [--asOne] [--overGate] [--approvedBy <who>] [--live] [--json]',
+  'Usage: log discord send --account <accountName> --channel <channelId|chat name> --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]',
   "Sends one message to a DM, a group DM (by its id or its name, from log discord chats) or a server channel (by its id), on the direct-API engine (no browser). Each message is typed first, as Discord's own app does: the typing signal (POST channels/<id>/typing, so the chat shows the account typing) goes out, then the account waits as long as the text takes to type, sending the signal again every 8 s, before the message. A typing signal Discord refuses or doesn't answer stops it before the message, nothing retried (rule 94).",
   "--brief says the message hands someone a task, not a casual reply: the gate reads it as a brief instead of the owner's chat voice (rule 162), asking SubQ whether it says clearly what to do, why, what done looks like and by when, kindly, and how to ask when stuck, with the attached files read beside it. The sameness, AI artifact and scrambler checks still run.",
   "--file attaches files (a guide, a spreadsheet) to the last message, uploaded through the account's own session: only files under OUTBOX or ~/.logCli, at most 10 MB each, refused before anything is sent otherwise (fileRefused).",
@@ -552,6 +552,7 @@ export const DISCORD_SEND_INPUT: CommandInput = {
         { name: "brief", kind: "boolean", description: "The message hands someone a task: gated as a brief (clear, why, done when, kind, how to ask), not as casual chat (rule 162)" },
         { name: "asOne", kind: "boolean", description: "Send it as one message, never split" },
         { name: "overGate", kind: "boolean", description: "the owner said to send this exact message over the voice gate's refusal: its SubQ read is skipped, the AI artifact check still runs; only when he said so for this message (rule 152)" },
+        { name: "followUp", kind: "boolean", description: "the owner asked for this follow-up, so the already-answered check lets it through; the voice gate still runs" },
         { name: "live", kind: "boolean", live: true, description: "Send it on Discord, only when the owner asked (rule 8); without it a dry run contacts nothing" },
         JSON_FLAG,
       ],
@@ -566,7 +567,7 @@ export const discordSendCommand: Command = {
   effect: "write",
   input: DISCORD_SEND_INPUT,
   summary: "Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live",
-  args: '--account <a> --channel <id|name> --text "<message>" [--file <path>[,<path>]] [--brief] [--asOne] [--overGate] [--approvedBy <who>] [--live] [--json]',
+  args: '--account <a> --channel <id|name> --text "<message>" [--file <path>[,<path>]] [--brief] [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]',
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DISCORD_SEND_INPUT));
     if (!parsed.ok) return refuseInput("discord send", parsed.error, DISCORD_SEND_USAGE);
@@ -628,7 +629,7 @@ export const discordSendCommand: Command = {
             context.err(`${account.accountName}: --overGate: the owner said to send this message over the voice gate, so its read is skipped; the AI artifact check passed (rule 152)`);
           } else {
             const roomSource = kind === "channel" ? null : await readSourceFor("discord", account.accountName, target, chatMessageCount("discord", account.accountName, target), 20);
-            const voiced = await gateDeps.gate(context, { platform: "discord", account: account.accountName, to: shown, text, conversationId: target, ...(parsed.flags["brief"] === true ? { brief: true, files: files.paths } : {}), readRoom: () => (roomSource?.from === "db" || chatCurrent ? roomFromRead(shown, kind, { ok: true, messages: chatMessages("discord", account.accountName, target, 20) }) : roomFromRead(shown, kind, direct(account, { action: "read", channel: target, limit: 20, saveAudio: false, saveImages: false } as never).answer)) });
+            const voiced = await gateDeps.gate(context, { platform: "discord", account: account.accountName, to: shown, text, conversationId: target, ...(parsed.flags["followUp"] === true ? { followUp: true } : {}), ...(parsed.flags["brief"] === true ? { brief: true, files: files.paths } : {}), readRoom: () => (roomSource?.from === "db" || chatCurrent ? roomFromRead(shown, kind, { ok: true, messages: chatMessages("discord", account.accountName, target, 20) }) : roomFromRead(shown, kind, direct(account, { action: "read", channel: target, limit: 20, saveAudio: false, saveImages: false } as never).answer)) });
             if (!voiced.ok) return { ok: false, code: "voiceGateFailed", detail: voiced.refused };
             context.err(voiced.line);
           }

@@ -139,6 +139,27 @@ describe("log discord session check", () => {
     }
   });
 
+  test("--followUp tells the gate the owner asked for this message on top of his own last one", async () => {
+    const saved = { ...discordDeps };
+    discordDeps.wait = async () => {};
+    discordDeps.incoming = () => [];
+    const gate = gateDeps.gate;
+    const gated: Record<string, unknown>[] = [];
+    gateDeps.gate = async (_context, send) => {
+      gated.push(send as Record<string, unknown>);
+      return { ok: true, line: "voice gate: passed (test)" };
+    };
+    try {
+      await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one", "--followUp", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1481513072660185149", timestamp: "t" }, refreshed: null });
+      await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "two", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "2", channelId: "1481513072660185149", timestamp: "t" }, refreshed: null });
+      expect(gated[0]).toMatchObject({ followUp: true });
+      expect(gated[1].followUp).toBeUndefined();
+    } finally {
+      gateDeps.gate = gate;
+      Object.assign(discordDeps, saved);
+    }
+  });
+
   test("delete without --live reads the messages and deletes nothing", async () => {
     const r = await run(["discord", "delete", "--account", "discordOne", "--channel", "1434928149904228392", "--message", "1566872902840619151,1566872961531777095"], { answer: { ok: true, loginState: "loggedIn", messages: [{ id: "1566872902840619151", fromMe: true, text: "lad im skint again" }, { id: "1566872961531777095", fromMe: false, text: "theirs" }] }, refreshed: null });
     expect(r.code).toBe(0);
