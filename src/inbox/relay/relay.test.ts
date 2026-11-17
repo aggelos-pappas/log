@@ -86,6 +86,8 @@ describe("a catch-up's failure", () => {
     expect(networkFailure("reading the inbox: DNSError: Failed to perform, curl: (6) Could not resolve host: api.x.com. See https://curl.se/libcurl/c/libcurl-errors.html first for more details.")).toBe(true);
     expect(networkFailure("reading the inbox: Timeout: curl private transport failed (Timeout)")).toBe(true);
     expect(networkFailure("reading 123: ConnectionError: Connection reset by peer")).toBe(true);
+    expect(networkFailure("CertificateVerifyError: Failed to perform, curl: (60) SSL: certificate subject name 'www.example.com' does not match target hostname 'api.x.com'")).toBe(true);
+    expect(networkFailure("xchatReadFailed: X Chat unlocked but its messages didn't open: Failed to perform, curl: (28) Operation timed out after 32090 milliseconds with 0 bytes received")).toBe(true);
   });
 
   test("the platform refusing stays a refusal", () => {
@@ -100,6 +102,7 @@ describe("who stopped a catch-up", () => {
   test("a network failure or our own crash isn't the platform refusing", () => {
     expect(notThePlatform("DNSError: Failed to perform, curl: (6) Could not resolve host: api.x.com.")).toBe(true);
     expect(notThePlatform("xSessionHostError: name 'XCHAT_MEDIA_PART_BYTES' is not defined")).toBe(true);
+    expect(notThePlatform("CertificateVerifyError: Failed to perform, curl: (60) SSL: certificate subject name 'www.example.com' does not match target hostname 'api.x.com'")).toBe(true);
   });
 
   test("a Python import that fails on this machine is our own error, not the platform", () => {
@@ -117,6 +120,8 @@ describe("who stopped a catch-up", () => {
   test("the platform's own refusal stays a refusal", () => {
     expect(notThePlatform("429: Too Many Requests")).toBe(false);
     expect(notThePlatform("226: this request looks like it might be automated")).toBe(false);
+    expect(notThePlatform("your account is locked")).toBe(false);
+    expect(notThePlatform("account suspended")).toBe(false);
     expect(notThePlatform(null)).toBe(false);
   });
 });
