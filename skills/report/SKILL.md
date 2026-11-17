@@ -7,7 +7,7 @@ description: Generative UI. Build the person a view in the chat with the MCP too
 
 `report` is log's generative UI. You decide what the person should see and write it as a small React view. log compiles it and draws it in the chat, with the data read from log.db in the same call.
 
-- **Where it draws:** an MCP Apps host (Claude, ChatGPT, Cursor) draws the view inline. Other hosts (Claude Code, Codex) get the same view rendered as text, which you show as it is.
+- **Where it draws:** an MCP Apps host (Claude, ChatGPT, Cursor) draws the view inline. Other hosts (Claude Code, Codex, Hermes) get it as text: show it as it is.
 - **Why it looks the way it does:** the kit follows [Lynx](https://github.com/yakkomajuri/lynx)'s workspace kit (MIT): a quiet canvas, plain blocks, big light numbers, and Geist. It gives a general starting point that informs; the content is what makes it good.
 
 ## One call, no code
