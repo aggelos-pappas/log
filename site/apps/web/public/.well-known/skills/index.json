@@ -197,6 +197,14 @@
       "summary": "Reading and answering a Slack DM"
     },
     {
+      "name": "log-tiktok-post",
+      "description": "Posting a video on TikTok, and deleting it. A log play (docs/useCases/tiktok/post.md): Post one video from the account's own TikTok Studio with a caption, and delete one of its posts, in the account's AdsPower browser. TikTok's own answers decide each step.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Posting a video on TikTok, and deleting it"
+    },
+    {
       "name": "log-twitter-affiliate-marketing",
       "description": "Affiliate marketing through your DMs. A log play (docs/useCases/twitter/affiliateMarketing.md): You use a tool, you make content about it, and people message you about it. This page turns those conversations into affiliate income without sounding like a pitch: each person gets a reply about their own thread, an update on what you've built, and the tool with your affiliate credit only where it actually helps them. The other side of the page is the tool companies themselves: getting onto their partner, referral or creator program and booking the call.",
       "files": [
