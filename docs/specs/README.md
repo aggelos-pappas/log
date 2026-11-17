@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 51 domains, 581 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 52 domains, 588 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -623,6 +623,18 @@ log keeps a Relate (Neo4j's embedded graph database) projection of log.db: the o
 - **REQ-RELATE-07** A graph behind log.db is rebuilt in the background
 - **REQ-RELATE-08** Agents can read the graph with Cypher
 - **REQ-RELATE-09** The hook adds what was said, found by all three retrievers together
+
+## [People across platforms](./people.md)
+
+One person often has several identities: a Discord account, an X account, an Instagram account. log keeps them apart until the owner says they are one person. From then on, the person card, the Relate graph and the hook treat them as one. Links are events in log.db, never edits, so every link can be explained and undone. Suggestions come from Fellegi-Sunter record linkage, the model Splink implements, over evidence log already stores. There are no model calls and no embeddings. The design and its reasoning: [People across platforms](../proposals/peopleAcrossPlatforms.md).
+
+- **REQ-PEOPLE-01** Links are events, and the tables are derived from them
+- **REQ-PEOPLE-02** One identity belongs to at most one person, enforced by the database
+- **REQ-PEOPLE-03** A link follows an identity when its id is learned
+- **REQ-PEOPLE-04** Suggestions are scored with Fellegi-Sunter record linkage
+- **REQ-PEOPLE-05** What never becomes a suggestion
+- **REQ-PEOPLE-06** One card across every platform of a person
+- **REQ-PEOPLE-07** The hook and the graph see a person, not one identity
 
 ## [Local accounts](./localAccounts.md)
 

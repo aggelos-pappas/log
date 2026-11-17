@@ -61,6 +61,8 @@ export interface IdentityRow {
   name: string | null
   aliases: string[]
   owner: boolean
+  personId: string | null
+  personNames: string[]
 }
 
 export interface RoomRow {
@@ -123,6 +125,7 @@ export interface Projection {
 export interface PersonFound {
   key: string
   keys: string[]
+  personId?: string | null
   platform: string
   handle: string | null
   name: string | null

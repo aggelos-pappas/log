@@ -19,6 +19,8 @@ import { hookAnswer } from '../../contextLayer/hook/index'
 import type { HookInput } from '../../contextLayer/hook/index'
 import { refreshGraph, relateContext } from '../../relate/graph/index'
 import { connectedSearch } from '../../relate/search/index'
+import { cardsNamedIn } from '../../people/index'
+import { defaultDbPath, openDatabase } from '../../storage/schema/index'
 import type { ConnectedSearch } from '../../relate/search/index'
 import { REFUSING_HOOKS } from './types'
 import type { EventAnswer, HookAnswer, HookTiming, RouteAsk } from './types'
@@ -151,11 +153,15 @@ export async function relateAnswer(raw: string, repo: string, searched: (prompt:
   const prompt = promptOf(raw)
   if (!prompt.trim() || prompt.trimStart().startsWith('<')) return {}
   const answer = relateContext(prompt, dbPath)
+  let cards = ''
+  try {
+    cards = cardsNamedIn(openDatabase(dbPath ?? defaultDbPath()), prompt).map((c) => c.text).join('\n')
+  } catch {}
   const found = answer.outcome === 'answered' ? await searched(prompt).catch(() => null) : null
   try {
     if (!dbPath) refreshGraph(repo)
   } catch {}
-  const text = [answer.text, found?.text ?? ''].filter(Boolean).join('\n')
+  const text = [cards, answer.text, found?.text ?? ''].filter(Boolean).join('\n')
   return text ? { context: text } : {}
 }
 

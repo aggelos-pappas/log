@@ -1,4 +1,5 @@
 import type { Database } from 'bun:sqlite'
+import { TOKEN_MIN } from '../types'
 import type { AccountRow, EngagedRow, IdentityRow, MemberRow, PostRow, Projection, RoomRow, SaidRow } from '../types'
 
 const identityKeyOf = (platform: string, userId: string): string => `${platform}:${userId}`
@@ -27,6 +28,7 @@ export function projectionOf(handle: Database): Projection {
     const chatRows = handle.prepare('SELECT chatId, platform, account, conversationId, kind, name, lastMessageAtMs FROM chats').all() as { chatId: string; platform: string; account: string; conversationId: string; kind: string; name: string | null; lastMessageAtMs: number | null }[]
     const identityRows = handle.prepare('SELECT platform, userId, handle, displayName FROM identities').all() as { platform: string; userId: string; handle: string | null; displayName: string | null }[]
     const aliasRows = handle.prepare('SELECT platform, handle, userId FROM handleAliases').all() as { platform: string; handle: string; userId: string }[]
+    const linkRows = handle.prepare('SELECT l.platform, l.userId, l.personId, p.name FROM identityLinks l LEFT JOIN persons p ON p.personId = l.personId WHERE l.revokedAt IS NULL').all() as { platform: string; userId: string; personId: string; name: string | null }[]
     const memberRows = handle.prepare('SELECT platform, roomId, userId, firstSeenAt, lastSeenAt FROM memberships').all() as { platform: string; roomId: string; userId: string; firstSeenAt: string; lastSeenAt: string }[]
     const saidRows = handle.prepare('SELECT m.chatId, m.senderPlatform AS platform, m.senderUserId AS userId, m.fromOwner, c.account, COUNT(*) AS messages, MAX(m.sentAtMs) AS lastAtMs FROM messages m JOIN chats c ON c.chatId = m.chatId GROUP BY m.chatId, m.senderPlatform, m.senderUserId, m.fromOwner').all() as { chatId: string; platform: string; userId: string; fromOwner: number; account: string; messages: number; lastAtMs: number | null }[]
     const interactionRows = handle.prepare('SELECT platform, account, kind, actorUserId, targetRef, MAX(targetText) AS targetText, COUNT(*) AS times, MAX(atMs) AS lastAtMs FROM interactions GROUP BY platform, account, kind, actorUserId, targetRef').all() as { platform: string; account: string; kind: string; actorUserId: string | null; targetRef: string | null; targetText: string | null; times: number; lastAtMs: number | null }[]
@@ -51,7 +53,7 @@ export function projectionOf(handle: Database): Projection {
     }
     const touch = (platform: string, userId: string): string => {
       const key = identityKeyOf(platform, userId)
-      if (!identities.has(key)) identities.set(key, { key, platform, userId, handle: null, handleLower: null, name: null, aliases: [], owner: ownerIds.has(key) || isSelf(userId) })
+      if (!identities.has(key)) identities.set(key, { key, platform, userId, handle: null, handleLower: null, name: null, aliases: [], owner: ownerIds.has(key) || isSelf(userId), personId: null, personNames: [] })
       return key
     }
     for (const i of identityRows) {
@@ -60,6 +62,12 @@ export function projectionOf(handle: Database): Projection {
       row.handle = i.handle ? i.handle.replace(/^@/, '') : null
       row.handleLower = row.handle ? row.handle.toLowerCase() : null
       row.name = i.displayName
+    }
+    for (const l of linkRows) {
+      const row = identities.get(identityKeyOf(l.platform, l.userId))
+      if (!row) continue
+      row.personId = l.personId
+      row.personNames = (l.name ?? '').toLowerCase().split(/[^\p{L}\p{N}_]+/u).filter((w) => w.length >= TOKEN_MIN)
     }
 
     const rooms: RoomRow[] = chatRows.map((c) => ({ key: c.chatId, platform: c.platform, account: c.account, accountKey: accountKeyOf(c.platform, c.account), conversationId: c.conversationId, kind: c.kind, name: c.name, lastAtMs: c.lastMessageAtMs }))
