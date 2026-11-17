@@ -147,25 +147,64 @@ async def scroll_by(page: Any, distance: float, mouse: Any = None, log=lambda _l
     return len(steps)
 
 
+ACROSS_JS = """(el) => {
+  let cur = el.parentElement, owner = null;
+  while (cur && cur !== document.documentElement) {
+    const s = getComputedStyle(cur);
+    if ((s.overflowX === 'auto' || s.overflowX === 'scroll') && cur.scrollWidth > cur.clientWidth) { owner = cur; break; }
+    cur = cur.parentElement;
+  }
+  const r = el.getBoundingClientRect();
+  const c = owner ? owner.getBoundingClientRect() : { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight };
+  const now = owner ? owner.scrollLeft : window.scrollX;
+  const max = owner ? owner.scrollWidth - owner.clientWidth : document.documentElement.scrollWidth - window.innerWidth;
+  const inView = r.left >= c.left && r.right <= c.right;
+  let want = now;
+  if (r.right > c.right) want = now + r.right - c.right + 40;
+  if (r.left < c.left) want = now + r.left - c.left - 40;
+  want = Math.max(0, Math.min(want, max));
+  const top = Math.max(c.top, 0), bottom = Math.min(c.bottom, window.innerHeight);
+  return { inView, distance: want - now, hoverX: (Math.max(c.left, 0) + Math.min(c.right, window.innerWidth)) / 2, hoverY: r.height > 0 && r.top >= top && r.bottom <= bottom ? r.top + r.height / 2 : (top + bottom) / 2 };
+}"""
+
+
+async def scroll_across(locator: Any, mouse: Any = None, log=lambda _l: None) -> bool:
+    where = await locator.evaluate(ACROSS_JS)
+    if where["inView"] or abs(where["distance"]) < 4:
+        return bool(where["inView"])
+    page = locator.page
+    if mouse is not None:
+        await mouse.glide(where["hoverX"], where["hoverY"], "scrollPosition")
+    else:
+        await asyncio.wait_for(page.mouse.move(where["hoverX"], where["hoverY"]), timeout=5.0)
+    steps = human_scroll_trajectory(where["distance"])
+    for step in steps:
+        if step.delta_y:
+            await page.mouse.wheel(step.delta_y, 0)
+        await asyncio.sleep(step.delay_ms / 1000)
+    log(f"  scroll: across {where['distance']:+.0f}px in {len(steps)} wheel steps")
+    return bool((await locator.evaluate(ACROSS_JS))["inView"])
+
+
 async def scroll_into_view(locator: Any, mouse: Any = None, log=lambda _l: None) -> bool:
     page = locator.page
     await locator.wait_for(state="attached", timeout=10_000)
     where = await locator.evaluate(DISTANCE_JS)
-    if where["inView"] or abs(where["distance"]) < 4:
-        return True
-    steps = human_scroll_trajectory(where["distance"])
-    if where["isWindow"]:
-        await scroll_by(page, where["distance"], mouse, log)
-    else:
-        owner = await locator.evaluate(OWNER_JS)
-        if mouse is not None and owner.get("hoverX") is not None:
-            await mouse.glide(owner["hoverX"], owner["hoverY"], "scrollPosition")
-        for step in steps:
-            if step.delta_y:
-                await locator.evaluate(CONTAINER_STEP_JS, step.delta_y)
-            await asyncio.sleep(step.delay_ms / 1000)
-        log(f"  scroll: container {where['distance']:+.0f}px in {len(steps)} steps")
-    return bool((await locator.evaluate(DISTANCE_JS))["inView"])
+    if not (where["inView"] or abs(where["distance"]) < 4):
+        steps = human_scroll_trajectory(where["distance"])
+        if where["isWindow"]:
+            await scroll_by(page, where["distance"], mouse, log)
+        else:
+            owner = await locator.evaluate(OWNER_JS)
+            if mouse is not None and owner.get("hoverX") is not None:
+                await mouse.glide(owner["hoverX"], owner["hoverY"], "scrollPosition")
+            for step in steps:
+                if step.delta_y:
+                    await locator.evaluate(CONTAINER_STEP_JS, step.delta_y)
+                await asyncio.sleep(step.delay_ms / 1000)
+            log(f"  scroll: container {where['distance']:+.0f}px in {len(steps)} steps")
+    across = await scroll_across(locator, mouse, log)
+    return bool((await locator.evaluate(DISTANCE_JS))["inView"]) and across
 
 
 def scroll_by_sync(page: Any, distance: float, mouse: Any = None, log=lambda _l: None) -> int:

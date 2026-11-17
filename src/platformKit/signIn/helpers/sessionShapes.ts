@@ -7,6 +7,7 @@ import { hasFacebookSession } from "../../socialAccount/index.ts";
 import type { PlaywrightCookie } from "../../socialAccount/index.ts";
 import { REDDIT_PLATFORM } from "../../../reddit/account/session/client.ts";
 import { SLACK_PLATFORM } from "../../../slack/account/session/client.ts";
+import { TIKTOK_PLATFORM } from "../../../tiktok/account/session/client.ts";
 import { sessionCookiesOf, sessionStorageOf } from "../../session/index.ts";
 import type { PlatformShape } from "../../session/index.ts";
 
@@ -23,6 +24,7 @@ export const BROWSER_SESSION_NEEDS: Readonly<Record<Exclude<Platform, "facebook"
   linkedin: LINKEDIN_PLATFORM,
   slack: SLACK_PLATFORM,
   instagram: INSTAGRAM_PLATFORM,
+  tiktok: TIKTOK_PLATFORM,
 };
 
 export function browserSessionGate(platform: Platform | null, state: BrowserSession): BrowserSessionGate {

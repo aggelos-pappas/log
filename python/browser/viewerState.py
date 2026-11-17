@@ -14,6 +14,7 @@ PLATFORM_HOSTS: dict[str, tuple[str, ...]] = {
     "linkedin": ("linkedin.com", "www.linkedin.com"),
     "slack": ("slack.com", "app.slack.com"),
     "instagram": ("instagram.com", "www.instagram.com"),
+    "tiktok": ("www.tiktok.com", "tiktok.com"),
 }
 
 FACEBOOK_INPUT = {"loginForm", "wrongPassword", "findAccount", "twoStepCode", "twoStepMethod", "trustDevice", "saveLogin", "continueAs"}

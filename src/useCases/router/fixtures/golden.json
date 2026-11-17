@@ -55,6 +55,8 @@
   { "prompt": "send a voice note on slack saying the call moved", "expect": "inbox/voiceNote" },
 
   { "prompt": "read my instagram dms", "expect": "instagram/dmReply" },
+  { "prompt": "post this video on tiktok", "expect": "tiktok/post" },
+  { "prompt": "delete that tiktok", "expect": "tiktok/post" },
   { "prompt": "reply to them on instagram", "expect": "instagram/dmReply" },
   { "prompt": "what did he say on instagram", "expect": "instagram/dmReply" },
   { "prompt": "send her a meme on insta", "expect": "instagram/dmReply" },

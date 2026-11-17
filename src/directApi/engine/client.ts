@@ -88,7 +88,8 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   instagramVoice: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send_voice', when: 'voice --live (a voice note in the voice cloned from the owner, its upload on curl_cffi)', seam: 'directInstagram' },
   instagramReact: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send_reaction', when: 'react --live (--remove takes it off)', seam: 'directInstagram' },
   instagramSend: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send', when: 'send --live (text one message per line, and --photo through direct_send_photo)', seam: 'directInstagram' },
-  instagramWatch: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'websocket', method: 'realtime_connect', when: 'watch (Instagram pushes each DM over its realtime MQTT, edge-mqtt.facebook.com, nothing polled)', seam: 'directInstagramLive' }
+  instagramWatch: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'websocket', method: 'realtime_connect', when: 'watch (Instagram pushes each DM over its realtime MQTT, edge-mqtt.facebook.com, nothing polled)', seam: 'directInstagramLive' },
+  tiktokSession: { platform: 'tiktok', library: 'no client vendored yet', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directTiktok' }
 }
 
 export function commandEngine(command: string, name: string = command): CommandEngine {

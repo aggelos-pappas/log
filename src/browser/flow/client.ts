@@ -3,12 +3,18 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { evidenceIdOf } from '../../rea/capture/client'
 import { redactPatterns } from '../../privacy/redact/index'
-import { renderFlowDoc } from './helpers/index'
+import { flowPlatform, renderFlowDoc } from './helpers/index'
 import type { RecordedCommand } from './helpers/index'
 import type { FlowDefinition, FlowStep } from './types'
 
 export const FLOWS_DIR = fileURLToPath(new URL('./definitions', import.meta.url))
 export const FLOW_DOCS_DIR = fileURLToPath(new URL('../../../docs/platforms/facebook/flows', import.meta.url))
+const PLATFORM_DOCS = fileURLToPath(new URL('../../../docs/platforms', import.meta.url))
+
+export const flowDocsDir = (flow: Pick<FlowDefinition, 'platform' | 'steps'>): string => {
+  const platform = flowPlatform(flow)
+  return platform && platform !== 'facebook' ? join(PLATFORM_DOCS, platform, 'flows') : FLOW_DOCS_DIR
+}
 const REQUEST_DOCS = fileURLToPath(new URL('../../../docs/platforms/facebook', import.meta.url))
 
 const jsonLines = <T>(path: string): T[] =>
@@ -115,7 +121,7 @@ function requestDocFor(name: string): string | null {
   }
 }
 
-export function writeFlowDoc(flow: FlowDefinition, dir = FLOW_DOCS_DIR): string {
+export function writeFlowDoc(flow: FlowDefinition, dir = flowDocsDir(flow)): string {
   mkdirSync(dir, { recursive: true })
   const path = join(dir, `${flow.name}.md`)
   writeFileSync(path, redactPatterns(renderFlowDoc(flow, requestDocFor)))

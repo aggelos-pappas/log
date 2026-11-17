@@ -147,7 +147,7 @@ describe("log ${n.name} session check", () => {
   test("an account of another platform is refused before the engine is called", async () => {
     const r = await run(["${n.name}", "session", "check", "--account", "galwayOne"]);
     expect(r.code).toBe(1);
-    expect(r.err).toContain("accountNotFound");
+    expect(r.err).toContain("accountPlatformMismatch");
     expect(r.calls).toEqual([]);
   });
 

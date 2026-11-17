@@ -50,6 +50,51 @@ def slug(text: str) -> str:
 FRIENDLY_NAME = re.compile(r'(?:^|&)fb_api_req_friendly_name=([^&]+)|name="fb_api_req_friendly_name"\r?\n\r?\n([^\r\n]+)')
 
 
+PATH_JS = """(el) => {
+  const parts = [];
+  for (let node = el; node && node.nodeType === 1 && node !== document.documentElement; node = node.parentElement) {
+    const parent = node.parentElement;
+    const index = parent ? Array.prototype.indexOf.call(parent.children, node) + 1 : 1;
+    parts.unshift(`${node.tagName.toLowerCase()}:nth-child(${index})`);
+  }
+  return `html > ${parts.join(' > ')}`;
+}"""
+
+ROW_MENU_BUTTON_JS = """(link) => {
+  const pathOf = """ + PATH_JS + """;
+  const unnamed = (b) => !(b.getAttribute('aria-label') || '').trim() && !(b.innerText || '').trim();
+  const shown = (b) => { const r = b.getBoundingClientRect(); const s = getComputedStyle(b); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; };
+  let row = link.parentElement;
+  for (let depth = 0; row && depth < 12; depth++, row = row.parentElement) {
+    if (row.querySelectorAll('a[href]').length > 1 && depth > 0) {
+      const links = Array.from(row.querySelectorAll('a[href]')).filter((a) => a !== link && (a.innerText || '').trim());
+      if (links.length) return null;
+    }
+    const buttons = Array.from(row.querySelectorAll('button, [role=button]')).filter((b) => !b.contains(link) && unnamed(b) && shown(b));
+    if (buttons.length) return pathOf(buttons[buttons.length - 1]);
+  }
+  return null;
+}"""
+
+MENU_ITEM_JS = """(name) => {
+  const pathOf = """ + PATH_JS + """;
+  const norm = (s) => (s || '').replace(/\\s+/g, ' ').trim().toLowerCase();
+  const want = norm(name);
+  const found = [];
+  for (const box of document.querySelectorAll('[role=dialog], [role=menu], [role=listbox], [role=tooltip]')) {
+    for (const el of box.querySelectorAll('*')) {
+      if (norm(el.innerText) !== want) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) continue;
+      if (getComputedStyle(el).cursor !== 'pointer' && el.getAttribute('role') !== 'menuitem') continue;
+      found.push(el);
+    }
+  }
+  const outer = found.filter((el) => !found.some((other) => other !== el && other.contains(el)));
+  return outer.length === 1 ? pathOf(outer[0]) : null;
+}"""
+
+
 def request_names(entries: list[dict[str, Any]]) -> set[str]:
     names = set()
     for e in entries:
@@ -547,6 +592,35 @@ class Inspector:
                 await (await chooser.value).set_files(path)
                 log(f"  upload: {Path(path).name} handed to the file chooser")
             return await self.step("uploadRole", f'{args[0]} "{args[1]}"', upload_role, expect, expect_ms)
+        if action == "rowMenu" and len(args) >= 2:
+            async def row_menu() -> None:
+                link = await self.by_role("link", args[0])
+                await self.mouse.approach(link, circle=False)
+                deadline = time.monotonic() + 10
+                path = None
+                while path is None:
+                    path = await link.evaluate(ROW_MENU_BUTTON_JS)
+                    if path is None:
+                        if time.monotonic() > deadline:
+                            raise RuntimeError(f'controlMissing: no menu button in the row of link "{args[0]}"')
+                        await asyncio.sleep(0.3)
+                token = f"r{time.monotonic_ns()}"
+                if not await page.evaluate(controlMatch.TAG_JS, [path, token]):
+                    raise RuntimeError(f'controlMissing: the menu button of link "{args[0]}" moved before it could be held')
+                await self.mouse.click(page.locator(f'[{controlMatch.TAG_ATTRIBUTE}="{token}"]'))
+                deadline = time.monotonic() + 10
+                item = None
+                while item is None:
+                    item = await page.evaluate(MENU_ITEM_JS, args[1])
+                    if item is None:
+                        if time.monotonic() > deadline:
+                            raise RuntimeError(f'controlMissing: the row menu has no item "{args[1]}"')
+                        await asyncio.sleep(0.3)
+                token = f"m{time.monotonic_ns()}"
+                if not await page.evaluate(controlMatch.TAG_JS, [item, token]):
+                    raise RuntimeError(f'controlMissing: menu item "{args[1]}" moved before it could be held')
+                await self.mouse.click(page.locator(f'[{controlMatch.TAG_ATTRIBUTE}="{token}"]'))
+            return await self.step("rowMenu", f'link "{args[0]}" > "{args[1]}"', row_menu, expect, expect_ms)
         if action == "waitRole" and len(args) >= 2:
             async def wait_role() -> None:
                 await self.by_role(args[0], args[1], timeout_ms=expect_ms)

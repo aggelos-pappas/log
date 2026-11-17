@@ -1,5 +1,6 @@
 import type { AnswerCheck, FlowDefinition } from '../types'
-import { flowToolName } from './flowPlatform'
+import { flowPlatform, flowToolName } from './flowPlatform'
+import { PLATFORM_LABELS } from '../../../cli/runner/helpers/platforms'
 
 export function checkText(check: AnswerCheck): string {
   const want = check.present ? 'present' : check.home ? (check.home === 'uid' ? "the account's id" : `the account's home ${check.home}`) : check.sent ? `what we sent as \`${check.sent}\`` : `\`${JSON.stringify(check.is)}\``
@@ -19,10 +20,11 @@ export function renderFlowDoc(flow: FlowDefinition, requestDoc: (name: string) =
   ]
   for (const p of flow.params) out.push(`- \`${p.name}\` (${p.kind}): ${p.description}`)
   if (!flow.params.length) out.push('None.')
-  out.push('', '## Steps', '', '| # | Step | Does | Confirmed by | Facebook must answer (rule 73) | Recorded |', '| --- | --- | --- | --- | --- | --- |')
+  const platform = flowPlatform(flow)
+  out.push('', '## Steps', '', `| # | Step | Does | Confirmed by | ${platform ? PLATFORM_LABELS[platform] : 'Facebook'} must answer (rule 73) | Recorded |`, '| --- | --- | --- | --- | --- | --- |')
   flow.steps.forEach((s, i) => {
     const does =
-      s.action === 'goto' ? `open \`${s.url}\`` : s.role ? `${s.action} ${s.role} "${s.name}"${s.value ? ` with \`${s.value}\`` : ''}` : s.action
+      s.action === 'goto' ? `open \`${s.url}\`` : s.role ? `${s.action} ${s.role} "${s.name}"${s.value ? ` with \`${s.value}\`` : ''}` : s.args?.length ? `${s.action} ${s.args.map((a) => `"${a}"`).join(' > ')}` : s.action
     const doc = s.expect ? requestDoc(s.expect) : null
     const confirmed = s.expect ? (doc ? `[\`${s.expect}\`](${doc})` : `\`${s.expect}\``) : '—'
     const recorded = `${s.recorded.step}${s.recorded.ms ? `, ${s.recorded.ms} ms` : ''}${s.recorded.reaEvidenceId ? `, rea \`${s.recorded.reaEvidenceId}\`` : ''}`

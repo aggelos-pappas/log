@@ -52,6 +52,7 @@ export interface CommandContext {
   directSlackLive?: (account: import("../../platformKit/session/index.ts").PlatformAccount, spec: import("../../platformKit/session/index.ts").PlatformEngineSpec, onLive: (event: Record<string, unknown>) => void) => Promise<import("../../platformKit/session/index.ts").PlatformEngineRun>;
   directInstagram?: (account: import("../../platformKit/session/index.ts").PlatformAccount, spec: import("../../platformKit/session/index.ts").PlatformEngineSpec) => import("../../platformKit/session/index.ts").PlatformEngineRun;
   directInstagramLive?: (account: import("../../platformKit/session/index.ts").PlatformAccount, spec: import("../../platformKit/session/index.ts").PlatformEngineSpec, onLive: (event: Record<string, unknown>) => void) => Promise<import("../../platformKit/session/index.ts").PlatformEngineRun>;
+  directTiktok?: (account: import("../../platformKit/session/index.ts").PlatformAccount, spec: import("../../platformKit/session/index.ts").PlatformEngineSpec) => import("../../platformKit/session/index.ts").PlatformEngineRun;
 }
 
 export type ValueFormat = "date" | "time" | "dateOrSpan" | "jsonObject";

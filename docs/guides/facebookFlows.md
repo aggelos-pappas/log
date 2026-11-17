@@ -13,6 +13,7 @@ When the owner asks for one of these, follow its page step by step.
 | Use case | What it is | How the owner asks for it |
 |---|---|---|
 | `getGuide({ useCase: "facebook/marketplaceListings" })` | From accounts to live Marketplace listings | "post a marketplace listing in <town>", "get listings up on facebook marketplace in every town", "set up the facebook accounts and publish the listings", "take the marketplace listing down". |
+| `getGuide({ useCase: "tiktok/post" })` | Posting a video on TikTok, and deleting it | "post this on tiktok", "put the video on tiktok", "post it to tiktok with this caption", "delete that tiktok", "take the tiktok down" |
 
 ## The tools in this guide
 
@@ -48,6 +49,10 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `facebookFlowProfilePostLive` | Post text on the account's own profile, live on Facebook | `log flow run profilePost --account <a> --set text=… --live` |
 | `facebookFlowProfileSetup` | Give an account its profile picture, cover photo and name, as… | `log flow run profileSetup --account <a> --set profilePhoto=… --set coverPhoto=… --set firstName=… --set lastName=…` |
 | `facebookFlowProfileSetupLive` | Give an account its profile picture, cover photo and…, live on Facebook | `log flow run profileSetup --account <a> --set profilePhoto=… --set coverPhoto=… --set firstName=… --set lastName=… --live` |
+| `tiktokFlowDelete` | Delete one of the account's own TikTok posts from TikTok Studio's… | `log flow run tiktokDelete --account <a> --set caption=…` |
+| `tiktokFlowDeleteLive` | Delete one of the account's own TikTok posts from…, live on TikTok | `log flow run tiktokDelete --account <a> --set caption=… --live` |
+| `tiktokFlowPost` | Post one video from TikTok Studio | `log flow run tiktokPost --account <a> --set video=… --set fileName=… --set caption=…` |
+| `tiktokFlowPostLive` | Post one video from TikTok Studio, live on TikTok | `log flow run tiktokPost --account <a> --set video=… --set fileName=… --set caption=… --live` |
 | `facebookFlowWarmupCreateAccessCheck` | Warm-up createAccessCheck | `log flow run warmupCreateAccessCheck --account <a> ` |
 | `facebookFlowWarmupCreateAccessCheckLive` | Warm-up createAccessCheck, live on Facebook | `log flow run warmupCreateAccessCheck --account <a>  --live` |
 | `facebookFlowWarmupFeedBrowse` | Warm-up feedBrowse | `log flow run warmupFeedBrowse --account <a> ` |

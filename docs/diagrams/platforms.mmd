@@ -45,6 +45,12 @@ flowchart LR
   e_instagrapi --> api
   p_instagram -->|"browser: the any-platform commands"| b_instagram["Instagram's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_instagram --> drivers
+  p_tiktok["TikTok (TIKTOK): 1 command of its own"]
+  twenty --> p_tiktok
+  p_tiktok -->|"direct API: tiktok session"| e_no_client_vendored_yet["no client vendored yet"]
+  e_no_client_vendored_yet --> api
+  p_tiktok -->|"browser: the any-platform commands"| b_tiktok["TikTok's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
+  b_tiktok --> drivers
   anyB["Any platform with a browser path: inspect, flow, #lt;platform#gt; warmup"]
   anyB --> b_facebook
   anyB --> b_reddit
@@ -52,6 +58,7 @@ flowchart LR
   anyB --> b_linkedin
   anyB --> b_slack
   anyB --> b_instagram
+  anyB --> b_tiktok
   anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, runs, storage, timing, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new"]
   anyN -.-> twenty
   newP["log new platform name: one more platform, wired whole (rule 83)"] -.-> twenty

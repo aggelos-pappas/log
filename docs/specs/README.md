@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 50 domains, 570 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 51 domains, 574 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -825,3 +825,12 @@ How log keeps what it reads and does: one SQLite database, `~/.logCli/log.db`, w
 - **REQ-STORAGE-15** The small logs are records, and hook timings are spans
 - **REQ-STORAGE-16** Nothing new writes shared state outside log.db
 - **REQ-STORAGE-17** The small shared state is keyed rows in log.db
+
+## [TikTok](./tiktok.md)
+
+What `log new platform tiktok` made, and what the platform's code must keep doing as it grows. Rules 83, 117 and 123.
+
+- **REQ-TIKTOK-01** The account is found on its own platform's row and gated
+- **REQ-TIKTOK-02** The engine runs the account through the shared platform kit
+- **REQ-TIKTOK-03** TikTok's own answer is what gets recorded
+- **REQ-TIKTOK-04** The platform is wired into the CLI and the direct-API routes
