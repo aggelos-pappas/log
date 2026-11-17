@@ -458,7 +458,32 @@ async def my_posts(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, A
     if missing:
         return missing
     limit = max(1, min(int(spec.get("limit") or 10), 50))
-    return await asyncio.to_thread(my_posts_of, cookies, browser, limit)
+    out = await asyncio.to_thread(my_posts_of, cookies, browser, limit)
+    if not out.get("ok") or not spec.get("views"):
+        return out
+    return await with_views(out, cookies, browser)
+
+
+async def with_views(out: dict[str, Any], cookies: dict[str, str], browser: dict[str, str]) -> dict[str, Any]:
+    from linkedinApi.analytics import Analytics
+
+    own = [p["activityId"] for p in out["posts"] if p.get("activityId") and not p.get("repost")]
+    if not own:
+        return out
+    fresh = {**cookies, **(out.get("refreshedCookies") or {})}
+    read = await asyncio.to_thread(share_run, fresh, browser, lambda a: a.views(own), Analytics, "analytics")
+    refreshed = {**(out.get("refreshedCookies") or {}), **(read.get("refreshedCookies") or {})}
+    merged = {**out, "calls": read.get("calls") or []}
+    if refreshed:
+        merged["refreshedCookies"] = refreshed
+    if not read.get("ok"):
+        merged["viewsError"] = {"code": read.get("code"), "detail": read.get("detail")}
+        if read.get("loginState") == "loggedOut":
+            merged["loginState"] = "loggedOut"
+        return merged
+    views = read.get("views") or {}
+    merged["posts"] = [{**p, "views": views[p["activityId"]]} if p.get("activityId") in views else p for p in out["posts"]]
+    return merged
 
 
 ACTIONS = {"myPosts": my_posts, "ping": ping, "scripts": scripts, "post": post, "deletePost": delete_post, "mentions": mentions, "suggestions": suggestions, "connectPace": connect_check, "connect": connect, "like": like, "repost": repost, "message": message, "inbox": inbox, "messages": messages}

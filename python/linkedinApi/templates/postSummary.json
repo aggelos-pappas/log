@@ -1,0 +1,73 @@
+{
+  "$type": "proto.sdui.actions.core.NavigateToScreen",
+  "screenId": "com.linkedin.sdui.flagshipnav.creatoranalytics.MembersSPAContainer",
+  "pageKey": "leia_post_summary",
+  "presentationStyle": "PresentationStyle_FULL_PAGE",
+  "presentation": {
+    "$case": "fullPage",
+    "fullPage": {
+      "$type": "proto.sdui.actions.core.presentation.FullPagePresentation"
+    }
+  },
+  "title": "Post analytics",
+  "url": "/analytics/post-summary/urn:li:activity:{{activityId}}/",
+  "inheritActor": false,
+  "colorScheme": "ColorScheme_UNKNOWN",
+  "disableScreenGutters": false,
+  "shouldHideMobileTopNavBar": false,
+  "shouldHideLoadingSpinner": false,
+  "replaceCurrentScreen": false,
+  "shouldHideMobileTopNavBarDivider": false,
+  "clearBackStack": false,
+  "preserveCurrentChildren": false,
+  "sharedElementTransitions": [],
+  "newHierarchy": {
+    "$type": "proto.sdui.navigation.ScreenHierarchy",
+    "screenHash": "com.linkedin.sdui.flagshipnav.home.Home#0",
+    "screenId": "com.linkedin.sdui.flagshipnav.home.Home",
+    "pageKey": "",
+    "isAnchorPage": true,
+    "url": "",
+    "childHierarchy": {
+      "$type": "proto.sdui.navigation.ScreenHierarchy",
+      "screenHash": "com.linkedin.sdui.flagshipnav.creatoranalytics.MembersSPAContainer#2c9332b4",
+      "screenId": "com.linkedin.sdui.flagshipnav.creatoranalytics.MembersSPAContainer",
+      "pageKey": "",
+      "isAnchorPage": true,
+      "url": ""
+    }
+  },
+  "screenTitle": [
+    "Post analytics"
+  ],
+  "sduiTrackingProvenance": {
+    "version": "0.2.5651"
+  },
+  "requestedArguments": {
+    "payload": {
+      "feedUpdateKey": {
+        "feedType": 13,
+        "items": [
+          {
+            "feedUpdateUrn": {
+              "updateUrnActivityUrn": {
+                "activityUrn": {
+                  "activityId": "{{activityId}}"
+                }
+              }
+            },
+            "trackingId": "{{trackingId}}"
+          }
+        ],
+        "aggregationType": null
+      },
+      "activityUrn": "urn:li:activity:{{activityId}}"
+    },
+    "states": [],
+    "requestMetadata": {
+      "$type": "proto.sdui.common.RequestMetadata"
+    },
+    "screenId": "",
+    "knownTemplateIds": []
+  }
+}
