@@ -1606,7 +1606,7 @@ async def send(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
         if not str(getattr(user, "id", "") or ""):
             return {"ok": False, "event": "dropped", "code": "xSentNothing", "detail": "x answered the follow with no user: nobody was followed"}
         return {"ok": True, "event": "sent", "followed": True, "userId": user_id, "handle": getattr(user, "screen_name", None) or getattr(before, "screen_name", None)}
-    if action in ("dm", "post", "reply"):
+    if action in ("dm", "post", "reply", "quote"):
         text, media = media_links_out(spec)
         spec = {**spec, "text": text, "media": media}
     if action == "dm" and re.fullmatch(r"g\d+", str(spec.get("userId") or "")):
@@ -1640,8 +1640,9 @@ async def send(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
         typed_seconds = await typed("reply", spec["text"])
         tweet = await client.create_tweet(text=spec["text"], media_ids=media_ids or None, reply_to=tweet_id_from_url(spec["tweetUrl"]))
     else:
+        media_ids = await upload_post_media(client, list(spec.get("media") or []))
         typed_seconds = await typed("quote", spec["text"])
-        tweet = await client.create_tweet(text=spec["text"], attachment_url=spec["tweetUrl"])
+        tweet = await client.create_tweet(text=spec["text"], media_ids=media_ids or None, attachment_url=spec["tweetUrl"])
     tweet_id = getattr(tweet, "id", None) or created_id_of(raw.get("body"))
     if not tweet_id:
         limits = raw.get("limits") or {}

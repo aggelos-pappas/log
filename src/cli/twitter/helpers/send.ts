@@ -28,7 +28,7 @@ const ACCOUNT: FlagSpec = { name: "account", kind: "string", required: true, des
 const TWEET: FlagSpec = { name: "tweet", kind: "string", required: true, pattern: "^https?://(?:www\\.)?(?:x|twitter)\\.com/[A-Za-z0-9_]+/status/\\d+", takes: "an x.com post url (https://x.com/<handle>/status/<id>)", refusal: "tweetUrlInvalid", description: "The post's url (https://x.com/<handle>/status/<id>), from treg research" };
 const USER_ID: FlagSpec = { name: "userId", kind: "string", required: true, pattern: "^\\d+$", takes: "an X user id (digits only)", refusal: "userIdInvalid", description: "The recipient's numeric X user id, from treg research" };
 const DM_USER_ID: FlagSpec = { ...USER_ID, pattern: "^(?:\\d+|g\\d+)$", takes: "an X user id (digits only) or an X Chat group id (g and digits)" };
-const MEDIA: FlagSpec = { name: "media", kind: "list", description: "Files to attach, comma separated: one video (.mp4 .mov) or gif, or up to 4 images (.jpg .png .webp) on a post or a reply, one file on a dm (it goes on the first message); a file path or an https url, which is downloaded first; uploaded to X before it is sent" };
+const MEDIA: FlagSpec = { name: "media", kind: "list", description: "Files to attach, comma separated: one video (.mp4 .mov) or gif, or up to 4 images (.jpg .png .webp) on a post, a reply or a quote, one file on a dm (it goes on the first message); a file path or an https url, which is downloaded first; uploaded to X before it is sent" };
 
 export async function localMedia(entries: readonly string[] | undefined, fetcher: typeof fetch = fetch): Promise<string[] | undefined> {
   if (!entries?.length) return entries as string[] | undefined;
@@ -78,7 +78,7 @@ const SHAPES: Record<SendAction, SendShape> = {
 
 function usageOf(shape: SendShape): string {
   const target = shape.target === "tweet" ? "--tweet <postUrl>" : shape.target === "userId" ? "--userId <id>" : "";
-  const text = shape.text ? ` --text "<copy>"${shape.action === "post" || shape.action === "reply" ? " [--media <file>[,<file>]]" : shape.action === "dm" ? " [--media <file|url>]" : ""}` : "";
+  const text = shape.text ? ` --text "<copy>"${shape.action === "post" || shape.action === "reply" || shape.action === "quote" ? " [--media <file>[,<file>]]" : shape.action === "dm" ? " [--media <file|url>]" : ""}` : "";
   const skip = shape.text ? ` [--skipStyleCheck]${shape.action === "dm" ? " [--asOne] [--overGate]" : ""}` : "";
   return [
     `Usage: log twitter ${shape.action} --account <accountName>${target ? ` ${target}` : ""}${text} [--approvedBy <who>]${skip} [--force] [--live] [--json]`,
@@ -89,7 +89,7 @@ function usageOf(shape: SendShape): string {
 }
 
 function inputOf(shape: SendShape): CommandInput {
-  const flags: FlagSpec[] = [ACCOUNT, ...(shape.target === "tweet" ? [TWEET] : shape.target === "userId" ? [shape.action === "dm" ? DM_USER_ID : USER_ID] : []), ...(shape.text ? [TEXT, SKIP_STYLE] : []), ...(shape.action === "post" || shape.action === "reply" || shape.action === "dm" ? [MEDIA] : []), ...(shape.action === "dm" ? [AS_ONE, OVER_GATE] : []), APPROVED_BY, FORCE, LIVE, JSON_FLAG];
+  const flags: FlagSpec[] = [ACCOUNT, ...(shape.target === "tweet" ? [TWEET] : shape.target === "userId" ? [shape.action === "dm" ? DM_USER_ID : USER_ID] : []), ...(shape.text ? [TEXT, SKIP_STYLE] : []), ...(shape.action === "post" || shape.action === "reply" || shape.action === "quote" || shape.action === "dm" ? [MEDIA] : []), ...(shape.action === "dm" ? [AS_ONE, OVER_GATE] : []), APPROVED_BY, FORCE, LIVE, JSON_FLAG];
   return { forms: [{ words: [], effect: "write", summary: shape.summary, positionals: [], flags }] };
 }
 
@@ -180,7 +180,7 @@ function sendCommand(shape: SendShape): Command {
     effect: "write",
     input,
     summary: shape.summary,
-    args: `--account <a>${shape.target === "tweet" ? " --tweet <url>" : shape.target === "userId" ? " --userId <id>" : ""}${shape.text ? ' --text "<copy>"' : ""}${shape.action === "post" || shape.action === "reply" ? " [--media <files>]" : shape.action === "dm" ? " [--media <file|url>]" : ""} [--approvedBy <who>] [--force] [--live] [--json]`,
+    args: `--account <a>${shape.target === "tweet" ? " --tweet <url>" : shape.target === "userId" ? " --userId <id>" : ""}${shape.text ? ' --text "<copy>"' : ""}${shape.action === "post" || shape.action === "reply" || shape.action === "quote" ? " [--media <files>]" : shape.action === "dm" ? " [--media <file|url>]" : ""} [--approvedBy <who>] [--force] [--live] [--json]`,
     async run(context, argv) {
       const parsed = parseArgs(argv, parserSpecOf(input));
       if (!parsed.ok) return { code: 1, stderr: `log ${label}: ${parsed.error}\n${usage}` };
@@ -215,10 +215,10 @@ function sendCommand(shape: SendShape): Command {
           const dry = { engine: "directApi", library: "twikit", account: account.accountName, ok: true, dryRun: true, action: shape.action, target: plan.target, text: plan.spec.text ?? null, ...(files.length ? { media: files } : {}), style: shape.text ? (parsed.flags["skipStyleCheck"] ? "skipped" : "pass") : null, approvedBy: plan.spec.approvedBy ?? null };
           if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify(dry, null, 2) };
           const attached = files.length ? ` with ${files.map((f) => `${f.kind} ${f.path} (${((f.bytes ?? 0) / 1024 / 1024).toFixed(1)} MB)`).join(", ")}` : "";
-          const what = shape.action === "post" ? `make a new post${attached}${plan.spec.text ? `, text "${plan.spec.text}"` : ""}` : `${shape.verb} ${plan.target}${plan.spec.text ? ` with "${plan.spec.text}"` : ""}`;
+          const what = shape.action === "post" ? `make a new post${attached}${plan.spec.text ? `, text "${plan.spec.text}"` : ""}` : `${shape.verb} ${plan.target}${attached}${plan.spec.text ? `, text "${plan.spec.text}"` : ""}`;
           return { code: 0, stdout: `log ${label}: dry run: ${account.accountName} would ${what}. Checked; X was not contacted. --live --approvedBy <who> sends it (rule 8).` };
         }
-        if (plan.spec.media?.length) context.err(`${account.accountName}: uploading ${plan.spec.media.length} file${plan.spec.media.length === 1 ? "" : "s"} to X first (${plan.spec.media.map((m) => mediaKindOf(m)).join(", ")}), then the ${shape.action === "dm" ? "dm" : shape.action === "reply" ? "reply" : "post"}`);
+        if (plan.spec.media?.length) context.err(`${account.accountName}: uploading ${plan.spec.media.length} file${plan.spec.media.length === 1 ? "" : "s"} to X first (${plan.spec.media.map((m) => mediaKindOf(m)).join(", ")}), then the ${shape.action === "dm" ? "dm" : shape.action === "reply" ? "reply" : shape.action === "quote" ? "quote" : "post"}`);
         context.err(`${account.accountName}: ${shape.action === "post" ? "new post" : `${shape.action} ${plan.target}`}${split ? ` ${splitLine(split)}` : ""} on the direct-API engine, X called directly, approved by ${plan.spec.approvedBy}`);
         if (split) {
           const group = /^g\d+$/.test(plan.target);
