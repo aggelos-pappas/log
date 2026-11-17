@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 50 domains, 570 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 51 domains, 578 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -607,6 +607,19 @@ The knowledge base holds everything an agent should look up before it guesses: A
 - **REQ-KB-08** Remember saves a note to Twenty and Redis at once
 - **REQ-KB-09** Show reads one article in full
 - **REQ-KB-10** Secrets are scrubbed before anything is written
+
+## [Relate graph](./relateGraph.md)
+
+log keeps a Relate (Neo4j's embedded graph database) projection of log.db: the owner's accounts, the people they meet, the rooms they share, the owner's posts and who engaged them. The hook layer reads it for the people a prompt names and injects their connected context before the agent answers. log.db's events stay the record; the graph is derived from them and can always be thrown away and rebuilt. How it works and why: [Relate graph](../relateGraph.md).
+
+- **REQ-RELATE-01** The graph is built from log.db's typed tables in one read snapshot
+- **REQ-RELATE-02** Each build writes a new graph file and only then points at it
+- **REQ-RELATE-03** The graph is checked against what log.db derives
+- **REQ-RELATE-04** A graph belongs to one log.db
+- **REQ-RELATE-05** The hook names only people the prompt names
+- **REQ-RELATE-06** The context is what the graph connects, as facts
+- **REQ-RELATE-07** A graph behind log.db is rebuilt in the background
+- **REQ-RELATE-08** Agents can read the graph with Cypher
 
 ## [Local accounts](./localAccounts.md)
 

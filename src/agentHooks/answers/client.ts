@@ -17,6 +17,7 @@ import { readPending } from '../../inbox/pending/index'
 import { superviseLocalWatchers } from '../../platformKit/watcher/index'
 import { hookAnswer } from '../../contextLayer/hook/index'
 import type { HookInput } from '../../contextLayer/hook/index'
+import { refreshGraph, relateContext } from '../../relate/graph/index'
 import { REFUSING_HOOKS } from './types'
 import type { EventAnswer, HookAnswer, HookTiming, RouteAsk } from './types'
 
@@ -136,6 +137,24 @@ export async function useCasesAnswer(raw: string, route: RouteAsk): Promise<Hook
   return result.text ? { context: result.text } : {}
 }
 
+export function promptOf(raw: string): string {
+  try {
+    return String((JSON.parse(raw || '{}') as { prompt?: string }).prompt ?? '')
+  } catch {
+    return ''
+  }
+}
+
+export function relateAnswer(raw: string, repo: string): HookAnswer {
+  const prompt = promptOf(raw)
+  if (!prompt.trim() || prompt.trimStart().startsWith('<')) return {}
+  const answer = relateContext(prompt)
+  try {
+    refreshGraph(repo)
+  } catch {}
+  return answer.text ? { context: answer.text } : {}
+}
+
 function toolOf(raw: string): string {
   try {
     return String((JSON.parse(raw || '{}') as { tool_name?: string }).tool_name ?? '')
@@ -167,6 +186,7 @@ export function answerOne(hook: AgentHook, event: HookEvent, raw: string, repo: 
   if (name === 'pageState') return pageStateAnswer(event, raw)
   if (name === 'inbox') return inboxAnswer(event, raw, repo)
   if (name === 'useCases') return useCasesAnswer(raw, route)
+  if (name === 'relate') return relateAnswer(raw, repo)
   return {}
 }
 

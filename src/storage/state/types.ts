@@ -17,6 +17,8 @@ export type StateScope =
   | 'signInLink'
   | 'watcherEnd'
   | 'watcherHold'
+  | 'relateGraph'
+  | 'relateGraphBuilding'
 
 export interface StateRow<T> {
   body: T

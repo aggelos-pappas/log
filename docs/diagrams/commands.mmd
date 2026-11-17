@@ -20,6 +20,7 @@ flowchart TB
     c_capture["capture"]
     c_runs["runs"]
     c_storage["storage"]
+    c_relate["relate"]
     c_timing["timing"]
     c_inbox["inbox"]
     c_media["media"]
@@ -243,6 +244,8 @@ flowchart TB
   mcp --> c_runs
   cli --> c_storage
   mcp --> c_storage
+  cli --> c_relate
+  mcp --> c_relate
   cli --> c_timing
   mcp --> c_timing
   cli --> c_inbox

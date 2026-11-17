@@ -1,6 +1,6 @@
 # knowledgeAndSearch
 
-Finding context: the knowledge base, the conversation search (keyword and meaning at once) and every voice note transcribed into it.
+Finding context: the knowledge base, the conversation search (keyword and meaning at once), the Relate graph of who connects to whom, and every voice note transcribed into it.
 
 Written by `bun run docs:build` from the code, the skills and AGENTS.md. Not edited by hand: change the command's usage, its skill or the rule, and rebuild.
 
@@ -25,6 +25,11 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 
 | Tool | What it does | Usage |
 |---|---|---|
+| `relateBuild` | Project log.db into a new Relate graph file and make it the current… | `log relate build [--json]            (projects log.db's people, rooms, posts and who said or engaged what into a new Relate graph file, then points at it)` |
+| `relateStatus` | Show the current Relate graph file, the event it was built through… | `log relate status [--json]           (which graph file is current, through which event, and how far behind log.db it is)` |
+| `relateVerify` | Compare every node and edge count in the Relate graph with what… | `log relate verify [--json]           (compares every node and edge count in the graph with what log.db derives now)` |
+| `relateAsk` | Show the connected context | `log relate ask "<text>" [--json]     (the connected context the hook injects for the people that text names, e.g. "@someone")` |
+| `relateQuery` | Run a read-only Cypher query on the current Relate graph | `log relate query "<cypher>" [--json] (a read-only Cypher query on the current graph, at most 100 rows)` |
 | `mediaDescriber` | Run the one media describer on this machine | `log media describer [--json]` |
 | `mediaDescribe` | Queue one local image or video for the describer and wait for its… | `log media describe <path> [--wait <seconds>] [--json]` |
 | `mediaStatus` | The media queue | `log media status [--json]` |
@@ -142,6 +147,8 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 - **Rule 89.** Find conversational context by scoped search and existing private records.
 - **Rule 94.** Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies.
 - **Rule 105.** One platform/account owns one continuous engine session and push connection.
+- **Rule 134.** Existing workspace log.db is the native private record/coordination foundation.
 - **Rule 137.** Preserve current context-aware voice and AI-artifact gates for messages sent as The owner.
 - **Rule 138.** Media and voice-note context uses the existing private media descriptions and transcripts.
+- **Rule 154.** Show people/chats by meaningful names and handles; keep routing ids internal unless needed for the specific technical artifact.
 - **Rule 163.** Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients.
