@@ -9,7 +9,7 @@ import { roomFromRead } from "../../voice/room/index.ts";
 import { findDiscordAccount, recordDiscordSession, discordGate } from "../../discord/account/session/index.ts";
 import { labelOf, matchChat, normalizedName } from "../../discord/chat/match/index.ts";
 import { embeddableXLinks } from "../../discord/chat/embed/index.ts";
-import { addPending, incomingSince, interruptedLines } from "../../inbox/watch/index.ts";
+import { addPending, incomingSince, interruptedLines, watchLogMark } from "../../inbox/watch/index.ts";
 import { ownOrAttach } from "../../inbox/relay/index.ts";
 import { enqueueAttachments, mediaByPath, mediaLine } from "../../media/describer/index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
@@ -90,11 +90,12 @@ export const discordSessionCommand: Command = {
   },
 };
 
-export const discordDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, channel: string, since: string) => InboxMessage[]; now: () => string } = {
+export const discordDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, channel: string, since: string) => InboxMessage[]; now: () => string; mark: (account: string) => { log: string; offset: number } } = {
   profiles: () => readProfiles(),
   wait: (ms) => new Promise((done) => setTimeout(done, ms)),
   incoming: (account, channel, since) => incomingSince("discord", account, channel, since),
   now: () => new Date().toISOString(),
+  mark: (account) => watchLogMark("discord", account),
 };
 
 const DISCORD_ACCOUNT: FlagSpec = { name: "account", kind: "string", required: true, description: "The DISCORD socialAccount's accountName (its handle)" };
@@ -636,6 +637,7 @@ export const discordSendCommand: Command = {
         },
         act: async (guard) => {
           const startedAt = discordDeps.now();
+          const holdIf = { ...discordDeps.mark(account.accountName), chat: target };
           for (const [i, part] of plan.parts.entries()) {
             if (i) {
               await discordDeps.wait(plan.gapSeconds * 1000);
@@ -655,7 +657,12 @@ export const discordSendCommand: Command = {
               sending.sent.push({ ok: true, event: "sent", messageId: "(already sent before)" } as PlatformAnswer);
               continue;
             }
-            const run = direct(account, { action: "send", channel: target, text: part, live: true, approvedBy, ...(i ? { continuesSend: true } : {}), ...(files.paths.length && i === plan.parts.length - 1 ? { files: files.paths } : {}) });
+            const run = direct(account, { action: "send", channel: target, text: part, live: true, approvedBy, holdIf, ...(i ? { continuesSend: true } : {}), ...(files.paths.length && i === plan.parts.length - 1 ? { files: files.paths } : {}) });
+            if (!run.answer.ok && run.answer.code === "chatMovedOn") {
+              const stored = discordDeps.incoming(account.accountName, target, startedAt);
+              sending.interrupted = stored.length ? stored : [{ platform: "discord", account: account.accountName, conversationId: target, with: "they", text: String(run.answer.detail ?? ""), at: discordDeps.now(), box: "dm", seenAt: discordDeps.now() }];
+              break;
+            }
             sending.sent.push(run.answer);
             if (!run.answer.ok || run.answer.event !== "sent") break;
             guard.partSent(i, part, run.answer.messageId ? String(run.answer.messageId) : null);

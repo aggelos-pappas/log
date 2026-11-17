@@ -158,6 +158,11 @@ export function sessionCheckedSince(platform: string, account: string, since: nu
   return session.sessionState === 'loggedIn' && Date.parse(session.checkedAt ?? '') > since
 }
 
+export function watchLogMark(platform: string, account: string): { log: string; offset: number } {
+  const log = join(inboxRoot(), platform, account, 'watch.log')
+  return { log, offset: existsSync(log) ? statSync(log).size : 0 }
+}
+
 export function watcherGone(platform: string, account: string): boolean {
   const session = readJson<{ sessionState?: string }>(join(dirname(inboxRoot()), platform, account, 'session.json'), {})
   if (session.sessionState === 'loggedOut') return true

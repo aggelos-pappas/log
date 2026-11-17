@@ -121,6 +121,24 @@ describe("log discord session check", () => {
     }
   });
 
+  test("a message they write while a line is still being typed stops that line before it posts", async () => {
+    const saved = { ...discordDeps };
+    discordDeps.wait = async () => {};
+    discordDeps.incoming = () => [];
+    discordDeps.mark = () => ({ log: "watch.log", offset: 10 });
+    try {
+      const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one\ntwo", "--approvedBy", "the owner", "--live"], { answer: { ok: false, code: "chatMovedOn", detail: "they wrote while this was being typed, so it wasn't sent: chat 1481513072660185149 · x · 3: oops wrong one", loginState: "loggedIn", event: "held" }, refreshed: null });
+      expect(r.code).toBe(1);
+      expect(r.calls).toEqual(["discordOne:send"]);
+      expect(r.out).toContain(">>> INTERRUPTED");
+      expect(r.out).toContain("0 of 2 sent");
+      expect(r.out).toContain("oops wrong one");
+      expect(r.out).toContain("not sent: one");
+    } finally {
+      Object.assign(discordDeps, saved);
+    }
+  });
+
   test("delete without --live reads the messages and deletes nothing", async () => {
     const r = await run(["discord", "delete", "--account", "discordOne", "--channel", "1434928149904228392", "--message", "1566872902840619151,1566872961531777095"], { answer: { ok: true, loginState: "loggedIn", messages: [{ id: "1566872902840619151", fromMe: true, text: "lad im skint again" }, { id: "1566872961531777095", fromMe: false, text: "theirs" }] }, refreshed: null });
     expect(r.code).toBe(0);

@@ -66,3 +66,25 @@ def test_a_media_only_message_goes_without_typing(monkeypatch):
 def test_typing_time_grows_with_the_text_and_stays_capped():
     assert 1.5 <= engine.typing_seconds("hi") <= 3.4
     assert 12.0 <= engine.typing_seconds("x" * 2000) <= 20.0
+
+
+def test_a_message_they_write_while_it_is_being_typed_stops_it_before_it_posts(monkeypatch, tmp_path):
+    log = tmp_path / "watch.log"
+    log.write_text("2026-01-01T00:00:00+00:00 chat 123 · someone · 1: old\n", encoding="utf-8")
+    offset = log.stat().st_size
+    client = FakeClient([])
+    monkeypatch.setattr(engine, "open_client", opened(client))
+    monkeypatch.setattr(engine, "attached_media", lambda c, t, text: ([], None))
+    monkeypatch.setattr(engine, "attached_files", no_files)
+    monkeypatch.setattr(engine, "typing_seconds", lambda text: 19.0)
+
+    def slept(seconds):
+        if len(client.calls) == 2:
+            with open(log, "a", encoding="utf-8") as f:
+                f.write("2026-01-01T00:00:09+00:00 chat 999 · other · 2: another chat\n")
+                f.write("2026-01-01T00:00:10+00:00 chat 123 · someone · 3: oops wrong one\n")
+
+    out = engine.send_of("token", "123", "a message long enough to type for a while", sleep=slept, heard=engine.heard_in(str(log), offset, "123"))
+    assert not out["ok"] and out["code"] == "chatMovedOn"
+    assert "oops wrong one" in out["detail"]
+    assert all(c[0] != "message" for c in client.calls)
