@@ -82,7 +82,7 @@ Checked by: code and SubQ
 
 ### REQ-MCP-12: A stale MCP server is said to the owner
 
-When the running MCP server started before the newest change to log-cli's code, the engines hook says so. When no reload proxy is running (rule 167), it tells the owner to restart the app and never to work around it with a hand-run command. When the proxy is running, there is no line while the reload is due, a line naming what the reload waits on (a call or a job), or a line saying why the new code didn't start.
+When the running MCP server started before the newest change to log-cli's code, the engines hook says so. When no reload proxy is running (rule 167), it tells the owner to restart the app and never to work around it with a hand-run command. When the proxy is running, there is no line while the reload is due, a line naming the call the reload waits on, or a line saying why the new code didn't start.
 
 Checked by: code and SubQ
 
