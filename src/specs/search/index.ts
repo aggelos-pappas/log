@@ -8,6 +8,7 @@ const fuse = 'src/search/conversations/helpers/fuse.ts'
 const embed = 'src/search/conversations/helpers/embed.ts'
 const worker = 'src/search/conversations/helpers/embedWorker.ts'
 const cli = 'src/cli/search/index.ts'
+const graph = 'src/relate/graph/client.ts'
 
 const anchors: RequirementAnchors = {
   'REQ-SEARCH-01': [
@@ -58,6 +59,22 @@ const anchors: RequirementAnchors = {
     { kind: 'symbol', file: fuse, name: 'percentiles' },
     { kind: 'string', file: cli, includes: 'rounds' },
   ],
+  'REQ-SEARCH-09': [
+    { kind: 'symbol', file: fuse, name: 'bayesFusion' },
+    { kind: 'symbol', file: fuse, name: 'combine' },
+    { kind: 'symbol', file: fuse, name: 'pignistic' },
+    { kind: 'value', file: types, name: 'BAYES_ALPHA', equals: 0.7 },
+    { kind: 'value', file: types, name: 'BAYES_BETA', equals: 0.6 },
+    { kind: 'value', file: types, name: 'MISSED_NO', equals: 0.3 },
+    { kind: 'string', file: cli, includes: 'bayes' },
+  ],
+  'REQ-SEARCH-10': [
+    { kind: 'symbol', file: client, name: 'relationList' },
+    { kind: 'symbol', file: graph, name: 'roomLinks' },
+    { kind: 'symbol', file: graph, name: 'graphPriorFor' },
+    { kind: 'value', file: types, name: 'RELATION_TRUST', equals: 0.5 },
+    { kind: 'uses', file: cli, name: 'graphPriorFor' },
+  ],
 }
 
 export const search = {
@@ -80,6 +97,8 @@ export const search = {
     'REQ-SEARCH-06': noul('Do buildIndex and updateIndex write the chunks, the bm25 index and the vectors under searchRoot, which an environment variable can move, and does openIndex load them from that same folder?'),
     'REQ-SEARCH-07': noul('Does updateIndex embed only the chunks whose text differs from what was saved, call collection.delete with the ids no longer present, and rebuild the whole index when nothing was saved yet, when the model or dimensions changed, or when the rebuild flag is given?'),
     'REQ-SEARCH-08': noul('Does log search bench time the queries once cold and then over the warm rounds, print p50, p95 and p99 for each, and print the average time a query of the linear scan beside them?'),
+    'REQ-SEARCH-09': noul('With --fusion bayes, does search combine the keyword and meaning lists with bayesFusion (min-max normalized scores, mass 0.7 × score relevant and 0.6 × (1 − score) irrelevant, a missed chunk as weak evidence against, Dempster combination that scores 0 at conflict 0.999, pignistic score) and report likelihood, prior and conflict per hit, keeping reciprocal rank fusion as the default?'),
+    'REQ-SEARCH-10': noul('With --fusion bayes and a query naming people the Relate graph knows, does a third retriever score every chat by 1 − e^(−0.5 × links) (3 per room they spoke or are a member in, 1 per shared group of a DM), unnormalized, trusted at 0.5, with no opinion on unlinked chats, and abstain when no one is named or there is no graph?'),
     unspecifiedBehavior: noul('Does the search code rank or filter hits, or embed text, by a route the specification does not describe, such as using only one of the two lists or sending text to a hosted service?'),
   },
   assertions: {
@@ -90,6 +109,8 @@ export const search = {
     'REQ-SEARCH-06': MET,
     'REQ-SEARCH-07': MET,
     'REQ-SEARCH-08': MET,
+    'REQ-SEARCH-09': MET,
+    'REQ-SEARCH-10': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

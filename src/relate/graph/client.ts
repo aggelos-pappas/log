@@ -7,7 +7,7 @@ import type { Connection, Database as GraphDatabase } from '@relate/relate'
 import { defaultDbPath, openDatabase } from '../../storage/schema/index'
 import { claimState, deleteState, getState, putState } from '../../storage/state/index'
 import { mentionedTokens, projectionOf } from './helpers/index'
-import { BUILD_GRACE_MS, CONTEXT_CHARS, QUERY_ROWS, REFRESH_AFTER_MS, GRAPH_FILE_PREFIX, GRAPH_FILE_SUFFIX, KEPT_SNAPSHOTS, KEYED_LABELS, LISTED, MENTIONED_PEOPLE, PROJECTOR_VERSION, WRITE_BATCH } from './types'
+import { BUILD_GRACE_MS, CONTEXT_CHARS, QUERY_ROWS, REFRESH_AFTER_MS, GRAPH_FILE_PREFIX, GRAPH_FILE_SUFFIX, KEPT_SNAPSHOTS, KEYED_LABELS, LISTED, MENTIONED_PEOPLE, PRIOR_FLOOR, PRIOR_KAPPA, PRIOR_WEIGHT_NEAR, PRIOR_WEIGHT_SPOKE, PROJECTOR_VERSION, WRITE_BATCH } from './types'
 import type { ConnectedContext, GraphCounts, GraphPointer, GraphVerify, PersonFound, Projection } from './types'
 
 type Relate = typeof import('@relate/relate')
@@ -200,6 +200,32 @@ export function connectedContext(conn: Connection, person: PersonFound): Connect
     sameOrbit: orbit.map((r) => ({ handle: String(r.handle), posts: Number(r.posts) })),
     otherAccounts: [...new Set([...talked.map((t) => t.account), ...engaged.map((e) => e.account)])],
   }
+}
+
+export function roomLinks(conn: Connection, people: readonly PersonFound[]): Map<string, number> {
+  const keys = people.flatMap((p) => p.keys)
+  const links = new Map<string, number>()
+  if (!keys.length) return links
+  const spoke = conn.query('MATCH (p:Identity)-[:MEMBER_OF|SAID]->(r:Room) WHERE p.key IN $keys RETURN r.key AS room, count(*) AS n', { keys }).rows
+  for (const r of spoke) links.set(String(r.room), (links.get(String(r.room)) ?? 0) + PRIOR_WEIGHT_SPOKE * Number(r.n))
+  const near = conn.query("MATCH (p:Identity)-[:MEMBER_OF]->(g:Room)<-[:MEMBER_OF]-(m:Identity)-[:MEMBER_OF|SAID]->(r:Room) WHERE p.key IN $keys AND g.kind <> 'dm' AND NOT m.key IN $keys AND NOT m.owner AND r.kind = 'dm' RETURN r.key AS room, count(DISTINCT g) AS n", { keys }).rows
+  for (const r of near) links.set(String(r.room), (links.get(String(r.room)) ?? 0) + PRIOR_WEIGHT_NEAR * Number(r.n))
+  return links
+}
+
+export function edgePrior(links: number, kappa: number = PRIOR_KAPPA, floor: number = PRIOR_FLOOR): number {
+  return Math.max(floor, 1 - Math.exp(-kappa * links))
+}
+
+export function graphPriorFor(prompt: string, dbPath: string = defaultDbPath()): { people: PersonFound[]; behind: number; prior: (room: string) => number; strength: (room: string) => number } | null {
+  const handle = openDatabase(dbPath)
+  const pointer = pointerOf(dbPath, handle)
+  if (!pointer) return null
+  const conn = graphConnection(pointer.file)
+  const people = findPeople(conn, prompt)
+  if (!people.length) return null
+  const links = roomLinks(conn, people)
+  return { people, behind: Math.max(0, eventsThrough(handle) - pointer.throughSeq), prior: (room) => edgePrior(links.get(room) ?? 0), strength: (room) => edgePrior(links.get(room) ?? 0, PRIOR_KAPPA, 0) }
 }
 
 export function ago(ms: number | null, now: number = Date.now()): string {
