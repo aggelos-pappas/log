@@ -6,8 +6,8 @@ const quiet = { messages: [], alerts: [], text: null }
 describe('the inbox push stream', () => {
   test('a reader with nothing new gives no batch, and a new message gives the same block the prompt hook shows', () => {
     expect(batchOf('session1', 'hermes', () => quiet)).toBeNull()
-    const read = () => ({ messages: [{ with: 'Kennedy' }], alerts: [], text: '>>> NEW DISCORD MESSAGE (1): Kennedy wrote' })
-    expect(batchOf('session1', 'hermes', read)).toEqual({ reader: 'session1', host: 'hermes', count: 1, context: '>>> NEW DISCORD MESSAGE (1): Kennedy wrote' })
+    const read = () => ({ messages: [{ with: 'grace_ships' }], alerts: [], text: '>>> NEW DISCORD MESSAGE (1): grace_ships wrote' })
+    expect(batchOf('session1', 'hermes', read)).toEqual({ reader: 'session1', host: 'hermes', count: 1, context: '>>> NEW DISCORD MESSAGE (1): grace_ships wrote' })
   })
 
   test('the loop emits once per batch the watchers bring in and nothing on quiet rounds', async () => {
