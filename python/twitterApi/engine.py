@@ -538,6 +538,19 @@ async def upload_dm_media(client: Any, path: str) -> str:
     return str(media_id)
 
 
+def typing_seconds(text: str) -> float:
+    import random
+    return random.uniform(min(12.0, 1.5 + len(text) / 9), min(20.0, 3.0 + len(text) / 6))
+
+
+async def typed(action: str, text: str, sleep: Any = None) -> float:
+    seconds = typing_seconds(text)
+    with timing.span("typing", seconds=round(seconds, 2)):
+        print(f"{action}: typing for {seconds:.1f}s first, as a person would, before x gets it", file=sys.stderr, flush=True)
+        await (sleep or asyncio.sleep)(seconds)
+    return seconds
+
+
 def keep_create_answers(client: Any) -> dict[str, Any]:
     raw: dict[str, Any] = {}
     create = client.gql.create_tweet
@@ -1601,17 +1614,19 @@ async def send(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
     if action == "dm":
         media = list(spec.get("media") or [])
         dm_media_id = await upload_dm_media(client, str(media[0])) if media else None
+        typed_seconds = await typed("dm", spec["text"])
         message = await client.send_dm(str(spec["userId"]), spec["text"], media_id=dm_media_id)
         message_id = str(getattr(message, "id", "") or "") or None
         if not message_id:
             return {"ok": False, "event": "dropped", "code": "xSentNothing", "detail": "x answered the dm with no message id: nothing was sent"}
         pair = sorted([str(getattr(message, "sender_id", "") or ""), str(getattr(message, "recipient_id", "") or "")], key=lambda i: int(i) if i.isdigit() else 0)
-        return {"ok": True, "event": "sent", "mode": "dm", "messageId": message_id, "conversationId": "-".join(pair), "userId": str(spec["userId"]), **({"mediaIds": [dm_media_id]} if dm_media_id else {})}
+        return {"ok": True, "event": "sent", "mode": "dm", "messageId": message_id, "conversationId": "-".join(pair), "userId": str(spec["userId"]), "typedSeconds": round(typed_seconds, 1), **({"mediaIds": [dm_media_id]} if dm_media_id else {})}
     media_ids: list[str] = []
     followed: dict[str, Any] | None = None
     liked: dict[str, Any] | None = None
     if action == "post":
         media_ids = await upload_post_media(client, list(spec.get("media") or []))
+        typed_seconds = await typed("post", spec["text"])
         tweet = await client.create_tweet(text=spec["text"], media_ids=media_ids or None)
     elif action == "reply":
         too_big = await author_too_big(client, spec)
@@ -1622,14 +1637,16 @@ async def send(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
         followed = await follow_author_first(client, spec)
         print(f"reply to {spec.get('tweetUrl')}: like first {json.dumps(liked)}, follow first {json.dumps(followed)}", file=sys.stderr, flush=True)
         media_ids = await upload_post_media(client, list(spec.get("media") or []))
+        typed_seconds = await typed("reply", spec["text"])
         tweet = await client.create_tweet(text=spec["text"], media_ids=media_ids or None, reply_to=tweet_id_from_url(spec["tweetUrl"]))
     else:
+        typed_seconds = await typed("quote", spec["text"])
         tweet = await client.create_tweet(text=spec["text"], attachment_url=spec["tweetUrl"])
     tweet_id = getattr(tweet, "id", None) or created_id_of(raw.get("body"))
     if not tweet_id:
         limits = raw.get("limits") or {}
         return {"ok": False, "event": "dropped", "code": "xSentNothing", "detail": f"x created no tweet (empty result): nothing was posted. x said: {json.dumps(raw.get('body'))[:300]}", "limits": limits, "rateLimitReset": reset_of(limits)}
-    return {"ok": True, "event": "sent", "mode": action, "tweetId": tweet_id, "target": spec.get("tweetUrl") or "newPost", **({"mediaIds": media_ids} if media_ids else {}), **({"likedPost": liked} if liked else {}), **({"followedAuthor": followed} if followed else {}), "limits": raw.get("limits") or {}}
+    return {"ok": True, "event": "sent", "mode": action, "tweetId": tweet_id, "target": spec.get("tweetUrl") or "newPost", "typedSeconds": round(typed_seconds, 1), **({"mediaIds": media_ids} if media_ids else {}), **({"likedPost": liked} if liked else {}), **({"followedAuthor": followed} if followed else {}), "limits": raw.get("limits") or {}}
 
 
 def list_row(found: Any) -> dict[str, Any]:
@@ -1757,8 +1774,9 @@ async def xchat_group_text(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
             await xchat_read_keys(client, spec)
         except Exception as e:
             return {"ok": False, "event": "dropped", "code": "xchatLocked", "detail": f"X Chat didn't unlock with the saved PIN: {str(e)[:200]}"}
+    typed_seconds = await typed("dm", str(spec["text"]))
     sent = await client.send_xchat_message(conversation_id, str(spec["text"]))
-    return {"ok": True, "event": "sent", "mode": "xchatGroup", "messageId": sent["message_id"], "conversationId": conversation_id, "keyVersion": sent["key_version"]}
+    return {"ok": True, "event": "sent", "mode": "xchatGroup", "messageId": sent["message_id"], "conversationId": conversation_id, "keyVersion": sent["key_version"], "typedSeconds": round(typed_seconds, 1)}
 
 
 async def xchat_voice(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
