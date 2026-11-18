@@ -160,10 +160,12 @@ class AccountBusy(Exception):
 
 
 class AccountLock:
-    def __init__(self, account: str, wait_seconds: float = LOCK_WAIT_SECONDS, name: str = "engine.lock") -> None:
+    def __init__(self, account: str, wait_seconds: float = LOCK_WAIT_SECONDS, name: str = "engine.lock", clock: Any = None, sleep: Any = None) -> None:
         self.path = state_dir(account) / name
         self.wait_seconds = wait_seconds
         self.handle: Any = None
+        self.clock = clock or time.time
+        self.sleep = sleep or asyncio.sleep
 
     def _try(self) -> bool:
         if os.name == "nt":
@@ -183,12 +185,12 @@ class AccountLock:
 
     async def __aenter__(self) -> "AccountLock":
         self.handle = open(self.path, "a+b")
-        deadline = time.time() + self.wait_seconds
+        deadline = self.clock() + self.wait_seconds
         while not self._try():
-            if time.time() > deadline:
+            if self.clock() > deadline:
                 self.handle.close()
                 raise AccountBusy(f"another log twitter call held this account for over {int(self.wait_seconds)} s")
-            await asyncio.sleep(0.5)
+            await self.sleep(0.5)
         return self
 
     async def __aexit__(self, *_: Any) -> None:
