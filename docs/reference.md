@@ -76,7 +76,7 @@ flowchart LR
   anyB --> b_slack
   anyB --> b_instagram
   anyB --> b_tiktok
-  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, runs, storage, relate, people, timing, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new"]
+  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, runs, storage, relate, people, timing, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy"]
   anyN -.-> twenty
   newP["log new platform name: one more platform, wired whole (rule 83)"] -.-> twenty
   drivers --> api
@@ -112,7 +112,7 @@ Source: [`docs/diagrams/browsers.mmd`](diagrams/browsers.mmd).
 
 - **The account's browser, through the driver:** `facebook host`, `inspect`, `flow`, `<platform> warmup`, `facebook join`, `facebook read`, `facebook poll`, `facebook check`, `reddit read`, `discord read`, `slack read`. They run on whichever browser the account uses: AdsPower when it has a linked profile (`socialAccounts.adsPowerProfileId`), Camoufox otherwise, or what `socialAccounts.browserDriver` says.
 - **Camoufox only, not on the driver yet:** `facebook doctor`, `facebook connect`, `facebook profile`, `facebook scan`, `facebook status`, `facebook watch`, `facebook publish`, `facebook campaign`, `discord watch`, `linkedin connect`, `slack watch`, `instagram watch`. They launch Camoufox themselves (facebook-camofox-client's worker, or the publish, connect and profile sessions), so on an AdsPower account they don't open its AdsPower profile. Moving one onto the driver is moving it into `OPENER_ACTIONS` (`src/browser/run`).
-- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `runs`, `storage`, `relate`, `people`, `timing`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`.
+- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `runs`, `storage`, `relate`, `people`, `timing`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`.
 - **No browser path at all:** X. Its accounts run on the direct API only (rule 80).
 
 Each browser's capabilities, built or not: [`docs/browsers.md`](browsers.md) (generated, `bun run check:browsers`). AdsPower's setup: [`docs/adsPower.md`](adsPower.md).
@@ -221,9 +221,9 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 287 command tools + saved flows"]
+  mcp["MCP server log: 288 command tools + saved flows"]
   bin["bin/log.ts"]
-  runCli["runCli: 132 commands (COMMANDS)"]
+  runCli["runCli: 133 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
   engine{"commandEngine: DIRECT_ROUTES"}
   direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi, no client vendored yet (vendor/), the account's saved session, a governor per account"]
@@ -412,6 +412,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log instagram voice`](#log-instagram-voice) | Send a voice note in the owner's cloned voice as Instagram's own voice note, from text; a dry run unless --live | `instagram` first | `--account <accountName>` `--with <with>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `instagramVoice`, `instagramVoiceLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 105, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log twitter voice`](#log-twitter-voice) | Send a voice note in the owner's cloned voice as Twitter's own voice note, from text; a dry run unless --live | `twitter` first | `--account <accountName>` `--with <with>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `twitterVoice`, `twitterVoiceLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 89, 94, 105, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log tiktok session`](#log-tiktok-session) | Check that TikTok still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `tiktok` first | `--account <accountName>` `[--json]` | direct API only | none | `tiktokSessionCheck` | PreToolUse, PostToolUse · PostToolUse | no | 73, 30, 38, 39, 40, 41 |
+| [`log saidBy`](#log-saidby) | Someone's messages on every platform, found by name, newest first | any (none) | `[--name <name>]` `[--limit <integer 1..500>]` `[--json]` | none | none | `saidBy` | PreToolUse, PostToolUse · PostToolUse | no | 30, 163, 30, 38, 39, 40, 41 |
 
 ### Saved flows: MCP tools of their own (rule 31)
 
@@ -493,6 +494,7 @@ flowchart TB
     c_clone["clone"]
     c_transcribe["transcribe"]
     c_new["new"]
+    c_saidBy["saidBy"]
   end
   subgraph g_byArgument["Platform named first"]
     c_warmup["#lt;platform#gt; warmup"]
@@ -891,6 +893,8 @@ flowchart TB
   mcp --> c_twitterVoice
   cli --> c_tiktokSession
   mcp --> c_tiktokSession
+  cli --> c_saidBy
+  mcp --> c_saidBy
   f_deletePost["facebookFlowDeletePost: flow run deletePost"]
   mcp --> f_deletePost
   f_deletePost --> c_flow
@@ -2538,6 +2542,14 @@ Check that TikTok still accepts an account's saved session, on the direct-API en
 log tiktok session check --account <accountName> [--json]
 Checks that TikTok still accepts the account's saved session, on the direct-API engine (no client vendored yet, no browser). Sends nothing.
 TikTok's own answer decides. The result goes to socialAccounts.sessionState, and refreshed cookies are merged back into the row.
+```
+
+#### log saidBy
+
+Someone's messages on every platform, found by name, newest first MCP tools: `saidBy`, one per form, with named fields.
+
+```text
+log saidBy [--name <name>] [--limit <n>] [--json]   (Someone's messages on every platform, found by name, newest first)
 ```
 
 <!-- surface:end -->

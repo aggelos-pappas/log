@@ -109,7 +109,7 @@ export function useCaseDoc(n: ToolNames): string {
   return [
     `# ${n.title}`,
     "",
-    `${n.summary}. Made from a hand-rolled one-off with \`newTool\` (getGuide({ useCase: "log/toolFromOneOff" })), so it is a log tool from now on and the one-off is never written again.`,
+    `${n.summary}. Made from a hand-rolled one-off with log new tool (getGuide({ useCase: "log/toolFromOneOff" })), so it is a log tool from now on and the one-off is never written again.`,
     "",
     `How the owner asks for it: ${n.asks.map((a) => JSON.stringify(a)).join(", ")}`,
     "",
