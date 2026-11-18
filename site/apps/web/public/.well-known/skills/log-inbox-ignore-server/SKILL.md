@@ -1,7 +1,7 @@
 ---
 name: log-inbox-ignore-server
 description: "Ignoring a server or a chat. A log play (docs/useCases/inbox/ignoreServer.md): The live push brings every message that mentions, replies to or talks with the owner into his session. Some servers are only noise to him. When he says to ignore one, the push stops alerting on it: its messages are still heard and stored, readable any time, and DMs from the same people still come through. Undo lifts it."
-when_to_use: "Use when the owner asks for this, in words like: \"ignore that discord server\", \"stop sending me messages about that server\", \"mute that channel\", \"unignore that server\""
+when_to_use: "Use when the owner asks for this, in words like: \"ignore that server\", \"mute that channel\", \"stop the alerts from there\", \"unignore it\""
 metadata:
   summary: "Ignoring a server or a chat"
 ---
@@ -14,7 +14,7 @@ Draft every message from that person's own thread and the owner's real replies (
 
 The live push brings every message that mentions, replies to or talks with the owner into his session. Some servers are only noise to him. When he says to ignore one, the push stops alerting on it: its messages are still heard and stored, readable any time, and DMs from the same people still come through. Undo lifts it.
 
-How the owner asks for it: "ignore that discord server", "stop sending me messages about that server", "mute that channel", "unignore that server"
+How the owner asks for it: "ignore that server", "mute that channel", "stop the alerts from there", "unignore it"
 
 ## Run it from a fresh context
 

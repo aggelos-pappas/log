@@ -139,7 +139,12 @@ export const inboxCommand: Command = {
       const server = str("server");
       const chat = str("chat");
       const by = str("by");
-      if (!PLATFORMS.includes(platform) || !by || (!server && !chat) || (server && chat)) return { code: 1, error: "inputInvalid", stderr: `log inbox ignore: --platform, --by and one of --server or --chat are needed\n${INBOX_USAGE}` };
+      if (!PLATFORMS.includes(platform) || !by || (server && chat)) return { code: 1, error: "inputInvalid", stderr: `log inbox ignore: --platform, --by and one of --server or --chat are needed\n${INBOX_USAGE}` };
+      if (!server && !chat) {
+        const entries = ignoredList();
+        if (json) return { code: 0, stdout: JSON.stringify({ entries, changed: false }, null, 2) };
+        return { code: 0, stdout: `log inbox ignore: nothing changed, name a --server or a --chat to ignore. ${entries.length} ignored now (log inbox ignored lists them).` };
+      }
       const undo = parsed.flags["undo"] === true;
       const entries = setIgnored({ platform, ...(server ? { server } : {}), ...(chat ? { chat } : {}) }, by, undo);
       if (json) return { code: 0, stdout: JSON.stringify({ entries }, null, 2) };

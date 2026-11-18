@@ -2,7 +2,7 @@
 
 The live push brings every message that mentions, replies to or talks with the owner into his session. Some servers are only noise to him. When he says to ignore one, the push stops alerting on it: its messages are still heard and stored, readable any time, and DMs from the same people still come through. Undo lifts it.
 
-How the owner asks for it: "ignore that discord server", "stop sending me messages about that server", "mute that channel", "unignore that server"
+How the owner asks for it: "ignore that server", "mute that channel", "stop the alerts from there", "unignore it"
 
 ## Run it from a fresh context
 
