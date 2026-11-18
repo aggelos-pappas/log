@@ -221,7 +221,7 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 285 command tools + saved flows"]
+  mcp["MCP server log: 287 command tools + saved flows"]
   bin["bin/log.ts"]
   runCli["runCli: 132 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
@@ -247,6 +247,7 @@ flowchart LR
   live -.->|tail -f, under Monitor| agent
   pre0{{"PreToolUse: chatNames.ts"}} -.->|before| shell
   pre1{{"PreToolUse: liveLogs.ts"}} -.->|before| shell
+  pre2{{"PreToolUse: handRolled.ts"}} -.->|before| shell
   post0{{"PostToolUse: inbox.ts"}} -.->|after| agent
   post1{{"PostToolUse: queue.ts"}} -.->|after| agent
   post2{{"PostToolUse: xLive.ts"}} -.->|after| agent
@@ -363,7 +364,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log twitter dm`](#log-twitter-dm) | Send one approved direct message on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--userId <id>` `--text <text>` `[--skipStyleCheck]` `[--media <file|url,…>]` `[--asOne]` `[--overGate]` `[--followUp]` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterDm`, `twitterDmLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 53, 73, 86, 94, 109, 105, 137, 133, 138, 30, 38, 39, 40, 41 |
 | [`log twitter react`](#log-twitter-react) | React to a X message with an emoji, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--chat <chat>` `--message <id>` `--emoji <emoji>` `[--remove]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `twitterReact`, `twitterReactLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 105, 133, 30, 38, 39, 40, 41 |
 | [`log twitter queue`](#log-twitter-queue) | Build, approve, plan and run a queue of approved X replies, quotes or dms at random moments, on the direct-API engine | `twitter` first | `--targets <targets.json>` `[--variations <a.json,b.json,…>]` `--out <queue.json>` `--account <accountName>` `[--action <reply|quote|dm|voice>]` `[--seed <integer>]` `[--json]` `[--skipXChatCheck]` `--by <who>` `[--window <5h|90m>]` `[--limit <integer>]` `[--start <time>]` `[--minGap <integer>]` `[--like]` `[--likeChance <number 0..1>]` `[--alertChannel <uuid>]` `[--alertReplyTo <eventId>]` `[--alertMention <hex,hex,…>]` `[--force]` `[--keepOpen]` `[--live]` `[--replies <integer>]` `--n <integer>` `--text <text>` | direct API only | none | `twitterQueueBuild`, `twitterQueueShow`, `twitterQueueCheck`, `twitterQueueStatus`, `twitterQueueApprove`, `twitterQueuePlan`, `twitterQueueRun`, `twitterQueueRunLive`, `twitterQueueAdd`, `twitterQueueNudge`, `twitterQueueEdit` | PreToolUse, PostToolUse · PostToolUse | yes: watch it | 8, 26, 53, 73, 86, 109, 94, 105, 137, 133, 138, 30, 38, 39, 40, 41 |
-| [`log new`](#log-new) | Make a new platform (session, command, MCP tool, engine, docs), wired into the repo through its syntax tree | any (none) | `[--label <shown name>]` `[--twentyPlatform <ENUM>]` `[--library <vendor/folder>]` `[--sessionCookies <a,b,…>]` `[--cookieDomain <.site.com>]` `[--hosts <a.com,b.com,…>]` `[--home <https://…>]` `[--noProxy]` `[--noBrowser]` `[--apply]` `[--json]` | none | none | `newPlatform`, `newPlatformLive` | PreToolUse, PostToolUse · PostToolUse | no | 1, 2, 63, 83, 30, 38, 39, 40, 41 |
+| [`log new`](#log-new) | Make a new platform, or a tool from a one-off, wired in through the syntax tree | any (none) | `[--label <shown name>]` `[--twentyPlatform <ENUM>]` `[--library <vendor/folder>]` `[--sessionCookies <a,b,…>]` `[--cookieDomain <.site.com>]` `[--hosts <a.com,b.com,…>]` `[--home <https://…>]` `[--noProxy]` `[--noBrowser]` `[--apply]` `[--json]` `[--summary <text>]` `[--acts]` `[--flags <a,b,…>]` `[--area <f>]` `[--asks <a,b,…>]` `[--guide <g>]` | none | none | `newPlatform`, `newPlatformLive`, `newTool`, `newToolLive` | PreToolUse, PostToolUse · PostToolUse | no | 1, 2, 63, 83, 30, 38, 39, 40, 41 |
 | [`log reddit session`](#log-reddit-session) | Check that Reddit still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `reddit` first | `--account <accountName>` `[--json]` | direct API only | none | `redditSessionCheck` | PreToolUse, PostToolUse · PostToolUse | no | 73, 30, 38, 39, 40, 41 |
 | [`log reddit read`](#log-reddit-read) | Find subreddits, and read a subreddit's newest posts with their links, through the account's direct-API engine | `reddit` first | `--account <accountName>` `--query <words>` `[--json]` `--subreddit <name>` `[--days <number ..365>]` `[--linksTo <host>]` `--url <permalink>` `[--limit <integer 1..500>]` | direct API only | the account's | `redditReadSubreddits`, `redditReadPosts`, `redditReadHome`, `redditReadPost` | PreToolUse, PostToolUse · PostToolUse | yes: watch it | 8, 53, 73, 94, 109, 30, 38, 39, 40, 41 |
 | [`log reddit post`](#log-reddit-post) | Post a text post to a subreddit through the account's direct-API engine; a dry run unless --live | `reddit` first | `--account <accountName>` `--subreddit <name>` `--title <title>` `[--text <markdown>]` `[--flair <flair>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `redditPost`, `redditPostLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 41, 73, 94, 30, 38, 39, 40, 41 |
@@ -984,6 +985,7 @@ One list (`src/agentHooks/registry`) writes Claude Code's `.claude/settings.json
 | PostToolUse | `Bash\|PowerShell\|Monitor\|mcp__log__.*` | [`scripts/hooks/xLive.ts`](../scripts/hooks/xLive.ts) | the same X live state after a log tool or shell call, so a reply on a post is answered mid-task |
 | PreToolUse | `mcp__log__(discord\|slack\|instagram).*` | [`scripts/hooks/chatNames.ts`](../scripts/hooks/chatNames.ts) | a Discord, Slack or Instagram call that names its chat by a bare id is refused and told to pass the name (a person, a group, or "<server> #<channel>"), so the owner sees where every call goes (rule 154) |
 | PreToolUse | `Bash\|PowerShell\|Monitor` | [`scripts/hooks/liveLogs.ts`](../scripts/hooks/liveLogs.ts) | a log-cli run that would hide its lines (piped through tail or head) is refused before it starts; a long one off a Monitor is told to start one (rule 26); any log action run by hand from a shell is refused and pointed at its MCP tool (rule 163) |
+| PreToolUse | `Bash\|PowerShell\|Monitor\|Write\|shell\|apply_patch\|run_command\|write_to_file` | [`scripts/hooks/handRolled.ts`](../scripts/hooks/handRolled.ts) | a hand-rolled data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off python or bun -e), unwrapped from heredocs, written files and execute_code, is labelled readsData or actsOnData with its target, counted in log.db, and advised, never blocked, to become a log tool through getGuide({ useCase: "log/toolFromOneOff" }) (rule 163) |
 | PostToolUse | `Bash\|PowerShell\|Monitor\|mcp__log__.*` | [`scripts/hooks/pageState.ts`](../scripts/hooks/pageState.ts) | a browser landed on a known state (checkpoint, captcha, prompt) or a step failed: its resolver, at once |
 | Stop | every turn | [`scripts/hooks/pageState.ts`](../scripts/hooks/pageState.ts) | the turn does not end while a browser sits on a state log-cli can resolve (rule 35) |
 
@@ -1022,6 +1024,7 @@ sequenceDiagram
     Agent->>Hook: PreToolUse
     Note over Hook: a Discord, Slack or Instagram call that names its chat by a bare id is refused and told to pass the name (a person, a group, or #quot;#lt;server#gt; ##lt;channel#gt;#quot;), so the owner sees where every call goes (rule 154)
     Note over Hook: a log-cli run that would hide its lines (piped through tail or head) is refused before it starts#59; a long one off a Monitor is told to start one (rule 26)#59; any log action run by hand from a shell is refused and pointed at its MCP tool (rule 163)
+    Note over Hook: a hand-rolled data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off python or bun -e), unwrapped from heredocs, written files and execute_code, is labelled readsData or actsOnData with its target, counted in log.db, and advised, never blocked, to become a log tool through getGuide({ useCase: #quot;log/toolFromOneOff#quot; }) (rule 163)
     alt a log run piped through tail/head
       Hook-->>Agent: refused (exit 2), run it live
     else
@@ -2052,12 +2055,13 @@ run walks the plan as an XState machine (planned, waiting, liking, replying, ret
 
 #### log new
 
-Make a new platform (session, command, MCP tool, engine, docs), wired into the repo through its syntax tree MCP tools: `newPlatform`, `newPlatformLive`, one per form, with named fields.
+Make a new platform, or a tool from a one-off, wired in through the syntax tree MCP tools: `newPlatform`, `newPlatformLive`, `newTool`, `newToolLive`, one per form, with named fields.
 
 ```text
 log new platform <name> [--label <shown name>] [--twentyPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]
-Makes a new platform for log-cli: its account session on the shared platformKit, `log <name> session check` with its MCP tool, a direct-API engine in python/<name>Api on the shared Python kit, and docs/platforms/<name>. The repo is wired by editing each file through its syntax tree (PLATFORMS, PLATFORM_LABELS, COMMANDS, COMMAND_INDEX, createContext, CommandContext, DIRECT_ROUTES, COMMAND_RULES), and every edit is checked to have landed before anything is written.
-Without --apply it lists what it would write and change, and writes nothing. Nothing is overwritten: an existing platform or file is refused. It says what Twenty is missing (the socialAccounts.platform option) but never changes Twenty. Then fill in the engine's actions and add the platform's families as commands (rule 83).
+log new tool [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]
+platform: its session on the shared platformKit, `log <name> session check` with its MCP tool, a direct-API engine in python/<name>Api and docs/platforms/<name>. tool: a hand-rolled one-off as a command and MCP tool with its test and use case; no name lists the one-offs the hook counted.
+Each file is edited through its syntax tree and every edit is checked to have landed before anything is written. Without --apply it lists what it would do and writes nothing; nothing is overwritten. It says what Twenty is missing but never changes Twenty (rule 83).
 ```
 
 #### log reddit session

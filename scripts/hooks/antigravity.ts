@@ -4,6 +4,7 @@ import { answerEvent } from '../../src/agentHooks/answers/index'
 import { clipContext, contextOf } from '../../src/agentHooks/harness/index'
 import { chatNameVerdict } from '../../src/agentHooks/chatNames/index'
 import { liveLogVerdict } from '../../src/agentHooks/liveLog/index'
+import { classifyCall, handRolledAdvice } from '../../src/agentHooks/handRolled/client'
 import { askRoute, readService, startService } from '../../src/contextLayer/service/index'
 
 const repo = join(import.meta.dir, '..', '..')
@@ -73,6 +74,17 @@ if (event === 'SessionStart') {
   const chatVerdict = chatNameVerdict(toolName, args)
   if (chatVerdict.deny) {
     process.stdout.write(JSON.stringify({ decision: 'deny', reason: chatVerdict.deny }))
+    process.exit(0)
+  }
+
+  const handRolled = classifyCall(toolName, args)
+  if (handRolled.handRolled) {
+    let seen = 0
+    try {
+      const { recordHandRolled } = await import('../../src/agentHooks/handRolled/helpers/store')
+      seen = recordHandRolled(handRolled)
+    } catch {}
+    process.stdout.write(JSON.stringify({ decision: 'allow', reason: handRolledAdvice(handRolled, seen) }))
     process.exit(0)
   }
 
