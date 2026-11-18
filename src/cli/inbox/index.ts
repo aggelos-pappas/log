@@ -7,6 +7,8 @@ import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseInput } fro
 import type { Command, CommandInput, FlagSpec } from "../runner/types.ts";
 import { readPending, READER_PATTERN } from "../../inbox/pending/index.ts";
 import { PUSH_QUIET_MAX_MINUTES, setQuiet } from "../../inbox/push/index.ts";
+import { ignoredList, setIgnored } from "../../inbox/ignore/index.ts";
+import type { IgnoreEntry } from "../../inbox/ignore/index.ts";
 
 export const INBOX_USAGE = [
   "Usage: log inbox claim --platform <twitter|discord|slack|instagram> --account <a> --chat <conversationId|handle> [--event <eventId>] [--json]",
@@ -17,6 +19,8 @@ export const INBOX_USAGE = [
   "       log inbox waiting [--platform <p>] [--account <a>] [--limit <n>] [--oldest] [--json]",
   "       log inbox pending --reader <name> [--json]",
   "       log inbox quiet --minutes <n> --by <who> [--json]",
+  "       log inbox ignore --platform <p> (--server <id> | --chat <id>) --by <who> [--undo] [--json]",
+  "       log inbox ignored [--json]",
   "pending is what the account watchers heard since this reader last asked, with what to do next for each message: the one delivery every harness reads, the prompt hook's included. A reader is one name per session or harness; a new one starts from now.",
   "Only the session that claims a chat acts on it (rule 133). Every message the push channels bring in has an event id (shown in >>> NEW MESSAGE). claim takes the chat for this session for 10 minutes before you draft or send; a second session is refused (chatClaimedElsewhere). Every send claims the chat itself and releases it once it is sent, interrupted or failed, so two sessions never answer the same chat. A claim held by a session that ended frees itself. resume is the owner's go-ahead after a refused catch-up (rule 94): the account's gap opens again and its owner catches up through its own session within 30 s; only when the owner says so. claims lists who holds what; actions logs every claim, refusal, send and release, to see what was already done in a chat. quiet holds the live push for n minutes. waiting is who wrote last on every platform, read from log.db and nothing else: each chat's messages in time order (never the order they were stored in, since a backfill stores older messages later), one person's chats judged together (an X user's old DM and X Chat), a message mirrored into the other side counted once as whoever sent it first, reactions, read markers and call notices never counted as the last word. It lists the people waiting on a reply, then apart the ones who reacted to your last message (a follow-up), newest first unless --oldest.",
 ].join("\n");
@@ -55,6 +59,19 @@ export const INBOX_INPUT: CommandInput = {
         JSON_FLAG,
       ],
     },
+    {
+      words: ["ignore"], effect: "write", summary: "Stop pushing a server or a chat to the owner; its messages are still stored, only the alerts stop. --undo lifts it",
+      positionals: [],
+      flags: [
+        { name: "platform", kind: "enum", values: ["twitter", "discord", "slack", "instagram"], required: true, description: "The platform" },
+        { name: "server", kind: "string", description: "A Discord server or Slack workspace id: every channel in it goes quiet, DMs still come" },
+        { name: "chat", kind: "string", description: "One chat or channel id" },
+        { name: "by", kind: "string", required: true, description: "The owner" },
+        { name: "undo", kind: "boolean", description: "Lift the ignore" },
+        JSON_FLAG,
+      ],
+    },
+    { words: ["ignored"], summary: "Every server and chat the push ignores, and who asked", positionals: [], flags: [JSON_FLAG] },
     { words: ["claims"], summary: "Every live claim: which session holds which chat, and until when", positionals: [], flags: [JSON_FLAG] },
     {
       words: ["actions"], summary: "The log of every claim, refusal, send and release, oldest first, to see what was already done in a chat",
@@ -93,7 +110,7 @@ export const inboxCommand: Command = {
   effect: "write",
   input: INBOX_INPUT,
   summary: "Claim and release chats, list claims, read the action log and what the watchers heard, quiet the push",
-  args: "claim|release|claims|actions|resume|waiting|pending|quiet [--reader <name>] [--minutes <n>] [--by <who>] [--platform <p>] [--account <a>] [--chat <id|handle>] [--event <id>] [--limit <n>] [--oldest]",
+  args: "claim|release|claims|actions|resume|waiting|pending|quiet|ignore|ignored [--server <id>] [--undo] [--reader <name>] [--minutes <n>] [--by <who>] [--platform <p>] [--account <a>] [--chat <id|handle>] [--event <id>] [--limit <n>] [--oldest]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(INBOX_INPUT));
     if (!parsed.ok) return refuseInput("inbox", parsed.error, INBOX_USAGE);
@@ -116,6 +133,24 @@ export const inboxCommand: Command = {
       if (json) return { code: 0, stdout: JSON.stringify({ until, by }, null, 2) };
       if (!until) return { code: 0, stdout: `log inbox quiet: ended; the push brings in what came in on its next round.` };
       return { code: 0, stdout: `log inbox quiet: no message is pushed into any session until ${until} (${minutes} min, asked by ${by}); the watchers keep storing everything, and it all arrives as one batch then.` };
+    }
+    if (sub === "ignore") {
+      const platform = str("platform");
+      const server = str("server");
+      const chat = str("chat");
+      const by = str("by");
+      if (!PLATFORMS.includes(platform) || !by || (!server && !chat) || (server && chat)) return { code: 1, error: "inputInvalid", stderr: `log inbox ignore: --platform, --by and one of --server or --chat are needed\n${INBOX_USAGE}` };
+      const undo = parsed.flags["undo"] === true;
+      const entries = setIgnored({ platform, ...(server ? { server } : {}), ...(chat ? { chat } : {}) }, by, undo);
+      if (json) return { code: 0, stdout: JSON.stringify({ entries }, null, 2) };
+      const what = server ? `${platform} server ${server}` : `${platform} chat ${chat}`;
+      return { code: 0, stdout: undo ? `log inbox ignore: ${what} is pushed again.` : `log inbox ignore: ${what} is no longer pushed to any session (asked by ${by}); its messages are still stored and readable, only the alerts stop. ${entries.length} ignored in all.` };
+    }
+    if (sub === "ignored") {
+      const entries = ignoredList();
+      if (json) return { code: 0, stdout: JSON.stringify({ entries }, null, 2) };
+      const line = (e: IgnoreEntry) => `  ${e.platform} ${e.server ? `server ${e.server}` : `chat ${e.chat}`}  by ${e.by} at ${e.at}`;
+      return { code: 0, stdout: entries.length ? [`log inbox ignored: ${entries.length}:`, ...entries.map(line)].join("\n") : "log inbox ignored: nothing is ignored." };
     }
     if (sub === "claims") {
       const claims = liveClaims();

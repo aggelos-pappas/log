@@ -1,6 +1,7 @@
 import { inboxTextWithVoiceNotes } from '../../media/voiceNotes/index'
 import { claimContext } from '../claims/index'
 import { chatMessages } from '../dbRead/index'
+import { withoutIgnored } from '../ignore/index'
 import type { DbMessage } from '../dbRead/types'
 import { inboxContext, localTime, storedInboxContext, takeAlerts, takePending, twitterAccounts } from '../watch/index'
 import type { InboxMessage } from '../watch/types'
@@ -61,7 +62,7 @@ export function behindLine(behind: readonly InboxMessage[]): string | null {
 
 export function readPending(reader: string, options: { stored?: boolean; read?: ChatRead } = {}): PendingRead {
   const alerts = takeAlerts(reader)
-  const messages = takePending(reader).map((m) => ({ ...m, text: inboxTextWithVoiceNotes(m) }))
+  const messages = withoutIgnored(takePending(reader)).map((m) => ({ ...m, text: inboxTextWithVoiceNotes(m) }))
   const { fresh, behind, conversations } = againstTheDb(messages, options.read)
   const loud = alerts.length ? [ONE_PROCESS_LINE, ...alerts].join('\n') : ''
   const text = [loud, inboxContext(fresh), ...conversations, behindLine(behind), claimContext(fresh), options.stored ? storedInboxContext(twitterAccounts()) : null].filter(Boolean).join('\n\n')

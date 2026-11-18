@@ -93,6 +93,14 @@
       "summary": "Resetting an account's governor count"
     },
     {
+      "name": "log-inbox-ignore-server",
+      "description": "Ignoring a server or a chat. A log play (docs/useCases/inbox/ignoreServer.md): The live push brings every message that mentions, replies to or talks with the owner into his session. Some servers are only noise to him. When he says to ignore one, the push stops alerting on it: its messages are still heard and stored, readable any time, and DMs from the same people still come through. Undo lifts it.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Ignoring a server or a chat"
+    },
+    {
       "name": "log-inbox-quiet-push",
       "description": "Quieting the live push. A log play (docs/useCases/inbox/quietPush.md): The live push brings every new message into the owner's session the moment it lands. When the owner wants a break from it, the push goes quiet for as many minutes as he says: the watchers keep hearing and storing everything, nothing is pushed into any session until then, and what came in arrives as one batch when it ends.",
       "files": [

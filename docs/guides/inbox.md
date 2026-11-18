@@ -15,6 +15,7 @@ When the owner asks for one of these, follow its page step by step.
 | `getGuide({ useCase: "discord/channelReply" })` | Answering someone in a Discord DM or group DM | "reply to <someone> on discord", "reply to <someone> in <group>", "explain what I'm trying to do to <someone> in <group>", "answer the group" |
 | `getGuide({ useCase: "discord/serverReply" })` | Replying in a Discord server channel | "reply to <someone> in <server>", "answer him in the general", "message the guy in <server> #<channel> who mentioned me", "reply in the <server> server", "find what <someone> said in <server> and answer it" |
 | `getGuide({ useCase: "inbox/bossMaxxing" })` | Bossmaxxing: giving out tasks to the team | "bossmaxxing", "give out the tasks", "send <person> the task in <group> and tag them", "tell <person> about everything I researched and give them an outline", "triage the jobs across the team", "walk <person> through setting up <tool>", "help <person> get set up like we did with <other person>" |
+| `getGuide({ useCase: "inbox/ignoreServer" })` | Ignoring a server or a chat | "ignore that discord server", "stop sending me messages about that server", "mute that channel", "unignore that server" |
 | `getGuide({ useCase: "inbox/quietPush" })` | Quieting the live push | "go silent for 30 minutes", "turn the notifications back on" |
 | `getGuide({ useCase: "inbox/reaLooksmaxxing" })` | /rea-looksmaxxing: moneymaxx like a creator | "/rea-looksmaxxing how clavicular gets paid", "moneymaxx like <creator>", "how does <creator> get paid" |
 | `getGuide({ useCase: "inbox/reactions" })` | Reacting to a message | "react to that", "heart his message", "put a 😂 on what she said", "send a reaction to <person>" |
@@ -35,6 +36,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `inboxWaiting` | Who wrote last on every platform, from log.db in time order | `log inbox waiting [--platform <p>] [--account <a>] [--limit <n>] [--oldest] [--json]` |
 | `inboxPending` | What the account watchers heard since this reader last asked, with… | `log inbox pending --reader <name> [--json]` |
 | `inboxQuiet` | Quiet the live push for n minutes | `log inbox quiet --minutes <n> --by <who> [--json]` |
+| `inboxIgnore` | Stop pushing a server or a chat to the owner | `log inbox ignore --platform <p> (--server <id> \| --chat <id>) --by <who> [--undo] [--json]` |
+| `inboxIgnored` | Every server and chat the push ignores, and who asked | `log inbox ignored [--json]` |
 | `inboxClaims` | Every live claim | `log inbox claims [--json]` |
 | `inboxActions` | The log of every claim, refusal, send and release, oldest first, to… | `log inbox actions [--platform <p>] [--account <a>] [--chat <conversationId\|handle>] [--limit <n>] [--json]` |
 | `chatsList` | List an account's chats on its own platform, the platform taken from… | `log chats list --account <account> [--space <space>] [--limit <limit>] [--platform <p>] [--json]` |
