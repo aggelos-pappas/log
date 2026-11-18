@@ -14,6 +14,7 @@ import { newQueueEvents, queueContext } from '../../twitter/queue/events/index'
 import { newLiveEvents, xLiveContext } from '../../twitter/live/feed/index'
 import { clearDeadQueueLocks, ensureLiveWatchers, hookReaderOf, startDescriber } from '../../inbox/watch/index'
 import { readPending } from '../../inbox/pending/index'
+import { quietUntil } from '../../inbox/push/index'
 import { superviseLocalWatchers } from '../../platformKit/watcher/index'
 import { hookAnswer } from '../../contextLayer/hook/index'
 import type { HookInput } from '../../contextLayer/hook/index'
@@ -106,6 +107,7 @@ export function queueAnswer(raw: string): HookAnswer {
 }
 
 export function xLiveAnswer(event: HookEvent, raw: string): HookAnswer {
+  if (quietUntil(Date.now())) return {}
   const text = xLiveContext(newLiveEvents(undefined, sessionIdOf(raw)), { sessionStart: event === 'SessionStart' })
   return text ? { context: text } : {}
 }
@@ -127,6 +129,7 @@ export function inboxAnswer(event: HookEvent, raw: string, repo: string): HookAn
   superviseLocalWatchers(repo)
   clearDeadQueueLocks()
   ensureLiveWatchers('model', ['describer'], () => startDescriber(repo))
+  if (quietUntil(Date.now())) return {}
   const { text } = readPending(hookReaderOf(raw), { stored: event === 'SessionStart' })
   return text ? { context: text } : {}
 }
