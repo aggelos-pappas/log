@@ -30,6 +30,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "inbox/quietPush" })` | Quieting the live push |
 | `getGuide({ useCase: "inbox/reaLooksmaxxing" })` | /rea-looksmaxxing: moneymaxx like a creator |
 | `getGuide({ useCase: "inbox/reactions" })` | Reacting to a message |
+| `getGuide({ useCase: "inbox/saidBy" })` | Someone's messages on every platform, found by name, newest first |
 | `getGuide({ useCase: "inbox/scopeAJob" })` | Scoping a job out of someone in a DM |
 | `getGuide({ useCase: "inbox/showMe" })` | Showing it as a view: generative UI in the chat |
 | `getGuide({ useCase: "inbox/signIn" })` | Signing an account in: checking it, then the live browser |

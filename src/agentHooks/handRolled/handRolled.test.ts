@@ -17,14 +17,14 @@ const ONE_OFF_TS = [
   'console.log(JSON.stringify(rows, null, 2))',
 ].join('\n')
 
-const HEREDOC_RUN = [`S=${SCRATCH}`, "cat > $S/grace.ts << 'EOF'", ONE_OFF_TS, 'EOF', 'bun $S/grace.ts'].join('\n')
+const HEREDOC_RUN = [`S=${SCRATCH}`, "cat > $S/oneOff.ts << 'EOF'", ONE_OFF_TS, 'EOF', 'bun $S/oneOff.ts'].join('\n')
 
 const EXECUTE_CODE_WRITE_AND_RUN = [
   'from hermes_tools import write_file, terminal',
   `S = "${SCRATCH}"`,
   `src = """${ONE_OFF_TS}"""`,
-  'write_file(f"{S}/grace.ts", src)',
-  'out = terminal(f"bun {S}/grace.ts")',
+  'write_file(f"{S}/oneOff.ts", src)',
+  'out = terminal(f"bun {S}/oneOff.ts")',
   'print(out["output"][:4000])',
 ].join('\n')
 
@@ -37,17 +37,17 @@ const readings = (verdict: ReturnType<typeof classifyCall>) => verdict.hits.map(
 describe('normalising each host tool into commands, written files and code', () => {
   test('a heredoc that writes a scratch script and runs it in the same command', () => {
     const call = normaliseCall('Bash', { command: HEREDOC_RUN })
-    expect(call.writtenFiles).toEqual([{ path: `${SCRATCH}/grace.ts`, content: ONE_OFF_TS }])
-    expect(call.effectiveCommands).toEqual([`bun ${SCRATCH}/grace.ts`])
+    expect(call.writtenFiles).toEqual([{ path: `${SCRATCH}/oneOff.ts`, content: ONE_OFF_TS }])
+    expect(call.effectiveCommands).toEqual([`bun ${SCRATCH}/oneOff.ts`])
   })
 
   test('Hermes execute_code: terminal() and write_file() inside the Python are unwrapped', () => {
     const call = normaliseCall('execute_code', { code: EXECUTE_CODE_WRITE_AND_RUN })
-    expect(call.writtenFiles.map((f) => f.path)).toEqual([`${SCRATCH}/grace.ts`])
+    expect(call.writtenFiles.map((f) => f.path)).toEqual([`${SCRATCH}/oneOff.ts`])
     expect(call.writtenFiles[0].content).toContain('bun:sqlite')
-    expect(call.effectiveCommands).toEqual([`bun ${SCRATCH}/grace.ts`])
+    expect(call.effectiveCommands).toEqual([`bun ${SCRATCH}/oneOff.ts`])
     const nested = normaliseCall('mcp__execute_code', { code: EXECUTE_CODE_HEREDOC })
-    expect(nested.writtenFiles.map((f) => f.path)).toEqual([`${SCRATCH}/grace.ts`])
+    expect(nested.writtenFiles.map((f) => f.path)).toEqual([`${SCRATCH}/oneOff.ts`])
   })
 
   test('Codex: a shell argv and an apply_patch that adds a file', () => {
@@ -70,7 +70,7 @@ describe('what is labelled hand-rolled', () => {
     expect(verdict.handRolled).toBe(true)
     expect(verdict.kinds).toEqual(['readsData'])
     expect(verdict.target).toBe('log.db (messages, chats)')
-    expect(verdict.why).toContain(`${SCRATCH}/grace.ts`)
+    expect(verdict.why).toContain(`${SCRATCH}/oneOff.ts`)
   })
 
   test('the same one-off through Hermes execute_code, written with write_file and run with terminal()', () => {
@@ -79,11 +79,11 @@ describe('what is labelled hand-rolled', () => {
   })
 
   test('a scratch script written by a write tool, then run in a later call', () => {
-    expect(readings(classifyCall('write_file', { path: `${SCRATCH}/grace.ts`, content: ONE_OFF_TS }))).toEqual(['readsData log.db (messages, chats)'])
-    expect(readings(classifyCall('Write', { file_path: 'grace.ts', content: ONE_OFF_TS }))).toEqual(['readsData log.db (messages, chats)'])
-    const later = classifyCall('terminal', { command: 'cd /c/Users/someone && bun grace.ts' }, { readScript: (p) => (p === 'grace.ts' ? ONE_OFF_TS : null) })
+    expect(readings(classifyCall('write_file', { path: `${SCRATCH}/oneOff.ts`, content: ONE_OFF_TS }))).toEqual(['readsData log.db (messages, chats)'])
+    expect(readings(classifyCall('Write', { file_path: 'oneOff.ts', content: ONE_OFF_TS }))).toEqual(['readsData log.db (messages, chats)'])
+    const later = classifyCall('terminal', { command: 'cd /c/Users/someone && bun oneOff.ts' }, { readScript: (p) => (p === 'oneOff.ts' ? ONE_OFF_TS : null) })
     expect(readings(later)).toEqual(['readsData log.db (messages, chats)'])
-    expect(later.why).toContain('runs the scratch script grace.ts')
+    expect(later.why).toContain('runs the scratch script oneOff.ts')
   })
 
   test('resolving a link with curl', () => {

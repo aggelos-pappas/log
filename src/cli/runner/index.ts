@@ -64,6 +64,7 @@ import { slackChatsCommand, slackCookiesCommand, slackReadCommand, slackSendComm
 import { instagramDmsCommand, instagramSendCommand, instagramSessionCommand, instagramWatchCommand } from "../instagram/index.ts";
 import { discordReactCommand, instagramReactCommand, slackReactCommand, twitterReactCommand } from "../react/index.ts";
 import { tiktokSessionCommand } from "../tiktok/index.ts";
+import { saidByCommand } from "../saidBy/index.ts";
 
 export * from "./helpers/index.ts";
 export { ALIASES, createContext, defaultSendInspect, runFast, takeProxyMs } from "./client.ts";
@@ -202,6 +203,7 @@ export const COMMANDS: Command[] = [
   instagramVoiceCommand,
   twitterVoiceCommand,
   tiktokSessionCommand,
+  saidByCommand,
 ];
 
 export async function runCli(argv: string[], context?: Partial<CommandContext>): Promise<number> {
