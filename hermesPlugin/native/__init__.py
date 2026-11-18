@@ -11,6 +11,7 @@ HOOK_TIMEOUT_SECONDS = 20
 EVENT_SCRIPT = ("scripts", "hooks", "event.ts")
 PUSH_SCRIPT = ("scripts", "hooks", "push.ts")
 PUSH_RETRY_SECONDS = 10
+BUSY_LIMIT_SECONDS = 600
 PACKAGE = ("@listeningkit", "log")
 
 
@@ -116,6 +117,40 @@ class Push:
         self.reader = ""
         self.proc = None
         self.lock = threading.Lock()
+        self.busy_since = 0.0
+        self.held = []
+
+    def start_turn(self):
+        with self.lock:
+            self.busy_since = time.time()
+
+    def busy(self):
+        return self.busy_since and time.time() - self.busy_since < BUSY_LIMIT_SECONDS
+
+    def take_held(self):
+        with self.lock:
+            held, self.held = self.held, []
+        return "\n\n".join(held)
+
+    def end_turn(self):
+        with self.lock:
+            self.busy_since = 0.0
+        held = self.take_held()
+        if held:
+            self.deliver(held)
+
+    def deliver(self, context):
+        try:
+            self.ctx.inject_message(context, role="user", session_key=self.key)
+        except Exception:
+            pass
+
+    def arrived(self, context):
+        with self.lock:
+            if self.busy():
+                self.held.append(context)
+                return
+        self.deliver(context)
 
     def remember(self, key, reader):
         try:
@@ -181,10 +216,7 @@ class Push:
                     continue
                 context = batch.get("context") if isinstance(batch, dict) else None
                 if isinstance(context, str) and context.strip():
-                    try:
-                        self.ctx.inject_message(context, role="user", session_key=key)
-                    except Exception:
-                        pass
+                    self.arrived(context)
             if self.key == key:
                 time.sleep(PUSH_RETRY_SECONDS)
 
@@ -202,9 +234,10 @@ def bound_key():
 
 def pre_llm_call(session_id="", user_message="", conversation_history=None, is_first_turn=False, **kwargs):
     PUSH.follow(bound_key(), reader_of(session_id))
+    PUSH.start_turn()
     events = (["SessionStart"] if is_first_turn else []) + ["UserPromptSubmit"]
     payload = {"session_id": session_id or "", "prompt": user_message or "", "source": "startup"}
-    texts = [ask_log(event, payload) for event in events]
+    texts = [ask_log(event, payload) for event in events] + [PUSH.take_held()]
     text = "\n\n".join(t for t in texts if t)
     return {"context": text} if text else None
 
@@ -228,15 +261,19 @@ def transform_tool_result(tool_name="", args=None, result=None, session_id="", *
     if not isinstance(result, str):
         return None
     subject = log_tool_of(tool_name, args)
-    if not subject:
-        return None
-    landed = ask_log("PostToolUse", {"session_id": session_id or "", "tool_name": subject})
-    return result + LIVE_MARK + landed if landed.strip() else None
+    asked = ask_log("PostToolUse", {"session_id": session_id or "", "tool_name": subject}) if subject else ""
+    landed = "\n\n".join(t for t in (PUSH.take_held(), asked) if t.strip())
+    return result + LIVE_MARK + landed if landed else None
+
+
+def post_llm_call(**kwargs):
+    PUSH.end_turn()
 
 
 def register(ctx):
     PUSH.ctx = ctx
     ctx.register_hook("pre_llm_call", pre_llm_call)
     ctx.register_hook("transform_tool_result", transform_tool_result)
+    ctx.register_hook("post_llm_call", post_llm_call)
     key, reader = PUSH.recall()
     PUSH.follow(key, reader)

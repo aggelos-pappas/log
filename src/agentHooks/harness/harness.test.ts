@@ -148,12 +148,43 @@ describe("the native Hermes plugin's pre_llm_call", () => {
       const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot } });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout.trim()) as { names: string[]; first: { context: string }; later: { context: string } };
-      expect(out.names).toEqual(["pre_llm_call", "transform_tool_result"]);
+      expect(out.names).toEqual(["post_llm_call", "pre_llm_call", "transform_tool_result"]);
       expect(out.first.context).toBe("SessionStart|--host hermes|check my x notifications\n\nUserPromptSubmit|--host hermes|check my x notifications");
       expect(out.later.context).toBe("UserPromptSubmit|--host hermes|hi");
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
+  });
+
+  test("holds what the push hears during a turn, hands it to the next tool result, and one turn for the rest", () => {
+    const plugin = join(root, HERMES_PLUGIN_DIR, "__init__.py");
+    const script = [
+      "import importlib.util, json",
+      `spec = importlib.util.spec_from_file_location("logHooks", ${JSON.stringify(plugin)})`,
+      "module = importlib.util.module_from_spec(spec)",
+      "spec.loader.exec_module(module)",
+      "sent = []",
+      "class Ctx:",
+      "    def inject_message(self, text, role, session_key):",
+      "        sent.append(text)",
+      "module.PUSH.ctx = Ctx()",
+      "module.PUSH.arrived('idle')",
+      "module.PUSH.start_turn()",
+      "module.PUSH.arrived('a')",
+      "mid = module.transform_tool_result(tool_name='mcp__terminal', args={}, result='ls', session_id='s')",
+      "module.PUSH.arrived('b')",
+      "module.PUSH.arrived('c')",
+      "during = list(sent)",
+      "module.post_llm_call()",
+      "print(json.dumps({'mid': mid, 'during': during, 'after': sent}))",
+    ].join("\n");
+    const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true });
+    expect(run.status).toBe(0);
+    const out = JSON.parse(run.stdout.trim()) as { mid: string; during: string[]; after: string[] };
+    expect(out.mid.startsWith("ls")).toBe(true);
+    expect(out.mid.endsWith("a")).toBe(true);
+    expect(out.during).toEqual(["idle"]);
+    expect(out.after).toEqual(["idle", "b\n\nc"]);
   });
 
   test("adds what landed while a log tool ran to its result, and leaves other tools alone", () => {
