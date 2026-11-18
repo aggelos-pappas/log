@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import re
@@ -190,3 +191,54 @@ def get_view(view_id: str):
     if view is None:
         return JSONResponse({"error": "noSuchView"}, status_code=404)
     return view
+
+
+GENUI_API = ("vendor", "hermesGenui", "dashboard", "plugin_api.py")
+PACKAGE = ("@listeningkit", "log")
+
+
+def _hooks_root() -> Path | None:
+    meta = Path(__file__).resolve().parents[2] / "logHooks" / "plugin.yaml"
+    try:
+        for line in meta.read_text(encoding="utf-8").splitlines():
+            if line.startswith("log_root:"):
+                return Path(line.split(":", 1)[1].strip().strip("'\""))
+    except OSError:
+        return None
+    return None
+
+
+def _log_roots() -> list[Path]:
+    roots: list[Path] = []
+    named = os.environ.get("LOG_ROOT", "").strip()
+    if named:
+        roots.append(Path(named))
+    hooks = _hooks_root()
+    if hooks is not None:
+        roots.append(hooks)
+    bun = Path(os.environ.get("BUN_INSTALL", "").strip() or Path.home() / ".bun")
+    roots.append(bun.joinpath("install", "global", "node_modules", *PACKAGE))
+    appdata = os.environ.get("APPDATA", "").strip()
+    if appdata:
+        roots.append(Path(appdata).joinpath("npm", "node_modules", *PACKAGE))
+    return roots
+
+
+def _genui_router() -> APIRouter | None:
+    for root in _log_roots():
+        path = root.joinpath(*GENUI_API)
+        if not path.is_file():
+            continue
+        try:
+            spec = importlib.util.spec_from_file_location("log_hermes_genui_api", path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module.router
+        except Exception:
+            return None
+    return None
+
+
+_genui = _genui_router()
+if _genui is not None:
+    router.include_router(_genui)

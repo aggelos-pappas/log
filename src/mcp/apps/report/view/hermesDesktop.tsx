@@ -3,6 +3,7 @@ import kitCss from "logViewCss";
 import { useEffect, useState } from "react";
 import type { MouseEvent } from "react";
 import { composerActions } from "../../../../../vendor/hermesGenui/web/src/host/actions.ts";
+import genui from "../../../../../vendor/hermesGenui/web/src/plugin.tsx";
 import { cleanViewHtml } from "./hermesClean.ts";
 
 export const HERMES_PLUGIN_ID = "log";
@@ -74,6 +75,7 @@ export default {
   id: HERMES_PLUGIN_ID,
   name: "log",
   register(ctx: { rest: (path: string) => Promise<unknown>; register: (contribution: unknown) => unknown }) {
+    genui.register(ctx);
     injectStyles();
     const load: Load = (id) => ctx.rest(`/views/${id}`);
     const send: Send = (text) => composerActions(host?.composer).send(text);

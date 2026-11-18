@@ -1,5 +1,7 @@
+import importlib.util
 import json
 import os
+import sys
 import re
 import shutil
 import sqlite3
@@ -18,6 +20,8 @@ VIEW_TAG = re.compile(r'::logview\{id="([0-9a-f]{8})"\}')
 DRAWING_PLATFORMS = frozenset({"local", "desktop"})
 VIEW_TEXT_LIMIT = 3500
 VIEW_ELSEWHERE = "(a view that draws only in Hermes Desktop and the Hermes Webapp)"
+GENUI = ("vendor", "hermesGenui")
+GENUI_PACKAGE = "log_hermes_genui"
 
 
 def has_event_script(root):
@@ -318,11 +322,72 @@ def transform_llm_output(response_text="", platform="", **kwargs):
     return replaced if replaced != response_text else None
 
 
+def load_genui(root):
+    folder = root.joinpath(*GENUI)
+    if not folder.joinpath("__init__.py").is_file():
+        return None
+    if GENUI_PACKAGE in sys.modules:
+        return sys.modules[GENUI_PACKAGE]
+    spec = importlib.util.spec_from_file_location(GENUI_PACKAGE, folder / "__init__.py", submodule_search_locations=[str(folder)])
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[GENUI_PACKAGE] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception:
+        sys.modules.pop(GENUI_PACKAGE, None)
+        raise
+    return module
+
+
+class GenuiContext:
+    def __init__(self, ctx):
+        self.ctx = ctx
+        self.transforms = []
+
+    def register_hook(self, name, callback):
+        if name == "transform_llm_output":
+            self.transforms.append(callback)
+            return None
+        return self.ctx.register_hook(name, callback)
+
+    def __getattr__(self, name):
+        return getattr(self.ctx, name)
+
+
+GENUI_TRANSFORMS = []
+
+
+def combined_llm_output(response_text="", platform="", **kwargs):
+    text = response_text
+    for transform in [*GENUI_TRANSFORMS, transform_llm_output]:
+        try:
+            rewrite = transform(response_text=text, platform=platform, **kwargs)
+        except Exception:
+            rewrite = None
+        if isinstance(rewrite, str) and rewrite:
+            text = rewrite
+    return text if text != response_text else None
+
+
+def register_genui(ctx):
+    try:
+        genui = load_genui(log_root())
+        if genui is None:
+            return False
+        wrapped = GenuiContext(ctx)
+        genui.register(wrapped)
+        GENUI_TRANSFORMS[:] = wrapped.transforms
+        return True
+    except Exception:
+        return False
+
+
 def register(ctx):
     PUSH.ctx = ctx
     ctx.register_hook("pre_llm_call", pre_llm_call)
     ctx.register_hook("transform_tool_result", transform_tool_result)
     ctx.register_hook("post_llm_call", post_llm_call)
-    ctx.register_hook("transform_llm_output", transform_llm_output)
+    register_genui(ctx)
+    ctx.register_hook("transform_llm_output", combined_llm_output)
     key, reader = PUSH.recall()
     PUSH.follow(key, reader)

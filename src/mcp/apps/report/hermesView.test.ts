@@ -154,6 +154,7 @@ describe("the Desktop half shipped in hermesPlugin", () => {
     const log = readFileSync(join(root, DESKTOP_BUNDLES[0].out), "utf8");
     expect(log).toContain('"logview"');
     expect(log).toContain(".dark .logview");
+    expect(log).toContain('"hermes-genui-tag"');
     const genui = readFileSync(join(root, DESKTOP_BUNDLES[1].out), "utf8");
     expect(genui).toContain("--hb-chart-1: #16181d");
   });
@@ -181,4 +182,37 @@ describe("the logHooks text fallback", () => {
     expect(out.missing).toContain("draws only in Hermes Desktop");
     expect(out.plain).toBeNull();
   });
+});
+
+const genuiPython = spawnSync(process.env.LOG_PYTHON || "python", ["-c", "import httpx"], { windowsHide: true }).status === 0;
+
+describe("log's plugin replaces the stock hermes-genui", () => {
+  test.skipIf(!genuiPython)("logHooks registers every genui tool, recipe and the drawing rule, and one transform covers both tags", () => {
+    const plugin = join(root, "hermesPlugin", "native", "__init__.py");
+    const script = [
+      "import importlib.util, json, os",
+      `os.environ["LOG_ROOT"] = ${JSON.stringify(root)}`,
+      `spec = importlib.util.spec_from_file_location("logHooksGenui", ${JSON.stringify(plugin)})`,
+      "module = importlib.util.module_from_spec(spec)",
+      "spec.loader.exec_module(module)",
+      "class Ctx:",
+      "    def __init__(self): self.tools, self.hooks, self.skills, self.sections = [], [], [], []",
+      "    def register_tool(self, **k): self.tools.append(k['name'])",
+      "    def register_hook(self, name, callback): self.hooks.append(name)",
+      "    def register_skill(self, name, *a, **k): self.skills.append(name)",
+      "    def register_system_prompt_section(self, name, *a, **k): self.sections.append(name)",
+      "    def dispatch_tool(self, *a, **k): return None",
+      "ctx = Ctx()",
+      "loaded = module.register_genui(ctx)",
+      "print(json.dumps({'loaded': loaded, 'tools': sorted(ctx.tools), 'hooks': ctx.hooks, 'held': len(module.GENUI_TRANSFORMS), 'skills': len(ctx.skills), 'sections': ctx.sections}))",
+    ].join("\n");
+    const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_INBOX_STATE: scratch } });
+    const out = JSON.parse(run.stdout.trim().split("\n").pop() ?? "{}") as { loaded: boolean; tools: string[]; hooks: string[]; held: number; skills: number; sections: string[] };
+    expect(out.loaded).toBe(true);
+    expect(out.tools).toEqual(expect.arrayContaining(["show_blocks", "market_history", "find_photos", "save_recipe", "dashboard", "board_page", "assistant_setup", "assistant_ideas"]));
+    expect(out.hooks).not.toContain("transform_llm_output");
+    expect(out.held).toBe(1);
+    expect(out.skills).toBeGreaterThan(0);
+    expect(out.sections).toHaveLength(1);
+  }, 60_000);
 });
