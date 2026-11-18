@@ -1,6 +1,6 @@
 {
   "name": "@listeningkit/log",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "ListeningKit's go-to-market tool, open-sourced: one CLI and MCP server that runs your accounts on X, Reddit, Facebook and Discord, self-hosted.",
   "type": "module",
   "bin": {
@@ -99,6 +99,7 @@
     "@huggingface/transformers": "^4.3.1",
     "@modelcontextprotocol/ext-apps": "1.7.5",
     "@modelcontextprotocol/sdk": "^1.32.1",
+    "@relate/relate": "1.0.2",
     "bm25s": "2.0.0",
     "cheerio": "1.2.0",
     "react": "19.2.7",

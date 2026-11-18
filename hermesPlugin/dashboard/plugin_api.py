@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import sqlite3
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
@@ -138,3 +141,52 @@ async def overview() -> dict[str, Any]:
         "waitingTotal": total,
         "syncedAt": max(synced) if synced else None,
     }
+
+
+VIEW_ID = re.compile(r"^[0-9a-f]{8}$")
+VIEW_TEXT_LIMIT = 512 * 1024
+
+
+def _log_db() -> Path:
+    named = os.environ.get("LOG_DB", "").strip()
+    if named:
+        return Path(named)
+    state = os.environ.get("LOG_INBOX_STATE", "").strip()
+    return Path(state) / "log.db" if state else Path.home() / ".logCli" / "log.db"
+
+
+def _stored_view(view_id: str) -> Any:
+    path = _log_db()
+    if not path.is_file():
+        return None
+    try:
+        handle = sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True, timeout=2)
+        try:
+            row = handle.execute("SELECT body FROM state WHERE scope = 'hermesView' AND key = ?", (view_id,)).fetchone()
+        finally:
+            handle.close()
+        if not row or len(row[0]) > VIEW_TEXT_LIMIT:
+            return None
+        return json.loads(row[0])
+    except (sqlite3.Error, ValueError, OSError):
+        return None
+
+
+def _view(view_id: str) -> dict[str, Any] | None:
+    if not VIEW_ID.fullmatch(view_id or ""):
+        return None
+    stored = _stored_view(view_id)
+    if not isinstance(stored, dict) or not isinstance(stored.get("html"), str):
+        return None
+    view = {"id": view_id, "title": str(stored.get("title") or ""), "html": stored["html"]}
+    if isinstance(stored.get("subtitle"), str):
+        view["subtitle"] = stored["subtitle"]
+    return view
+
+
+@router.get("/views/{view_id}")
+def get_view(view_id: str):
+    view = _view(view_id)
+    if view is None:
+        return JSONResponse({"error": "noSuchView"}, status_code=404)
+    return view

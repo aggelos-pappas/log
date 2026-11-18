@@ -45,6 +45,8 @@ export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "capture", platform: "any", module: "src/cli/capture/index.ts", exportName: "captureCommand", longRunning: true },
   { name: "runs", platform: "any", module: "src/cli/runs/index.ts", exportName: "runsCommand" },
   { name: "storage", platform: "any", module: "src/cli/storage/index.ts", exportName: "storageCommand" },
+  { name: "relate", platform: "any", module: "src/cli/relate/index.ts", exportName: "relateCommand" },
+  { name: "people", platform: "any", module: "src/cli/people/index.ts", exportName: "peopleCommand" },
   { name: "timing", platform: "any", module: "src/cli/timing/index.ts", exportName: "timingCommand" },
   { name: "inbox", platform: "any", module: "src/cli/inbox/index.ts", exportName: "inboxCommand" },
   { name: "media", platform: "any", module: "src/cli/media/index.ts", exportName: "mediaCommand" },

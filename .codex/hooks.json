@@ -133,6 +133,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bun \"$(git rev-parse --show-toplevel)/scripts/hooks/relate.ts\" --host codex",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "bun \"$(git rev-parse --show-toplevel)/scripts/hooks/queue.ts\" --host codex",
             "timeout": 10
           }

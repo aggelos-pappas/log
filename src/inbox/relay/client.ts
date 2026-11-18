@@ -5,7 +5,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { hostname } from 'node:os'
 import { addAlert, claimWatcher, killTree, processAlive, processStartedAt, releaseWatcher, sameProcess, watchHolder } from '../watch/index'
 import { appendEvent, asOwner, behindOf, db, lastEventAt, markGap, markStage, openGap, OwnerFencedError } from '../store/index'
-import { CHAT_ACCESS_REFUSAL, HEARTBEAT_MS, HEARTBEAT_RETRIES, HEARTBEAT_RETRY_MS, MAX_BUFFERED_BYTES, NETWORK_FAILURE, OWN_FAILURE, PLATFORM_REFUSAL, STALE_CONFIRM_MS, STALE_MS } from './types'
+import { CHAT_ACCESS_REFUSAL, HEARTBEAT_MS, HEARTBEAT_RETRIES, HEARTBEAT_RETRY_MS, MAX_BUFFERED_BYTES, NETWORK_FAILURE, OWN_FAILURE, OWN_GOVERNOR_CAP, PLATFORM_REFUSAL, STALE_CONFIRM_MS, STALE_MS } from './types'
 import type { AttachResult, CatchUp, CatchUpRun, Relay, RelaySession, RelayStatus } from './types'
 import { gapCatchUpMachine } from './machine'
 import { createActor } from 'xstate'
@@ -290,7 +290,7 @@ export function networkFailure(detail: string): boolean {
 
 export function notThePlatform(detail: string | null | undefined): boolean {
   if (!detail || PLATFORM_REFUSAL.test(detail)) return false
-  return NETWORK_FAILURE.test(detail) || OWN_FAILURE.test(detail) || CHAT_ACCESS_REFUSAL.test(detail)
+  return NETWORK_FAILURE.test(detail) || OWN_FAILURE.test(detail) || CHAT_ACCESS_REFUSAL.test(detail) || OWN_GOVERNOR_CAP.test(detail)
 }
 
 export function catchUpRunner(platform: string, account: string, catchUp: CatchUp | undefined, log: (line: string) => void = () => {}): { run: () => Promise<CatchUpRun>; settled: () => Promise<void> } {

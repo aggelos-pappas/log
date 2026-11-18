@@ -9,7 +9,7 @@ import { roomFromRead } from "../../voice/room/index.ts";
 import { findDiscordAccount, recordDiscordSession, discordGate } from "../../discord/account/session/index.ts";
 import { labelOf, matchChat, normalizedName } from "../../discord/chat/match/index.ts";
 import { embeddableXLinks } from "../../discord/chat/embed/index.ts";
-import { addPending, incomingSince, interruptedLines } from "../../inbox/watch/index.ts";
+import { addPending, incomingSince, interruptedLines, watchLogMark } from "../../inbox/watch/index.ts";
 import { ownOrAttach } from "../../inbox/relay/index.ts";
 import { enqueueAttachments, mediaByPath, mediaLine } from "../../media/describer/index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
@@ -90,11 +90,12 @@ export const discordSessionCommand: Command = {
   },
 };
 
-export const discordDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, channel: string, since: string) => InboxMessage[]; now: () => string } = {
+export const discordDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, channel: string, since: string) => InboxMessage[]; now: () => string; mark: (account: string) => { log: string; offset: number } } = {
   profiles: () => readProfiles(),
   wait: (ms) => new Promise((done) => setTimeout(done, ms)),
   incoming: (account, channel, since) => incomingSince("discord", account, channel, since),
   now: () => new Date().toISOString(),
+  mark: (account) => watchLogMark("discord", account),
 };
 
 const DISCORD_ACCOUNT: FlagSpec = { name: "account", kind: "string", required: true, description: "The DISCORD socialAccount's accountName (its handle)" };
@@ -318,15 +319,40 @@ export function watchLine(event: Record<string, unknown>): string {
   return `${event.at ?? ""} ${event.guildId ? `channel ${event.channelId}` : `chat ${event.channelId}`} · ${event.from}${event.bot ? " [bot]" : ""}${event.fromMe ? " (me)" : ""}${event.replyTo ? ` replying to ${event.replyTo}` : ""} · ${event.id}: ${text}`;
 }
 
-export function toInboxOf(event: Record<string, unknown>): boolean {
+export function toInboxOf(event: Record<string, unknown>, talking?: ServerTalks): boolean {
   if (event.kind !== "message" || event.fromMe) return false;
   if (event.bot && String(event.text ?? "").trim() === "Thinking...") return false;
-  return !event.guildId || event.mentionsMe === true || event.repliesToMe === true;
+  return !event.guildId || event.mentionsMe === true || event.repliesToMe === true || (talking?.with(event) ?? false);
+}
+
+export const SERVER_TALK_MS = 30 * 60_000;
+
+export class ServerTalks {
+  private senders = new Map<string, string>();
+  private talks = new Map<string, number>();
+  see(event: Record<string, unknown>, at: number): void {
+    if (event.kind !== "message" || !event.guildId || !event.channelId) return;
+    const channel = String(event.channelId);
+    if (event.id && event.fromId) {
+      this.senders.set(String(event.id), String(event.fromId));
+      if (this.senders.size > 5000) this.senders.delete(this.senders.keys().next().value as string);
+    }
+    if (event.fromMe) {
+      const to = event.replyTo ? this.senders.get(String(event.replyTo)) : undefined;
+      const tagged = [...String(event.text ?? "").matchAll(/<@!?(\d{15,22})>/g)].map((m) => m[1]);
+      for (const who of [to, ...tagged]) if (who) this.talks.set(`${channel}:${who}`, at);
+    } else if (event.fromId && (event.mentionsMe === true || event.repliesToMe === true)) this.talks.set(`${channel}:${String(event.fromId)}`, at);
+  }
+  with(event: Record<string, unknown>, at = Date.now()): boolean {
+    if (!event.guildId || !event.channelId || !event.fromId || event.bot) return false;
+    const last = this.talks.get(`${String(event.channelId)}:${String(event.fromId)}`);
+    return last !== undefined && at - last <= SERVER_TALK_MS;
+  }
 }
 
 export function discordInboxMessageOf(account: string, event: Record<string, unknown>, now: Date) {
   const attachments = ((event.attachments as { name?: string; filename?: string; type?: string; content_type?: string; path?: string; error?: string }[] | undefined) ?? []).filter((a) => a.name ?? a.filename).map((a) => ({ name: String(a.name ?? a.filename), ...((a.type ?? a.content_type) ? { type: String(a.type ?? a.content_type) } : {}), ...(a.path ? { path: a.path } : {}), ...(a.error ? { error: a.error } : {}) }));
-  return { platform: "discord", account, conversationId: String(event.channelId ?? ""), with: String(event.from ?? "?"), text: String(event.text ?? ""), at: String(event.at ?? now.toISOString()), box: event.guildId ? (event.mentionsMe ? "mention" : "reply") : "dm", seenAt: now.toISOString(), ...(event.id ? { id: String(event.id) } : {}), ...(event.fromId ? { senderId: String(event.fromId) } : {}), ...(event.replyTo ? { replyTo: String(event.replyTo) } : {}), ...(event.guildId ? { serverId: String(event.guildId) } : {}), ...(attachments.length ? { attachments } : {}) };
+  return { platform: "discord", account, conversationId: String(event.channelId ?? ""), with: String(event.from ?? "?"), text: String(event.text ?? ""), at: String(event.at ?? now.toISOString()), box: event.guildId ? (event.mentionsMe ? "mention" : event.repliesToMe ? "reply" : "talk") : "dm", seenAt: now.toISOString(), ...(event.id ? { id: String(event.id) } : {}), ...(event.fromId ? { senderId: String(event.fromId) } : {}), ...(event.replyTo ? { replyTo: String(event.replyTo) } : {}), ...(event.guildId ? { serverId: String(event.guildId) } : {}), ...(attachments.length ? { attachments } : {}) };
 }
 
 export const discordWatchCommand: Command = {
@@ -375,13 +401,15 @@ export const discordWatchCommand: Command = {
         },
         run: (emit) => {
           context.err(`${account.accountName}: the one owner of Discord's gateway as the account's own browser${only ? `, showing only ${only}` : ""}${seconds ? `, for ${seconds} s` : ", until stopped"}; new DMs, group messages, mentions and replies go to the inbox and every event to every attached subscriber`);
+          const talks = new ServerTalks();
           return directDiscordLive(account, { action: "watch", seconds }, (event) => {
             emit(event);
             if (event.kind === "message" && !event.guildId && event.channelId && event.id) {
               recordPosition("discord", account.accountName, String(event.id), String(event.channelId));
               if (event.fromMe) storeRead("discord", account.accountName, String(event.channelId), "dm", { id: String(event.id), at: String(event.at ?? ""), from: "me", fromMe: true, text: String(event.text ?? "") }, context.now?.() ?? new Date(), "live");
             }
-            const mine = toInboxOf(event);
+            const mine = toInboxOf(event, talks);
+            talks.see(event, Date.now());
             if (mine) {
               const inbox = discordInboxMessageOf(account.accountName, event, context.now?.() ?? new Date());
               enqueueAttachments(inbox, ((event.attachments as { filename?: string; name?: string; content_type?: string; type?: string; path?: string }[] | undefined) ?? []).map((a) => ({ name: a.filename ?? a.name, type: a.content_type ?? a.type ?? "", path: a.path ?? null })));
@@ -528,7 +556,7 @@ export function filesOf(given: readonly string[] | undefined, roots = fileRoots(
 }
 
 export const DISCORD_SEND_USAGE = [
-  'Usage: log discord send --account <accountName> --channel <channelId|chat name> --text "<message>" [--asOne] [--overGate] [--approvedBy <who>] [--live] [--json]',
+  'Usage: log discord send --account <accountName> --channel <channelId|chat name> --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]',
   "Sends one message to a DM, a group DM (by its id or its name, from log discord chats) or a server channel (by its id), on the direct-API engine (no browser). Each message is typed first, as Discord's own app does: the typing signal (POST channels/<id>/typing, so the chat shows the account typing) goes out, then the account waits as long as the text takes to type, sending the signal again every 8 s, before the message. A typing signal Discord refuses or doesn't answer stops it before the message, nothing retried (rule 94).",
   "--brief says the message hands someone a task, not a casual reply: the gate reads it as a brief instead of the owner's chat voice (rule 162), asking SubQ whether it says clearly what to do, why, what done looks like and by when, kindly, and how to ask when stuck, with the attached files read beside it. The sameness, AI artifact and scrambler checks still run.",
   "--file attaches files (a guide, a spreadsheet) to the last message, uploaded through the account's own session: only files under OUTBOX or ~/.logCli, at most 10 MB each, refused before anything is sent otherwise (fileRefused).",
@@ -551,6 +579,7 @@ export const DISCORD_SEND_INPUT: CommandInput = {
         { name: "brief", kind: "boolean", description: "The message hands someone a task: gated as a brief (clear, why, done when, kind, how to ask), not as casual chat (rule 162)" },
         { name: "asOne", kind: "boolean", description: "Send it as one message, never split" },
         { name: "overGate", kind: "boolean", description: "the owner said to send this exact message over the voice gate's refusal: its SubQ read is skipped, the AI artifact check still runs; only when he said so for this message (rule 152)" },
+        { name: "followUp", kind: "boolean", description: "the owner asked for this follow-up, so the already-answered check lets it through; the voice gate still runs" },
         { name: "live", kind: "boolean", live: true, description: "Send it on Discord, only when the owner asked (rule 8); without it a dry run contacts nothing" },
         JSON_FLAG,
       ],
@@ -565,7 +594,7 @@ export const discordSendCommand: Command = {
   effect: "write",
   input: DISCORD_SEND_INPUT,
   summary: "Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live",
-  args: '--account <a> --channel <id|name> --text "<message>" [--file <path>[,<path>]] [--brief] [--asOne] [--overGate] [--approvedBy <who>] [--live] [--json]',
+  args: '--account <a> --channel <id|name> --text "<message>" [--file <path>[,<path>]] [--brief] [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]',
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DISCORD_SEND_INPUT));
     if (!parsed.ok) return refuseInput("discord send", parsed.error, DISCORD_SEND_USAGE);
@@ -627,7 +656,7 @@ export const discordSendCommand: Command = {
             context.err(`${account.accountName}: --overGate: the owner said to send this message over the voice gate, so its read is skipped; the AI artifact check passed (rule 152)`);
           } else {
             const roomSource = kind === "channel" ? null : await readSourceFor("discord", account.accountName, target, chatMessageCount("discord", account.accountName, target), 20);
-            const voiced = await gateDeps.gate(context, { platform: "discord", account: account.accountName, to: shown, text, conversationId: target, ...(parsed.flags["brief"] === true ? { brief: true, files: files.paths } : {}), readRoom: () => (roomSource?.from === "db" || chatCurrent ? roomFromRead(shown, kind, { ok: true, messages: chatMessages("discord", account.accountName, target, 20) }) : roomFromRead(shown, kind, direct(account, { action: "read", channel: target, limit: 20, saveAudio: false, saveImages: false } as never).answer)) });
+            const voiced = await gateDeps.gate(context, { platform: "discord", account: account.accountName, to: shown, text, conversationId: target, ...(parsed.flags["followUp"] === true ? { followUp: true } : {}), ...(parsed.flags["brief"] === true ? { brief: true, files: files.paths } : {}), readRoom: () => (roomSource?.from === "db" || chatCurrent ? roomFromRead(shown, kind, { ok: true, messages: chatMessages("discord", account.accountName, target, 20) }) : roomFromRead(shown, kind, direct(account, { action: "read", channel: target, limit: 20, saveAudio: false, saveImages: false } as never).answer)) });
             if (!voiced.ok) return { ok: false, code: "voiceGateFailed", detail: voiced.refused };
             context.err(voiced.line);
           }
@@ -636,6 +665,7 @@ export const discordSendCommand: Command = {
         },
         act: async (guard) => {
           const startedAt = discordDeps.now();
+          const holdIf = { ...discordDeps.mark(account.accountName), chat: target };
           for (const [i, part] of plan.parts.entries()) {
             if (i) {
               await discordDeps.wait(plan.gapSeconds * 1000);
@@ -655,7 +685,12 @@ export const discordSendCommand: Command = {
               sending.sent.push({ ok: true, event: "sent", messageId: "(already sent before)" } as PlatformAnswer);
               continue;
             }
-            const run = direct(account, { action: "send", channel: target, text: part, live: true, approvedBy, ...(i ? { continuesSend: true } : {}), ...(files.paths.length && i === plan.parts.length - 1 ? { files: files.paths } : {}) });
+            const run = direct(account, { action: "send", channel: target, text: part, live: true, approvedBy, holdIf, ...(i ? { continuesSend: true } : {}), ...(files.paths.length && i === plan.parts.length - 1 ? { files: files.paths } : {}) });
+            if (!run.answer.ok && run.answer.code === "chatMovedOn") {
+              const stored = discordDeps.incoming(account.accountName, target, startedAt);
+              sending.interrupted = stored.length ? stored : [{ platform: "discord", account: account.accountName, conversationId: target, with: "they", text: String(run.answer.detail ?? ""), at: discordDeps.now(), box: "dm", seenAt: discordDeps.now() }];
+              break;
+            }
             sending.sent.push(run.answer);
             if (!run.answer.ok || run.answer.event !== "sent") break;
             guard.partSent(i, part, run.answer.messageId ? String(run.answer.messageId) : null);

@@ -89,7 +89,7 @@ export function renderVoice(reading: VoiceReading & { notHere?: string[]; aiTell
   const ai = reading.aiTells ? `\n  ${aiTellsLine(reading.aiTells)}` : "";
   const phrases = reading.phrases ? `\n  ${phrasesLine(reading.phrases)}` : "";
   const scrambler = reading.scrambler ? `\n  ${scramblerLine(reading.scrambler)}` : "";
-  return `log voice: @${reading.to.replace(/^@/, "")} ${reading.pass ? "PASS" : "FAIL"}: ${scores}${never}${notHere}${watermark}${ai}${phrases}${scrambler}${reading.pass ? "" : "\n  rewrite it in the owner's words and gate it again"}`;
+  return `log voice: @${reading.to.replace(/^@/, "")} ${reading.pass ? "PASS" : "FAIL"}: ${scores}${never}${notHere}${watermark}${ai}${phrases}${scrambler}${reading.pass ? "" : `${reading.firstContact ? `\n  ${firstContactLine(reading.to)}` : ""}\n  rewrite it in the owner's words and gate it again`}`;
 }
 
 function chatsOf(conversations: readonly Conversation[]): (DiscordChat & { platform: string; account: string; conversationId: string; target: VoiceTarget })[] {
@@ -327,7 +327,7 @@ function cosineOf(a: ArrayLike<number>, b: ArrayLike<number>): number {
   return na && nb ? dot / Math.sqrt(na * nb) : 0;
 }
 
-export async function gateReading(context: CommandContext, draft: { to: string; text: string; said: string; guide: string; evidence?: VoiceEvidence; ranked?: RankedMoment[]; spoken?: boolean; room?: Room; card?: ConversationCard | null }): Promise<GateReading> {
+export async function gateReading(context: CommandContext, draft: { to: string; text: string; said: string; guide: string; evidence?: VoiceEvidence; ranked?: RankedMoment[]; spoken?: boolean; room?: Room; card?: ConversationCard | null; publicReply?: boolean }): Promise<GateReading> {
   const { to, text, said, guide, evidence } = draft;
   const ranked = draft.ranked ?? [];
   const scoped = scopedToThisChat(draft.card ?? null);
@@ -337,7 +337,7 @@ export async function gateReading(context: CommandContext, draft: { to: string; 
   if (!phraseIndex) context.err("voice: no voice index yet, so the owner's own phrasing isn't measured: build it with `log voice index`");
   const phrases = phraseIndex ? readPhrases(text, phraseIndex, said) : undefined;
   const scrambler = voiceDeps.scrambler(text);
-  const scored = await readVoice({ to, text, ...cardFacts(draft.card), ...(said ? { context: said } : {}), ...(evidence ? { evidence } : {}), ...(everywhere ? { everywhere } : {}), ...(phrases ? { phrasesNewToOwner: phrases.newPhrasing } : {}), ...(ranked.length ? { conversation: ranked } : {}), ...(draft.spoken ? { spoken: true, howOwnerTalks: voiceDeps.howOwnerTalks() } : {}), ...(draft.room ? { room: draft.room } : {}), ...(scrambler.ran ? { scrambler: { suspicious: scrambler.suspicious, kinds: [...new Set(scrambler.hits.map((h) => h.kind))] } } : {}) }, guide, voiceDeps.decisions());
+  const scored = await readVoice({ to, text, ...(draft.card?.fromOwner ? { ownerWroteHere: draft.card.fromOwner } : {}), ...cardFacts(draft.card), ...(said ? { context: said } : {}), ...(evidence ? { evidence } : {}), ...(everywhere ? { everywhere } : {}), ...(phrases ? { phrasesNewToOwner: phrases.newPhrasing } : {}), ...(ranked.length ? { conversation: ranked } : {}), ...(draft.spoken ? { spoken: true, howOwnerTalks: voiceDeps.howOwnerTalks() } : {}), ...(draft.publicReply ? { publicReply: true } : {}), ...(draft.room ? { room: draft.room } : {}), ...(scrambler.ran ? { scrambler: { suspicious: scrambler.suspicious, kinds: [...new Set(scrambler.hits.map((h) => h.kind))] } } : {}) }, guide, voiceDeps.decisions());
   const notHere = evidence && !draft.spoken ? offProfile(text, evidence.profile as VoiceProfile | null) : [];
   const aiReady = await ensureAiIndex(context);
   const aiIndex = openAiIndex(aiIndexDir(), JINA_EMBED_MODEL);
@@ -354,8 +354,14 @@ export function howOwnerTalks(): string[] {
   });
 }
 
+export function firstContactLine(to: string): string {
+  const them = to.replace(/^@/, "");
+  return `first message: the owner has never messaged @${them}, so this is a cold opener and there is no chat of theirs to answer. Open it the cold way (getGuide({ useCase: \"twitter/engagerDms\" }), how a cold DM opens): one of their own recent posts first (twitterPosts { user: \"${them}\" }), then one informal line about it, with no ask and no stock thanks`;
+}
+
 export function failedParts(reading: GateReading): string[] {
   const out: string[] = [];
+  if (reading.firstContact && !reading.pass) out.push(firstContactLine(reading.to));
   if (reading.neverSays.length) out.push(`phrases the owner never says: ${reading.neverSays.join(", ")}`);
   if (reading.watermark.level === "artifacts") out.push(`AI artifacts in the text: ${watermarkLine(reading.watermark)}`);
   if (reading.voice < VOICE_PASS) out.push(`doesn't sound like the owner ${reading.buildsOn === null ? "typed" : "said"} it (voice ${reading.voice.toFixed(2)}, needs ${VOICE_PASS})`);
@@ -405,7 +411,7 @@ export function roomKindOf(send: { platform: string; conversationId?: string | n
   return send.conversationId || send.handle || send.userId ? "dm" : "unknown";
 }
 
-type GateSend = { platform: string; account: string; to: string; text: string; conversationId?: string | null; handle?: string | null; userId?: string | null; said?: string; spoken?: boolean; room?: Room; readRoom?: () => Room | undefined; brief?: boolean; files?: readonly string[] };
+type GateSend = { platform: string; account: string; to: string; text: string; conversationId?: string | null; handle?: string | null; userId?: string | null; said?: string; spoken?: boolean; room?: Room; readRoom?: () => Room | undefined; brief?: boolean; files?: readonly string[]; followUp?: boolean; publicReply?: boolean };
 
 export function gateSend(context: CommandContext, send: GateSend): Promise<{ ok: true; line: string } | { ok: false; refused: string }> {
   return timed("voice.gate", async (span) => {
@@ -415,7 +421,21 @@ export function gateSend(context: CommandContext, send: GateSend): Promise<{ ok:
   }, { platform: send.platform, brief: send.brief === true, spoken: send.spoken === true });
 }
 
+export const ALREADY_ANSWERED_MS = 3 * 60 * 60 * 1000;
+
+export function alreadyAnswered(messages: readonly { fromMe?: boolean; time?: string | null; text?: string | null }[], nowMs: number = Date.now()): { at: string; text: string } | null {
+  const timed = messages.filter((m) => !Number.isNaN(Date.parse(String(m.time ?? "")))).sort((a, b) => Date.parse(String(a.time)) - Date.parse(String(b.time)));
+  const lastTheirs = [...timed].reverse().find((m) => !m.fromMe);
+  const lastMine = [...timed].reverse().find((m) => m.fromMe);
+  if (!lastMine) return null;
+  const mineAt = Date.parse(String(lastMine.time));
+  if (lastTheirs && Date.parse(String(lastTheirs.time)) > mineAt) return null;
+  return nowMs - mineAt <= ALREADY_ANSWERED_MS ? { at: String(lastMine.time), text: String(lastMine.text ?? "") } : null;
+}
+
 async function gateSendNow(context: CommandContext, send: GateSend): Promise<{ ok: true; line: string } | { ok: false; refused: string }> {
+  const answered = send.followUp ? null : alreadyAnswered(saidOnly(chatContextOf(send.platform, send.account, { conversationId: send.conversationId ?? null, handle: send.handle ?? null, userId: send.userId ?? null }).messages));
+  if (answered) return { ok: false, refused: `>>> ALREADY ANSWERED in ${send.to}: the owner's message "${answered.text.slice(0, 120)}" went out at ${answered.at} and they haven't written since, so this one wasn't sent. Another session or an earlier send already answered them: read the chat (inboxActions { chat }) and send only what the owner asks for on top of it; when he asked for a follow-up on top of it, send again with followUp.` };
   const same = timedSync("voice.sameness", () => gateDeps.same({ platform: send.platform, account: send.account, to: send.to, text: send.text }));
   if (!same.ok) return { ok: false, refused: same.refused };
   if (send.brief) return gateBrief(send);
@@ -431,7 +451,7 @@ async function gateSendNow(context: CommandContext, send: GateSend): Promise<{ o
   const card = timedSync("voice.card", () => cardOrNull(send.platform, send.account, who));
   const ranked = await timed("voice.rankedContext", () => rankedContext(send.platform, send.account, who, [said, send.text].filter((t) => t.trim()).join("\n"))).catch(() => []);
   const evidence = await timed("voice.evidence", () => chatEvidence(context, said, { platform: send.platform, conversationId: send.conversationId, userId: send.userId, handle }, send.text));
-  const reading = await timed("voice.reading", () => gateReading(context, { to: handle || send.to, text: send.text, said, guide, ranked, card, ...(evidence ? { evidence } : {}), ...(send.spoken ? { spoken: true } : {}), room }));
+  const reading = await timed("voice.reading", () => gateReading(context, { to: handle || send.to, text: send.text, said, guide, ranked, card, ...(evidence ? { evidence } : {}), ...(send.spoken ? { spoken: true } : {}), ...(send.publicReply ? { publicReply: true } : {}), room }));
   if (reading.pass) {
     recordPass(send.text, send.to, reading.voice);
     return { ok: true, line: `voice gate: passed for ${handle ? `@${handle}` : send.to} (voice ${reading.voice.toFixed(2)})` };

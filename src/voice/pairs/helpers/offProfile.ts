@@ -9,11 +9,12 @@ const FEATURES: { name: string; share: (p: VoiceProfile) => number; has: (text: 
   { name: 'an exclamation mark', share: (p) => p.exclamations, has: (t) => t.includes('!') },
   { name: 'a question mark', share: (p) => p.questions, has: (t) => t.includes('?') },
   { name: 'a comma', share: (p) => p.commas, has: (t) => t.includes(',') },
-  { name: 'a full stop', share: (p) => p.fullStops, has: (t) => /\.(\s|$)/.test(t.replace(/https?:\/\/\S+/g, '')) },
+  { name: 'a full stop', share: (p) => p.fullStops, has: (t) => /\.(\s|$)/.test(t) },
   { name: 'capital letters', share: (p) => 1 - p.lowercase, has: (t) => t !== t.toLowerCase() },
 ]
 
 export function offProfile(text: string, profile: VoiceProfile | null): string[] {
   if (!profile || profile.replies < SEEN) return []
-  return FEATURES.filter((f) => f.share(profile) <= RARE && f.has(text)).map((f) => `${f.name} (he uses it in ${Math.round(f.share(profile) * profile.replies)} of his ${profile.replies} messages here)`)
+  const prose = text.replace(/https?:\/\/\S+/g, '')
+  return FEATURES.filter((f) => f.share(profile) <= RARE && f.has(prose)).map((f) => `${f.name} (he uses it in ${Math.round(f.share(profile) * profile.replies)} of his ${profile.replies} messages here)`)
 }

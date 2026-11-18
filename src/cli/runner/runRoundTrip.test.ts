@@ -163,13 +163,14 @@ let clientBefore: typeof tregDeps.client;
 
 beforeAll(() => {
   const home = mkdtempSync(join(tmpdir(), "logRoundTrip"));
-  for (const key of ["USERPROFILE", "HOME", "LOG_HOME", "LOG_PYTHON", "KB_TWENTY_URL", "MEMELORD_API_KEY"]) saved[key] = process.env[key];
+  for (const key of ["USERPROFILE", "HOME", "LOG_HOME", "LOG_PYTHON", "KB_TWENTY_URL", "MEMELORD_API_KEY", "LOG_CLIENT_DOCS_ROOT"]) saved[key] = process.env[key];
   cwdBefore = process.cwd();
   process.chdir(home);
   process.env.USERPROFILE = home;
   process.env.HOME = home;
   process.env.LOG_HOME = join(home, ".logCli");
   process.env.LOG_PYTHON = join(home, "noPython.exe");
+  process.env.LOG_CLIENT_DOCS_ROOT = join(home, "clientDocs");
   delete process.env.KB_TWENTY_URL;
   delete process.env.MEMELORD_API_KEY;
   instrumentFetch();

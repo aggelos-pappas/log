@@ -1,0 +1,31 @@
+/* log's Lynx look over the upstream blocks, loaded last so it wins: the same card, title and number rules as log's
+   report kit (src/mcp/apps/report/view/kit.css). Upstream's bold headings and heavy figures become Lynx's light
+   ones; colour and type come from tokens.css. */
+.hb-card {
+  background: var(--hb-card);
+  border: 1px solid var(--hb-line);
+  border-radius: var(--hb-radius);
+  padding: 16px 18px;
+  box-shadow: none;
+}
+.hb-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.hb-kpis { gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.hb-kpi { padding: 16px 18px; gap: 4px; }
+.hb-kpi-label { font-size: 12.5px; font-weight: 500; color: var(--hb-muted); }
+.hb-kpi-value {
+  font-size: 32px;
+  font-weight: 450;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+.hb-kpi-value-text { font-size: 17px; font-weight: 500; letter-spacing: -0.015em; }
+.hb-kpi-change { font-weight: 500; }
+.hb-chip { font-weight: 500; }
+.hb-pill { font-weight: 500; border-radius: 10px; }
+.hb-pill-solid { color: var(--hb-surface); }
+.hb-pill-solid:hover { background: color-mix(in srgb, var(--hb-accent) 86%, var(--hb-surface)); }
+.hb-blocks h1, .hb-blocks h2, .hb-blocks h3 { font-weight: 600; letter-spacing: -0.02em; }

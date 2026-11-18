@@ -23,6 +23,7 @@ const QUEUE = "scripts/hooks/queue.ts";
 const X_LIVE = "scripts/hooks/xLive.ts";
 const CHAT_NAMES = "scripts/hooks/chatNames.ts";
 const USE_CASES = "scripts/hooks/useCases.ts";
+const RELATE = "scripts/hooks/relate.ts";
 export const EVENT_SCRIPT = "scripts/hooks/event.ts";
 
 export const AGENT_HOOKS: readonly AgentHook[] = [
@@ -39,6 +40,7 @@ export const AGENT_HOOKS: readonly AgentHook[] = [
   { event: "SessionStart", matcher: "startup|resume|clear|compact", script: QUEUE, timeout: 10, why: "what every account's queue did since the last look (held, sent, cooling off, stopped), so a queue is never running out of the agent's sight (rule 109)" },
   { event: "SessionStart", matcher: "startup|resume|clear|compact", script: USE_CASES, timeout: 10, why: "the play this session loaded, read from its own transcript, put back with the step it reached when the session comes back from compaction or resumes, and the context layer service started (rule 158)" },
   { event: "UserPromptSubmit", script: USE_CASES, service: "/hook", timeout: 10, why: "the play the owner's prompt asks for, matched against every use case's own \"How the owner asks for it\" phrases and title, named with getGuide to load it before anything is done (rule 158)" },
+  { event: "UserPromptSubmit", script: RELATE, timeout: 10, why: "the people the owner's prompt names (@handle or a known handle), looked up in the Relate graph projected from log.db: which accounts talk with them, what they engaged, the groups they share, who could introduce them and who is in the same orbit; silent when nobody is named, and the graph rebuilt in the background when log.db has moved on" },
   { event: "UserPromptSubmit", script: QUEUE, timeout: 10, why: "the same queue events with each of the owner's prompts" },
   { event: "PostToolUse", matcher: TOOL_MATCHER, script: QUEUE, timeout: 10, why: "the same queue events after a log tool or shell call, so a held item or a cool-off is acted on at once" },
   { event: "SessionStart", matcher: "startup|resume|clear|compact", script: X_LIVE, timeout: 10, why: "what X's own client shows on each X account right now (its unread notifications, DMs and X Chat, read through the account's one session the way x.com polls it), and every new like, retweet, reply, quote, mention or follow since this Claude session last looked (rule 109)" },
@@ -140,9 +142,12 @@ export function hermesPluginYaml(version: string): string {
   return [
     `name: ${HERMES_PLUGIN_NAME}`,
     `version: ${version}`,
-    `description: "log's hooks for Hermes. Before each model call, pre_llm_call puts the play the prompt asks for, pending inbox messages and browser states in front of the model. Written from src/agentHooks/registry (bun run check:agentHooks --write)."`,
+    `description: "log's hooks for Hermes. Before each model call, pre_llm_call puts the play the prompt asks for, pending inbox messages and browser states in front of the model, after each log tool transform_tool_result adds the messages that landed while it ran so a stale draft is steered before the next send, a message the account watchers hear between turns starts a turn in that chat through ctx.inject_message, and what they hear during a turn is held for that turn and post_llm_call hands any left over as one turn (needs plugins.entries.logHooks.allow_gateway_injection: true). On chats that can't draw, transform_llm_output swaps a report view's ::logview line for its text. Written from src/agentHooks/registry (bun run check:agentHooks --write)."`,
     "provides_hooks:",
     "  - pre_llm_call",
+    "  - transform_tool_result",
+    "  - post_llm_call",
+    "  - transform_llm_output",
     "",
   ].join("\n");
 }
@@ -171,7 +176,7 @@ function wholeFile(path: string, wanted: Record<string, unknown>): HookFile {
   return { path, format: "json", same: (current) => JSON.stringify(parsedOrNull(current)) === JSON.stringify(wanted), wanted: () => jsonText(wanted) };
 }
 
-export function hookFiles(hooks: readonly AgentHook[] = AGENT_HOOKS, hermesVersion = "0.2.0"): HookFile[] {
+export function hookFiles(hooks: readonly AgentHook[] = AGENT_HOOKS, hermesVersion = "0.2.1"): HookFile[] {
   const yaml = hermesPluginYaml(hermesVersion);
   return [
     hooksKeyFile(".claude/settings.json", hooksFor("claudeCode", hooks)),

@@ -158,6 +158,11 @@ export function sessionCheckedSince(platform: string, account: string, since: nu
   return session.sessionState === 'loggedIn' && Date.parse(session.checkedAt ?? '') > since
 }
 
+export function watchLogMark(platform: string, account: string): { log: string; offset: number } {
+  const log = join(inboxRoot(), platform, account, 'watch.log')
+  return { log, offset: existsSync(log) ? statSync(log).size : 0 }
+}
+
 export function watcherGone(platform: string, account: string): boolean {
   const session = readJson<{ sessionState?: string }>(join(dirname(inboxRoot()), platform, account, 'session.json'), {})
   if (session.sessionState === 'loggedOut') return true
@@ -376,7 +381,7 @@ export function localTime(iso: string): string {
 const SEND_RULE = 'Send it straight away when it answers what they said and fits that conversation: the owner has given full authority to reply and follow up (rule 108). Then tell the owner what they said and what went out. Hold it and ask him only when it would book a meeting, make a promise, name a price or money, or you cannot tell what the conversation is about.'
 
 function discordContext(messages: readonly InboxMessage[]): string {
-  const lines = messages.map((m) => `  ${m.with} on discord ${m.account} (${m.box === 'dm' ? 'DM or group' : m.box === 'mention' ? 'mentioned you in a server channel' : 'replied to you in a server channel'}) at ${localTime(m.at)}: "${m.text.replace(/\s+/g, ' ').slice(0, 240)}" (channel ${m.conversationId})`)
+  const lines = messages.map((m) => `  ${m.with} on discord ${m.account} (${m.box === 'dm' ? 'DM or group' : m.box === 'mention' ? 'mentioned you in a server channel' : m.box === 'talk' ? 'in a server channel conversation with you' : 'replied to you in a server channel'}) at ${localTime(m.at)}: "${m.text.replace(/\s+/g, ' ').slice(0, 240)}" (channel ${m.conversationId})`)
   const { account } = messages[0]
   return [
     `>>> NEW DISCORD MESSAGE${messages.length === 1 ? '' : 'S'} (${messages.length}): pushed by Discord's gateway the moment it landed. Tell the owner now, with what they said and what the conversation is about. Then, for each one:`,

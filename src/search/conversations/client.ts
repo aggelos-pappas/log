@@ -5,8 +5,9 @@ import { join } from 'node:path'
 import { BM25, tokenize } from 'bm25s'
 import { VectorDB } from 'verso-db'
 import type { Collection } from 'verso-db'
-import { chunksOf, onePerPerson, percentiles, reciprocalRankFusion } from './helpers/index'
-import { SEARCH_DEPTH } from './types'
+import { bayesFusion, chunksOf, onePerPerson, percentiles, reciprocalRankFusion } from './helpers/index'
+import type { Scored } from './helpers/index'
+import { RELATION_TRUST, SEARCH_DEPTH } from './types'
 import type { Chunk, Conversation, Embedder, Latency, SearchHit, SearchOptions } from './types'
 import type { TwitterDmConversation } from '../../twitter/account/session/index'
 import { applyTranscripts } from '../../media/voiceNotes/helpers/store'
@@ -211,6 +212,16 @@ function passes(chunk: Chunk, options: SearchOptions): boolean {
   return true
 }
 
+export function relationList(index: ConversationIndex, relation: (chunk: Chunk) => number, options: SearchOptions = {}): Scored[] {
+  const found: (Scored & { at: string })[] = []
+  for (const chunk of index.chunks) {
+    if (!passes(chunk, options)) continue
+    const score = relation(chunk)
+    if (score > 0) found.push({ id: chunk.id, score, at: chunk.at ?? '' })
+  }
+  return found.sort((a, b) => b.score - a.score || b.at.localeCompare(a.at)).map(({ id, score }) => ({ id, score }))
+}
+
 export async function search(index: ConversationIndex, query: string, options: SearchOptions = {}): Promise<SearchHit[]> {
   const limit = options.limit ?? 10
   const filtered = Boolean(options.platform || options.account || options.with || options.after)
@@ -220,16 +231,23 @@ export async function search(index: ConversationIndex, query: string, options: S
     const terms = queryTerms(query)
     if (!terms[0].length) return []
     const found = index.keyword.retrieve(terms, { k: depth })
-    return Array.from(found.documents[0]).filter((_, i) => found.scores[0][i] > 0).map((n) => index.chunks[n as number].id)
+    return Array.from(found.documents[0]).map((n, i) => ({ id: index.chunks[n as number].id, score: Number(found.scores[0][i]) })).filter((s) => s.score > 0)
   })()
   const meaningList = (async () => {
     const [vector] = await index.embedder.embed([query])
     const found = await index.vectors.search({ vector, limit: depth })
-    return found.matches.map((m: { id: string | number }) => String(m.id))
+    return found.matches.map((m: { id: string | number; score: number }) => ({ id: String(m.id), score: m.score }))
   })()
   const [byKeyword, byMeaning] = await Promise.all([keywordList, meaningList])
-  const keep = (ids: string[]) => ids.filter((id) => index.byId.has(id) && passes(index.byId.get(id)!, options))
-  return reciprocalRankFusion([keep(byKeyword), keep(byMeaning)]).slice(0, limit).map((f, i) => ({ rank: i + 1, score: f.score, keywordRank: f.ranks[0], meaningRank: f.ranks[1], chunk: index.byId.get(f.id)! }))
+  const keep = (list: Scored[]) => list.filter((s) => index.byId.has(s.id) && passes(index.byId.get(s.id)!, options))
+  const lists = [keep(byKeyword), keep(byMeaning)]
+  if (options.fusion === 'bayes') {
+    const prior = options.prior
+    const related = options.relation ? relationList(index, options.relation, options) : []
+    const fused = bayesFusion(related.length ? [...lists, related] : lists, { prior: prior ? (id) => prior(index.byId.get(id)!) : undefined, trust: [undefined, undefined, RELATION_TRUST], missed: ['weakNo', 'weakNo', 'ignorance'], probability: [false, false, true] })
+    return fused.slice(0, limit).map((f, i) => ({ rank: i + 1, score: f.score, keywordRank: f.ranks[0], meaningRank: f.ranks[1], relationRank: f.ranks[2] ?? null, chunk: index.byId.get(f.id)!, likelihood: f.likelihood, prior: f.prior, conflict: f.conflict }))
+  }
+  return reciprocalRankFusion(lists.map((list) => list.map((s) => s.id))).slice(0, limit).map((f, i) => ({ rank: i + 1, score: f.score, keywordRank: f.ranks[0], meaningRank: f.ranks[1], chunk: index.byId.get(f.id)! }))
 }
 
 export function linearScan(conversations: Conversation[], query: string, limit = 10): Chunk[] {

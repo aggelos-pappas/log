@@ -53,7 +53,7 @@ export function makeExtender(options: BaseOptions): PlatformExtender {
     toChat(event) {
       if (!event.conversationId) return null
       const kind = options.chatKind(event)
-      const name = textOf(event.payload.title) ?? textOf(event.payload.chatName) ?? (kind === 'dm' ? handleOf(event) : null)
+      const name = textOf(event.payload.title) ?? textOf(event.payload.chatName) ?? (kind === 'dm' && event.type !== 'ownMessage' && event.payload.fromMe !== true ? handleOf(event) : null)
       return { chatId: chatIdOf(event.platform, event.account, event.conversationId), platform: event.platform, account: event.account, conversationId: event.conversationId, kind, name, serverId: options.serverIdOf?.(event) ?? null }
     },
     toIdentities(event, context) {

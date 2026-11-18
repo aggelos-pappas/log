@@ -15,11 +15,14 @@ When the owner asks for one of these, follow its page step by step.
 | `getGuide({ useCase: "discord/channelReply" })` | Answering someone in a Discord DM or group DM | "reply to <someone> on discord", "reply to <someone> in <group>", "explain what I'm trying to do to <someone> in <group>", "answer the group" |
 | `getGuide({ useCase: "discord/serverReply" })` | Replying in a Discord server channel | "reply to <someone> in <server>", "answer him in the general", "message the guy in <server> #<channel> who mentioned me", "reply in the <server> server", "find what <someone> said in <server> and answer it" |
 | `getGuide({ useCase: "inbox/bossMaxxing" })` | Bossmaxxing: giving out tasks to the team | "bossmaxxing", "give out the tasks", "send <person> the task in <group> and tag them", "tell <person> about everything I researched and give them an outline", "triage the jobs across the team", "walk <person> through setting up <tool>", "help <person> get set up like we did with <other person>" |
+| `getGuide({ useCase: "inbox/ignoreServer" })` | Ignoring a server or a chat | "ignore that server", "mute that channel", "stop the alerts from there", "unignore it" |
+| `getGuide({ useCase: "inbox/quietPush" })` | Quieting the live push | "go silent for 30 minutes", "turn the notifications back on" |
 | `getGuide({ useCase: "inbox/reaLooksmaxxing" })` | /rea-looksmaxxing: moneymaxx like a creator | "/rea-looksmaxxing how clavicular gets paid", "moneymaxx like <creator>", "how does <creator> get paid" |
 | `getGuide({ useCase: "inbox/reactions" })` | Reacting to a message | "react to that", "heart his message", "put a 😂 on what she said", "send a reaction to <person>" |
 | `getGuide({ useCase: "inbox/scopeAJob" })` | Scoping a job out of someone in a DM | "probe <person> so we can scope out what the task is", "scope it out with him", "find out what he actually wants done", "go through and then scope it out". |
 | `getGuide({ useCase: "inbox/triage" })` | Triage: scoping someone's job and handing it to whoever does it | "triage this", "scope it out with him and pass it to <person>", "inform <person> of what the job is and what he needs to do", "we've already scoped the work with the client, hand it over", "this is a triage job", "don't tell him anyone else is doing it" |
 | `getGuide({ useCase: "inbox/voiceNote" })` | Sending a voice note | "send <person> a voice note saying …", "voice note him that …", "send a vn to the group saying …" |
+| `getGuide({ useCase: "inbox/warmPeople" })` | Working the warm people in your dms | "who's warm", "who can i ask now", "label my people", "who have we been warming up", "mark him as a friend" |
 | `getGuide({ useCase: "twitter/dmInbox" })` | Reading the DM inbox: who is waiting on you | "who is waiting on me", "check my x dms", "go through my twitter inbox and tell me who needs a reply", "who am I waiting on in my dms". |
 
 ## The tools in this guide
@@ -33,6 +36,11 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `inboxResume` | The owner's go-ahead after a refused catch-up | `log inbox resume --platform <p> --account <a> --by <who> [--json]` |
 | `inboxWaiting` | Who wrote last on every platform, from log.db in time order | `log inbox waiting [--platform <p>] [--account <a>] [--limit <n>] [--oldest] [--json]` |
 | `inboxPending` | What the account watchers heard since this reader last asked, with… | `log inbox pending --reader <name> [--json]` |
+| `inboxQuiet` | Quiet the live push for n minutes | `log inbox quiet --minutes <n> --by <who> [--json]` |
+| `inboxIgnore` | Stop pushing a server or a chat to the owner | `log inbox ignore --platform <p> (--server <id> \| --chat <id>) --by <who> [--undo] [--json]` |
+| `inboxIgnored` | Every server and chat the push ignores, and who asked | `log inbox ignored [--json]` |
+| `inboxLabels` | Every person in the owner's dms with a label | `log inbox labels [--label <l>] [--platform <p>] [--account <a>] [--limit <n>] [--json]` |
+| `inboxLabel` | Set the label on one person's dm by hand, over what log.db says | `log inbox label --platform <p> --account <a> --chat <id> --as <l> --by <who> [--undo] [--json]` |
 | `inboxClaims` | Every live claim | `log inbox claims [--json]` |
 | `inboxActions` | The log of every claim, refusal, send and release, oldest first, to… | `log inbox actions [--platform <p>] [--account <a>] [--chat <conversationId\|handle>] [--limit <n>] [--json]` |
 | `chatsList` | List an account's chats on its own platform, the platform taken from… | `log chats list --account <account> [--space <space>] [--limit <limit>] [--platform <p>] [--json]` |

@@ -93,6 +93,22 @@
       "summary": "Resetting an account's governor count"
     },
     {
+      "name": "log-inbox-ignore-server",
+      "description": "Ignoring a server or a chat. A log play (docs/useCases/inbox/ignoreServer.md): The live push brings every message that mentions, replies to or talks with the owner into his session. Some servers are only noise to him. When he says to ignore one, the push stops alerting on it: its messages are still heard and stored, readable any time, and DMs from the same people still come through. Undo lifts it.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Ignoring a server or a chat"
+    },
+    {
+      "name": "log-inbox-quiet-push",
+      "description": "Quieting the live push. A log play (docs/useCases/inbox/quietPush.md): The live push brings every new message into the owner's session the moment it lands. When the owner wants a break from it, the push goes quiet for as many minutes as he says: the watchers keep hearing and storing everything, nothing is pushed into any session until then, and what came in arrives as one batch when it ends.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Quieting the live push"
+    },
+    {
       "name": "log-inbox-rea-looksmaxxing",
       "description": "/rea-looksmaxxing: moneymaxx like a creator. A log play (docs/useCases/inbox/reaLooksmaxxing.md): Reverse engineer how a creator gets paid, then run the same play on your own accounts. [treg](https://treg.to/?ref=matthewdonse-aebsh) reads the social data (the creator's most viral clips, the clip farms reposting them, views and comments), the formula is decoded from what won, and log posts it through your accounts and funnels everyone who replies or DMs into your offer, every message checked against how you write. Clavicular is the worked example: 40 of his clips pulled, the top one at 8.44M views, a looksmaxxing program as the offer. The video and the page (`log.listeningkit.com/rea-looksmaxxing`) tell the same play.",
       "files": [
@@ -147,6 +163,14 @@
         "SKILL.md"
       ],
       "summary": "Sending a voice note"
+    },
+    {
+      "name": "log-inbox-warm-people",
+      "description": "Working the warm people in your dms. A log play (docs/useCases/inbox/warmPeople.md): The people already in the owner's dms are the easiest yes. Every one of them carries a label worked out from log.db: warming (talking, no ask yet), readyToAsk (enough back and forths and they still write), askedWaiting (he asked and they haven't answered), cold (quiet for three weeks), skip (never wrote back). The owner sets friend (never pitch) and client (money, he answers) by hand, and his label always wins. The agent pulls the readyToAsk people, reads each chat, and drafts the ask in his words.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Working the warm people in your dms"
     },
     {
       "name": "log-instagram-dm-reply",

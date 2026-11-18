@@ -14,9 +14,15 @@ import { newQueueEvents, queueContext } from '../../twitter/queue/events/index'
 import { newLiveEvents, xLiveContext } from '../../twitter/live/feed/index'
 import { clearDeadQueueLocks, ensureLiveWatchers, hookReaderOf, startDescriber } from '../../inbox/watch/index'
 import { readPending } from '../../inbox/pending/index'
+import { quietUntil } from '../../inbox/push/index'
 import { superviseLocalWatchers } from '../../platformKit/watcher/index'
 import { hookAnswer } from '../../contextLayer/hook/index'
 import type { HookInput } from '../../contextLayer/hook/index'
+import { refreshGraph, relateContext } from '../../relate/graph/index'
+import { connectedSearch } from '../../relate/search/index'
+import { cardsNamedIn } from '../../people/index'
+import { defaultDbPath, openDatabase } from '../../storage/schema/index'
+import type { ConnectedSearch } from '../../relate/search/index'
 import { REFUSING_HOOKS } from './types'
 import type { EventAnswer, HookAnswer, HookTiming, RouteAsk } from './types'
 
@@ -101,6 +107,7 @@ export function queueAnswer(raw: string): HookAnswer {
 }
 
 export function xLiveAnswer(event: HookEvent, raw: string): HookAnswer {
+  if (quietUntil(Date.now())) return {}
   const text = xLiveContext(newLiveEvents(undefined, sessionIdOf(raw)), { sessionStart: event === 'SessionStart' })
   return text ? { context: text } : {}
 }
@@ -122,6 +129,7 @@ export function inboxAnswer(event: HookEvent, raw: string, repo: string): HookAn
   superviseLocalWatchers(repo)
   clearDeadQueueLocks()
   ensureLiveWatchers('model', ['describer'], () => startDescriber(repo))
+  if (quietUntil(Date.now())) return {}
   const { text } = readPending(hookReaderOf(raw), { stored: event === 'SessionStart' })
   return text ? { context: text } : {}
 }
@@ -134,6 +142,30 @@ export async function useCasesAnswer(raw: string, route: RouteAsk): Promise<Hook
   if (!raw.trim()) return {}
   const result = await hookAnswer(input, route as never)
   return result.text ? { context: result.text } : {}
+}
+
+export function promptOf(raw: string): string {
+  try {
+    return String((JSON.parse(raw || '{}') as { prompt?: string }).prompt ?? '')
+  } catch {
+    return ''
+  }
+}
+
+export async function relateAnswer(raw: string, repo: string, searched: (prompt: string) => Promise<ConnectedSearch | null> = connectedSearch, dbPath?: string): Promise<HookAnswer> {
+  const prompt = promptOf(raw)
+  if (!prompt.trim() || prompt.trimStart().startsWith('<')) return {}
+  const answer = relateContext(prompt, dbPath)
+  let cards = ''
+  try {
+    cards = cardsNamedIn(openDatabase(dbPath ?? defaultDbPath()), prompt).map((c) => c.text).join('\n')
+  } catch {}
+  const found = answer.outcome === 'answered' ? await searched(prompt).catch(() => null) : null
+  try {
+    if (!dbPath) refreshGraph(repo)
+  } catch {}
+  const text = [cards, answer.text, found?.text ?? ''].filter(Boolean).join('\n')
+  return text ? { context: text } : {}
 }
 
 function toolOf(raw: string): string {
@@ -167,6 +199,7 @@ export function answerOne(hook: AgentHook, event: HookEvent, raw: string, repo: 
   if (name === 'pageState') return pageStateAnswer(event, raw)
   if (name === 'inbox') return inboxAnswer(event, raw, repo)
   if (name === 'useCases') return useCasesAnswer(raw, route)
+  if (name === 'relate') return relateAnswer(raw, repo)
   return {}
 }
 

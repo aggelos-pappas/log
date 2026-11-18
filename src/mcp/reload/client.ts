@@ -32,6 +32,7 @@ export class ReloadProxy {
   private queue: string[] = [];
   private crashes: number[] = [];
   private killed = new Set<number>();
+  private retired: Slot[] = [];
   private failedStamp = 0;
   private state: ReloadState;
 
@@ -100,6 +101,10 @@ export class ReloadProxy {
 
   private childExit(generation: number, code: number | null): void {
     if (this.killed.delete(generation)) return;
+    if (this.retired.some((slot) => slot.generation === generation)) {
+      this.retired = this.retired.filter((slot) => slot.generation !== generation);
+      return;
+    }
     if (this.swap && generation === this.swap.slot.generation) {
       this.failSwap(`the new server exited with ${code} before it answered`);
       return;
@@ -128,13 +133,14 @@ export class ReloadProxy {
     if (stamp <= this.current.stamp || stamp === this.failedStamp) return false;
     const now = this.deps.now();
     const calls = [...this.pending.values()].map((p) => `${p.what} for ${Math.round((now - p.since) / 1000)} s`);
-    const busy = [...(calls.length ? [`${calls.length} call(s) in flight: ${calls.join(", ")}`] : []), ...this.deps.jobsRunning(this.current.child.pid)];
+    const busy = calls.length ? [`${calls.length} call(s) in flight: ${calls.join(", ")}`] : [];
     this.state.waitingOn = busy.length ? busy.join(", ") : null;
     if (busy.length) this.save();
     return busy.length === 0;
   }
 
   tick(): void {
+    this.sweepRetired();
     if (!this.current && !this.swap && this.deps.stamp() !== this.failedStamp) {
       this.reload("a crash, now the code changed");
       return;
@@ -169,8 +175,14 @@ export class ReloadProxy {
   private adopt(slot: Slot, reason: string): void {
     const old = this.current;
     if (old) {
-      this.killed.add(old.generation);
-      old.child.kill();
+      const jobs = this.deps.jobsRunning(old.child.pid);
+      if (jobs.length) {
+        this.retired.push(old);
+        this.deps.log(`the old server (pid ${old.child.pid}) keeps running ${jobs.join(", ")} until it ends; every new call goes to the new code`);
+      } else {
+        this.killed.add(old.generation);
+        old.child.kill();
+      }
     }
     this.current = slot;
     const reloaded = old !== null || reason !== "start";
@@ -207,12 +219,22 @@ export class ReloadProxy {
     this.flush();
   }
 
+  private sweepRetired(): void {
+    this.retired = this.retired.filter((slot) => {
+      if (this.deps.jobsRunning(slot.child.pid).length) return true;
+      this.killed.add(slot.generation);
+      slot.child.kill();
+      this.deps.log(`the old server (pid ${slot.child.pid}) finished its jobs and stopped`);
+      return false;
+    });
+  }
+
   private flush(): void {
     for (const line of this.queue.splice(0)) this.fromClient(line);
   }
 
   close(): void {
-    for (const slot of [this.current, this.swap?.slot]) {
+    for (const slot of [this.current, this.swap?.slot, ...this.retired]) {
       if (!slot) continue;
       this.killed.add(slot.generation);
       slot.child.kill();

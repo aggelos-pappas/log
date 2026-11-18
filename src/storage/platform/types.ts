@@ -148,8 +148,12 @@ export interface TypedRows {
 
 export const MESSAGE_TYPES: readonly string[] = ['message', 'ownMessage']
 
-export const DERIVED_EVENT_TYPES: readonly string[] = ['attachmentsSeen', 'messageEdited', 'conversationSeen', 'identityLearned', 'accountIdentified', 'profileSeen']
+export const DERIVED_EVENT_TYPES: readonly string[] = ['attachmentsSeen', 'messageEdited', 'conversationSeen', 'identityLearned', 'accountIdentified', 'profileSeen', 'personNamed', 'identityLinked', 'identityUnlinked', 'identityNotLinked']
 
-export const DERIVED_TABLES: readonly string[] = ['attachments', 'memberships', 'messages', 'interactions', 'chats', 'identityProfiles', 'identities', 'accounts', 'handleAliases', 'identityMerges']
+export const PEOPLE_PLATFORM = 'log'
+
+export const PEOPLE_ACCOUNT = 'people'
+
+export const DERIVED_TABLES: readonly string[] = ['attachments', 'memberships', 'messages', 'interactions', 'chats', 'identityProfiles', 'identities', 'accounts', 'handleAliases', 'identityMerges', 'persons', 'identityLinks', 'identityNotLinked']
 
 export const EXTENDER_VERSION = 2

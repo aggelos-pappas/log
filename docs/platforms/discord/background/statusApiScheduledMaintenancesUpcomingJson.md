@@ -10,7 +10,7 @@
 | Path | `status.discord.com/api/scheduled-maintenances/upcoming.json` |
 | Sends | — |
 | Reads | `page.id`, `page.name`, `page.url`, `page.time_zone`, `page.updated_at`, `scheduled_maintenances` |
-| Called from | `runs/inspect/20261114T184328_deepman2/script0.js:23 statement`, `runs/inspect/20261111T233723_deepman2/script10.js:23 statement` |
+| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:23 statement`, `runs/inspect/20261111T233723_discordAccount/script10.js:23 statement` |
 | rea | `ev_951f5493389bbfeb61083ec3de9e46811ab01c131074667dabb29a16432902ce` |
 
 Seen 15 time(s) in 13 run(s).
@@ -31,7 +31,7 @@ Seen 15 time(s) in 13 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261114T184328_deepman2**, step 9: wait 45s: 200, 102 ms
+**runs/inspect/20261114T184328_discordAccount**, step 9: wait 45s: 200, 102 ms
 
 Sent:
 
@@ -54,7 +54,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261113T231616_deepman2**, step 6: wait 45s: 200, 131 ms
+**runs/inspect/20261113T231616_discordAccount**, step 6: wait 45s: 200, 131 ms
 
 Sent:
 
@@ -77,7 +77,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261111T233723_deepman2**, step 1: goto /login: 200, 102 ms
+**runs/inspect/20261111T233723_discordAccount**, step 1: goto /login: 200, 102 ms
 
 Sent:
 

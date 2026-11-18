@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 51 domains, 574 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 53 domains, 592 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -592,6 +592,8 @@ Finding context in conversations is a search, never reading every thread. `log s
 - **REQ-SEARCH-06** The indexes survive restarts
 - **REQ-SEARCH-07** An update embeds only what changed
 - **REQ-SEARCH-08** The bench prints p50, p95 and p99, cold and warm, beside a linear scan
+- **REQ-SEARCH-09** Search fuses keyword, meaning and relationship as evidence
+- **REQ-SEARCH-10** The relationship retriever votes from the Relate graph
 
 ## [Knowledge base](./knowledgeBase.md)
 
@@ -607,6 +609,32 @@ The knowledge base holds everything an agent should look up before it guesses: A
 - **REQ-KB-08** Remember saves a note to Twenty and Redis at once
 - **REQ-KB-09** Show reads one article in full
 - **REQ-KB-10** Secrets are scrubbed before anything is written
+
+## [Relate graph](./relateGraph.md)
+
+log keeps a Relate (Neo4j's embedded graph database) projection of log.db: the owner's accounts, the people they meet, the rooms they share, the owner's posts and who engaged them. The hook layer reads it for the people a prompt names and injects their connected context before the agent answers. log.db's events stay the record; the graph is derived from them and can always be thrown away and rebuilt. How it works and why: [Relate graph](../relateGraph.md).
+
+- **REQ-RELATE-01** The graph is built from log.db's typed tables in one read snapshot
+- **REQ-RELATE-02** Each build writes a new graph file and only then points at it
+- **REQ-RELATE-03** The graph is checked against what log.db derives
+- **REQ-RELATE-04** A graph belongs to one log.db
+- **REQ-RELATE-05** The hook names only people the prompt names
+- **REQ-RELATE-06** The context is what the graph connects, as facts
+- **REQ-RELATE-07** A graph behind log.db is rebuilt in the background
+- **REQ-RELATE-08** Agents can read the graph with Cypher
+- **REQ-RELATE-09** The hook adds what was said, found by all three retrievers together
+
+## [People across platforms](./people.md)
+
+One person often has several identities: a Discord account, an X account, an Instagram account. log keeps them apart until the owner says they are one person. From then on, the person card, the Relate graph and the hook treat them as one. Links are events in log.db, never edits, so every link can be explained and undone. Suggestions come from Fellegi-Sunter record linkage, the model Splink implements, over evidence log already stores. There are no model calls and no embeddings. The design and its reasoning: [People across platforms](../proposals/peopleAcrossPlatforms.md).
+
+- **REQ-PEOPLE-01** Links are events, and the tables are derived from them
+- **REQ-PEOPLE-02** One identity belongs to at most one person, enforced by the database
+- **REQ-PEOPLE-03** A link follows an identity when its id is learned
+- **REQ-PEOPLE-04** Suggestions are scored with Fellegi-Sunter record linkage
+- **REQ-PEOPLE-05** What never becomes a suggestion
+- **REQ-PEOPLE-06** One card across every platform of a person
+- **REQ-PEOPLE-07** The hook and the graph see a person, not one identity
 
 ## [Local accounts](./localAccounts.md)
 

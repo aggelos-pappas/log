@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { clonePath, forgetClones, voiceNotesDir, writeClone } from "../../extensions/voiceClone/index.ts";
 import type { Rendered, VoiceNotePlatform, VoiceProvider } from "../../extensions/voiceClone/index.ts";
 import type { PlatformEngineRun, PlatformEngineSpec } from "../../platformKit/session/index.ts";
+import { markGap, openGap } from "../../inbox/store/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { runCli } from "../runner/index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
@@ -111,6 +112,18 @@ describe("log discord|instagram|slack voice (rule 142)", () => {
     expect(ig.specs[0]).toMatchObject({ action: "voice", with: "someone", levels: [0.5, 1] });
     const slack = await run(["slack", "voice", "--account", "slackOne", "--chat", "D0123456789", "--text", "yo", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn" });
     expect(slack.specs[0]).toMatchObject({ action: "voice", chat: "D0123456789" });
+  });
+
+  test("a discord voice note while the account is still catching up reads that one chat first and goes out, instead of waiting for the whole account", async () => {
+    const gap = openGap("discord", "discordOne", "2026-11-18T18:55:00Z", "socketDropped");
+    const started = Date.now();
+    const r = await run(["discord", "voice", "--account", "discordOne", "--channel", CHANNEL, "--text", "yo how was the gym", "--approvedBy", "the owner", "--live"], { ok: true, event: "sent", loginState: "loggedIn", messageId: "99" });
+    markGap(gap.id, "closed");
+    expect(Date.now() - started).toBeLessThan(5000);
+    expect(r.code).toBe(0);
+    expect(r.specs.map((s) => s.action)).toEqual(["read", "voice"]);
+    expect(r.specs[0]).toMatchObject({ channel: CHANNEL });
+    expect(r.err).toContain("this one chat was read first");
   });
 
   test("--provider picks who says it, and the clone must be on that provider", async () => {

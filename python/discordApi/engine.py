@@ -296,7 +296,22 @@ def typing_seconds(text: str) -> float:
     return random.uniform(min(12.0, 1.5 + len(text) / 9), min(20.0, 3.0 + len(text) / 6))
 
 
-def typed(client: Any, channel: str, text: str, sleep: Any = time.sleep) -> dict[str, Any] | None:
+def heard_in(log: str, offset: int, chat: str) -> Any:
+    marker = f" chat {chat} · "
+
+    def heard() -> str:
+        try:
+            with open(log, "rb") as f:
+                f.seek(max(0, offset))
+                lines = f.read().decode("utf-8", errors="replace").splitlines()
+        except OSError:
+            return ""
+        return next((line for line in lines if marker in line), "")
+
+    return heard
+
+
+def typed(client: Any, channel: str, text: str, sleep: Any = time.sleep, heard: Any = None) -> dict[str, Any] | None:
     left = typing_seconds(text)
     while left > 0:
         answer = client.send_typing(channel)
@@ -307,10 +322,13 @@ def typed(client: Any, channel: str, text: str, sleep: Any = time.sleep) -> dict
         step = min(left, TYPING_REFRESH_SECONDS)
         sleep(step)
         left -= step
+        said = heard() if heard else ""
+        if said:
+            return {"ok": False, "code": "chatMovedOn", "detail": f"they wrote while this was being typed, so it wasn't sent: {said.strip()}", "loginState": "loggedIn", "event": "held", "channelId": channel}
     return None
 
 
-def send_of(token: str, channel: str, text: str, paths: list[str] | None = None, sleep: Any = time.sleep) -> dict[str, Any]:
+def send_of(token: str, channel: str, text: str, paths: list[str] | None = None, sleep: Any = time.sleep, heard: Any = None) -> dict[str, Any]:
     client, failed = open_client(token)
     if failed:
         return failed
@@ -331,7 +349,7 @@ def send_of(token: str, channel: str, text: str, paths: list[str] | None = None,
         return failed
     content = "" if files and not documents else text
     if content.strip():
-        refused = typed(client, target, content, sleep)
+        refused = typed(client, target, content, sleep, heard)
         if refused:
             return refused
     sent = client.send_message(target, content, attachments=(files + documents) or None)
@@ -532,7 +550,9 @@ async def send(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:
     if not channel or not text.strip():
         return {"ok": False, "code": "sendInvalid", "detail": "send needs a channel and text"}
     paths = [str(p) for p in spec.get("files") or []]
-    return await asyncio.to_thread(send_of, token, channel, text, paths)
+    hold = spec.get("holdIf") if isinstance(spec.get("holdIf"), dict) else None
+    heard = heard_in(str(hold.get("log") or ""), int(hold.get("offset") or 0), str(hold.get("chat") or channel)) if hold and hold.get("log") else None
+    return await asyncio.to_thread(send_of, token, channel, text, paths, time.sleep, heard)
 
 
 def delete_of(token: str, channel: str, message: str) -> dict[str, Any]:

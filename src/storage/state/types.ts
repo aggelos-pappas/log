@@ -17,6 +17,12 @@ export type StateScope =
   | 'signInLink'
   | 'watcherEnd'
   | 'watcherHold'
+  | 'relateGraph'
+  | 'relateGraphBuilding'
+  | 'pushQuiet'
+  | 'inboxIgnore'
+  | 'inboxLabels'
+  | 'hermesView'
 
 export interface StateRow<T> {
   body: T

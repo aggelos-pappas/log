@@ -14,7 +14,7 @@ describe("log twitter posts", () => {
   });
 
   test("it needs a handle and refuses anything else before X is called", async () => {
-    const out = await postsCommand.run({} as never, ["--account", "deepman_1", "--user", "not a handle!"]);
+    const out = await postsCommand.run({} as never, ["--account", "xAccount", "--user", "not a handle!"]);
     expect(out.code).not.toBe(0);
   });
 });

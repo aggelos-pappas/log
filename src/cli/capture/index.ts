@@ -48,7 +48,7 @@ export const CAPTURE_INPUT: CommandInput = {
   ],
 };
 
-export const platformClientDocs = (platform: string): string => fileURLToPath(new URL(`../../../docs/platforms/${platform}`, import.meta.url));
+export const platformClientDocs = (platform: string): string => (process.env.LOG_CLIENT_DOCS_ROOT ? join(process.env.LOG_CLIENT_DOCS_ROOT, platform) : fileURLToPath(new URL(`../../../docs/platforms/${platform}`, import.meta.url)));
 
 export async function runCapture(argv: string[], runner?: ReaRunner, log: (line: string) => void = () => {}): Promise<CommandResult> {
   const parsed = parseArgs(argv, parserSpecOf(CAPTURE_INPUT));

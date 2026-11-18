@@ -82,6 +82,8 @@ export function rekeyIdentity(handle: Database, platform: string, fromId: string
     handle.prepare('DELETE FROM identities WHERE platform = ? AND lower(userId) = lower(?)').run(platform, fromId)
     moved++
   }
+  handle.prepare('UPDATE OR IGNORE identityLinks SET userId = ? WHERE platform = ? AND lower(userId) = lower(?)').run(toId, platform, fromId)
+  handle.prepare("UPDATE identityLinks SET revokedAt = ?, revokedBy = 'rekeyConflict' WHERE platform = ? AND lower(userId) = lower(?) AND revokedAt IS NULL").run(at, platform, fromId)
   if (moved) handle.prepare('INSERT INTO identityMerges (platform, fromId, toId, at, reason) VALUES (?, ?, ?, ?, ?)').run(platform, fromId, toId, at, reason)
   return moved
 }
@@ -180,6 +182,35 @@ function deriveInternal(handle: Database, event: EventInput): boolean {
     const userId = String(event.payload.userId ?? '')
     const row = userId ? identityProfileRowOf(event.platform, userId, event.payload as IdentityProfileFields, event.receivedAt) : null
     if (row) writeIdentityProfile(handle, row)
+    return true
+  }
+  if (event.type === 'personNamed') {
+    const personId = String(event.payload.personId ?? '')
+    if (!personId) return true
+    const name = typeof event.payload.name === 'string' && event.payload.name ? event.payload.name : null
+    handle.prepare('INSERT INTO persons (personId, name, createdAt, updatedAt) VALUES (?, ?, ?, ?) ON CONFLICT(personId) DO UPDATE SET name = COALESCE(excluded.name, persons.name), updatedAt = excluded.updatedAt').run(personId, name, event.receivedAt, event.receivedAt)
+    return true
+  }
+  if (event.type === 'identityLinked') {
+    const personId = String(event.payload.personId ?? '')
+    const platform = String(event.payload.platform ?? '')
+    const userId = String(event.payload.userId ?? '')
+    if (!personId || !platform || !userId) return true
+    handle.prepare('INSERT INTO persons (personId, name, createdAt, updatedAt) VALUES (?, NULL, ?, ?) ON CONFLICT(personId) DO NOTHING').run(personId, event.receivedAt, event.receivedAt)
+    const active = handle.prepare('SELECT personId FROM identityLinks WHERE platform = ? AND userId = ? AND revokedAt IS NULL').get(platform, userId) as { personId: string } | null
+    if (active) return true
+    handle.prepare('INSERT OR IGNORE INTO identityLinks (personId, platform, userId, evidence, linkedBy, linkedAt, linkedEventId) VALUES (?, ?, ?, ?, ?, ?, ?)').run(personId, platform, userId, typeof event.payload.evidence === 'string' ? event.payload.evidence : null, String(event.payload.by ?? 'owner'), event.receivedAt, event.eventId)
+    return true
+  }
+  if (event.type === 'identityUnlinked') {
+    handle.prepare('UPDATE identityLinks SET revokedAt = ?, revokedBy = ? WHERE personId = ? AND platform = ? AND userId = ? AND revokedAt IS NULL').run(event.receivedAt, String(event.payload.by ?? 'owner'), String(event.payload.personId ?? ''), String(event.payload.platform ?? ''), String(event.payload.userId ?? ''))
+    return true
+  }
+  if (event.type === 'identityNotLinked') {
+    const a = event.payload.a as { platform?: string; userId?: string } | undefined
+    const b = event.payload.b as { platform?: string; userId?: string } | undefined
+    if (!a?.platform || !a.userId || !b?.platform || !b.userId) return true
+    handle.prepare('INSERT OR IGNORE INTO identityNotLinked (platformA, userIdA, platformB, userIdB, decidedBy, decidedAt) VALUES (?, ?, ?, ?, ?, ?)').run(a.platform, a.userId, b.platform, b.userId, String(event.payload.by ?? 'owner'), event.receivedAt)
     return true
   }
   if (event.type === 'messageEdited') {
@@ -297,13 +328,16 @@ const FINGERPRINT_COLUMNS: Record<string, string> = {
   accounts: 'platform, account, userId',
   handleAliases: 'platform, handle, userId',
   identityMerges: 'platform, fromId, toId, reason',
+  persons: 'personId, name',
+  identityLinks: 'personId, platform, userId, evidence, linkedBy, linkedEventId, revokedAt, revokedBy',
+  identityNotLinked: 'platformA, userIdA, platformB, userIdB, decidedBy',
   identityProfiles: 'platform, userId, bio, avatarHash, followerCount, verified, extra, fetchedAt',
 }
 
 export function derivedFingerprint(handle: Database): Record<string, { rows: number; hash: string }> {
   const out: Record<string, { rows: number; hash: string }> = {}
   for (const [table, columns] of Object.entries(FINGERPRINT_COLUMNS)) {
-    const rows = handle.prepare(`SELECT ${columns} FROM ${table} ORDER BY ${columns.split(',')[0]}, ${columns.split(',')[1]}`).values() as unknown[][]
+    const rows = handle.prepare(`SELECT ${columns} FROM ${table} ORDER BY ${columns}`).values() as unknown[][]
     const hash = createHash('sha256')
     for (const row of rows) hash.update(JSON.stringify(row)).update('\n')
     out[table] = { rows: rows.length, hash: hash.digest('hex').slice(0, 16) }

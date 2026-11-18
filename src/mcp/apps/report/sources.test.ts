@@ -35,7 +35,7 @@ const text = (answer: { content: unknown }) => (answer.content as { text: string
 
 describe("report data sources are a registry, dispatched on source", () => {
   test("the registry lists every source and the tool schema offers each one", () => {
-    expect(REPORT_SOURCE_NAMES).toEqual(["twitterDmsBySender", "dmsBySender", "identityProfile"]);
+    expect(REPORT_SOURCE_NAMES).toEqual(["twitterDmsBySender", "dmsBySender", "identityProfile", "waitingOnYou"]);
     const schema = JSON.stringify(reportInputSchema());
     for (const name of REPORT_SOURCE_NAMES) expect(schema).toContain(name);
   });
@@ -121,5 +121,24 @@ describe("a view can't reach a module through import", () => {
 
   test("the starters still compile", () => {
     for (const name of ["twitterDms", "blocks", "person"]) expect(compileView(starterCode(name)).ok).toBe(true);
+  });
+});
+
+describe("waitingOnYou names who is waiting and the platform they are on", () => {
+  const REPORT = { source: "waitingOnYou" as const, readFrom: "log.db" as const, since: "2026-11-03T00:00:00.000Z", waiting: [{ who: "fakeFinch", platform: "discord", account: "discordAccount", kind: "dm" as const, said: "pick up", at: "2026-11-17T15:52:00Z" }], followUps: [{ who: "@fakeBird", platform: "twitter", account: "xAccount", kind: "dm" as const, said: "(reacted fire)", at: "2026-11-16T10:00:00Z" }], byPlatform: [{ platform: "discord", waiting: 1, followUps: 0 }, { platform: "twitter", waiting: 0, followUps: 1 }] };
+
+  test("the text answer lists each person with the platform and account", async () => {
+    const answer = await runReport({ title: "Who needs me", data: { inbox: { source: "waitingOnYou" } } }, false, { readWaiting: () => REPORT });
+    expect(answer.isError).toBeFalsy();
+    expect(text(answer)).toContain("fakeFinch");
+    expect(text(answer)).toContain("discord");
+    expect(text(answer)).toContain("discordAccount");
+    expect(text(answer)).toContain("They opened it and didn't answer");
+  });
+
+  test("the drawn starter compiles and carries the data", async () => {
+    const answer = await runReport({ title: "Who needs me", data: { inbox: { source: "waitingOnYou", platform: "discord", since: "7d" } } }, true, { readWaiting: (o) => (expect(o.platform).toBe("discord"), REPORT) });
+    expect(answer.isError).toBeFalsy();
+    expect(JSON.stringify(answer.structuredContent)).toContain("fakeFinch");
   });
 });
