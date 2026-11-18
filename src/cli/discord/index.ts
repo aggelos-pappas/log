@@ -319,15 +319,40 @@ export function watchLine(event: Record<string, unknown>): string {
   return `${event.at ?? ""} ${event.guildId ? `channel ${event.channelId}` : `chat ${event.channelId}`} · ${event.from}${event.bot ? " [bot]" : ""}${event.fromMe ? " (me)" : ""}${event.replyTo ? ` replying to ${event.replyTo}` : ""} · ${event.id}: ${text}`;
 }
 
-export function toInboxOf(event: Record<string, unknown>): boolean {
+export function toInboxOf(event: Record<string, unknown>, talking?: ServerTalks): boolean {
   if (event.kind !== "message" || event.fromMe) return false;
   if (event.bot && String(event.text ?? "").trim() === "Thinking...") return false;
-  return !event.guildId || event.mentionsMe === true || event.repliesToMe === true;
+  return !event.guildId || event.mentionsMe === true || event.repliesToMe === true || (talking?.with(event) ?? false);
+}
+
+export const SERVER_TALK_MS = 30 * 60_000;
+
+export class ServerTalks {
+  private senders = new Map<string, string>();
+  private talks = new Map<string, number>();
+  see(event: Record<string, unknown>, at: number): void {
+    if (event.kind !== "message" || !event.guildId || !event.channelId) return;
+    const channel = String(event.channelId);
+    if (event.id && event.fromId) {
+      this.senders.set(String(event.id), String(event.fromId));
+      if (this.senders.size > 5000) this.senders.delete(this.senders.keys().next().value as string);
+    }
+    if (event.fromMe) {
+      const to = event.replyTo ? this.senders.get(String(event.replyTo)) : undefined;
+      const tagged = [...String(event.text ?? "").matchAll(/<@!?(\d{15,22})>/g)].map((m) => m[1]);
+      for (const who of [to, ...tagged]) if (who) this.talks.set(`${channel}:${who}`, at);
+    } else if (event.fromId && (event.mentionsMe === true || event.repliesToMe === true)) this.talks.set(`${channel}:${String(event.fromId)}`, at);
+  }
+  with(event: Record<string, unknown>, at = Date.now()): boolean {
+    if (!event.guildId || !event.channelId || !event.fromId || event.bot) return false;
+    const last = this.talks.get(`${String(event.channelId)}:${String(event.fromId)}`);
+    return last !== undefined && at - last <= SERVER_TALK_MS;
+  }
 }
 
 export function discordInboxMessageOf(account: string, event: Record<string, unknown>, now: Date) {
   const attachments = ((event.attachments as { name?: string; filename?: string; type?: string; content_type?: string; path?: string; error?: string }[] | undefined) ?? []).filter((a) => a.name ?? a.filename).map((a) => ({ name: String(a.name ?? a.filename), ...((a.type ?? a.content_type) ? { type: String(a.type ?? a.content_type) } : {}), ...(a.path ? { path: a.path } : {}), ...(a.error ? { error: a.error } : {}) }));
-  return { platform: "discord", account, conversationId: String(event.channelId ?? ""), with: String(event.from ?? "?"), text: String(event.text ?? ""), at: String(event.at ?? now.toISOString()), box: event.guildId ? (event.mentionsMe ? "mention" : "reply") : "dm", seenAt: now.toISOString(), ...(event.id ? { id: String(event.id) } : {}), ...(event.fromId ? { senderId: String(event.fromId) } : {}), ...(event.replyTo ? { replyTo: String(event.replyTo) } : {}), ...(event.guildId ? { serverId: String(event.guildId) } : {}), ...(attachments.length ? { attachments } : {}) };
+  return { platform: "discord", account, conversationId: String(event.channelId ?? ""), with: String(event.from ?? "?"), text: String(event.text ?? ""), at: String(event.at ?? now.toISOString()), box: event.guildId ? (event.mentionsMe ? "mention" : event.repliesToMe ? "reply" : "talk") : "dm", seenAt: now.toISOString(), ...(event.id ? { id: String(event.id) } : {}), ...(event.fromId ? { senderId: String(event.fromId) } : {}), ...(event.replyTo ? { replyTo: String(event.replyTo) } : {}), ...(event.guildId ? { serverId: String(event.guildId) } : {}), ...(attachments.length ? { attachments } : {}) };
 }
 
 export const discordWatchCommand: Command = {
@@ -376,13 +401,15 @@ export const discordWatchCommand: Command = {
         },
         run: (emit) => {
           context.err(`${account.accountName}: the one owner of Discord's gateway as the account's own browser${only ? `, showing only ${only}` : ""}${seconds ? `, for ${seconds} s` : ", until stopped"}; new DMs, group messages, mentions and replies go to the inbox and every event to every attached subscriber`);
+          const talks = new ServerTalks();
           return directDiscordLive(account, { action: "watch", seconds }, (event) => {
             emit(event);
             if (event.kind === "message" && !event.guildId && event.channelId && event.id) {
               recordPosition("discord", account.accountName, String(event.id), String(event.channelId));
               if (event.fromMe) storeRead("discord", account.accountName, String(event.channelId), "dm", { id: String(event.id), at: String(event.at ?? ""), from: "me", fromMe: true, text: String(event.text ?? "") }, context.now?.() ?? new Date(), "live");
             }
-            const mine = toInboxOf(event);
+            const mine = toInboxOf(event, talks);
+            talks.see(event, Date.now());
             if (mine) {
               const inbox = discordInboxMessageOf(account.accountName, event, context.now?.() ?? new Date());
               enqueueAttachments(inbox, ((event.attachments as { filename?: string; name?: string; content_type?: string; type?: string; path?: string }[] | undefined) ?? []).map((a) => ({ name: a.filename ?? a.name, type: a.content_type ?? a.type ?? "", path: a.path ?? null })));

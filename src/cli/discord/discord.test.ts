@@ -7,7 +7,7 @@ import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { DISCORD_PLATFORM } from "../../discord/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
-import { attachmentLines, discordDeps, discordInboxMessageOf, filesOfStored, storedAttachmentsOf, toInboxOf, UNTRUSTED_FILE_LINE } from "./index.ts";
+import { attachmentLines, discordDeps, discordInboxMessageOf, filesOfStored, storedAttachmentsOf, toInboxOf, ServerTalks, SERVER_TALK_MS, UNTRUSTED_FILE_LINE } from "./index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
 import { chatEvents } from "../../inbox/store/index.ts";
 import { takePending } from "../../inbox/watch/index.ts";
@@ -314,6 +314,28 @@ describe("log discord session check", () => {
     expect(toInboxOf({ kind: "message", channelId: "1", guildId: "9", repliesToMe: true, bot: true, text: "Thinking..." })).toBe(false);
     expect(toInboxOf({ kind: "message", channelId: "1", guildId: "9", repliesToMe: true, bot: true, text: "look beyond x" })).toBe(true);
     expect(toInboxOf({ kind: "message", channelId: "1", fromMe: true, text: "mine" })).toBe(false);
+  });
+});
+
+describe("a server channel conversation reaches the inbox past its mentions", () => {
+  test("someone who replied to the account, then wrote on without a mention, still goes to the inbox for 30 minutes", () => {
+    const talks = new ServerTalks();
+    const reply = { kind: "message", channelId: "1", guildId: "9", id: "10", fromId: "77", repliesToMe: true, text: "industrial field" };
+    talks.see(reply, 0);
+    const on = { kind: "message", channelId: "1", guildId: "9", id: "11", fromId: "77", text: "many people havent adapted yet" };
+    expect(toInboxOf(on, { with: (e: Record<string, unknown>) => talks.with(e, 60_000) } as ServerTalks)).toBe(true);
+    expect(talks.with(on, SERVER_TALK_MS + 1)).toBe(false);
+    expect(talks.with({ ...on, fromId: "88" }, 60_000)).toBe(false);
+    expect(talks.with({ ...on, channelId: "2" }, 60_000)).toBe(false);
+  });
+  test("someone the owner replied to or tagged counts too, a bot never", () => {
+    const talks = new ServerTalks();
+    talks.see({ kind: "message", channelId: "1", guildId: "9", id: "20", fromId: "55", text: "pumps" }, 0);
+    talks.see({ kind: "message", channelId: "1", guildId: "9", id: "21", fromId: "me", fromMe: true, replyTo: "20", text: "nice" }, 0);
+    talks.see({ kind: "message", channelId: "1", guildId: "9", id: "22", fromId: "me", fromMe: true, text: "<@123456789012345678> yo" }, 0);
+    expect(talks.with({ kind: "message", channelId: "1", guildId: "9", fromId: "55", text: "x" }, 1000)).toBe(true);
+    expect(talks.with({ kind: "message", channelId: "1", guildId: "9", fromId: "123456789012345678", text: "x" }, 1000)).toBe(true);
+    expect(talks.with({ kind: "message", channelId: "1", guildId: "9", fromId: "55", bot: true, text: "x" }, 1000)).toBe(false);
   });
 });
 
