@@ -209,8 +209,34 @@ def pre_llm_call(session_id="", user_message="", conversation_history=None, is_f
     return {"context": text} if text else None
 
 
+LOG_TOOL = re.compile(r"^mcp__log__\w+$")
+LIVE_MARK = "\n\n>>> LANDED WHILE THIS TOOL RAN (live, read before the next send; the draft may be stale):\n"
+
+
+def log_tool_of(tool_name, args):
+    if LOG_TOOL.match(tool_name or ""):
+        return tool_name
+    if tool_name in ("mcp__tool_call", "tool_call") and isinstance(args, dict):
+        for call in args.get("calls") or []:
+            name = call.get("name") if isinstance(call, dict) else ""
+            if LOG_TOOL.match(name or ""):
+                return name
+    return ""
+
+
+def transform_tool_result(tool_name="", args=None, result=None, session_id="", **kwargs):
+    if not isinstance(result, str):
+        return None
+    subject = log_tool_of(tool_name, args)
+    if not subject:
+        return None
+    landed = ask_log("PostToolUse", {"session_id": session_id or "", "tool_name": subject})
+    return result + LIVE_MARK + landed if landed.strip() else None
+
+
 def register(ctx):
     PUSH.ctx = ctx
     ctx.register_hook("pre_llm_call", pre_llm_call)
+    ctx.register_hook("transform_tool_result", transform_tool_result)
     key, reader = PUSH.recall()
     PUSH.follow(key, reader)

@@ -148,9 +148,41 @@ describe("the native Hermes plugin's pre_llm_call", () => {
       const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot } });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout.trim()) as { names: string[]; first: { context: string }; later: { context: string } };
-      expect(out.names).toEqual(["pre_llm_call"]);
+      expect(out.names).toEqual(["pre_llm_call", "transform_tool_result"]);
       expect(out.first.context).toBe("SessionStart|--host hermes|check my x notifications\n\nUserPromptSubmit|--host hermes|check my x notifications");
       expect(out.later.context).toBe("UserPromptSubmit|--host hermes|hi");
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
+  });
+
+  test("adds what landed while a log tool ran to its result, and leaves other tools alone", () => {
+    const scratch = mkdtempSync(join(tmpdir(), "harnessContract-pyHermesLive-"));
+    try {
+      const stubRoot = join(scratch, "root");
+      mkdirSync(join(stubRoot, "scripts", "hooks"), { recursive: true });
+      writeFileSync(
+        join(stubRoot, "scripts", "hooks", "event.ts"),
+        "const input = JSON.parse(await Bun.stdin.text())\nprocess.stdout.write(JSON.stringify({ context: `${process.argv[2]}|${input.tool_name}|${input.session_id}` }))\n",
+      );
+      const plugin = join(root, HERMES_PLUGIN_DIR, "__init__.py");
+      const script = [
+        "import importlib.util, json",
+        `spec = importlib.util.spec_from_file_location("logHooks", ${JSON.stringify(plugin)})`,
+        "module = importlib.util.module_from_spec(spec)",
+        "spec.loader.exec_module(module)",
+        "direct = module.transform_tool_result(tool_name='mcp__log__discordSendLive', args={}, result='sent', session_id='s')",
+        "wrapped = module.transform_tool_result(tool_name='mcp__tool_call', args={'calls': [{'name': 'mcp__log__voice'}]}, result='gated', session_id='s')",
+        "other = module.transform_tool_result(tool_name='mcp__terminal', args={}, result='ls', session_id='s')",
+        "print(json.dumps({'direct': direct, 'wrapped': wrapped, 'other': other}))",
+      ].join("\n");
+      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot } });
+      expect(run.status).toBe(0);
+      const out = JSON.parse(run.stdout.trim()) as { direct: string; wrapped: string; other: string | null };
+      expect(out.direct.startsWith("sent")).toBe(true);
+      expect(out.direct.endsWith("PostToolUse|mcp__log__discordSendLive|s")).toBe(true);
+      expect(out.wrapped.endsWith("PostToolUse|mcp__log__voice|s")).toBe(true);
+      expect(out.other).toBeNull();
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
