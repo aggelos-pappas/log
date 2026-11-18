@@ -35,6 +35,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "inbox/signIn" })` | Signing an account in: checking it, then the live browser |
 | `getGuide({ useCase: "inbox/triage" })` | Triage: scoping someone's job and handing it to whoever does it |
 | `getGuide({ useCase: "inbox/voiceNote" })` | Sending a voice note |
+| `getGuide({ useCase: "inbox/warmPeople" })` | Working the warm people in your dms |
 | `getGuide({ useCase: "instagram/dmReply" })` | Reading and answering an Instagram DM |
 | `getGuide({ useCase: "instagram/newPlatform" })` | Bringing a new platform up, then vendoring its client |
 | `getGuide({ useCase: "linkedin/network" })` | Growing a LinkedIn network, and reading and answering its inbox |

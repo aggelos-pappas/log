@@ -22,6 +22,7 @@ When the owner asks for one of these, follow its page step by step.
 | `getGuide({ useCase: "inbox/scopeAJob" })` | Scoping a job out of someone in a DM | "probe <person> so we can scope out what the task is", "scope it out with him", "find out what he actually wants done", "go through and then scope it out". |
 | `getGuide({ useCase: "inbox/triage" })` | Triage: scoping someone's job and handing it to whoever does it | "triage this", "scope it out with him and pass it to <person>", "inform <person> of what the job is and what he needs to do", "we've already scoped the work with the client, hand it over", "this is a triage job", "don't tell him anyone else is doing it" |
 | `getGuide({ useCase: "inbox/voiceNote" })` | Sending a voice note | "send <person> a voice note saying …", "voice note him that …", "send a vn to the group saying …" |
+| `getGuide({ useCase: "inbox/warmPeople" })` | Working the warm people in your dms | "who's warm", "who can i ask now", "label my people", "who have we been warming up", "mark him as a friend" |
 | `getGuide({ useCase: "twitter/dmInbox" })` | Reading the DM inbox: who is waiting on you | "who is waiting on me", "check my x dms", "go through my twitter inbox and tell me who needs a reply", "who am I waiting on in my dms". |
 
 ## The tools in this guide
@@ -38,6 +39,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `inboxQuiet` | Quiet the live push for n minutes | `log inbox quiet --minutes <n> --by <who> [--json]` |
 | `inboxIgnore` | Stop pushing a server or a chat to the owner | `log inbox ignore --platform <p> (--server <id> \| --chat <id>) --by <who> [--undo] [--json]` |
 | `inboxIgnored` | Every server and chat the push ignores, and who asked | `log inbox ignored [--json]` |
+| `inboxLabels` | Every person in the owner's dms with a label | `log inbox labels [--label <l>] [--platform <p>] [--account <a>] [--limit <n>] [--json]` |
+| `inboxLabel` | Set the label on one person's dm by hand, over what log.db says | `log inbox label --platform <p> --account <a> --chat <id> --as <l> --by <who> [--undo] [--json]` |
 | `inboxClaims` | Every live claim | `log inbox claims [--json]` |
 | `inboxActions` | The log of every claim, refusal, send and release, oldest first, to… | `log inbox actions [--platform <p>] [--account <a>] [--chat <conversationId\|handle>] [--limit <n>] [--json]` |
 | `chatsList` | List an account's chats on its own platform, the platform taken from… | `log chats list --account <account> [--space <space>] [--limit <limit>] [--platform <p>] [--json]` |

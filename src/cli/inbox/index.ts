@@ -9,6 +9,8 @@ import { readPending, READER_PATTERN } from "../../inbox/pending/index.ts";
 import { PUSH_QUIET_MAX_MINUTES, setQuiet } from "../../inbox/push/index.ts";
 import { ignoredList, setIgnored } from "../../inbox/ignore/index.ts";
 import type { IgnoreEntry } from "../../inbox/ignore/index.ts";
+import { isLabel, LABEL_MEANS, LABELS, labelsOf, setLabel } from "../../inbox/label/index.ts";
+import type { Labelled } from "../../inbox/label/index.ts";
 
 export const INBOX_USAGE = [
   "Usage: log inbox claim --platform <twitter|discord|slack|instagram> --account <a> --chat <conversationId|handle> [--event <eventId>] [--json]",
@@ -21,6 +23,8 @@ export const INBOX_USAGE = [
   "       log inbox quiet --minutes <n> --by <who> [--json]",
   "       log inbox ignore --platform <p> (--server <id> | --chat <id>) --by <who> [--undo] [--json]",
   "       log inbox ignored [--json]",
+  "       log inbox labels [--label <l>] [--platform <p>] [--account <a>] [--limit <n>] [--json]",
+  "       log inbox label --platform <p> --account <a> --chat <id> --as <l> --by <who> [--undo] [--json]",
   "pending is what the account watchers heard since this reader last asked, with what to do next for each message: the one delivery every harness reads, the prompt hook's included. A reader is one name per session or harness; a new one starts from now.",
   "Only the session that claims a chat acts on it (rule 133). Every message the push channels bring in has an event id (shown in >>> NEW MESSAGE). claim takes the chat for this session for 10 minutes before you draft or send; a second session is refused (chatClaimedElsewhere). Every send claims the chat itself and releases it once it is sent, interrupted or failed, so two sessions never answer the same chat. A claim held by a session that ended frees itself. resume is the owner's go-ahead after a refused catch-up (rule 94): the account's gap opens again and its owner catches up through its own session within 30 s; only when the owner says so. claims lists who holds what; actions logs every claim, refusal, send and release, to see what was already done in a chat. quiet holds the live push for n minutes. waiting is who wrote last on every platform, read from log.db and nothing else: each chat's messages in time order (never the order they were stored in, since a backfill stores older messages later), one person's chats judged together (an X user's old DM and X Chat), a message mirrored into the other side counted once as whoever sent it first, reactions, read markers and call notices never counted as the last word. It lists the people waiting on a reply, then apart the ones who reacted to your last message (a follow-up), newest first unless --oldest.",
 ].join("\n");
@@ -72,6 +76,30 @@ export const INBOX_INPUT: CommandInput = {
       ],
     },
     { words: ["ignored"], summary: "Every server and chat the push ignores, and who asked", positionals: [], flags: [JSON_FLAG] },
+    {
+      words: ["labels"], summary: "Every person in the owner's dms with a label: warming, readyToAsk, askedWaiting, friend, client, cold or skip, worked out from log.db unless the owner set it, with why",
+      positionals: [],
+      flags: [
+        { name: "label", kind: "enum", values: [...LABELS], description: "Only this label" },
+        { name: "platform", kind: "enum", values: ["twitter", "discord", "slack", "instagram"], description: "Only this platform" },
+        { name: "account", kind: "string", description: "Only this account" },
+        { name: "limit", kind: "integer", min: 1, max: 1000, description: "At most this many, newest first (default 40)" },
+        JSON_FLAG,
+      ],
+    },
+    {
+      words: ["label"], effect: "write", summary: "Set the label on one person's dm by hand, over what log.db says; --undo goes back to the worked out label",
+      positionals: [],
+      flags: [
+        { name: "platform", kind: "enum", values: ["twitter", "discord", "slack", "instagram"], required: true, description: "The platform" },
+        { name: "account", kind: "string", required: true, description: "The owner's account on it" },
+        { name: "chat", kind: "string", description: "The dm's conversation id (log inbox labels shows it)" },
+        { name: "as", kind: "enum", values: [...LABELS], description: "The label" },
+        { name: "by", kind: "string", required: true, description: "The owner" },
+        { name: "undo", kind: "boolean", description: "Drop the hand label" },
+        JSON_FLAG,
+      ],
+    },
     { words: ["claims"], summary: "Every live claim: which session holds which chat, and until when", positionals: [], flags: [JSON_FLAG] },
     {
       words: ["actions"], summary: "The log of every claim, refusal, send and release, oldest first, to see what was already done in a chat",
@@ -110,7 +138,7 @@ export const inboxCommand: Command = {
   effect: "write",
   input: INBOX_INPUT,
   summary: "Claim and release chats, list claims, read the action log and what the watchers heard, quiet the push",
-  args: "claim|release|claims|actions|resume|waiting|pending|quiet|ignore|ignored [--server <id>] [--undo] [--reader <name>] [--minutes <n>] [--by <who>] [--platform <p>] [--account <a>] [--chat <id|handle>] [--event <id>] [--limit <n>] [--oldest]",
+  args: "claim|release|claims|actions|resume|waiting|pending|quiet|ignore|ignored|labels|label [--label <l>] [--as <l>] [--server <id>] [--undo] [--reader <name>] [--minutes <n>] [--by <who>] [--platform <p>] [--account <a>] [--chat <id|handle>] [--event <id>] [--limit <n>] [--oldest]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(INBOX_INPUT));
     if (!parsed.ok) return refuseInput("inbox", parsed.error, INBOX_USAGE);
@@ -150,6 +178,30 @@ export const inboxCommand: Command = {
       if (json) return { code: 0, stdout: JSON.stringify({ entries }, null, 2) };
       const what = server ? `${platform} server ${server}` : `${platform} chat ${chat}`;
       return { code: 0, stdout: undo ? `log inbox ignore: ${what} is pushed again.` : `log inbox ignore: ${what} is no longer pushed to any session (asked by ${by}); its messages are still stored and readable, only the alerts stop. ${entries.length} ignored in all.` };
+    }
+    if (sub === "labels") {
+      const platform = str("platform");
+      const label = str("label");
+      if (label && !isLabel(label)) return { code: 1, error: "inputInvalid", stderr: `log inbox labels: --label is one of ${LABELS.join(", ")}\n${INBOX_USAGE}` };
+      const limit = Number(parsed.flags["limit"] ?? 40);
+      const rows = labelsOf({ platform: platform || undefined, account: str("account") || undefined, ...(label && isLabel(label) ? { label } : {}) });
+      const counts = LABELS.map((l) => [l, rows.filter((r) => r.label === l).length] as const).filter(([, n]) => n);
+      if (json) return { code: 0, stdout: JSON.stringify({ counts: Object.fromEntries(counts), people: rows.slice(0, limit) }, null, 2) };
+      const line = (r: Labelled) => `  ${r.label.padEnd(12)} ${r.platform} ${r.with} · chat ${r.conversationIds[0]} · last ${r.lastAt.slice(0, 10)} ${r.lastFromMe ? "you" : "them"} · ${r.why}`;
+      return { code: 0, stdout: [`log inbox labels: ${rows.length} people (${counts.map(([l, n]) => `${l} ${n}`).join(", ") || "none"}), newest first:`, ...rows.slice(0, limit).map(line), "", ...LABELS.map((l) => `  ${l}: ${LABEL_MEANS[l]}`)].join("\n") };
+    }
+    if (sub === "label") {
+      const platform = str("platform");
+      const account = str("account");
+      const chat = str("chat");
+      const as = str("as");
+      const by = str("by");
+      const undo = parsed.flags["undo"] === true;
+      if (!PLATFORMS.includes(platform) || !account || !by || (as && !isLabel(as))) return { code: 1, error: "inputInvalid", stderr: `log inbox label: --platform, --account and --by are needed, --as is one of ${LABELS.join(", ")}\n${INBOX_USAGE}` };
+      if (!chat || (!as && !undo)) return { code: 0, stdout: `log inbox label: nothing changed, name a --chat and an --as (or --undo). log inbox labels lists everyone.` };
+      const entries = setLabel({ platform, account, chat }, undo ? null : (as as never), by);
+      if (json) return { code: 0, stdout: JSON.stringify({ entries }, null, 2) };
+      return { code: 0, stdout: undo ? `log inbox label: ${platform} chat ${chat} is back to its worked out label.` : `log inbox label: ${platform} chat ${chat} is ${as} (set by ${by}). ${entries.length} set by hand in all.` };
     }
     if (sub === "ignored") {
       const entries = ignoredList();

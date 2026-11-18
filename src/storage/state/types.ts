@@ -21,6 +21,7 @@ export type StateScope =
   | 'relateGraphBuilding'
   | 'pushQuiet'
   | 'inboxIgnore'
+  | 'inboxLabels'
 
 export interface StateRow<T> {
   body: T

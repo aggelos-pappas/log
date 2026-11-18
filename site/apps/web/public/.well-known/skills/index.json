@@ -165,6 +165,14 @@
       "summary": "Sending a voice note"
     },
     {
+      "name": "log-inbox-warm-people",
+      "description": "Working the warm people in your dms. A log play (docs/useCases/inbox/warmPeople.md): The people already in the owner's dms are the easiest yes. Every one of them carries a label worked out from log.db: warming (talking, no ask yet), readyToAsk (enough back and forths and they still write), askedWaiting (he asked and they haven't answered), cold (quiet for three weeks), skip (never wrote back). The owner sets friend (never pitch) and client (money, he answers) by hand, and his label always wins. The agent pulls the readyToAsk people, reads each chat, and drafts the ask in his words.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Working the warm people in your dms"
+    },
+    {
       "name": "log-instagram-dm-reply",
       "description": "Reading and answering an Instagram DM. A log play (docs/useCases/instagram/dmReply.md): Read what someone wrote to the account on Instagram and answer it in the owner's voice, with text or a meme, on the account's own session through vendor/instagrapi. No browser, ever.",
       "files": [
