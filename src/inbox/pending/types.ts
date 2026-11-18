@@ -1,3 +1,4 @@
+import type { DbMessage } from '../dbRead/types'
 import type { InboxMessage } from '../watch/types'
 
 export interface PendingRead {
@@ -6,3 +7,5 @@ export interface PendingRead {
   alerts: string[]
   text: string | null
 }
+
+export type ChatRead = (platform: string, account: string, conversationId: string, limit: number) => DbMessage[]
