@@ -46,8 +46,8 @@ A contact writes a short question on Discord while a reply to them is going out 
 
 | Harness | How a pushed batch starts a turn |
 |---|---|
-| Hermes | the `logHooks` plugin runs `push.ts` with the reader of the chat the owner last wrote in and calls `ctx.inject_message(context, session_key=...)`; needs `plugins.entries.logHooks.allow_gateway_injection: true`, and picks the same chat up again after a restart from `~/.logCli/inbox/hermesPush.json` |
-| opencode | the `logHooks` plugin runs `push.ts` for each session it starts and sends each batch with `session.synthetic` |
+| Hermes | the `log` plugin runs `push.ts` with the reader of the chat the owner last wrote in and calls `ctx.inject_message(context, session_key=...)`; needs `plugins.entries.log.allow_gateway_injection: true`, and picks the same chat up again after a restart from `~/.logCli/inbox/hermesPush.json` |
+| opencode | the `log` plugin runs `push.ts` for each session it starts and sends each batch with `session.synthetic` |
 | Claude Code | a `Monitor` on `bun <log>/scripts/hooks/push.ts --host claudeCode --reader <session id>`: every line it prints wakes the session |
 | Codex, Cursor, Antigravity | no way for a plugin to start a turn yet, so messages wait for the next prompt hook |
 

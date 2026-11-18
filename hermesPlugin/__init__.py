@@ -25,6 +25,13 @@ VIEW_TEXT_LIMIT = 3500
 VIEW_ELSEWHERE = "(a view that draws only in Hermes Desktop and the Hermes Webapp)"
 GENUI = ("vendor", "hermesGenui")
 GENUI_PACKAGE = "log_hermes_genui"
+SKILLS = ("hermesPlugin", "skills")
+MCP_SERVER = "log"
+MCP_SETUP = 'hermes mcp add log --command logMcp --env "LOG_ACCOUNTS=${LOG_ACCOUNTS}"'
+MCP_MISSING = (
+    ">>> LOG'S TOOLS ARE NOT SET UP IN HERMES: the log plugin is loaded, but config.yaml has no mcp_servers.log, so no mcp__log__* tool exists. "
+    f"Tell the owner to run `{MCP_SETUP}` (or `log launch --setup`), then restart Hermes. Don't hand-roll log's reads meanwhile."
+)
 
 
 def has_event_script(root):
@@ -248,12 +255,37 @@ def bound_key():
         return ""
 
 
+def hermes_home():
+    try:
+        from hermes_constants import get_hermes_home
+        return Path(get_hermes_home())
+    except Exception:
+        named = os.environ.get("HERMES_HOME", "").strip()
+        return Path(named) if named else Path.home() / ".hermes"
+
+
+def mcp_configured(config_path=None):
+    path = Path(config_path) if config_path else hermes_home() / "config.yaml"
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    try:
+        import yaml
+        servers = (yaml.safe_load(text) or {}).get("mcp_servers") or {}
+        return isinstance(servers, dict) and MCP_SERVER in servers
+    except Exception:
+        block = re.search(r"^mcp_servers:\s*\n((?:[ \t]+.*\n?|\s*\n)*)", text, re.M)
+        return bool(block and re.search(rf"^[ \t]+{MCP_SERVER}:", block.group(1), re.M))
+
+
 def pre_llm_call(session_id="", user_message="", conversation_history=None, is_first_turn=False, **kwargs):
     PUSH.follow(bound_key(), reader_of(session_id))
     PUSH.start_turn()
     events = (["SessionStart"] if is_first_turn else []) + ["UserPromptSubmit"]
     payload = {"session_id": session_id or "", "prompt": user_message or "", "source": "startup"}
-    texts = [ask_log(event, payload) for event in events] + [PUSH.take_held()]
+    setup = [] if mcp_configured() else [MCP_MISSING]
+    texts = setup + [ask_log(event, payload) for event in events] + [PUSH.take_held()]
     text = "\n\n".join(t for t in texts if t)
     return {"context": text} if text else None
 
@@ -404,8 +436,38 @@ def register_genui(ctx):
         return False
 
 
+def skills_dir():
+    own = Path(__file__).with_name("skills")
+    if own.is_dir():
+        return own
+    try:
+        return log_root().joinpath(*SKILLS)
+    except Exception:
+        return own
+
+
+def register_skills(ctx):
+    folder = skills_dir()
+    names = []
+    try:
+        children = sorted(folder.iterdir())
+    except OSError:
+        return names
+    for child in children:
+        skill_md = child / "SKILL.md"
+        if not (child.is_dir() and skill_md.is_file()):
+            continue
+        try:
+            ctx.register_skill(child.name, skill_md)
+            names.append(child.name)
+        except Exception:
+            continue
+    return names
+
+
 def register(ctx):
     PUSH.ctx = ctx
+    register_skills(ctx)
     ctx.register_hook("pre_llm_call", pre_llm_call)
     ctx.register_hook("transform_tool_result", transform_tool_result)
     ctx.register_hook("post_llm_call", post_llm_call)

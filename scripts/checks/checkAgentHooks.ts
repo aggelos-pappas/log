@@ -41,7 +41,7 @@ const ADAPTER_PROBES: readonly AdapterProbe[] = [
 const write = process.argv.includes("--write");
 const problems: string[] = [];
 
-const hermesVersion = (JSON.parse(readFileSync(join(root, "hermesPlugin", "plugin.json"), "utf8")) as { version: string }).version;
+const hermesVersion = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version: string }).version;
 for (const file of hookFiles(AGENT_HOOKS, hermesVersion)) {
   const path = join(root, file.path);
   const current = existsSync(path) ? readFileSync(path, "utf8") : null;

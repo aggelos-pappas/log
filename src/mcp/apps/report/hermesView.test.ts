@@ -164,7 +164,7 @@ describe("the logHooks text fallback", () => {
   test("swaps the line for the view's text on chats that can't draw and leaves Desktop alone", () => {
     const path = dbAt("py.db");
     putState(HERMES_VIEW_SCOPE, "0a1b2c3d", { title: "T", html: "<div></div>", text: "# T\nMessages in 120" }, Date.now(), openDatabase(path));
-    const plugin = join(root, "hermesPlugin", "native", "__init__.py");
+    const plugin = join(root, "hermesPlugin", "__init__.py");
     const script = [
       "import importlib.util, json",
       `spec = importlib.util.spec_from_file_location("logHooks", ${JSON.stringify(plugin)})`,
@@ -188,7 +188,7 @@ const genuiPython = spawnSync(process.env.LOG_PYTHON || "python", ["-c", "import
 
 describe("log's plugin replaces the stock hermes-genui", () => {
   test.skipIf(!genuiPython)("logHooks registers every genui tool, recipe and the drawing rule, and one transform covers both tags", () => {
-    const plugin = join(root, "hermesPlugin", "native", "__init__.py");
+    const plugin = join(root, "hermesPlugin", "__init__.py");
     const script = [
       "import importlib.util, json, os",
       `os.environ["LOG_ROOT"] = ${JSON.stringify(root)}`,

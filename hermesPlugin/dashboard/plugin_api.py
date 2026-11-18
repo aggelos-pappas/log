@@ -198,13 +198,14 @@ PACKAGE = ("@listeningkit", "log")
 
 
 def _hooks_root() -> Path | None:
-    meta = Path(__file__).resolve().parents[2] / "logHooks" / "plugin.yaml"
-    try:
-        for line in meta.read_text(encoding="utf-8").splitlines():
-            if line.startswith("log_root:"):
-                return Path(line.split(":", 1)[1].strip().strip("'\""))
-    except OSError:
-        return None
+    here = Path(__file__).resolve().parents[1]
+    for meta in (here / "plugin.yaml", here.parent / "logHooks" / "plugin.yaml"):
+        try:
+            for line in meta.read_text(encoding="utf-8").splitlines():
+                if line.startswith("log_root:"):
+                    return Path(line.split(":", 1)[1].strip().strip("'\""))
+        except OSError:
+            continue
     return None
 
 

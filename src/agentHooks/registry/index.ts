@@ -137,15 +137,19 @@ export function antigravityHooks(hooks: readonly AgentHook[] = AGENT_HOOKS): Rec
   return { "log-hooks": out };
 }
 
-export const HERMES_PLUGIN_NAME = "logHooks";
+export const HERMES_PLUGIN_NAME = "log";
 
-export const HERMES_PLUGIN_DIR = "hermesPlugin/native";
+export const HERMES_PLUGIN_DIR = "hermesPlugin";
+
+export const HERMES_GENUI_TOOLS = ["assistant_calendar", "assistant_ideas", "assistant_inbox", "assistant_items", "assistant_open", "assistant_report", "assistant_setup", "board_page", "dashboard", "find_photos", "market_history", "save_recipe", "show_blocks"] as const;
 
 export function hermesPluginYaml(version: string): string {
   return [
     `name: ${HERMES_PLUGIN_NAME}`,
     `version: ${version}`,
-    `description: "log's hooks for Hermes. Before each model call, pre_llm_call puts the play the prompt asks for, pending inbox messages and browser states in front of the model, after each log tool transform_tool_result adds the messages that landed while it ran so a stale draft is steered before the next send, and after a terminal, execute_code, write_file, browser_exec or tool_call that hand-rolled a data read or action it adds the advice to make it a log tool (Hermes has no pre-tool hook that can advise without blocking), a message the account watchers hear between turns starts a turn in that chat through ctx.inject_message, and what they hear during a turn is held for that turn and post_llm_call hands any left over as one turn (needs plugins.entries.logHooks.allow_gateway_injection: true). On chats that can't draw, transform_llm_output swaps a report view's ::logview line for its text. Written from src/agentHooks/registry (bun run check:agentHooks --write)."`,
+    `description: "log by ListeningKit for Hermes, as one plugin: every play as a log:<play> skill, log's GenUI blocks and report views (tools, recipes, the dashboard tab and the Desktop half), and the hooks. Before each model call, pre_llm_call puts the play the prompt asks for, pending inbox messages and browser states in front of the model; transform_tool_result adds the messages that landed while a log tool ran and advises turning a hand-rolled read into a log tool; a message the account watchers hear between turns starts a turn in that chat through ctx.inject_message (needs plugins.entries.log.allow_gateway_injection: true); on chats that can't draw, transform_llm_output swaps a view's tag for its text. log's tools come from the log MCP server in config.yaml (hermes mcp add log --command logMcp), which a native plugin can't declare; the hook says so when it's missing. Written from src/agentHooks/registry (bun run check:agentHooks --write)."`,
+    "provides_tools:",
+    ...HERMES_GENUI_TOOLS.map((tool) => `  - ${tool}`),
     "provides_hooks:",
     "  - pre_llm_call",
     "  - transform_tool_result",

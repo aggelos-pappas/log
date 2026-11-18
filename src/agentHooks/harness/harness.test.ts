@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { installHermes, installedPluginYaml } from "../hermes/index.ts";
@@ -89,7 +89,7 @@ describe("the hook files, generated from AGENT_HOOKS", () => {
   });
 
   test("every generated file in the repo matches", () => {
-    const version = (JSON.parse(readFileSync(join(root, "hermesPlugin", "plugin.json"), "utf8")) as { version: string }).version;
+    const version = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version: string }).version;
     for (const file of hookFiles(undefined, version)) {
       const path = join(root, file.path);
       expect({ path: file.path, same: file.same(existsSync(path) ? readFileSync(path, "utf8") : null) }).toEqual({ path: file.path, same: true });
@@ -102,14 +102,23 @@ describe("log launch --setup installs user-level hooks", () => {
     expect(SETUP_HARNESSES.map((h) => h.id)).toEqual(["hermes", "opencode"]);
   });
 
-  test("writes the native Hermes plugin under <home>/plugins/logHooks with the log checkout it runs", () => {
+  test("writes the one native Hermes plugin under <home>/plugins/log with the log checkout it runs, and retires the old logHooks half", () => {
     const home = mkdtempSync(join(tmpdir(), "harnessContract-hermes-"));
     try {
+      const oldHooks = join(home, "plugins", "logHooks");
+      mkdirSync(oldHooks, { recursive: true });
+      writeFileSync(join(oldHooks, "plugin.yaml"), "name: logHooks\nversion: 0.2.0\n");
+      mkdirSync(join(home, "plugins", "log"), { recursive: true });
+      writeFileSync(join(home, "plugins", "log", "plugin.json"), "{}");
       const first = installHermes(home, root);
       expect(first.changed).toBe(true);
-      expect(first.pluginDir).toBe(join(home, "plugins", "logHooks"));
+      expect(first.pluginDir).toBe(join(home, "plugins", "log"));
+      expect(existsSync(oldHooks)).toBe(false);
+      expect(existsSync(join(first.pluginDir, "plugin.json"))).toBe(false);
+      expect(existsSync(join(first.pluginDir, "desktop", "plugin.js"))).toBe(true);
+      expect(existsSync(join(first.pluginDir, "dashboard", "plugin_api.py"))).toBe(true);
       const yaml = readFileSync(join(first.pluginDir, "plugin.yaml"), "utf8");
-      expect(yaml).toContain("name: logHooks");
+      expect(yaml).toContain("name: log\n");
       expect(yaml).toContain(`log_root: '${root}'`);
       expect(readFileSync(join(first.pluginDir, "__init__.py"), "utf8")).toBe(readFileSync(join(root, HERMES_PLUGIN_DIR, "__init__.py"), "utf8"));
       expect(installHermes(home, root).changed).toBe(false);
@@ -228,7 +237,7 @@ describe("the native Hermes plugin installed on its own, with no log launch --se
       const installed = join(bunHome, "install", "global", "node_modules", "@listeningkit", "log");
       mkdirSync(join(installed, "scripts", "hooks"), { recursive: true });
       writeFileSync(join(installed, "scripts", "hooks", "event.ts"), "await Bun.stdin.text()\nprocess.stdout.write(JSON.stringify({ context: `found ${process.argv[2]}` }))\n");
-      const pluginDir = join(scratch, "hermes", "plugins", "logHooks");
+      const pluginDir = join(scratch, "hermes", "plugins", "log");
       mkdirSync(pluginDir, { recursive: true });
       writeFileSync(join(pluginDir, "plugin.yaml"), readFileSync(join(root, HERMES_PLUGIN_DIR, "plugin.yaml"), "utf8"));
       writeFileSync(join(pluginDir, "__init__.py"), readFileSync(join(root, HERMES_PLUGIN_DIR, "__init__.py"), "utf8"));
@@ -245,6 +254,39 @@ describe("the native Hermes plugin installed on its own, with no log launch --se
       const out = JSON.parse(run.stdout.trim()) as { root: string; answer: { context: string } };
       expect(realpathSync.native(out.root).toLowerCase()).toBe(realpathSync.native(installed).toLowerCase());
       expect(out.answer.context).toBe("found UserPromptSubmit");
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("the one Hermes plugin carries what the portable half used to", () => {
+  test("registers every play as a skill and says when config.yaml has no log MCP server", () => {
+    const scratch = mkdtempSync(join(tmpdir(), "harnessContract-onePlugin-"));
+    try {
+      const withServer = join(scratch, "with.yaml");
+      const without = join(scratch, "without.yaml");
+      writeFileSync(withServer, "model: x\nmcp_servers:\n  other:\n    command: a\n  log:\n    command: logMcp\n");
+      writeFileSync(without, "model: x\nmcp_servers:\n  other:\n    command: a\n");
+      const plugin = join(root, HERMES_PLUGIN_DIR, "__init__.py");
+      const script = [
+        "import importlib.util, json",
+        `spec = importlib.util.spec_from_file_location("logOnePlugin", ${JSON.stringify(plugin)})`,
+        "module = importlib.util.module_from_spec(spec)",
+        "spec.loader.exec_module(module)",
+        "class Ctx:",
+        "    def __init__(self): self.skills = []",
+        "    def register_skill(self, name, path): self.skills.append(name)",
+        "ctx = Ctx()",
+        "module.register_skills(ctx)",
+        `print(json.dumps({'skills': ctx.skills, 'with': module.mcp_configured(${JSON.stringify(withServer)}), 'without': module.mcp_configured(${JSON.stringify(without)}), 'missing': module.mcp_configured(${JSON.stringify(join(scratch, "none.yaml"))})}))`,
+      ].join("\n");
+      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: root } });
+      expect(run.status).toBe(0);
+      const out = JSON.parse(run.stdout.trim()) as { skills: string[]; with: boolean; without: boolean; missing: boolean };
+      const plays = readdirSync(join(root, HERMES_PLUGIN_DIR, "skills")).filter((name) => existsSync(join(root, HERMES_PLUGIN_DIR, "skills", name, "SKILL.md")));
+      expect(out.skills.sort()).toEqual(plays.sort());
+      expect({ with: out.with, without: out.without, missing: out.missing }).toEqual({ with: true, without: false, missing: false });
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
