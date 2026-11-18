@@ -198,7 +198,7 @@
     },
     {
       "name": "log-tiktok-post",
-      "description": "Posting a video on TikTok, and deleting it. A log play (docs/useCases/tiktok/post.md): Post one video from the account's own TikTok Studio with a caption, and delete one of its posts, in the account's AdsPower browser. TikTok's own answers decide each step.",
+      "description": "Posting a video on TikTok, and deleting it. A log play (docs/useCases/tiktok/post.md): Post one video on the account's TikTok with a caption, and delete one of its posts, on the direct-API engine with no browser: the calls TikTok Studio makes, sent the same way. The AdsPower browser flows are the fallback when TikTok refuses a direct call. TikTok's own answers decide each step.",
       "files": [
         "SKILL.md"
       ],
