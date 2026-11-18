@@ -1,6 +1,7 @@
 import { serviceHookCommand } from "../../contextLayer/service/client.ts";
 import { CONTEXT_PORT } from "../../contextLayer/service/types.ts";
 import { HARNESS_TABLE_START, withHarnessTable } from "../harness/client.ts";
+import { HAND_ROLLED_MATCHER } from "../handRolled/types.ts";
 import type { AgentHook, HookEvent, HookFile } from "./types.ts";
 
 export const HARNESS_README = "docs/harnesses/README.md";
@@ -24,6 +25,7 @@ const X_LIVE = "scripts/hooks/xLive.ts";
 const CHAT_NAMES = "scripts/hooks/chatNames.ts";
 const USE_CASES = "scripts/hooks/useCases.ts";
 const RELATE = "scripts/hooks/relate.ts";
+const HAND_ROLLED = "scripts/hooks/handRolled.ts";
 export const EVENT_SCRIPT = "scripts/hooks/event.ts";
 
 export const AGENT_HOOKS: readonly AgentHook[] = [
@@ -48,6 +50,7 @@ export const AGENT_HOOKS: readonly AgentHook[] = [
   { event: "PostToolUse", matcher: TOOL_MATCHER, script: X_LIVE, timeout: 10, why: "the same X live state after a log tool or shell call, so a reply on a post is answered mid-task" },
   { event: "PreToolUse", matcher: `mcp__${MCP_SERVER_NAME}__(discord|slack|instagram).*`, script: CHAT_NAMES, timeout: 10, why: "a Discord, Slack or Instagram call that names its chat by a bare id is refused and told to pass the name (a person, a group, or \"<server> #<channel>\"), so the owner sees where every call goes (rule 154)" },
   { event: "PreToolUse", matcher: SHELL_MATCHER, script: LIVE_LOGS, timeout: 10, why: "a log-cli run that would hide its lines (piped through tail or head) is refused before it starts; a long one off a Monitor is told to start one (rule 26); any log action run by hand from a shell is refused and pointed at its MCP tool (rule 163)" },
+  { event: "PreToolUse", matcher: HAND_ROLLED_MATCHER, script: HAND_ROLLED, timeout: 10, why: "a hand-rolled data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off python or bun -e), unwrapped from heredocs, written files and execute_code, is labelled readsData or actsOnData with its target, counted in log.db, and advised, never blocked, to become a log tool through getGuide({ useCase: \"log/toolFromOneOff\" }) (rule 163)" },
   { event: "PostToolUse", matcher: TOOL_MATCHER, script: PAGE_STATE, timeout: 20, why: "a browser landed on a known state (checkpoint, captcha, prompt) or a step failed: its resolver, at once" },
   { event: "Stop", script: PAGE_STATE, timeout: 20, why: "the turn does not end while a browser sits on a state log-cli can resolve (rule 35)" },
 ];
@@ -63,7 +66,7 @@ export const HOOK_SERVICE_URL = `http://127.0.0.1:${CONTEXT_PORT}/hooks`;
 
 const SERVED_EVENTS: readonly HookEvent[] = ["UserPromptSubmit", "PostToolUse", "Stop"];
 
-const REFUSING: readonly string[] = [CHAT_NAMES, LIVE_LOGS];
+const REFUSING: readonly string[] = [CHAT_NAMES, LIVE_LOGS, HAND_ROLLED];
 
 function execHook(script: string, timeout: number, extra: string[] = []): Record<string, unknown> {
   return { type: "command", command: "bun", args: [`\${CLAUDE_PROJECT_DIR}/${script}`, ...extra], timeout };
@@ -142,7 +145,7 @@ export function hermesPluginYaml(version: string): string {
   return [
     `name: ${HERMES_PLUGIN_NAME}`,
     `version: ${version}`,
-    `description: "log's hooks for Hermes. Before each model call, pre_llm_call puts the play the prompt asks for, pending inbox messages and browser states in front of the model, after each log tool transform_tool_result adds the messages that landed while it ran so a stale draft is steered before the next send, a message the account watchers hear between turns starts a turn in that chat through ctx.inject_message, and what they hear during a turn is held for that turn and post_llm_call hands any left over as one turn (needs plugins.entries.logHooks.allow_gateway_injection: true). On chats that can't draw, transform_llm_output swaps a report view's ::logview line for its text. Written from src/agentHooks/registry (bun run check:agentHooks --write)."`,
+    `description: "log's hooks for Hermes. Before each model call, pre_llm_call puts the play the prompt asks for, pending inbox messages and browser states in front of the model, after each log tool transform_tool_result adds the messages that landed while it ran so a stale draft is steered before the next send, and after a terminal, execute_code, write_file, browser_exec or tool_call that hand-rolled a data read or action it adds the advice to make it a log tool (Hermes has no pre-tool hook that can advise without blocking), a message the account watchers hear between turns starts a turn in that chat through ctx.inject_message, and what they hear during a turn is held for that turn and post_llm_call hands any left over as one turn (needs plugins.entries.logHooks.allow_gateway_injection: true). On chats that can't draw, transform_llm_output swaps a report view's ::logview line for its text. Written from src/agentHooks/registry (bun run check:agentHooks --write)."`,
     "provides_hooks:",
     "  - pre_llm_call",
     "  - transform_tool_result",

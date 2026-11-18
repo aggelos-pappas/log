@@ -205,6 +205,14 @@
       "summary": "Posting on LinkedIn, liking or reposting, and taking a post down"
     },
     {
+      "name": "log-log-tool-from-one-off",
+      "description": "Turning a hand-rolled one-off into a log tool. A log play (docs/useCases/log/toolFromOneOff.md): When the agent reaches for a one-off to get or change data (a scratch script over log.db, a raw `sqlite3` query, a `curl` to a platform or a link, a `python -c` or `bun -e`), log has no tool for that job yet. The hook labels the call `readsData` or `actsOnData` with what it touched, counts it in log.db, and says so before or right after it runs. It never blocks: the agent may finish the one-off, then makes it a real command and MCP tool so it routes from then on. The owner isn't asked; the guide below is the whole procedure.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Turning a hand-rolled one-off into a log tool"
+    },
+    {
       "name": "log-reddit-contributor-maxxing",
       "description": "Contributor maxxing: finding talented builders through what they share. A log play (docs/useCases/reddit/contributorMaxxing.md): Find talented people who are into the same things as the owner, through the GitHub repos they post on Reddit. Read a subreddit's last few days through the owner's Reddit account, keep the posts that link to GitHub, and rank them. It reads only. It posts, votes and messages nothing.",
       "files": [

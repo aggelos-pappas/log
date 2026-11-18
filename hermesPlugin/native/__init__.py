@@ -13,6 +13,9 @@ from pathlib import Path
 HOOK_TIMEOUT_SECONDS = 20
 EVENT_SCRIPT = ("scripts", "hooks", "event.ts")
 PUSH_SCRIPT = ("scripts", "hooks", "push.ts")
+HAND_ROLLED_SCRIPT = ("scripts", "hooks", "handRolled.ts")
+HAND_ROLLED_TOOLS = re.compile(r"^(?:mcp__)?(?:terminal|execute_code|write_file|browser_exec|tool_call|patch)$")
+HAND_ROLLED_HINT = re.compile(r"log\.db|\.logCli|https?://|sqlite|requests\.|urllib|httpx|fetch\(|curl|wget|\.(?:ts|py|js|mjs)\b", re.I)
 PUSH_RETRY_SECONDS = 10
 BUSY_LIMIT_SECONDS = 600
 PACKAGE = ("@listeningkit", "log")
@@ -85,13 +88,17 @@ def bun_command():
 
 
 def ask_log(event, payload):
+    return ask_script(EVENT_SCRIPT, [event], event, payload)
+
+
+def ask_script(parts, argv, event, payload):
     root = log_root()
-    script = root.joinpath(*EVENT_SCRIPT)
+    script = root.joinpath(*parts)
     if not script.exists():
         return ""
     try:
         run = subprocess.run(
-            [bun_command(), str(script), event, "--host", "hermes"],
+            [bun_command(), str(script), *argv, "--host", "hermes"],
             input=json.dumps({"hook_event_name": event, **payload}),
             capture_output=True,
             text=True,
@@ -266,13 +273,28 @@ def log_tool_of(tool_name, args):
     return ""
 
 
+def hand_rolled_advice(tool_name, args, session_id=""):
+    if not HAND_ROLLED_TOOLS.match(tool_name or "") or not isinstance(args, dict):
+        return ""
+    try:
+        text = json.dumps(args)
+    except (TypeError, ValueError):
+        return ""
+    if not HAND_ROLLED_HINT.search(text):
+        return ""
+    return ask_script(HAND_ROLLED_SCRIPT, [], "PreToolUse", {"session_id": session_id or "", "tool_name": tool_name, "tool_input": args, "cwd": os.getcwd()})
+
+
 def transform_tool_result(tool_name="", args=None, result=None, session_id="", **kwargs):
     if not isinstance(result, str):
         return None
     subject = log_tool_of(tool_name, args)
     asked = ask_log("PostToolUse", {"session_id": session_id or "", "tool_name": subject}) if subject else ""
     landed = "\n\n".join(t for t in (PUSH.take_held(), asked) if t.strip())
-    return result + LIVE_MARK + landed if landed else None
+    advice = hand_rolled_advice(tool_name, args, session_id)
+    out = result + LIVE_MARK + landed if landed else result
+    out = out + "\n\n" + advice if advice else out
+    return out if out != result else None
 
 
 def post_llm_call(**kwargs):

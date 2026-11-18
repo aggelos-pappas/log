@@ -9,6 +9,8 @@ import type { OpenCodeEvent, PluginContext, SessionHookEvent, ToolHookEvent } fr
 
 const CHAT_NAME_TOOL = /^mcp__log__(discord|slack|instagram)/;
 
+const HAND_ROLLED_TOOL = /^(Bash|PowerShell|Monitor|write|patch|apply_patch)$/i;
+
 const STOP_REPEAT_MS = 5 * 60 * 1000;
 
 const STOP_QUIET_MS = 2000;
@@ -170,6 +172,10 @@ export default {
       const name = codeTool || hostToolName(String(event.tool ?? ""));
       const callID = String(event.callID ?? "");
       if (callID) callTools.set(callID, name);
+      if (HAND_ROLLED_TOOL.test(name)) {
+        const advice = await runCommandHook("handRolled.ts", repo, { hook_event_name: "PreToolUse", session_id: event.sessionID, tool_name: name, tool_input: input, cwd: repo });
+        if (advice.context) carried.set(event.sessionID, [carried.get(event.sessionID), advice.context].filter(Boolean).join("\n\n"));
+      }
       if (CHAT_NAME_TOOL.test(name)) {
         const verdict = await runCommandHook("chatNames.ts", repo, {
           hook_event_name: "PreToolUse",

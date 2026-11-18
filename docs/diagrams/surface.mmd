@@ -4,7 +4,7 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 285 command tools + saved flows"]
+  mcp["MCP server log: 287 command tools + saved flows"]
   bin["bin/log.ts"]
   runCli["runCli: 132 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
@@ -30,6 +30,7 @@ flowchart LR
   live -.->|tail -f, under Monitor| agent
   pre0{{"PreToolUse: chatNames.ts"}} -.->|before| shell
   pre1{{"PreToolUse: liveLogs.ts"}} -.->|before| shell
+  pre2{{"PreToolUse: handRolled.ts"}} -.->|before| shell
   post0{{"PostToolUse: inbox.ts"}} -.->|after| agent
   post1{{"PostToolUse: queue.ts"}} -.->|after| agent
   post2{{"PostToolUse: xLive.ts"}} -.->|after| agent

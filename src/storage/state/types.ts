@@ -23,6 +23,7 @@ export type StateScope =
   | 'inboxIgnore'
   | 'inboxLabels'
   | 'hermesView'
+  | 'handRolled'
 
 export interface StateRow<T> {
   body: T

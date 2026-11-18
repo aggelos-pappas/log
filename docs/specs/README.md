@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 53 domains, 592 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 54 domains, 597 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -767,6 +767,16 @@ Every platform account's governor counts what it sent today (requests, writes, t
 - **REQ-GOVERNOR-02** A reset puts the count back to 0 and proves it held
 - **REQ-GOVERNOR-03** Every reset is a row in log.db
 - **REQ-GOVERNOR-04** A cooldown after a block is kept
+
+## [Hand-rolled one-offs into tools](./handRolled.md)
+
+When an agent hand-rolls a data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off `python -c` or `bun -e`), log labels it, counts it and advises turning it into a real command and MCP tool, without blocking and without asking the owner; `log new tool` then writes that tool through the syntax tree. Rules 83 and 163.
+
+- **REQ-HANDROLLED-01** Every host's call is normalised before it is classified
+- **REQ-HANDROLLED-02** The label is readsData or actsOnData with the data it touched
+- **REQ-HANDROLLED-03** Each hit is counted in log.db
+- **REQ-HANDROLLED-04** The hook advises on every host and never blocks
+- **REQ-HANDROLLED-05** log new tool writes the tool through the syntax tree
 
 ## [Instagram](./instagram.md)
 
