@@ -5,10 +5,11 @@ from typing import Any
 from curl_cffi.requests import AsyncSession
 
 IMPERSONATE = "chrome150"
-CHROME_VERSION = "150.0.0.0"
+CHROME_MAJOR = "150"
+CHROME_VERSION = f"{CHROME_MAJOR}.0.0.0"
 USER_AGENT = f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{CHROME_VERSION} Safari/537.36"
 COOKIE_DOMAIN = ".tiktok.com"
-SEC_CH_UA = f'"Chromium";v="{CHROME_VERSION.split(".")[0]}", "Google Chrome";v="{CHROME_VERSION.split(".")[0]}", "Not.A/Brand";v="99"'
+SEC_CH_UA = f'"Chromium";v="{CHROME_MAJOR}", "Google Chrome";v="{CHROME_MAJOR}", "Not.A/Brand";v="99"'
 
 __all__ = ["IMPERSONATE", "USER_AGENT", "headers", "new_session", "refreshed", "studio_query"]
 
