@@ -89,7 +89,10 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   instagramReact: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send_reaction', when: 'react --live (--remove takes it off)', seam: 'directInstagram' },
   instagramSend: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send', when: 'send --live (text one message per line, and --photo through direct_send_photo)', seam: 'directInstagram' },
   instagramWatch: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'websocket', method: 'realtime_connect', when: 'watch (Instagram pushes each DM over its realtime MQTT, edge-mqtt.facebook.com, nothing polled)', seam: 'directInstagramLive' },
-  tiktokSession: { platform: 'tiktok', library: 'no client vendored yet', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directTiktok' }
+  tiktokSession: { platform: 'tiktok', library: 'tiktokApi (curl_cffi, TikTok Studio calls)', only: true, surface: 'account', method: 'ping', when: 'session check (/tiktokstudio/api/web/user)', seam: 'directTiktok' },
+  tiktokStats: { platform: 'tiktok', library: 'tiktokApi (curl_cffi, TikTok Studio calls)', only: true, surface: 'posts', method: 'stats', when: 'stats (multiGetFollowRelationCount, then creator/manage/item_list/v1 paged)', seam: 'directTiktok' },
+  tiktokPost: { platform: 'tiktok', library: 'tiktokApi (curl_cffi, TikTok Studio calls)', only: true, surface: 'posts', method: 'post', when: 'post --live (upload/auth, ApplyUploadInner signed AWS4, the video to TikTok storage, then project/post/v1)', seam: 'directTiktok' },
+  tiktokDelete: { platform: 'tiktok', library: 'tiktokApi (curl_cffi, TikTok Studio calls)', only: true, surface: 'posts', method: 'deletePost', when: 'delete --live (post/edit/v1 with delete_type 1)', seam: 'directTiktok' }
 }
 
 export function commandEngine(command: string, name: string = command): CommandEngine {
