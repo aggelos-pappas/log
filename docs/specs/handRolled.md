@@ -4,7 +4,7 @@ title: "Hand-rolled one-offs into tools"
 
 # Hand-rolled one-offs into tools
 
-When an agent hand-rolls a data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off `python -c` or `bun -e`), log labels it, counts it and advises turning it into a real command and MCP tool, without blocking and without asking the owner; `log new tool` then writes that tool through the syntax tree. Rules 83 and 163.
+When an agent hand-rolls a data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off `python -c` or `bun -e`), log labels it, counts it and advises turning it into a real command and MCP tool, without blocking and without asking the owner; `log tool scaffold` then writes that tool through the syntax tree. Rules 83 and 163.
 
 ### REQ-HANDROLLED-01: Every host's call is normalised before it is classified
 
@@ -20,7 +20,7 @@ Checked by: code and SubQ
 
 ### REQ-HANDROLLED-03: Each hit is counted in log.db
 
-`recordHandRolled` keeps one row per label and target in log.db's `state` table (scope `handRolled`) with its count, first and last time, the tools it came through and a sample, so a one-off that keeps coming back is countable. `listHandRolled` reads them, most frequent first, and `log new tool` with no name shows them.
+`recordHandRolled` keeps one row per label and target in log.db's `state` table (scope `handRolled`) with its count, first and last time, the tools it came through and a sample, so a one-off that keeps coming back is countable. `listHandRolled` reads them, most frequent first, and `log tool scaffold` with no name shows them.
 
 Checked by: code and SubQ
 
@@ -30,7 +30,7 @@ Checked by: code and SubQ
 
 Checked by: code and SubQ
 
-### REQ-HANDROLLED-05: log new tool writes the tool through the syntax tree
+### REQ-HANDROLLED-05: log tool scaffold writes the tool through the syntax tree
 
 `planNewTool` (`src/scaffold/tool/client.ts`) plans a new any-platform command from a name and a summary (optional string flags, `acts` for a dry run plus a Live form, the use case folder, the owner's asks and the guide group): `src/cli/<name>/index.ts` with its rows function, a test, and `docs/useCases/<area>/<name>.md` with "How the owner asks for it" and a steps table; and syntax-tree edits that add the import and the `COMMANDS` entry, its `SOURCE_COMMAND_RULES` and its entry in a `GUIDE_TOPICS` group (`addToPropertyArray`). An existing command, a bad name, a missing summary or an unknown guide group is refused before anything is written. Without `--apply` it lists the plan; with it, `applyPlan` checks every edit landed before writing, then the docs and skills builds run and `src/mcp/server/index.ts` is touched so the reload proxy loads the tool.
 

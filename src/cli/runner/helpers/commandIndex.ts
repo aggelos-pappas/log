@@ -141,4 +141,5 @@ export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "voice", platform: "twitter", module: "src/cli/voiceNote/index.ts", exportName: "twitterVoiceCommand" },
   { name: "session", platform: "tiktok", module: "src/cli/tiktok/index.ts", exportName: "tiktokSessionCommand" },
   { name: "saidBy", platform: "any", module: "src/cli/saidBy/index.ts", exportName: "saidByCommand" },
+  { name: "tool", platform: "any", module: "src/cli/tool/index.ts", exportName: "toolCommand" },
 ]

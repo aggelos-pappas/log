@@ -154,7 +154,7 @@ describe('the advice and the record', () => {
     expect(text).toContain('HAND-ROLLED (readsData)')
     expect(text).toContain('log.db (messages, chats)')
     expect(text).toContain('getGuide({ useCase: "log/toolFromOneOff" })')
-    expect(text).toContain('newTool')
+    expect(text).toContain('toolScaffold')
     expect(text).toContain('advice, not a block')
     expect(text).toContain('come up 3 times')
     expect(handRolledAdvice(classifyCall('Bash', { command: 'git status' }))).toBe('')

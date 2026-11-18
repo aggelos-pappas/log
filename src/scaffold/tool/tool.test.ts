@@ -12,7 +12,7 @@ const PROBE = "scaffoldToolProbe";
 const SUMMARY = "Every message someone sent, found by their name across every platform in log.db, newest first";
 
 function copyOfRepo(): string {
-  const root = mkdtempSync(join(tmpdir(), "newTool"));
+  const root = mkdtempSync(join(tmpdir(), "toolScaffold"));
   for (const path of ["src/cli/runner/index.ts", "src/mcp/server/helpers/agentRules.ts", "src/mcp/server/helpers/guides.ts"]) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     cpSync(join(REPO, path), join(root, path));
@@ -32,7 +32,7 @@ describe("the nested-array syntax-tree edit", () => {
   });
 });
 
-describe("log new tool", () => {
+describe("log tool scaffold", () => {
   test("names follow the tool's name; acting on data adds a Live tool", () => {
     expect(toolNamesOf({ name: "saidBy", summary: SUMMARY, flags: ["name"] })).toMatchObject({ command: "saidByCommand", usage: "SAID_BY_USAGE", rows: "saidByRows", tools: ["saidBy"], area: "inbox", guide: "knowledgeAndSearch" });
     expect(toolNamesOf({ name: "linkTargets", summary: "x", acts: true }).tools).toEqual(["linkTargets", "linkTargetsLive"]);

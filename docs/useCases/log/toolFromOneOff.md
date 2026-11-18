@@ -24,11 +24,11 @@ Not labelled: `git`, `gh`, `bun test`, `tsc`, `log` itself, a `VACUUM INTO` copy
 <!-- stepsDiagram: written by `bun run docs:build` from the steps table below, not edited by hand -->
 ```mermaid
 flowchart TD
-  s0["1. See the one-offs the hook counted, most frequent first<br/><i>newTool</i>"]
-  s1["2. Name it and say what it does, a dry run<br/><i>newTool</i>"]
-  s2["3. Write it: the command, its test, its rules, its guide group and…<br/><i>newToolLive</i>"]
+  s0["1. See the one-offs the hook counted, most frequent first<br/><i>toolScaffold</i>"]
+  s1["2. Name it and say what it does, a dry run<br/><i>toolScaffold</i>"]
+  s2["3. Write it: the command, its test, its rules, its guide group and…<br/><i>toolScaffoldLive</i>"]
   s3["4. Move the one-off's logic into the command's rows function, and…<br/><i>bun</i>"]
-  s4["5. Reload the MCP so the tool exists in this session<br/><i>touch, newToolLive</i>"]
+  s4["5. Reload the MCP so the tool exists in this session<br/><i>touch, toolScaffoldLive</i>"]
   s5["6. Call the new tool's dry run with the one-off's inputs and compa…<br/><i>the new tool</i>"]
   s6["7. Commit it with the devlog, then open or extend the PR<br/><i>git, gh</i>"]
   s0 --> s1
@@ -42,11 +42,11 @@ flowchart TD
 
 | # | Step | Tool | Done when |
 | --- | --- | --- | --- |
-| 1 | See the one-offs the hook counted, most frequent first | `newTool` with no name | the one-off is listed with its label and target |
-| 2 | Name it and say what it does, a dry run | `newTool` { name, summary, flags, asks } (acts: true when it changes data) | the planned files and syntax-tree edits are listed |
-| 3 | Write it: the command, its test, its rules, its guide group and its use case, then the docs and skills builds | `newToolLive` { the same, confirmLive: true } | every edit landed and both builds passed |
+| 1 | See the one-offs the hook counted, most frequent first | `toolScaffold` with no name | the one-off is listed with its label and target |
+| 2 | Name it and say what it does, a dry run | `toolScaffold` { name, summary, flags, asks } (acts: true when it changes data) | the planned files and syntax-tree edits are listed |
+| 3 | Write it: the command, its test, its rules, its guide group and its use case, then the docs and skills builds | `toolScaffoldLive` { the same, confirmLive: true } | every edit landed and both builds passed |
 | 4 | Move the one-off's logic into the command's rows function, and its real case into the test | `src/cli/<name>/index.ts`, `bun test src/cli/<name>` | the test passes on synthetic data |
-| 5 | Reload the MCP so the tool exists in this session | `touch src/mcp/server/index.ts` (the reload proxy restarts the server; `newToolLive` does it) | the tool shows up |
+| 5 | Reload the MCP so the tool exists in this session | `touch src/mcp/server/index.ts` (the reload proxy restarts the server; `toolScaffoldLive` does it) | the tool shows up |
 | 6 | Call the new tool's dry run with the one-off's inputs and compare the answers | the new tool | it answers what the one-off answered |
 | 7 | Commit it with the devlog, then open or extend the PR | `git commit`, `gh pr create` | the remote branch equals HEAD; the router offers the tool from now on |
 

@@ -76,7 +76,7 @@ flowchart LR
   anyB --> b_slack
   anyB --> b_instagram
   anyB --> b_tiktok
-  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, runs, storage, relate, people, timing, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy"]
+  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, runs, storage, relate, people, timing, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy, tool"]
   anyN -.-> twenty
   newP["log new platform name: one more platform, wired whole (rule 83)"] -.-> twenty
   drivers --> api
@@ -112,7 +112,7 @@ Source: [`docs/diagrams/browsers.mmd`](diagrams/browsers.mmd).
 
 - **The account's browser, through the driver:** `facebook host`, `inspect`, `flow`, `<platform> warmup`, `facebook join`, `facebook read`, `facebook poll`, `facebook check`, `reddit read`, `discord read`, `slack read`. They run on whichever browser the account uses: AdsPower when it has a linked profile (`socialAccounts.adsPowerProfileId`), Camoufox otherwise, or what `socialAccounts.browserDriver` says.
 - **Camoufox only, not on the driver yet:** `facebook doctor`, `facebook connect`, `facebook profile`, `facebook scan`, `facebook status`, `facebook watch`, `facebook publish`, `facebook campaign`, `discord watch`, `linkedin connect`, `slack watch`, `instagram watch`. They launch Camoufox themselves (facebook-camofox-client's worker, or the publish, connect and profile sessions), so on an AdsPower account they don't open its AdsPower profile. Moving one onto the driver is moving it into `OPENER_ACTIONS` (`src/browser/run`).
-- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `runs`, `storage`, `relate`, `people`, `timing`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`.
+- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `runs`, `storage`, `relate`, `people`, `timing`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tool`.
 - **No browser path at all:** X. Its accounts run on the direct API only (rule 80).
 
 Each browser's capabilities, built or not: [`docs/browsers.md`](browsers.md) (generated, `bun run check:browsers`). AdsPower's setup: [`docs/adsPower.md`](adsPower.md).
@@ -223,7 +223,7 @@ flowchart LR
   shell["Bash / PowerShell / Monitor"]
   mcp["MCP server log: 288 command tools + saved flows"]
   bin["bin/log.ts"]
-  runCli["runCli: 133 commands (COMMANDS)"]
+  runCli["runCli: 134 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
   engine{"commandEngine: DIRECT_ROUTES"}
   direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi, no client vendored yet (vendor/), the account's saved session, a governor per account"]
@@ -364,7 +364,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log twitter dm`](#log-twitter-dm) | Send one approved direct message on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--userId <id>` `--text <text>` `[--skipStyleCheck]` `[--media <file|url,…>]` `[--asOne]` `[--overGate]` `[--followUp]` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterDm`, `twitterDmLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 53, 73, 86, 94, 109, 105, 137, 133, 138, 30, 38, 39, 40, 41 |
 | [`log twitter react`](#log-twitter-react) | React to a X message with an emoji, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--chat <chat>` `--message <id>` `--emoji <emoji>` `[--remove]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `twitterReact`, `twitterReactLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 105, 133, 30, 38, 39, 40, 41 |
 | [`log twitter queue`](#log-twitter-queue) | Build, approve, plan and run a queue of approved X replies, quotes or dms at random moments, on the direct-API engine | `twitter` first | `--targets <targets.json>` `[--variations <a.json,b.json,…>]` `--out <queue.json>` `--account <accountName>` `[--action <reply|quote|dm|voice>]` `[--seed <integer>]` `[--json]` `[--skipXChatCheck]` `--by <who>` `[--window <5h|90m>]` `[--limit <integer>]` `[--start <time>]` `[--minGap <integer>]` `[--like]` `[--likeChance <number 0..1>]` `[--alertChannel <uuid>]` `[--alertReplyTo <eventId>]` `[--alertMention <hex,hex,…>]` `[--force]` `[--keepOpen]` `[--live]` `[--replies <integer>]` `--n <integer>` `--text <text>` | direct API only | none | `twitterQueueBuild`, `twitterQueueShow`, `twitterQueueCheck`, `twitterQueueStatus`, `twitterQueueApprove`, `twitterQueuePlan`, `twitterQueueRun`, `twitterQueueRunLive`, `twitterQueueAdd`, `twitterQueueNudge`, `twitterQueueEdit` | PreToolUse, PostToolUse · PostToolUse | yes: watch it | 8, 26, 53, 73, 86, 109, 94, 105, 137, 133, 138, 30, 38, 39, 40, 41 |
-| [`log new`](#log-new) | Make a new platform, or a tool from a one-off, wired in through the syntax tree | any (none) | `[--label <shown name>]` `[--twentyPlatform <ENUM>]` `[--library <vendor/folder>]` `[--sessionCookies <a,b,…>]` `[--cookieDomain <.site.com>]` `[--hosts <a.com,b.com,…>]` `[--home <https://…>]` `[--noProxy]` `[--noBrowser]` `[--apply]` `[--json]` `[--summary <text>]` `[--acts]` `[--flags <a,b,…>]` `[--area <f>]` `[--asks <a,b,…>]` `[--guide <g>]` | none | none | `newPlatform`, `newPlatformLive`, `newTool`, `newToolLive` | PreToolUse, PostToolUse · PostToolUse | no | 1, 2, 63, 83, 30, 38, 39, 40, 41 |
+| [`log new`](#log-new) | Make a new platform (session, command, MCP tool, engine, docs), wired into the repo through its syntax tree | any (none) | `[--label <shown name>]` `[--twentyPlatform <ENUM>]` `[--library <vendor/folder>]` `[--sessionCookies <a,b,…>]` `[--cookieDomain <.site.com>]` `[--hosts <a.com,b.com,…>]` `[--home <https://…>]` `[--noProxy]` `[--noBrowser]` `[--apply]` `[--json]` | none | none | `newPlatform`, `newPlatformLive` | PreToolUse, PostToolUse · PostToolUse | no | 1, 2, 63, 83, 30, 38, 39, 40, 41 |
 | [`log reddit session`](#log-reddit-session) | Check that Reddit still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `reddit` first | `--account <accountName>` `[--json]` | direct API only | none | `redditSessionCheck` | PreToolUse, PostToolUse · PostToolUse | no | 73, 30, 38, 39, 40, 41 |
 | [`log reddit read`](#log-reddit-read) | Find subreddits, and read a subreddit's newest posts with their links, through the account's direct-API engine | `reddit` first | `--account <accountName>` `--query <words>` `[--json]` `--subreddit <name>` `[--days <number ..365>]` `[--linksTo <host>]` `--url <permalink>` `[--limit <integer 1..500>]` | direct API only | the account's | `redditReadSubreddits`, `redditReadPosts`, `redditReadHome`, `redditReadPost` | PreToolUse, PostToolUse · PostToolUse | yes: watch it | 8, 53, 73, 94, 109, 30, 38, 39, 40, 41 |
 | [`log reddit post`](#log-reddit-post) | Post a text post to a subreddit through the account's direct-API engine; a dry run unless --live | `reddit` first | `--account <accountName>` `--subreddit <name>` `--title <title>` `[--text <markdown>]` `[--flair <flair>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `redditPost`, `redditPostLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 41, 73, 94, 30, 38, 39, 40, 41 |
@@ -413,6 +413,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log twitter voice`](#log-twitter-voice) | Send a voice note in the owner's cloned voice as Twitter's own voice note, from text; a dry run unless --live | `twitter` first | `--account <accountName>` `--with <with>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `twitterVoice`, `twitterVoiceLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 89, 94, 105, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log tiktok session`](#log-tiktok-session) | Check that TikTok still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `tiktok` first | `--account <accountName>` `[--json]` | direct API only | none | `tiktokSessionCheck` | PreToolUse, PostToolUse · PostToolUse | no | 73, 30, 38, 39, 40, 41 |
 | [`log saidBy`](#log-saidby) | Someone's messages on every platform, found by name, newest first | any (none) | `[--name <name>]` `[--limit <integer 1..500>]` `[--json]` | none | none | `saidBy` | PreToolUse, PostToolUse · PostToolUse | no | 30, 163, 30, 38, 39, 40, 41 |
+| [`log tool`](#log-tool) | Turn a hand-rolled one-off into a log command and MCP tool | any (none) | `[--summary <text>]` `[--acts]` `[--flags <a,b,…>]` `[--area <f>]` `[--asks <a,b,…>]` `[--guide <g>]` `[--apply]` `[--json]` | none | none | `toolScaffold`, `toolScaffoldLive` | PreToolUse, PostToolUse · PostToolUse | no | 30, 163, 30, 38, 39, 40, 41 |
 
 ### Saved flows: MCP tools of their own (rule 31)
 
@@ -495,6 +496,7 @@ flowchart TB
     c_transcribe["transcribe"]
     c_new["new"]
     c_saidBy["saidBy"]
+    c_tool["tool"]
   end
   subgraph g_byArgument["Platform named first"]
     c_warmup["#lt;platform#gt; warmup"]
@@ -895,6 +897,8 @@ flowchart TB
   mcp --> c_tiktokSession
   cli --> c_saidBy
   mcp --> c_saidBy
+  cli --> c_tool
+  mcp --> c_tool
   f_deletePost["facebookFlowDeletePost: flow run deletePost"]
   mcp --> f_deletePost
   f_deletePost --> c_flow
@@ -2059,13 +2063,12 @@ run walks the plan as an XState machine (planned, waiting, liking, replying, ret
 
 #### log new
 
-Make a new platform, or a tool from a one-off, wired in through the syntax tree MCP tools: `newPlatform`, `newPlatformLive`, `newTool`, `newToolLive`, one per form, with named fields.
+Make a new platform (session, command, MCP tool, engine, docs), wired into the repo through its syntax tree MCP tools: `newPlatform`, `newPlatformLive`, one per form, with named fields.
 
 ```text
 log new platform <name> [--label <shown name>] [--twentyPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]
-log new tool [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]
-platform: its session on the shared platformKit, `log <name> session check` with its MCP tool, a direct-API engine in python/<name>Api and docs/platforms/<name>. tool: a hand-rolled one-off as a command and MCP tool with its test and use case; no name lists the one-offs the hook counted.
-Each file is edited through its syntax tree and every edit is checked to have landed before anything is written. Without --apply it lists what it would do and writes nothing; nothing is overwritten. It says what Twenty is missing but never changes Twenty (rule 83).
+Makes a new platform for log-cli: its account session on the shared platformKit, `log <name> session check` with its MCP tool, a direct-API engine in python/<name>Api on the shared Python kit, and docs/platforms/<name>. The repo is wired by editing each file through its syntax tree (PLATFORMS, PLATFORM_LABELS, COMMANDS, COMMAND_INDEX, createContext, CommandContext, DIRECT_ROUTES, COMMAND_RULES), and every edit is checked to have landed before anything is written.
+Without --apply it lists what it would write and change, and writes nothing. Nothing is overwritten: an existing platform or file is refused. It says what Twenty is missing (the socialAccounts.platform option) but never changes Twenty. Then fill in the engine's actions and add the platform's families as commands (rule 83).
 ```
 
 #### log reddit session
@@ -2550,6 +2553,15 @@ Someone's messages on every platform, found by name, newest first MCP tools: `sa
 
 ```text
 log saidBy [--name <name>] [--limit <n>] [--json]   (Someone's messages on every platform, found by name, newest first)
+```
+
+#### log tool
+
+Turn a hand-rolled one-off into a log command and MCP tool MCP tools: `toolScaffold`, `toolScaffoldLive`, one per form, with named fields.
+
+```text
+log tool scaffold [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]
+A hand-rolled one-off as a command and MCP tool with its test and use case, each edit made through the syntax tree and checked before anything is written; no name lists the one-offs the hook counted. Without --apply it writes nothing.
 ```
 
 <!-- surface:end -->
