@@ -19,6 +19,7 @@ export type StateScope =
   | 'watcherHold'
   | 'relateGraph'
   | 'relateGraphBuilding'
+  | 'pushQuiet'
 
 export interface StateRow<T> {
   body: T

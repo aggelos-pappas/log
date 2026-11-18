@@ -6,6 +6,7 @@ import type { LastWord } from "../../inbox/lastWord/index.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput, FlagSpec } from "../runner/types.ts";
 import { readPending, READER_PATTERN } from "../../inbox/pending/index.ts";
+import { PUSH_QUIET_MAX_MINUTES, setQuiet } from "../../inbox/push/index.ts";
 
 export const INBOX_USAGE = [
   "Usage: log inbox claim --platform <twitter|discord|slack|instagram> --account <a> --chat <conversationId|handle> [--event <eventId>] [--json]",
@@ -15,8 +16,9 @@ export const INBOX_USAGE = [
   "       log inbox actions [--platform <p>] [--account <a>] [--chat <conversationId|handle>] [--limit <n>] [--json]",
   "       log inbox waiting [--platform <p>] [--account <a>] [--limit <n>] [--oldest] [--json]",
   "       log inbox pending --reader <name> [--json]",
+  "       log inbox quiet --minutes <n> --by <who> [--json]",
   "pending is what the account watchers heard since this reader last asked, with what to do next for each message: the one delivery every harness reads, the prompt hook's included. A reader is one name per session or harness; a new one starts from now.",
-  "Only the session that claims a chat acts on it (rule 133). Every message the push channels bring in has an event id (shown in >>> NEW MESSAGE). claim takes the chat for this session for 10 minutes before you draft or send; a second session is refused (chatClaimedElsewhere). Every send claims the chat itself and releases it once it is sent, interrupted or failed, so two sessions never answer the same chat. A claim held by a session that ended frees itself. resume is the owner's go-ahead after a refused catch-up (rule 94): the account's gap opens again and its owner catches up through its own session within 30 s; only when the owner says so. claims lists who holds what; actions is the log of every claim, refusal, send and release, oldest first, to search what was already done in a chat before acting. waiting is who wrote last on every platform, read from log.db and nothing else: each chat's messages in time order (never the order they were stored in, since a backfill stores older messages later), one person's chats judged together (an X user's old DM and X Chat), a message mirrored into the other side counted once as whoever sent it first, reactions, read markers and call notices never counted as the last word. It lists the people waiting on a reply, then apart the ones who reacted to your last message (a follow-up), newest first unless --oldest.",
+  "Only the session that claims a chat acts on it (rule 133). Every message the push channels bring in has an event id (shown in >>> NEW MESSAGE). claim takes the chat for this session for 10 minutes before you draft or send; a second session is refused (chatClaimedElsewhere). Every send claims the chat itself and releases it once it is sent, interrupted or failed, so two sessions never answer the same chat. A claim held by a session that ended frees itself. resume is the owner's go-ahead after a refused catch-up (rule 94): the account's gap opens again and its owner catches up through its own session within 30 s; only when the owner says so. claims lists who holds what; actions logs every claim, refusal, send and release, to see what was already done in a chat. quiet holds the live push for n minutes. waiting is who wrote last on every platform, read from log.db and nothing else: each chat's messages in time order (never the order they were stored in, since a backfill stores older messages later), one person's chats judged together (an X user's old DM and X Chat), a message mirrored into the other side counted once as whoever sent it first, reactions, read markers and call notices never counted as the last word. It lists the people waiting on a reply, then apart the ones who reacted to your last message (a follow-up), newest first unless --oldest.",
 ].join("\n");
 
 const PLATFORM: FlagSpec = { name: "platform", kind: "enum", values: ["twitter", "discord", "slack", "instagram"], required: true, description: "The platform: twitter, discord, slack or instagram" };
@@ -43,6 +45,15 @@ export const INBOX_INPUT: CommandInput = {
       words: ["pending"], effect: "read", summary: "What the account watchers heard since this reader last asked, with what to do next: the same delivery the prompt hook gives, for any harness",
       positionals: [],
       flags: [{ name: "reader", kind: "string", required: true, pattern: READER_PATTERN.source, takes: "a reader name: letters, digits, _ and -, up to 80", description: "Who is reading: one name per session or harness. A new reader starts from now; each read moves only its own place" }, JSON_FLAG],
+    },
+    {
+      words: ["quiet"], effect: "write", summary: "Quiet the live push for n minutes; what comes in arrives as one batch after",
+      positionals: [],
+      flags: [
+        { name: "minutes", kind: "integer", min: 0, max: PUSH_QUIET_MAX_MINUTES, required: true, description: "Minutes, 0 ends it" },
+        { name: "by", kind: "string", required: true, description: "The owner" },
+        JSON_FLAG,
+      ],
     },
     { words: ["claims"], summary: "Every live claim: which session holds which chat, and until when", positionals: [], flags: [JSON_FLAG] },
     {
@@ -81,8 +92,8 @@ export const inboxCommand: Command = {
   name: "inbox",
   effect: "write",
   input: INBOX_INPUT,
-  summary: "Claim a chat before acting on it, release it, list the live claims, read the log of every action taken in a chat, and read what the watchers heard",
-  args: "claim|release|claims|actions|resume|waiting|pending [--reader <name>] [--by <who>] [--platform <p>] [--account <a>] [--chat <id|handle>] [--event <id>] [--limit <n>] [--oldest]",
+  summary: "Claim and release chats, list claims, read the action log and what the watchers heard, quiet the push",
+  args: "claim|release|claims|actions|resume|waiting|pending|quiet [--reader <name>] [--minutes <n>] [--by <who>] [--platform <p>] [--account <a>] [--chat <id|handle>] [--event <id>] [--limit <n>] [--oldest]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(INBOX_INPUT));
     if (!parsed.ok) return refuseInput("inbox", parsed.error, INBOX_USAGE);
@@ -96,6 +107,15 @@ export const inboxCommand: Command = {
       const read = readPending(reader);
       if (json) return { code: 0, stdout: JSON.stringify({ reader, messages: read.messages, alerts: read.alerts, context: read.text }, null, 2) };
       return { code: 0, stdout: read.text ?? `log inbox pending: nothing new for ${reader} since it last asked.` };
+    }
+    if (sub === "quiet") {
+      const minutes = numberOf(parsed, "minutes");
+      const by = str("by");
+      if (minutes === undefined || minutes < 0 || minutes > PUSH_QUIET_MAX_MINUTES || !by) return { code: 1, error: "inputInvalid", stderr: `log inbox quiet: --minutes (0 to ${PUSH_QUIET_MAX_MINUTES}) and --by are needed\n${INBOX_USAGE}` };
+      const until = setQuiet(minutes, by);
+      if (json) return { code: 0, stdout: JSON.stringify({ until, by }, null, 2) };
+      if (!until) return { code: 0, stdout: `log inbox quiet: ended; the push brings in what came in on its next round.` };
+      return { code: 0, stdout: `log inbox quiet: no message is pushed into any session until ${until} (${minutes} min, asked by ${by}); the watchers keep storing everything, and it all arrives as one batch then.` };
     }
     if (sub === "claims") {
       const claims = liveClaims();

@@ -26,6 +26,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "facebook/marketplaceListings" })` | From accounts to live Marketplace listings |
 | `getGuide({ useCase: "inbox/bossMaxxing" })` | Bossmaxxing: giving out tasks to the team |
 | `getGuide({ useCase: "inbox/governorReset" })` | Resetting an account's governor count |
+| `getGuide({ useCase: "inbox/quietPush" })` | Quieting the live push |
 | `getGuide({ useCase: "inbox/reaLooksmaxxing" })` | /rea-looksmaxxing: moneymaxx like a creator |
 | `getGuide({ useCase: "inbox/reactions" })` | Reacting to a message |
 | `getGuide({ useCase: "inbox/scopeAJob" })` | Scoping a job out of someone in a DM |

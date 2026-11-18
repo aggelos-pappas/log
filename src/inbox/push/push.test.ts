@@ -28,6 +28,27 @@ describe('the inbox push stream', () => {
     expect(waits).toEqual([5, 5, 5, 5])
   })
 
+  test('while the owner has the push quiet nothing is read or emitted, and what came in arrives as one batch when it ends', async () => {
+    let clock = 0
+    let reads = 0
+    const seen: string[] = []
+    await pushLoop('session1', 'hermes', (b) => seen.push(b.context), {
+      read: () => {
+        reads++
+        return { messages: [{}, {}, {}], alerts: [], text: 'held three' }
+      },
+      quiet: (now) => (now < 3000 ? 3000 : 0),
+      now: () => clock,
+      wait: async (_root, ms) => {
+        clock += ms
+      },
+      rounds: 3,
+      fallbackMs: 2000,
+    })
+    expect(seen).toEqual(['held three'])
+    expect(reads).toBe(1)
+  })
+
   test('an alert alone, such as a refused second watcher, is pushed too', () => {
     const read = () => ({ messages: [], alerts: ['!!! REFUSED discord a'], text: '>>> ONE PROCESS PER ACCOUNT' })
     expect(batchOf('r', 'claudeCode', read)?.count).toBe(0)
