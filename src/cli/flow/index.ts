@@ -6,6 +6,7 @@ import { createActor, fromPromise, toPromise } from "xstate";
 import { createFlowMachine, fillStep, flowFromRecording, listFlows, loadFlow, readRecordedCommands, flowToolName, saveFlow, writeFlowDoc } from "../../browser/flow/index.ts";
 import type { FlowActInput, FlowDefinition, FlowRunOutput, FlowStep, FlowStepResult } from "../../browser/flow/index.ts";
 import type { InspectAction } from "../../browser/inspect/index.ts";
+import { readCurrentInspect } from "../../browser/inspect/index.ts";
 import { placeProblem } from "../../facebook/marketplace/location/index.ts";
 import { preparePhotos } from "../../media/photo/index.ts";
 import { fetchProxyUrl } from "../../platformKit/socialAccount/index.ts";
@@ -110,6 +111,23 @@ export async function runFlow(
     const lines = [`Flow ${flow.name} (dry run: nothing opens). With --live it runs:`];
     flow.steps.forEach((step, i) => lines.push(`  ${i + 1}. ${describe(fillStep(step, filled))}${step.expect ? `  → waits for ${step.expect}` : ""}`));
     return { code: 0, stdout: lines.join("\n") };
+  }
+  const already = uid ? readCurrentInspect(undefined, uid) : null;
+  if (already && !flow.params.some((p) => p.kind === "file" && !isVideoFile(values[p.name] ?? ""))) {
+    for (const p of flow.params.filter((p) => p.kind === "file")) {
+      if (!existsSync(values[p.name])) return { code: 1, stderr: `log flow: ${p.name}: no such video file ${values[p.name]}` };
+      filled[p.name] = resolve(values[p.name]);
+    }
+    const account = await findAccount(context.twenty, uid);
+    if (flow.steps.some((s) => s.name?.includes("{profileName}"))) {
+      if (!account.profileName) return { code: 1, stderr: `log flow: ${flow.name} names the account's own posts by its profile name, and ${uid} has none in Twenty (socialAccounts.profileName)` };
+      filled.profileName = account.profileName;
+    }
+    context.err(`Flow ${flow.name} on ${uid}: ${flow.steps.length} steps, in the browser already open for it (${already.runDir}), no new launch (rule 35)`);
+    const output = await runFlowInSession(context, already, flow, filled, { account: { uid, homeCity: account.homeCity, homeCountry: account.homeCountry } });
+    const afterLines = output.result === "done" && after ? await after(output) : [];
+    if (flags["json"]) return { code: output.result === "done" ? 0 : 1, stdout: JSON.stringify({ ...output, ...(afterLines.length ? { after: afterLines } : {}) }, null, 2) };
+    return { code: output.result === "done" ? 0 : 1, stdout: [renderRun(flow, output, already.runDir), ...afterLines].join("\n") };
   }
   const opened = await openAccount(context, "flow", FLOW_USAGE, flags["account"], "connect", Boolean(flags["bypass"]), true, Boolean(flags["now"]));
   if (!("run" in opened)) return opened;

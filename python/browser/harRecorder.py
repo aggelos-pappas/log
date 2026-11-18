@@ -84,6 +84,13 @@ class SocketTap:
         }
 
 
+BEACON = re.compile(r"^https?://(?:mcs|mon|mssdk|vmweb|vcs)(?:-[a-z0-9]+)?\.(?:tiktok|tiktokv|byteoversea)\.com/")
+
+
+def is_beacon(url: str) -> bool:
+    return bool(BEACON.match(url or ""))
+
+
 class Recorder:
 
     def __init__(self) -> None:
@@ -92,22 +99,27 @@ class Recorder:
         self.inflight = 0
         self.last_start = 0.0
         self.sockets: list[SocketTap] = []
+        self.meaningful = 0
 
     def busy(self) -> bool:
         since = time.monotonic() - self.last_start
         return since < 0.4 or (self.inflight > 0 and since < 4.0)
 
-    def _started(self, _request: Any) -> None:
+    def _started(self, request: Any) -> None:
         self.inflight += 1
         self.last_start = time.monotonic()
+        if not is_beacon(getattr(request, "url", "")):
+            self.meaningful += 1
 
-    def _ended(self) -> None:
+    def _ended(self, request: Any = None) -> None:
         self.inflight = max(0, self.inflight - 1)
+        if request is not None and not is_beacon(getattr(request, "url", "")):
+            self.meaningful += 1
 
     def attach(self, context: Any) -> None:
         context.on("request", self._started)
-        context.on("requestfinished", lambda request: (self._ended(), self._track(self._entry(request, None))))
-        context.on("requestfailed", lambda request: (self._ended(), self._track(self._entry(request, request.failure or "failed"))))
+        context.on("requestfinished", lambda request: (self._ended(request), self._track(self._entry(request, None))))
+        context.on("requestfailed", lambda request: (self._ended(request), self._track(self._entry(request, request.failure or "failed"))))
         context.on("page", self._watch)
         for page in getattr(context, "pages", []) or []:
             self._watch(page)
@@ -178,6 +190,9 @@ class Recorder:
 
     def seen(self) -> int:
         return len(self.entries) + len(self.pending)
+
+    def work(self) -> int:
+        return self.meaningful
 
     async def take(self) -> list[dict[str, Any]]:
         if self.pending:

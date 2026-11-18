@@ -350,14 +350,14 @@ class Inspector:
             self.extra["openedTab"] = self.popup.url.split("?", 1)[0]
             log(f"  opened a tab: {self.extra['openedTab']}")
         landed_ms = round((time.monotonic() - started) * 1000)
-        count, quiet_since = self.recorder.seen(), time.monotonic()
+        count, quiet_since = self.recorder.work(), time.monotonic()
         limit_ms = max(settle_max_ms, expect_ms) if expect and not error else (settle_max_ms if quiet_ms else 0)
         expect_seen = False
         while (time.monotonic() - settle_start) * 1000 < limit_ms:
             await asyncio.sleep(0.25)
             if expect and not expect_seen:
                 expect_seen = expect in request_names(self.recorder.entries)
-            now_count = self.recorder.seen()
+            now_count = self.recorder.work()
             if now_count != count:
                 count, quiet_since = now_count, time.monotonic()
             elif (time.monotonic() - quiet_since) * 1000 >= quiet_ms and (not expect or expect_seen or error):
