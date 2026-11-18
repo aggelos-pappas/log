@@ -103,6 +103,6 @@ export function handRolledAdvice(verdict: HandRolledVerdict, seen = 0): string {
   const times = seen > 1 ? ` This one-off has come up ${seen} times.` : ''
   return [
     `>>> HAND-ROLLED (${verdict.kinds.join(' + ')}): this ${verdict.tool} call ${kindsLabel(verdict.kinds)} against ${verdict.targets.join(', ')} by hand (${clip(verdict.hits[0]?.why ?? '', 200)}).${times}`,
-    `log should have a tool for this. You may go on: this is advice, not a block, and the owner isn't asked (rule ${HAND_ROLLED_RULE}). Once it has worked, make it a real log command and MCP tool: getGuide({ useCase: "${HAND_ROLLED_GUIDE}" }), then newTool { name, summary } (a dry run) and newToolLive to write it.`,
+    `log should have a tool for this. You may go on: this is advice, not a block, and the owner isn't asked (rule ${HAND_ROLLED_RULE}). Once it has worked, make it a real log command and MCP tool: getGuide({ useCase: "${HAND_ROLLED_GUIDE}" }), then toolScaffold { name, summary } (a dry run) and toolScaffoldLive to write it.`,
   ].join('\n')
 }

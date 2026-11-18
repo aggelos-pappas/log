@@ -21,8 +21,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 |---|---|---|
 | `newPlatform` | Make a new platform's session, command, MCP tool, engine and docs… | `log new platform <name> [--label <shown name>] [--twentyPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]` |
 | `newPlatformLive` | Make a new platform's session, command, MCP tool…, live on the platform | `log new platform <name> [--label <shown name>] [--twentyPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]` |
-| `newTool` | A hand-rolled one-off made a log command and MCP tool | `log new tool [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]` |
-| `newToolLive` | A hand-rolled one-off made a log command and MCP tool, live on the platform | `log new tool [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]` |
+| `toolScaffold` | A hand-rolled one-off made a log command and MCP tool | `log tool scaffold [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]` |
+| `toolScaffoldLive` | A hand-rolled one-off made a log command and MCP tool, live on the platform | `log tool scaffold [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]` |
 
 ## The work, step by step: layout
 
@@ -73,3 +73,4 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 - **Rule 39.** Use only the scope, options and intent The owner stated or implied.
 - **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
+- **Rule 163.** Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients.

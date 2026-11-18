@@ -1,6 +1,6 @@
 ---
 name: log-inbox-said-by
-description: "Someone's messages on every platform, found by name, newest first. A log play (docs/useCases/inbox/saidBy.md): Someone's messages on every platform, found by name, newest first. Made from a hand-rolled one-off with log new tool (getGuide({ useCase: \"log/toolFromOneOff\" })), so it is a log tool from now on and the one-off is never written again."
+description: "Someone's messages on every platform, found by name, newest first. A log play (docs/useCases/inbox/saidBy.md): Someone's messages on every platform, found by name, newest first. Made from a hand-rolled one-off with log tool scaffold (getGuide({ useCase: \"log/toolFromOneOff\" })), so it is a log tool from now on and the one-off is never written again."
 when_to_use: "Use when the owner asks for this, in words like: \"what did he say\", \"find his messages\", \"everything they said\""
 metadata:
   summary: "Someone's messages on every platform, found by name, newest first"
@@ -12,7 +12,7 @@ This is the log play `inbox/saidBy`. Before anything else, call the log MCP tool
 
 Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
-Someone's messages on every platform, found by name, newest first. Made from a hand-rolled one-off with log new tool (getGuide({ useCase: "log/toolFromOneOff" })), so it is a log tool from now on and the one-off is never written again.
+Someone's messages on every platform, found by name, newest first. Made from a hand-rolled one-off with log tool scaffold (getGuide({ useCase: "log/toolFromOneOff" })), so it is a log tool from now on and the one-off is never written again.
 
 How the owner asks for it: "what did he say", "find his messages", "everything they said"
 

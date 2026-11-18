@@ -770,13 +770,13 @@ Every platform account's governor counts what it sent today (requests, writes, t
 
 ## [Hand-rolled one-offs into tools](./handRolled.md)
 
-When an agent hand-rolls a data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off `python -c` or `bun -e`), log labels it, counts it and advises turning it into a real command and MCP tool, without blocking and without asking the owner; `log new tool` then writes that tool through the syntax tree. Rules 83 and 163.
+When an agent hand-rolls a data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off `python -c` or `bun -e`), log labels it, counts it and advises turning it into a real command and MCP tool, without blocking and without asking the owner; `log tool scaffold` then writes that tool through the syntax tree. Rules 83 and 163.
 
 - **REQ-HANDROLLED-01** Every host's call is normalised before it is classified
 - **REQ-HANDROLLED-02** The label is readsData or actsOnData with the data it touched
 - **REQ-HANDROLLED-03** Each hit is counted in log.db
 - **REQ-HANDROLLED-04** The hook advises on every host and never blocks
-- **REQ-HANDROLLED-05** log new tool writes the tool through the syntax tree
+- **REQ-HANDROLLED-05** log tool scaffold writes the tool through the syntax tree
 
 ## [Instagram](./instagram.md)
 

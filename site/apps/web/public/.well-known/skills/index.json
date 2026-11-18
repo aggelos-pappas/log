@@ -126,7 +126,7 @@
     },
     {
       "name": "log-inbox-said-by",
-      "description": "Someone's messages on every platform, found by name, newest first. A log play (docs/useCases/inbox/saidBy.md): Someone's messages on every platform, found by name, newest first. Made from a hand-rolled one-off with log new tool (getGuide({ useCase: \"log/toolFromOneOff\" })), so it is a log tool from now on and the one-off is never written again.",
+      "description": "Someone's messages on every platform, found by name, newest first. A log play (docs/useCases/inbox/saidBy.md): Someone's messages on every platform, found by name, newest first. Made from a hand-rolled one-off with log tool scaffold (getGuide({ useCase: \"log/toolFromOneOff\" })), so it is a log tool from now on and the one-off is never written again.",
       "files": [
         "SKILL.md"
       ],
