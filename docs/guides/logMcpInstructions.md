@@ -10,7 +10,7 @@ The guides describe the current command implementation. Legacy storage names and
 
 ## Use cases: the work the owner asks for, tool by tool
 
-This is how the owner works. Each use case is something the owner asks for again and again, written as its steps in order, each step naming its tool and what counts as done. When the owner asks for work a use case covers, read that use case and follow it step by step instead of improvising. Work no use case covers yet, done for the owner more than once, gets a page of its own in docs/useCases/<platform>/.
+This is how the owner works. Each use case is something the owner asks for again and again, written as its steps in order, each step naming its tool and what counts as done. When the owner asks for work a use case covers, follow it step by step instead of improvising. Repeated work no use case covers gets its own page in docs/useCases/<platform>/.
 
 With no prompt hook, getGuide({ ask }) routes the owner's words to the one that fits; each page's own asks line holds the words it is matched on.
 
@@ -37,6 +37,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "instagram/newPlatform" })` | Bringing a new platform up, then vendoring its client |
 | `getGuide({ useCase: "linkedin/network" })` | Growing a LinkedIn network, and reading and answering its inbox |
 | `getGuide({ useCase: "linkedin/posts" })` | Posting on LinkedIn, liking or reposting, and taking a post down |
+| `getGuide({ useCase: "log/toolHealth" })` | Tool health |
 | `getGuide({ useCase: "reddit/contributorMaxxing" })` | Contributor maxxing: finding talented builders through what they share |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM |
 | `getGuide({ useCase: "tiktok/post" })` | Posting a video on TikTok, and deleting it |
@@ -101,7 +102,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `slack` | A Slack account: its session and workspaces, chats, reading, the live websocket watch and sending |
 | `linkedin` | A LinkedIn account: saving its cookies, checking its session, posting or deleting its own posts, inviting people LinkedIn suggests, liking and reposting posts, seeing how its own posts are doing, and reading and writing in its conversations |
 | `accountsAndProxies` | Every account in the workspace with its session state, and each account's proxy: checking it, giving it one from a provider in its home city, and providers' traffic; and the interactive launcher that sets log up and adds accounts |
-| `runsAndEvidence` | What runs leave behind: run folders and pruning, captures and request docs, error codes, jobs, every call's timings, log.db's typed tables checked and rebuilt from its events, and the MCP server itself |
+| `runsAndEvidence` | What runs leave behind: run folders and pruning, captures and request docs, error codes, jobs, call timings and tool health, log.db's typed tables rebuilt from its events, the MCP server |
 | `knowledgeAndSearch` | Finding context: the knowledge base, the conversation search (keyword and meaning at once) and every voice note transcribed into it |
 | `extensions` | Extensions that make an account more human on social media: Memelord's memes found for the moment in a chat and sent in context, the owner's cloned voice (Inworld or Fish Audio) for the voice notes they ask for, every paid provider's balance, and treg's catalog of endpoints for every lookup |
 | `console` | The local console: this machine's log.db, MCP, accounts, usage, events, AI client config, settings and provider keys, read in the terminal, as JSON per screen, or in the web console on loopback with no sign-in |

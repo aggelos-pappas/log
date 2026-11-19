@@ -21,6 +21,7 @@ flowchart TB
     c_runs["runs"]
     c_storage["storage"]
     c_timing["timing"]
+    c_tool["tool"]
     c_inbox["inbox"]
     c_media["media"]
     c_browsers["browsers"]
@@ -251,6 +252,8 @@ flowchart TB
   mcp --> c_storage
   cli --> c_timing
   mcp --> c_timing
+  cli --> c_tool
+  mcp --> c_tool
   cli --> c_inbox
   mcp --> c_inbox
   cli --> c_media

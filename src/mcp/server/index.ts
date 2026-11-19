@@ -206,6 +206,7 @@ async function runTimed(name: string, argv: string[], context: Partial<CommandCo
   }
   if (job && !cancelled && code !== 0 && cancelRequested(job.id)) cancelled = true;
   call.attrs.exit = code;
+  if (code !== 0) call.attrs.code = refusal ?? "commandFailed";
   const keptJob = kept as JobRecord | null;
   onLine(name, "out", `■ exit ${code} in ${msText(performance.now() - began)} (call ${call.callId}: timing { call: "${call.callId}" } shows where the time went)${keptJob ? `; the client had cancelled it, so its answer is job ${keptJob.id}` : ""}`);
   const text = [out.join("\n"), processLog.length ? `log:\n${processLog.join("\n")}` : "", err.length ? `stderr:\n${err.join("\n")}` : "", `exit ${code}`].filter(Boolean).join("\n\n");

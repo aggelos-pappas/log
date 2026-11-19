@@ -110,7 +110,7 @@ put("docs/specs/README.md", specsIndex(specDomains(root).filter((d) => existsSyn
         ? [
             "## Use cases: the work the owner asks for, tool by tool",
             "",
-            "This is how the owner works. Each use case is something the owner asks for again and again, written as its steps in order, each step naming its tool and what counts as done. When the owner asks for work a use case covers, read that use case and follow it step by step instead of improvising. Work no use case covers yet, done for the owner more than once, gets a page of its own in docs/useCases/<platform>/.",
+            "This is how the owner works. Each use case is something the owner asks for again and again, written as its steps in order, each step naming its tool and what counts as done. When the owner asks for work a use case covers, follow it step by step instead of improvising. Repeated work no use case covers gets its own page in docs/useCases/<platform>/.",
             "",
             "With no prompt hook, getGuide({ ask }) routes the owner's words to the one that fits; each page's own asks line holds the words it is matched on.",
             "",

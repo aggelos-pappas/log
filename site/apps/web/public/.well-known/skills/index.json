@@ -181,6 +181,14 @@
       "summary": "Posting on LinkedIn, liking or reposting, and taking a post down"
     },
     {
+      "name": "log-log-tool-health",
+      "description": "Tool health. A log play (docs/useCases/log/toolHealth.md): Read how log's own tools are doing from the calls log.db already stores: per tool its calls, failures, commonest failure code, p50 and p95, and last use, with three flags (unused, failing, stale guide mentions) and a fix for each. It reads only: it changes no code, file or guide, and the fixes are for the owner to choose.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Tool health"
+    },
+    {
       "name": "log-reddit-contributor-maxxing",
       "description": "Contributor maxxing: finding talented builders through what they share. A log play (docs/useCases/reddit/contributorMaxxing.md): Find talented people who are into the same things as the owner, through the GitHub repos they post on Reddit. Read a subreddit's last few days through the owner's Reddit account, keep the posts that link to GitHub, and rank them. It reads only. It posts, votes and messages nothing.",
       "files": [

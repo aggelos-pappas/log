@@ -3,7 +3,7 @@ import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuseInput } from "../ru
 import type { Command, CommandInput } from "../runner/types.ts";
 
 export const TIMING_USAGE = [
-  "Usage: log timing [--tool <name>] [--hours <n>] [--stages <n>] [--json]   (p50, p95 and p99 for every tool call, and for every stage inside it: the guards, the voice gate, each fetch, the Python start, the session host's queue, lock, spacing and governor, each platform request; newest --hours, default 24)",
+  "Usage: log timing [--tool <name>] [--hours <n>] [--stages <n>] [--json]   (p50, p95, p99 per tool and per stage: guards, voice gate, fetches, Python start, host queue, lock, spacing, governor, platform requests; --hours default 24)",
   "       log timing --call <callId> [--json]   (one call as a waterfall: every stage in order, when it started and how long it took; the id is on the call's ▶ and ■ lines in the live log)",
 ].join("\n");
 
@@ -35,7 +35,7 @@ export const timingCommand: Command = {
   name: "timing",
   effect: "read",
   input: TIMING_INPUT,
-  summary: "Where the time goes in every call: p50, p95 and p99 per tool and per stage, from the timings every call stores in log.db, or one call as a waterfall",
+  summary: "Where each call's time goes: p50, p95, p99 per tool and stage, or one call as a waterfall",
   args: "[--tool <name>] [--hours <n>] [--stages <n>] [--call <callId>] [--json]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(TIMING_INPUT));
