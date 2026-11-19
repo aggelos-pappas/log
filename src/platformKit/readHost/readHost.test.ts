@@ -10,9 +10,10 @@ const stateRoot = join(scratch, 'state')
 const account = 'grace_ships'
 let host: ReturnType<typeof Bun.spawn> | null = null
 
-afterAll(() => {
+afterAll(async () => {
   host?.kill()
-  rmSync(scratch, { recursive: true, force: true })
+  await host?.exited
+  rmSync(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 })
 })
 
 async function hostUp(): Promise<ReadHostInfo> {
