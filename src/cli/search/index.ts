@@ -8,10 +8,10 @@ import type { Command, CommandContext, CommandInput } from "../runner/types.ts";
 import { openTwitterAccount } from "../twitter/helpers/account.ts";
 
 export const SEARCH_USAGE = [
-  "Usage: log search \"<query>\" [--limit <n>] [--platform <p>] [--account <a>] [--with <handle>] [--after <YYYY-MM-DD>] [--json]",
-  "       log search index [--platform <twitter|discord>] [--account <a>] [--saved] [--rebuild]   (only the chunks that are new or changed are embedded, and the ones gone are removed, so the index stays deduplicated; --rebuild embeds everything again. --saved indexes the conversations already kept, reading nothing; otherwise reads every conversation through the platform's engine: X's DMs with X Chat decrypted with the saved PIN, and every Discord DM and group (its whole history, up to 20,000 messages each), keeps them in ~/.logCli/conversations, and builds the keyword and meaning indexes in ~/.logCli/search)",
+  "Usage: log search \"<query>\" [--limit <n>] [--platform <p>] [--account <a>] [--with <handle>] [--after <YYYY-MM-DD>] [--full] [--json]",
+  "       log search index [--platform <twitter|discord>] [--account <a>] [--saved] [--rebuild]   (only the chunks that are new or changed are embedded, and the ones gone are removed; --rebuild embeds everything again. --saved indexes the conversations already kept, reading nothing; otherwise reads every conversation through the platform's engine: X's DMs with X Chat decrypted with the saved PIN, and every Discord DM and group (its whole history, up to 20,000 messages each), keeps them in ~/.logCli/conversations, and builds the keyword and meaning indexes in ~/.logCli/search)",
   "       log search bench [--rounds <n>]   (times realistic queries on the built index, cold and warm, and prints p50, p95 and p99 beside a plain linear scan)",
-  "Hybrid search across every conversation: BM25 keyword ranking (bm25s) and meaning ranking (verso-db HNSW over local all-MiniLM-L6-v2 embeddings) run in parallel and are fused with reciprocal rank fusion. Each hit names the conversation, who it was with, when, and the messages it covers.",
+  "Hybrid search across every conversation: BM25 keyword ranking (bm25s) and meaning ranking (verso-db HNSW over local all-MiniLM-L6-v2 embeddings) run in parallel and are fused with reciprocal rank fusion. Each hit names the conversation, who, when, and its matching lines.",
 ].join("\n");
 
 const FILTERS = [
@@ -27,7 +27,7 @@ export const SEARCH_INPUT: CommandInput = {
       words: [],
       summary: "Find where someone talked about something: every conversation by keyword and meaning, before reading whole chats; --with, --platform and --after narrow it",
       positionals: [{ name: "query", kind: "string", required: true, description: "What to look for, in plain words" }],
-      flags: [{ name: "limit", kind: "integer", min: 1, max: 100, description: "How many hits, default 10, at most 100" }, ...FILTERS, JSON_FLAG],
+      flags: [{ name: "limit", kind: "integer", min: 1, max: 100, description: "How many hits, default 10, at most 100" }, ...FILTERS, { name: "full", kind: "boolean", description: "Each hit's whole chunk, not its matching lines" }, JSON_FLAG],
     },
     {
       words: ["index"],
@@ -93,10 +93,29 @@ async function indexDiscord(context: CommandContext, only: string | undefined, l
   }
 }
 
-function hitLine(hit: SearchHit): string {
+export const SNIPPET_LINES = 3;
+export const SNIPPET_WIDTH = 160;
+
+export function snippetOf(text: string, query: string, lines: number = SNIPPET_LINES, width: number = SNIPPET_WIDTH): string {
+  const all = text.split("\n").filter((l) => l.trim());
+  const words = [...new Set(query.toLowerCase().match(/[\p{L}\p{N}']{3,}/gu) ?? [])];
+  const scored = all.map((line, at) => ({ line, at, score: words.filter((w) => line.toLowerCase().includes(w)).length }));
+  const picked = scored.some((s) => s.score) ? [...scored].sort((a, b) => b.score - a.score || a.at - b.at).slice(0, lines).sort((a, b) => a.at - b.at) : scored.slice(0, lines);
+  const cut = (line: string) => (line.length > width ? `${line.slice(0, width - 1)}…` : line);
+  const left = all.length - picked.length;
+  return [...picked.map((s) => cut(s.line)), ...(left > 0 ? [`(${left} more line(s) in this chunk: --full)`] : [])].join("\n");
+}
+
+export function compactChunk(chunk: SearchHit["chunk"], query: string): Omit<SearchHit["chunk"], "messageIds"> & { messages: number; firstMessageId: string | null; lastMessageId: string | null } {
+  const { messageIds, ...rest } = chunk;
+  return { ...rest, text: snippetOf(chunk.text, query), messages: messageIds.length, firstMessageId: messageIds[0] ?? null, lastMessageId: messageIds.at(-1) ?? null };
+}
+
+function hitLine(hit: SearchHit, query: string, full: boolean): string {
   const c = hit.chunk;
   const ranks = [hit.keywordRank ? `keyword #${hit.keywordRank}` : null, hit.meaningRank ? `meaning #${hit.meaningRank}` : null].filter(Boolean).join(", ");
-  return [`  ${hit.rank}. ${c.platform} ${c.account} with @${c.with.join(", @")} · ${c.at ?? "?"} · ${ranks} · conversation ${c.conversationId}`, ...c.text.split("\n").map((l) => `     ${l.slice(0, 220)}`)].join("\n");
+  const body = full ? c.text.split("\n").map((l) => l.slice(0, 220)) : snippetOf(c.text, query).split("\n");
+  return [`  ${hit.rank}. ${c.platform} ${c.account} with @${c.with.join(", @")} · ${c.at ?? "?"} · ${ranks} · conversation ${c.conversationId}`, ...body.map((l) => `     ${l}`)].join("\n");
 }
 
 async function indexAll(context: CommandContext, only: string | undefined, platform: string | undefined): Promise<{ lines: string[]; conversations: Conversation[] }> {
@@ -179,8 +198,9 @@ export const searchCommand: Command = {
         const started = performance.now();
         const hits = await search(index, query, { limit, platform: pick("platform"), account: pick("account"), with: pick("with"), after });
         const ms = performance.now() - started;
-        if (json) return { code: 0, stdout: JSON.stringify({ query, ms, hits }, null, 2) };
-        return { code: 0, stdout: [`log search "${query}": ${hits.length} hit${hits.length === 1 ? "" : "s"} in ${ms.toFixed(1)} ms (keyword + meaning, RRF)`, ...hits.map(hitLine)].join("\n") };
+        const full = parsed.flags["full"] === true;
+        if (json) return { code: 0, stdout: JSON.stringify({ query, ms, hits: full ? hits : hits.map((h) => ({ ...h, chunk: compactChunk(h.chunk, query) })) }, null, full ? 2 : undefined) };
+        return { code: 0, stdout: [`log search "${query}": ${hits.length} hit${hits.length === 1 ? "" : "s"} in ${ms.toFixed(1)} ms (keyword + meaning, RRF)`, ...hits.map((h) => hitLine(h, query, full))].join("\n") };
       } finally {
         await index.close();
       }

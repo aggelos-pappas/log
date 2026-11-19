@@ -1,12 +1,13 @@
 #!/usr/bin/env bun
 import { join } from 'node:path'
-import { answerEvent } from '../../src/agentHooks/answers/index'
+import { answerEvent, hookStages } from '../../src/agentHooks/answers/index'
 import { hookHostOf, hostBody, positionalOf } from '../../src/agentHooks/harness/index'
 import type { HookEvent } from '../../src/agentHooks/registry/index'
 import { askRoute, logTiming, readService, startService } from '../../src/contextLayer/service/index'
 import { turnEvent } from '../../src/observability/turns/index'
 
 const started = performance.now()
+const bootedAt = Date.now()
 const repo = join(import.meta.dir, '..', '..')
 const host = hookHostOf(process.argv)
 const raw = await Bun.stdin.text().catch(() => '')
@@ -21,5 +22,7 @@ const service = readService()
 if (!service) startService(repo)
 const answered = await answerEvent(event, raw, repo, (prompt) => askRoute(prompt, service))
 const body = hostBody(host, event, answered.body)
-logTiming({ event, provider: host === 'claudeCode' ? 'hookEventProcess' : `hookEventProcess:${host}`, ms: performance.now() - started, chars: JSON.stringify(body ?? '').length, outcome: answered.timings.map((t) => `${t.hook}${t.ok ? '' : '!'}:${Math.round(t.ms)}`).join(',') })
+const stages = hookStages(raw, answered.timings, { processAt: performance.timeOrigin, bootedAt })
+const firstAt = Math.min(bootedAt, ...stages.map((s) => s.startedAt))
+logTiming({ event, provider: host === 'claudeCode' ? 'hookEventProcess' : `hookEventProcess:${host}`, ms: Date.now() - firstAt, chars: JSON.stringify(body ?? '').length, outcome: answered.timings.map((t) => `${t.hook}${t.ok ? '' : '!'}:${Math.round(t.ms)}`).join(','), attrs: { workMs: Math.round(performance.now() - started) }, stages })
 if (body) process.stdout.write(JSON.stringify(body))

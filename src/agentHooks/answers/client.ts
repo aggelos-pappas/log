@@ -17,7 +17,8 @@ import { readPending } from '../../inbox/pending/index'
 import { superviseLocalWatchers } from '../../platformKit/watcher/index'
 import { hookAnswer } from '../../contextLayer/hook/index'
 import type { HookInput } from '../../contextLayer/hook/index'
-import { REFUSING_HOOKS } from './types'
+import type { TimingStage } from '../../contextLayer/service/types'
+import { REFUSING_HOOKS, WAITING_HOOKS } from './types'
 import type { EventAnswer, HookAnswer, HookTiming, RouteAsk } from './types'
 
 export function storageAnswer(): HookAnswer {
@@ -186,22 +187,61 @@ export function mergeAnswers(event: HookEvent, answers: readonly HookAnswer[]): 
   return { ...decision, ...(contexts.length ? { hookSpecificOutput: { hookEventName: event, additionalContext: contexts.join('\n\n') } } : {}) }
 }
 
+export function sentAtOf(raw: string): number | null {
+  try {
+    const sent = Number((JSON.parse(raw || '{}') as { log_sent_at?: unknown }).log_sent_at)
+    return Number.isFinite(sent) && sent > 0 ? sent : null
+  } catch {
+    return null
+  }
+}
+
+export function hookStages(raw: string, timings: readonly HookTiming[], at: { processAt?: number; bootedAt?: number; arrivedAt?: number }): TimingStage[] {
+  const sentAt = sentAtOf(raw)
+  const stages: TimingStage[] = []
+  const between = (name: string, from: number | null | undefined, to: number | undefined) => {
+    if (from && to && to >= from) stages.push({ name, startedAt: from, ms: to - from })
+  }
+  between('spawn', sentAt, at.processAt)
+  between('bunStart', at.processAt, at.bootedAt)
+  between('sent', sentAt, at.arrivedAt)
+  for (const t of timings) stages.push({ name: `hook ${t.hook}`, startedAt: t.startedAt ?? at.bootedAt ?? at.arrivedAt ?? Date.now(), ms: t.ms, ok: t.ok })
+  return stages
+}
+
+export function waitingHooksFirst(chosen: readonly AgentHook[]): AgentHook[] {
+  const waits = (hook: AgentHook) => WAITING_HOOKS.includes(hookName(hook))
+  return [...chosen.filter(waits), ...chosen.filter((hook) => !waits(hook))]
+}
+
+const hookName = (hook: AgentHook) => hook.script.replace(/^.*\//, '').replace(/\.ts$/, '')
+
+const failedAnswer = (name: string, event: HookEvent, error: unknown): HookAnswer => ({ context: `log hook ${name} failed on ${event}: ${error instanceof Error ? error.message : String(error)}` })
+
 export async function answerEvent(event: HookEvent, raw: string, repo: string, route: RouteAsk, hooks: readonly AgentHook[] = AGENT_HOOKS): Promise<EventAnswer> {
   const chosen = hooksForEvent(event, raw, hooks)
+  const order = waitingHooksFirst(chosen)
   const timings: HookTiming[] = []
-  const settled = await Promise.all(
-    chosen.map(async (hook) => {
-      const started = performance.now()
-      const name = hook.script.replace(/^.*\//, '').replace(/\.ts$/, '')
-      try {
-        const answer = await answerOne(hook, event, raw, repo, route)
-        timings.push({ hook: name, ms: performance.now() - started, ok: true })
+  const pending = order.map((hook) => {
+    const name = hookName(hook)
+    const startedAt = Date.now()
+    const began = performance.now()
+    try {
+      const answer = answerOne(hook, event, raw, repo, route)
+      if (!(answer instanceof Promise)) {
+        timings.push({ hook: name, ms: performance.now() - began, ok: true, startedAt })
         return answer
-      } catch (error) {
-        timings.push({ hook: name, ms: performance.now() - started, ok: false })
-        return { context: `log hook ${name} failed on ${event}: ${error instanceof Error ? error.message : String(error)}` } satisfies HookAnswer
       }
-    }),
-  )
-  return { event, body: mergeAnswers(event, settled), timings }
+      return answer.then(
+        (done) => (timings.push({ hook: name, ms: performance.now() - began, ok: true, startedAt }), done),
+        (error) => (timings.push({ hook: name, ms: performance.now() - began, ok: false, startedAt }), failedAnswer(name, event, error)),
+      )
+    } catch (error) {
+      timings.push({ hook: name, ms: performance.now() - began, ok: false, startedAt })
+      return failedAnswer(name, event, error)
+    }
+  })
+  const settled = await Promise.all(pending)
+  const byHook = new Map(order.map((hook, i) => [hook, settled[i]] as const))
+  return { event, body: mergeAnswers(event, chosen.map((hook) => byHook.get(hook) ?? {})), timings }
 }

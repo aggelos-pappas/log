@@ -30,4 +30,12 @@ export interface TimingLine {
   chars: number
   outcome: string
   attrs?: Record<string, unknown>
+  stages?: TimingStage[]
+}
+
+export interface TimingStage {
+  name: string
+  startedAt: number
+  ms: number
+  ok?: boolean
 }

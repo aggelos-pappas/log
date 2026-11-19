@@ -1,12 +1,18 @@
+import http.client
 import json
 import os
 import re
 import shutil
+import socket
 import subprocess
 import threading
+import time
 from pathlib import Path
 
 HOOK_TIMEOUT_SECONDS = 20
+SERVICE_HOST = "127.0.0.1"
+SERVICE_CONNECT_SECONDS = 0.3
+SERVICE_ANSWER_SECONDS = 10
 EVENT_SCRIPT = ("scripts", "hooks", "event.ts")
 PACKAGE = ("@listeningkit", "log")
 
@@ -71,7 +77,48 @@ def bun_command():
     return "bun"
 
 
+def service_port():
+    try:
+        return int(os.environ.get("LOG_CONTEXT_PORT", "").strip() or 47317)
+    except ValueError:
+        return 47317
+
+
+def context_of(raw):
+    try:
+        answer = json.loads(raw) if raw.strip() else {}
+    except ValueError:
+        return ""
+    context = answer.get("context") if isinstance(answer, dict) else None
+    return context if isinstance(context, str) else ""
+
+
+def ask_service(event, body):
+    if os.environ.get("LOG_CONTEXT_SERVICE", "").strip() == "off":
+        return None
+    try:
+        sock = socket.create_connection((SERVICE_HOST, service_port()), timeout=SERVICE_CONNECT_SECONDS)
+    except OSError:
+        return None
+    conn = http.client.HTTPConnection(SERVICE_HOST, service_port(), timeout=SERVICE_ANSWER_SECONDS)
+    conn.sock = sock
+    sock.settimeout(SERVICE_ANSWER_SECONDS)
+    try:
+        conn.request("POST", f"/hooks/{event}?host=hermes", body=body.encode("utf-8"), headers={"content-type": "application/json"})
+        response = conn.getresponse()
+        raw = response.read().decode("utf-8", errors="replace")
+        return context_of(raw) if response.status == 200 else None
+    except (OSError, http.client.HTTPException):
+        return ""
+    finally:
+        conn.close()
+
+
 def ask_log(event, payload):
+    body = json.dumps({"hook_event_name": event, **payload, "log_sent_at": time.time() * 1000})
+    answered = ask_service(event, body)
+    if answered is not None:
+        return answered
     root = log_root()
     script = root.joinpath(*EVENT_SCRIPT)
     if not script.exists():
@@ -79,7 +126,7 @@ def ask_log(event, payload):
     try:
         run = subprocess.run(
             [bun_command(), str(script), event, "--host", "hermes"],
-            input=json.dumps({"hook_event_name": event, **payload}),
+            input=body,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -88,20 +135,25 @@ def ask_log(event, payload):
         )
     except (OSError, subprocess.TimeoutExpired):
         return ""
-    if run.returncode != 0 or not run.stdout.strip():
+    if run.returncode != 0:
         return ""
-    try:
-        answer = json.loads(run.stdout)
-    except ValueError:
-        return ""
-    context = answer.get("context") if isinstance(answer, dict) else None
-    return context if isinstance(context, str) else ""
+    return context_of(run.stdout or "")
 
 
 def pre_llm_call(session_id="", user_message="", conversation_history=None, is_first_turn=False, **kwargs):
     events = (["SessionStart"] if is_first_turn else []) + ["UserPromptSubmit"]
     payload = {"session_id": session_id or "", "prompt": user_message or "", "source": "startup"}
-    texts = [ask_log(event, payload) for event in events]
+    texts = ["" for _ in events]
+
+    def ask(i, event):
+        texts[i] = ask_log(event, payload)
+
+    threads = [threading.Thread(target=ask, args=(i, event), daemon=True) for i, event in enumerate(events[1:], start=1)]
+    for thread in threads:
+        thread.start()
+    ask(0, events[0])
+    for thread in threads:
+        thread.join(HOOK_TIMEOUT_SECONDS)
     text = "\n\n".join(t for t in texts if t)
     return {"context": text} if text else None
 

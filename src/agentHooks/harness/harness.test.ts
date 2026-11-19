@@ -145,7 +145,7 @@ describe("the native Hermes plugin's pre_llm_call", () => {
         "later = hooks['pre_llm_call'](session_id='s', user_message='hi', is_first_turn=False)",
         "print(json.dumps({'names': sorted(hooks), 'first': first, 'later': later}))",
       ].join("\n");
-      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot } });
+      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot, LOG_CONTEXT_SERVICE: "off" } });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout.trim()) as { names: string[]; first: { context: string }; later: { context: string } };
       expect(out.names).toEqual(["post_llm_call", "pre_llm_call", "pre_tool_call"]);
@@ -176,18 +176,64 @@ describe("the native Hermes plugin's pre_llm_call", () => {
         "[t.join(20) for t in threading.enumerate() if t is not threading.current_thread()]",
         "print(json.dumps({'grep': grep, 'parse': parse, 'fine': fine}))",
       ].join("\n");
-      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot } });
+      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot, LOG_CONTEXT_SERVICE: "off" } });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout.trim()) as { grep: { action: string; message: string }; parse: { message: string }; fine: unknown[] };
       expect(out.grep.action).toBe("block");
       expect(out.grep.message).toStartWith("log has a flag for this: discordChats --kind dm,group, --name <text>; don't parse log output with scripts.");
       expect(out.parse.message).toStartWith("log has a flag for this: inboxWaiting --tail <n>");
       expect(out.fine).toEqual([null, null, null]);
-      expect(JSON.parse(readFileSync(said, "utf8"))).toEqual({ event: "Stop", input: { hook_event_name: "Stop", session_id: "s", tool_calls: 3 } });
+      const stop = JSON.parse(readFileSync(said, "utf8")) as { event: string; input: Record<string, unknown> };
+      expect(typeof stop.input.log_sent_at).toBe("number");
+      delete stop.input.log_sent_at;
+      expect(stop).toEqual({ event: "Stop", input: { hook_event_name: "Stop", session_id: "s", tool_calls: 3 } });
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
   });
+
+  test("asks the warm context service over localhost first and starts no process; a closed port falls back to the event script", async () => {
+    const scratch = mkdtempSync(join(tmpdir(), "harnessContract-pyService-"));
+    const posted: { path: string; body: Record<string, unknown> }[] = [];
+    const server = Bun.serve({
+      hostname: "127.0.0.1",
+      port: 0,
+      async fetch(request) {
+        const url = new URL(request.url);
+        posted.push({ path: `${url.pathname}${url.search}`, body: (await request.json()) as Record<string, unknown> });
+        return Response.json({ context: `served ${url.pathname.split("/").pop()}` });
+      },
+    });
+    try {
+      const stubRoot = join(scratch, "root");
+      mkdirSync(join(stubRoot, "scripts", "hooks"), { recursive: true });
+      writeFileSync(join(stubRoot, "scripts", "hooks", "event.ts"), "await Bun.stdin.text()\nprocess.stdout.write(JSON.stringify({ context: `spawned ${process.argv[2]}` }))\n");
+      const plugin = join(root, HERMES_PLUGIN_DIR, "__init__.py");
+      const script = [
+        "import importlib.util, json",
+        `spec = importlib.util.spec_from_file_location("logHooks", ${JSON.stringify(plugin)})`,
+        "module = importlib.util.module_from_spec(spec)",
+        "spec.loader.exec_module(module)",
+        "print(json.dumps(module.pre_llm_call(session_id='s', user_message='hi', is_first_turn=True)))",
+      ].join("\n");
+      const run = (port: number) => Bun.spawn([process.env.LOG_PYTHON || "python", "-c", script], { stdout: "pipe", stderr: "pipe", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot, LOG_CONTEXT_PORT: String(port), LOG_CONTEXT_SERVICE: "" } });
+      const warm = run(server.port ?? 0);
+      const warmOut = await new Response(warm.stdout).text();
+      expect(await warm.exited).toBe(0);
+      expect(JSON.parse(warmOut.trim())).toEqual({ context: "served SessionStart\n\nserved UserPromptSubmit" });
+      expect(posted.map((p) => p.path).sort()).toEqual(["/hooks/SessionStart?host=hermes", "/hooks/UserPromptSubmit?host=hermes"]);
+      expect(posted.every((p) => typeof p.body.log_sent_at === "number" && p.body.prompt === "hi")).toBe(true);
+      const closedPort = server.port ?? 0;
+      server.stop(true);
+      const cold = run(closedPort);
+      const coldOut = await new Response(cold.stdout).text();
+      expect(await cold.exited).toBe(0);
+      expect(JSON.parse(coldOut.trim())).toEqual({ context: "spawned SessionStart\n\nspawned UserPromptSubmit" });
+    } finally {
+      server.stop(true);
+      rmSync(scratch, { recursive: true, force: true });
+    }
+  }, 30000);
 });
 
 describe("the native Hermes plugin installed on its own, with no log launch --setup", () => {
@@ -209,7 +255,7 @@ describe("the native Hermes plugin installed on its own, with no log launch --se
         "spec.loader.exec_module(module)",
         "print(json.dumps({'root': str(module.log_root()), 'answer': module.pre_llm_call(session_id='s', user_message='hi', is_first_turn=False)}))",
       ].join("\n");
-      const env: Record<string, string | undefined> = { ...process.env, BUN_INSTALL: bunHome, LOG_ROOT: "" };
+      const env: Record<string, string | undefined> = { ...process.env, BUN_INSTALL: bunHome, LOG_ROOT: "", LOG_CONTEXT_SERVICE: "off" };
       const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout.trim()) as { root: string; answer: { context: string } };

@@ -1,7 +1,7 @@
 import { playReminder, sessionPlayOf, transcriptTail } from '../session/index'
 import { listUseCases, readUseCase } from '../../mcp/server/helpers/guides.ts'
 import { logTiming } from '../service/client'
-import { isPrompt, loadToolFacts, outcomeOf, playMatchText, routerSection, route as wordRoute } from '../../useCases/router/client'
+import { askOf, isPrompt, loadToolFacts, outcomeOf, playMatchText, routerSection, route as wordRoute } from '../../useCases/router/client'
 import type { MeaningAnswer, PlayMatch, RoutableUseCase, ToolFacts } from '../../useCases/router/types'
 import type { HookInput, HookResult } from './types'
 import { promptNameHints, promptWords } from '../../inbox/nameHints/index'
@@ -26,8 +26,9 @@ export async function hookAnswer(input: HookInput, route: RouteFn, useCases: Use
     const page = play ? readUseCase(play.id) : null
     return play && page ? { event, text: playReminder(play, page), outcome: `reinjected ${play.id}` } : { event, text: '', outcome: 'noPlay' }
   }
-  const prompt = String(input.prompt ?? '')
-  if (!isPrompt(prompt)) return { event, text: '', outcome: 'notAPrompt' }
+  const whole = String(input.prompt ?? '')
+  if (!isPrompt(whole)) return { event, text: '', outcome: 'notAPrompt' }
+  const prompt = askOf(whole)
   const served = await route(prompt)
   const known = useCases()
   const answer = served ?? wordRoute(prompt, { useCases: known })

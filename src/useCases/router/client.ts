@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { aiIndexOf, saveAiIndex, storedEmbedder, vectorsFor } from '../../inbox/store/index'
 import { askTermsOf, buildToolIndex, catalogHash, catalogOf, clearsToolBar, correctTypos, denseScores, fuseToolsOver, meaningRanks, rankToolsOver, reciprocalRankFusion, shortSummary, skillsIn, toolDocsOf, toolsText, windowsOf } from './helpers'
 import type { ChatNameOf, ToolIndex } from './helpers'
-import { EMBED_BATCH, PLAY_MEANING_FLOOR, ROUTER_BUDGET_MS, ROUTER_INDEX_NAME, ROUTER_VECTOR_KIND, SKILL_MEANING_FLOOR, SKILL_SUMMARY_CHARS, SKILL_WORD_FLOOR, SKILLS_SHOWN, TOOL_MEANING_SPREAD, TOOL_TEXT_BUDGET, AMBIGUITY_BAND, DEFAULT_MENU_FLOOR, DEFAULT_THRESHOLD, DENSE_WEIGHT, MATCHES_SHOWN, MIN_PHRASE_WORDS, NOT_A_PROMPT, PLATFORM_BONUS, PLATFORM_FOLDERS, PLATFORM_WORDS, SHORT_PROMPT_WORDS, STOP_WORDS, TOOL_INDEX_FILE, TOOL_SYNONYMS, WORD_AMBIGUITY_BAND, WORD_MENU_FLOOR, WORD_THRESHOLD } from './types'
+import { ASK_HEAD_WORDS, ASK_TAIL_WORDS, EMBED_BATCH, PLAY_MEANING_FLOOR, ROUTER_BUDGET_MS, ROUTER_INDEX_NAME, ROUTER_VECTOR_KIND, SKILL_MEANING_FLOOR, SKILL_SUMMARY_CHARS, SKILL_WORD_FLOOR, SKILLS_SHOWN, TOOL_MEANING_SPREAD, TOOL_TEXT_BUDGET, AMBIGUITY_BAND, DEFAULT_MENU_FLOOR, DEFAULT_THRESHOLD, DENSE_WEIGHT, MATCHES_SHOWN, MIN_PHRASE_WORDS, NOT_A_PROMPT, PLATFORM_BONUS, PLATFORM_FOLDERS, PLATFORM_WORDS, SHORT_PROMPT_WORDS, STOP_WORDS, TOOL_INDEX_FILE, TOOL_SYNONYMS, WORD_AMBIGUITY_BAND, WORD_MENU_FLOOR, WORD_THRESHOLD } from './types'
 import type { ToolFusion, CatalogItem, CatalogKind, EmbedTexts, FusedTools, MeaningAnswer, MeaningIndex, RouterMeaning, RouterSection, SkillFacts, PlayMatch, RoutableUseCase, RouteContext, RouteDecision, RouteIndex, Thresholds, ToolFacts, ToolMatch, Utterance } from './types'
 
 const PLACEHOLDER = /<[^<>]*>/g
@@ -160,10 +160,26 @@ export function route(prompt: string, context: RouteContext): RouteDecision {
   return { outcome: menu.length ? 'menu' : 'none', play: null, matches: [], ranked, menu, platforms, corrected: fixed.corrected, ms }
 }
 
+export function askOf(prompt: string, head: number = ASK_HEAD_WORDS, tail: number = ASK_TAIL_WORDS): string {
+  const words = prompt.split(/\s+/).filter(Boolean)
+  if (words.length <= head + tail) return prompt
+  return [...words.slice(0, head), ...words.slice(-tail)].join(' ')
+}
+
+export async function withinBudget<T>(work: Promise<T>, budgetMs: number = ROUTER_BUDGET_MS): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), budgetMs)))
+  try {
+    return await Promise.race([work.catch(() => null), late])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 export async function routePrompt(prompt: string, index: RouteIndex, embed: EmbedTexts, thresholds: Thresholds = {}): Promise<RouteDecision> {
   const started = performance.now()
   if (!isPrompt(prompt)) return emptyDecision(started, 'notAPrompt')
-  const fixed = correctTypos(prompt.replace(/https?:\/\/\S+/g, ' '), index.vocabulary)
+  const fixed = correctTypos(askOf(prompt).replace(/https?:\/\/\S+/g, ' '), index.vocabulary)
   if (!contentWords(fixed.text).length) return { ...emptyDecision(started, 'trivial'), corrected: fixed.corrected }
   const corrected = performance.now()
   const vectors = await embed(windowsOf(fixed.text))
@@ -334,7 +350,7 @@ export async function meaningWithin(prompt: string, index: MeaningIndex | null, 
   let timer: ReturnType<typeof setTimeout> | undefined
   const late = new Promise<'late'>((resolve) => (timer = setTimeout(() => resolve('late'), budgetMs)))
   try {
-    const answer = await Promise.race([routerMeaning(prompt, index, embed), late])
+    const answer = await Promise.race([routerMeaning(askOf(prompt), index, embed), late])
     const ms = performance.now() - started
     return answer === 'late' ? { meaning: null, fallback: 'overBudget', ms } : { meaning: answer, ms }
   } catch {

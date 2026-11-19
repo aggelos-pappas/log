@@ -12,6 +12,10 @@ export const WINDOW_WORDS = 14
 
 export const WINDOW_STEP = 7
 
+export const ASK_HEAD_WORDS = 120
+
+export const ASK_TAIL_WORDS = 40
+
 export const DEFAULT_THRESHOLD = 0.63
 
 export const DEFAULT_MENU_FLOOR = 0.4375
@@ -296,6 +300,8 @@ export const ROUTER_VECTOR_KIND = 'routerCatalog'
 export const ROUTER_MEANING_FILE = 'routerMeaning.json'
 
 export const ROUTER_BUDGET_MS = 150
+
+export const PLAY_ROUTE_BUDGET_MS = 200
 
 export const RRF_K = 60
 

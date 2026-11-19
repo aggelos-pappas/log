@@ -67,6 +67,8 @@ export interface AiReading {
 export const JINA_EMBED_MODEL = 'jina-embeddings-v5-omni-small'
 export const JINA_RERANK_MODEL = 'jina-reranker-v3.5'
 export const JINA_DIMENSIONS = 1024
+
+export const JINA_BATCHES_AT_ONCE = 4
 export const MUTE_IF_OWNER_USES = 0.02
 export const OWNER_SAYS_IT_TIMES = 5
 export const X_COMPLAINT = 'xComplaint'

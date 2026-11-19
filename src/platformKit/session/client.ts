@@ -9,7 +9,8 @@ import { SOCIAL_ACCOUNTS, toFacebookAccount } from '../socialAccount/index'
 import type { FacebookAccount, SocialAccountRow } from '../socialAccount/index'
 import { TwentyError, accountStore } from '../../twenty/graphql/index'
 import type { TwentyClient } from '../../twenty/graphql/index'
-import { timedEngine, timedEngineSync } from '../../observability/timing/index'
+import { timedEngine, timedEngineSync, timedSync } from '../../observability/timing/index'
+import { askReadHost, hostable, readHostOf, startReadHost } from '../readHost/index'
 import type { EngineTrace } from '../../observability/timing/index'
 import type { PlatformAnswer, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from './types'
 
@@ -111,7 +112,10 @@ function spawnPlatformEngine(shape: PlatformShape, account: PlatformAccount, req
     const storagePath = shape.sessionStorage ? join(dir, 'storage.json') : null
     if (storagePath) writeFileSync(storagePath, JSON.stringify(sessionStorageOf(account.storageOrigins, shape.sessionStorage)), { mode: 0o600 })
     const spec = join(dir, 'spec.json')
-    writeFileSync(spec, JSON.stringify({ ...request, account: account.accountName, platform: shape.platform, stateRoot: platformStateRoot(shape.platform), writesPerDay: writesPerDayOf(shape.platform), cookiesPath, refreshedPath, ...(storagePath ? { storagePath } : {}), ...(trace ? { trace } : {}) }), { mode: 0o600 })
+    const body = { ...request, account: account.accountName, platform: shape.platform, stateRoot: platformStateRoot(shape.platform), writesPerDay: writesPerDayOf(shape.platform), cookiesPath, refreshedPath, ...(storagePath ? { storagePath } : {}), ...(trace ? { trace } : {}) }
+    const hosted = hostedRun(shape, account, request, body, refreshedPath)
+    if (hosted) return hosted
+    writeFileSync(spec, JSON.stringify(body), { mode: 0o600 })
     const run = spawnSync(process.env.LOG_PYTHON || 'python', [shape.engine, spec], { encoding: 'utf8', windowsHide: true, maxBuffer: 512 * 1024 * 1024, stdio: ['ignore', 'pipe', request.streamProgress ? 'inherit' : 'pipe'] })
     const line = (run.stdout || '').trim().split('\n').filter(Boolean).pop() || ''
     let answer: PlatformAnswer
@@ -125,6 +129,20 @@ function spawnPlatformEngine(shape: PlatformShape, account: PlatformAccount, req
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
+}
+
+function hostedRun(shape: PlatformShape, account: PlatformAccount, request: PlatformEngineSpec, body: Record<string, unknown>, refreshedPath: string): PlatformEngineRun | null {
+  if (!hostable(shape.platform, request, shape.engine)) return null
+  const stateRoot = platformStateRoot(shape.platform)
+  const host = readHostOf(shape.platform, stateRoot, account.accountName)
+  if (!host) {
+    startReadHost(shape.platform, stateRoot, account.accountName)
+    return null
+  }
+  const answer = timedSync('host.roundTrip', () => askReadHost<PlatformAnswer>(host, body), { pid: host.pid })
+  if (!answer) return null
+  const refreshed = existsSync(refreshedPath) ? (JSON.parse(readFileSync(refreshedPath, 'utf8')) as Record<string, string>) : null
+  return { answer, refreshed }
 }
 
 export function runPlatformEngineLive(shape: PlatformShape, account: PlatformAccount, request: PlatformEngineSpec, onLive: (event: Record<string, unknown>) => void): Promise<PlatformEngineRun> {

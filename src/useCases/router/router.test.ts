@@ -5,7 +5,7 @@ import { hookAnswer } from '../../contextLayer/hook/index'
 import { askAnswer } from '../../mcp/server/helpers/guideAnswer.ts'
 import { clearActivePlay, playScope } from '../../mcp/server/helpers/activePlay.ts'
 import { listUseCases } from '../../mcp/server/helpers/guides.ts'
-import { buildMeaningIndex, contentWords, folderOf, fuseSkills, fuseTools, isPlatformFolder, loadToolFacts, meaningWithin, openMeaningIndex, outcomeOf, phrasesOf, platformsOf, playMatchText, rankTools, route, routerCatalog, routerIndexState, routerSection, shippedSkills, toolMatchText } from './client'
+import { askOf, buildMeaningIndex, contentWords, folderOf, fuseSkills, fuseTools, isPlatformFolder, loadToolFacts, meaningWithin, openMeaningIndex, outcomeOf, phrasesOf, platformsOf, playMatchText, rankTools, route, routerCatalog, routerIndexState, routerSection, shippedSkills, toolMatchText } from './client'
 import { asksToWrite, callOf, catalogHash, fillOf, meaningRanks, reciprocalRankFusion, skillOf, stepRowsOf, writesToAccount } from './helpers'
 import { GOLDEN_FILE, ROUTER_INDEX_NAME, ROUTER_MEANING_FILE, TOOL_GOLDEN_FILE, TOOL_TEXT_BUDGET } from './types'
 import type { CatalogKind, GoldenPrompt, RouterGolden, RouterMeaning, RouterMeaningFixture, ToolFusion, ToolGolden } from './types'
@@ -329,5 +329,18 @@ describe('the meaning router', () => {
     const section = routerSection(prompt, useCases, recorded(prompt), { decision: { ranked: [] } })
     if (section.play) expect(section.skills).not.toContain(shippedSkills().find((s) => s.play === section.play)?.name)
     expect(routerSection(prompt, useCases, recorded(prompt), { playShown: true }).play).toBeNull()
+  })
+})
+
+describe('a long prompt is routed by its ask, not by every word pasted after it', () => {
+  test('askOf keeps the first 120 and the last 40 words, and a short prompt whole', () => {
+    expect(askOf('read the chat with grace_ships')).toBe('read the chat with grace_ships')
+    const words = Array.from({ length: 2000 }, (_, i) => `w${i}`)
+    const asked = askOf(words.join(' ')).split(' ')
+    expect(asked).toHaveLength(160)
+    expect(asked[0]).toBe('w0')
+    expect(asked[119]).toBe('w119')
+    expect(asked[120]).toBe('w1960')
+    expect(asked.at(-1)).toBe('w1999')
   })
 })
