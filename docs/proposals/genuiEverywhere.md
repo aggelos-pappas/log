@@ -27,6 +27,25 @@ One view bundle and one tool contract serve every row. A host only decides how m
 - `logMcp --http` serves Streamable HTTP with OAuth (`src/mcp/oauth`) and a stateless mode (`src/mcp/stateless`).
 - `log runtime connect` keeps an outbound bridge from this machine to the hosted side, so a remote client's call runs here.
 
+## Prior art: a production server that draws one card set in ChatGPT, Claude and its own chat
+
+A partner's MCP server (private code, read with access granted to the owner; described here by pattern only) already ships what this spec plans. Its lessons, each one a change to the design below:
+
+| What it does | Why it matters for log |
+| --- | --- |
+| A card tool's handler calls the server's own read tools first (a list of steps; a later step can depend on an earlier one's answer) and returns `content` = one summary sentence for the model, `_meta["<app>/view"]` = `{ kind, version, results: { <tool name>: <its parsed answer> } }` | The card draws on first load with no call from the iframe. The model reads one sentence, not the rows. This is design B, proven. |
+| The widget reads the view from the tool result's `_meta`, checks `kind` and `version`, and only when it is missing (an older server, a host that drops `_meta`) fetches for itself with `callServerTool` | A version bump never blanks a card; old and new servers both draw. |
+| A failed step stays in `results` as `{ error, hint }` and the card turns it into words; it never prints raw errors | One broken read shows as one line in the card, not an empty card. |
+| One registration helper per card: tool `_meta` (`ui.resourceUri`, `ui.visibility: ["model","app"]`, `openai/outputTemplate`, `openai/widgetAccessible`, `openai/toolInvocation/invoking|invoked`) and resource `_meta` (`ui.csp`, `ui.prefersBorder`, `openai/widgetDescription`, `openai/widgetCSP`, `openai/widgetPrefersBorder`), derived from one definition | Design D: the ChatGPT keys are never typed by hand. Two tools may share one widget; the helper registers the `ui://` resource once. |
+| The handler and the widget are both optional: a tool with a handler and no widget is a complete text tool | Claude Code and Codex, which draw nothing, get the same answer as text. |
+| CSP: fonts only by default; image or upload origins named per card | Nothing in a card can fetch data on its own. |
+| One Vite build per widget with `inlineDynamicImports`; a multi-entry build splits React into chunks a `ui://` iframe cannot load | The bundle must be one self-contained HTML file per card. |
+| The product's own web chat draws the same card components as the MCP widgets, adjusting to width | One card set for every surface; for log that surface is Hermes (below). |
+| At most two primary actions per card, enforced after a review found three | Design E. |
+| The client's declared capabilities (`elicitation`) are logged at initialize and nothing branches on them yet | Design F, as written. |
+| A public `/.well-known/openai-apps-challenge` route answers the app-submission domain check from config, no redeploy | Needed for A3 before a ChatGPT directory listing. |
+| A test bench renders every widget inside replica ChatGPT and Claude hosts, and runs prompts against several models | The Verification matrix, with the replica host as the CI cell. |
+
 ## Gaps
 
 ### 1. ChatGPT can't reach log today
@@ -118,6 +137,18 @@ Unchanged and restated: a view only calls read tools. `AskButton` and `FollowUps
 | Claude Code, Codex, Cursor, VS Code | `log install <harness>` (exists) |
 | Hermes | log's plugin (exists); it draws `hermesView` from the same compiled view |
 
+### I. The Hermes blocks, everywhere
+
+In Hermes, log's views are genui blocks (`show_blocks`: tables, lists, callouts, actions, forms, charts), drawn by the vendored renderer (`vendor/hermesGenui`). Other hosts can't see them. The same blocks become one more card:
+
+- A `blocks` card tool (`ui://log/blocks`) takes a blocks payload, or the id of a stored one, and returns the usual three parts: a one-line summary for the model, a small `structuredContent`, and the blocks in `_meta["log/view"]` as `{ kind: "blocks", version: 1, results: { blocks } }`.
+- Its resource is the vendored blocks renderer built as one self-contained HTML file (one Vite entry, `inlineDynamicImports`), drawing from the host's CSS variables (`hostContext.styles.variables`) the way it draws from Hermes's theme.
+- Block actions map onto the host bridge: an `actions` button's prompt becomes `ui/message` (`sendFollowUpMessage` in ChatGPT), a form submit becomes a prompt too, and only read tools are called from the card (G).
+- Inline, the card shows at most two actions and no tabs; a blocks payload with tabs or more buttons opens with `requestDisplayMode("fullscreen")` (E).
+- Hosts that draw nothing get the blocks as markdown (tables, lists, bullets), from the same payload.
+
+So a view written once with `show_blocks` reads the same in Hermes, ChatGPT, Claude and Claude Desktop, and as text in Claude Code.
+
 ## Verification
 
 A host matrix test per release, each cell a check with a pass/fail:
@@ -130,16 +161,18 @@ A host matrix test per release, each cell a check with a pass/fail:
 | inline card rules | `checkReport` test with breaking fixtures |
 | renders in ChatGPT, Claude web, Claude Desktop | by hand through `log mcp connector`, screenshot kept in the PR |
 | text fallback | existing tests |
+| every card and the blocks card draw inside a replica ChatGPT host and a replica Claude host | a headless test bench that loads each `ui://` resource in an iframe behind each host's bridge, in CI |
 
 ## Order
 
-1. Card views (B) and the ChatGPT metadata (D). Small, no new surface, makes the existing view ready.
-2. `log mcp connector` (A2). This is the first time ChatGPT can reach log; check the view renders there by hand.
-3. Card rules in the kit (E).
-4. The `/mcp/inbox` profile (C).
-5. The `.mcpb` Desktop extension (H).
-6. The host matrix in CI (Verification).
-7. Hosted deployment (A3), when a team needs it.
+1. Card views (B) and the ChatGPT metadata (D), through one card registration helper. Small, no new surface, makes the existing view ready.
+2. The blocks card (I), so `show_blocks` output reaches every host.
+3. `log mcp connector` (A2). This is the first time ChatGPT can reach log; check the views render there by hand.
+4. Card rules in the kit (E).
+5. The `/mcp/inbox` profile (C).
+6. The `.mcpb` Desktop extension (H).
+7. The host matrix and replica-host bench in CI (Verification).
+8. Hosted deployment (A3) with the app-submission challenge route, when a team needs it.
 
 ## Open questions
 
