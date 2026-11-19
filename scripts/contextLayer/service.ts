@@ -8,15 +8,15 @@ import { CODE_CHECK_MS, CONTEXT_PORT, forgetService, HOST, labelledPath, logTimi
 import { codeStamp } from '../../src/mcp/freshness/index.ts'
 import { listUseCases } from '../../src/mcp/server/helpers/index.ts'
 import { localEmbedder } from '../../src/search/conversations/helpers/embed.ts'
-import { EMBED_MODEL } from '../../src/search/conversations/types.ts'
-import { buildRouteIndex, routePrompt } from '../../src/useCases/router/index'
+import { EMBED_DIMENSIONS, EMBED_MODEL } from '../../src/search/conversations/types.ts'
+import { buildMeaningIndex, buildRouteIndex, meaningWithin, openMeaningIndex, routePrompt, routerCatalog, SKILL_DIRS } from '../../src/useCases/router/index'
 import { answerEvent, cachedFreshness, useFreshnessSource } from '../../src/agentHooks/answers/index'
 import type { HookEvent } from '../../src/agentHooks/registry/index'
-import type { RouteIndex, Thresholds, Utterance } from '../../src/useCases/router/index'
+import type { MeaningIndex, RouteIndex, Thresholds, Utterance } from '../../src/useCases/router/index'
 
 const repo = join(import.meta.dir, '..', '..')
 const fixtures = join(repo, 'src', 'useCases', 'router', 'fixtures')
-const sources = [join(repo, 'docs', 'useCases'), fixtures, labelledPath()]
+const sources = [join(repo, 'docs', 'useCases'), fixtures, labelledPath(), ...SKILL_DIRS.map((dir) => join(repo, dir))]
 
 const running = readService()
 if (running && running.pid !== process.pid) {
@@ -45,7 +45,19 @@ const readJson = <T>(path: string, fallback: T): T => {
 }
 
 const embedder = localEmbedder()
-const embed = (texts: string[]) => embedder.embed(texts)
+const remembered = new Map<string, Float32Array>()
+const embed = async (texts: string[]) => {
+  const missing = [...new Set(texts.filter((t) => !remembered.has(t)))]
+  if (missing.length) {
+    const made = await embedder.embed(missing)
+    missing.forEach((t, i) => remembered.set(t, made[i]))
+    while (remembered.size > EMBED_MEMO) remembered.delete(remembered.keys().next().value!)
+  }
+  return texts.map((t) => remembered.get(t)!)
+}
+const EMBED_MEMO = 512
+let meaningIndex: MeaningIndex | null = null
+let meaningBuilding = false
 let index: RouteIndex
 let thresholds: Thresholds = {}
 let stamp = 0
@@ -59,6 +71,23 @@ async function load(): Promise<void> {
   thresholds = readJson<Thresholds>(join(fixtures, 'thresholds.json'), {})
   stamp = Math.max(...sources.map(newest))
   console.log(`${new Date().toISOString()} loaded ${index.utterances.length} utterances for ${index.titles.size} plays in ${Math.round(performance.now() - started)} ms`)
+  void loadMeaning()
+}
+
+async function loadMeaning(): Promise<void> {
+  if (meaningBuilding) return
+  meaningBuilding = true
+  const started = performance.now()
+  try {
+    const items = routerCatalog(listUseCases())
+    const opened = openMeaningIndex(items, EMBED_MODEL, EMBED_DIMENSIONS)
+    meaningIndex = opened ?? (await buildMeaningIndex(items, embedder))
+    console.log(`${new Date().toISOString()} ${opened ? 'opened' : 'built'} the router's meaning index: ${items.length} plays, tools and skills in ${Math.round(performance.now() - started)} ms`)
+  } catch (error) {
+    console.log(`${new Date().toISOString()} the router's meaning index did not load, so the router uses words only: ${String(error).slice(0, 200)}`)
+  } finally {
+    meaningBuilding = false
+  }
 }
 
 await load()
@@ -66,7 +95,10 @@ setInterval(() => {
   if (Math.max(...sources.map(newest)) > stamp) void load()
 }, SOURCE_CHECK_MS)
 
-const route = (prompt: string) => routePrompt(prompt, index, embed, thresholds)
+const route = async (prompt: string) => {
+  const [decision, meaning] = await Promise.all([routePrompt(prompt, index, embed, thresholds), meaningWithin(prompt, meaningIndex, embed)])
+  return { ...decision, meaning }
+}
 useFreshnessSource(cachedFreshness(repo))
 
 let server: ReturnType<typeof Bun.serve>
@@ -75,7 +107,7 @@ const codeNow = () => Math.max(codeStamp(repo), newest(join(repo, 'scripts')))
 const codeAtStart = codeNow()
 async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url)
-    if (url.pathname === '/health') return Response.json({ ok: true, utterances: index.utterances.length })
+    if (url.pathname === '/health') return Response.json({ ok: true, utterances: index.utterances.length, router: meaningIndex ? { model: meaningIndex.model, items: meaningIndex.items.length, hash: meaningIndex.hash } : null })
     if (url.pathname === '/hook' && request.method === 'POST') {
       const started = performance.now()
       let input: HookInput = {}
@@ -99,7 +131,7 @@ async function handle(request: Request): Promise<Response> {
     }
     if (url.pathname !== '/route' || request.method !== 'POST') return new Response('not found', { status: 404 })
     const { prompt } = (await request.json()) as { prompt?: string }
-    const decision = await routePrompt(String(prompt ?? ''), index, embed, thresholds)
+    const decision = await route(String(prompt ?? ''))
     logTiming({ event: 'UserPromptSubmit', provider: 'routeService', ms: decision.ms.total, chars: 0, outcome: decision.skipped ?? (decision.matches[0]?.id || 'none') })
     return Response.json(decision)
 }

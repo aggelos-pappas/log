@@ -74,6 +74,7 @@
 {"name":"captureHar","platform":null,"summary":"Copy a run's raw HAR and read it and its scripts with offline rea; no browser opens","flags":["out","noRea"],"required":[],"notes":"","effect":"write"},
 {"name":"captureSettle","platform":null,"summary":"Settle a run's capture: rea reads it, split per step (what each run starts in the background)","flags":[],"required":[],"notes":"","effect":"write"},
 {"name":"captureDocs","platform":null,"summary":"Every platform's client docs from its runs: one doc per request in docs/platforms/<platform>/, rea reading its code","flags":["noRea"],"required":[],"notes":"","effect":"write"},
+{"name":"routerIndex","platform":null,"summary":"Is the prompt router's meaning index of plays, tools and skills current; apply builds it. The prompt router's meaning index","flags":["apply"],"required":[],"notes":"","effect":"read"},
 {"name":"runsList","platform":null,"summary":"Every recorded run: its size, settled by rea, in the request docs, and whether it may go","flags":[],"required":[],"notes":"","effect":"read"},
 {"name":"runsExchanges","platform":null,"summary":"Take every recorded step's internal API calls (sent and answered) out of its HAR into exchanges.json, for every run still on disk","flags":[],"required":[],"notes":"","effect":"read"},
 {"name":"runsPrune","platform":null,"summary":"Delete each analysed run after taking out its steps' exchanges, keeping its findings, exchanges, readings and goal findings; a dry run unless apply","flags":["before"],"required":[],"notes":"","effect":"delete"},

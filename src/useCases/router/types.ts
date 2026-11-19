@@ -215,3 +215,114 @@ export interface ToolGolden {
   never?: string[]
   note?: string
 }
+
+export type CatalogKind = 'play' | 'tool' | 'skill'
+
+export type CatalogSource = 'own' | 'step'
+
+export interface CatalogText {
+  text: string
+  source: CatalogSource
+}
+
+export interface CatalogItem {
+  kind: CatalogKind
+  id: string
+  label: string
+  texts: CatalogText[]
+}
+
+export interface SkillFacts {
+  name: string
+  description: string
+  asks: string[]
+  play: string | null
+}
+
+export interface MeaningIndex {
+  model: string
+  dimensions: number
+  hash: string
+  items: CatalogItem[]
+  vectors: Float32Array[][]
+}
+
+export interface MeaningHit {
+  id: string
+  score: number
+}
+
+export interface RouterMeaning {
+  model: string
+  play: MeaningHit[]
+  tool: MeaningHit[]
+  skill: MeaningHit[]
+  ms: number
+}
+
+export interface MeaningAnswer {
+  meaning: RouterMeaning | null
+  fallback?: 'notLoaded' | 'overBudget' | 'noService' | 'failed'
+  ms: number
+}
+
+export interface FusedTools {
+  matches: ToolMatch[]
+  lexical: string[]
+  meaning: string[]
+}
+
+export interface RouterSection {
+  text: string
+  tools: string[]
+  skills: string[]
+  play: string | null
+}
+
+export interface RouterGolden extends ToolGolden {
+  skills?: string[]
+}
+
+export interface RouterMeaningFixture {
+  model: string
+  hash: string
+  prompts: Record<string, Partial<Record<CatalogKind, [string, number][]>>>
+}
+
+export const ROUTER_INDEX_NAME = 'skillRouter'
+
+export const ROUTER_VECTOR_KIND = 'routerCatalog'
+
+export const ROUTER_MEANING_FILE = 'routerMeaning.json'
+
+export const ROUTER_BUDGET_MS = 150
+
+export const RRF_K = 60
+
+export const MEANING_DEPTH = 10
+
+export const MEANING_STEP_DISCOUNT = 0.9
+
+export const TOOL_MEANING_FLOOR = 0.42
+
+export const SKILL_MEANING_FLOOR = 0.45
+
+export const PLAY_MEANING_FLOOR = 0.5
+
+export const SKILLS_SHOWN = 2
+
+export const FUSED_TOOLS_SHOWN = 3
+
+export const SKILL_DIRS: readonly string[] = ['hermesPlugin/skills', '.claude/skills', 'skills', 'skills/published']
+
+export const TOOL_MEANING_SPREAD = 0.12
+
+export const TOOL_LEXICAL_WEIGHT = 0.7
+
+export const SKILL_WORD_FLOOR = 0.6
+
+export const SKILL_SUMMARY_CHARS = 60
+
+export const EMBED_BATCH = 64
+
+export type ToolFusion = 'lexical' | 'meaning' | 'rrf' | 'weighted'

@@ -12,4 +12,5 @@ export interface HookResult {
   outcome: string
   menu?: string[]
   tools?: string[]
+  skills?: string[]
 }

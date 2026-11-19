@@ -1,9 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { buildToolIndex, clearsToolBar, correctTypos, denseScores, rankToolsOver, toolDocsOf, toolsText, windowsOf } from './helpers'
+import { aiIndexOf, saveAiIndex, storedEmbedder, vectorsFor } from '../../inbox/store/index'
+import { askTermsOf, buildToolIndex, catalogHash, catalogOf, clearsToolBar, correctTypos, denseScores, fuseToolsOver, meaningRanks, rankToolsOver, reciprocalRankFusion, shortSummary, skillsIn, toolDocsOf, toolsText, windowsOf } from './helpers'
 import type { ChatNameOf, ToolIndex } from './helpers'
-import { AMBIGUITY_BAND, DEFAULT_MENU_FLOOR, DEFAULT_THRESHOLD, DENSE_WEIGHT, MATCHES_SHOWN, MIN_PHRASE_WORDS, NOT_A_PROMPT, PLATFORM_BONUS, PLATFORM_FOLDERS, PLATFORM_WORDS, SHORT_PROMPT_WORDS, STOP_WORDS, TOOL_INDEX_FILE, TOOL_SYNONYMS, WORD_AMBIGUITY_BAND, WORD_MENU_FLOOR, WORD_THRESHOLD } from './types'
-import type { EmbedTexts, PlayMatch, RoutableUseCase, RouteContext, RouteDecision, RouteIndex, Thresholds, ToolFacts, ToolMatch, Utterance } from './types'
+import { EMBED_BATCH, PLAY_MEANING_FLOOR, ROUTER_BUDGET_MS, ROUTER_INDEX_NAME, ROUTER_VECTOR_KIND, SKILL_MEANING_FLOOR, SKILL_SUMMARY_CHARS, SKILL_WORD_FLOOR, SKILLS_SHOWN, TOOL_MEANING_SPREAD, TOOL_TEXT_BUDGET, AMBIGUITY_BAND, DEFAULT_MENU_FLOOR, DEFAULT_THRESHOLD, DENSE_WEIGHT, MATCHES_SHOWN, MIN_PHRASE_WORDS, NOT_A_PROMPT, PLATFORM_BONUS, PLATFORM_FOLDERS, PLATFORM_WORDS, SHORT_PROMPT_WORDS, STOP_WORDS, TOOL_INDEX_FILE, TOOL_SYNONYMS, WORD_AMBIGUITY_BAND, WORD_MENU_FLOOR, WORD_THRESHOLD } from './types'
+import type { ToolFusion, CatalogItem, CatalogKind, EmbedTexts, FusedTools, MeaningAnswer, MeaningIndex, RouterMeaning, RouterSection, SkillFacts, PlayMatch, RoutableUseCase, RouteContext, RouteDecision, RouteIndex, Thresholds, ToolFacts, ToolMatch, Utterance } from './types'
 
 const PLACEHOLDER = /<[^<>]*>/g
 
@@ -260,4 +261,186 @@ export function toolMatchText(prompt: string, useCases: readonly RoutableUseCase
   if (!clearsToolBar(matches)) return { text: '', tools: [] }
   const text = toolsText(matches)
   return { text, tools: matches.map((m) => m.name) }
+}
+
+export const REPO_ROOT = join(import.meta.dir, '..', '..', '..')
+
+export interface RouterEmbedder {
+  model: string
+  dimensions: number
+  embed(texts: string[]): Promise<Float32Array[]>
+}
+
+export function routerCatalog(useCases: readonly RoutableUseCase[], facts: readonly ToolFacts[] = loadToolFacts(), skills: readonly SkillFacts[] = skillsIn(REPO_ROOT)): CatalogItem[] {
+  return catalogOf(useCases, toolDocsOf(facts, useCases, phrasesOf), skills, phrasesOf)
+}
+
+export interface RouterIndexState {
+  built: boolean
+  fresh: boolean
+  builtAt: string | null
+  hash: string
+  storedHash: string | null
+  texts: number
+  counts: Record<CatalogKind, number>
+}
+
+const countsOf = (items: readonly CatalogItem[]): Record<CatalogKind, number> => {
+  const counts = { play: 0, tool: 0, skill: 0 }
+  for (const item of items) counts[item.kind]++
+  return counts
+}
+
+export function routerIndexState(items: readonly CatalogItem[], model: string): RouterIndexState {
+  const hash = catalogHash(items, model)
+  const row = aiIndexOf(ROUTER_INDEX_NAME)
+  const stored = row ? (JSON.parse(row.meta) as { hash?: string }) : null
+  return { built: Boolean(row), fresh: Boolean(row) && row?.model === model && stored?.hash === hash, builtAt: row?.builtAt ?? null, hash, storedHash: stored?.hash ?? null, texts: new Set(items.flatMap((i) => i.texts.map((t) => t.text))).size, counts: countsOf(items) }
+}
+
+export function openMeaningIndex(items: readonly CatalogItem[], model: string, dimensions: number): MeaningIndex | null {
+  const state = routerIndexState(items, model)
+  if (!state.fresh) return null
+  const vectors = items.map((item) => vectorsFor(model, dimensions, item.texts.map((t) => t.text)))
+  if (vectors.some((row) => row.some((v) => !v))) return null
+  return { model, dimensions, hash: state.hash, items: [...items], vectors: vectors as Float32Array[][] }
+}
+
+export async function buildMeaningIndex(items: readonly CatalogItem[], embedder: RouterEmbedder, now: Date = new Date()): Promise<MeaningIndex> {
+  const stored = storedEmbedder({ model: embedder.model, dimensions: embedder.dimensions, embed: (texts: string[]) => embedder.embed(texts) }, ROUTER_VECTOR_KIND)
+  const unique = [...new Set(items.flatMap((i) => i.texts.map((t) => t.text)))]
+  const made = new Map<string, Float32Array>()
+  for (let at = 0; at < unique.length; at += EMBED_BATCH) {
+    const batch = unique.slice(at, at + EMBED_BATCH)
+    const vectors = await stored.embed(batch)
+    batch.forEach((text, i) => made.set(text, vectors[i]))
+  }
+  const hash = catalogHash(items, embedder.model)
+  saveAiIndex(ROUTER_INDEX_NAME, embedder.model, { hash, dimensions: embedder.dimensions, texts: unique.length, counts: countsOf(items) }, now)
+  return { model: embedder.model, dimensions: embedder.dimensions, hash, items: [...items], vectors: items.map((item) => item.texts.map((t) => made.get(t.text)!)) }
+}
+
+export async function routerMeaning(prompt: string, index: MeaningIndex, embed: (texts: string[]) => Promise<Float32Array[]>): Promise<RouterMeaning> {
+  const started = performance.now()
+  const text = prompt.replace(/https?:\/\/\S+/g, ' ').toLowerCase()
+  const ranks = meaningRanks(await embed(windowsOf(text)), index)
+  return { model: index.model, ...ranks, ms: performance.now() - started }
+}
+
+export async function meaningWithin(prompt: string, index: MeaningIndex | null, embed: (texts: string[]) => Promise<Float32Array[]>, budgetMs: number = ROUTER_BUDGET_MS): Promise<MeaningAnswer> {
+  const started = performance.now()
+  if (!index) return { meaning: null, fallback: 'notLoaded', ms: 0 }
+  if (!isPrompt(prompt) || !contentWords(prompt).length) return { meaning: null, ms: 0 }
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<'late'>((resolve) => (timer = setTimeout(() => resolve('late'), budgetMs)))
+  try {
+    const answer = await Promise.race([routerMeaning(prompt, index, embed), late])
+    const ms = performance.now() - started
+    return answer === 'late' ? { meaning: null, fallback: 'overBudget', ms } : { meaning: answer, ms }
+  } catch {
+    return { meaning: null, fallback: 'failed', ms: performance.now() - started }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+export function fuseTools(prompt: string, useCases: readonly RoutableUseCase[], meaning: RouterMeaning | null, fusion: ToolFusion = 'rrf', facts: readonly ToolFacts[] = loadToolFacts(), chatNameOf?: ChatNameOf): FusedTools {
+  if (!isPrompt(prompt) || !facts.length) return { matches: [], lexical: [], meaning: [] }
+  const { index, known } = toolIndexOf(useCases, facts)
+  const fixed = correctTypos(prompt.replace(/https?:\/\/\S+/g, ' '), known)
+  return fuseToolsOver(fixed.text, index, toolTerms, known, meaning?.tool ?? null, fusion, prompt, chatNameOf)
+}
+
+export function skillWordScore(prompt: string, skill: SkillFacts): number {
+  const words = new Set(askTermsOf(prompt, toolTerms))
+  return Math.max(
+    0,
+    ...skill.asks.map((ask) => {
+      const terms = [...new Set(askTermsOf(ask, toolTerms))]
+      return terms.length >= MIN_PHRASE_WORDS ? terms.filter((t) => words.has(t)).length / terms.length : 0
+    }),
+  )
+}
+
+const skillOnPlatform = (named: ReadonlySet<string>, name: string) => {
+  const folder = /^log-([a-z]+)-/.exec(name)?.[1]
+  return !named.size || !folder || !PLATFORM_FOLDERS.has(folder) || named.has(folder)
+}
+
+export function fuseSkills(prompt: string, meaning: RouterMeaning | null, skills: readonly SkillFacts[], fusion: ToolFusion = 'rrf', limit: number = SKILLS_SHOWN): string[] {
+  if (!isPrompt(prompt) || !askTermsOf(prompt, toolTerms).length) return []
+  const named = new Set(platformsOf(contentWords(prompt)))
+  const lexical = skills
+    .map((s) => ({ id: s.name, score: skillWordScore(prompt, s) }))
+    .filter((s) => s.score >= SKILL_WORD_FLOOR && skillOnPlatform(named, s.id))
+    .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
+    .map((s) => s.id)
+  const hits = (meaning?.skill ?? []).filter((h) => skillOnPlatform(named, h.id))
+  const near = (hits[0]?.score ?? 0) >= SKILL_MEANING_FLOOR ? hits.filter((h) => h.score >= hits[0].score - TOOL_MEANING_SPREAD).map((h) => h.id) : []
+  if (fusion === 'lexical') return lexical.slice(0, limit)
+  if (fusion === 'meaning') return near.slice(0, limit)
+  return reciprocalRankFusion([lexical, near]).slice(0, limit).map((f) => f.id)
+}
+
+export function fusePlay(prompt: string, decision: Pick<RouteDecision, 'ranked'> | null, meaning: RouterMeaning | null, titles: ReadonlyMap<string, string> = new Map()): PlayMatch | null {
+  const hits = meaning?.play ?? []
+  if (!hits.length || hits[0].score < PLAY_MEANING_FLOOR || !askTermsOf(prompt, toolTerms).length) return null
+  const named = new Set(platformsOf(contentWords(prompt)))
+  const allowed = (id: string) => !named.size || !isPlatformFolder(id) || named.has(folderOf(id))
+  const lexical = (decision?.ranked ?? []).map((m) => m.id).filter(allowed)
+  const near = hits.filter((h) => allowed(h.id) && h.score >= PLAY_MEANING_FLOOR).map((h) => h.id)
+  if (!near.length) return null
+  const top = reciprocalRankFusion([lexical, near])[0]
+  const hit = hits.find((h) => h.id === top.id)
+  return { id: top.id, title: titles.get(top.id) ?? decision?.ranked.find((m) => m.id === top.id)?.title ?? '', score: hit?.score ?? 0, phrase: '' }
+}
+
+const skillLine = (skill: SkillFacts | undefined, name: string) => `  skill ${name}${skill ? `: ${shortSummary(skill.description, SKILL_SUMMARY_CHARS)}` : ''}`
+
+export function routerText(play: PlayMatch | null, tools: readonly ToolMatch[], skills: readonly string[], known: readonly SkillFacts[], budget: number = TOOL_TEXT_BUDGET): string {
+  if (!play && !tools.length && !skills.length) return ''
+  const head = ">>> Tools for this ask, ranked from log's plays, tools and skills by meaning and words:"
+  const tail = "Use these; don't parse log output with scripts."
+  const byName = new Map(known.map((s) => [s.name, s]))
+  const wanted: [string, string][] = [
+    ...(play ? [[`  play ${play.id}${play.title ? `: ${shortSummary(play.title, SKILL_SUMMARY_CHARS)}` : ''} (getGuide)`, `  play ${play.id} (getGuide)`] as [string, string]] : []),
+    ...tools.map((m) => [`  ${m.call}: ${shortSummary(m.summary)}`, `  ${m.call}`] as [string, string]),
+    ...skills.map((name) => [skillLine(byName.get(name), name), `  skill ${name}`] as [string, string]),
+  ]
+  const lines: string[] = []
+  for (const [full, bare] of wanted) {
+    const size = [head, ...lines, tail].join('\n').length + 1
+    if (size + full.length <= budget) lines.push(full)
+    else if (size + bare.length <= budget) lines.push(bare)
+  }
+  return lines.length ? [head, ...lines, tail].join('\n') : ''
+}
+
+export interface RouterOptions {
+  decision?: Pick<RouteDecision, 'ranked'> | null
+  playShown?: boolean
+  facts?: readonly ToolFacts[]
+  skills?: readonly SkillFacts[]
+  chatNameOf?: ChatNameOf
+  fusion?: ToolFusion
+}
+
+let skillCache: SkillFacts[] | null = null
+
+export function shippedSkills(): SkillFacts[] {
+  skillCache ??= skillsIn(REPO_ROOT)
+  return skillCache
+}
+
+export function routerSection(prompt: string, useCases: readonly RoutableUseCase[], meaning: RouterMeaning | null, options: RouterOptions = {}): RouterSection {
+  const facts = options.facts ?? loadToolFacts()
+  const skills = options.skills ?? shippedSkills()
+  const fusion = options.fusion ?? 'rrf'
+  const tools = fuseTools(prompt, useCases, meaning, fusion, facts, options.chatNameOf).matches
+  const titles = new Map(useCases.map((u) => [u.id, u.title]))
+  const play = options.playShown || !meaning ? null : fusePlay(prompt, options.decision ?? route(prompt, { useCases }), meaning, titles)
+  const playSkill = new Set(skills.filter((s) => s.play && s.play === play?.id).map((s) => s.name))
+  const chosen = meaning ? fuseSkills(prompt, meaning, skills, fusion).filter((name) => !playSkill.has(name)) : []
+  const text = routerText(play, tools, chosen, skills)
+  return { text, tools: tools.map((m) => m.name), skills: chosen, play: play?.id ?? null }
 }

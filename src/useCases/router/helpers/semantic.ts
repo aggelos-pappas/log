@@ -1,4 +1,4 @@
-import { TOP_K, WINDOW_STEP, WINDOW_WORDS } from '../types'
+import { RRF_K, TOP_K, WINDOW_STEP, WINDOW_WORDS } from '../types'
 import type { RouteIndex } from '../types'
 
 export function cosine(a: Float32Array, b: Float32Array): number {
@@ -36,4 +36,10 @@ export function denseScores(promptVectors: readonly Float32Array[], index: Route
   const out = new Map<string, { score: number; text: string }>()
   for (const [route, entry] of byRoute) out.set(route, { score: (entry.sum / entry.n + entry.top) / 2, text: entry.text })
   return out
+}
+
+export function reciprocalRankFusion(lists: readonly (readonly string[])[], k: number = RRF_K, weights: readonly number[] = []): { id: string; score: number }[] {
+  const scores = new Map<string, number>()
+  lists.forEach((list, at) => list.forEach((id, rank) => scores.set(id, (scores.get(id) ?? 0) + (weights[at] ?? 1) / (k + rank + 1))))
+  return [...scores].map(([id, score]) => ({ id, score })).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
 }

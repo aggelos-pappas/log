@@ -5,10 +5,13 @@ import { hookAnswer } from '../../contextLayer/hook/index'
 import { askAnswer } from '../../mcp/server/helpers/guideAnswer.ts'
 import { clearActivePlay, playScope } from '../../mcp/server/helpers/activePlay.ts'
 import { listUseCases } from '../../mcp/server/helpers/guides.ts'
-import { contentWords, folderOf, isPlatformFolder, loadToolFacts, outcomeOf, phrasesOf, platformsOf, playMatchText, rankTools, route, toolMatchText } from './client'
-import { asksToWrite, callOf, fillOf, stepRowsOf, writesToAccount } from './helpers'
-import { GOLDEN_FILE, TOOL_GOLDEN_FILE, TOOL_TEXT_BUDGET } from './types'
-import type { GoldenPrompt, ToolGolden } from './types'
+import { buildMeaningIndex, contentWords, folderOf, fuseSkills, fuseTools, isPlatformFolder, loadToolFacts, meaningWithin, openMeaningIndex, outcomeOf, phrasesOf, platformsOf, playMatchText, rankTools, route, routerCatalog, routerIndexState, routerSection, shippedSkills, toolMatchText } from './client'
+import { asksToWrite, callOf, catalogHash, fillOf, meaningRanks, reciprocalRankFusion, skillOf, stepRowsOf, writesToAccount } from './helpers'
+import { GOLDEN_FILE, ROUTER_INDEX_NAME, ROUTER_MEANING_FILE, TOOL_GOLDEN_FILE, TOOL_TEXT_BUDGET } from './types'
+import type { CatalogKind, GoldenPrompt, RouterGolden, RouterMeaning, RouterMeaningFixture, ToolFusion, ToolGolden } from './types'
+import { hashEmbedder } from '../../search/conversations/helpers/embed.ts'
+import { aiIndexOf } from '../../inbox/store/index'
+import { openDatabase } from '../../storage/schema/client'
 import { loadDenylist } from '../../privacy/scan/client.ts';
 import { ownerNameIn } from '../../surface/scorecard/helpers/measure.ts';
 
@@ -135,7 +138,7 @@ describe('the router text', () => {
 const toolGolden = JSON.parse(readFileSync(join(import.meta.dir, 'fixtures', TOOL_GOLDEN_FILE), 'utf8')) as ToolGolden[]
 
 describe('the tool ranking', () => {
-  test('the tool golden set ranks the expected tool first in 17 of 22 asks and in the top 3 in 18, and injects nothing for status questions or asks that are not about log', () => {
+  test('words alone rank the expected tool first in 25 of the 44 tool asks and in the top 3 in 27, and inject nothing for status questions or asks that are not about log', () => {
     const facts = loadToolFacts()
     const names = new Set(facts.map((f) => f.name))
     for (const g of toolGolden) for (const name of g.expect) expect(names.has(name)).toBe(true)
@@ -143,10 +146,10 @@ describe('the tool ranking', () => {
     const shown = (prompt: string) => toolMatchText(prompt, useCases).tools
     const first = asks.filter((g) => g.expect.includes(shown(g.prompt)[0] ?? '')).length
     const three = asks.filter((g) => shown(g.prompt).slice(0, 3).some((name) => g.expect.includes(name))).length
-    expect(asks.length).toBeGreaterThanOrEqual(20)
-    expect(first).toBeGreaterThanOrEqual(17)
-    expect(three).toBeGreaterThanOrEqual(18)
-    for (const g of toolGolden.filter((g) => !g.expect.length)) expect(shown(g.prompt)).toEqual([])
+    expect(asks.length).toBe(44)
+    expect(first).toBe(25)
+    expect(three).toBe(27)
+    for (const g of (toolGolden as RouterGolden[]).filter((g) => !g.expect.length && !g.skills?.length)) expect(shown(g.prompt)).toEqual([])
   })
 
   test('the slow summary ask names discordRead, filling the person only when a stored chat is linked to them, inside the budget', () => {
@@ -212,5 +215,117 @@ describe('the tool ranking', () => {
     expect(hooked.tools?.[0]).toBe('discordRead')
     expect(hooked.text).toContain('>>> Tools for this ask')
     expect(hooked.outcome).toBe(outcomeOf(decide(prompt)))
+  })
+})
+
+const routerMeaningFixture = JSON.parse(readFileSync(join(import.meta.dir, 'fixtures', ROUTER_MEANING_FILE), 'utf8')) as RouterMeaningFixture
+const routerGolden = toolGolden as RouterGolden[]
+const recorded = (prompt: string): RouterMeaning | null => {
+  const kinds = routerMeaningFixture.prompts[prompt]
+  if (!kinds) return null
+  const hits = (kind: CatalogKind) => (kinds[kind] ?? []).map(([id, score]) => ({ id, score }))
+  return { model: routerMeaningFixture.model, play: hits('play'), tool: hits('tool'), skill: hits('skill'), ms: 0 }
+}
+
+describe('the meaning router', () => {
+  test('the catalog holds every play, every tool and every shipped skill, and its hash moves with any text', () => {
+    const facts = loadToolFacts()
+    const skills = shippedSkills()
+    const items = routerCatalog(useCases, facts, skills)
+    expect(items.filter((i) => i.kind === 'play').length).toBe(useCases.length)
+    expect(items.filter((i) => i.kind === 'tool').length).toBe(facts.length)
+    expect(items.filter((i) => i.kind === 'skill').map((i) => i.id).sort()).toEqual(skills.map((s) => s.name).sort())
+    expect(skills.some((s) => s.play === 'twitter/dmInbox')).toBe(true)
+    expect(skills.some((s) => s.name === 'callTiming' && !s.play)).toBe(true)
+    const changed = items.map((i, at) => (at === 0 ? { ...i, texts: [...i.texts, { text: 'one more way to ask', source: 'own' as const }] } : i))
+    expect(catalogHash(changed, 'm')).not.toBe(catalogHash(items, 'm'))
+    expect(catalogHash(items, 'm')).not.toBe(catalogHash(items, 'other'))
+  })
+
+  test('a skill page gives its name, its description, the asks it lists and the play it copies', () => {
+    const skill = skillOf('---\nname: demoPlay\ndescription: "Reading things. A log play (docs/useCases/inbox/demoPlay.md): read it."\nwhen_to_use: "Use when the owner asks, in words like: \\"read the thing\\", \\"go over it\\"."\n---\n# body')
+    expect(skill).toEqual({ name: 'demoPlay', description: 'Reading things. A log play (docs/useCases/inbox/demoPlay.md): read it.', asks: ['read the thing', 'go over it'], play: 'inbox/demoPlay' })
+    expect(skillOf('# no front matter')).toBeNull()
+  })
+
+  test('the index is kept in log.db: vectors in embeddings under the model, the catalog hash in aiIndexes, and a changed catalog is not opened', async () => {
+    const embedder = hashEmbedder(32)
+    const items = routerCatalog(useCases.slice(0, 3), loadToolFacts().slice(0, 5), shippedSkills().slice(0, 2))
+    const built = await buildMeaningIndex(items, embedder)
+    expect(routerIndexState(items, 'hash').fresh).toBe(true)
+    const opened = openMeaningIndex(items, 'hash', 32)
+    expect(opened?.hash).toBe(built.hash)
+    expect(opened?.vectors.flat().length).toBe(items.reduce((n, i) => n + i.texts.length, 0))
+    expect(aiIndexOf(ROUTER_INDEX_NAME)?.model).toBe('hash')
+    const fewer = items.slice(1)
+    expect(openMeaningIndex(fewer, 'hash', 32)).toBeNull()
+    expect(routerIndexState(fewer, 'hash')).toMatchObject({ built: true, fresh: false })
+    const ranks = meaningRanks(await embedder.embed([items[0].texts[0].text]), built)
+    expect(ranks[items[0].kind][0].id).toBe(items[0].id)
+  })
+
+  test('the meaning step falls back to words when the index is not loaded or the budget is blown', async () => {
+    const embedder = hashEmbedder(32)
+    const items = routerCatalog(useCases.slice(0, 3), loadToolFacts().slice(0, 5), [])
+    const index = await buildMeaningIndex(items, embedder)
+    expect(await meaningWithin('read my x dms', null, (t) => embedder.embed(t))).toEqual({ meaning: null, fallback: 'notLoaded', ms: 0 })
+    const slow = (texts: string[]) => new Promise<Float32Array[]>((resolve) => setTimeout(() => resolve(embedder.embed(texts)), 80))
+    expect((await meaningWithin('read my x dms', index, slow, 10)).fallback).toBe('overBudget')
+    const ok = await meaningWithin('read my x dms', index, (t) => embedder.embed(t))
+    expect(ok.fallback).toBeUndefined()
+    expect(ok.meaning?.tool.length).toBeGreaterThan(0)
+  })
+
+  test('reciprocal rank fusion adds 1 / (60 + rank) from each list', () => {
+    const fused = reciprocalRankFusion([['a', 'b'], ['b', 'c']])
+    expect(fused.map((f) => f.id)).toEqual(['b', 'a', 'c'])
+    expect(fused[0].score).toBeCloseTo(1 / 62 + 1 / 61, 10)
+  })
+
+  test('on the 44 tool asks, words alone rank the tool first in 25 and in the top 3 in 27; fused with the recorded local meaning, 26 and 30; skills 2 and 3 of 13; no status or chat question gets a line', () => {
+    const facts = loadToolFacts()
+    const skills = shippedSkills()
+    const names = new Set(facts.map((f) => f.name))
+    const skillNames = new Set(skills.map((s) => s.name))
+    for (const g of routerGolden) {
+      for (const name of g.expect) expect(names.has(name)).toBe(true)
+      for (const name of g.skills ?? []) expect(skillNames.has(name)).toBe(true)
+      expect(recorded(g.prompt)).not.toBeNull()
+    }
+    const asks = routerGolden.filter((g) => g.expect.length)
+    const count = (fusion: ToolFusion) => {
+      const shown = (g: RouterGolden) => fuseTools(g.prompt, useCases, fusion === 'lexical' ? null : recorded(g.prompt), fusion, facts).matches.map((m) => m.name)
+      return { first: asks.filter((g) => g.expect.includes(shown(g)[0] ?? '')).length, three: asks.filter((g) => shown(g).slice(0, 3).some((n) => g.expect.includes(n))).length }
+    }
+    expect(asks.length).toBe(44)
+    expect(count('lexical')).toEqual({ first: 25, three: 27 })
+    expect(count('rrf')).toEqual({ first: 26, three: 30 })
+    const skillAsks = routerGolden.filter((g) => g.skills?.length)
+    const chosen = (g: RouterGolden) => fuseSkills(g.prompt, recorded(g.prompt), skills, 'rrf')
+    expect(skillAsks.filter((g) => g.skills!.includes(chosen(g)[0] ?? '')).length).toBe(2)
+    expect(skillAsks.filter((g) => chosen(g).some((s) => g.skills!.includes(s))).length).toBe(3)
+    for (const g of routerGolden.filter((g) => !g.expect.length && !g.skills?.length)) expect(routerSection(g.prompt, useCases, recorded(g.prompt), { facts, skills }).text).toBe('')
+  })
+
+  test('the hook injects the fused section inside the budget and records it as the router span, falling back to words when the service sent no meaning', async () => {
+    const prompt = 'send grace_ships a voice note on discord'
+    const served = async (p: string) => ({ ...decide(p), meaning: { meaning: recorded(p), ms: 4 } })
+    const hooked = await hookAnswer({ hook_event_name: 'UserPromptSubmit', prompt }, served)
+    expect(hooked.tools?.[0]).toBe('discordVoice')
+    expect(hooked.text).toContain('>>> Tools for this ask')
+    const section = hooked.text.slice(hooked.text.indexOf('>>> Tools for this ask'))
+    expect(section.length).toBeLessThanOrEqual(TOOL_TEXT_BUDGET)
+    const span = openDatabase().prepare("SELECT attrs FROM spans WHERE tool = 'hook:UserPromptSubmit:router' ORDER BY startedAt DESC LIMIT 1").get() as { attrs: string }
+    expect(JSON.parse(span.attrs)).toMatchObject({ meaning: 'used', provider: 'router', outcome: 'fused' })
+    await hookAnswer({ hook_event_name: 'UserPromptSubmit', prompt }, async (p) => ({ ...decide(p), meaning: { meaning: null, fallback: 'overBudget', ms: 151 } }))
+    const late = openDatabase().prepare("SELECT attrs FROM spans WHERE tool = 'hook:UserPromptSubmit:router' ORDER BY rowid DESC LIMIT 1").get() as { attrs: string }
+    expect(JSON.parse(late.attrs)).toMatchObject({ meaning: 'overBudget', outcome: 'lexical:overBudget' })
+  })
+
+  test('a play the words missed is named once, with its skill copy left out', () => {
+    const prompt = 'who started following me on x'
+    const section = routerSection(prompt, useCases, recorded(prompt), { decision: { ranked: [] } })
+    if (section.play) expect(section.skills).not.toContain(shippedSkills().find((s) => s.play === section.play)?.name)
+    expect(routerSection(prompt, useCases, recorded(prompt), { playShown: true }).play).toBeNull()
   })
 })

@@ -1,5 +1,6 @@
-import { BM25_B, BM25_K1, NAME_FLAGS, PLATFORM_NAME_ALIASES, TOOL_PLATFORM_BONUS, PLATFORM_WORDS, STOP_WORDS, TOOL_FIELD_WEIGHTS, TOOL_KEEP_SHARE, TOOL_MIN_SCORE, TOOL_SUMMARY_CHARS, TOOL_GENERIC_WORDS, TOOL_RARE_DF, TOOL_READ_EFFECTS, TOOL_WRITE_WORDS, TOOL_STOP_WORDS, TOOL_SYNONYMS, TOOL_WEAK_WORDS, TOOL_TEXT_BUDGET, TOOLS_SHOWN } from '../types'
-import type { RoutableUseCase, ToolDoc, ToolFacts, ToolFill, ToolMatch } from '../types'
+import { FUSED_TOOLS_SHOWN, TOOL_LEXICAL_WEIGHT, TOOL_MEANING_FLOOR, TOOL_MEANING_SPREAD, BM25_B, BM25_K1, NAME_FLAGS, PLATFORM_NAME_ALIASES, TOOL_PLATFORM_BONUS, PLATFORM_WORDS, STOP_WORDS, TOOL_FIELD_WEIGHTS, TOOL_KEEP_SHARE, TOOL_MIN_SCORE, TOOL_SUMMARY_CHARS, TOOL_GENERIC_WORDS, TOOL_RARE_DF, TOOL_READ_EFFECTS, TOOL_WRITE_WORDS, TOOL_STOP_WORDS, TOOL_SYNONYMS, TOOL_WEAK_WORDS, TOOL_TEXT_BUDGET, TOOLS_SHOWN } from '../types'
+import type { FusedTools, MeaningHit, ToolFusion, RoutableUseCase, ToolDoc, ToolFacts, ToolFill, ToolMatch } from '../types'
+import { reciprocalRankFusion } from './semantic'
 
 export interface ToolTerms {
   stem: (word: string) => string
@@ -158,21 +159,70 @@ export function callOf(doc: ToolFacts, fill: ToolFill): string {
   return `${doc.name} { ${parts.join(', ')} }`.replace('{  }', '{}')
 }
 
-export function rankToolsOver(prompt: string, index: ToolIndex, terms: ToolTerms, known: ReadonlySet<string>, limit: number = TOOLS_SHOWN, raw: string = prompt, chatNameOf?: ChatNameOf): ToolMatch[] {
+export interface ToolCandidates {
+  query: string[]
+  fill: ToolFill
+  eligible: (at: number) => boolean
+  lexical: { at: number; score: number }[]
+}
+
+export function toolCandidates(prompt: string, index: ToolIndex, terms: ToolTerms, known: ReadonlySet<string>, raw: string = prompt, chatNameOf?: ChatNameOf): ToolCandidates | null {
   const named = new Set(terms.platformsOf(terms.contentWords(prompt)))
   const query = askTermsOf(prompt, terms)
-  if (!query.length || !index.docs.some((_, at) => specificEnough(index, query, at))) return []
+  if (!query.length) return null
   const fill = fillOf(raw, known, [...named], chatNameOf)
   const writes = asksToWrite(raw)
-  const scored = index.docs
-    .map((doc, at) => ({ doc, score: (named.size && doc.platform && !named.has(doc.platform)) || (!writes && writesToAccount(doc)) || !specificEnough(index, query, at) ? 0 : bm25(index, query, at) * (doc.platform && named.has(doc.platform) ? 1 + TOOL_PLATFORM_BONUS : 1) }))
+  const eligible = (at: number) => {
+    const doc = index.docs[at]
+    return !((named.size && doc.platform && !named.has(doc.platform)) || (!writes && writesToAccount(doc)))
+  }
+  const lexical = index.docs
+    .map((doc, at) => ({ at, score: !eligible(at) || !specificEnough(index, query, at) ? 0 : bm25(index, query, at) * (doc.platform && named.has(doc.platform) ? 1 + TOOL_PLATFORM_BONUS : 1) }))
     .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score || a.doc.name.localeCompare(b.doc.name))
-  const top = scored[0]?.score ?? 0
-  return scored
+    .sort((a, b) => b.score - a.score || index.docs[a.at].name.localeCompare(index.docs[b.at].name))
+  return { query, fill, eligible, lexical }
+}
+
+const matchOf = (doc: ToolDoc, score: number, fill: ToolFill): ToolMatch => ({ name: doc.name, score, call: callOf(doc, fill), summary: doc.summary })
+
+export function rankToolsOver(prompt: string, index: ToolIndex, terms: ToolTerms, known: ReadonlySet<string>, limit: number = TOOLS_SHOWN, raw: string = prompt, chatNameOf?: ChatNameOf): ToolMatch[] {
+  const found = toolCandidates(prompt, index, terms, known, raw, chatNameOf)
+  if (!found?.lexical.length) return []
+  const top = found.lexical[0].score
+  return found.lexical
     .filter((s) => s.score >= top * TOOL_KEEP_SHARE)
     .slice(0, limit)
-    .map((s) => ({ name: s.doc.name, score: s.score, call: callOf(s.doc, fill), summary: s.doc.summary }))
+    .map((s) => matchOf(index.docs[s.at], s.score, found.fill))
+}
+
+export function fuseToolsOver(prompt: string, index: ToolIndex, terms: ToolTerms, known: ReadonlySet<string>, meaning: readonly MeaningHit[] | null, fusion: ToolFusion = 'rrf', raw: string = prompt, chatNameOf?: ChatNameOf, limit: number = FUSED_TOOLS_SHOWN): FusedTools {
+  const none: FusedTools = { matches: [], lexical: [], meaning: [] }
+  if (!meaning || fusion === 'lexical') {
+    const matches = rankToolsOver(prompt, index, terms, known, TOOLS_SHOWN, raw, chatNameOf)
+    return clearsToolBar(matches) ? { matches: matches.slice(0, fusion === 'lexical' ? TOOLS_SHOWN : limit), lexical: matches.map((m) => m.name), meaning: [] } : none
+  }
+  const found = toolCandidates(prompt, index, terms, known, raw, chatNameOf)
+  if (!found) return none
+  const at = new Map(index.docs.map((d, i) => [d.name, i]))
+  const lexicalTop = found.lexical[0]?.score ?? 0
+  const lexicalOn = lexicalTop >= TOOL_MIN_SCORE
+  const lexical = lexicalOn ? found.lexical.filter((s) => s.score >= lexicalTop * TOOL_KEEP_SHARE).map((s) => index.docs[s.at].name) : []
+  const close = meaning.filter((h) => at.has(h.id) && found.eligible(at.get(h.id)!))
+  const meaningOn = (close[0]?.score ?? 0) >= TOOL_MEANING_FLOOR
+  const near = meaningOn ? close.filter((h) => h.score >= close[0].score - TOOL_MEANING_SPREAD).map((h) => h.id) : []
+  if (fusion === 'meaning') return { matches: near.slice(0, limit).map((name) => matchOf(index.docs[at.get(name)!], close.find((h) => h.id === name)!.score, found.fill)), lexical, meaning: near }
+  if (!lexical.length && !near.length) return { ...none, lexical, meaning: near }
+  const fused = fusion === 'rrf' ? reciprocalRankFusion([lexical, near]) : weightedFusion(found.lexical.map((s) => ({ id: index.docs[s.at].name, score: s.score })).filter((s) => lexical.includes(s.id)), close.filter((h) => near.includes(h.id)))
+  return { matches: fused.slice(0, limit).map((f) => matchOf(index.docs[at.get(f.id)!], f.score, found.fill)), lexical, meaning: near }
+}
+
+export function weightedFusion(lexical: readonly MeaningHit[], meaning: readonly MeaningHit[], weight: number = TOOL_LEXICAL_WEIGHT): MeaningHit[] {
+  const top = lexical[0]?.score ?? 0
+  const best = meaning[0]?.score ?? 0
+  const scores = new Map<string, number>()
+  for (const h of lexical) scores.set(h.id, weight * (top ? h.score / top : 0))
+  for (const h of meaning) scores.set(h.id, (scores.get(h.id) ?? 0) + (1 - weight) * Math.max(0, 1 - (best - h.score) / TOOL_MEANING_SPREAD))
+  return [...scores].map(([id, score]) => ({ id, score })).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
 }
 
 export function clearsToolBar(matches: readonly ToolMatch[], floor: number = TOOL_MIN_SCORE): boolean {
