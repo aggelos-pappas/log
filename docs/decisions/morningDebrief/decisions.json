@@ -1,0 +1,171 @@
+[
+ {
+  "id": "D1",
+  "question": "How should the morning debrief gather its data?",
+  "options": [
+   {
+    "id": "A",
+    "name": "Agent calls existing tools",
+    "description": "A play tells the agent to call inboxWaiting, twitterNotifications, sessionsCheck and governorShow each morning and assemble the debrief itself."
+   },
+   {
+    "id": "B",
+    "name": "One read-only command",
+    "description": "A new `log inbox debrief --since <time>` reads log.db once and returns new messages per platform, waiting, follow-ups, X notifications and account health, compact and under 40 KB, as one MCP tool."
+   },
+   {
+    "id": "C",
+    "name": "Watchers keep a running debrief",
+    "description": "The account watchers update a debrief table in log.db as messages land; the morning job only reads that table."
+   }
+  ],
+  "criteria": [
+   {
+    "id": "turnTime",
+    "question": "How long does the whole morning agent turn take at p99, counting model round trips, not just tool time?",
+    "levels": [
+     "over 2 minutes",
+     "1 to 2 minutes",
+     "30 s to 1 minute",
+     "under 30 s"
+    ]
+   },
+   {
+    "id": "cronSafe",
+    "question": "Does it run in Hermes cron, where log tools not annotated read-only are refused?",
+    "levels": [
+     "refused or needs the owner",
+     "works with workarounds",
+     "works",
+     "works and cannot change anything"
+    ]
+   },
+   {
+    "id": "correct",
+    "question": "How likely is it to miss or misreport something (a misspelt name, a late backfill, a thread cut short)?",
+    "levels": [
+     "often",
+     "sometimes",
+     "rarely",
+     "almost never"
+    ]
+   },
+   {
+    "id": "buildCost",
+    "question": "How much work to build and keep working, given the files already being changed elsewhere?",
+    "levels": [
+     "weeks",
+     "days",
+     "a day",
+     "hours"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "D2",
+  "question": "How should the debrief rank opportunities?",
+  "options": [
+   {
+    "id": "A",
+    "name": "No ranking",
+    "description": "Newest first, the owner judges."
+   },
+   {
+    "id": "B",
+    "name": "Rules over log.db",
+    "description": "Score each thread from signals log already has: money words and amounts, deal or client labels, how long they have waited, whether the owner asked them something, whether they are in a money band from the owner's own scored list."
+   },
+   {
+    "id": "C",
+    "name": "SubQ reads each thread",
+    "description": "Batch the waiting threads to SubQ decisions with the owner's goals (base or retainer partnerships, clients, leads) and take its choice per thread."
+   },
+   {
+    "id": "D",
+    "name": "Rules first, SubQ for the top",
+    "description": "B for every thread, then C only on the top 10 to order them and write one line why."
+   }
+  ],
+  "criteria": [
+   {
+    "id": "relevance",
+    "question": "Would the top 5 match what the owner would have picked (deals, money, warm leads first)?",
+    "levels": [
+     "rarely",
+     "sometimes",
+     "mostly",
+     "almost always"
+    ]
+   },
+   {
+    "id": "cost",
+    "question": "Money and time per morning run?",
+    "levels": [
+     "dollars and minutes",
+     "cents and a minute",
+     "under a cent and seconds",
+     "free and instant"
+    ]
+   },
+   {
+    "id": "explain",
+    "question": "Can the owner see why each item is ranked where it is?",
+    "levels": [
+     "no",
+     "vaguely",
+     "yes for most",
+     "yes, one line each"
+    ]
+   }
+  ]
+ },
+ {
+  "id": "D3",
+  "question": "Where should the debrief be delivered?",
+  "options": [
+   {
+    "id": "A",
+    "name": "Today page",
+    "description": "The Hermes Today page shows the debrief as blocks, refreshed by the cron job."
+   },
+   {
+    "id": "B",
+    "name": "Telegram message",
+    "description": "The cron job delivers a rendered PNG and a short text to the owner's Telegram."
+   },
+   {
+    "id": "C",
+    "name": "Chat reply only",
+    "description": "The debrief appears as a reply in the Hermes chat when he opens it."
+   },
+   {
+    "id": "D",
+    "name": "Today page and Telegram",
+    "description": "A and B together."
+   }
+  ],
+  "criteria": [
+   {
+    "id": "seen",
+    "question": "Will the owner see it within minutes of waking, on his phone, while travelling?",
+    "levels": [
+     "unlikely",
+     "sometimes",
+     "usually",
+     "always"
+    ]
+   },
+   {
+    "id": "actionable",
+    "question": "Can he act on an item straight from it (draft a reply, open the chat)?",
+    "levels": [
+     "no",
+     "with copying",
+     "one step",
+     "one tap"
+    ]
+   }
+  ]
+ }
+]

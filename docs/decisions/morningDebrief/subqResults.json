@@ -1,0 +1,742 @@
+{
+  "model": "subq-snap-preview",
+  "decisions": {
+    "D1": {
+      "stateChars": 49029,
+      "choices": {
+        "turnTime": {
+          "type": "choice",
+          "choice": "B",
+          "probabilities": {
+            "A": 0.012077702209353447,
+            "B": 0.7645922303199768,
+            "C": 0.2233300656080246
+          },
+          "confidence": 0.6468883454799652
+        },
+        "cronSafe": {
+          "type": "choice",
+          "choice": "B",
+          "probabilities": {
+            "A": 0.04361372068524361,
+            "B": 0.8955455422401428,
+            "C": 0.06084083765745163
+          },
+          "confidence": 0.8433183133602142
+        },
+        "correct": {
+          "type": "choice",
+          "choice": "B",
+          "probabilities": {
+            "A": 0.037569381296634674,
+            "B": 0.7310606241226196,
+            "C": 0.2313699722290039
+          },
+          "confidence": 0.5965909361839294
+        },
+        "buildCost": {
+          "type": "choice",
+          "choice": "A",
+          "probabilities": {
+            "A": 0.7478214502334595,
+            "B": 0.2376001626253128,
+            "C": 0.01457830611616373
+          },
+          "confidence": 0.6217321753501892
+        },
+        "overall": {
+          "type": "choice",
+          "choice": "B",
+          "probabilities": {
+            "A": 0.01843145303428173,
+            "B": 0.9615975618362427,
+            "C": 0.01997099258005619
+          },
+          "confidence": 0.942396342754364
+        }
+      },
+      "scores": {
+        "A": {
+          "turnTime": {
+            "type": "score",
+            "score": 0.8236941024661064,
+            "legend": {
+              "0": "over 2 minutes",
+              "1": "1 to 2 minutes",
+              "2": "30 s to 1 minute",
+              "3": "under 30 s"
+            },
+            "probabilities": {
+              "0": 0.3818189799785614,
+              "1": 0.45369115471839905,
+              "2": 0.12346649169921875,
+              "3": 0.04102332144975662
+            },
+            "confidence": 0.4126678854227066
+          },
+          "cronSafe": {
+            "type": "score",
+            "score": 2.3184531778097153,
+            "legend": {
+              "0": "refused or needs the owner",
+              "1": "works with workarounds",
+              "2": "works",
+              "3": "works and cannot change anything"
+            },
+            "probabilities": {
+              "0": 0.017201533541083336,
+              "1": 0.0948762446641922,
+              "2": 0.44018983840942383,
+              "3": 0.44773241877555847
+            },
+            "confidence": 0.31845307163894176
+          },
+          "correct": {
+            "type": "score",
+            "score": 1.3454642668366432,
+            "legend": {
+              "0": "often",
+              "1": "sometimes",
+              "2": "rarely",
+              "3": "almost never"
+            },
+            "probabilities": {
+              "0": 0.1430964171886444,
+              "1": 0.45150309801101685,
+              "2": 0.3222401738166809,
+              "3": 0.08316027373075485
+            },
+            "confidence": 0.368342861533165
+          },
+          "buildCost": {
+            "type": "score",
+            "score": 1.7877931892871857,
+            "legend": {
+              "0": "weeks",
+              "1": "days",
+              "2": "a day",
+              "3": "hours"
+            },
+            "probabilities": {
+              "0": 0.24142180383205414,
+              "1": 0.16218948364257812,
+              "2": 0.16356243193149567,
+              "3": 0.43282628059387207
+            },
+            "confidence": 0
+          }
+        },
+        "B": {
+          "turnTime": {
+            "type": "score",
+            "score": 2.625282969325781,
+            "legend": {
+              "0": "over 2 minutes",
+              "1": "1 to 2 minutes",
+              "2": "30 s to 1 minute",
+              "3": "under 30 s"
+            },
+            "probabilities": {
+              "0": 0.0017379256896674633,
+              "1": 0.021750357002019882,
+              "2": 0.3260025382041931,
+              "3": 0.6505091786384583
+            },
+            "confidence": 0.6252829707227647
+          },
+          "cronSafe": {
+            "type": "score",
+            "score": 2.9348303177393973,
+            "legend": {
+              "0": "refused or needs the owner",
+              "1": "works with workarounds",
+              "2": "works",
+              "3": "works and cannot change anything"
+            },
+            "probabilities": {
+              "0": 0.000629349728114903,
+              "1": 0.00625224644318223,
+              "2": 0.0507771335542202,
+              "3": 0.9423412680625916
+            },
+            "confidence": 0.9348303243750706
+          },
+          "correct": {
+            "type": "score",
+            "score": 2.3784064650535583,
+            "legend": {
+              "0": "often",
+              "1": "sometimes",
+              "2": "rarely",
+              "3": "almost never"
+            },
+            "probabilities": {
+              "0": 0.0023341928608715534,
+              "1": 0.04252663254737854,
+              "2": 0.5295377373695374,
+              "3": 0.42560145258903503
+            },
+            "confidence": 0.5272035291418433
+          },
+          "buildCost": {
+            "type": "score",
+            "score": 2.16220186650753,
+            "legend": {
+              "0": "weeks",
+              "1": "days",
+              "2": "a day",
+              "3": "hours"
+            },
+            "probabilities": {
+              "0": 0.009762284345924854,
+              "1": 0.2116108387708664,
+              "2": 0.3852894604206085,
+              "3": 0.3933373689651489
+            },
+            "confidence": 0.16220200899988413
+          }
+        },
+        "C": {
+          "turnTime": {
+            "type": "score",
+            "score": 2.6615398600697517,
+            "legend": {
+              "0": "over 2 minutes",
+              "1": "1 to 2 minutes",
+              "2": "30 s to 1 minute",
+              "3": "under 30 s"
+            },
+            "probabilities": {
+              "0": 0.002348999958485365,
+              "1": 0.03333736211061478,
+              "2": 0.26473838090896606,
+              "3": 0.6995752453804016
+            },
+            "confidence": 0.6615398949943483
+          },
+          "cronSafe": {
+            "type": "score",
+            "score": 2.665331430733204,
+            "legend": {
+              "0": "refused or needs the owner",
+              "1": "works with workarounds",
+              "2": "works",
+              "3": "works and cannot change anything"
+            },
+            "probabilities": {
+              "0": 0.005577720236033201,
+              "1": 0.050002939999103546,
+              "2": 0.21792948246002197,
+              "3": 0.7264898419380188
+            },
+            "confidence": 0.6653314768336713
+          },
+          "correct": {
+            "type": "score",
+            "score": 1.9421376883983612,
+            "legend": {
+              "0": "often",
+              "1": "sometimes",
+              "2": "rarely",
+              "3": "almost never"
+            },
+            "probabilities": {
+              "0": 0.016814719885587692,
+              "1": 0.2802978456020355,
+              "2": 0.44682249426841736,
+              "3": 0.2560649514198303
+            },
+            "confidence": 0.43000776320695877
+          },
+          "buildCost": {
+            "type": "score",
+            "score": 1.7017986476421356,
+            "legend": {
+              "0": "weeks",
+              "1": "days",
+              "2": "a day",
+              "3": "hours"
+            },
+            "probabilities": {
+              "0": 0.13967365026474,
+              "1": 0.30801185965538025,
+              "2": 0.2631566822528839,
+              "3": 0.28915780782699585
+            },
+            "confidence": 0.0188540518283844
+          }
+        }
+      }
+    },
+    "D2": {
+      "stateChars": 48853,
+      "choices": {
+        "relevance": {
+          "type": "choice",
+          "choice": "D",
+          "probabilities": {
+            "A": 0.0036814447958022356,
+            "B": 0.09417957812547684,
+            "C": 0.3998974859714508,
+            "D": 0.5022414922714233
+          },
+          "confidence": 0.33632198969523114
+        },
+        "cost": {
+          "type": "choice",
+          "choice": "B",
+          "probabilities": {
+            "A": 0.30920881032943726,
+            "B": 0.5093340873718262,
+            "C": 0.004959902260452509,
+            "D": 0.1764971762895584
+          },
+          "confidence": 0.3457787831624349
+        },
+        "explain": {
+          "type": "choice",
+          "choice": "D",
+          "probabilities": {
+            "A": 0.004299184773117304,
+            "B": 0.4621475040912628,
+            "C": 0.006746935658156872,
+            "D": 0.5268064141273499
+          },
+          "confidence": 0.3690752188364665
+        },
+        "overall": {
+          "type": "choice",
+          "choice": "D",
+          "probabilities": {
+            "A": 0.002768963808193803,
+            "B": 0.13045662641525269,
+            "C": 0.012058502063155174,
+            "D": 0.8547159433364868
+          },
+          "confidence": 0.806287924448649
+        }
+      },
+      "scores": {
+        "A": {
+          "relevance": {
+            "type": "score",
+            "score": 0.25829416746273637,
+            "legend": {
+              "0": "rarely",
+              "1": "sometimes",
+              "2": "mostly",
+              "3": "almost always"
+            },
+            "probabilities": {
+              "0": 0.7729069590568542,
+              "1": 0.2036205679178238,
+              "2": 0.015743521973490715,
+              "3": 0.007728851865977049
+            },
+            "confidence": 0.7417058325372636
+          },
+          "cost": {
+            "type": "score",
+            "score": 2.7042465694248676,
+            "legend": {
+              "0": "dollars and minutes",
+              "1": "cents and a minute",
+              "2": "under a cent and seconds",
+              "3": "free and instant"
+            },
+            "probabilities": {
+              "0": 0.002306075766682625,
+              "1": 0.040544260293245316,
+              "2": 0.2077467441558838,
+              "3": 0.7494029402732849
+            },
+            "confidence": 0.7042465079575777
+          },
+          "explain": {
+            "type": "score",
+            "score": 0.349777827039361,
+            "legend": {
+              "0": "no",
+              "1": "vaguely",
+              "2": "yes for most",
+              "3": "yes, one line each"
+            },
+            "probabilities": {
+              "0": 0.7340619564056396,
+              "1": 0.2000133991241455,
+              "2": 0.04800962284207344,
+              "3": 0.017915060743689537
+            },
+            "confidence": 0.650222172960639
+          }
+        },
+        "B": {
+          "relevance": {
+            "type": "score",
+            "score": 1.9104306399822235,
+            "legend": {
+              "0": "rarely",
+              "1": "sometimes",
+              "2": "mostly",
+              "3": "almost always"
+            },
+            "probabilities": {
+              "0": 0.004283987917006016,
+              "1": 0.23584888875484467,
+              "2": 0.6050198674201965,
+              "3": 0.15484733879566193
+            },
+            "confidence": 0.6007357966154814
+          },
+          "cost": {
+            "type": "score",
+            "score": 2.5110670663416386,
+            "legend": {
+              "0": "dollars and minutes",
+              "1": "cents and a minute",
+              "2": "under a cent and seconds",
+              "3": "free and instant"
+            },
+            "probabilities": {
+              "0": 0.0008306516101583838,
+              "1": 0.02076617255806923,
+              "2": 0.4449087381362915,
+              "3": 0.5334944725036621
+            },
+            "confidence": 0.5110669619170949
+          },
+          "explain": {
+            "type": "score",
+            "score": 2.711697591468692,
+            "legend": {
+              "0": "no",
+              "1": "vaguely",
+              "2": "yes for most",
+              "3": "yes, one line each"
+            },
+            "probabilities": {
+              "0": 0.0018036572728306055,
+              "1": 0.023174507543444633,
+              "2": 0.23654256761074066,
+              "3": 0.7384793162345886
+            },
+            "confidence": 0.7116974454838783
+          }
+        },
+        "C": {
+          "relevance": {
+            "type": "score",
+            "score": 2.3364559933543205,
+            "legend": {
+              "0": "rarely",
+              "1": "sometimes",
+              "2": "mostly",
+              "3": "almost always"
+            },
+            "probabilities": {
+              "0": 0.00909485574811697,
+              "1": 0.09190814942121506,
+              "2": 0.45244300365448,
+              "3": 0.44655394554138184
+            },
+            "confidence": 0.44334819354116917
+          },
+          "cost": {
+            "type": "score",
+            "score": 0.8444531997665763,
+            "legend": {
+              "0": "dollars and minutes",
+              "1": "cents and a minute",
+              "2": "under a cent and seconds",
+              "3": "free and instant"
+            },
+            "probabilities": {
+              "0": 0.27495673298835754,
+              "1": 0.6191484928131104,
+              "2": 0.09237949550151825,
+              "3": 0.013515238650143147
+            },
+            "confidence": 0.6056332942098379
+          },
+          "explain": {
+            "type": "score",
+            "score": 1.142922267317772,
+            "legend": {
+              "0": "no",
+              "1": "vaguely",
+              "2": "yes for most",
+              "3": "yes, one line each"
+            },
+            "probabilities": {
+              "0": 0.3274310827255249,
+              "1": 0.33055099844932556,
+              "2": 0.21368248760700226,
+              "3": 0.12833543121814728
+            },
+            "confidence": 0.20221556723117828
+          }
+        },
+        "D": {
+          "relevance": {
+            "type": "score",
+            "score": 2.545984882861376,
+            "legend": {
+              "0": "rarely",
+              "1": "sometimes",
+              "2": "mostly",
+              "3": "almost always"
+            },
+            "probabilities": {
+              "0": 0.0016225125873461366,
+              "1": 0.03282960131764412,
+              "2": 0.3834882080554962,
+              "3": 0.5820596218109131
+            },
+            "confidence": 0.5459850515471771
+          },
+          "cost": {
+            "type": "score",
+            "score": 1.406909417361021,
+            "legend": {
+              "0": "dollars and minutes",
+              "1": "cents and a minute",
+              "2": "under a cent and seconds",
+              "3": "free and instant"
+            },
+            "probabilities": {
+              "0": 0.004681307822465897,
+              "1": 0.6438001990318298,
+              "2": 0.2914462387561798,
+              "3": 0.06007224693894386
+            },
+            "confidence": 0.5837279595434666
+          },
+          "explain": {
+            "type": "score",
+            "score": 2.6777308378368616,
+            "legend": {
+              "0": "no",
+              "1": "vaguely",
+              "2": "yes for most",
+              "3": "yes, one line each"
+            },
+            "probabilities": {
+              "0": 0.0012601418420672417,
+              "1": 0.025287548080086708,
+              "2": 0.2679136097431183,
+              "3": 0.7055386900901794
+            },
+            "confidence": 0.6777308685705066
+          }
+        }
+      }
+    },
+    "D3": {
+      "stateChars": 48550,
+      "choices": {
+        "seen": {
+          "type": "choice",
+          "choice": "B",
+          "probabilities": {
+            "A": 0.0039117177948355675,
+            "B": 0.5849748253822327,
+            "C": 0.0010004303185269237,
+            "D": 0.4101130962371826
+          },
+          "confidence": 0.44663310050964355
+        },
+        "actionable": {
+          "type": "choice",
+          "choice": "A",
+          "probabilities": {
+            "A": 0.48110735416412354,
+            "B": 0.024521244689822197,
+            "C": 0.017453083768486977,
+            "D": 0.4769183397293091
+          },
+          "confidence": 0.30814313888549805
+        },
+        "overall": {
+          "type": "choice",
+          "choice": "D",
+          "probabilities": {
+            "A": 0.08398671448230743,
+            "B": 0.0371047705411911,
+            "C": 0.0018117640865966678,
+            "D": 0.8770967721939087
+          },
+          "confidence": 0.8361290295918783
+        }
+      },
+      "scores": {
+        "A": {
+          "seen": {
+            "type": "score",
+            "score": 0.8411274943500757,
+            "legend": {
+              "0": "unlikely",
+              "1": "sometimes",
+              "2": "usually",
+              "3": "always"
+            },
+            "probabilities": {
+              "0": 0.3041212856769562,
+              "1": 0.5732481479644775,
+              "2": 0.10001234710216522,
+              "3": 0.022618217393755913
+            },
+            "confidence": 0.5506299324333668
+          },
+          "actionable": {
+            "type": "score",
+            "score": 2.2026915550231934,
+            "legend": {
+              "0": "no",
+              "1": "with copying",
+              "2": "one step",
+              "3": "one tap"
+            },
+            "probabilities": {
+              "0": 0.03823869675397873,
+              "1": 0.13966020941734314,
+              "2": 0.4032720923423767,
+              "3": 0.4188290536403656
+            },
+            "confidence": 0.20269139856100082
+          }
+        },
+        "B": {
+          "seen": {
+            "type": "score",
+            "score": 2.845638018101454,
+            "legend": {
+              "0": "unlikely",
+              "1": "sometimes",
+              "2": "usually",
+              "3": "always"
+            },
+            "probabilities": {
+              "0": 0.0021501111332327127,
+              "1": 0.01525041088461876,
+              "2": 0.11741090565919876,
+              "3": 0.8651885986328125
+            },
+            "confidence": 0.8456379391718656
+          },
+          "actionable": {
+            "type": "score",
+            "score": 0.7166862227022648,
+            "legend": {
+              "0": "no",
+              "1": "with copying",
+              "2": "one step",
+              "3": "one tap"
+            },
+            "probabilities": {
+              "0": 0.47766274213790894,
+              "1": 0.3730603754520416,
+              "2": 0.10420490056276321,
+              "3": 0.04507201537489891
+            },
+            "confidence": 0.2833137772977352
+          }
+        },
+        "C": {
+          "seen": {
+            "type": "score",
+            "score": 0.4325047507882118,
+            "legend": {
+              "0": "unlikely",
+              "1": "sometimes",
+              "2": "usually",
+              "3": "always"
+            },
+            "probabilities": {
+              "0": 0.6324611306190491,
+              "1": 0.31299692392349243,
+              "2": 0.044117964804172516,
+              "3": 0.010423965752124786
+            },
+            "confidence": 0.5674952492117882
+          },
+          "actionable": {
+            "type": "score",
+            "score": 1.4633952379226685,
+            "legend": {
+              "0": "no",
+              "1": "with copying",
+              "2": "one step",
+              "3": "one tap"
+            },
+            "probabilities": {
+              "0": 0.21565112471580505,
+              "1": 0.26215532422065735,
+              "2": 0.3653406500816345,
+              "3": 0.1568528711795807
+            },
+            "confidence": 0.14968955516815186
+          }
+        },
+        "D": {
+          "seen": {
+            "type": "score",
+            "score": 2.8532633082941175,
+            "legend": {
+              "0": "unlikely",
+              "1": "sometimes",
+              "2": "usually",
+              "3": "always"
+            },
+            "probabilities": {
+              "0": 0.0013255191734060645,
+              "1": 0.012533952482044697,
+              "2": 0.11769220232963562,
+              "3": 0.8684483170509338
+            },
+            "confidence": 0.8532633351860568
+          },
+          "actionable": {
+            "type": "score",
+            "score": 1.9118472337722778,
+            "legend": {
+              "0": "no",
+              "1": "with copying",
+              "2": "one step",
+              "3": "one tap"
+            },
+            "probabilities": {
+              "0": 0.031040040776133537,
+              "1": 0.2700618505477905,
+              "2": 0.45490893721580505,
+              "3": 0.24398916959762573
+            },
+            "confidence": 0.42386889830231667
+          }
+        }
+      }
+    }
+  },
+  "claims": {
+    "toolsNotSlow": {
+      "type": "noul",
+      "noul": 0.9987082481384277
+    },
+    "cronRefusesWrites": {
+      "type": "noul",
+      "noul": 0.9995449185371399
+    },
+    "noDebriefYet": {
+      "type": "noul",
+      "noul": 0.9997147917747498
+    },
+    "waitingHasNoSince": {
+      "type": "noul",
+      "noul": 0.9994413256645203
+    },
+    "noOpportunityScore": {
+      "type": "noul",
+      "noul": 0.9993591904640198
+    }
+  },
+  "inputTokens": 201000
+}

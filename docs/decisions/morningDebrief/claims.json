@@ -1,0 +1,22 @@
+[
+ {
+  "id": "toolsNotSlow",
+  "statement": "In the measured turn, log's own tools took a small fraction of the turn's time; agent round trips took most of it."
+ },
+ {
+  "id": "cronRefusesWrites",
+  "statement": "A Hermes cron job refuses log tools that are not annotated read-only."
+ },
+ {
+  "id": "noDebriefYet",
+  "statement": "log has no play, command or doc for a morning debrief today."
+ },
+ {
+  "id": "waitingHasNoSince",
+  "statement": "inboxWaiting cannot be limited to messages since a given time today."
+ },
+ {
+  "id": "noOpportunityScore",
+  "statement": "log has no score that ranks conversations by money or opportunity today."
+ }
+]
