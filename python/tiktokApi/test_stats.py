@@ -45,8 +45,8 @@ def test_a_studio_item_reads_as_numbers():
 
 
 def test_the_user_takes_its_handle_and_region():
-    user = user_of({"userId": "1", "userBaseInfo": {"UserProfile": {"UserBase": {"UniqueId": "deepman_2", "NickName": "Mandeep", "Region": {"Region": "CA"}}}}})
-    assert user == {"userId": "1", "uniqueId": "deepman_2", "nickname": "Mandeep", "region": "CA"}
+    user = user_of({"userId": "1", "userBaseInfo": {"UserProfile": {"UserBase": {"UniqueId": "tiktokAccount", "NickName": "Grace", "Region": {"Region": "CA"}}}}})
+    assert user == {"userId": "1", "uniqueId": "tiktokAccount", "nickname": "Grace", "region": "CA"}
 
 
 def test_studio_queries_carry_the_cookie_region_and_ms_token():
