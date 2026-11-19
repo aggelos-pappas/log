@@ -1,6 +1,9 @@
-import { correctTypos, denseScores, windowsOf } from './helpers'
-import { AMBIGUITY_BAND, DEFAULT_MENU_FLOOR, DEFAULT_THRESHOLD, DENSE_WEIGHT, MATCHES_SHOWN, MIN_PHRASE_WORDS, NOT_A_PROMPT, PLATFORM_BONUS, PLATFORM_FOLDERS, PLATFORM_WORDS, SHORT_PROMPT_WORDS, STOP_WORDS, WORD_AMBIGUITY_BAND, WORD_MENU_FLOOR, WORD_THRESHOLD } from './types'
-import type { EmbedTexts, PlayMatch, RoutableUseCase, RouteContext, RouteDecision, RouteIndex, Thresholds, Utterance } from './types'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { buildToolIndex, clearsToolBar, correctTypos, denseScores, rankToolsOver, toolDocsOf, toolsText, windowsOf } from './helpers'
+import type { ToolIndex } from './helpers'
+import { AMBIGUITY_BAND, DEFAULT_MENU_FLOOR, DEFAULT_THRESHOLD, DENSE_WEIGHT, MATCHES_SHOWN, MIN_PHRASE_WORDS, NOT_A_PROMPT, PLATFORM_BONUS, PLATFORM_FOLDERS, PLATFORM_WORDS, SHORT_PROMPT_WORDS, STOP_WORDS, TOOL_INDEX_FILE, TOOL_SYNONYMS, WORD_AMBIGUITY_BAND, WORD_MENU_FLOOR, WORD_THRESHOLD } from './types'
+import type { EmbedTexts, PlayMatch, RoutableUseCase, RouteContext, RouteDecision, RouteIndex, Thresholds, ToolFacts, ToolMatch, Utterance } from './types'
 
 const PLACEHOLDER = /<[^<>]*>/g
 
@@ -189,4 +192,70 @@ export function playMatchText(matches: readonly PlayMatch[], menu: readonly Play
     `>>> MAYBE A PLAY: the prompt is close to these log plays, and none of them is a clear match. A play loads with getGuide({ useCase }). ${none}`,
     ...menu.map((m) => `  ${m.id}: ${m.title}`),
   ].join('\n')
+}
+
+export const TOOL_INDEX_PATH = join(import.meta.dir, 'fixtures', TOOL_INDEX_FILE)
+
+export interface CommandToolEntry {
+  tool: string
+  live: boolean
+  command: { platform: string; summary: string; usage: string; input?: { forms: readonly unknown[] } }
+  form: { summary: string; flags: readonly { name: string; required?: boolean }[] } | null
+}
+
+const USAGE_NOTE_CHARS = 400
+
+export function toolFactsOf(entries: readonly CommandToolEntry[], isPlatform: (word: string) => boolean): ToolFacts[] {
+  const names = new Set(entries.map((e) => e.tool))
+  return entries
+    .filter((e) => !(e.live && names.has(e.tool.replace(/Live$/, ''))))
+    .map((e) => {
+      const flags = (e.form?.flags ?? []).map((f) => f.name).filter((name) => name !== 'json')
+      const single = (e.command.input?.forms.length ?? 1) <= 1
+      const notes = single ? e.command.usage.split('\n').map((line) => line.trim()).filter((line) => line && !/^(Usage:\s*)?log /.test(line)).join(' ').slice(0, USAGE_NOTE_CHARS) : ''
+      return {
+        name: e.tool,
+        platform: isPlatform(e.command.platform) ? e.command.platform : null,
+        summary: [...new Set([e.form?.summary, single ? e.command.summary : ''])].filter(Boolean).join('. '),
+        flags,
+        required: (e.form?.flags ?? []).filter((f) => f.required && f.name !== 'json').map((f) => f.name),
+        notes,
+      }
+    })
+}
+
+let toolFacts: { path: string; facts: ToolFacts[] } | null = null
+
+export function loadToolFacts(path: string = TOOL_INDEX_PATH): ToolFacts[] {
+  if (toolFacts?.path === path) return toolFacts.facts
+  const facts = existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as ToolFacts[]) : []
+  toolFacts = { path, facts }
+  return facts
+}
+
+let lastToolIndex: { key: string; index: ToolIndex; known: Set<string> } | null = null
+
+const toolTerms = { stem, contentWords, platformsOf }
+
+export function toolIndexOf(useCases: readonly RoutableUseCase[], facts: readonly ToolFacts[] = loadToolFacts()): { index: ToolIndex; known: Set<string> } {
+  const key = `${facts.length}\u0001${useCases.map((u) => `${u.id}\u0000${u.asks}\u0000${textOf(u).length}`).join('\u0001')}`
+  if (lastToolIndex?.key === key) return lastToolIndex
+  const docs = toolDocsOf(facts, useCases, phrasesOf)
+  const known = vocabularyOf([...useCases.map((u) => `${u.title} ${u.asks} ${textOf(u)}`), ...facts.map((f) => `${f.summary} ${f.notes}`), Object.keys(TOOL_SYNONYMS).join(' ')])
+  lastToolIndex = { key, index: buildToolIndex(docs, toolTerms), known }
+  return lastToolIndex
+}
+
+export function rankTools(prompt: string, useCases: readonly RoutableUseCase[], facts: readonly ToolFacts[] = loadToolFacts()): ToolMatch[] {
+  if (!isPrompt(prompt) || !facts.length) return []
+  const { index, known } = toolIndexOf(useCases, facts)
+  const fixed = correctTypos(prompt.replace(/https?:\/\/\S+/g, ' '), known)
+  return rankToolsOver(fixed.text, index, toolTerms, known, undefined, prompt)
+}
+
+export function toolMatchText(prompt: string, useCases: readonly RoutableUseCase[], facts: readonly ToolFacts[] = loadToolFacts()): { text: string; tools: string[] } {
+  const matches = rankTools(prompt, useCases, facts)
+  if (!clearsToolBar(matches)) return { text: '', tools: [] }
+  const text = toolsText(matches)
+  return { text, tools: matches.map((m) => m.name) }
 }

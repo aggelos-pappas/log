@@ -1,14 +1,14 @@
 import { playReminder, sessionPlayOf, transcriptTail } from '../session/index'
 import { listUseCases, readUseCase } from '../../mcp/server/helpers/guides.ts'
-import { isPrompt, outcomeOf, playMatchText, route as wordRoute } from '../../useCases/router/client'
-import type { PlayMatch, RoutableUseCase } from '../../useCases/router/types'
+import { isPrompt, loadToolFacts, outcomeOf, playMatchText, toolMatchText, route as wordRoute } from '../../useCases/router/client'
+import type { PlayMatch, RoutableUseCase, ToolFacts } from '../../useCases/router/types'
 import type { HookInput, HookResult } from './types'
 
 export type RouteFn = (prompt: string) => Promise<{ play?: PlayMatch | null; menu?: PlayMatch[]; skipped?: string } | null>
 
 export type UseCasesFn = () => readonly RoutableUseCase[]
 
-export async function hookAnswer(input: HookInput, route: RouteFn, useCases: UseCasesFn = listUseCases): Promise<HookResult> {
+export async function hookAnswer(input: HookInput, route: RouteFn, useCases: UseCasesFn = listUseCases, toolFacts: () => readonly ToolFacts[] = loadToolFacts): Promise<HookResult> {
   const event = input.hook_event_name ?? 'UserPromptSubmit'
   if (event === 'SessionStart') {
     const play = sessionPlayOf(transcriptTail(input.transcript_path ?? ''))
@@ -18,11 +18,14 @@ export async function hookAnswer(input: HookInput, route: RouteFn, useCases: Use
   const prompt = String(input.prompt ?? '')
   if (!isPrompt(prompt)) return { event, text: '', outcome: 'notAPrompt' }
   const served = await route(prompt)
-  const answer = served ?? wordRoute(prompt, { useCases: useCases() })
+  const known = useCases()
+  const answer = served ?? wordRoute(prompt, { useCases: known })
   const play = answer.play ?? null
   const menu = answer.menu ?? []
   const outcome = answer.skipped ?? outcomeOf({ play, menu })
-  return { event, text: playMatchText(play ? [play] : [], menu), outcome: served ? outcome : `wordsOnly ${outcome}`, ...(menu.length && !play ? { menu: menu.map((m) => m.id) } : {}) }
+  const tools = toolMatchText(prompt, known, toolFacts())
+  const text = [playMatchText(play ? [play] : [], menu), tools.text].filter(Boolean).join('\n')
+  return { event, text, outcome: served ? outcome : `wordsOnly ${outcome}`, ...(menu.length && !play ? { menu: menu.map((m) => m.id) } : {}), ...(tools.tools.length ? { tools: tools.tools } : {}) }
 }
 
 export function hookOutput(result: HookResult): string {

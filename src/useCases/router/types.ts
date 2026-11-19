@@ -129,3 +129,81 @@ export interface GoldenPrompt {
 export type Thresholds = Record<string, number>
 
 export type EmbedTexts = (texts: string[]) => Promise<Float32Array[]>
+
+export const TOOL_INDEX_FILE = 'tools.json'
+
+export const TOOL_GOLDEN_FILE = 'toolGolden.json'
+
+export const TOOLS_SHOWN = 4
+
+export const TOOL_MIN_SCORE = 4
+
+export const TOOL_PLATFORM_BONUS = 0.3
+
+export const PLATFORM_NAME_ALIASES: readonly string[] = ['x', 'insta', 'ig', 'fb']
+
+export const TOOL_KEEP_SHARE = 0.6
+
+export const TOOL_TEXT_BUDGET = 500
+
+export const TOOL_SUMMARY_CHARS = 70
+
+export const BM25_K1 = 1.2
+
+export const BM25_B = 0.75
+
+export const TOOL_FIELD_WEIGHTS = { name: 3, summary: 2, asks: 1.5, steps: 1, flags: 1, notes: 0.5 } as const
+
+export const TOOL_SYNONYMS: Readonly<Record<string, string>> = {
+  convo: 'conversation',
+  convos: 'conversation',
+  summarize: 'summarise',
+  stats: 'statistic',
+  stat: 'statistic',
+  dm: 'dms',
+  slowness: 'slow',
+  latency: 'slow',
+}
+
+export const TOOL_STOP_WORDS: ReadonlySet<string> = new Set(['about', 'any', 'all', 'give', 'please', 'see', 'show', 'tell'])
+
+export const TOOL_GENERIC_WORDS: ReadonlySet<string> = new Set(['again', 'already', 'anything', 'continue', 'does', 'doing', 'done', 'eta', 'finish', 'finished', 'going', 'happen', 'happened', 'happening', 'here', 'long', 'longer', 'more', 'much', 'ok', 'okay', 'ready', 'status', 'stuck', 'take', 'taking', 'takes', 'there', 'time', 'update', 'whats', 'why', 'work', 'working', 'yet'])
+
+export const TOOL_RARE_DF = 3
+
+export const NAME_FLAGS: readonly string[] = ['channel', 'chat', 'with', 'handle']
+
+export interface ToolFacts {
+  name: string
+  platform: string | null
+  summary: string
+  flags: string[]
+  required: string[]
+  notes: string
+}
+
+export interface ToolDoc extends ToolFacts {
+  asks: string[]
+  steps: string[]
+  plays: number
+}
+
+export interface ToolMatch {
+  name: string
+  score: number
+  call: string
+  summary: string
+}
+
+export interface ToolFill {
+  name?: string
+  server?: string
+  words?: string
+  platforms: string[]
+}
+
+export interface ToolGolden {
+  prompt: string
+  expect: string[]
+  note?: string
+}

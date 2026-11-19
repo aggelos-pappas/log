@@ -11,7 +11,7 @@ export const TIMING_INPUT: CommandInput = {
   forms: [
     {
       words: [],
-      summary: "Where the time goes: p50, p95 and p99 for each tool call and each stage inside it, or one call as a waterfall",
+      summary: "How slow log is: p50, p95 and p99 per tool call and per stage inside it, or one call as a waterfall (--call); --tool and --hours narrow it",
       positionals: [],
       flags: [
         { name: "tool", kind: "string", description: "Only this tool (its MCP name, e.g. twitterDms, or a terminal run's words, e.g. cli twitter dms)" },

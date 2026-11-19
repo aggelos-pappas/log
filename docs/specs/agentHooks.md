@@ -173,13 +173,19 @@ Checked by: code and SubQ
 
 ### REQ-HOOKS-26: The prompt hook names the play when the service is down
 
-When the context service gives no answer (down, starting or timed out), `hookAnswer` (`src/contextLayer/hook/client.ts`) runs the word-only `route` over `listUseCases()`, the same router `getGuide({ ask })` uses, and its outcome starts with `wordsOnly`. A prompt that matches no play still injects nothing.
+When the context service gives no answer (down, starting or timed out), `hookAnswer` (`src/contextLayer/hook/client.ts`) runs the word-only `route` over `listUseCases()`, the same router `getGuide({ ask })` uses, and its outcome starts with `wordsOnly`. A prompt that matches no play injects no play text; only the tools section (REQ-HOOKS-29) can still answer it.
 
 Checked by: code and SubQ
 
 ### REQ-HOOKS-27: The check runs every hook on scratch state, starting nothing
 
 `check:agentHooks` runs each hook and each adapter (`scripts/hooks/useCases.ts` for Claude Code and Codex, `event.ts --host hermes`, `event.ts --host cursor`, `antigravity.ts`) with `scratchHookEnv`: `LOG_DB`, the inbox, the context layer, the queues, the X, platform and fbk state and the hook memory all in its scratch folder, with a signed-in `fakeBird` account, `LOG_CONTEXT_SERVICE=off` (so `readService` reads nothing and `startService` starts nothing) and `LOG_INBOX_POLL=off` (so no watcher starts). It fails when a hook leaves a `watch.log` (`watcherLogsIn`) or a context service log in the scratch folder. Before, every run started the context service detached against the scratch database the next hook opened.
+
+Checked by: code and SubQ
+
+### REQ-HOOKS-29: The prompt hook names the tools for the ask
+
+Every UserPromptSubmit answer from `hookAnswer` also ranks log's tools for the prompt with `toolMatchText` (`src/useCases/router/client.ts`). The index is `src/useCases/router/fixtures/tools.json`, written by `bun run docs:build` (`toolFactsOf`): each MCP tool's name, summary, flags and required flags, a single-form command's usage notes, and no `Live` twin of a tool that has a plain one. At prompt time `toolDocsOf` adds the asks and step text of every play whose steps table names the tool (a `Live` twin counts for its plain tool). `rankToolsOver` scores the prompt against it with BM25 over the router's own stems (`contentWords`) after the typo fix; a platform the prompt names drops tools filed under other platforms and adds `TOOL_PLATFORM_BONUS` to its own, and a prompt that names no platform gets no platform. Status and chat words aimed at the agent (`TOOL_GENERIC_WORDS`: how long, done, still going, stuck, any update) are dropped from the query, and nothing is injected unless some tool matches at least two of the remaining terms, or one that is in its name or in at most `TOOL_RARE_DF` tools (`specificEnough`), so "how much longer will it take here?" names no tool. When the top score clears `TOOL_MIN_SCORE`, up to `TOOLS_SHOWN` tools scoring at least `TOOL_KEEP_SHARE` of the top one are written after the play text as `>>> Tools for this ask`, one filled-in call each (`callOf`: required flags, the person after with/from/to as the chat or `with`, the server and words of "search <server> for <words>", the named platform as `platform`), ending "Use these; don't parse log output with scripts.", within `TOOL_TEXT_BUDGET` characters. `fixtures/toolGolden.json` holds the expected first tools for real-shaped asks, and the router test holds the top-1 and top-3 counts.
 
 Checked by: code and SubQ
 

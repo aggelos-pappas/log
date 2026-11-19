@@ -105,7 +105,7 @@ export const DISCORD_CHATS_USAGE = [
 ].join("\n");
 
 export const DISCORD_CHATS_INPUT: CommandInput = {
-  forms: [{ words: [], summary: "The account's DMs and group DMs, with their ids", positionals: [], flags: [DISCORD_ACCOUNT, JSON_FLAG] }],
+  forms: [{ words: [], summary: "The account's DMs and group DMs with their ids and members: a list, not messages (read one with discordRead)", positionals: [], flags: [DISCORD_ACCOUNT, JSON_FLAG] }],
 };
 
 export const discordChatsCommand: Command = {
@@ -147,7 +147,7 @@ export const DISCORD_READ_INPUT: CommandInput = {
   forms: [
     {
       words: [],
-      summary: "A chat's latest messages, oldest first, sending nothing",
+      summary: "One chat's messages by its name (a DM with someone, a group or \"<server> #<channel>\"): who said what and when, oldest first. Use it to summarise a conversation",
       positionals: [],
       flags: [
         DISCORD_ACCOUNT,
@@ -885,7 +885,7 @@ export const DISCORD_SEARCH_USAGE = [
 export const DISCORD_SEARCH_INPUT: CommandInput = {
   forms: [{
     words: [],
-    summary: "Search a whole server with Discord's own search",
+    summary: "Search a whole server for words: each hit's time, channel, author and text. To find what was said in a server, not discordRead; --from and --channel narrow it",
     positionals: [],
     flags: [
       DISCORD_ACCOUNT,

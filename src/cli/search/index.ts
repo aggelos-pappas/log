@@ -25,7 +25,7 @@ export const SEARCH_INPUT: CommandInput = {
   forms: [
     {
       words: [],
-      summary: "Search every conversation by keyword and meaning at once, fused with reciprocal rank fusion",
+      summary: "Find where someone talked about something: every conversation by keyword and meaning, before reading whole chats; --with, --platform and --after narrow it",
       positionals: [{ name: "query", kind: "string", required: true, description: "What to look for, in plain words" }],
       flags: [{ name: "limit", kind: "integer", min: 1, max: 100, description: "How many hits, default 10, at most 100" }, ...FILTERS, JSON_FLAG],
     },
