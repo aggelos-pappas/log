@@ -24,6 +24,7 @@ export type StateScope =
   | 'inboxLabels'
   | 'hermesView'
   | 'handRolled'
+  | 'turnStart'
 
 export interface StateRow<T> {
   body: T

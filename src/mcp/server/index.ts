@@ -22,7 +22,7 @@ import { accountOfArgv, appendProgress, busyJob, cancelRequested, DEFAULT_WAIT_M
 import type { JobRecord } from "../jobs/index.ts";
 import { oauthFromEnv } from "../oauth/index.ts";
 import type { OAuthServer } from "../oauth/index.ts";
-import { activePlay, currentToolName, FLOW_LIVE_TOOL, forgetPlayScope, gatedToolOf, guideAnswer, handleOf, PLAY_HANDLE_FIELD, playMeta, playRefusal, actingAsOwnerTools, capabilityPlayGateMode, folderOfPlay, namedByPlay, platformOfTool, playGateMode, stepToolsOf, playScope, processPlayScope, renamedTool, touchPlay, withoutHandle, withPlayFooter, withRenamedNote } from "./helpers/index.ts";
+import { activePlay, capResult, currentToolName, narrowingFlags, FLOW_LIVE_TOOL, forgetPlayScope, gatedToolOf, guideAnswer, handleOf, PLAY_HANDLE_FIELD, playMeta, playRefusal, actingAsOwnerTools, capabilityPlayGateMode, folderOfPlay, namedByPlay, platformOfTool, playGateMode, stepToolsOf, playScope, processPlayScope, renamedTool, touchPlay, withoutHandle, withPlayFooter, withRenamedNote } from "./helpers/index.ts";
 import type { PlayScope } from "./helpers/index.ts";
 import { isPlatform } from "../../cli/runner/helpers/index.ts";
 import { capabilityDeps } from "../../cli/capabilities/index.ts";
@@ -326,7 +326,8 @@ export async function runToolCall(
 export function withCallFooter(name: string, input: LogToolInput | undefined, result: CallToolResult, scope: PlayScope = processPlayScope()): CallToolResult {
   if (name === GUIDE_TOOL || name === REPORT_TOOL) return result;
   const target = name === CALL_TOOL ? resolveCall(catalog(COMMANDS, savedFlows()), withoutHandle(input)) : null;
-  return withPlayFooter(target?.ok ? target.tool : currentToolName(name), result, activePlay(scope, handleOf(input)));
+  const tool = target?.ok ? target.tool : currentToolName(name);
+  return withPlayFooter(tool, capResult(tool, result, narrowingFlags(commandOfTool(tool)?.form?.flags ?? [])), activePlay(scope, handleOf(input)));
 }
 
 async function withViewer(result: CallToolResult, input: LogToolInput | undefined): Promise<CallToolResult> {

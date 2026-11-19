@@ -2,6 +2,7 @@ import { claimChat, liveClaims, readActions, releaseChat } from "../../inbox/cla
 import { behindOf, resumeGap } from "../../inbox/store/index.ts";
 import type { ActionRecord, ChatClaim } from "../../inbox/claims/index.ts";
 import { lastWordOf, waitingOf } from "../../inbox/lastWord/index.ts";
+import { chatMessages } from "../../inbox/dbRead/index.ts";
 import type { LastWord } from "../../inbox/lastWord/index.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput, FlagSpec } from "../runner/types.ts";
@@ -18,7 +19,7 @@ export const INBOX_USAGE = [
   "       log inbox claims [--json]",
   "       log inbox resume --platform <p> --account <a> --by <who> [--json]",
   "       log inbox actions [--platform <p>] [--account <a>] [--chat <conversationId|handle>] [--limit <n>] [--json]",
-  "       log inbox waiting [--platform <p>] [--account <a>] [--limit <n>] [--oldest] [--json]",
+  "       log inbox waiting [--platform <p>] [--account <a>] [--limit <n>] [--tail <n>] [--oldest] [--json]",
   "       log inbox pending --reader <name> [--json]",
   "       log inbox quiet --minutes <n> --by <who> [--json]",
   "       log inbox ignore --platform <p> (--server <id> | --chat <id>) --by <who> [--undo] [--json]",
@@ -39,12 +40,13 @@ export const INBOX_INPUT: CommandInput = {
     { words: ["release"], effect: "write", summary: "Release this session's claim on a chat when it is done with it", positionals: [], flags: [PLATFORM, ACCOUNT, CHAT, JSON_FLAG] },
     { words: ["resume"], effect: "write", summary: "The owner's go-ahead after a refused catch-up: the account catches up again through its own session (rule 94), only when the owner says so", positionals: [], flags: [PLATFORM, ACCOUNT, { name: "by", kind: "string", required: true, description: "Who said to resume: the owner" }, JSON_FLAG] },
     {
-      words: ["waiting"], summary: "Who wrote last on every platform, from log.db in time order: the people waiting on a reply, and apart the ones who reacted to your last message",
+      words: ["waiting"], summary: "The people waiting on my reply, counts per platform (inbox stats), then reactions to my last message; --platform, --account narrow it",
       positionals: [],
       flags: [
         { name: "platform", kind: "enum", values: ["twitter", "discord", "slack", "instagram"], description: "Only this platform: twitter, discord, slack or instagram" },
         { name: "account", kind: "string", description: "Only this account" },
         { name: "limit", kind: "integer", min: 1, max: 1000, description: "How many per list, default 50, at most 1000" },
+        { name: "tail", kind: "integer", min: 0, max: 60, description: "Each chat's last n messages" },
         { name: "oldest", kind: "boolean", description: "Oldest first instead of newest first" },
         JSON_FLAG,
       ],
@@ -121,6 +123,42 @@ function claimLine(c: ChatClaim): string {
   return `  ${c.platform} ${c.account} ${c.with ? `@${c.with} ` : ""}${c.conversationId}  held by pid ${c.by} since ${c.claimedAt} until ${c.expiresAt}${c.eventId ? `  event ${c.eventId}` : ""}`;
 }
 
+export interface TailLine {
+  at: string;
+  fromMe: boolean;
+  from: string;
+  text: string;
+}
+
+export type ReadTail = (w: LastWord, n: number) => TailLine[];
+
+export const readTail: ReadTail = (w, n) =>
+  w.conversationIds
+    .flatMap((id) => chatMessages(w.platform, w.account, id, n))
+    .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
+    .slice(-n)
+    .map((m) => ({ at: m.at, fromMe: m.fromMe, from: m.from, text: m.text }));
+
+export function withTail(list: readonly LastWord[], n: number | undefined, read: ReadTail = readTail): LastWord[] {
+  if (n === undefined) return [...list];
+  return list.map((w) => {
+    const held = (w as LastWord & { messages?: { ms?: number; at: string }[] }).messages;
+    const messages = Array.isArray(held) ? [...held].sort((a, b) => (a.ms ?? Date.parse(a.at)) - (b.ms ?? Date.parse(b.at))).slice(held.length - Math.min(n, held.length)) : n ? read(w, n) : [];
+    return { ...w, messages } as LastWord;
+  });
+}
+
+export function waitingTotals(waiting: readonly LastWord[], followUps: readonly LastWord[]) {
+  const count = (keys: string[]) => keys.reduce<Record<string, number>>((all, k) => ({ ...all, [k]: (all[k] ?? 0) + 1 }), {});
+  return {
+    waiting: waiting.length,
+    followUps: followUps.length,
+    byPlatform: count(waiting.map((w) => w.platform)),
+    byKind: count(waiting.map((w) => w.kind)),
+    byMonth: count(waiting.map((w) => w.lastAt.slice(0, 7))),
+  };
+}
+
 function wordLine(w: LastWord): string {
   const who = w.kind === "group" ? `${w.with} (group)` : w.with;
   const how = w.followUp ? `they reacted ${w.theyReacted ?? ""} to your last message`.trim() : w.youReactedOnly ? "waiting on you (you only reacted)" : "waiting on you";
@@ -137,7 +175,7 @@ export const inboxCommand: Command = {
   name: "inbox",
   effect: "write",
   input: INBOX_INPUT,
-  summary: "Claim and release chats, list claims, read the action log and what the watchers heard, quiet the push",
+  summary: "Chat claims and their action log, who is waiting on a reply, what the watchers heard, quiet the push",
   args: "claim|release|claims|actions|resume|waiting|pending|quiet|ignore|ignored|labels|label [--label <l>] [--as <l>] [--server <id>] [--undo] [--reader <name>] [--minutes <n>] [--by <who>] [--platform <p>] [--account <a>] [--chat <id|handle>] [--event <id>] [--limit <n>] [--oldest]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(INBOX_INPUT));
@@ -228,14 +266,16 @@ ${INBOX_USAGE}` };
       const oldest = parsed.flags["oldest"] === true;
       const order = (list: LastWord[]) => (oldest ? [...list].reverse() : list).slice(0, limit);
       const { waiting, followUps } = waitingOf(lastWordOf({ platform: platform || undefined, account: str("account") || undefined }));
-      if (json) return { code: 0, stdout: JSON.stringify({ waiting: order(waiting), followUps: order(followUps), totals: { waiting: waiting.length, followUps: followUps.length } }, null, 2) };
+      const tail = numberOf(parsed, "tail");
+      if (json) return { code: 0, stdout: JSON.stringify({ waiting: withTail(order(waiting), tail), followUps: withTail(order(followUps), tail), totals: waitingTotals(waiting, followUps) }, null, 2) };
       const counts = PLATFORMS.map((p) => [p, waiting.filter((w) => w.platform === p).length] as const).filter(([, n]) => n).map(([p, n]) => `${p} ${n}`).join(", ");
+      const lines = (list: LastWord[]) => withTail(order(list), tail).flatMap((w) => [wordLine(w), ...((w as LastWord & { messages?: { at: string; fromMe?: boolean; fromOwner?: boolean; text: string }[] }).messages ?? []).map((m) => `       ${m.at.slice(0, 16)} ${m.fromMe || m.fromOwner ? "you" : "them"}: ${m.text.replace(/\s+/g, " ").slice(0, 200)}`)]);
       return {
         code: 0,
         stdout: [
           `log inbox waiting: ${waiting.length} waiting on a reply${counts ? ` (${counts})` : ""}, ${oldest ? "oldest" : "newest"} first, from log.db in time order:`,
-          ...order(waiting).map(wordLine),
-          ...(followUps.length ? [`${followUps.length} reacted to your last message, each a follow-up to send, not a reply they wait on:`, ...order(followUps).map(wordLine)] : []),
+          ...lines(waiting),
+          ...(followUps.length ? [`${followUps.length} reacted to your last message, each a follow-up to send, not a reply they wait on:`, ...lines(followUps)] : []),
         ].join("\n"),
       };
     }

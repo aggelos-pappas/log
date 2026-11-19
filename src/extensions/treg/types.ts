@@ -1,5 +1,10 @@
 export const TREG_TIMEOUT_MS = 180_000
 export const TREG_MAX_OUTPUT = 200_000
+export const TREG_HEDGE_DEFAULT_MS = 10_000
+export const TREG_HEDGE_MIN_MS = 2_000
+export const TREG_HEDGE_SAMPLE = 200
+export const TREG_HEDGE_REFRESH_MS = 10 * 60_000
+export const TREG_PRICE_KEEP_MS = 30 * 60_000
 
 export interface TregRun {
   ok: boolean
@@ -8,7 +13,7 @@ export interface TregRun {
   stderr: string
 }
 
-export type TregRunner = (args: string[], timeoutMs: number) => Promise<TregRun>
+export type TregRunner = (args: string[], timeoutMs: number, signal?: AbortSignal) => Promise<TregRun>
 
 export interface TregEndpoint {
   id: string
@@ -32,6 +37,7 @@ export interface TregClient {
   search: (query: string, limit: number) => Promise<TregRun>
   get: (id: string) => Promise<TregRun>
   call: (input: TregCallInput) => Promise<TregRun>
+  keptGet?: (id: string) => TregRun | null
 }
 
 export interface TregTrim {

@@ -1,9 +1,11 @@
+import http.client
 import importlib.util
 import json
 import os
 import sys
 import re
 import shutil
+import socket
 import sqlite3
 import subprocess
 import threading
@@ -11,6 +13,9 @@ import time
 from pathlib import Path
 
 HOOK_TIMEOUT_SECONDS = 20
+SERVICE_HOST = "127.0.0.1"
+SERVICE_CONNECT_SECONDS = 0.3
+SERVICE_ANSWER_SECONDS = 10
 EVENT_SCRIPT = ("scripts", "hooks", "event.ts")
 PUSH_SCRIPT = ("scripts", "hooks", "push.ts")
 HAND_ROLLED_SCRIPT = ("scripts", "hooks", "handRolled.ts")
@@ -94,11 +99,52 @@ def bun_command():
     return "bun"
 
 
+def service_port():
+    try:
+        return int(os.environ.get("LOG_CONTEXT_PORT", "").strip() or 47317)
+    except ValueError:
+        return 47317
+
+
+def context_of(raw):
+    try:
+        answer = json.loads(raw) if raw.strip() else {}
+    except ValueError:
+        return ""
+    context = answer.get("context") if isinstance(answer, dict) else None
+    return context if isinstance(context, str) else ""
+
+
+def ask_service(event, body):
+    if os.environ.get("LOG_CONTEXT_SERVICE", "").strip() == "off":
+        return None
+    try:
+        sock = socket.create_connection((SERVICE_HOST, service_port()), timeout=SERVICE_CONNECT_SECONDS)
+    except OSError:
+        return None
+    conn = http.client.HTTPConnection(SERVICE_HOST, service_port(), timeout=SERVICE_ANSWER_SECONDS)
+    conn.sock = sock
+    sock.settimeout(SERVICE_ANSWER_SECONDS)
+    try:
+        conn.request("POST", f"/hooks/{event}?host=hermes", body=body.encode("utf-8"), headers={"content-type": "application/json"})
+        response = conn.getresponse()
+        raw = response.read().decode("utf-8", errors="replace")
+        return context_of(raw) if response.status == 200 else None
+    except (OSError, http.client.HTTPException):
+        return ""
+    finally:
+        conn.close()
+
+
 def ask_log(event, payload):
-    return ask_script(EVENT_SCRIPT, [event], event, payload)
+    body = json.dumps({"hook_event_name": event, **payload, "log_sent_at": time.time() * 1000})
+    answered = ask_service(event, body)
+    if answered is not None:
+        return answered
+    return ask_script(EVENT_SCRIPT, [event], event, payload, body)
 
 
-def ask_script(parts, argv, event, payload):
+def ask_script(parts, argv, event, payload, body=None):
     root = log_root()
     script = root.joinpath(*parts)
     if not script.exists():
@@ -106,7 +152,7 @@ def ask_script(parts, argv, event, payload):
     try:
         run = subprocess.run(
             [bun_command(), str(script), *argv, "--host", "hermes"],
-            input=json.dumps({"hook_event_name": event, **payload}),
+            input=body if body is not None else json.dumps({"hook_event_name": event, **payload}),
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -116,14 +162,9 @@ def ask_script(parts, argv, event, payload):
         )
     except (OSError, subprocess.TimeoutExpired):
         return ""
-    if run.returncode != 0 or not run.stdout.strip():
+    if run.returncode != 0:
         return ""
-    try:
-        answer = json.loads(run.stdout)
-    except ValueError:
-        return ""
-    context = answer.get("context") if isinstance(answer, dict) else None
-    return context if isinstance(context, str) else ""
+    return context_of(run.stdout or "")
 
 
 def reader_of(session_id):
@@ -308,7 +349,18 @@ def pre_llm_call(session_id="", user_message="", conversation_history=None, is_f
     events = (["SessionStart"] if is_first_turn else []) + ["UserPromptSubmit"]
     payload = {"session_id": session_id or "", "prompt": user_message or "", "source": "startup"}
     setup = [] if mcp_configured() else [MCP_MISSING]
-    texts = setup + [ask_log(event, payload) for event in events] + [PUSH.take_held()]
+    asked = ["" for _ in events]
+
+    def ask(i, event):
+        asked[i] = ask_log(event, payload)
+
+    threads = [threading.Thread(target=ask, args=(i, event), daemon=True) for i, event in enumerate(events[1:], start=1)]
+    for thread in threads:
+        thread.start()
+    ask(0, events[0])
+    for thread in threads:
+        thread.join(HOOK_TIMEOUT_SECONDS)
+    texts = setup + asked + [PUSH.take_held()]
     text = "\n\n".join(t for t in texts if t)
     return {"context": text} if text else None
 
@@ -352,8 +404,73 @@ def transform_tool_result(tool_name="", args=None, result=None, session_id="", *
     return out if out != result else None
 
 
-def post_llm_call(**kwargs):
+def tool_calls_this_turn(conversation_history):
+    count = 0
+    for message in reversed(conversation_history or []):
+        if not isinstance(message, dict):
+            continue
+        if message.get("role") == "user":
+            break
+        if message.get("role") == "assistant":
+            count += len(message.get("tool_calls") or [])
+    return count
+
+
+def post_llm_call(session_id="", conversation_history=None, **kwargs):
     PUSH.end_turn()
+    payload = {"session_id": session_id or "", "tool_calls": tool_calls_this_turn(conversation_history)}
+    threading.Thread(target=ask_log, args=("Stop", payload), daemon=True).start()
+
+
+SCRIPT_TOOLS = re.compile(r"(^|_)(execute_code|terminal)$")
+SPILL_PATH = re.compile(r"[A-Za-z]:[\/][^\s'\"]*spillover[\/][\w.-]+|/[^\s'\"]*spillover/[\w.-]+")
+LOG_PIPE = re.compile(r"(?:^|[;&|(\s])log\s+([a-z][a-zA-Z]*)\s+([a-z][a-zA-Z]*)?[^\n|]*\|\s*(?:grep|rg|findstr|python\d?|py|jq|awk|sed|Select-String|ConvertFrom-Json)\b")
+LOG_ARGV = re.compile(r"\[\s*['\"]log['\"]\s*,\s*['\"]([a-z][a-zA-Z]*)['\"](?:\s*,\s*['\"]([a-z][a-zA-Z]*)['\"])?")
+LOG_RESULT_HEAD = "Browsers:"
+NARROWING = {
+    "discordChats": "--kind dm,group, --name <text>",
+    "inboxWaiting": "--tail <n>, --platform <p>, --limit <n>",
+}
+
+
+def tool_of(words):
+    first, second = (words + ("",))[:2]
+    return first + second[:1].upper() + second[1:] if second else first
+
+
+def spilled_log_result(text):
+    for path in SPILL_PATH.findall(text):
+        try:
+            with open(path, encoding="utf-8", errors="replace") as handle:
+                if handle.read(len(LOG_RESULT_HEAD)) == LOG_RESULT_HEAD:
+                    return True
+        except OSError:
+            continue
+    return False
+
+
+def parsed_log_tool(text):
+    for pattern in (LOG_PIPE, LOG_ARGV):
+        found = pattern.search(text)
+        if found and (pattern is LOG_PIPE or re.search(r"json\.loads?|re\.(search|findall)|\bgrep\b|split\(", text)):
+            return tool_of(tuple(g for g in found.groups() if g))
+    return "a log tool" if spilled_log_result(text) else ""
+
+
+def script_refusal(tool_name, args):
+    if not SCRIPT_TOOLS.search(tool_name or "") or not isinstance(args, dict):
+        return ""
+    text = re.sub(r"\bgit\s+log\b", "git", "\n".join(str(args.get(key) or "") for key in ("code", "command")))
+    tool = parsed_log_tool(text) if text.strip() else ""
+    if not tool:
+        return ""
+    flags = NARROWING.get(tool, "the narrowing flags in its schema")
+    return f"log has a flag for this: {tool} {flags}; don't parse log output with scripts. Call the log tool again with those flags (a log result over 40 KB comes back as a head that names them)."
+
+
+def pre_tool_call(tool_name="", args=None, **kwargs):
+    message = script_refusal(tool_name, args)
+    return {"action": "block", "message": message} if message else None
 
 
 def log_db():
@@ -492,6 +609,7 @@ def register(ctx):
     PUSH.ctx = ctx
     register_skills(ctx)
     ctx.register_hook("pre_llm_call", pre_llm_call)
+    ctx.register_hook("pre_tool_call", pre_tool_call)
     ctx.register_hook("transform_tool_result", transform_tool_result)
     ctx.register_hook("post_llm_call", post_llm_call)
     register_genui(ctx)

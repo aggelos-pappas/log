@@ -18,6 +18,7 @@ flowchart TB
     c_errors["errors"]
     c_graph["graph"]
     c_capture["capture"]
+    c_router["router"]
     c_runs["runs"]
     c_storage["storage"]
     c_relate["relate"]
@@ -249,6 +250,8 @@ flowchart TB
   cli --> c_capture
   mcp --> c_capture
   c_capture --> live
+  cli --> c_router
+  mcp --> c_router
   cli --> c_runs
   mcp --> c_runs
   cli --> c_storage

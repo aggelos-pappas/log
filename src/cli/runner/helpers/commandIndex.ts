@@ -43,6 +43,7 @@ export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "errors", platform: "any", module: "src/cli/errors/index.ts", exportName: "errorsCommand" },
   { name: "graph", platform: "any", module: "src/cli/errors/index.ts", exportName: "graphCommand" },
   { name: "capture", platform: "any", module: "src/cli/capture/index.ts", exportName: "captureCommand", longRunning: true },
+  { name: "router", platform: "any", module: "src/cli/router/index.ts", exportName: "routerCommand" },
   { name: "runs", platform: "any", module: "src/cli/runs/index.ts", exportName: "runsCommand" },
   { name: "storage", platform: "any", module: "src/cli/storage/index.ts", exportName: "storageCommand" },
   { name: "relate", platform: "any", module: "src/cli/relate/index.ts", exportName: "relateCommand" },

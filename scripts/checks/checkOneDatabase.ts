@@ -34,6 +34,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'scripts/fbk/tryAccount.ts': { writes: 1, kind: 'capture' },
   'scripts/media/personaPictures.ts': { writes: 1, kind: 'dataset' },
   'scripts/useCases/benchRouter.ts': { writes: 1, kind: 'dataset' },
+  'scripts/useCases/evalSkillRouter.ts': { writes: 1, kind: 'dataset' },
   'src/agentHooks/opencode/client.ts': { writes: 1, kind: 'repo' },
   'src/agentHooks/hermes/client.ts': { writes: 1, kind: 'repo' },
   'src/agentHooks/harness/client.ts': { writes: 1, kind: 'session' },

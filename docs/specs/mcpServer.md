@@ -60,6 +60,12 @@ Every tool the server lists carries `anthropic/maxResultSizeChars` in its `_meta
 
 Checked by: code and SubQ
 
+### REQ-MCP-26: Every tool result is capped at 40 KB with the flags that narrow it
+
+`withCallFooter` passes every tool's result through `capResult`: over `RESULT_CAP_BYTES` (40 KB) of text or structured content, the answer becomes its head (counts and the first rows of each list, or its first lines) plus one line naming the tool's narrowing flags (`narrowingFlags`), so a host never spills a log result to a file for the agent to parse with a script.
+
+Checked by: code and SubQ
+
 ### REQ-MCP-09: The use-case review asks SubQ whether the use cases are stale, when run
 
 Run by hand (`bun run check:useCases`), never in a commit, push or CI (rule 170), `check:useCases` reads the latest Claude Code session for the repo (the owner's asks and the tools called) and asks SubQ, for every use case page, whether it is still current, stale or should move, and whether the session did repeatable work no page covers. A stale or misplaced page, or uncovered work, stops the commit unless that page, or a new page, is staged. A commit that stages only the landing site (`site/`) and the commit log (`log.md`, `log/<date>.md`) isn't reviewed (`siteOnly`): site work is never a use case (the owner, 2026-11-06).

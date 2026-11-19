@@ -1,6 +1,6 @@
 import { noteProviderAnswer, withCreditNote } from '../../../billing/balance/helpers/answers'
 import { saveVectors, vectorsFor } from '../../../inbox/store/index'
-import { JINA_DIMENSIONS, JINA_EMBED_MODEL, JINA_RERANK_MODEL } from '../types'
+import { JINA_BATCHES_AT_ONCE, JINA_DIMENSIONS, JINA_EMBED_MODEL, JINA_RERANK_MODEL } from '../types'
 import type { AiEmbedder } from '../types'
 
 async function call(path: string, key: string, body: unknown): Promise<Record<string, unknown>> {
@@ -28,13 +28,19 @@ export function jinaEmbedder(key = process.env.JINA_API_KEY ?? '', batch = 256):
       const held = vectorsFor(JINA_EMBED_MODEL, JINA_DIMENSIONS, texts)
       const missing = [...new Set(texts.filter((_, i) => !held[i]))]
       const made = new Map<string, number[]>()
-      for (let start = 0; start < missing.length; start += batch) {
-        const slice = missing.slice(start, start + batch)
-        const answer = await call('embeddings', key, { model: JINA_EMBED_MODEL, task: 'text-matching', dimensions: JINA_DIMENSIONS, input: slice })
-        const data = (answer.data as { index: number; embedding: number[] }[]).sort((a, b) => a.index - b.index)
-        data.forEach((d, i) => made.set(slice[i], d.embedding))
-        saveVectors(JINA_EMBED_MODEL, JINA_DIMENSIONS, data.map((d, i) => ({ text: slice[i], vector: d.embedding })))
+      const slices: string[][] = []
+      for (let start = 0; start < missing.length; start += batch) slices.push(missing.slice(start, start + batch))
+      let next = 0
+      const worker = async () => {
+        while (next < slices.length) {
+          const slice = slices[next++]
+          const answer = await call('embeddings', key, { model: JINA_EMBED_MODEL, task: 'text-matching', dimensions: JINA_DIMENSIONS, input: slice })
+          const data = (answer.data as { index: number; embedding: number[] }[]).sort((a, b) => a.index - b.index)
+          data.forEach((d, i) => made.set(slice[i], d.embedding))
+          saveVectors(JINA_EMBED_MODEL, JINA_DIMENSIONS, data.map((d, i) => ({ text: slice[i], vector: d.embedding })))
+        }
       }
+      await Promise.all(Array.from({ length: Math.min(JINA_BATCHES_AT_ONCE, slices.length) }, worker))
       return texts.map((text, i) => (held[i] ? Array.from(held[i]!) : made.get(text)!))
     },
     async rerank(query, documents) {

@@ -39,6 +39,7 @@ import { transcribeCommand } from "../transcribe/index.ts";
 import { pollCommand } from "../poll/index.ts";
 import { proxyCommand } from "../proxy/index.ts";
 import { readCommand } from "../read/index.ts";
+import { routerCommand } from "../router/index.ts";
 import { runsCommand } from "../runs/index.ts";
 import { storageCommand } from "../storage/index.ts";
 import { relateCommand } from "../relate/index.ts";
@@ -107,6 +108,7 @@ export const COMMANDS: Command[] = [
   errorsCommand,
   graphCommand,
   captureCommand,
+  routerCommand,
   runsCommand,
   storageCommand,
   relateCommand,

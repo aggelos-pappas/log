@@ -7,7 +7,7 @@ import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { DISCORD_PLATFORM } from "../../discord/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
-import { attachmentLines, discordDeps, discordInboxMessageOf, filesOfStored, storedAttachmentsOf, toInboxOf, ServerTalks, SERVER_TALK_MS, UNTRUSTED_FILE_LINE } from "./index.ts";
+import { attachmentLines, discordDeps, forgetServerLists, discordInboxMessageOf, filesOfStored, storedAttachmentsOf, toInboxOf, ServerTalks, SERVER_TALK_MS, UNTRUSTED_FILE_LINE } from "./index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
 import { chatEvents } from "../../inbox/store/index.ts";
 import { takePending } from "../../inbox/watch/index.ts";
@@ -77,6 +77,37 @@ describe("log discord session check", () => {
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["discordOne:chats"]);
     expect(r.out).toContain("1000000000000000001  group  log  (QuietSparrow, Jon)");
+  });
+
+  test("chats --kind keeps only dms and groups, and --name finds a typo'd name in one call", async () => {
+    const chats = [
+      { id: "1000000000000000001", kind: "group", name: "build crew", members: ["grace_ships", "linus_k"] },
+      { id: "1000000000000000002", kind: "dm", name: "linus_k", members: ["linus_k"] },
+      { id: "1000000000000000003", kind: "channel", name: "demo server #general", members: [] },
+    ];
+    const kinds = await run(["discord", "chats", "--account", "discordOne", "--kind", "dm,group", "--json"], { answer: { ok: true, loginState: "loggedIn", chats }, refreshed: null });
+    expect(JSON.parse(kinds.out)).toMatchObject({ of: 3, chats: [{ kind: "group" }, { kind: "dm" }] });
+    const named = await run(["discord", "chats", "--account", "discordOne", "--kind", "dm", "--name", "lnius_k"], { answer: { ok: true, loginState: "loggedIn", chats }, refreshed: null });
+    expect(named.out).toContain("has 1 of 3 chat(s) matching");
+    expect(named.out).toContain("1000000000000000002  dm     linus_k");
+    const wrong = await run(["discord", "chats", "--account", "discordOne", "--kind", "server"], { answer: { ok: true, loginState: "loggedIn", chats }, refreshed: null });
+    expect(wrong.code).toBe(1);
+  });
+
+  test("search reads the server list once and reuses it for the next searches", async () => {
+    forgetServerLists();
+    const calls: string[] = [];
+    const engine = (_account: unknown, spec: { action: string }) => {
+      calls.push(spec.action);
+      if (spec.action === "servers") return { answer: { ok: true, servers: [{ id: "1000000000000000009", name: "demo server", owner: false }] }, refreshed: null };
+      return { answer: { ok: true, serverId: "1000000000000000009", total: 0, messages: [], places: {} }, refreshed: null };
+    };
+    for (const query of ["ship it", "release"]) {
+      const code = await runCli(["discord", "search", "--account", "discordOne", "--server", "demo server", "--query", query], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: engine as never });
+      expect(code).toBe(0);
+    }
+    expect(calls).toEqual(["servers", "search", "search"]);
+    forgetServerLists();
   });
 
   test("send without --live is a dry run and calls nothing", async () => {
