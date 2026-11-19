@@ -38,6 +38,15 @@ Not `@everyone`, `@here`, role mentions or the owner's name typed in text. One-t
 
 The whole channel is never stored: only the window.
 
+### Stored on arrival, judged on arrival
+
+The message that decided the 19 Nov ban was sent and deleted within moments, so a capture can't wait for a session to read the channel.
+
+- **Write first.** Inside a capture, each `MESSAGE_CREATE` is written to log.db the moment the gateway pushes it, before media is fetched, before it is judged and before it reaches a session. A message deleted a second later is still kept: text, author, time and attachment metadata.
+- **Judge on arrival.** The judge (#189, #190) runs on each captured message as it is stored, in the watcher. Its verdict (`clean`, `suspect`, `held`), the rules or model that fired and the score are saved on the row (`judgeVerdict`, `judgeHits`, `judgedAt`). It is never run again later, so the record shows what the judge saw at the time.
+- **Quick deletes.** A captured message deleted within `QUICK_DELETE` of being sent (default 120 seconds) is marked `deletedQuickly`. If the judge also flagged it, the owner is told at once: "<who> sent and deleted a message the judge flagged in <server #channel>; it's kept in capture <id>". A message sent and then quickly removed is how a bait is used, so the pattern is worth a line on its own.
+- **The order of the record.** `captureExport` lists quick deletes first: message id, author, sent and deleted times, the text as it arrived and the judge's verdict. Then it gives the full window.
+
 ### When it closes
 
 The capture stays open while the conversation involves the owner, and closes when either:
@@ -62,7 +71,7 @@ When a read or a subscription answers `Missing Access` (50001) or `Unknown Chann
 ## Storage (log.db)
 
 - `captures`: `id`, `platform`, `account`, `channelId`, `serverId`, `openedBy` (message id), `openedAt`, `lastActivityAt`, `closedAt`, `closeReason` (`quiet`, `cap`, `lostAccess`, `owner`), `participants` (json), `previousId`.
-- `messages` gains `captureId` (nullable), `deletedAt` (nullable) and `firstText` (the text when first seen).
+- `messages` gains `captureId` (nullable), `deletedAt` (nullable), `firstText` (the text when first seen), `deletedQuickly`, and the judge's verdict on arrival: `judgeVerdict`, `judgeHits`, `judgedAt`.
 - `messageEdits`: `messageId`, `at`, `text`.
 
 Captured messages are ordinary rows in `messages`, so `search`, `discordRead`, `voice` and the judge see them with no change. A capture is kept for `CAPTURE_KEEP` (default 90 days) unless the owner pins it.
@@ -100,13 +109,16 @@ Discord is first, since that's where it happened.
 | `Missing Access` mid-capture | it closes with `lostAccess`, and every stored message stays readable |
 | a second watcher for the account | refused (rule 105); the one watcher holds the captures |
 | a capture holding a stealer paste | the judge holds it; it is stored but not shown |
+| a message sent then deleted 5 seconds later | stored with its text before the delete arrives, marked `deletedQuickly` |
+| a flagged message sent then deleted quickly | the owner gets the one-line alert, and `captureExport` lists it first |
+| the judge's verdict on a captured message | saved on the row when it arrives, and the same when read a day later |
 
 All of them run against a recorded gateway stream (fixtures), never a live server.
 
 ## Order
 
 1. Store `MESSAGE_UPDATE` and `MESSAGE_DELETE` for messages log already has, in every channel. This is small and would have kept the edits on 19 Nov.
-2. Captures: open, record, close, and the `captures` and `messageEdits` tables.
+2. Captures: open, record, close, write each message on arrival, judge it there, and the `captures` and `messageEdits` tables.
 3. The REST read of the messages before the mention.
 4. The channel subscription, after a live check (open question 1).
 5. `captureRead`, `captureExport` and the inbox lines.
