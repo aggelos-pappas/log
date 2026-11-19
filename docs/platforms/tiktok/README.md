@@ -14,7 +14,7 @@ Made by `log new platform tiktok`. TikTok is a platform of its own: every comman
 
 ## Reads, with no browser
 
-TikTok Studio's own calls, recorded from a real post (`~/.logCli/runs/inspect/20261117T052642_deepman_2`) and answered without TikTok's page signatures (`X-Bogus`, `_signature`): the reads need only the account's cookies, its `tt-csrf-token` and its `msToken`.
+TikTok Studio's own calls, recorded from a real post (`~/.logCli/runs/inspect/20261117T052642_tiktokAccount`) and answered without TikTok's page signatures (`X-Bogus`, `_signature`): the reads need only the account's cookies, its `tt-csrf-token` and its `msToken`.
 
 | Command | Calls, in order | TikTok's answer decides |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ TikTok Studio's own calls, recorded from a real post (`~/.logCli/runs/inspect/20
 
 ## Posting and deleting, with no browser
 
-Recorded from a real post and a real delete in TikTok Studio, then sent the same way without the page. TikTok accepted both without its page signatures (`X-Bogus`, `_signature`) or the ticket-guard headers (tested 2026-11-18 on deepman_2: a 73 KB clip posted in 3 s, deleted in 1 s).
+Recorded from a real post and a real delete in TikTok Studio, then sent the same way without the page. TikTok accepted both without its page signatures (`X-Bogus`, `_signature`) or the ticket-guard headers (tested 2026-11-18 on tiktokAccount: a 73 KB clip posted in 3 s, deleted in 1 s).
 
 | Command | Calls, in order | TikTok's answer decides |
 | --- | --- | --- |
