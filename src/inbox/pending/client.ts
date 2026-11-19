@@ -2,6 +2,7 @@ import { inboxTextWithVoiceNotes } from '../../media/voiceNotes/index'
 import { claimContext } from '../claims/index'
 import { chatMessages } from '../dbRead/index'
 import { withoutIgnored } from '../ignore/index'
+import { heldText, judgeText, judgedMessages } from '../judge/index'
 import type { DbMessage } from '../dbRead/types'
 import { inboxContext, localTime, storedInboxContext, takeAlerts, takePending, twitterAccounts } from '../watch/index'
 import type { InboxMessage } from '../watch/types'
@@ -26,6 +27,8 @@ function safeRead(read: ChatRead, m: InboxMessage): DbMessage[] {
 }
 
 function rowText(r: DbMessage): string {
+  const judged = r.fromMe ? null : judgeText(r.text ?? '')
+  if (judged?.verdict === 'held') return heldText(judged, (r.text ?? '').length)
   const text = r.text || (r.attachments?.length ? `[${r.attachments.map((a) => a.name).join(', ')}]` : '(no text)')
   return text.replace(/\s+/g, ' ').slice(0, 240)
 }
@@ -62,9 +65,10 @@ export function behindLine(behind: readonly InboxMessage[]): string | null {
 
 export function readPending(reader: string, options: { stored?: boolean; read?: ChatRead } = {}): PendingRead {
   const alerts = takeAlerts(reader)
-  const messages = withoutIgnored(takePending(reader)).map((m) => ({ ...m, text: inboxTextWithVoiceNotes(m) }))
+  const judged = judgedMessages(withoutIgnored(takePending(reader)).map((m) => ({ ...m, text: inboxTextWithVoiceNotes(m) })))
+  const messages = judged.messages
   const { fresh, behind, conversations } = againstTheDb(messages, options.read)
   const loud = alerts.length ? [ONE_PROCESS_LINE, ...alerts].join('\n') : ''
-  const text = [loud, inboxContext(fresh), ...conversations, behindLine(behind), claimContext(fresh), options.stored ? storedInboxContext(twitterAccounts()) : null].filter(Boolean).join('\n\n')
+  const text = [loud, judged.alerts.join('\n'), inboxContext(fresh), ...conversations, behindLine(behind), claimContext(fresh), options.stored ? storedInboxContext(twitterAccounts()) : null].filter(Boolean).join('\n\n')
   return { reader, messages, alerts, text: text || null }
 }
