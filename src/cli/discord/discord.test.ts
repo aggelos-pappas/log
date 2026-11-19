@@ -121,6 +121,41 @@ describe("log discord session check", () => {
     }
   });
 
+  test("a line waits while they are typing, then goes out once they stop", async () => {
+    const saved = { ...discordDeps };
+    let waits = 0;
+    discordDeps.wait = async () => void waits++;
+    discordDeps.now = () => "2026-11-03T19:23:36.000Z";
+    discordDeps.incoming = () => [];
+    discordDeps.typing = () => (waits >= 1 && waits < 4 ? ["7"] : []);
+    try {
+      const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one\ntwo", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1481513072660185149", at: "2026-11-03T19:24:13.300Z" }, refreshed: null });
+      expect(r.code).toBe(0);
+      expect(r.calls).toEqual(["discordOne:send", "discordOne:send"]);
+      expect(waits).toBeGreaterThan(1);
+    } finally {
+      Object.assign(discordDeps, saved);
+    }
+  });
+
+  test("still typing at the limit holds the rest and says so", async () => {
+    const saved = { ...discordDeps };
+    let waits = 0;
+    discordDeps.wait = async () => void waits++;
+    discordDeps.now = () => "2026-11-03T19:23:36.000Z";
+    discordDeps.incoming = () => [];
+    discordDeps.typing = () => (waits ? ["7"] : []);
+    try {
+      const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one\ntwo\nthree", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1481513072660185149", at: "2026-11-03T19:24:13.300Z" }, refreshed: null });
+      expect(r.code).toBe(1);
+      expect(r.calls).toEqual(["discordOne:send"]);
+      expect(r.out).toContain(">>> STILL TYPING");
+      expect(r.out).toContain("  two");
+    } finally {
+      Object.assign(discordDeps, saved);
+    }
+  });
+
   test("delete without --live reads the messages and deletes nothing", async () => {
     const r = await run(["discord", "delete", "--account", "discordOne", "--channel", "1434928149904228392", "--message", "1566872902840619151,1566872961531777095"], { answer: { ok: true, loginState: "loggedIn", messages: [{ id: "1566872902840619151", fromMe: true, text: "lad im skint again" }, { id: "1566872961531777095", fromMe: false, text: "theirs" }] }, refreshed: null });
     expect(r.code).toBe(0);
