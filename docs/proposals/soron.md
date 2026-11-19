@@ -83,6 +83,47 @@ Captured messages are ordinary rows in `messages`, so `search`, `discordRead`, `
 - **`captureExport` { id }:** a markdown record with message ids, authors, UTC times, the edit history and deletions, for an appeal or a report. Read-only; it sends nothing.
 - **Report view (#196):** a capture is drawn as a timeline, with edits and deletions marked.
 
+## Where a message was said: DM, group or server channel
+
+A capture is only useful if every reader can tell where it happened. Today search can't: a search chunk (`Chunk` in `src/search/conversations/types.ts`) carries `with[]` and nothing else, and `log search` prints every hit as `discord <account> with @a, @b, …`. On 19 Nov the #general hits came back as "with" 76 names, with no server or channel, and read the same as a DM. Whether something was said to the owner alone, in a group of five, or in a server of thousands changes what it means.
+
+### One place, every platform
+
+Every chat already has `kind`, `name` and `serverId` in log.db's `chats` table. Search, captures, the inbox lines and `voice` read **one** description of a chat from it:
+
+| Platform | Kinds |
+| --- | --- |
+| Discord | `dm`, `group` (group DM), `channel` (a server's text channel), `thread`, `forumPost` |
+| Slack | `dm`, `group` (multi-person DM), `channel` (in a workspace) |
+| X | `dm`, `group` (X Chat group), `replies` (a reply thread under a post) |
+| Instagram | `dm`, `group` |
+| Reddit | `dm`, `post` (a post's comments in a subreddit) |
+
+The description is `{ platform, account, kind, server, channel, with }`. `server` is the Discord server, Slack workspace or subreddit, and `channel` is the channel, thread or post title. `with` is the people in a `dm` or `group` only, never a server's member list.
+
+### What changes
+
+- **Each search chunk and hit** carries the chat's `kind`, `server` and `channel` along with `with`.
+- **How a hit reads:**
+  - `discord channel Scraping Enthusiasts #general` for a server channel;
+  - `discord group (ada, linus, grace)` for a group DM;
+  - `discord dm @ada` for a DM;
+  - `slack channel <workspace> #general`, `x replies under "<post>"`.
+- **New search filters:** `kind` (`dm`, `group`, `channel`, `thread`…), `server` and `channel`, so "what did they say about me in that server" searches only that server's channels, and "what did ada say to me" searches only the DM.
+- **Ranking:** a hit in a DM or a small group counts as said to the owner. A hit in a big channel is said in front of others; that matters to tone and to evidence.
+- **Captures** (above) store the same description on the capture, so an export reads "in <server> #general, 412 members" rather than a list of names.
+- **`voice`** already picks how the owner writes by chat. It reads `kind` from the same place, so a reply drafted for a server channel is gated against how he writes in channels, not in DMs.
+
+### Tests
+
+| Case | Expect |
+| --- | --- |
+| a hit in a Discord server channel | reads `discord channel <server> #<channel>`, with no member list |
+| a hit in a group DM and one in a DM | `group (…)` and `dm @…`, different |
+| `search` { kind: "dm" } | no channel or group hits |
+| `search` { server: "Scraping Enthusiasts" } | only that server's channels |
+| the same check for Slack, X, Instagram and Reddit | each platform's kinds map as in the table |
+
 ## The judge and privacy
 
 - Every captured message goes through the judge (#189, #190) like any pushed message. A held capture is stored but withheld from sessions the same way.
@@ -118,12 +159,13 @@ All of them run against a recorded gateway stream (fixtures), never a live serve
 ## Order
 
 1. Store `MESSAGE_UPDATE` and `MESSAGE_DELETE` for messages log already has, in every channel. This is small and would have kept the edits on 19 Nov.
-2. Captures: open, record, close, write each message on arrival, judge it there, and the `captures` and `messageEdits` tables.
-3. The REST read of the messages before the mention.
-4. The channel subscription, after a live check (open question 1).
-5. `captureRead`, `captureExport` and the inbox lines.
-6. The view in #196.
-7. Slack, then X.
+2. Where it was said: `kind`, `server` and `channel` on every search chunk and hit, the new filters, and the readable hit line. **Built in this PR.** Left for later: log.db keeps no name for the server channels it holds (12 today), so they read `server <id> (name not kept)` until the watcher stores the channel and server names, and ranking by kind isn't built.
+3. Captures: open, record, close, write each message on arrival, judge it there, and the `captures` and `messageEdits` tables.
+4. The REST read of the messages before the mention.
+5. The channel subscription, after a live check (open question 1).
+6. `captureRead`, `captureExport` and the inbox lines.
+7. The view in #196.
+8. Slack, then X.
 
 ## Open questions
 

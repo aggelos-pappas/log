@@ -1,17 +1,17 @@
 import { twitterAccounts } from "../../inbox/watch/client.ts";
 import { platformStateRoot } from "../../directApi/engine/index.ts";
 import { discordGate, findDiscordAccount } from "../../discord/account/session/index.ts";
-import { benchmark, buildIndex, linearScan, loadConversations, localEmbedder, openIndex, saveConversations, search, twitterConversationOf, updateIndex } from "../../search/conversations/index.ts";
+import { benchmark, buildIndex, chunkPlace, linearScan, placeFromBox, whereSaid, loadConversations, localEmbedder, openIndex, saveConversations, search, twitterConversationOf, updateIndex } from "../../search/conversations/index.ts";
 import type { Conversation, ConversationAttachment, Embedder, SearchHit } from "../../search/conversations/index.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandInput } from "../runner/types.ts";
 import { openTwitterAccount } from "../twitter/helpers/account.ts";
 
 export const SEARCH_USAGE = [
-  "Usage: log search \"<query>\" [--limit <n>] [--platform <p>] [--account <a>] [--with <handle>] [--after <YYYY-MM-DD>] [--json]",
-  "       log search index [--platform <twitter|discord>] [--account <a>] [--saved] [--rebuild]   (only the chunks that are new or changed are embedded, and the ones gone are removed, so the index stays deduplicated; --rebuild embeds everything again. --saved indexes the conversations already kept, reading nothing; otherwise reads every conversation through the platform's engine: X's DMs with X Chat decrypted with the saved PIN, and every Discord DM and group (its whole history, up to 20,000 messages each), keeps them in ~/.logCli/conversations, and builds the keyword and meaning indexes in ~/.logCli/search)",
+  "Usage: log search \"<query>\" [--limit <n>] [--platform <p>] [--account <a>] [--with <handle>] [--after <YYYY-MM-DD>] [--kind <kind>] [--server <s>] [--channel <c>] [--json]",
+  "       log search index [--platform <twitter|discord>] [--account <a>] [--saved] [--rebuild]   (only new or changed chunks are embedded and gone ones removed; --rebuild embeds everything again. --saved indexes the conversations already kept, reading nothing; otherwise reads every conversation through the platform's engine: X's DMs with X Chat decrypted with the saved PIN, and every Discord DM and group (its whole history, up to 20,000 messages each), keeps them in log.db, and builds the keyword and meaning indexes in ~/.logCli/search)",
   "       log search bench [--rounds <n>]   (times realistic queries on the built index, cold and warm, and prints p50, p95 and p99 beside a plain linear scan)",
-  "Hybrid search across every conversation: BM25 keyword ranking (bm25s) and meaning ranking (verso-db HNSW over local all-MiniLM-L6-v2 embeddings) run in parallel and are fused with reciprocal rank fusion. Each hit names the conversation, who it was with, when, and the messages it covers.",
+  "Hybrid search across every conversation: BM25 keyword ranking (bm25s) and meaning ranking (verso-db HNSW over local all-MiniLM-L6-v2 embeddings) run in parallel and are fused with reciprocal rank fusion. Each hit names where it was said (DM, group or channel), when, and the messages it covers.",
 ].join("\n");
 
 const FILTERS = [
@@ -19,6 +19,9 @@ const FILTERS = [
   { name: "account", kind: "string", description: "Only this account's conversations" },
   { name: "with", kind: "string", description: "Only conversations with this handle" },
   { name: "after", kind: "string", format: "date", description: "Only chunks from this day on, YYYY-MM-DD" },
+  { name: "kind", kind: "string", description: "dm, group, channel, thread, forumPost, replies, post" },
+  { name: "server", kind: "string", description: "Only this server, workspace or subreddit" },
+  { name: "channel", kind: "string", description: "Only this channel, thread or post" },
 ] as const;
 
 export const SEARCH_INPUT: CommandInput = {
@@ -63,6 +66,7 @@ function discordConversationOf(account: string, c: DiscordExported): Conversatio
     conversationId: c.id,
     box: c.name ? `${c.kind} ${c.name}` : c.kind,
     with: c.members,
+    place: placeFromBox("discord", c.name ? `${c.kind} ${c.name}` : c.kind, c.id),
     messages: c.messages.map((m) => ({ id: m.id, at: m.at, from: m.from, fromMe: m.fromMe, text: m.text, ...(m.attachments?.length ? { attachments: m.attachments } : {}) })),
   };
 }
@@ -96,7 +100,7 @@ async function indexDiscord(context: CommandContext, only: string | undefined, l
 function hitLine(hit: SearchHit): string {
   const c = hit.chunk;
   const ranks = [hit.keywordRank ? `keyword #${hit.keywordRank}` : null, hit.meaningRank ? `meaning #${hit.meaningRank}` : null].filter(Boolean).join(", ");
-  return [`  ${hit.rank}. ${c.platform} ${c.account} with @${c.with.join(", @")} · ${c.at ?? "?"} · ${ranks} · conversation ${c.conversationId}`, ...c.text.split("\n").map((l) => `     ${l.slice(0, 220)}`)].join("\n");
+  return [`  ${hit.rank}. ${whereSaid(c.platform, chunkPlace(c), c.with, c.account)} · ${c.account} · ${c.at ?? "?"} · ${ranks} · conversation ${c.conversationId}`, ...c.text.split("\n").map((l) => `     ${l.slice(0, 220)}`)].join("\n");
 }
 
 async function indexAll(context: CommandContext, only: string | undefined, platform: string | undefined): Promise<{ lines: string[]; conversations: Conversation[] }> {
@@ -133,7 +137,7 @@ export const searchCommand: Command = {
   effect: "read",
   input: SEARCH_INPUT,
   summary: "Hybrid search across every conversation (BM25 keyword + vector meaning, fused with RRF), and building its indexes",
-  args: "\"<query>\"|index|bench [--limit <n>] [--platform <p>] [--account <a>] [--with <handle>] [--after <day>] [--json]",
+  args: "\"<query>\"|index|bench [--limit <n>] [--platform <p>] [--account <a>] [--with <handle>] [--after <day>] [--kind <kind>] [--server <s>] [--channel <c>] [--json]",
   async run(context, argv) {
     const [first] = argv;
     const sub = first === "index" || first === "bench" ? first : "query";
@@ -177,7 +181,7 @@ export const searchCommand: Command = {
         const after = typeof parsed.flags["after"] === "string" ? parsed.flags["after"] : undefined;
         const pick = (name: string) => (typeof parsed.flags[name] === "string" ? (parsed.flags[name] as string) : undefined);
         const started = performance.now();
-        const hits = await search(index, query, { limit, platform: pick("platform"), account: pick("account"), with: pick("with"), after });
+        const hits = await search(index, query, { limit, platform: pick("platform"), account: pick("account"), with: pick("with"), after, kind: pick("kind"), server: pick("server"), channel: pick("channel") });
         const ms = performance.now() - started;
         if (json) return { code: 0, stdout: JSON.stringify({ query, ms, hits }, null, 2) };
         return { code: 0, stdout: [`log search "${query}": ${hits.length} hit${hits.length === 1 ? "" : "s"} in ${ms.toFixed(1)} ms (keyword + meaning, RRF)`, ...hits.map(hitLine)].join("\n") };
