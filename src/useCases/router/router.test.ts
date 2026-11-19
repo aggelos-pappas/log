@@ -6,7 +6,7 @@ import { askAnswer } from '../../mcp/server/helpers/guideAnswer.ts'
 import { clearActivePlay, playScope } from '../../mcp/server/helpers/activePlay.ts'
 import { listUseCases } from '../../mcp/server/helpers/guides.ts'
 import { contentWords, folderOf, isPlatformFolder, loadToolFacts, outcomeOf, phrasesOf, platformsOf, playMatchText, rankTools, route, toolMatchText } from './client'
-import { asksToWrite, callOf, fillOf, stepRowsOf } from './helpers'
+import { asksToWrite, callOf, fillOf, stepRowsOf, writesToAccount } from './helpers'
 import { GOLDEN_FILE, TOOL_GOLDEN_FILE, TOOL_TEXT_BUDGET } from './types'
 import type { GoldenPrompt, ToolGolden } from './types'
 import { loadDenylist } from '../../privacy/scan/client.ts';
@@ -135,7 +135,7 @@ describe('the router text', () => {
 const toolGolden = JSON.parse(readFileSync(join(import.meta.dir, 'fixtures', TOOL_GOLDEN_FILE), 'utf8')) as ToolGolden[]
 
 describe('the tool ranking', () => {
-  test('the tool golden set ranks the expected tool first in 16 of 21 asks and in the top 3 in 19, and injects nothing for status questions or asks that are not about log', () => {
+  test('the tool golden set ranks the expected tool first in 17 of 22 asks and in the top 3 in 18, and injects nothing for status questions or asks that are not about log', () => {
     const facts = loadToolFacts()
     const names = new Set(facts.map((f) => f.name))
     for (const g of toolGolden) for (const name of g.expect) expect(names.has(name)).toBe(true)
@@ -144,14 +144,18 @@ describe('the tool ranking', () => {
     const first = asks.filter((g) => g.expect.includes(shown(g.prompt)[0] ?? '')).length
     const three = asks.filter((g) => shown(g.prompt).slice(0, 3).some((name) => g.expect.includes(name))).length
     expect(asks.length).toBeGreaterThanOrEqual(20)
-    expect(first).toBeGreaterThanOrEqual(16)
-    expect(three).toBeGreaterThanOrEqual(19)
+    expect(first).toBeGreaterThanOrEqual(17)
+    expect(three).toBeGreaterThanOrEqual(18)
     for (const g of toolGolden.filter((g) => !g.expect.length)) expect(shown(g.prompt)).toEqual([])
   })
 
-  test('the slow summary ask names discordRead with the person filled in, inside the budget', () => {
-    const { text, tools } = toolMatchText('can you summarise the discord convo with linus_k tell me about some opportunities on discord show me the stats', useCases)
-    expect(tools[0]).toBe('discordRead')
+  test('the slow summary ask names discordRead, filling the person only when a stored chat is linked to them, inside the budget', () => {
+    const prompt = 'can you summarise the discord convo with linus_k tell me about some opportunities on discord show me the stats'
+    const plain = toolMatchText(prompt, useCases)
+    expect(plain.tools[0]).toBe('discordRead')
+    expect(plain.text).toContain('discordRead { account, channel }')
+    expect(plain.text).not.toContain('linus_k')
+    const { text } = toolMatchText(prompt, useCases, loadToolFacts(), (word) => (word === 'linus_k' ? 'linus_k' : null))
     expect(text).toContain('discordRead { account, channel: "linus_k" }')
     expect(text).toContain("Use these; don't parse log output with scripts.")
     expect(text.length).toBeLessThanOrEqual(TOOL_TEXT_BUDGET)
@@ -166,7 +170,7 @@ describe('the tool ranking', () => {
       for (const name of shown) {
         const platform = facts.get(name)?.platform
         if (named.length && platform) expect(named).toContain(platform)
-        if (!asksToWrite(g.prompt)) expect(['read', 'browser']).toContain(facts.get(name)?.effect ?? '')
+        if (!asksToWrite(g.prompt)) expect(writesToAccount(facts.get(name)!)).toBe(false)
       }
     }
     expect(asksToWrite('reply to linus_k on discord')).toBe(true)
@@ -180,8 +184,10 @@ describe('the tool ranking', () => {
   })
 
   test('a call template fills the person, the server and the words from the ask', () => {
-    const fill = fillOf('search the buildspace server for launch week with grace_ships', new Set(['search', 'launch']), ['discord'])
+    const fill = fillOf('search the buildspace server for launch week with grace_ships', new Set(['search', 'launch']), ['discord'], (word) => (word === 'grace_ships' ? 'grace_ships' : null))
     expect(fill).toEqual({ platforms: ['discord'], server: 'buildspace', words: 'launch week with grace_ships', name: 'grace_ships' })
+    expect(fillOf('go through what i said to bme in that chat', new Set(), []).name).toBeUndefined()
+    expect(toolMatchText('go through what i said to bme in that chat and read it', useCases).text).not.toContain('bme')
     const facts = { name: 'discordSearch', platform: 'discord', summary: '', flags: ['account', 'server', 'query', 'from'], required: ['account', 'server', 'query'], notes: '', effect: 'read' }
     expect(callOf(facts, { platforms: [], server: 'buildspace', words: 'launch week' })).toBe('discordSearch { account, server: "buildspace", query: "launch week" }')
     expect(callOf({ ...facts, name: 'inboxWaiting', platform: null, flags: ['platform'], required: [] }, { platforms: ['discord'] })).toBe('inboxWaiting { platform: "discord" }')

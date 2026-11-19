@@ -23,6 +23,7 @@
   { "prompt": "read the reddit home feed", "expect": ["redditReadHome"] },
   { "prompt": "what is the weather in lisbon", "expect": [], "note": "not about log: nothing is injected" },
   { "prompt": "refactor the parser", "expect": [], "note": "building log itself: nothing is injected" },
+  { "prompt": "go through what I have been saying to that guy we were talking to, read it, then outline it in blocks: what we have and what I want to do now", "expect": [], "note": "live it named redditReadSubreddits, messagesRead { chat: \"bme\" }, redditReadPosts, slackChats: only generic words and no platform, so nothing is injected" },
   {"prompt": "how much longer will it take here?", "expect": [], "note": "a status or chat question to the agent, not an ask for a tool: nothing is injected"},
   {"prompt": "how long", "expect": [], "note": "a status or chat question to the agent, not an ask for a tool: nothing is injected"},
   {"prompt": "how long will this take", "expect": [], "note": "a status or chat question to the agent, not an ask for a tool: nothing is injected"},

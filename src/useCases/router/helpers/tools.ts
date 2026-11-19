@@ -1,4 +1,4 @@
-import { BM25_B, BM25_K1, NAME_FLAGS, PLATFORM_NAME_ALIASES, TOOL_PLATFORM_BONUS, PLATFORM_WORDS, STOP_WORDS, TOOL_FIELD_WEIGHTS, TOOL_KEEP_SHARE, TOOL_MIN_SCORE, TOOL_SUMMARY_CHARS, TOOL_GENERIC_WORDS, TOOL_RARE_DF, TOOL_READ_EFFECTS, TOOL_WRITE_WORDS, TOOL_STOP_WORDS, TOOL_SYNONYMS, TOOL_TEXT_BUDGET, TOOLS_SHOWN } from '../types'
+import { BM25_B, BM25_K1, NAME_FLAGS, PLATFORM_NAME_ALIASES, TOOL_PLATFORM_BONUS, PLATFORM_WORDS, STOP_WORDS, TOOL_FIELD_WEIGHTS, TOOL_KEEP_SHARE, TOOL_MIN_SCORE, TOOL_SUMMARY_CHARS, TOOL_GENERIC_WORDS, TOOL_RARE_DF, TOOL_READ_EFFECTS, TOOL_WRITE_WORDS, TOOL_STOP_WORDS, TOOL_SYNONYMS, TOOL_WEAK_WORDS, TOOL_TEXT_BUDGET, TOOLS_SHOWN } from '../types'
 import type { RoutableUseCase, ToolDoc, ToolFacts, ToolFill, ToolMatch } from '../types'
 
 export interface ToolTerms {
@@ -89,12 +89,16 @@ export function askTermsOf(prompt: string, terms: ToolTerms): string[] {
   return toolTermsOf(words.join(' '), terms).filter((w) => !generic.has(w))
 }
 
+export function writesToAccount(doc: Pick<ToolFacts, 'platform' | 'effect'>): boolean {
+  return doc.platform !== null && !TOOL_READ_EFFECTS.has(doc.effect)
+}
+
 export function asksToWrite(prompt: string): boolean {
   return (prompt.toLowerCase().match(/[a-z]+/g) ?? []).some((w) => TOOL_WRITE_WORDS.has(w))
 }
 
 export function specificEnough(index: ToolIndex, query: readonly string[], at: number): boolean {
-  const matched = [...new Set(query)].filter((term) => index.terms[at].has(term))
+  const matched = [...new Set(query)].filter((term) => !TOOL_WEAK_WORDS.has(term) && index.terms[at].has(term))
   return matched.length >= 2 || matched.some((term) => index.names[at].has(term) || (index.frequency.get(term) ?? 0) <= TOOL_RARE_DF)
 }
 
@@ -112,7 +116,9 @@ export function bm25(index: ToolIndex, query: readonly string[], at: number): nu
   return score
 }
 
-export function fillOf(prompt: string, known: ReadonlySet<string>, platforms: readonly string[]): ToolFill {
+export type ChatNameOf = (word: string) => string | null
+
+export function fillOf(prompt: string, known: ReadonlySet<string>, platforms: readonly string[], chatNameOf: ChatNameOf = () => null): ToolFill {
   const text = prompt.toLowerCase().replace(/https?:\/\/\S+/g, ' ')
   const fill: ToolFill = { platforms: [...platforms] }
   const search = /\bsearch\s+(?:the\s+|my\s+)?([a-z0-9_. -]+?)\s+(?:server\s+|discord\s+)?for\s+["\u201c]?([^"\u201d?.!,]+)/.exec(text)
@@ -124,7 +130,9 @@ export function fillOf(prompt: string, known: ReadonlySet<string>, platforms: re
   for (const m of text.matchAll(/\b(?:with|from|to|by)\s+@?([a-z0-9_.]+)/g)) {
     const word = m[1].replace(/\.+$/, '')
     if (word.length < 3 || STOP_WORDS.has(word) || PLATFORM_TERMS.has(word) || known.has(word)) continue
-    fill.name = word
+    const chat = chatNameOf(word)
+    if (!chat) continue
+    fill.name = chat
     break
   }
   return fill
@@ -150,14 +158,14 @@ export function callOf(doc: ToolFacts, fill: ToolFill): string {
   return `${doc.name} { ${parts.join(', ')} }`.replace('{  }', '{}')
 }
 
-export function rankToolsOver(prompt: string, index: ToolIndex, terms: ToolTerms, known: ReadonlySet<string>, limit: number = TOOLS_SHOWN, raw: string = prompt): ToolMatch[] {
+export function rankToolsOver(prompt: string, index: ToolIndex, terms: ToolTerms, known: ReadonlySet<string>, limit: number = TOOLS_SHOWN, raw: string = prompt, chatNameOf?: ChatNameOf): ToolMatch[] {
   const named = new Set(terms.platformsOf(terms.contentWords(prompt)))
   const query = askTermsOf(prompt, terms)
   if (!query.length || !index.docs.some((_, at) => specificEnough(index, query, at))) return []
-  const fill = fillOf(raw, known, [...named])
+  const fill = fillOf(raw, known, [...named], chatNameOf)
   const writes = asksToWrite(raw)
   const scored = index.docs
-    .map((doc, at) => ({ doc, score: (named.size && doc.platform && !named.has(doc.platform)) || (!writes && !TOOL_READ_EFFECTS.has(doc.effect ?? 'read')) ? 0 : bm25(index, query, at) * (doc.platform && named.has(doc.platform) ? 1 + TOOL_PLATFORM_BONUS : 1) }))
+    .map((doc, at) => ({ doc, score: (named.size && doc.platform && !named.has(doc.platform)) || (!writes && writesToAccount(doc)) || !specificEnough(index, query, at) ? 0 : bm25(index, query, at) * (doc.platform && named.has(doc.platform) ? 1 + TOOL_PLATFORM_BONUS : 1) }))
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score || a.doc.name.localeCompare(b.doc.name))
   const top = scored[0]?.score ?? 0

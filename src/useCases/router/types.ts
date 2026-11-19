@@ -165,9 +165,11 @@ export const TOOL_SYNONYMS: Readonly<Record<string, string>> = {
   latency: 'slow',
 }
 
-export const TOOL_STOP_WORDS: ReadonlySet<string> = new Set(['about', 'any', 'all', 'give', 'please', 'see', 'show', 'tell'])
+export const TOOL_STOP_WORDS: ReadonlySet<string> = new Set(['about', 'any', 'all', 'being', 'give', 'please', 'see', 'show', 'tell', 'were'])
 
-export const TOOL_GENERIC_WORDS: ReadonlySet<string> = new Set(['again', 'already', 'anything', 'continue', 'does', 'doing', 'done', 'eta', 'finish', 'finished', 'going', 'happen', 'happened', 'happening', 'here', 'long', 'longer', 'more', 'much', 'ok', 'okay', 'ready', 'status', 'stuck', 'take', 'taking', 'takes', 'there', 'time', 'update', 'whats', 'why', 'work', 'working', 'yet'])
+export const TOOL_WEAK_WORDS: ReadonlySet<string> = new Set(['check', 'find', 'list', 'look', 'read'])
+
+export const TOOL_GENERIC_WORDS: ReadonlySet<string> = new Set(['again', 'already', 'anything', 'been', 'block', 'blocks', 'continue', 'does', 'doing', 'done', 'eta', 'finish', 'finished', 'go', 'going', 'guy', 'happen', 'happened', 'happening', 'here', 'long', 'longer', 'more', 'much', 'now', 'ok', 'okay', 'outline', 'ready', 'saying', 'status', 'stuck', 'take', 'taking', 'takes', 'there', 'thing', 'through', 'time', 'update', 'want', 'whats', 'why', 'work', 'working', 'yet'])
 
 export const TOOL_RARE_DF = 3
 

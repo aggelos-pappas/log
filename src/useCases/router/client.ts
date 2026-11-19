@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { buildToolIndex, clearsToolBar, correctTypos, denseScores, rankToolsOver, toolDocsOf, toolsText, windowsOf } from './helpers'
-import type { ToolIndex } from './helpers'
+import type { ChatNameOf, ToolIndex } from './helpers'
 import { AMBIGUITY_BAND, DEFAULT_MENU_FLOOR, DEFAULT_THRESHOLD, DENSE_WEIGHT, MATCHES_SHOWN, MIN_PHRASE_WORDS, NOT_A_PROMPT, PLATFORM_BONUS, PLATFORM_FOLDERS, PLATFORM_WORDS, SHORT_PROMPT_WORDS, STOP_WORDS, TOOL_INDEX_FILE, TOOL_SYNONYMS, WORD_AMBIGUITY_BAND, WORD_MENU_FLOOR, WORD_THRESHOLD } from './types'
 import type { EmbedTexts, PlayMatch, RoutableUseCase, RouteContext, RouteDecision, RouteIndex, Thresholds, ToolFacts, ToolMatch, Utterance } from './types'
 
@@ -248,15 +248,15 @@ export function toolIndexOf(useCases: readonly RoutableUseCase[], facts: readonl
   return lastToolIndex
 }
 
-export function rankTools(prompt: string, useCases: readonly RoutableUseCase[], facts: readonly ToolFacts[] = loadToolFacts()): ToolMatch[] {
+export function rankTools(prompt: string, useCases: readonly RoutableUseCase[], facts: readonly ToolFacts[] = loadToolFacts(), chatNameOf?: ChatNameOf): ToolMatch[] {
   if (!isPrompt(prompt) || !facts.length) return []
   const { index, known } = toolIndexOf(useCases, facts)
   const fixed = correctTypos(prompt.replace(/https?:\/\/\S+/g, ' '), known)
-  return rankToolsOver(fixed.text, index, toolTerms, known, undefined, prompt)
+  return rankToolsOver(fixed.text, index, toolTerms, known, undefined, prompt, chatNameOf)
 }
 
-export function toolMatchText(prompt: string, useCases: readonly RoutableUseCase[], facts: readonly ToolFacts[] = loadToolFacts()): { text: string; tools: string[] } {
-  const matches = rankTools(prompt, useCases, facts)
+export function toolMatchText(prompt: string, useCases: readonly RoutableUseCase[], facts: readonly ToolFacts[] = loadToolFacts(), chatNameOf?: ChatNameOf): { text: string; tools: string[] } {
+  const matches = rankTools(prompt, useCases, facts, chatNameOf)
   if (!clearsToolBar(matches)) return { text: '', tools: [] }
   const text = toolsText(matches)
   return { text, tools: matches.map((m) => m.name) }
