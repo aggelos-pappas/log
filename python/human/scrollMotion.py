@@ -7,6 +7,8 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+from human import myuriInput
+
 
 @dataclass
 class ScrollStep:
@@ -109,6 +111,11 @@ CONTAINER_STEP_JS = """(el, d) => {
 }"""
 
 
+def _stream(mouse: Any = None):
+    stream = getattr(mouse, "stream", None)
+    return stream if stream is not None else myuriInput.make_stream(myuriInput.account_seed())
+
+
 def _viewport(page: Any, mouse: Any = None) -> dict:
     if mouse is not None and hasattr(mouse, "viewport"):
         return mouse.viewport()
@@ -139,6 +146,10 @@ async def scroll_by(page: Any, distance: float, mouse: Any = None, log=lambda _l
     else:
         await asyncio.wait_for(page.mouse.move(x, y), timeout=5.0)
     started = time.monotonic()
+    if myuriInput.available():
+        sent = await myuriInput.play_wheel(page, 0, distance, _stream(mouse))
+        log(f"  scroll: {distance:+.0f}px in {sent} wheel steps (myuri), {(time.monotonic() - started) * 1000:.0f} ms")
+        return sent
     for step in steps:
         if step.delta_y:
             await page.mouse.wheel(0, step.delta_y)
@@ -177,11 +188,14 @@ async def scroll_across(locator: Any, mouse: Any = None, log=lambda _l: None) ->
         await mouse.glide(where["hoverX"], where["hoverY"], "scrollPosition")
     else:
         await asyncio.wait_for(page.mouse.move(where["hoverX"], where["hoverY"]), timeout=5.0)
-    steps = human_scroll_trajectory(where["distance"])
-    for step in steps:
-        if step.delta_y:
-            await page.mouse.wheel(step.delta_y, 0)
-        await asyncio.sleep(step.delay_ms / 1000)
+    if myuriInput.available():
+        steps = [None] * await myuriInput.play_wheel(page, where["distance"], 0, _stream(mouse))
+    else:
+        steps = human_scroll_trajectory(where["distance"])
+        for step in steps:
+            if step.delta_y:
+                await page.mouse.wheel(step.delta_y, 0)
+            await asyncio.sleep(step.delay_ms / 1000)
     log(f"  scroll: across {where['distance']:+.0f}px in {len(steps)} wheel steps")
     return bool((await locator.evaluate(ACROSS_JS))["inView"])
 
@@ -198,10 +212,13 @@ async def scroll_into_view(locator: Any, mouse: Any = None, log=lambda _l: None)
             owner = await locator.evaluate(OWNER_JS)
             if mouse is not None and owner.get("hoverX") is not None:
                 await mouse.glide(owner["hoverX"], owner["hoverY"], "scrollPosition")
-            for step in steps:
-                if step.delta_y:
-                    await locator.evaluate(CONTAINER_STEP_JS, step.delta_y)
-                await asyncio.sleep(step.delay_ms / 1000)
+            if mouse is not None and owner.get("hoverX") is not None and myuriInput.available():
+                steps = [None] * await myuriInput.play_wheel(page, 0, where["distance"], _stream(mouse))
+            else:
+                for step in steps:
+                    if step.delta_y:
+                        await locator.evaluate(CONTAINER_STEP_JS, step.delta_y)
+                    await asyncio.sleep(step.delay_ms / 1000)
             log(f"  scroll: container {where['distance']:+.0f}px in {len(steps)} steps")
     across = await scroll_across(locator, mouse, log)
     return bool((await locator.evaluate(DISTANCE_JS))["inView"]) and across
@@ -216,6 +233,10 @@ def scroll_by_sync(page: Any, distance: float, mouse: Any = None, log=lambda _l:
         mouse.glide(x, y, "scrollPosition")
     else:
         page.mouse.move(x, y)
+    if myuriInput.available():
+        sent = myuriInput.play_wheel_sync(page, 0, distance, _stream(mouse))
+        log(f"  scroll: {distance:+.0f}px in {sent} wheel steps (myuri)")
+        return sent
     for step in steps:
         if step.delta_y:
             page.mouse.wheel(0, step.delta_y)

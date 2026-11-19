@@ -47,6 +47,21 @@ python -m camoufox fetch          # downloads the Camoufox browser
 log facebook doctor
 ```
 
+### Human input: Myuri
+
+```bash
+pip install "myuri>=4,<5"         # human mouse, typing and scroll (LGPL-3.0)
+```
+
+With [Myuri](https://github.com/JWriter20/Myuri) installed, every session that
+moves the pointer itself plans its moves, typing and wheel steps with Myuri
+(`python/human/myuriInput.py`): recorded human paths, typos it corrects,
+fitted key timing, and notched mouse-wheel scrolls. The seed comes from the
+account's device file, so each account keeps one steady "hand" across runs.
+Passwords, codes and PINs are typed with no typos. Camoufox's own humanize is
+turned off on those launches so nothing is paced twice. Without Myuri, log
+falls back to its own curves and a fixed typing beat.
+
 ## Adding another browser
 
 A new browser is one more driver:

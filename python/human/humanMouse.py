@@ -6,7 +6,7 @@ import random
 import time
 from typing import Any, Callable
 
-from human import scrollMotion
+from human import myuriInput, scrollMotion
 
 MOVE_TIMEOUT = 5.0
 EMIT_HZ = 60
@@ -148,6 +148,15 @@ class MouseBase:
         self.measured: dict[str, int] | None = None
         self._stop = False
         self._seen_errors: set[str] = set()
+        self.stream = myuriInput.make_stream(myuriInput.account_seed())
+
+    def planned(self, tx: float, ty: float) -> list[tuple[float, float, float]]:
+        points = myuriInput.path((self.x or 0.0, self.y or 0.0), (tx, ty), self.stream)
+        return [(t, *self.clamp(x, y)) for t, x, y in points]
+
+    def _record_planned(self, kind: str, target: str, sx: float, sy: float, tx: float, ty: float, points: list, started: float) -> None:
+        self.legs.append({"kind": kind, **({"target": target} if target else {}), "from": [round(sx), round(sy)], "to": [round(tx), round(ty)],
+                          "model": "myuri", "reports": len(points), "ms": round((time.monotonic() - started) * 1000)})
 
     def viewport(self) -> dict[str, int]:
         return self.page.viewport_size or self.measured or {"width": 1280, "height": 800}
@@ -260,10 +269,29 @@ class HumanMouse(MouseBase):
         tx, ty = self.clamp(tx, ty)
         if self.x is None:
             return await self._emit(tx, ty)
+        if myuriInput.available():
+            return await self._play(tx, ty, kind, target)
         for g in reach(self.rng, self.x, self.y, tx, ty, overshoot):
             if not await self._run(g, kind, target):
                 return False
         return True
+
+    async def _play(self, tx: float, ty: float, kind: str, target: str) -> bool:
+        sx, sy = self.x or 0.0, self.y or 0.0
+        if abs(tx - sx) < 1.5 and abs(ty - sy) < 1.5:
+            return True
+        points = self.planned(tx, ty)
+        started = time.monotonic()
+        for at, x, y in points:
+            if self._stop:
+                return False
+            wait = at / 1000 - (time.monotonic() - started)
+            if wait > 0:
+                await asyncio.sleep(wait)
+            if not await self._emit(x, y):
+                return False
+        self._record_planned(kind, target, sx, sy, tx, ty, points, started)
+        return not self._stop
 
     async def wander(self, seconds: float) -> None:
         if self.x is not None:
@@ -424,10 +452,29 @@ class SyncHumanMouse(MouseBase):
         tx, ty = self.clamp(tx, ty)
         if self.x is None:
             return self._emit(tx, ty)
+        if myuriInput.available():
+            return self._play(tx, ty, kind, target)
         for g in reach(self.rng, self.x, self.y, tx, ty, overshoot):
             if not self._run(g, kind, target):
                 return False
         return True
+
+    def _play(self, tx: float, ty: float, kind: str, target: str) -> bool:
+        sx, sy = self.x or 0.0, self.y or 0.0
+        if abs(tx - sx) < 1.5 and abs(ty - sy) < 1.5:
+            return True
+        points = self.planned(tx, ty)
+        started = time.monotonic()
+        for at, x, y in points:
+            if self._stop:
+                return False
+            wait = at / 1000 - (time.monotonic() - started)
+            if wait > 0:
+                time.sleep(wait)
+            if not self._emit(x, y):
+                return False
+        self._record_planned(kind, target, sx, sy, tx, ty, points, started)
+        return not self._stop
 
     def wander(self, seconds: float) -> None:
         if self.x is not None:
