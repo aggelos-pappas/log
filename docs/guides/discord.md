@@ -29,7 +29,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | Tool | What it does | Usage |
 |---|---|---|
 | `discordSessionCheck` | Check that Discord still accepts one account's saved session, sending… | `log discord session check --account <accountName> [--json]` |
-| `discordChats` | The account's DMs and group DMs, with their ids | `log discord chats --account <accountName> [--json]` |
+| `discordChats` | Its chats, with ids | `log discord chats --account <accountName> [--kind <kinds>] [--name <text>] [--json]` |
 | `discordServers` | The servers the account is in | `log discord servers --account <accountName> [--json]` |
 | `discordChannels` | One server's channels by category, each with its kind | `log discord channels --account <accountName> --server <server name> [--json]` |
 | `discordPosts` | A forum's posts | `log discord posts --account <accountName> --channel "<server> #<forum>" [--limit <n>] [--archived <true\|false>] [--json]` |

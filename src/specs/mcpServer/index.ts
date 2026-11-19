@@ -129,6 +129,11 @@ export const mcpServer = {
       { kind: 'symbol', file: LIVE_LOG, name: 'indexEntryOf' },
       { kind: 'symbol', file: 'src/platformKit/gates/helpers/commandGates.ts', name: 'terminalOnlyByKey' },
     ],
+    'REQ-MCP-26': [
+      { kind: 'symbol', file: 'src/mcp/server/helpers/resultCap.ts', name: 'capResult' },
+      { kind: 'symbol', file: 'src/mcp/server/helpers/resultCap.ts', name: 'RESULT_CAP_BYTES' },
+      { kind: 'uses', file: SERVER, name: 'capResult' },
+    ],
     'REQ-MCP-25': [
       { kind: 'symbol', file: 'src/platformKit/gates/client.ts', name: 'gateCall' },
       { kind: 'symbol', file: 'src/platformKit/gates/client.ts', name: 'gateCli' },
@@ -262,6 +267,7 @@ export const mcpServer = {
     'REQ-MCP-09': noul('Is check:useCases left out of lefthook, so a commit never waits on it; and when it is run, does checkUseCases ask SubQ reviewQuestions for every page from listUseCases against sessionDigest of the latest session, and exit 1 when readReview says it blocks, a page blocking only when it is not current, its confidence reaches blockAt and it is not staged, and uncovered work blocking only when no new page is staged; and does checkUseCases exit 0 without asking SubQ when siteOnly says every staged file other than log.md and log/<date>.md is under site/, siteOnly being false for an empty list or one with only the log?'),
     'REQ-MCP-10': noul('Does liveLogVerdict return the deny from handRunDenial for every command logCommandOf recognises as an installed log command or bun bin/log.ts, before it checks for tail or head?'),
     'REQ-MCP-11': noul('Does handRunDenial return null, so nothing is refused, for a command whose COMMAND_INDEX entry (found by platform and name) has terminalOnly, and a denial for every other command?'),
+    'REQ-MCP-26': noul('Does withCallFooter pass every result through capResult, which returns a result over RESULT_CAP_BYTES as its head (counts and first rows, or first lines) plus one line naming the narrowing flags, and leaves a smaller one untouched?'),
     'REQ-MCP-25': noul('Does gateCall apply, in GATE_ORDER, terminal-only, the input, confirmLive, approvedBy (notApproved), confirmBypass, the capability-to-platform-tool resolution, the play as that platform tool, sessionGate for a tool acting as the owner, approvalRequired for a live tool from the runtime caller and accountBusy for a long-running command; does runToolCall call it with its caller for tools, aliases, logCall, the console and the runtime; does runFast call gateCli for a long-running command; are terminalOnly, longRunning and noPrompt fields of each command keyed by command key; are --apply and --write live flags; and does the console send confirmLive only when its request carries it?'),
     'REQ-MCP-12': noul('Is staleServerLine(repo) one of the parts the engines hook joins into its text; when the recorded server pid is alive and codeStamp of the checkout is newer than the recorded stamp, does it return a line telling the owner to restart and never to work around it with a hand-run command only when readProxyState shows no live reload proxy, and when a proxy is live, the proxy lastError or waitingOn line, or null; and null when the server is current?'),
     'REQ-MCP-13': noul('Does localChangesLine return null when there are no files, and otherwise a line starting with >>> UNCOMMITTED LOCAL CHANGES that lists the files and says to read each diff and never overwrite, revert, stage, publish or ship them without the owner?'),
@@ -299,6 +305,7 @@ export const mcpServer = {
     'REQ-MCP-22': MET,
     'REQ-MCP-24': MET,
     'REQ-MCP-25': MET,
+    'REQ-MCP-26': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

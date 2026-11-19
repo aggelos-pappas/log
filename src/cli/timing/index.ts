@@ -1,10 +1,12 @@
 import { callWaterfall, msText, reportLines, timingStats } from "../../observability/timing/index.ts";
+import { readTurns, turnLines, turnStats } from "../../observability/turns/index.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
 
 export const TIMING_USAGE = [
   "Usage: log timing [--tool <name>] [--hours <n>] [--stages <n>] [--json]   (p50, p95 and p99 for every tool call, and for every stage inside it: the guards, the voice gate, each fetch, the Python start, the session host's queue, lock, spacing and governor, each platform request; newest --hours, default 24)",
   "       log timing --call <callId> [--json]   (one call as a waterfall: every stage in order, when it started and how long it took; the id is on the call's ▶ and ■ lines in the live log)",
+  "       log timing --turns [--hours <n>] [--json]   (p50, p95 and p99 per agent turn, each split into log's tool time and agent time)",
 ].join("\n");
 
 export const TIMING_INPUT: CommandInput = {
@@ -18,6 +20,7 @@ export const TIMING_INPUT: CommandInput = {
         { name: "hours", kind: "number", description: "How far back, in hours (default 24), more than 0" },
         { name: "stages", kind: "number", description: "How many stages to show per tool, slowest share first (default 8), more than 0" },
         { name: "call", kind: "string", description: "One call's id, to show it as a waterfall" },
+        { name: "turns", kind: "boolean", description: "Whole agent turns instead of tool calls" },
         JSON_FLAG,
       ],
     },
@@ -36,7 +39,7 @@ export const timingCommand: Command = {
   effect: "read",
   input: TIMING_INPUT,
   summary: "Where the time goes in every call: p50, p95 and p99 per tool and per stage, from the timings every call stores in log.db, or one call as a waterfall",
-  args: "[--tool <name>] [--hours <n>] [--stages <n>] [--call <callId>] [--json]",
+  args: "[--tool <name>] [--hours <n>] [--stages <n>] [--call <callId>] [--turns] [--json]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(TIMING_INPUT));
     if (!parsed.ok) return refuseInput("timing", parsed.error, TIMING_USAGE);
@@ -51,6 +54,10 @@ export const timingCommand: Command = {
     const hours = positive(numberOf(parsed, "hours"), 24);
     const stages = positive(numberOf(parsed, "stages"), 8);
     if (hours === null || stages === null) return { code: 1, stderr: `log timing: --hours and --stages take a positive number\n${TIMING_USAGE}` };
+    if (parsed.flags["turns"] === true) {
+      const stats = turnStats(readTurns(Date.now() - hours * 3600000));
+      return { code: 0, stdout: json ? JSON.stringify({ hours, ...stats }, null, 2) : turnLines(stats, hours).join("\n") };
+    }
     const tool = typeof parsed.flags["tool"] === "string" ? String(parsed.flags["tool"]) : undefined;
     const stats = timingStats({ tool, sinceMs: Date.now() - hours * 3600000 });
     if (json) return { code: 0, stdout: JSON.stringify({ hours, tool: tool ?? null, tools: stats }, null, 2) };

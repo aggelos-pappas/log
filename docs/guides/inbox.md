@@ -31,7 +31,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `inboxClaim` | Claim a chat for this session before drafting or sending in it, so no… | `log inbox claim --platform <twitter\|discord\|slack\|instagram> --account <a> --chat <conversationId\|handle> [--event <eventId>] [--json]` |
 | `inboxRelease` | Release this session's claim on a chat when it is done with it | `log inbox release --platform <p> --account <a> --chat <conversationId\|handle> [--json]` |
 | `inboxResume` | The owner's go-ahead after a refused catch-up | `log inbox resume --platform <p> --account <a> --by <who> [--json]` |
-| `inboxWaiting` | Who wrote last on every platform, from log.db in time order | `log inbox waiting [--platform <p>] [--account <a>] [--limit <n>] [--oldest] [--json]` |
+| `inboxWaiting` | Who wrote last on every platform, from log.db | `log inbox waiting [--platform <p>] [--account <a>] [--limit <n>] [--tail <n>] [--oldest] [--json]` |
 | `inboxPending` | What the account watchers heard since this reader last asked, with… | `log inbox pending --reader <name> [--json]` |
 | `inboxClaims` | Every live claim | `log inbox claims [--json]` |
 | `inboxActions` | The log of every claim, refusal, send and release, oldest first, to… | `log inbox actions [--platform <p>] [--account <a>] [--chat <conversationId\|handle>] [--limit <n>] [--json]` |

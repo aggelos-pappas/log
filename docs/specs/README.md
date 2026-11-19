@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 51 domains, 574 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 51 domains, 576 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -45,6 +45,7 @@ The log MCP server is how every agent works with log-cli: it carries the owner's
 - **REQ-MCP-06** getGuide reads a guide or a use case
 - **REQ-MCP-07** Every tool names the use cases that call it
 - **REQ-MCP-08** Every tool declares Claude Code's result limit
+- **REQ-MCP-26** Every tool result is capped at 40 KB with the flags that narrow it
 - **REQ-MCP-09** The use-case review asks SubQ whether the use cases are stale, when run
 - **REQ-MCP-10** A log command run by hand from a shell is refused
 - **REQ-MCP-11** The terminal-only prompts are let through
@@ -722,6 +723,7 @@ Every call is timed, never guessed: one timing layer across Bun and Python gives
 - **REQ-TIMING-02** The trace crosses into Python and back as one tree
 - **REQ-TIMING-03** The guards and the voice gate are timed stage by stage
 - **REQ-TIMING-04** Timings are stored and reported, never lost to a failure
+- **REQ-TIMING-05** Whole agent turns are timed and split into tool and agent time
 
 ## [treg](./treg.md)
 

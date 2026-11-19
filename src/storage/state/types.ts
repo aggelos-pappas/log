@@ -17,6 +17,7 @@ export type StateScope =
   | 'signInLink'
   | 'watcherEnd'
   | 'watcherHold'
+  | 'turnStart'
 
 export interface StateRow<T> {
   body: T

@@ -3,12 +3,23 @@ import { listUseCases, readUseCase } from '../../mcp/server/helpers/guides.ts'
 import { isPrompt, outcomeOf, playMatchText, route as wordRoute } from '../../useCases/router/client'
 import type { PlayMatch, RoutableUseCase } from '../../useCases/router/types'
 import type { HookInput, HookResult } from './types'
+import { promptNameHints, promptWords } from '../../inbox/nameHints/index'
+import { logTiming } from '../service/client'
 
 export type RouteFn = (prompt: string) => Promise<{ play?: PlayMatch | null; menu?: PlayMatch[]; skipped?: string } | null>
 
 export type UseCasesFn = () => readonly RoutableUseCase[]
 
-export async function hookAnswer(input: HookInput, route: RouteFn, useCases: UseCasesFn = listUseCases): Promise<HookResult> {
+export type NamesFn = (prompt: string) => string
+
+export function timedNameHints(prompt: string): string {
+  const started = performance.now()
+  const text = promptNameHints(prompt)
+  if (promptWords(prompt).length) logTiming({ event: 'UserPromptSubmit', provider: 'names', ms: performance.now() - started, chars: text.length, outcome: text ? 'named' : 'none' })
+  return text
+}
+
+export async function hookAnswer(input: HookInput, route: RouteFn, useCases: UseCasesFn = listUseCases, names: NamesFn = timedNameHints): Promise<HookResult> {
   const event = input.hook_event_name ?? 'UserPromptSubmit'
   if (event === 'SessionStart') {
     const play = sessionPlayOf(transcriptTail(input.transcript_path ?? ''))
@@ -22,7 +33,11 @@ export async function hookAnswer(input: HookInput, route: RouteFn, useCases: Use
   const play = answer.play ?? null
   const menu = answer.menu ?? []
   const outcome = answer.skipped ?? outcomeOf({ play, menu })
-  return { event, text: playMatchText(play ? [play] : [], menu), outcome: served ? outcome : `wordsOnly ${outcome}`, ...(menu.length && !play ? { menu: menu.map((m) => m.id) } : {}) }
+  const namesStarted = performance.now()
+  const named = names(prompt)
+  const namesMs = Math.round(performance.now() - namesStarted)
+  const text = [playMatchText(play ? [play] : [], menu), named].filter(Boolean).join('\n\n')
+  return { event, text, outcome: `${served ? outcome : `wordsOnly ${outcome}`}${named ? ' named' : ''}`, namesMs, ...(menu.length && !play ? { menu: menu.map((m) => m.id) } : {}) }
 }
 
 export function hookOutput(result: HookResult): string {

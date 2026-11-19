@@ -4,6 +4,7 @@ import { answerEvent } from '../../src/agentHooks/answers/index'
 import { hookHostOf, hostBody, positionalOf } from '../../src/agentHooks/harness/index'
 import type { HookEvent } from '../../src/agentHooks/registry/index'
 import { askRoute, logTiming, readService, startService } from '../../src/contextLayer/service/index'
+import { turnEvent } from '../../src/observability/turns/index'
 
 const started = performance.now()
 const repo = join(import.meta.dir, '..', '..')
@@ -15,6 +16,7 @@ try {
 } catch {
   event = event || 'UserPromptSubmit'
 }
+turnEvent(event, raw, host)
 const service = readService()
 if (!service) startService(repo)
 const answered = await answerEvent(event, raw, repo, (prompt) => askRoute(prompt, service))

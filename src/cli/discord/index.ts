@@ -8,6 +8,7 @@ import { watermarkLine, watermarkReadingOf } from "../../twitter/copy/watermark/
 import { roomFromRead } from "../../voice/room/index.ts";
 import { findDiscordAccount, recordDiscordSession, discordGate } from "../../discord/account/session/index.ts";
 import { labelOf, matchChat, normalizedName } from "../../discord/chat/match/index.ts";
+import { closestNamed } from "../../inbox/nameHints/index.ts";
 import { embeddableXLinks } from "../../discord/chat/embed/index.ts";
 import { addPending, incomingSince, interruptedLines } from "../../inbox/watch/index.ts";
 import { ownOrAttach } from "../../inbox/relay/index.ts";
@@ -100,13 +101,32 @@ export const discordDeps: { profiles: () => Record<string, VoiceProfile>; wait: 
 const DISCORD_ACCOUNT: FlagSpec = { name: "account", kind: "string", required: true, description: "The DISCORD socialAccount's accountName (its handle)" };
 
 export const DISCORD_CHATS_USAGE = [
-  "Usage: log discord chats --account <accountName> [--json]",
-  "Lists the account's DMs and group DMs with their ids, names and members, on the direct-API engine (no browser). Sends nothing.",
+  "Usage: log discord chats --account <accountName> [--kind <kinds>] [--name <text>] [--json]",
+  "Lists the account's chats with ids, names and members, on the direct-API engine. Sends nothing.",
 ].join("\n");
 
+export const CHAT_KINDS = ["dm", "group", "channel"] as const;
+
 export const DISCORD_CHATS_INPUT: CommandInput = {
-  forms: [{ words: [], summary: "The account's DMs and group DMs, with their ids", positionals: [], flags: [DISCORD_ACCOUNT, JSON_FLAG] }],
+  forms: [
+    {
+      words: [],
+      summary: "Its chats, with ids",
+      positionals: [],
+      flags: [
+        DISCORD_ACCOUNT,
+        { name: "kind", kind: "list", description: "Only these kinds: dm, group, channel" },
+        { name: "name", kind: "string", description: "Only chats named like this, typos allowed" },
+        JSON_FLAG,
+      ],
+    },
+  ],
 };
+
+export function narrowChats(chats: readonly DiscordChat[], kinds: readonly string[], name: string): DiscordChat[] {
+  const ofKind = kinds.length ? chats.filter((c) => kinds.includes(c.kind)) : [...chats];
+  return name.trim() ? closestNamed(ofKind, name, (c) => [c.name, ...c.members]) : ofKind;
+}
 
 export const discordChatsCommand: Command = {
   usage: DISCORD_CHATS_USAGE,
@@ -114,12 +134,16 @@ export const discordChatsCommand: Command = {
   name: "chats",
   effect: "read",
   input: DISCORD_CHATS_INPUT,
-  summary: "List the account's DMs and group DMs with their ids, on the direct-API engine, sending nothing",
+  summary: "The account's chats with their ids, on the direct-API engine; sends nothing",
   args: "--account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DISCORD_CHATS_INPUT));
     if (!parsed.ok) return refuseInput("discord chats", parsed.error, DISCORD_CHATS_USAGE);
     if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log discord chats: takes no words, only flags\n${DISCORD_CHATS_USAGE}` };
+    const kinds = listOf(parsed, "kind") ?? [];
+    const wrongKind = kinds.find((k) => !(CHAT_KINDS as readonly string[]).includes(k));
+    if (wrongKind) return refuseInput("discord chats", `--kind "${wrongKind}" is not one of ${CHAT_KINDS.join(", ")}`, DISCORD_CHATS_USAGE);
+    const name = typeof parsed.flags["name"] === "string" ? String(parsed.flags["name"]) : "";
     try {
       const account = await findDiscordAccount(context.twenty, String(parsed.flags["account"]));
       const gate = discordGate(account);
@@ -127,11 +151,13 @@ export const discordChatsCommand: Command = {
       if (!context.directDiscord) return { code: 1, stderr: "log discord chats: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: chats on the direct-API engine`);
       const run = context.directDiscord(account, { action: "chats" });
-      const chats = (run.answer.chats as DiscordChat[] | undefined) ?? [];
+      const all = (run.answer.chats as DiscordChat[] | undefined) ?? [];
+      const chats = narrowChats(all, kinds, name);
+      const narrowed = kinds.length > 0 || Boolean(name.trim());
       const code = run.answer.ok ? 0 : 1;
-      if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, ...run.answer }, null, 2) };
+      if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, ...run.answer, ...(run.answer.ok ? { chats, ...(narrowed ? { of: all.length } : {}) } : {}) }, null, 2) };
       if (!run.answer.ok) return { code, stdout: `log discord chats: ${account.accountName}: ${run.answer.code}: ${run.answer.detail ?? ""}` };
-      return { code, stdout: [`log discord chats: ${account.accountName} has ${chats.length} DM(s) and group(s)`, ...chats.map((c) => `  ${c.id}  ${c.kind.padEnd(5)}  ${c.name ?? "(no name)"}  (${c.members.join(", ")})`)].join("\n") };
+      return { code, stdout: [`log discord chats: ${account.accountName} has ${narrowed ? `${chats.length} of ${all.length} chat(s) matching` : `${chats.length} chat(s)`}`, ...chats.map((c) => `  ${c.id}  ${c.kind.padEnd(5)}  ${c.name ?? "(no name)"}  (${c.members.join(", ")})`)].join("\n") };
     } catch (error) {
       return refuseError("discord chats", error);
     }
@@ -701,10 +727,25 @@ export function matchServer(servers: readonly ServerRow[], said: string): { ok: 
   return { ok: false, code: "chatAmbiguous", detail: `${pool.length} servers match "${said}": ${pool.slice(0, 8).map((s) => s.name).join(", ")}` };
 }
 
-function serverByName(direct: DirectDiscord, account: DiscordAccount, said: string) {
+export const SERVER_LIST_TTL_MS = 10 * 60_000;
+
+const serverLists = new Map<string, { at: number; servers: ServerRow[] }>();
+
+export function forgetServerLists(): void {
+  serverLists.clear();
+}
+
+function serverByName(direct: DirectDiscord, account: DiscordAccount, said: string, now: number = Date.now()) {
+  const kept = serverLists.get(account.accountName);
+  if (kept && now - kept.at < SERVER_LIST_TTL_MS) {
+    const found = matchServer(kept.servers, said);
+    if (found.ok) return { found } as const;
+  }
   const run = direct(account, { action: "servers" });
   if (!run.answer.ok) return { failed: `${run.answer.code}: ${run.answer.detail ?? ""}` } as const;
-  return { found: matchServer((run.answer.servers as ServerRow[] | undefined) ?? [], said) } as const;
+  const servers = (run.answer.servers as ServerRow[] | undefined) ?? [];
+  serverLists.set(account.accountName, { at: now, servers });
+  return { found: matchServer(servers, said) } as const;
 }
 
 function channelByName(direct: DirectDiscord, account: DiscordAccount, said: string) {

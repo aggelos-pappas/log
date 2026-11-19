@@ -11,6 +11,7 @@ import { localEmbedder } from '../../src/search/conversations/helpers/embed.ts'
 import { EMBED_MODEL } from '../../src/search/conversations/types.ts'
 import { buildRouteIndex, routePrompt } from '../../src/useCases/router/index'
 import { answerEvent, cachedFreshness, useFreshnessSource } from '../../src/agentHooks/answers/index'
+import { turnEvent } from '../../src/observability/turns/index'
 import type { HookEvent } from '../../src/agentHooks/registry/index'
 import type { RouteIndex, Thresholds, Utterance } from '../../src/useCases/router/index'
 
@@ -91,6 +92,7 @@ async function handle(request: Request): Promise<Response> {
     if (eventPath && request.method === 'POST') {
       const started = performance.now()
       const raw = await request.text()
+      turnEvent(eventPath[1], raw, hookHostOf(['--host', url.searchParams.get('host') ?? '']))
       const answered = await answerEvent(eventPath[1] as HookEvent, raw, repo, route)
       const chars = JSON.stringify(answered.body ?? '').length
       logTiming({ event: answered.event, provider: 'hookEvent', ms: performance.now() - started, chars, outcome: answered.timings.map((t) => `${t.hook}${t.ok ? '' : '!'}:${Math.round(t.ms)}`).join(',') })

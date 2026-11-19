@@ -1,7 +1,9 @@
 import json
 import os
+import re
 import shutil
 import subprocess
+import threading
 from pathlib import Path
 
 HOOK_TIMEOUT_SECONDS = 20
@@ -104,5 +106,75 @@ def pre_llm_call(session_id="", user_message="", conversation_history=None, is_f
     return {"context": text} if text else None
 
 
+def tool_calls_this_turn(conversation_history):
+    count = 0
+    for message in reversed(conversation_history or []):
+        if not isinstance(message, dict):
+            continue
+        if message.get("role") == "user":
+            break
+        if message.get("role") == "assistant":
+            count += len(message.get("tool_calls") or [])
+    return count
+
+
+def post_llm_call(session_id="", conversation_history=None, **kwargs):
+    payload = {"session_id": session_id or "", "tool_calls": tool_calls_this_turn(conversation_history)}
+    threading.Thread(target=ask_log, args=("Stop", payload), daemon=True).start()
+
+
+SCRIPT_TOOLS = re.compile(r"(^|_)(execute_code|terminal)$")
+SPILL_PATH = re.compile(r"[A-Za-z]:[\/][^\s'\"]*spillover[\/][\w.-]+|/[^\s'\"]*spillover/[\w.-]+")
+LOG_PIPE = re.compile(r"(?:^|[;&|(\s])log\s+([a-z][a-zA-Z]*)\s+([a-z][a-zA-Z]*)?[^\n|]*\|\s*(?:grep|rg|findstr|python\d?|py|jq|awk|sed|Select-String|ConvertFrom-Json)\b")
+LOG_ARGV = re.compile(r"\[\s*['\"]log['\"]\s*,\s*['\"]([a-z][a-zA-Z]*)['\"](?:\s*,\s*['\"]([a-z][a-zA-Z]*)['\"])?")
+LOG_RESULT_HEAD = "Browsers:"
+NARROWING = {
+    "discordChats": "--kind dm,group, --name <text>",
+    "inboxWaiting": "--tail <n>, --platform <p>, --limit <n>",
+}
+
+
+def tool_of(words):
+    first, second = (words + ("",))[:2]
+    return first + second[:1].upper() + second[1:] if second else first
+
+
+def spilled_log_result(text):
+    for path in SPILL_PATH.findall(text):
+        try:
+            with open(path, encoding="utf-8", errors="replace") as handle:
+                if handle.read(len(LOG_RESULT_HEAD)) == LOG_RESULT_HEAD:
+                    return True
+        except OSError:
+            continue
+    return False
+
+
+def parsed_log_tool(text):
+    for pattern in (LOG_PIPE, LOG_ARGV):
+        found = pattern.search(text)
+        if found and (pattern is LOG_PIPE or re.search(r"json\.loads?|re\.(search|findall)|\bgrep\b|split\(", text)):
+            return tool_of(tuple(g for g in found.groups() if g))
+    return "a log tool" if spilled_log_result(text) else ""
+
+
+def script_refusal(tool_name, args):
+    if not SCRIPT_TOOLS.search(tool_name or "") or not isinstance(args, dict):
+        return ""
+    text = re.sub(r"\bgit\s+log\b", "git", "\n".join(str(args.get(key) or "") for key in ("code", "command")))
+    tool = parsed_log_tool(text) if text.strip() else ""
+    if not tool:
+        return ""
+    flags = NARROWING.get(tool, "the narrowing flags in its schema")
+    return f"log has a flag for this: {tool} {flags}; don't parse log output with scripts. Call the log tool again with those flags (a log result over 40 KB comes back as a head that names them)."
+
+
+def pre_tool_call(tool_name="", args=None, **kwargs):
+    message = script_refusal(tool_name, args)
+    return {"action": "block", "message": message} if message else None
+
+
 def register(ctx):
     ctx.register_hook("pre_llm_call", pre_llm_call)
+    ctx.register_hook("pre_tool_call", pre_tool_call)
+    ctx.register_hook("post_llm_call", post_llm_call)
