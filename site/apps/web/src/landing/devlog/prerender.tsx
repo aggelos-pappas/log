@@ -8,7 +8,7 @@ import { SITE_PAGES, SITE_PLATFORMS } from '../useCases/sitePages'
 import { QUICK_ANSWERS } from '../useCases/quickAnswers'
 import { PLATFORMS } from '../PlatformSuite'
 import { UPDATED, applySchema, devlogIndexSchema, homeSchema, mcpSchema, platformSchema } from '../structuredData'
-import { APPLY_COMPARE, APPLY_DESCRIPTION, APPLY_FAQ, APPLY_GITHUB_URL, APPLY_INSTALL, APPLY_PATH, APPLY_STEPS, APPLY_TITLE, APPLY_USAGE } from '../apply/applyContent'
+import { APPLY_BUILT_WITH, APPLY_COMPARE, APPLY_DESCRIPTION, APPLY_FAQ, APPLY_GITHUB_URL, APPLY_INSTALL, APPLY_PATH, APPLY_STEPS, APPLY_TITLE, APPLY_USAGE } from '../apply/applyContent'
 import { MCP_CLIENTS, MCP_DESCRIPTION, MCP_FAQ, MCP_INSTALL, MCP_PATH, MCP_PLATFORMS, MCP_STEPS, MCP_TITLE } from '../mcp/mcpContent'
 import { USE_CASES } from '../useCases/useCaseCatalog'
 
@@ -303,6 +303,10 @@ export function prerenderedPages(): PrerenderedPage[] {
       '',
       `Agent setup instructions: ${SITE}/apply.txt`,
       '',
+      '',
+      '## Built with',
+      '',
+      ...APPLY_BUILT_WITH.map((item) => `- [${item.name}](${item.href}): ${item.role}`),
       '',
       '## log apply: quick answers',
       '',

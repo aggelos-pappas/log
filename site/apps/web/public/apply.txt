@@ -31,6 +31,10 @@ You are the user's agent. Follow these steps in order. Ask the user when a step 
 
 6. Ask the user before adding --submit. Submit only when they say yes.
 
+How it finds jobs:
+- It searches company job boards (Greenhouse, Ashby, Lever, SmartRecruiters and more) with treg (https://treg.to) and drops postings that were taken down.
+- Or the user pastes any posting URL: /apply <posting url>
+
 Rules log apply keeps:
 - It works in the user's own browser (Chrome, Edge or Brave through a dedicated profile, or the Aside browser), one application at a time.
 - It reads Workday verification links and Greenhouse security codes from the user's email.

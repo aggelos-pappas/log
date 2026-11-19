@@ -33,7 +33,7 @@ export const APPLY_STEPS = [
   {
     number: '01',
     title: 'Find and tailor',
-    body: 'It finds the postings, then writes a one-page LaTeX resume and a cover letter for each job, only from the facts in your profile.yaml.',
+    body: 'Your agent finds open postings with treg, checks they’re still live, then writes a one-page LaTeX resume and cover letter for each job, only from the facts in your profile.yaml.',
   },
   {
     number: '02',
@@ -66,6 +66,10 @@ export const APPLY_FAQ: FaqItem[] = [
     a: 'No. Every resume, cover letter and form answer comes only from the facts in your profile.yaml. It never invents experience, and it refuses to claim citizenship you do not have.',
   },
   {
+    q: 'Where do the jobs come from?',
+    a: 'treg searches company job boards (Greenhouse, Ashby, Lever, SmartRecruiters and more) and drops postings that were taken down. Or paste any posting URL yourself.',
+  },
+  {
     q: 'Which job sites does it work on?',
     a: 'Workday and Greenhouse today, with more coming.',
   },
@@ -80,3 +84,13 @@ export const APPLY_FAQ: FaqItem[] = [
 ]
 
 
+
+export type BuiltWithItem = { name: string; role: string; href: string; logo: string | null }
+
+export const APPLY_BUILT_WITH: BuiltWithItem[] = [
+  { name: 'log', role: 'the stack it’s part of', href: 'https://log.listeningkit.com', logo: '/logo.svg' },
+  { name: 'treg', role: 'finds the jobs', href: 'https://treg.to', logo: '/logos/stack/treg.svg' },
+  { name: 'Aside', role: 'the browser it can drive', href: 'https://aside.com', logo: '/logos/built/aside.png' },
+  { name: 'Claude Code', role: 'the agent', href: 'https://claude.com/claude-code', logo: null },
+  { name: 'AutoInternship', role: 'the form-filling idea it grew from', href: 'https://github.com/pqthangv/AutoInternshipClaude', logo: '/logos/built/autoInternship.png' },
+]

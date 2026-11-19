@@ -9,6 +9,7 @@ import { DitherFade } from '../useCases/DitherFade'
 import { StoryFaq } from '../story/StorySections'
 import { ApplyDemo } from './ApplyDemo'
 import { InstallCard } from './InstallCard'
+import { BuiltWithMap } from './BuiltWith'
 import {
   APPLY_COMPARE,
   APPLY_FAQ,
@@ -224,6 +225,22 @@ function Compare() {
   )
 }
 
+const TREG_URL = 'https://treg.to'
+
+function withTregLink(text: string) {
+  const at = text.indexOf('treg')
+  if (at === -1) return text
+  return (
+    <>
+      {text.slice(0, at)}
+      <a href={TREG_URL} target="_blank" rel="noopener noreferrer" className="font-bold text-[#2A8CFF] underline decoration-[#2A8CFF]/30 underline-offset-2 hover:decoration-[#2A8CFF]">
+        treg
+      </a>
+      {text.slice(at + 4)}
+    </>
+  )
+}
+
 function Steps() {
   return (
     <section id="how" aria-label="How log apply works" className={`${SECTION} bg-white`}>
@@ -249,13 +266,31 @@ function Steps() {
                     <span className="rounded-lg bg-[#2A8CFF] px-2 py-0.5 text-[13px] font-black text-white">{step.number}</span>
                     <span className="text-[22px] font-black leading-tight text-[#0D2A4C]">{step.title}</span>
                   </span>
-                  <p className="text-[15px] leading-relaxed text-[#0D2A4C]/70">{step.body}</p>
+                  <p className="text-[15px] leading-relaxed text-[#0D2A4C]/70">{withTregLink(step.body)}</p>
                 </div>
               </li>
             )
           })}
         </ol>
         <Compare />
+      </div>
+    </section>
+  )
+}
+
+function BuiltWith() {
+  return (
+    <section id="builtWith" aria-label="Built with" className={`${SECTION} bg-[#F7FAFD]`}>
+      <div className={INNER}>
+        <SectionHead
+          title={
+            <>
+              Built on tools <span className={STICKER}>you can see.</span>
+            </>
+          }
+          lede="log apply stands on open tools and good ideas. Each one does one job."
+        />
+        <BuiltWithMap />
       </div>
     </section>
   )
@@ -302,6 +337,7 @@ export function ApplyPage() {
       <SiteHeader cta={{ href: '#installTop', label: 'Install' }} />
       <Hero />
       <Steps />
+      <BuiltWith />
       <div className="quick-answers w-full bg-white pt-8 md:pt-12">
         <StoryFaq title="log apply: quick answers" items={APPLY_FAQ} />
       </div>
