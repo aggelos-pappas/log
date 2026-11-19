@@ -15,9 +15,9 @@ export const APPLY_INSTALL = ['/plugin marketplace add matthewdonsemail-lab/log-
 
 export const APPLY_TERMINAL = ['npx github:matthewdonsemail-lab/log-apply setup', 'log-apply doctor']
 
-export const APPLY_USAGE = ['/apply <posting url>', '/apply co-op software Vancouver', '/loop /apply']
+export const APPLY_USAGE = ['/apply <posting url>', '/apply software jobs Vancouver', '/loop /apply']
 
-export const APPLY_ASK = 'apply to every co-op posted this week'
+export const APPLY_ASK = 'apply to every software job posted this week'
 export const APPLY_DONE = `${APPLY_NUMBERS.bestDay} submitted today, 3 need your answer.`
 
 export type DemoRow = { company: string; role: string; city: string; via: 'Workday' | 'Greenhouse' }

@@ -40,5 +40,5 @@ Rules log apply keeps:
 
 After setup, the user can ask for work like:
 
-   /apply co-op software Vancouver
+   /apply software jobs Vancouver
    /loop /apply

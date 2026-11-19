@@ -10,7 +10,7 @@
     "pitch": "job applications, run by <span class=\"u\">your AI agent</span>"
   },
   "chat": {
-    "ask": "apply to every co-op posted this week",
+    "ask": "apply to every software job posted this week",
     "done": "68 submitted today, 3 need your answer.",
     "rows": [
       { "who": "Global Relay", "status": "Applied" },

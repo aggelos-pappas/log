@@ -81,7 +81,7 @@ function Chat({ tick }: { tick: number }) {
         <p className="ml-auto max-w-[92%] rounded-[18px] rounded-br-md bg-[#2A8CFF] px-4 py-2.5 text-[15px] font-bold leading-snug text-white">{APPLY_ASK}</p>
         <Reveal shown className="self-start">
           <p className="rounded-[18px] rounded-bl-md bg-white px-4 py-2 text-[13px] leading-snug text-[#0D2A4C]/65 shadow-[0_0_0_1px_rgba(13,42,76,0.08)]">
-            Running <span className="font-bold text-[#0D2A4C]">/apply co-op software</span>, one at a time
+            Running <span className="font-bold text-[#0D2A4C]">/apply software jobs</span>, one at a time
           </p>
         </Reveal>
         <Reveal shown={tick >= 1} className="self-start">

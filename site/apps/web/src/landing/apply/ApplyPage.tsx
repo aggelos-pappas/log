@@ -311,7 +311,7 @@ function Receipts() {
               Receipts, not <span className={STICKER}>promises.</span>
             </>
           }
-          lede="Built during a real co-op search and run on it every day. Every application is on a public ledger, with the exact resume and cover letter that went out."
+          lede={`Built for a real job search, by a builder with a full-time job. log apply went after every opening they qualified for: ${APPLY_NUMBERS.applied} applications so far, ${APPLY_NUMBERS.bestDay} in a single day, each with its own resume and cover letter. Every one is on a public ledger, with the exact documents that went out.`}
         />
         <div className="w-full overflow-hidden rounded-3xl bg-[#0B1626] p-2 text-white shadow-[0_4px_0_#061a33]">
           <ul className="m-0 grid list-none grid-cols-3 gap-2 p-0">
