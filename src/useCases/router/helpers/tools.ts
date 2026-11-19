@@ -1,4 +1,4 @@
-import { BM25_B, BM25_K1, NAME_FLAGS, PLATFORM_NAME_ALIASES, TOOL_PLATFORM_BONUS, PLATFORM_WORDS, STOP_WORDS, TOOL_FIELD_WEIGHTS, TOOL_KEEP_SHARE, TOOL_MIN_SCORE, TOOL_SUMMARY_CHARS, TOOL_GENERIC_WORDS, TOOL_RARE_DF, TOOL_STOP_WORDS, TOOL_SYNONYMS, TOOL_TEXT_BUDGET, TOOLS_SHOWN } from '../types'
+import { BM25_B, BM25_K1, NAME_FLAGS, PLATFORM_NAME_ALIASES, TOOL_PLATFORM_BONUS, PLATFORM_WORDS, STOP_WORDS, TOOL_FIELD_WEIGHTS, TOOL_KEEP_SHARE, TOOL_MIN_SCORE, TOOL_SUMMARY_CHARS, TOOL_GENERIC_WORDS, TOOL_RARE_DF, TOOL_READ_EFFECTS, TOOL_WRITE_WORDS, TOOL_STOP_WORDS, TOOL_SYNONYMS, TOOL_TEXT_BUDGET, TOOLS_SHOWN } from '../types'
 import type { RoutableUseCase, ToolDoc, ToolFacts, ToolFill, ToolMatch } from '../types'
 
 export interface ToolTerms {
@@ -89,6 +89,10 @@ export function askTermsOf(prompt: string, terms: ToolTerms): string[] {
   return toolTermsOf(words.join(' '), terms).filter((w) => !generic.has(w))
 }
 
+export function asksToWrite(prompt: string): boolean {
+  return (prompt.toLowerCase().match(/[a-z]+/g) ?? []).some((w) => TOOL_WRITE_WORDS.has(w))
+}
+
 export function specificEnough(index: ToolIndex, query: readonly string[], at: number): boolean {
   const matched = [...new Set(query)].filter((term) => index.terms[at].has(term))
   return matched.length >= 2 || matched.some((term) => index.names[at].has(term) || (index.frequency.get(term) ?? 0) <= TOOL_RARE_DF)
@@ -151,8 +155,9 @@ export function rankToolsOver(prompt: string, index: ToolIndex, terms: ToolTerms
   const query = askTermsOf(prompt, terms)
   if (!query.length || !index.docs.some((_, at) => specificEnough(index, query, at))) return []
   const fill = fillOf(raw, known, [...named])
+  const writes = asksToWrite(raw)
   const scored = index.docs
-    .map((doc, at) => ({ doc, score: named.size && doc.platform && !named.has(doc.platform) ? 0 : bm25(index, query, at) * (doc.platform && named.has(doc.platform) ? 1 + TOOL_PLATFORM_BONUS : 1) }))
+    .map((doc, at) => ({ doc, score: (named.size && doc.platform && !named.has(doc.platform)) || (!writes && !TOOL_READ_EFFECTS.has(doc.effect ?? 'read')) ? 0 : bm25(index, query, at) * (doc.platform && named.has(doc.platform) ? 1 + TOOL_PLATFORM_BONUS : 1) }))
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score || a.doc.name.localeCompare(b.doc.name))
   const top = scored[0]?.score ?? 0

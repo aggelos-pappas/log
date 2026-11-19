@@ -1,6 +1,7 @@
 [
-  { "prompt": "can you summarise the discord convo with linus_k tell me about some opportunities on discord show me the stats", "expect": ["discordRead", "discordChats"], "note": "the slow turn this was built for: a summary of one person's chat" },
-  { "prompt": "summarise the discord convo with grace_ships", "expect": ["discordRead", "discordChats"] },
+  { "prompt": "can you summarise the discord convo with linus_k tell me about some opportunities on discord show me the stats", "expect": ["discordRead", "discordChats"], "never": ["twitterDms", "twitterQueueAdd", "twitterDm", "discordSend"], "note": "the slow turn this was built for; live it once named twitterDms, twitterQueueAdd and twitterDm" },
+  { "prompt": "summarise the discord convo with grace_ships", "expect": ["discordRead", "discordChats"], "never": ["twitterDms", "twitterDm", "twitterQueueAdd", "discordSend"] },
+  { "prompt": "summarise my x dms with grace_ships", "expect": ["twitterDms"], "never": ["twitterDm", "twitterQueueAdd", "discordRead"], "note": "a read ask on X names no send tool and no Discord tool" },
   { "prompt": "who is waiting on me on discord", "expect": ["inboxWaiting"] },
   { "prompt": "show me stats of my discord", "expect": ["inboxWaiting", "discordServers"] },
   { "prompt": "search the buildspace server for launch week", "expect": ["discordSearch"] },

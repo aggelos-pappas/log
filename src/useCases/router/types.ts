@@ -171,6 +171,10 @@ export const TOOL_GENERIC_WORDS: ReadonlySet<string> = new Set(['again', 'alread
 
 export const TOOL_RARE_DF = 3
 
+export const TOOL_READ_EFFECTS: ReadonlySet<string> = new Set(['read', 'browser'])
+
+export const TOOL_WRITE_WORDS: ReadonlySet<string> = new Set(['add', 'answer', 'approve', 'comment', 'connect', 'create', 'delete', 'dm', 'draft', 'edit', 'follow', 'invite', 'join', 'like', 'message', 'post', 'prune', 'publish', 'queue', 'quote', 'react', 'remove', 'repost', 'reply', 'respond', 'retweet', 'schedule', 'send', 'share', 'start', 'stop', 'tweet', 'upvote', 'vote', 'write'])
+
 export const NAME_FLAGS: readonly string[] = ['channel', 'chat', 'with', 'handle']
 
 export interface ToolFacts {
@@ -180,6 +184,7 @@ export interface ToolFacts {
   flags: string[]
   required: string[]
   notes: string
+  effect: string
 }
 
 export interface ToolDoc extends ToolFacts {
@@ -205,5 +210,6 @@ export interface ToolFill {
 export interface ToolGolden {
   prompt: string
   expect: string[]
+  never?: string[]
   note?: string
 }

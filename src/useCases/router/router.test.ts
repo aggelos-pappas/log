@@ -6,7 +6,7 @@ import { askAnswer } from '../../mcp/server/helpers/guideAnswer.ts'
 import { clearActivePlay, playScope } from '../../mcp/server/helpers/activePlay.ts'
 import { listUseCases } from '../../mcp/server/helpers/guides.ts'
 import { contentWords, folderOf, isPlatformFolder, loadToolFacts, outcomeOf, phrasesOf, platformsOf, playMatchText, rankTools, route, toolMatchText } from './client'
-import { callOf, fillOf, stepRowsOf } from './helpers'
+import { asksToWrite, callOf, fillOf, stepRowsOf } from './helpers'
 import { GOLDEN_FILE, TOOL_GOLDEN_FILE, TOOL_TEXT_BUDGET } from './types'
 import type { GoldenPrompt, ToolGolden } from './types'
 import { loadDenylist } from '../../privacy/scan/client.ts';
@@ -157,6 +157,22 @@ describe('the tool ranking', () => {
     expect(text.length).toBeLessThanOrEqual(TOOL_TEXT_BUDGET)
   })
 
+  test('a named platform drops the tools of every other platform and a read ask names no write tool', () => {
+    const facts = new Map(loadToolFacts().map((f) => [f.name, f]))
+    for (const g of toolGolden) {
+      const shown = toolMatchText(g.prompt, useCases).tools
+      for (const name of g.never ?? []) expect(shown).not.toContain(name)
+      const named = platformsOf(contentWords(g.prompt))
+      for (const name of shown) {
+        const platform = facts.get(name)?.platform
+        if (named.length && platform) expect(named).toContain(platform)
+        if (!asksToWrite(g.prompt)) expect(['read', 'browser']).toContain(facts.get(name)?.effect ?? '')
+      }
+    }
+    expect(asksToWrite('reply to linus_k on discord')).toBe(true)
+    expect(asksToWrite('summarise the discord convo with linus_k')).toBe(false)
+  })
+
   test('a named platform filters tools, never adds one', () => {
     for (const name of rankTools('list my slack chats', useCases).map((m) => m.name)) expect(name.startsWith('discord') || name.startsWith('twitter')).toBe(false)
     expect(rankTools('how slow is log', useCases)[0]?.name).toBe('timing')
@@ -166,7 +182,7 @@ describe('the tool ranking', () => {
   test('a call template fills the person, the server and the words from the ask', () => {
     const fill = fillOf('search the buildspace server for launch week with grace_ships', new Set(['search', 'launch']), ['discord'])
     expect(fill).toEqual({ platforms: ['discord'], server: 'buildspace', words: 'launch week with grace_ships', name: 'grace_ships' })
-    const facts = { name: 'discordSearch', platform: 'discord', summary: '', flags: ['account', 'server', 'query', 'from'], required: ['account', 'server', 'query'], notes: '' }
+    const facts = { name: 'discordSearch', platform: 'discord', summary: '', flags: ['account', 'server', 'query', 'from'], required: ['account', 'server', 'query'], notes: '', effect: 'read' }
     expect(callOf(facts, { platforms: [], server: 'buildspace', words: 'launch week' })).toBe('discordSearch { account, server: "buildspace", query: "launch week" }')
     expect(callOf({ ...facts, name: 'inboxWaiting', platform: null, flags: ['platform'], required: [] }, { platforms: ['discord'] })).toBe('inboxWaiting { platform: "discord" }')
   })

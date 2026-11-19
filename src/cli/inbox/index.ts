@@ -29,7 +29,7 @@ export const INBOX_INPUT: CommandInput = {
     { words: ["release"], effect: "write", summary: "Release this session's claim on a chat when it is done with it", positionals: [], flags: [PLATFORM, ACCOUNT, CHAT, JSON_FLAG] },
     { words: ["resume"], effect: "write", summary: "The owner's go-ahead after a refused catch-up: the account catches up again through its own session (rule 94), only when the owner says so", positionals: [], flags: [PLATFORM, ACCOUNT, { name: "by", kind: "string", required: true, description: "Who said to resume: the owner" }, JSON_FLAG] },
     {
-      words: ["waiting"], summary: "Who is waiting on me: the people waiting on a reply, with counts per platform (the inbox stats), then those who reacted to my last message; --platform and --account narrow it",
+      words: ["waiting"], effect: "read", summary: "Who is waiting on me: the people waiting on a reply, with counts per platform (the inbox stats), then those who reacted to my last message; --platform and --account narrow it",
       positionals: [],
       flags: [
         { name: "platform", kind: "enum", values: ["twitter", "discord", "slack", "instagram"], description: "Only this platform: twitter, discord, slack or instagram" },
@@ -44,9 +44,9 @@ export const INBOX_INPUT: CommandInput = {
       positionals: [],
       flags: [{ name: "reader", kind: "string", required: true, pattern: READER_PATTERN.source, takes: "a reader name: letters, digits, _ and -, up to 80", description: "Who is reading: one name per session or harness. A new reader starts from now; each read moves only its own place" }, JSON_FLAG],
     },
-    { words: ["claims"], summary: "Every live claim: which session holds which chat, and until when", positionals: [], flags: [JSON_FLAG] },
+    { words: ["claims"], effect: "read", summary: "Every live claim: which session holds which chat, and until when", positionals: [], flags: [JSON_FLAG] },
     {
-      words: ["actions"], summary: "The log of every claim, refusal, send and release, oldest first, to see what was already done in a chat",
+      words: ["actions"], effect: "read", summary: "The log of every claim, refusal, send and release, oldest first, to see what was already done in a chat",
       positionals: [],
       flags: [
         { name: "platform", kind: "string", description: "Only this platform" },

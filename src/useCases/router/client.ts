@@ -199,6 +199,7 @@ export const TOOL_INDEX_PATH = join(import.meta.dir, 'fixtures', TOOL_INDEX_FILE
 export interface CommandToolEntry {
   tool: string
   live: boolean
+  effect: string
   command: { platform: string; summary: string; usage: string; input?: { forms: readonly unknown[] } }
   form: { summary: string; flags: readonly { name: string; required?: boolean }[] } | null
 }
@@ -220,6 +221,7 @@ export function toolFactsOf(entries: readonly CommandToolEntry[], isPlatform: (w
         flags,
         required: (e.form?.flags ?? []).filter((f) => f.required && f.name !== 'json').map((f) => f.name),
         notes,
+        effect: e.effect,
       }
     })
 }
