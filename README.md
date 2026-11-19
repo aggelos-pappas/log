@@ -166,7 +166,7 @@ A harness is the agent app you talk to log through. log is the same MCP server i
 |---|---|---|---|---|
 | [Claude Code](docs/harnesses/claudeApp.md#claude-code) | local or hosted | its prompt hook runs the router on every prompt | hooks on every prompt and after every tool call | text; sign-in in the window on your screen |
 | [Codex](docs/harnesses/codex.md) | local or hosted | its prompt hook | hooks on every prompt and around tool calls | text |
-| [Hermes](docs/harnesses/hermes.md) | local or hosted | the `logHooks` plugin's `pre_llm_call`, before every model call | the same hook, before every model call | text, plus a **log tab** in the Hermes dashboard |
+| [Hermes](docs/harnesses/hermes.md) | local or hosted | the `log` plugin's `pre_llm_call`, before every model call | the same hook, before every model call | text, plus a **log tab** in the Hermes dashboard |
 | [OpenCode](docs/harnesses/README.md) | local | its prompt hook | its plugin's hooks | text |
 | [Antigravity](docs/harnesses/README.md) | local | its prompt hook | its hooks | text |
 | [Cursor](docs/harnesses/cursor.md) | local or hosted | `getGuide({ ask })` (Cursor's prompt hook can't add context) | `sessionStart` and `postToolUse` hooks | MCP Apps: `report` and `browserView` inline |
@@ -297,7 +297,7 @@ flowchart TD
   VG --> LIVE["Sent as you, only with --live<br/>and your approval"]
 ```
 
-1. **The hook runs it for you.** In a harness with a prompt hook, the router runs before the model sees your message, and its answer is added to the turn. In Hermes this is the `logHooks` plugin's `pre_llm_call`.
+1. **The hook runs it for you.** In a harness with a prompt hook, the router runs before the model sees your message, and its answer is added to the turn. In Hermes this is the `log` plugin's `pre_llm_call`.
 2. **Or the model asks.** Everywhere else, the server's instructions and every tool's description tell the model to call `getGuide({ ask: "<your words>" })` first. It's the same router, so the same prompt gets the same play. A golden set of prompts checks that (`src/useCases/router/fixtures/golden.json`).
 3. **Words, then meaning.** Each play lists how people ask for it. The hook's warm context service adds a meaning score from MiniLM, a small model on your machine, in about 12 ms. If the service is down, the hook falls back to the word score, so a play is still named.
 4. **A clear match loads the play. A near tie doesn't.** A clear match names the play and its steps load with `getGuide({ useCase })`. A near tie shows a short menu and loads nothing. Building or fixing log itself is never a play.

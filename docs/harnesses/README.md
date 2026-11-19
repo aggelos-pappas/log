@@ -16,7 +16,7 @@ A harness is the agent app someone talks to log through: Claude, ChatGPT, Cursor
 | [Claude Code](claudeApp.md#claude-code) | yes | yes | yes | no | yes | yes | yes | the prompt hook | 10,000 characters | hosted or local | `.claude/settings.json` |
 | [Codex](codex.md) | yes | yes | yes | unknown | yes | unknown | unknown | the prompt hook | 7,500 characters | hosted or local | `.codex/hooks.json` |
 | [Cursor](cursor.md) | no | yes | yes | yes | unknown | unknown | unknown | `getGuide({ ask })` | 7,500 characters | hosted or local | `.cursor/hooks.json` |
-| [Hermes](hermes.md) | yes | no | yes | unknown | unknown | yes | no | the `pre_llm_call` hook (native plugin) | 7,500 characters | hosted or local | `hermesPlugin/native/plugin.yaml` |
+| [Hermes](hermes.md) | yes | no | yes | unknown | unknown | yes | no | the `pre_llm_call` hook (native plugin) | 7,500 characters | hosted or local | `hermesPlugin/plugin.yaml` |
 | [OpenCode](README.md) | yes | yes | yes | unknown | unknown | unknown | unknown | the prompt hook | 20,000 characters | local | `.opencode/plugins/logHooks/index.ts` |
 | [Antigravity](README.md) | yes | yes | yes | unknown | unknown | unknown | unknown | the prompt hook | 7,500 characters | local | `.agents/hooks.json` |
 | [Claude (web, desktop, mobile)](claudeApp.md) | no | no | no | yes | unknown | unknown | unknown | `getGuide({ ask })` | no hooks | hosted | none |

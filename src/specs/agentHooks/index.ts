@@ -29,7 +29,7 @@ export const agentHooks = {
     'src/agentHooks/hermes/client.ts',
     'src/contextLayer/hook/client.ts',
     'src/cli/launch/helpers/setup.ts',
-    'hermesPlugin/native/__init__.py',
+    'hermesPlugin/__init__.py',
     'scripts/contextLayer/service.ts',
     'scripts/hooks/event.ts',
     'src/agentHooks/answers/client.ts',
@@ -93,7 +93,7 @@ export const agentHooks = {
     'REQ-HOOKS-28': [
       { kind: 'symbol', file: 'src/cli/launch/helpers/setup.ts', name: 'SETUP_HARNESSES' },
       { kind: 'symbol', file: HERMES, name: 'installHermes' },
-      { kind: 'string', file: 'hermesPlugin/native/__init__.py', includes: 'pre_llm_call' },
+      { kind: 'string', file: 'hermesPlugin/__init__.py', includes: 'pre_llm_call' },
       { kind: 'string', file: 'scripts/docs/syncSiteSkills.mjs', includes: 'hermesPlugin' },
     ],
     'REQ-HOOKS-12': [

@@ -13,7 +13,7 @@ swaps the line for text on chats that can't draw. log uses the same delivery for
 - `src/mcp/apps/report/view/hermesDesktop.tsx` is log's Desktop half (the `::logview` directive). It imports
   `composerActions` from `web/src/host/actions.ts` here, so a view's suggested questions go through the composer with
   upstream's guards (long text and slash commands are put in the box, never sent).
-- `hermesPlugin/native/__init__.py` (`transform_llm_output`) and `hermesPlugin/dashboard/plugin_api.py` (`/views/<id>`, read from log.db)
+- `hermesPlugin/__init__.py` (`transform_llm_output`) and `hermesPlugin/dashboard/plugin_api.py` (`/views/<id>`, read from log.db)
   follow `hooks/text_fallback.py` and `dashboard/plugin_api.py` here.
 - `bun run docs:build` (through `scripts/hermes/desktopBundles.ts`) builds both Desktop halves, log's into `hermesPlugin/desktop/plugin.js` and this
   one's into `desktop/plugin.js`, with Bun instead of upstream's esbuild script (`web/build.mjs`, kept for reference).
