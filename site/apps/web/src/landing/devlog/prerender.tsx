@@ -8,7 +8,7 @@ import { SITE_PAGES, SITE_PLATFORMS } from '../useCases/sitePages'
 import { QUICK_ANSWERS } from '../useCases/quickAnswers'
 import { PLATFORMS } from '../PlatformSuite'
 import { UPDATED, applySchema, devlogIndexSchema, homeSchema, mcpSchema, platformSchema } from '../structuredData'
-import { APPLY_COMPARE, APPLY_DESCRIPTION, APPLY_FAQ, APPLY_GITHUB_URL, APPLY_INSTALL, APPLY_LEDGER_URL, APPLY_PATH, APPLY_STEPS, APPLY_TITLE, APPLY_USAGE } from '../apply/applyContent'
+import { APPLY_COMPARE, APPLY_DESCRIPTION, APPLY_FAQ, APPLY_GITHUB_URL, APPLY_INSTALL, APPLY_PATH, APPLY_STEPS, APPLY_TITLE, APPLY_USAGE } from '../apply/applyContent'
 import { MCP_CLIENTS, MCP_DESCRIPTION, MCP_FAQ, MCP_INSTALL, MCP_PATH, MCP_PLATFORMS, MCP_STEPS, MCP_TITLE } from '../mcp/mcpContent'
 import { USE_CASES } from '../useCases/useCaseCatalog'
 
@@ -303,7 +303,6 @@ export function prerenderedPages(): PrerenderedPage[] {
       '',
       `Agent setup instructions: ${SITE}/apply.txt`,
       '',
-      `The public ledger of every application: ${APPLY_LEDGER_URL}`,
       '',
       '## log apply: quick answers',
       '',
@@ -327,9 +326,6 @@ export function prerenderedPages(): PrerenderedPage[] {
         <pre>
           <code>{APPLY_INSTALL.join('\n')}</code>
         </pre>
-        <p>
-          The public ledger of every application: <a href={APPLY_LEDGER_URL}>{APPLY_LEDGER_URL}</a>
-        </p>
         <section className="quick-answers">
           <h2>log apply: quick answers</h2>
           {APPLY_FAQ.map((item) => (

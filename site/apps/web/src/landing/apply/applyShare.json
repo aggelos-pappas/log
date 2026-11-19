@@ -11,7 +11,7 @@
   },
   "chat": {
     "ask": "apply to every software job posted this week",
-    "done": "68 submitted today, 3 need your answer.",
+    "done": "7 submitted, each with its own resume. Ready for more.",
     "rows": [
       { "who": "Global Relay", "status": "Applied" },
       { "who": "Workday", "status": "Applied" },

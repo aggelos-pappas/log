@@ -5,10 +5,7 @@ export const APPLY_PATH = '/apply'
 export const APPLY_TITLE = applyShare.title
 export const APPLY_DESCRIPTION = applyShare.description
 export const APPLY_GITHUB_URL = 'https://github.com/matthewdonsemail-lab/log-apply'
-export const APPLY_LEDGER_URL = 'https://coop-ledger-five.vercel.app'
 export const APPLY_AGENT_LINE = 'set up log apply - https://log.listeningkit.com/apply.txt'
-
-export const APPLY_NUMBERS = { applied: 206, companies: 112, bestDay: 68 }
 
 
 export const APPLY_INSTALL = ['/plugin marketplace add matthewdonsemail-lab/log-apply', '/plugin install log-apply@log-apply', '/apply-setup']
@@ -18,7 +15,7 @@ export const APPLY_TERMINAL = ['npx github:matthewdonsemail-lab/log-apply setup'
 export const APPLY_USAGE = ['/apply <posting url>', '/apply software jobs Vancouver', '/loop /apply']
 
 export const APPLY_ASK = 'apply to every software job posted this week'
-export const APPLY_DONE = `${APPLY_NUMBERS.bestDay} submitted today, 3 need your answer.`
+export const APPLY_DONE = '7 submitted, each with its own resume. Ready for more.'
 
 export type DemoRow = { company: string; role: string; city: string; via: 'Workday' | 'Greenhouse' }
 
@@ -46,7 +43,7 @@ export const APPLY_STEPS = [
   {
     number: '03',
     title: 'Track',
-    body: 'Every application lands on a public ledger, with the exact resume and cover letter that went out.',
+    body: 'Every application lands on your own ledger, with the exact resume and cover letter that went out.',
   },
 ]
 
@@ -58,7 +55,7 @@ export const APPLY_COMPARE = {
   },
   with: {
     label: 'With log apply',
-    headline: `${APPLY_NUMBERS.bestDay} in a day`,
+    headline: 'As many as you want in a day',
     points: ['A one-page resume and cover letter for each job', 'Workday and Greenhouse filled in your own browser', 'Codes and links read from your inbox', 'A public ledger with every resume sent'],
   },
 }
@@ -82,21 +79,4 @@ export const APPLY_FAQ: FaqItem[] = [
   },
 ]
 
-export const APPLY_LEDGER_DAYS: Record<string, number> = {
-  '2026-09-15': 3,
-  '2026-09-16': 9,
-  '2026-09-17': 5,
-  '2026-09-18': 1,
-  '2026-10-09': 1,
-  '2026-10-13': 2,
-  '2026-10-14': 6,
-  '2026-10-15': 11,
-  '2026-10-20': 5,
-  '2026-10-21': 10,
-  '2026-10-27': 5,
-  '2026-11-17': 56,
-  '2026-11-18': 68,
-}
 
-export const APPLY_LEDGER_FROM = '2026-09-13'
-export const APPLY_LEDGER_TO = '2026-11-21'

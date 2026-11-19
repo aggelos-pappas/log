@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGithub } from '@fortawesome/free-brands-svg-icons'
-import { faArrowRight, faCheck, faEnvelope, faFileLines, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faCheck, faEnvelope, faFileLines, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { SiteHeader } from '../SiteHeader'
 import { SiteFooter } from '../SiteFooter'
 import { ClayClouds } from '../ClayClouds'
@@ -13,11 +13,6 @@ import {
   APPLY_COMPARE,
   APPLY_FAQ,
   APPLY_GITHUB_URL,
-  APPLY_LEDGER_DAYS,
-  APPLY_LEDGER_FROM,
-  APPLY_LEDGER_TO,
-  APPLY_LEDGER_URL,
-  APPLY_NUMBERS,
   APPLY_STEPS,
   APPLY_TITLE,
 } from './applyContent'
@@ -85,13 +80,13 @@ function Hero() {
           <InstallCard id="installTop" />
         </div>
         <a
-          href={APPLY_LEDGER_URL}
+          href={APPLY_GITHUB_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="relative z-30 mt-5 inline-flex items-center gap-1.5 text-[15px] font-bold text-white/90 underline decoration-white/40 underline-offset-4 transition-colors hover:text-white hover:decoration-white"
+          className="relative z-30 mt-5 inline-flex items-center gap-2 text-[15px] font-bold text-white/90 underline decoration-white/40 underline-offset-4 transition-colors hover:text-white hover:decoration-white"
         >
-          See the live ledger
-          <FontAwesomeIcon icon={faArrowRight} className="text-[12px]" />
+          <FontAwesomeIcon icon={faGithub} className="text-[16px]" />
+          github.com/matthewdonsemail-lab/log-apply
         </a>
         <div className="mt-14 w-full md:mt-20">
           <ApplyDemo />
@@ -266,100 +261,6 @@ function Steps() {
   )
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-function ledgerWeeks() {
-  const start = Date.parse(`${APPLY_LEDGER_FROM}T00:00:00Z`)
-  const end = Date.parse(`${APPLY_LEDGER_TO}T00:00:00Z`)
-  const weeks: { date: string; count: number }[][] = []
-  for (let time = start; time <= end; time += DAY_MS) {
-    const date = new Date(time).toISOString().slice(0, 10)
-    const index = Math.floor((time - start) / DAY_MS)
-    if (index % 7 === 0) weeks.push([])
-    weeks[weeks.length - 1].push({ date, count: APPLY_LEDGER_DAYS[date] ?? 0 })
-  }
-  return weeks
-}
-
-function shade(count: number) {
-  if (count === 0) return 'bg-white/[0.06]'
-  if (count < 3) return 'bg-[#2A8CFF]/35'
-  if (count < 8) return 'bg-[#2A8CFF]/60'
-  if (count < 20) return 'bg-[#2A8CFF]/85'
-  return 'bg-[#7BE3A4]'
-}
-
-function labelOf(date: string) {
-  const [, month, day] = date.split('-')
-  return `${MONTHS[Number(month) - 1]} ${Number(day)}`
-}
-
-function Receipts() {
-  const weeks = ledgerWeeks()
-  const stats = [
-    { value: `${APPLY_NUMBERS.applied}+`, label: 'applications' },
-    { value: String(APPLY_NUMBERS.companies), label: 'companies' },
-    { value: String(APPLY_NUMBERS.bestDay), label: 'in a single day' },
-  ]
-  return (
-    <section id="receipts" aria-label="Receipts" className={`${SECTION} bg-[#F7FAFD]`}>
-      <div className={INNER}>
-        <SectionHead
-          title={
-            <>
-              Receipts, not <span className={STICKER}>promises.</span>
-            </>
-          }
-          lede={`Built for a real job search, by a builder with a full-time job. log apply went after every opening they qualified for: ${APPLY_NUMBERS.applied} applications so far, ${APPLY_NUMBERS.bestDay} in a single day, each with its own resume and cover letter. Every one is on a public ledger, with the exact documents that went out.`}
-        />
-        <div className="w-full overflow-hidden rounded-3xl bg-[#0B1626] p-2 text-white shadow-[0_4px_0_#061a33]">
-          <ul className="m-0 grid list-none grid-cols-3 gap-2 p-0">
-            {stats.map((stat) => (
-              <li key={stat.label} className="flex flex-col items-center rounded-2xl bg-white/[0.05] px-2 py-5 text-center md:py-7">
-                <span className="text-[clamp(1.9rem,1.2rem+3vw,3.5rem)] font-black leading-none text-white">{stat.value}</span>
-                <span className="mt-2 text-[12px] font-bold text-white/55 md:text-[15px]">{stat.label}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="px-4 pb-5 pt-6 md:px-8 md:pb-7">
-            <p className="text-center text-[14px] font-bold text-white/70">Applications per day, from the public ledger</p>
-            <div className="mx-auto mt-4 flex w-full max-w-[26rem] gap-[5px] sm:gap-1.5">
-              {weeks.map((week) => (
-                <div key={week[0].date} className="flex min-w-0 flex-1 flex-col gap-[5px] sm:gap-1.5">
-                  {week.map((day) => (
-                    <span key={day.date} title={`${labelOf(day.date)}: ${day.count} sent`} className={`block aspect-square w-full rounded-[4px] sm:rounded-md ${shade(day.count)}`} />
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div className="mx-auto mt-3 flex w-full max-w-[26rem] justify-between text-[11px] font-bold text-white/45">
-              <span>{labelOf(APPLY_LEDGER_FROM)}</span>
-              <span className="flex items-center gap-1.5">
-                less
-                {[0, 1, 5, 10, 40].map((count) => (
-                  <i key={count} className={`size-2.5 rounded-[3px] ${shade(count)}`} />
-                ))}
-                more
-              </span>
-              <span>{labelOf(APPLY_LEDGER_TO)}</span>
-            </div>
-          </div>
-        </div>
-        <a
-          href={APPLY_LEDGER_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-8 inline-flex items-center gap-1.5 text-[16px] font-bold text-[#2A8CFF] underline decoration-[#2A8CFF]/30 underline-offset-4 transition-colors hover:decoration-[#2A8CFF]"
-        >
-          Open the live ledger
-          <FontAwesomeIcon icon={faArrowRight} className="text-[13px]" />
-        </a>
-      </div>
-    </section>
-  )
-}
-
 function FinalInstall() {
   return (
     <section id="install" aria-label="Install log apply" className={`${SECTION} bg-white pt-4 md:pt-6`}>
@@ -401,7 +302,6 @@ export function ApplyPage() {
       <SiteHeader cta={{ href: '#installTop', label: 'Install' }} />
       <Hero />
       <Steps />
-      <Receipts />
       <div className="quick-answers w-full bg-white pt-8 md:pt-12">
         <StoryFaq title="log apply: quick answers" items={APPLY_FAQ} />
       </div>
