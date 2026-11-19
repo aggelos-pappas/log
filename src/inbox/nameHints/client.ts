@@ -2,12 +2,14 @@ import { existsSync } from 'node:fs'
 import { Database } from 'bun:sqlite'
 import { dbPath } from '../store/client'
 import { editDistance } from '../../useCases/router/helpers/typos'
-import { FTS_BOOST, HINT_THRESHOLD, MAX_HINTS, NAMES_BUDGET, NOT_NAMES, READ_TOOLS } from './types'
+import { EVERYDAY_WORDS, FTS_BOOST, TYPO_MAX_USES, HINT_THRESHOLD, MAX_HINTS, NAMES_BUDGET, NOT_NAMES, READ_TOOLS } from './types'
 import type { NameHint, NamedChat } from './types'
 
 export type CountMessages = (chat: NamedChat) => number
 
 export type MentionsOf = (said: string, chat: NamedChat) => number
+
+export type WordUses = (said: string) => number
 
 const plain = (text: string) => text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
 
@@ -18,7 +20,7 @@ export function promptWords(prompt: string): string[] {
 
 function tokensOf(name: string): string[] {
   const parts = name.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 3)
-  return [...new Set([plain(name), ...parts])]
+  return [...new Set([plain(name), ...parts.filter((t, i) => i === 0 || !EVERYDAY_WORDS.has(t))])]
 }
 
 export function editsFor(said: string, name: string): number {
@@ -37,10 +39,10 @@ export function nameScore(edits: number, mentions: number): number {
   return Math.min(1, 1 - 0.25 * edits + (mentions > 0 ? FTS_BOOST : 0))
 }
 
-export function nameHints(prompt: string, chats: readonly NamedChat[], count: CountMessages = (chat) => chat.messages, mentions: MentionsOf = () => 0): NameHint[] {
+export function nameHints(prompt: string, chats: readonly NamedChat[], count: CountMessages = (chat) => chat.messages, mentions: MentionsOf = () => 0, uses: WordUses = () => 0): NameHint[] {
   const hints: NameHint[] = []
   for (const said of promptWords(prompt)) {
-    const limit = plain(said).length >= 5 ? 2 : 1
+    const limit = uses(said) > TYPO_MAX_USES ? 0 : plain(said).length >= 5 ? 2 : 1
     const found = chats.map((chat) => ({ said, chat, edits: editsFor(said, chat.name) })).filter((h) => h.edits <= limit)
     if (!found.length) continue
     const fewest = Math.min(...found.map((h) => h.edits))
@@ -60,8 +62,8 @@ export function hintLine(hint: NameHint): string {
   return `"${hint.said}" → ${chat.name} · ${chat.platform} ${chat.kind} ${chat.conversationId} · ${chat.messages} msgs · last ${last}${next}`
 }
 
-export function nameHintsText(prompt: string, chats: readonly NamedChat[], count?: CountMessages, mentions?: MentionsOf): string {
-  const hints = nameHints(prompt, chats, count, mentions)
+export function nameHintsText(prompt: string, chats: readonly NamedChat[], count?: CountMessages, mentions?: MentionsOf, uses?: WordUses): string {
+  const hints = nameHints(prompt, chats, count, mentions, uses)
   if (!hints.length) return ''
   const lines = ['>>> NAMED IN THE PROMPT (pointers into log.db; read the chat by its name, never list every chat):']
   for (const line of hints.map(hintLine)) if ([...lines, line].join('\n').length <= NAMES_BUDGET) lines.push(line)
@@ -93,9 +95,25 @@ export function mentionCounter(database: Database): MentionsOf {
   }
 }
 
+export function wordUseCounter(database: Database): WordUses {
+  let query: ReturnType<Database['query']> | null = null
+  try {
+    query = database.query(`SELECT COUNT(*) AS n FROM (SELECT 1 FROM searchIndex WHERE searchIndex MATCH ? LIMIT ${TYPO_MAX_USES + 1})`)
+  } catch {
+    return () => 0
+  }
+  return (said) => {
+    try {
+      return Number((query!.get(`text:"${plain(said)}"`) as { n: number } | null)?.n ?? 0)
+    } catch {
+      return 0
+    }
+  }
+}
+
 export function storedNameHints(prompt: string, database: Database): string {
   if (!promptWords(prompt).length) return ''
-  return nameHintsText(prompt, namedChats(database), messageCounter(database), mentionCounter(database))
+  return nameHintsText(prompt, namedChats(database), messageCounter(database), mentionCounter(database), wordUseCounter(database))
 }
 
 export function promptNameHints(prompt: string, path: string = dbPath()): string {

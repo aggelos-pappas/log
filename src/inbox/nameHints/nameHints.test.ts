@@ -45,6 +45,20 @@ describe('names in a prompt become pointers to the stored chats, typos included'
     expect(nameHintsText('show me the discord chats and stats', chats)).toBe('')
     expect(nameHintsText('refactor the parser', chats)).toBe('')
   })
+
+  test('an everyday word that is only a later word of a chat name points nowhere, but the name\'s first word still does', () => {
+    const named = [chat('Mika Live', { conversationId: '900000000000000004' }), chat('Orla Team', { conversationId: '900000000000000005' })]
+    expect(nameHintsText('is it all live on that version, the whole team', named)).toBe('')
+    expect(nameHints('what did mika say', named).map((h) => h.chat.name)).toEqual(['Mika Live'])
+    expect(nameHints('ask orla', named).map((h) => h.chat.name)).toEqual(['Orla Team'])
+  })
+
+  test('a word people really write is not a typo of a name: only an exact name counts for it', () => {
+    const named = [chat('mats_k', { conversationId: '900000000000000006' })]
+    const uses = (said: string) => (said === 'meant' ? 120 : 0)
+    expect(nameHints('is it meant to be there', named, undefined, undefined, uses)).toEqual([])
+    expect(nameHints('ask mats_kk', named, undefined, undefined, uses).map((h) => h.chat.name)).toEqual(['mats_k'])
+  })
 })
 
 describe('the stored chats come from log.db, dms and groups only, counted only when they match', () => {

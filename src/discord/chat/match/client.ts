@@ -1,3 +1,4 @@
+import { editDistance } from '../../../useCases/router/helpers/typos'
 import { FILLER_WORDS } from './types'
 import type { ChatMatch, DiscordChat } from './types'
 
@@ -27,7 +28,15 @@ function namesOf(chat: DiscordChat): string[] {
   return [...(chat.name?.trim() ? [chat.name] : []), ...(chat.kind === 'dm' || !chat.name?.trim() ? chat.members : [])]
 }
 
-function scoreOf(said: string[], chat: DiscordChat): { score: number; how: 'exact' | 'words' | 'prefix' } | null {
+function typoOf(said: string[], names: string[]): boolean {
+  if (said.length !== 1 || said[0].length < 4) return false
+  const word = said[0]
+  const limit = word.length >= 5 ? 2 : 1
+  const tokens = new Set(names.flatMap((n) => [n.replace(/ /g, ''), ...n.split(' ')]).filter((t) => t.length >= 3))
+  return [...tokens].some((t) => t[0] === word[0] && editDistance(word, t, limit) <= limit)
+}
+
+function scoreOf(said: string[], chat: DiscordChat): { score: number; how: 'exact' | 'words' | 'prefix' | 'typo' } | null {
   const names = namesOf(chat).map((n) => normalizedName(n)).filter(Boolean)
   const phrase = said.join(' ')
   const own = chat.kind === 'dm' || chat.name?.trim() ? names : []
@@ -36,6 +45,7 @@ function scoreOf(said: string[], chat: DiscordChat): { score: number; how: 'exac
   const pool = new Set(names.flatMap((n) => n.split(' ')))
   if (said.every((w) => pool.has(w))) return { score: 2, how: 'words' }
   if (said.every((w) => w.length >= 3 && [...pool].some((p) => p.startsWith(w)))) return { score: 1, how: 'prefix' }
+  if (typoOf(said, names)) return { score: 0.5, how: 'typo' }
   return null
 }
 
@@ -45,7 +55,7 @@ export function matchChat(chats: readonly DiscordChat[], said: string): ChatMatc
   if (byId) return { ok: true, chat: byId, label: labelOf(byId), how: 'id' }
   const words = normalizedName(text).split(' ').filter(Boolean)
   if (!words.length) return { ok: false, code: 'chatNotFound', detail: `"${said}" names no chat`, candidates: [] }
-  const scored = chats.map((chat) => ({ chat, hit: scoreOf(words, chat) })).filter((s) => s.hit) as { chat: DiscordChat; hit: { score: number; how: 'exact' | 'words' | 'prefix' } }[]
+  const scored = chats.map((chat) => ({ chat, hit: scoreOf(words, chat) })).filter((s) => s.hit) as { chat: DiscordChat; hit: { score: number; how: 'exact' | 'words' | 'prefix' | 'typo' } }[]
   if (!scored.length) return { ok: false, code: 'chatNotFound', detail: `no DM or group matches "${said}" (read as "${words.join(' ')}")`, candidates: [] }
   const best = Math.max(...scored.map((s) => s.hit.score))
   const top = scored.filter((s) => s.hit.score === best)
