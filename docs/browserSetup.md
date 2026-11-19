@@ -47,6 +47,21 @@ python -m camoufox fetch          # downloads the Camoufox browser
 log facebook doctor
 ```
 
+### When Camoufox's GitHub is down
+
+On 19 Nov 2026 GitHub suspended daijro's and JWriter20's accounts with no notice, and `daijro/camoufox` went with them. Every release source the camoufox package knows (`daijro/camoufox`, `camoufox/camoufox`, `JWriter20/camoufox`) answers 404, so `camoufox fetch` can't download or update the browser. daijro is moving the project to a self-hosted GitLab.
+
+Point log at the GitLab project once it publishes releases:
+
+```bash
+LOG_CAMOUFOX_SOURCE=https://<their gitlab host>/daijro/camoufox   # or "camoufoxSource" in ~/.logCli/settings.json
+python python/browser/camoufoxSource.py fetch                       # any camoufox command: list all, set, version
+```
+
+`python/browser/camoufoxSource.py` reads the GitLab releases API (`/api/v4/projects/<path>/releases`) and hands camoufox each release in the shape of a GitHub release, so camoufox's own version rules, channels and installer run unchanged. Every launch goes through it (`visibleBrowser.launch_kwargs`). Nothing changes while it's unset.
+
+The GeoIP database camoufox uses to place each proxy exit (`GeoIP AIO by daijro`) came from `daijro/geoip-all-in-one`, also gone. Switch to the other source with `python -m camoufox set --geoip "MaxMind GeoLite2"`. If an update still fails, the gate (`proxyGate.locate_ip`) keeps the database already on this machine instead of refusing the launch.
+
 ### Human input: Myuri
 
 ```bash

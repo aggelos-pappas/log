@@ -21,6 +21,9 @@ def own_trajectory_humanize() -> float:
 
 
 def launch_kwargs(kwargs: dict[str, Any], own_trajectory: bool = False) -> dict[str, Any]:
+    from browser import camoufoxSource
+
+    camoufoxSource.install()
     visible = {**VISIBLE_LAUNCH, "humanize": own_trajectory_humanize()} if own_trajectory else VISIBLE_LAUNCH
     return proxyGate.apply(kwargs, visible)
 
