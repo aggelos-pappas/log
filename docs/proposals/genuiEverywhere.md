@@ -86,7 +86,7 @@ No test renders `ui://log/report` in a real MCP Apps host. The text fallback is 
 ### A. Three ways to connect, one server
 
 1. **Local stdio** (unchanged): Claude Code, Codex, Cursor, VS Code, Claude Desktop. `logMcp` is started by the host.
-2. **Local connector** (new command, `log mcp connector`): runs `logMcp --http` on loopback with OAuth on, opens an HTTPS tunnel to it, and prints the URL to paste into ChatGPT or Claude as a custom connector. The tunnel only forwards; the OAuth gate stays in front of every call. Personal use, no deployment. The tunnel provider is a setting (`cloudflared` by default).
+2. **Local connector** (new command, `log mcp connector`): runs `logMcp --http` on loopback with OAuth on and connects it outward. For ChatGPT (and Codex, the Responses API) it runs OpenAI's Secure MCP Tunnel client (`openai/tunnel-client`): outbound HTTPS only, nothing reachable from the internet, and the person picks **Tunnel** under Plugins, Add custom MCP server. For other remote-only clients (Claude web) it opens a public HTTPS tunnel instead (`cloudflared` by default), with the OAuth gate in front of every call. Personal use, no deployment. Research and the local-versus-hosted table: `docs/decisions/genuiEverywhere/research.md`.
 3. **Hosted** (existing code, not deployed): `https://<hosted origin>/mcp` with OAuth, which relays each call to the owner's machine over `log runtime connect`. This is the path for a shared team and for ChatGPT app submission.
 
 All three run the same `runToolCall`, so a view and its data are identical whichever way the call arrives.
@@ -176,5 +176,6 @@ A host matrix test per release, each cell a check with a pass/fail:
 
 ## Open questions
 
-- Which tunnel by default: `cloudflared` needs no account for a quick tunnel but changes its URL every run, so the connector would need re-adding in ChatGPT. A named tunnel keeps the URL but needs a Cloudflare account.
+- Which public tunnel for clients OpenAI's tunnel doesn't reach: `cloudflared` needs no account for a quick tunnel but changes its URL every run, so the connector would need re-adding. A named tunnel keeps the URL but needs a Cloudflare account. (ChatGPT itself goes through Secure MCP Tunnel, which keeps a stable tunnel id.)
+- Whether Secure MCP Tunnel passes MCP Apps resources and `_meta` through unchanged; check by hand with the first card.
 - Whether `ui.domain` can be the tunnel's origin for personal use, or only a fixed origin.
