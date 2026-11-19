@@ -160,10 +160,7 @@ class DGWClient:
                                     sorted(self.cookies.items())),
                 "Origin": "https://www.facebook.com",
                 "User-Agent": sanitize_user_agent(
-                    self.user_agent or
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/136.0.0.0 Safari/537.36"),
+                    self.user_agent or C.USER_AGENT_DEFAULT),
             },
             timeout=self.open_timeout)
         assert self._ws is not None  # narrowed for the handshake exchange below

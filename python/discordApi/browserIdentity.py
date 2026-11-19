@@ -9,7 +9,9 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-IMPERSONATE = "chrome150"
+from identity import browserIdentity as _identity
+
+IMPERSONATE = _identity.curl_target("discord")
 ORIGIN = "https://discord.com"
 GATEWAY_URL = "wss://gateway.discord.gg/?encoding=json&v=9&compress=zlib-stream"
 REST_HEADERS = ("accept-language", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform", "user-agent", "x-debug-options", "x-discord-locale", "x-discord-timezone", "x-installation-id", "x-super-properties")

@@ -10,7 +10,7 @@ from curl_cffi.requests import AsyncSession, Response
 
 from ..client.gql import GQLClient
 from ..client.v11 import V11Client
-from ..constants import DOMAIN, IMPERSONATE, TOKEN
+from ..constants import DOMAIN, IMPERSONATE, TOKEN, USER_AGENT
 from ..errors import (
     BadRequest,
     Forbidden,
@@ -89,9 +89,7 @@ class GuestClient:
         self.proxy = proxy
 
         self._token = TOKEN
-        self._user_agent = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                            'AppleWebKit/537.36 (KHTML, like Gecko) '
-                            'Chrome/122.0.0.0 Safari/537.36')
+        self._user_agent = USER_AGENT
         self._guest_token: str | None = None  # set when activate method is called
         self.gql = GQLClient(self)
         self.v11 = V11Client(self)

@@ -50,7 +50,7 @@
       "sections": [
         { "title": "Specs", "folder": "specs" },
         { "title": "The ideas", "pages": ["howItWorks.md", "models.md", "liveInbox.md", "unifyStorage.md", "storageAgainstTheBook.md", "storageReadPath.md", "hookStartup.md", "antigravityHooks.md", "toolCallSpeed.md", "accountsAndListings.md", "lifecycle.md", "twenty.md", "signingIn.md", "status.md"] },
-        { "title": "Browsers and proxies", "pages": ["browsers.md", "browserSetup.md", "adsPower.md", "proxies.md"], "folders": ["proxyVendors"] },
+        { "title": "Browsers and proxies", "pages": ["browsers.md", "browserSetup.md", "browserIdentity.md", "adsPower.md", "proxies.md"], "folders": ["proxyVendors", "httpClients"] },
         {
           "title": "Facebook in depth",
           "pages": ["groupListening.md", "groupMembers.md", "groupRead.md", "conversations.md", "voiceNotes.md", "listingMonitor.md", "listingMedia.md", "recordToFlow.md"],

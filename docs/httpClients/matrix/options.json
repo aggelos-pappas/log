@@ -1,0 +1,27 @@
+[
+ {
+  "id": "stayAsIs",
+  "name": "Keep curl_cffi 0.16.3, each client as it is",
+  "description": "No change. Each vendored client keeps its own hard-coded target (chrome136, safari17_0, chrome150, chrome_140) and its own user agent."
+ },
+ {
+  "id": "curlUnified",
+  "name": "curl_cffi 0.17 behind one identity",
+  "description": "Upgrade curl_cffi to 0.17.0. One identity module (env LOG_BROWSER, LOG_BROWSER_OS, pinned per account) gives every client the same Windows Chrome target (chrome152) plus the matching user agent, client hints and accept-language. WebSocket and asyncio paths stay on curl_cffi. Reddit's wreq-js reads the same identity."
+ },
+ {
+  "id": "httpcloakAll",
+  "name": "httpcloak everywhere",
+  "description": "Replace curl_cffi in every client with httpcloak presets (chrome-latest-windows or a pinned chrome-N-windows). log would have to supply its own WebSocket client and run httpcloak's sync Python API in threads for the async clients."
+ },
+ {
+  "id": "hybridOneIdentity",
+  "name": "One identity, curl_cffi plus httpcloak by switch",
+  "description": "Same identity module as curlUnified. LOG_HTTP_CLIENT picks curl_cffi or httpcloak per platform for plain REST, at the same browser version and OS. WebSocket and asyncio paths always use curl_cffi. Platforms move to httpcloak only after a bake-off through their own proxy."
+ },
+ {
+  "id": "wreqAll",
+  "name": "wreq / rnet everywhere",
+  "description": "Replace curl_cffi with rnet (Python binding of wreq) and keep wreq-js for Reddit, under one identity."
+ }
+]

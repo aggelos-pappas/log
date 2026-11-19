@@ -88,6 +88,6 @@ Checked by: code and SubQ
 
 ### REQ-BUDGET-12: LinkedIn goes out as curl_cffi impersonating Chrome
 
-The LinkedIn client reaches LinkedIn only through one curl_cffi `Session` pinned to `IMPERSONATE` (`chrome150`), sending that target's own user agent, never plain `requests` and never the library's fixed user agent on its calls. Rule 102.
+The LinkedIn client reaches LinkedIn only through one curl_cffi `Session` pinned to `IMPERSONATE`, which with its user agent comes from log's one browser identity (`python/identity/browserIdentity.py`), never plain `requests` and never the library's fixed user agent on its calls. Rule 102.
 
 Checked by: code and SubQ

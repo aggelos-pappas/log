@@ -54,7 +54,8 @@ describe("log linkedin session check", () => {
   test("the engine reaches LinkedIn through curl_cffi pinned to Chrome, never plain requests", () => {
     const probe = spawnSync(process.env.LOG_PYTHON || "python", ["-c", "import sys; sys.path[:0]=['python','vendor/openLinkedinApi']; from linkedinApi.engine import session_of; s=session_of({'li_at':'x','JSESSIONID':'ajax:1'}).client.session; print(type(s).__module__, s.impersonate, s.headers.get('user-agent'))"], { encoding: "utf8" });
     if (probe.error) return;
-    expect(probe.stdout.trim()).toBe("curl_cffi.requests.session chrome150 None");
+    const identity = spawnSync(process.env.LOG_PYTHON || "python", ["-c", "import sys; sys.path[:0]=['python']; from identity import browserIdentity as b; print(b.curl_target('linkedin'), b.user_agent('linkedin'))"], { encoding: "utf8" }).stdout.trim();
+    expect(probe.stdout.trim()).toBe(`curl_cffi.requests.session ${identity}`);
   });
 
   test("with the saved browser, every call carries its user agent, client hints and Voyager's own headers", () => {

@@ -72,9 +72,7 @@ def build_identity_json(
         username field.
     """
     return {
-        "a": sanitize_user_agent(user_agent or (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")),
+        "a": sanitize_user_agent(user_agent or C.USER_AGENT_DEFAULT),
         "asi": None,
         "aid": int(app_id),
         "aids": None,
