@@ -4,13 +4,13 @@ import applyShare from './applyShare.json'
 export const APPLY_PATH = '/apply'
 export const APPLY_TITLE = applyShare.title
 export const APPLY_DESCRIPTION = applyShare.description
-export const APPLY_GITHUB_URL = 'https://github.com/matthewdonsemail-lab/log-apply'
+export const APPLY_GITHUB_URL = 'https://github.com/deepmroot/log-apply'
 export const APPLY_AGENT_LINE = 'set up log apply - https://log.listeningkit.com/apply.txt'
 
 
-export const APPLY_INSTALL = ['/plugin marketplace add matthewdonsemail-lab/log-apply', '/plugin install log-apply@log-apply', '/apply-setup']
+export const APPLY_INSTALL = ['/plugin marketplace add deepmroot/log-apply', '/plugin install log-apply@log-apply', '/apply-setup']
 
-export const APPLY_TERMINAL = ['npx github:matthewdonsemail-lab/log-apply setup', 'log-apply doctor']
+export const APPLY_TERMINAL = ['npx github:deepmroot/log-apply setup', 'log-apply doctor']
 
 export const APPLY_USAGE = ['/apply <posting url>', '/apply software jobs Vancouver', '/loop /apply']
 

@@ -86,7 +86,7 @@ function Hero() {
           className="relative z-30 mt-5 inline-flex items-center gap-2 text-[15px] font-bold text-white/90 underline decoration-white/40 underline-offset-4 transition-colors hover:text-white hover:decoration-white"
         >
           <FontAwesomeIcon icon={faGithub} className="text-[16px]" />
-          github.com/matthewdonsemail-lab/log-apply
+          github.com/deepmroot/log-apply
         </a>
         <div className="mt-14 w-full md:mt-20">
           <ApplyDemo />

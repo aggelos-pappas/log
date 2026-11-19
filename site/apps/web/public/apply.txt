@@ -2,13 +2,13 @@
 
 log apply is an open-source Claude Code plugin and CLI that applies to jobs for the user.
 Page: https://log.listeningkit.com/apply
-Source: https://github.com/matthewdonsemail-lab/log-apply
+Source: https://github.com/deepmroot/log-apply
 
 You are the user's agent. Follow these steps in order. Ask the user when a step needs them.
 
 1. Install the plugin from its marketplace, in Claude Code:
 
-   /plugin marketplace add matthewdonsemail-lab/log-apply
+   /plugin marketplace add deepmroot/log-apply
    /plugin install log-apply@log-apply
 
 2. Run the setup command:
