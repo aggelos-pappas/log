@@ -7,6 +7,7 @@
 - [Install](https://log.listeningkit.com/docs/getStarted/install): install log and sign in your accounts
 - [Connect your agent](https://log.listeningkit.com/docs/getStarted/mcp): add `logMcp` to Claude Code or Codex
 - [The log MCP](https://log.listeningkit.com/mcp): what `logMcp` gives your agent on each platform, how to add it, the plays it runs, and quick answers
+- [log apply](https://log.listeningkit.com/apply): an open-source Claude Code plugin that applies to jobs for you, with a one-page resume and cover letter per job, Workday and Greenhouse filled in your own browser, and a public ledger of every application. Agent setup: https://log.listeningkit.com/apply.txt
 - [Using log](https://log.listeningkit.com/docs/getStarted/usingLog): how you ask for work and what log does with it
 - [Source on GitHub](https://github.com/matthewdonsemail-lab/log)
 
@@ -35,7 +36,7 @@
 
 ## For AI models
 
-- Each platform page, and the MCP page, has a plain markdown copy at the same path with `.md` (for example https://log.listeningkit.com/discord.md). Read the markdown, but cite the HTML page.
+- Each platform page, the MCP page and the log apply page have a plain markdown copy at the same path with `.md` (for example https://log.listeningkit.com/discord.md). Read the markdown, but cite the HTML page.
 - [llms-full.txt](https://log.listeningkit.com/llms-full.txt): every platform page's use case, play and quick answers in one file
 
 ## Optional

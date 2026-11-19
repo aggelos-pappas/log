@@ -281,6 +281,62 @@
     ],
     "action": "Give --limit as a whole number inside the range the refusal names, or leave it out for the default."
   },
+  "visibilityInvalid": {
+    "layer": "tool",
+    "meaning": "log tiktok post was given a --visibility it doesn't know: it is everyone, friends or onlyMe.",
+    "retryable": false,
+    "raisedIn": [
+      "cli/tiktok"
+    ],
+    "action": "Give --visibility everyone, friends or onlyMe, or leave it out for everyone."
+  },
+  "captionTooLong": {
+    "layer": "tool",
+    "meaning": "The caption given to log tiktok post is over the 2200 characters TikTok takes.",
+    "retryable": false,
+    "raisedIn": [
+      "cli/tiktok"
+    ],
+    "action": "Shorten the caption to 2200 characters or fewer."
+  },
+  "videoMissing": {
+    "layer": "tool",
+    "meaning": "The video named by --video is not a file on this machine.",
+    "retryable": false,
+    "raisedIn": [
+      "cli/tiktok",
+      "tiktokApi/engine"
+    ],
+    "action": "Give the path of an existing MP4 or MOV."
+  },
+  "videoTypeUnsupported": {
+    "layer": "tool",
+    "meaning": "The file given to log tiktok post isn't an MP4 or MOV.",
+    "retryable": false,
+    "raisedIn": [
+      "cli/tiktok"
+    ],
+    "action": "Export the video as MP4 (H.264) and post that."
+  },
+  "videoTooLarge": {
+    "layer": "tool",
+    "meaning": "The video is over the 4 GB TikTok's web upload takes.",
+    "retryable": false,
+    "raisedIn": [
+      "cli/tiktok"
+    ],
+    "action": "Compress or shorten the video below 4 GB."
+  },
+  "itemIdInvalid": {
+    "layer": "tool",
+    "meaning": "The --id given to log tiktok delete isn't a TikTok post id (the long number in a post's link).",
+    "retryable": false,
+    "raisedIn": [
+      "cli/tiktok",
+      "tiktokApi/engine"
+    ],
+    "action": "Take the id from the post link or from log tiktok stats."
+  },
   "notificationQueryInvalid": {
     "layer": "twitter",
     "meaning": "A flag given to log twitter notifications isn't one it reads: --type is likes, reposts, replies, quotes, follows or all; --since a date; --post a post id or url; --pages a whole number from 1 to 200.",

@@ -158,6 +158,9 @@ flowchart TB
   end
   subgraph g_tiktok["TikTok"]
     c_tiktokSession["session"]
+    c_tiktokStats["stats"]
+    c_tiktokPost["post"]
+    c_tiktokDelete["delete"]
   end
   cli --> c_launch
   c_launch -.- terminal
@@ -453,6 +456,12 @@ flowchart TB
   mcp --> c_saidBy
   cli --> c_tool
   mcp --> c_tool
+  cli --> c_tiktokStats
+  mcp --> c_tiktokStats
+  cli --> c_tiktokPost
+  mcp --> c_tiktokPost
+  cli --> c_tiktokDelete
+  mcp --> c_tiktokDelete
   f_deletePost["facebookFlowDeletePost: flow run deletePost"]
   mcp --> f_deletePost
   f_deletePost --> c_flow

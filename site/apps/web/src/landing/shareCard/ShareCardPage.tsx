@@ -1,13 +1,15 @@
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiscord, faInstagram, faReddit, faSlack, faXTwitter, type IconDefinition } from '@fortawesome/free-brands-svg-icons'
+import { faBriefcase } from '@fortawesome/free-solid-svg-icons'
 import { ClayClouds } from '../ClayClouds'
 import { DitherFade } from '../useCases/DitherFade'
 import sharePages from '../useCases/sharePages.json'
+import applyShare from '../apply/applyShare.json'
 import { faChatgptMark, faClaudeMark, faCursorMark, faGrokMark, faHermesMark } from '../agentMarks'
 import '../story/story.css'
 
-const ICONS: Record<string, IconDefinition> = { faXTwitter, faDiscord, faSlack, faInstagram, faReddit, faCursorMark, faClaudeMark, faChatgptMark, faHermesMark, faGrokMark }
+const ICONS: Record<string, IconDefinition> = { faXTwitter, faDiscord, faSlack, faInstagram, faReddit, faCursorMark, faClaudeMark, faChatgptMark, faHermesMark, faGrokMark, faBriefcase }
 
 type SharePage = (typeof sharePages)[number] & { headline?: string[]; agent?: { name: string; logo: string } }
 
@@ -29,7 +31,7 @@ const OUTLINE = Array.from({ length: 32 }, (_, index) => {
 
 export function ShareCardPage() {
   const { slug } = useParams()
-  const page = (sharePages as SharePage[]).find((item) => item.slug === slug)
+  const page = ([...sharePages, applyShare] as SharePage[]).find((item) => item.slug === slug)
   if (!page) return null
   const [top, verb] = page.headline ?? ['let claude', 'control']
   const agent = page.agent ?? { name: 'Claude Code', logo: '/logos/tools/claude-desktop.svg' }

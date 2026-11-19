@@ -1,6 +1,6 @@
 # Posting a video on TikTok, and deleting it
 
-Post one video from the account's own TikTok Studio with a caption, and delete one of its posts, in the account's AdsPower browser. TikTok's own answers decide each step.
+Post one video on the account's TikTok with a caption, and delete one of its posts, on the direct-API engine with no browser: the calls TikTok Studio makes, sent the same way. The AdsPower browser flows are the fallback when TikTok refuses a direct call. TikTok's own answers decide each step.
 
 How the owner asks for it: "post this on tiktok", "put the video on tiktok", "post it to tiktok with this caption", "delete that tiktok", "take the tiktok down"
 
@@ -13,27 +13,33 @@ Say: **"go on docs/useCases/tiktok/post.md"**, with the video file and the capti
 <!-- stepsDiagram: written by `bun run docs:build` from the steps table below, not edited by hand -->
 ```mermaid
 flowchart TD
-  s0["0. The account is known and signed in to TikTok in its AdsPower pr…<br/><i>localAccountList</i>"]
+  s0["0. The account is still signed in to TikTok<br/><i>tiktokSessionCheck</i>"]
   s1["1. Show the owner the video and the caption, and get a yes<br/><i>the reply to the owner</i>"]
-  s2["2. Post it<br/><i>tiktokFlowPostLive</i>"]
-  s3["3. Delete a post, when asked<br/><i>tiktokFlowDeleteLive</i>"]
-  s4["4. Tell the owner what came back<br/><i>the reply to the owner</i>"]
+  s2["2. Post it<br/><i>tiktokPostLive</i>"]
+  s3["3. Delete a post, when asked<br/><i>tiktokDeleteLive</i>"]
+  s4["4. If TikTok refused a direct call, the same in the browser<br/><i>tiktokFlowPostLive, tiktokFlowDeleteLive</i>"]
+  s5["5. Tell the owner what came back, with how it is doing<br/><i>tiktokStats</i>"]
   s0 --> s1
   s1 --> s2
   s2 --> s3
   s3 --> s4
+  s4 --> s5
 ```
 <!-- /stepsDiagram -->
 
 | # | Step | Tool | Done when |
 | --- | --- | --- | --- |
-| 0 | The account is known and signed in to TikTok in its AdsPower profile | `localAccountList` {} | the TikTok account is listed with its AdsPower profile |
+| 0 | The account is still signed in to TikTok | `tiktokSessionCheck` { account } | TikTok answered loggedIn |
 | 1 | Show the owner the video and the caption, and get a yes | the reply to the owner | the owner approved this video and this caption |
-| 2 | Post it | `tiktokFlowPostLive` { account, video, fileName, caption, confirmLive: true } | `tiktokWebProjectPostV1` answered `status_code` 0 and an `item_id` |
-| 3 | Delete a post, when asked | `tiktokFlowDeleteLive` { account, caption, confirmLive: true } | `tiktokPostEditV1` answered `status_code` 0 for the `aweme_id` it sent |
-| 4 | Tell the owner what came back | the reply to the owner | the post's item id, or that it was deleted |
+| 2 | Post it | `tiktokPostLive` { account, video, caption, approvedBy, confirmLive: true } | TikTok answered `status_code` 0 with an `item_id`, and the post's link came back |
+| 3 | Delete a post, when asked | `tiktokDeleteLive` { account, id, approvedBy, confirmLive: true } | TikTok's `edit_diff` names the post and every edit result is 0 |
+| 4 | If TikTok refused a direct call, the same in the browser | `tiktokFlowPostLive` { account, video, fileName, caption, confirmLive: true } or `tiktokFlowDeleteLive` { account, caption, confirmLive: true } | `tiktokWebProjectPostV1` or `tiktokPostEditV1` answered `status_code` 0 |
+| 5 | Tell the owner what came back, with how it is doing | `tiktokStats` { account } | the post's link, or that it was deleted, and its views so far |
 
 ## What the runs taught
+
+- **No browser is needed.** On 2026-11-18 a 73 KB clip posted in 3 s and was deleted in 1 s, direct. TikTok took the calls without its page signatures (`X-Bogus`, `_signature`) or the ticket-guard headers. The upload is signed AWS4 with the keys `/api/v1/video/upload/auth/` hands out.
+- **The id to delete is the number in the post's link.** `tiktokStats` lists every post with its link.
 
 - **TikTok Studio, not the feed.** Posting starts at `tiktokstudio/upload` and deleting at `tiktokstudio/content`. The public video page has no delete for the owner.
 - **The caption box is found by the file name.** TikTok fills the caption with the video's file name without its extension, so `fileName` is that name and the caption replaces it.

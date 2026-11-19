@@ -188,6 +188,9 @@ const SOURCE_COMMAND_RULES: Readonly<Record<string, number[]>> = {
   tiktokSession: [13, 63, 64, 73, 83],
   saidBy: [30, 163],
   tool: [30, 163],
+  tiktokStats: [63, 64, 73, 94],
+  tiktokPost: [8, 63, 64, 73, 94],
+  tiktokDelete: [8, 63, 64, 73, 94],
 };
 
 const CONSOLIDATED_RULES: Readonly<Record<number, number | null>> = {

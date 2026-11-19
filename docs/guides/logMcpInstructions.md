@@ -114,7 +114,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `newPlatform` | Making a new platform whole with one command, and where every new file goes |
 | `instagram` | An Instagram account: its session, reading its DMs, sending text and photos, and the live realtime watch |
 | `ui` | Generative UI in the chat: the report tool, where you write a small React view against log's kit (in the spirit of Lynx workspaces) and log draws it with data from log.db, or send just data for a starter view; text everywhere else |
-| `tiktok` | A TikTok account's session |
+| `tiktok` | A TikTok account's session, and how it is doing: followers and each post's views, likes, comments, shares and saves |
 
 ## How a run reports back
 

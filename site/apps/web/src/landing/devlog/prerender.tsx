@@ -7,7 +7,8 @@ import sharePages from '../useCases/sharePages.json'
 import { SITE_PAGES, SITE_PLATFORMS } from '../useCases/sitePages'
 import { QUICK_ANSWERS } from '../useCases/quickAnswers'
 import { PLATFORMS } from '../PlatformSuite'
-import { UPDATED, devlogIndexSchema, homeSchema, mcpSchema, platformSchema } from '../structuredData'
+import { UPDATED, applySchema, devlogIndexSchema, homeSchema, mcpSchema, platformSchema } from '../structuredData'
+import { APPLY_BUILT_WITH, APPLY_COMPARE, APPLY_DESCRIPTION, APPLY_FAQ, APPLY_GITHUB_URL, APPLY_INSTALL, APPLY_PATH, APPLY_STEPS, APPLY_TITLE, APPLY_USAGE } from '../apply/applyContent'
 import { MCP_CLIENTS, MCP_DESCRIPTION, MCP_FAQ, MCP_INSTALL, MCP_PATH, MCP_PLATFORMS, MCP_STEPS, MCP_TITLE } from '../mcp/mcpContent'
 import { USE_CASES } from '../useCases/useCaseCatalog'
 
@@ -263,5 +264,83 @@ export function prerenderedPages(): PrerenderedPage[] {
       </main>,
     ),
   }
-  return [index, ...articles, ...platforms, mcp]
+  const applyImage = `${SITE}/og/pages/apply.png`
+  const apply: PrerenderedPage = {
+    path: APPLY_PATH,
+    title: APPLY_TITLE,
+    description: APPLY_DESCRIPTION,
+    image: applyImage,
+    type: 'website',
+    schema: applySchema({ path: APPLY_PATH, title: APPLY_TITLE, description: APPLY_DESCRIPTION, image: applyImage, repo: APPLY_GITHUB_URL, faq: APPLY_FAQ, steps: APPLY_STEPS }),
+    markdown: [
+      `# ${APPLY_TITLE}`,
+      '',
+      `canonical_url: ${SITE}${APPLY_PATH}`,
+      `last_updated: ${UPDATED}`,
+      '',
+      APPLY_DESCRIPTION,
+      '',
+      '## How it works',
+      '',
+      ...APPLY_STEPS.map((step) => `${step.number}. **${step.title}.** ${step.body}`),
+      '',
+      `## ${APPLY_COMPARE.without.label} vs ${APPLY_COMPARE.with.label}`,
+      '',
+      `- ${APPLY_COMPARE.without.label}: ${APPLY_COMPARE.without.headline}. ${APPLY_COMPARE.without.points.join('. ')}.`,
+      `- ${APPLY_COMPARE.with.label}: ${APPLY_COMPARE.with.headline}. ${APPLY_COMPARE.with.points.join('. ')}.`,
+      '',
+      '## Install, in Claude Code',
+      '',
+      FENCE,
+      ...APPLY_INSTALL,
+      FENCE,
+      '',
+      'Then ask for jobs:',
+      '',
+      FENCE,
+      ...APPLY_USAGE,
+      FENCE,
+      '',
+      `Agent setup instructions: ${SITE}/apply.txt`,
+      '',
+      '',
+      '## Built with',
+      '',
+      ...APPLY_BUILT_WITH.map((item) => `- [${item.name}](${item.href}): ${item.role}`),
+      '',
+      '## log apply: quick answers',
+      '',
+      ...APPLY_FAQ.flatMap((item) => [`### ${item.q}`, '', item.a, '']),
+      `Source: ${APPLY_GITHUB_URL}`,
+      '',
+    ].join('\n'),
+    body: renderToStaticMarkup(
+      <main>
+        <h1>{APPLY_TITLE}</h1>
+        <p>{APPLY_DESCRIPTION}</p>
+        <h2>How it works</h2>
+        <ol>
+          {APPLY_STEPS.map((step) => (
+            <li key={step.number}>
+              <strong>{step.title}.</strong> {step.body}
+            </li>
+          ))}
+        </ol>
+        <h2>Install, in Claude Code</h2>
+        <pre>
+          <code>{APPLY_INSTALL.join('\n')}</code>
+        </pre>
+        <section className="quick-answers">
+          <h2>log apply: quick answers</h2>
+          {APPLY_FAQ.map((item) => (
+            <div key={item.q}>
+              <h3>{item.q}</h3>
+              <p>{item.a}</p>
+            </div>
+          ))}
+        </section>
+      </main>,
+    ),
+  }
+  return [index, ...articles, ...platforms, mcp, apply]
 }
