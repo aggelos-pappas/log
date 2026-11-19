@@ -29,12 +29,12 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | Tool | What it does | Usage |
 |---|---|---|
 | `discordSessionCheck` | Check that Discord still accepts one account's saved session, sending… | `log discord session check --account <accountName> [--json]` |
-| `discordChats` | Its chats, with ids | `log discord chats --account <accountName> [--kind <kinds>] [--name <text>] [--json]` |
+| `discordChats` | The account's chats with ids and members | `log discord chats --account <accountName> [--kind <kinds>] [--name <text>] [--json]` |
 | `discordServers` | The servers the account is in | `log discord servers --account <accountName> [--json]` |
 | `discordChannels` | One server's channels by category, each with its kind | `log discord channels --account <accountName> --server <server name> [--json]` |
 | `discordPosts` | A forum's posts | `log discord posts --account <accountName> --channel "<server> #<forum>" [--limit <n>] [--archived <true\|false>] [--json]` |
-| `discordSearch` | Search a whole server with Discord's own search | `log discord search --account <accountName> --server <server name> --query "<words>" [--channel "<server> #<channel>"] [--from <name>] [--limit <n>] [--json]` |
-| `discordRead` | A chat's latest messages, oldest first, sending nothing | `log discord read --account <accountName> --channel <channelId\|chat name> [--limit <n>] [--after <messageId>] [--noMedia] [--json]` |
+| `discordSearch` | Search a whole server for words | `log discord search --account <accountName> --server <server name> --query "<words>" [--channel "<server> #<channel>"] [--from <name>] [--limit <n>] [--json]` |
+| `discordRead` | One chat's messages by its name | `log discord read --account <accountName> --channel <channelId\|chat name> [--limit <n>] [--after <messageId>] [--noMedia] [--json]` |
 | `discordWatch` | Every Discord message as Discord pushes it, over the gateway, sending… | `log discord watch --account <accountName> [--channel <channelId\|chat name>] [--seconds <s>] [--inbox] [--json]` |
 | `discordSend` | Send one message on Discord, on the direct-API engine | `log discord send --account <accountName> --channel <channelId\|chat name> --text "<message>" [--asOne] [--overGate] [--approvedBy <who>] [--live] [--json]` |
 | `discordSendLive` | Send one message on Discord, on the direct-API engine, live on Discord | `log discord send --account <accountName> --channel <channelId\|chat name> --text "<message>" [--asOne] [--overGate] [--approvedBy <who>] [--live] [--json]` |

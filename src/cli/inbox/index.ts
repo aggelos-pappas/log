@@ -30,7 +30,7 @@ export const INBOX_INPUT: CommandInput = {
     { words: ["release"], effect: "write", summary: "Release this session's claim on a chat when it is done with it", positionals: [], flags: [PLATFORM, ACCOUNT, CHAT, JSON_FLAG] },
     { words: ["resume"], effect: "write", summary: "The owner's go-ahead after a refused catch-up: the account catches up again through its own session (rule 94), only when the owner says so", positionals: [], flags: [PLATFORM, ACCOUNT, { name: "by", kind: "string", required: true, description: "Who said to resume: the owner" }, JSON_FLAG] },
     {
-      words: ["waiting"], summary: "Who wrote last on every platform, from log.db: the people waiting on a reply, and apart the ones who reacted to your last message",
+      words: ["waiting"], summary: "The people waiting on my reply, counts per platform (inbox stats), then reactions to my last message; --platform, --account narrow it",
       positionals: [],
       flags: [
         { name: "platform", kind: "enum", values: ["twitter", "discord", "slack", "instagram"], description: "Only this platform: twitter, discord, slack or instagram" },
@@ -119,7 +119,7 @@ export const inboxCommand: Command = {
   name: "inbox",
   effect: "write",
   input: INBOX_INPUT,
-  summary: "Claim and release chats, list claims, read the action log and what the watchers heard",
+  summary: "Chat claims and their action log, who is waiting on a reply, and what the watchers heard",
   args: "claim|release|claims|actions|resume|waiting|pending [--reader <name>] [--by <who>] [--platform <p>] [--account <a>] [--chat <id|handle>] [--event <id>] [--limit <n>] [--oldest]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(INBOX_INPUT));

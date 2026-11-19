@@ -29,4 +29,5 @@ export interface TimingLine {
   ms: number
   chars: number
   outcome: string
+  attrs?: Record<string, unknown>
 }

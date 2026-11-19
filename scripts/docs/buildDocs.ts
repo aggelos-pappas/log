@@ -11,6 +11,7 @@ import { renderSurface, withSurface } from "../../src/surface/readme/index.ts";
 import { withStepsDiagrams } from "../../src/surface/stepsDiagram/index.ts";
 import { SPEC_ORDER, specDomains, specsIndex, specSummary } from "../../src/specs/index.ts";
 import { REPORT_TOOL, reportTool } from "../../src/mcp/apps/index.ts";
+import { toolFactsOf } from "../../src/useCases/router/client.ts";
 
 const SERVER_TOOLS: Record<string, { name: string; title: string; description: string }> = { [REPORT_TOOL]: reportTool() };
 
@@ -156,6 +157,8 @@ put("docs/specs/README.md", specsIndex(specDomains(root).filter((d) => existsSyn
     }
   }
 }
+
+put("src/useCases/router/fixtures/tools.json", `[\n${toolFactsOf(commandTools(COMMANDS), isPlatform).map((f) => JSON.stringify(f)).join(",\n")}\n]\n`);
 
 put(HOSTED_INSTRUCTIONS_FILE, `${serverInstructions("hosted")}\n`);
 
