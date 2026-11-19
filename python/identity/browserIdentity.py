@@ -139,6 +139,120 @@ def describe(platform: str | None = None) -> str:
     return f"{i['browser']} on {i['os']} through {i['client']} (curl {i['curl']}, httpcloak {i['httpcloak']})"
 
 
+GREASE_CHARS = (" ", "(", ":", "-", ".", "/", ")", ";", "=", "?", "_")
+GREASE_VERSIONS = ("8", "99", "24")
+BRAND_ORDERS = ((0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0))
+FETCH_HEAD = ("content-length", "sec-ch-ua-platform")
+FETCH_TAIL = ("user-agent", "sec-ch-ua", "content-type", "sec-ch-ua-mobile", "accept", "origin", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest", "referer", "accept-encoding", "accept-language", "cookie", "priority")
+NAVIGATION_ONLY = ("upgrade-insecure-requests", "sec-fetch-user", "cache-control")
+API_PATH = re.compile(r"/(api|graphql|voyager|ajax)(/|$)|\.json($|\?)", re.I)
+API_HOST = re.compile(r"^(api|upload|graph|edge-chat|gateway)\.", re.I)
+
+
+def sec_ch_ua(version: int) -> str:
+    brands = (
+        f'"Not{GREASE_CHARS[version % 11]}A{GREASE_CHARS[(version + 1) % 11]}Brand";v="{GREASE_VERSIONS[version % 3]}"',
+        f'"Chromium";v="{version}"',
+        f'"Google Chrome";v="{version}"',
+    )
+    placed: list[str] = [""] * 3
+    for brand, slot in zip(brands, BRAND_ORDERS[version % 6]):
+        placed[slot] = brand
+    return ", ".join(placed)
+
+
+def _site_of(url_host: str, origin_host: str) -> str:
+    if url_host == origin_host:
+        return "same-origin"
+    base = lambda h: ".".join(h.split(".")[-2:])
+    return "same-site" if base(url_host) == base(origin_host) else "cross-site"
+
+
+def is_api_call(method: str, url: str, headers: Mapping[str, str]) -> bool:
+    from urllib.parse import urlsplit
+
+    accept = str(headers.get("accept") or "")
+    if "text/html" in accept:
+        return False
+    if str(method).upper() != "GET":
+        return True
+    parts = urlsplit(str(url))
+    return bool(API_PATH.search(parts.path) or API_HOST.match(parts.hostname or ""))
+
+
+def fetch_enabled(platform: str | None, env: Mapping[str, str] | None = None) -> bool:
+    env = os.environ if env is None else env
+    value = _per_platform(env.get("LOG_FETCH_HEADERS"), platform) or _per_platform(_settings().get("fetchHeaders"), platform) or "on"
+    return value.lower() not in ("off", "false", "0", "no")
+
+
+def chrome_fetch(platform: str | None, method: str, url: str, origin: str, headers: Mapping[str, str] | None = None, env: Mapping[str, str] | None = None) -> tuple[dict[str, str], str]:
+    from urllib.parse import urlsplit
+
+    identity = resolve(platform, env)
+    url_host = urlsplit(str(url)).hostname or ""
+    origin_host = urlsplit(origin).hostname or ""
+    site = _site_of(url_host, origin_host)
+    given = {str(k).lower(): str(v) for k, v in (headers or {}).items() if v is not None}
+    base: dict[str, str] = {"user-agent": identity["userAgent"], "accept": "*/*"}
+    if identity["family"] == "chrome":
+        base.update({"sec-ch-ua-platform": CH_PLATFORM[identity["os"]], "sec-ch-ua": sec_ch_ua(identity["version"]), "sec-ch-ua-mobile": "?0", "priority": "u=1, i"})
+    base.update({"sec-fetch-site": site, "sec-fetch-mode": "cors", "sec-fetch-dest": "empty", "referer": origin.rstrip("/") + "/", "accept-encoding": "gzip, deflate, br, zstd", "accept-language": "en-US,en;q=0.9"})
+    if str(method).upper() != "GET" or site != "same-origin":
+        base["origin"] = origin.rstrip("/")
+    merged = {**base, **given}
+    for key in NAVIGATION_ONLY:
+        merged.pop(key, None)
+    custom = [k for k in merged if k not in FETCH_HEAD and k not in FETCH_TAIL]
+    names = [k for k in FETCH_HEAD if k == "content-length" or k in merged] + custom + [k for k in FETCH_TAIL if k in merged or k == "cookie"]
+    ordered = {k: merged[k] for k in names if k in merged}
+    return ordered, ",".join(names)
+
+
+_PATCHED: dict[str, bool] = {}
+
+
+def attach(session: Any, platform: str, origin: str) -> Any:
+    session._log_fetch = {"platform": platform, "origin": origin}
+    install()
+    return session
+
+
+def _rewrite(session: Any, method: Any, url: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
+    fetch = getattr(session, "_log_fetch", None)
+    if not fetch or not fetch_enabled(fetch["platform"]):
+        return kwargs
+    combined = {str(k).lower(): v for k, v in dict(getattr(session, "headers", None) or {}).items()}
+    combined.update({str(k).lower(): v for k, v in dict(kwargs.get("headers") or {}).items()})
+    if not is_api_call(str(method), str(url), combined):
+        return kwargs
+    ordered, order = chrome_fetch(fetch["platform"], str(method), str(url), fetch["origin"], combined)
+    extra = dict(kwargs.get("extra_fp") or {})
+    extra["header_order"] = order
+    return {**kwargs, "headers": ordered, "default_headers": False, "extra_fp": extra}
+
+
+def install() -> None:
+    if _PATCHED.get("fetch"):
+        return
+    try:
+        from curl_cffi.requests import AsyncSession, Session
+    except ImportError:
+        return
+    _PATCHED["fetch"] = True
+    sync_request = Session.request
+    async_request = AsyncSession.request
+
+    def request(self: Any, method: Any, url: Any, *args: Any, **kwargs: Any) -> Any:
+        return sync_request(self, method, url, *args, **_rewrite(self, method, url, kwargs))
+
+    async def arequest(self: Any, method: Any, url: Any, *args: Any, **kwargs: Any) -> Any:
+        return await async_request(self, method, url, *args, **_rewrite(self, method, url, kwargs))
+
+    Session.request = request
+    AsyncSession.request = arequest
+
+
 if __name__ == "__main__":
     import sys
 

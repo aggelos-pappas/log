@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 from ..bookmark import BookmarkFolder
 from ..community import Community, CommunityMember
-from ..constants import TOKEN, DOMAIN, IMPERSONATE, USER_AGENT
+from ..constants import ATTACH, TOKEN, DOMAIN, IMPERSONATE, USER_AGENT
 from ..errors import (
     AccountLocked,
     AccountSuspended,
@@ -110,7 +110,7 @@ class Client:
 
         kwargs.setdefault('impersonate', IMPERSONATE)
         kwargs.setdefault('allow_redirects', False)
-        self.http = AsyncSession(proxy=proxy, **kwargs)
+        self.http = ATTACH(AsyncSession(proxy=proxy, **kwargs))
         self.language = language
         self.proxy = proxy
         self.captcha_solver = captcha_solver

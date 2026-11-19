@@ -73,14 +73,14 @@ class ClientProfile(BaseModel):
         ),
     )
     sec_ch_ua: str = Field(
-        default='"Chromium";v="136", "Not_A Brand";v="99", "Google Chrome";v="136"',
+        default=C.SEC_CH_UA_DEFAULT,
         description=(
             "The sec-ch-ua client hint; the Chrome major inside it must "
             "agree with user_agent (the validator enforces it)."
         ),
     )
     sec_ch_ua_platform: str = Field(
-        default='"Windows"',
+        default=C.SEC_CH_UA_PLATFORM_DEFAULT,
         description='sec-ch-ua-platform; OS class must match the UA exactly.',
     )
     sec_ch_ua_mobile: str = Field(

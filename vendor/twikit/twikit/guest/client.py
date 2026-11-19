@@ -10,7 +10,7 @@ from curl_cffi.requests import AsyncSession, Response
 
 from ..client.gql import GQLClient
 from ..client.v11 import V11Client
-from ..constants import DOMAIN, IMPERSONATE, TOKEN, USER_AGENT
+from ..constants import ATTACH, DOMAIN, IMPERSONATE, TOKEN, USER_AGENT
 from ..errors import (
     BadRequest,
     Forbidden,
@@ -84,7 +84,7 @@ class GuestClient:
 
         kwargs.setdefault('impersonate', IMPERSONATE)
         kwargs.setdefault('allow_redirects', False)
-        self.http = AsyncSession(proxy=proxy, **kwargs)
+        self.http = ATTACH(AsyncSession(proxy=proxy, **kwargs))
         self.language = language
         self.proxy = proxy
 

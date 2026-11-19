@@ -219,6 +219,8 @@ class FBTransport:
         # type argument (mypy runs at python_version 3.11, below the
         # TypeVar-default syntax upstream).
         self._session: creq.Session[creq.Response] = creq.Session()
+        if C._identity:
+            C._identity.attach(self._session, "facebook", "https://www.facebook.com")
         if proxy:
             self._session.proxies = {"http": proxy, "https": proxy}
         self._session.cookies.update(self.cookies)

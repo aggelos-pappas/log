@@ -12,4 +12,5 @@ __all__ = ["COOKIE_DOMAIN", "Cookies", "IMPERSONATE", "new_session"]
 
 
 def new_session(proxies=None):
-    return Session(impersonate=IMPERSONATE, proxies=dict(proxies or {}) or None, headers=_identity.headers("linkedin") if _identity else None)
+    session = Session(impersonate=IMPERSONATE, proxies=dict(proxies or {}) or None, headers=_identity.headers("linkedin") if _identity else None)
+    return _identity.attach(session, "linkedin", "https://www.linkedin.com") if _identity else session

@@ -20,7 +20,8 @@ __all__ = ["IMPERSONATE", "TIMEOUT_ERRORS", "USER_AGENT", "ConnectionClosed", "S
 
 
 def new_session() -> AsyncSession:
-    return AsyncSession(impersonate=IMPERSONATE, allow_redirects=False)
+    session = AsyncSession(impersonate=IMPERSONATE, allow_redirects=False)
+    return _identity.attach(session, "slack", "https://app.slack.com") if _identity else session
 
 
 def _headers(headers: Mapping[str, str] | None) -> dict[str, str]:

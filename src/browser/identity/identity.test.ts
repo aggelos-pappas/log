@@ -87,3 +87,66 @@ print(json.dumps({"slack": [slack.IMPERSONATE, slack.USER_AGENT], "linkedin": [l
     expect(redditBrowser().os).toBe("windows");
   });
 });
+
+describe("API calls carry real Chrome's fetch headers, in its order", () => {
+  const realChromePost = ["content-length", "sec-ch-ua-platform", "authorization", "x-csrf-token", "user-agent", "sec-ch-ua", "content-type", "sec-ch-ua-mobile", "accept", "origin", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest", "referer", "accept-encoding", "accept-language", "cookie", "priority"];
+  const realChromeGet = ["content-length", "sec-ch-ua-platform", "user-agent", "sec-ch-ua", "sec-ch-ua-mobile", "accept", "sec-fetch-site", "sec-fetch-mode", "sec-fetch-dest", "referer", "accept-encoding", "accept-language", "cookie", "priority"];
+
+  test("the order is the one captured from real Chrome 157 doing fetch(), with the page's own headers after sec-ch-ua-platform", () => {
+    const out = py(`from identity import browserIdentity as b
+post, order = b.chrome_fetch("x", "POST", "https://tls.peet.ws/api/all", "https://tls.peet.ws", {"authorization": "Bearer x", "x-csrf-token": "t", "content-type": "application/json"})
+get, order2 = b.chrome_fetch("x", "GET", "https://tls.peet.ws/api/all", "https://tls.peet.ws")
+print(json.dumps([order.split(","), order2.split(","), post, get]))`);
+    expect(out[0]).toEqual(realChromePost);
+    expect(out[1]).toEqual(realChromeGet);
+    expect(out[2]).toMatchObject({ "sec-fetch-mode": "cors", "sec-fetch-dest": "empty", "sec-fetch-site": "same-origin", accept: "*/*", priority: "u=1, i", origin: "https://tls.peet.ws" });
+    expect(out[3].origin).toBeUndefined();
+    expect(out[2]["upgrade-insecure-requests"]).toBeUndefined();
+  });
+
+  test("sec-ch-ua follows Chromium's brand rule: real Chrome 157 and curl_cffi's chrome152 both match", () => {
+    const out = py(`from identity import browserIdentity as b\nprint(json.dumps([b.sec_ch_ua(157), b.sec_ch_ua(152)]))`);
+    expect(out).toEqual(['"Not-A.Brand";v="99", "Google Chrome";v="157", "Chromium";v="157"', '"Chromium";v="152", "Not?A_Brand";v="24", "Google Chrome";v="152"']);
+  });
+
+  test("the site is worked out from the page: same-origin, same-site or cross-site", () => {
+    const out = py(`from identity import browserIdentity as b
+print(json.dumps([b.chrome_fetch("x", "POST", u, "https://app.slack.com")[0]["sec-fetch-site"] for u in ("https://app.slack.com/api/a", "https://slack.com/api/a", "https://example.org/api")]))`);
+    expect(out).toEqual(["same-origin", "same-site", "cross-site"]);
+  });
+
+  test("only API calls change: a page load keeps curl_cffi's navigation headers, and the switch turns it off per platform", () => {
+    const out = py(`from identity import browserIdentity as b
+class S:
+    headers = {"accept-language": "en-IE"}
+s = b.attach(S(), "facebook", "https://www.facebook.com")
+api = b._rewrite(s, "POST", "https://www.facebook.com/api/graphql/", {"headers": {"x-fb-lsd": "L"}})
+page = b._rewrite(s, "GET", "https://www.facebook.com/marketplace/", {"headers": {}})
+html = b._rewrite(s, "GET", "https://www.facebook.com/api/x", {"headers": {"accept": "text/html"}})
+import os
+os.environ["LOG_FETCH_HEADERS"] = "facebook=off"
+off = b._rewrite(s, "POST", "https://www.facebook.com/api/graphql/", {"headers": {}})
+print(json.dumps([api["default_headers"], api["headers"]["accept-language"], api["headers"]["x-fb-lsd"], "header_order" in api["extra_fp"], page, html, off]))`);
+    expect(out[0]).toBe(false);
+    expect(out[1]).toBe("en-IE");
+    expect(out[2]).toBe("L");
+    expect(out[3]).toBe(true);
+    expect(out[4]).toEqual({ headers: {} });
+    expect(out[5]).toEqual({ headers: { accept: "text/html" } });
+    expect(out[6]).toEqual({ headers: {} });
+  });
+
+  test("every API client attaches its session: Slack, LinkedIn, X and Facebook", () => {
+    const out = py(`import asyncio
+from gabriel.core import transport as slack
+from open_linkedin_api import transport as li
+from twikit import Client
+from transport.session import FBTransport
+async def a():
+    s = slack.new_session(); f = s._log_fetch; await s.close(); return f
+fb = FBTransport(cookies={"c_user": "1", "xs": "x"})
+print(json.dumps([asyncio.run(a()), li.new_session()._log_fetch, Client("en-US").http._log_fetch, fb._session._log_fetch, fb.profile.sec_ch_ua == __import__("identity.browserIdentity", fromlist=["x"]).sec_ch_ua(152)]))`);
+    expect(out.slice(0, 4).map((f: any) => f.platform)).toEqual(["slack", "linkedin", "twitter", "facebook"]);
+    expect(out[4]).toBe(true);
+  });
+});

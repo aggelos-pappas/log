@@ -20,6 +20,18 @@ The identity gives each client the curl_cffi target, the matching user agent and
 
 Facebook keeps each account's saved transport profile (fbk writes it once and replays it), so existing Facebook accounts stay on the `chrome136` they were made with. Only new profiles take the identity.
 
+## API calls send Chrome's fetch headers
+
+curl_cffi's default headers are a page load's (`sec-fetch-mode: navigate`, `sec-fetch-dest: document`, `sec-fetch-user`, `upgrade-insecure-requests`, an HTML `accept`). Slack, LinkedIn, X and Facebook were sending those on every GraphQL and JSON call. A real browser's `fetch()` sends `sec-fetch-mode: cors`, `sec-fetch-dest: empty`, `accept: */*`, `priority: u=1, i`, and its own order, with the page's headers (`authorization`, `x-csrf-token`, `x-fb-lsd`) right after `sec-ch-ua-platform`.
+
+Each API client attaches its session with `browserIdentity.attach(session, platform, origin)`. From then on, every API call (any non-GET, or a GET to an `/api/`, `/graphql`, `/voyager` or `api.` URL that doesn't ask for HTML) goes out with:
+- the header set and order captured from real Chrome 157 doing `fetch()`;
+- `sec-fetch-site` worked out from the page origin;
+- `sec-ch-ua` built by Chromium's own brand rule;
+- curl_cffi's `header_order` and `default_headers=False`.
+
+Page loads keep curl_cffi's navigation headers. `LOG_FETCH_HEADERS=facebook=off` (or `fetchHeaders` in settings.json) turns it off for a platform.
+
 ## Why Chrome 152, curl_cffi, and httpcloak later
 
 See [httpClients](httpClients/README.md): a live test against the real Chrome on this machine, both libraries' docs, what Scraping Enthusiasts said, and a SubQ matrix. In short:
