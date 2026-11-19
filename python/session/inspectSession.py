@@ -19,7 +19,7 @@ from pathlib import Path as _Path
 
 _sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
 from login import autoLogin
-from human import scrollMotion
+from human import myuriInput, scrollMotion
 from browser import proxyGate
 from browser import controlMatch
 from browser.browserViewer import BrowserViewer
@@ -451,7 +451,7 @@ class Inspector:
         if not answer:
             raise RuntimeError("2Captcha returned an empty answer")
         await field.click()
-        await self.page.keyboard.type(answer, delay=90)
+        await myuriInput.type_text(self.page, answer, secret=True, log=log)
         await field.press("Enter")
         await asyncio.sleep(3)
         button = self.page.get_by_role("button", name=re.compile(r"^(continue|submit)$", re.I))
@@ -473,10 +473,10 @@ class Inspector:
         if email_field is not None and self.secrets.get("email"):
             await self.mouse.click(email_field, circle=False)
             await email_field.fill("")
-            await email_field.press_sequentially(str(self.secrets["email"]), delay=90)
+            await myuriInput.type_text(self.page, str(self.secrets["email"]), secret=True)
             log("  signIn: email typed")
         await self.mouse.click(pass_field, circle=False)
-        await pass_field.press_sequentially(str(password), delay=90)
+        await myuriInput.type_text(self.page, str(password), secret=True)
         log("  signIn: password typed; submitting with Enter")
         before = self.page.url
         await pass_field.press("Enter")
@@ -494,7 +494,7 @@ class Inspector:
             raise RuntimeError("no totpSecret in Twenty")
         field = await self.first_visible(autoLogin.CODE_FIELD) or await self.by_role("textbox", "Code", 10_000)
         await field.click()
-        await field.press_sequentially(autoLogin.totp(str(secret)), delay=110)
+        await myuriInput.type_text(self.page, autoLogin.totp(str(secret)), secret=True)
         log("  code: typed the current authenticator code; submitting with Enter")
         await field.press("Enter")
 
@@ -505,7 +505,7 @@ class Inspector:
         field = await self.first_visible('input[autocomplete="one-time-code"], input[inputmode="numeric"], input[type="password"], input[type="tel"], input[type="text"]')
         if field is not None:
             await self.mouse.click(field, circle=False)
-        await self.page.keyboard.type(pin, delay=140)
+        await myuriInput.type_text(self.page, pin, secret=True)
         log("  pin: typed the account's Messenger PIN")
 
     async def shows(self, role: str, name: str) -> bool:
@@ -578,7 +578,7 @@ class Inspector:
                 await self.mouse.click(field, circle=False)
                 await page.keyboard.press("Control+a")
                 text = " ".join(args[2:])
-                await field.press_sequentially(text, delay=90, timeout=typing_ms(text))
+                await myuriInput.type_text(page, text, log=log)
             return await self.step("fillRole", f'{args[0]} "{args[1]}"', fill_role, expect, expect_ms)
         if action == "uploadRole" and len(args) >= 3:
             path = " ".join(args[2:])
@@ -796,7 +796,7 @@ class Inspector:
                 await self.mouse.click(box, circle=False)
                 await page.keyboard.press("Control+a")
                 await page.keyboard.press("Backspace")
-                await page.keyboard.type(place, delay=90)
+                await myuriInput.type_text(page, place, log=log)
                 offered = await answer_for(place, answers, 20.0)
                 page.remove_listener("response", on_response)
                 index = pick_suggestion(place, offered)
@@ -807,7 +807,7 @@ class Inspector:
                 option = page.get_by_role("option", name=re.compile(r"^" + re.escape(offered[index]) + r"(\s|$)", re.I))
                 if not await option.count() or not await option.first.is_visible():
                     await page.keyboard.press("Backspace")
-                    await page.keyboard.type(place[-1], delay=90)
+                    await myuriInput.type_text(page, place[-1])
                     await asyncio.sleep(2.5)
                 await option.first.wait_for(state="visible", timeout=15_000)
                 await self.mouse.click(option.first)
@@ -839,7 +839,10 @@ class Inspector:
             return await self.step("highlight", f'{args[0]} "{args[1]}"', highlight)
         if action == "type" and len(args) >= 2:
             text = " ".join(args[1:])
-            return await self.step("type", args[0], lambda: page.locator(f"aria-ref={args[0]}").press_sequentially(text, delay=90, timeout=typing_ms(text)))
+            async def type_into() -> None:
+                await page.locator(f"aria-ref={args[0]}").focus(timeout=typing_ms(text))
+                await myuriInput.type_text(page, text, log=log)
+            return await self.step("type", args[0], type_into)
         if action == "upload" and len(args) >= 2:
             path = " ".join(args[1:])
 

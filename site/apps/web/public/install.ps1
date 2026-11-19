@@ -83,7 +83,7 @@ $Python = Join-Path $Venv "Scripts\python.exe"
 $Wheel = Get-ChildItem (Join-Path $Root "vendor\chatXdk\wheels") -Filter "*win_amd64.whl" -ErrorAction SilentlyContinue | Select-Object -First 1
 $Extra = @()
 if ($Wheel) { $Extra += $Wheel.FullName }
-uv pip install --python $Python -r (Join-Path $Root "vendor\twikit\requirements.txt") (Join-Path $Root "vendor\fbk") (Join-Path $Root "vendor\endcord") @Extra
+uv pip install --python $Python -r (Join-Path $Root "vendor\twikit\requirements.txt") (Join-Path $Root "vendor\fbk") (Join-Path $Root "vendor\endcord") "myuri>=4,<5" @Extra
 
 $EnvFile = Join-Path $LogHome ".env"
 if (-not (Test-Path $EnvFile)) { New-Item -ItemType File -Path $EnvFile | Out-Null }

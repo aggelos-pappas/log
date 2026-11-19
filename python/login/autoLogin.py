@@ -9,6 +9,7 @@ import struct
 import time
 from typing import Any
 
+from human import myuriInput
 from human.humanMouse import human_click
 
 TWO_STEP = re.compile(
@@ -130,7 +131,7 @@ def _click_button(page, pattern: str) -> bool:
 def _type(page, field, text: str) -> None:
     human_click(field, circle=False, timeout=CLICK_MS)
     field.fill("", timeout=CLICK_MS)
-    page.keyboard.type(text, delay=random.randint(60, 140))
+    myuriInput.type_text_sync(page, text, secret=True)
     page.wait_for_timeout(random.randint(300, 700))
 
 

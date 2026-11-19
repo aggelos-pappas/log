@@ -97,7 +97,7 @@ uv python install 3.12
 [ -d "$LOG_HOME/python" ] || uv venv --python 3.12 "$LOG_HOME/python"
 PYTHON="$LOG_HOME/python/bin/python"
 [ -x "$PYTHON" ] || PYTHON="$LOG_HOME/python/Scripts/python.exe"
-uv pip install --python "$PYTHON" -r "$ROOT/vendor/twikit/requirements.txt" "$ROOT/vendor/fbk" "$ROOT/vendor/endcord"
+uv pip install --python "$PYTHON" -r "$ROOT/vendor/twikit/requirements.txt" "$ROOT/vendor/fbk" "$ROOT/vendor/endcord" "myuri>=4,<5"
 
 ENV_FILE="$LOG_HOME/.env"
 touch "$ENV_FILE"
