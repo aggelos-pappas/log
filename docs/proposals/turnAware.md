@@ -2,7 +2,7 @@
 
 20 November 2026.
 
-Status: spec. Part 1 (typing on Discord) is built in the PR that adds this file; the rest is not. It reads `main` at `43c0f35b` and the soron branch (#198).
+Status: spec. Part 1 is built for Discord (the PR that adds this file) and for Slack (the next one); X Chat typing and the rest are not. It reads `main` at `43c0f35b` and the soron branch (#198).
 
 Four things the owner has said log should do, what is already there for each, and what is left.
 
@@ -23,7 +23,7 @@ Four things the owner has said log should do, what is already there for each, an
    - they sent something: the rest is held, as an interruption today;
    - they stopped without sending: the line goes out;
    - they are still typing at the limit: the rest is held, and the owner is told they were still typing.
-3. Slack the same way from `user_typing`, then X Chat, which has its own typing event.
+3. Slack the same way from `user_typing` (built): the engine marks each one `fromMe`, the watcher keeps it for DMs and groups (`D` and `G` chats, as the inbox does) with `slackTypingOf`, and `log slack send` waits it out before each line, one-line sends included. X Chat is next; log's X watcher reads no typing event yet, so it needs that first.
 
 **Tests.** Typing stored and cleared by their message; typing that stops lets the line go; typing that turns into a message holds the rest; typing past the limit holds the rest; someone typing in another chat changes nothing.
 

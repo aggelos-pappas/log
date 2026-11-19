@@ -3,6 +3,7 @@ import { findSlackAccount, recordSlackSession, slackGate } from "../../slack/acc
 import { labelOf, matchChat } from "../../discord/chat/match/index.ts";
 import type { DiscordChat } from "../../discord/chat/match/index.ts";
 import { addPending, incomingSince, interruptedLines } from "../../inbox/watch/index.ts";
+import { TYPING_HOLD_MS, clearTyping, recordTyping, typingNow, waitOutTyping } from "../../inbox/typing/index.ts";
 import { ownOrAttach } from "../../inbox/relay/index.ts";
 import { enqueueAttachments } from "../../media/describer/index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
@@ -84,10 +85,11 @@ export const slackSessionCommand: Command = {
   },
 };
 
-export const slackDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, chat: string, since: string) => InboxMessage[]; now: () => string } = {
+export const slackDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, chat: string, since: string) => InboxMessage[]; typing: (account: string, chat: string) => string[]; now: () => string } = {
   profiles: () => readProfiles(),
   wait: (ms) => new Promise((done) => setTimeout(done, ms)),
   incoming: (account, chat, since) => incomingSince("slack", account, chat, since),
+  typing: (account, chat) => typingNow({ platform: "slack", account, conversationId: chat }),
   now: () => new Date().toISOString(),
 };
 
@@ -311,6 +313,15 @@ export function slackToInboxOf(event: Record<string, unknown>): boolean {
   return channel.startsWith("D") || channel.startsWith("G") || event.mentionsMe === true;
 }
 
+export function slackTypingOf(account: string, event: Record<string, unknown>, now: Date): void {
+  const channel = String(event.channel ?? "");
+  const user = String(event.user ?? "");
+  if (!user || event.fromMe || !(channel.startsWith("D") || channel.startsWith("G"))) return;
+  const ref = { platform: "slack", account, conversationId: channel };
+  if (event.type === "user_typing") recordTyping(ref, user, now);
+  else if (event.type === "message") clearTyping(ref, user);
+}
+
 export function slackInboxMessageOf(account: string, event: Record<string, unknown>, now: Date) {
   const channel = String(event.channel ?? "");
   return { platform: "slack", account, conversationId: channel, with: String(event.from ?? "?"), text: String(event.text ?? ""), at: String(event.at ?? now.toISOString()), box: channel.startsWith("D") ? "dm" : channel.startsWith("G") ? "group" : "mention", seenAt: now.toISOString(), workspace: String(event.workspace ?? ""), ...(event.ts ? { id: String(event.ts) } : {}), ...(event.user ? { senderId: String(event.user) } : {}), ...(event.threadTs ? { replyTo: String(event.threadTs) } : {}), ...(Array.isArray(event.attachments) && event.attachments.length ? { attachments: event.attachments as { name: string }[] } : {}) };
@@ -356,6 +367,7 @@ export const slackWatchCommand: Command = {
         run: (emit) => {
           context.err(`${opened.account.accountName}: the one owner of ${opened.workspace || "every workspace"}'s websocket through vendor/gabrielSlack${only ? `, showing only ${only}` : ""}${seconds ? `, for ${seconds} s` : ", until stopped"}; new DMs, group messages and mentions go to the inbox and every event to every attached subscriber`);
           return directSlackLive(opened.account, { action: "watch", seconds, ...inWorkspace(opened.workspace) }, (event) => {
+            slackTypingOf(opened.account.accountName, event, context.now?.() ?? new Date());
             emit(event);
             if (event.type === "message" && event.channel && event.ts && slackToInboxOf({ ...event, fromMe: false })) recordPosition("slack", opened.account.accountName, String(event.ts), String(event.channel));
             const mine = slackToInboxOf(event);
@@ -445,7 +457,7 @@ export const slackSendCommand: Command = {
       if (!live && parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ engine: "directApi", platform: "slack", account: opened.account.accountName, ok: true, dryRun: true, chat: chat.id, split: { parts: plan.parts, gapSeconds: plan.gapSeconds, why: plan.why }, watermark }, null, 2) };
       if (!live) return { code: 0, stdout: [`log slack send: dry run: ${opened.account.accountName} would send to ${chat.label} ${planLine}:`, ...plan.parts.map((p, i) => `  ${i + 1}. ${p}`), watermarkLine(watermark), "Nothing was sent. --live --approvedBy <who> sends it (rule 8); --asOne sends it as one message."].join("\n") };
       context.err(`${opened.account.accountName}: send to ${chat.label} ${planLine} on the direct-API engine, approved by ${approvedBy}`);
-      const sending = { movedOn: [] as string[], sent: [] as PlatformAnswer[], interrupted: [] as InboxMessage[], fenced: false };
+      const sending = { movedOn: [] as string[], sent: [] as PlatformAnswer[], interrupted: [] as InboxMessage[], fenced: false, stillTyping: false };
       const acted = await runAction<HeldGuard, typeof sending>({
         gate: async () => {
           const caught = await waitCaughtUp("slack", opened.account.accountName);
@@ -464,6 +476,12 @@ export const slackSendCommand: Command = {
               await slackDeps.wait(plan.gapSeconds * 1000);
               sending.interrupted = slackDeps.incoming(opened.account.accountName, chat.id, startedAt);
               if (sending.interrupted.length) break;
+            }
+            const turn = await waitOutTyping({ typing: () => slackDeps.typing(opened.account.accountName, chat.id), wrote: () => (sending.interrupted = slackDeps.incoming(opened.account.accountName, chat.id, startedAt)).length > 0, wait: slackDeps.wait });
+            if (turn === "wrote") break;
+            if (turn === "stillTyping") {
+              sending.stillTyping = true;
+              break;
             }
             const step = guard.part(i, part);
             if (step === "lost") {
@@ -486,11 +504,11 @@ export const slackSendCommand: Command = {
           }
           return sending;
         },
-        confirm: (s) => confirmParts({ sent: s.sent.filter((a) => a.ok).length, total: plan.parts.length, interrupted: s.interrupted.length > 0, movedOn: s.movedOn.length > 0, lost: s.fenced, last: s.sent[s.sent.length - 1] }),
+        confirm: (s) => confirmParts({ sent: s.sent.filter((a) => a.ok).length, total: plan.parts.length, interrupted: s.interrupted.length > 0 || s.stillTyping, movedOn: s.movedOn.length > 0, lost: s.fenced, last: s.sent[s.sent.length - 1] }),
       });
       if (acted.held) {
         const ok = sending.sent.filter((a) => a.ok).length;
-        acted.held.done(sending.interrupted.length ? "interrupted" : ok === plan.parts.length ? "sent" : "failed", `${ok} of ${plan.parts.length}${sending.fenced ? ", then the claim on this chat was lost, so the rest was held" : ""}: ${plan.parts.slice(0, ok).join(" / ").slice(0, 300)}`);
+        acted.held.done(sending.interrupted.length || sending.stillTyping ? "interrupted" : ok === plan.parts.length ? "sent" : "failed", `${ok} of ${plan.parts.length}${sending.fenced ? ", then the claim on this chat was lost, so the rest was held" : ""}: ${plan.parts.slice(0, ok).join(" / ").slice(0, 300)}`);
       }
       rethrowFailure(acted);
       if (!acted.held) return refuseGated("slack send", acted, "chatClaimedElsewhere");
@@ -500,6 +518,7 @@ export const slackSendCommand: Command = {
       const last = sent[sent.length - 1];
       const code = done.length === plan.parts.length ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "slack", account: opened.account.accountName, approvedBy, chat: chat.id, split: { parts: plan.parts, gapSeconds: plan.gapSeconds, why: plan.why }, watermark, sent, interrupted }, null, 2) };
+      if (sending.stillTyping && !interrupted.length) return { code, stdout: `>>> STILL TYPING: ${opened.account.accountName}: ${done.length} of ${plan.parts.length} sent to ${chat.label}, then they were typing for ${TYPING_HOLD_MS / 1000} s without sending, so the rest was held for when they finish:\n${plan.parts.slice(done.length).map((p) => `  ${p}`).join("\n")}` };
       if (interrupted.length) return { code, stdout: interruptedLines(opened.account.accountName, interrupted, plan.parts.slice(done.length), done.length, plan.parts.length).join("\n") };
       if (code === 0) return { code, stdout: `log slack send: ${opened.account.accountName} sent ${done.length} message(s) to ${chat.label}${done.length > 1 ? `, ${plan.gapSeconds} s apart` : ""}.` };
       return { code, stdout: `log slack send: ${opened.account.accountName}: ${done.length} of ${plan.parts.length} sent, then ${last.code}: ${last.detail ?? ""}. What was sent stays sent; nothing is retried (rule 94).` };

@@ -345,6 +345,8 @@ async def watch(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]
                 if isinstance(channel, dict):
                     channel = channel.get("id")
                 row = {"type": kind, "subtype": data.get("subtype"), "workspace": session.domain, "teamId": session.team_id, "channel": channel, "user": data.get("user"), "ts": data.get("ts") or data.get("event_ts")}
+                if kind == "user_typing":
+                    row["fromMe"] = str(data.get("user") or "") == session.user_id
                 if kind == "message":
                     user = str(data.get("user") or "")
                     text = str(data.get("text") or "")
