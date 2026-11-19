@@ -67,6 +67,7 @@ Checked live and in code on 20 November 2026. The hosted side exists and is depl
 | UI tools listed whatever the client declares (both servers) | not started |
 | Hosted relay kept running (`log runtime connect` supervised like the watchers) | not started |
 | Hosted tool list generated from the local catalog instead of a hand list | not started |
+| Live browser (J): voxl by default, local streaming, Camoufox kiosk, take control, server/VM setup | specced; today no voxl runs (`LOG_VOXL_URL` unset), local streaming is refused, input is sign-in only |
 | Card registration helper, view in `_meta`, ChatGPT keys (B, D) | not started |
 | Blocks card `ui://log/blocks` (I) | not started |
 | ChatGPT through Secure MCP Tunnel (A2) | not started |

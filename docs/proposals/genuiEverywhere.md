@@ -149,6 +149,27 @@ In Hermes, log's views are genui blocks (`show_blocks`: tables, lists, callouts,
 
 So a view written once with `show_blocks` reads the same in Hermes, ChatGPT, Claude and Claude Desktop, and as text in Claude Code.
 
+### J. The live browser, streamed and driven from the chat, wherever it runs
+
+`browserView` already has the parts: a voxl video stream (`python/browser/streamSurface.py`), a screenshot fallback (`browserViewFrame`, about 2 frames a second) and the person's clicks, typing, keys and scroll replayed with Playwright as recorded steps (`browserViewInput`). It has never worked from a hosted chat, and it was built as a sign-in helper. The owner's decision (20 Nov 2026): the stream is the normal picture, not screenshots, and the person drives the browser from the chat for whatever they need, wherever the browser runs.
+
+Where the browser runs, and how the chat reaches it:
+
+| Browser on | Calls (state, frames, input) | Picture |
+| --- | --- | --- |
+| the person's own machine, chat in Hermes or Claude Desktop | local stdio | voxl on loopback (`http://127.0.0.1:<port>`), allowed in the view's CSP |
+| the person's own machine, chat in ChatGPT or claude.ai | through `mcp.listeningkit.com` and the relay, or Secure MCP Tunnel | voxl through an https tunnel from the same machine, its origin in the CSP |
+| the person's own server or VM (Xvfb or a desktop session, AdsPower headless with its Local API, `docs/deployment.md`) | `log runtime connect` runs on that server, so the hosted server relays to it | voxl on the server's display, published over https (its own tunnel or reverse proxy) |
+
+Changes:
+
+1. **Streaming on by default.** `log` starts voxl `--read-only` beside each open account browser on its display, sets `LOG_VOXL_URL` itself, and publishes it over https when the chat isn't on the same machine. The URL (with voxl's read-only password) reaches only the view, never the model (as now).
+2. **Streaming locally too.** The "use your own window" refusal (`browserViewLocal`) goes: a chat on the same machine streams as well, so a Hermes or Claude Desktop chat shows the browser inline.
+3. **Camoufox streams too.** voxl needs the page to fill the display so a point on the video is a point on the page. Chromium does it over CDP; Camoufox (Firefox, no CDP) gets it by launching kiosk/fullscreen at the display's size and checking the viewport against the display before the stream is offered. The screenshot path stays only as the fallback when voxl can't run.
+4. **The person drives, not just signs in.** `browserViewInput` takes input on any page while the person holds control (a "Take control" / "Hand back" toggle in the view), still as recorded steps with their HAR. While the person holds control no flow or agent step runs in that browser (`browserBusy` the other way round). A checkpoint or blocked page is something only the person may act on: the agent still stops there (rule 94), and the person can clear it from the chat.
+5. **The server or VM setup is one command.** On a server with AdsPower: `log runtime pair` once, then the supervisor keeps the account hosts, voxl and `runtime connect` running together, and the chat sees that server's browsers the same way as local ones.
+6. **Proof.** The replica-host bench (Verification) loads the view with a stream and with frames, sends a click and a typed line, and checks they reached the page; a manual run in ChatGPT, claude.ai and Hermes per release.
+
 ## Verification
 
 A host matrix test per release, each cell a check with a pass/fail:
@@ -166,17 +187,19 @@ A host matrix test per release, each cell a check with a pass/fail:
 ## Order
 
 1. Make the hosted server answer: list UI tools whatever the client declares (both servers), keep `log runtime connect` running under the same supervisor as the watchers, and generate the hosted tool list from the local catalog. Without this, every hosted connector is empty.
-2. Card views (B) and the ChatGPT metadata (D), through one card registration helper. Makes the existing view ready.
-3. The blocks card (I), so `show_blocks` output reaches every host.
-4. `log mcp connector` (A2) for a private ChatGPT tunnel; check the views render there and through `mcp.listeningkit.com` by hand.
-5. Card rules in the kit (E).
-6. The `/mcp/inbox` profile (C).
-7. The `.mcpb` Desktop extension (H).
-8. The host matrix and replica-host bench in CI (Verification).
-9. The app-submission challenge route on `mcp.listeningkit.com`, when the app is listed.
+2. The live browser (J): voxl started and published by log, streaming locally too, Camoufox in kiosk, take control from the chat, and the server/VM setup.
+3. Card views (B) and the ChatGPT metadata (D), through one card registration helper. Makes the existing view ready.
+4. The blocks card (I), so `show_blocks` output reaches every host.
+5. `log mcp connector` (A2) for a private ChatGPT tunnel; check the views render there and through `mcp.listeningkit.com` by hand.
+6. Card rules in the kit (E).
+7. The `/mcp/inbox` profile (C).
+8. The `.mcpb` Desktop extension (H).
+9. The host matrix and replica-host bench in CI (Verification).
+10. The app-submission challenge route on `mcp.listeningkit.com`, when the app is listed.
 
 ## Open questions
 
+- On a person's own desktop, voxl captures the whole display (DXGI on Windows), and a kiosk browser covers their screen. Streaming locally needs the browser on a display of its own (a virtual display, a second desktop session, or Xvfb on Linux), or the stream would show everything else on screen. Pick the per-OS answer before J.2.
 - Which public tunnel for clients OpenAI's tunnel doesn't reach: `cloudflared` needs no account for a quick tunnel but changes its URL every run, so the connector would need re-adding. A named tunnel keeps the URL but needs a Cloudflare account. (ChatGPT itself goes through Secure MCP Tunnel, which keeps a stable tunnel id.)
 - Whether Secure MCP Tunnel passes MCP Apps resources and `_meta` through unchanged; check by hand with the first card.
 - Whether `ui.domain` can be the tunnel's origin for personal use, or only a fixed origin.
