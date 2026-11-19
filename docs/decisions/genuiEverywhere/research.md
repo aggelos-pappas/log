@@ -34,12 +34,39 @@ Secure MCP Tunnel changes the plan for ChatGPT. It supports private connections 
 
 Guides read: OpenAI "Add UI to your MCP server" (keep every tool useful without UI; UI only for inspect, compare, edit, confirm, navigate), "Secure MCP Tunnel" and "Connecting custom MCP servers in ChatGPT" (Plugins, Add custom MCP server, choose Tunnel), the goose team's "5 tips for building MCP Apps", and Anthropic's `build-mcp-app` skill.
 
+## The hosted server today: `mcp.listeningkit.com`
+
+Checked live and in code on 20 November 2026. The hosted side exists and is deployed; it is less developed than the local one.
+
+| What | State |
+| --- | --- |
+| Origin | `https://mcp.listeningkit.com` (Cloudflare, HTTP/2), served by `python/controlService` |
+| OAuth | live: authorization-server and protected-resource metadata (root and `/mcp` paths), dynamic client registration, PKCE S256, public clients, scopes `log` and `offline_access`; `POST /mcp` without a token answers 401 with `WWW-Authenticate: Bearer resource_metadata=…` |
+| MCP | hand-written JSON-RPC, not the SDK: `initialize`, `tools/list`, `tools/call`, `resources/list`, `resources/read`; GET and DELETE `/mcp` answer 405; `listChanged` off; no progress notifications |
+| Tools | an allow-list in `python/controlService/tools.py`: 29 reads, 15 live writes, 4 browser-view app tools, against about 300 locally. A new local tool is missing until someone adds it by hand |
+| How calls run | relayed to the owner's machine over `log runtime connect` (`wss://mcp.listeningkit.com/bridge`). The machine is paired (workspace lease until 2027-02-11), but no `runtime connect` process is running and its log was last written on 13 November, so every hosted tool call has nowhere to run |
+| Views | `ui://` resources are relayed from the local server, and only when the client declares the MCP Apps extension |
+
+### Issues other people hit, and what each means here
+
+| Issue | What happened | For log |
+| --- | --- | --- |
+| `anthropics/claude-ai-mcp#61` (open) | MCP App views don't render in claude.ai from remote, often hand-written, servers. One cause found on the wire: claude.ai sends no `extensions` in `initialize`, yet draws views; servers that list UI tools only when the client declares `io.modelcontextprotocol/ui` hide them from it | both `uiCapable()` (`src/mcp/apps/browserView/client.ts`) and `ui_capable()` (`python/controlService/mcpRoutes.py`) gate exactly that way, so claude.ai never sees log's views. Declare the extension and list UI tools unconditionally; every UI tool already has a text answer |
+| same issue, Nov 2026 | after a reconnect, the view draws in the first new chat and not in later ones | a host bug to note in the matrix, not ours to fix |
+| `anthropics/claude-ai-mcp#219` (closed, fixed) | claude.ai matched `WWW-Authenticate` case-sensitively, breaking OAuth behind HTTP/2 (Cloudflare) | was our setup; fixed on Anthropic's side |
+| `anthropics/claude-ai-mcp#82` | claude.ai built `/authorize`, `/token`, `/register` from the server's base URL instead of the metadata | ours live at the advertised paths on the same origin; check `/register` vs `/oauth/register` by hand on first connect |
+| `openai/codex#19154`, `#13200` | Codex's `mcp login` needs dynamic client registration | the hosted server has it |
+| `openai/codex#31573` (open) | OAuth fails at issuer validation | our `issuer` equals the origin; keep it so |
+
 ## Progress
 
 | Step | State |
 | --- | --- |
-| Spec (`docs/proposals/genuiEverywhere.md`) | written, prior art added, blocks card (section I) added |
-| Research (this file) | written |
+| Spec (`docs/proposals/genuiEverywhere.md`) | written, prior art added, blocks card (section I) added, hosted origin corrected |
+| Research (this file) | written, hosted server checked live |
+| UI tools listed whatever the client declares (both servers) | not started |
+| Hosted relay kept running (`log runtime connect` supervised like the watchers) | not started |
+| Hosted tool list generated from the local catalog instead of a hand list | not started |
 | Card registration helper, view in `_meta`, ChatGPT keys (B, D) | not started |
 | Blocks card `ui://log/blocks` (I) | not started |
 | ChatGPT through Secure MCP Tunnel (A2) | not started |

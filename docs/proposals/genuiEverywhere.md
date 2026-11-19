@@ -21,7 +21,7 @@ One view bundle and one tool contract serve every row. A host only decides how m
 ## What already works (checked in code)
 
 - `report` and `browserView` are MCP Apps tools. Each carries `_meta.ui.resourceUri` (`ui://log/report`, `ui://log/browserView`). Each resource is `text/html;profile=mcp-app` with `_meta.ui.csp`.
-- UI tools and resources are listed only when the client advertises the `io.modelcontextprotocol/ui` extension (`uiCapable()`), and text otherwise.
+- UI tools and resources are listed only when the client advertises the `io.modelcontextprotocol/ui` extension (`uiCapable()`), and text otherwise. That gate hides every view from claude.ai, which draws views without declaring the extension (gap 1).
 - `report` has an `outputSchema`, read-only annotations and a text fallback for hosts that don't draw.
 - The view talks to the host over the standard `ui/*` bridge (`@modelcontextprotocol/ext-apps` 1.7.5). It can call read tools (`useTool`), put a prompt in the chat (`AskButton`, `FollowUps`) and tell the model what the person is pointing at (`tellAgent`).
 - `logMcp --http` serves Streamable HTTP with OAuth (`src/mcp/oauth`) and a stateless mode (`src/mcp/stateless`).
@@ -48,9 +48,9 @@ A partner's MCP server (private code, read with access granted to the owner; des
 
 ## Gaps
 
-### 1. ChatGPT can't reach log today
+### 1. The hosted server is deployed but can't answer, and hides its views
 
-ChatGPT only connects to a remote HTTPS MCP server. It has no stdio. The hosted origin `app.log.listeningkit.com` doesn't resolve (checked 20 Nov 2026), so there is nothing for ChatGPT to add. Every ChatGPT cell in `docs/harnesses/chatgpt.md` is unverified for this reason.
+The hosted origin is `https://mcp.listeningkit.com` (`python/controlService`, live with OAuth and dynamic client registration). It relays every call to the owner's machine over `log runtime connect`, and that bridge isn't running, so a ChatGPT or Claude connector added today authenticates and then has nowhere to run a tool. Its tool list is a hand-kept allow-list (48 tools against about 300 local), and like the local server it lists views only for clients that declare the MCP Apps extension, which claude.ai doesn't. Details and the issues other servers hit: `docs/decisions/genuiEverywhere/research.md`.
 
 ### 2. The whole view goes to the model
 
@@ -87,7 +87,7 @@ No test renders `ui://log/report` in a real MCP Apps host. The text fallback is 
 
 1. **Local stdio** (unchanged): Claude Code, Codex, Cursor, VS Code, Claude Desktop. `logMcp` is started by the host.
 2. **Local connector** (new command, `log mcp connector`): runs `logMcp --http` on loopback with OAuth on and connects it outward. For ChatGPT (and Codex, the Responses API) it runs OpenAI's Secure MCP Tunnel client (`openai/tunnel-client`): outbound HTTPS only, nothing reachable from the internet, and the person picks **Tunnel** under Plugins, Add custom MCP server. For other remote-only clients (Claude web) it opens a public HTTPS tunnel instead (`cloudflared` by default), with the OAuth gate in front of every call. Personal use, no deployment. Research and the local-versus-hosted table: `docs/decisions/genuiEverywhere/research.md`.
-3. **Hosted** (existing code, not deployed): `https://<hosted origin>/mcp` with OAuth, which relays each call to the owner's machine over `log runtime connect`. This is the path for a shared team and for ChatGPT app submission.
+3. **Hosted** (deployed at `https://mcp.listeningkit.com/mcp`, relay not running): `https://mcp.listeningkit.com/mcp` with OAuth, which relays each call to the owner's machine over `log runtime connect`. This is the path for a shared team and for ChatGPT app submission.
 
 All three run the same `runToolCall`, so a view and its data are identical whichever way the call arrives.
 
@@ -133,7 +133,7 @@ Unchanged and restated: a view only calls read tools. `AskButton` and `FollowUps
 | Harness | Install |
 | --- | --- |
 | Claude Desktop | a `.mcpb` Desktop extension built from `logMcp` (`log mcp pack`), with the `LOG_*` settings as its user config |
-| ChatGPT, Claude web | `log mcp connector` prints the URL; the hosted origin when deployed |
+| ChatGPT, Claude web | `https://mcp.listeningkit.com/mcp` once the relay runs; `log mcp connector` for a private ChatGPT tunnel |
 | Claude Code, Codex, Cursor, VS Code | `log install <harness>` (exists) |
 | Hermes | log's plugin (exists); it draws `hermesView` from the same compiled view |
 
@@ -165,14 +165,15 @@ A host matrix test per release, each cell a check with a pass/fail:
 
 ## Order
 
-1. Card views (B) and the ChatGPT metadata (D), through one card registration helper. Small, no new surface, makes the existing view ready.
-2. The blocks card (I), so `show_blocks` output reaches every host.
-3. `log mcp connector` (A2). This is the first time ChatGPT can reach log; check the views render there by hand.
-4. Card rules in the kit (E).
-5. The `/mcp/inbox` profile (C).
-6. The `.mcpb` Desktop extension (H).
-7. The host matrix and replica-host bench in CI (Verification).
-8. Hosted deployment (A3) with the app-submission challenge route, when a team needs it.
+1. Make the hosted server answer: list UI tools whatever the client declares (both servers), keep `log runtime connect` running under the same supervisor as the watchers, and generate the hosted tool list from the local catalog. Without this, every hosted connector is empty.
+2. Card views (B) and the ChatGPT metadata (D), through one card registration helper. Makes the existing view ready.
+3. The blocks card (I), so `show_blocks` output reaches every host.
+4. `log mcp connector` (A2) for a private ChatGPT tunnel; check the views render there and through `mcp.listeningkit.com` by hand.
+5. Card rules in the kit (E).
+6. The `/mcp/inbox` profile (C).
+7. The `.mcpb` Desktop extension (H).
+8. The host matrix and replica-host bench in CI (Verification).
+9. The app-submission challenge route on `mcp.listeningkit.com`, when the app is listed.
 
 ## Open questions
 
