@@ -1,6 +1,6 @@
 # One browser identity
 
-Every HTTP client log runs presents the same browser: Facebook (fbk), X (twikit), Instagram's web transport (instagrapi), Slack (gabriel), LinkedIn, Discord and Reddit (wreq-js). One module decides it: `python/identity/browserIdentity.py`, with its TypeScript twin `src/identity/index.ts`. A vendored client never writes its own impersonate target or user agent, and `bun run check:oneIdentity` fails the commit if one does. A new platform from `log new platform` takes it the same way.
+Every HTTP client log runs presents the same browser: Facebook (fbk), X (twikit), Instagram's web transport (instagrapi), Slack (gabriel), LinkedIn, Discord and Reddit (wreq-js). One module decides it: `python/identity/browserIdentity.py`, with its TypeScript twin `src/browser/identity/index.ts`. A vendored client never writes its own impersonate target or user agent, and `bun run check:oneIdentity` fails the commit if one does. A new platform from `log new platform` takes it the same way.
 
 ## Set it
 

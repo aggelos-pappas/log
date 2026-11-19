@@ -1,7 +1,7 @@
 import { RedditClient, RedditLoginError } from "../../../vendor/reverseChud/src/index.ts";
 import type { RedditComment, RedditFeedPost, RedditPost } from "../../../vendor/reverseChud/src/index.ts";
 import { TwoCaptchaRecaptchaSolver, twoCaptchaKey } from "../../captcha/twoCaptchaToken/index.ts";
-import { wreqBrowser } from "../../identity/index.ts";
+import { wreqBrowser } from "../../browser/identity/index.ts";
 import type { RedditBridgeAnswer, RedditBridgeComment, RedditBridgePost, RedditBridgeRequest, RedditBridgeSubreddit, RedditVoteDirection } from "./types.ts";
 
 const ORIGIN = "https://www.reddit.com";

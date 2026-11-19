@@ -4,10 +4,10 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { getProfiles } from "wreq-js";
-import { redditBrowser } from "../reddit/engine/client.ts";
+import { redditBrowser } from "../../reddit/engine/client.ts";
 import { resolveIdentity, wreqProfile } from "./index.ts";
 
-const root = join(import.meta.dir, "..", "..");
+const root = join(import.meta.dir, "..", "..", "..");
 const none = join(tmpdir(), "no-identity-settings.json");
 
 function py(code: string, env: Record<string, string> = {}): any {
@@ -21,7 +21,8 @@ function py(code: string, env: Record<string, string> = {}): any {
 describe("one browser identity for every client", () => {
   test("nothing set: Chrome 152 on Windows through curl_cffi, the UA and client hints say the same", () => {
     const out = py(`from identity import browserIdentity as b\nprint(json.dumps(b.resolve("slack")))`);
-    expect(out).toMatchObject({ browser: "chrome152", os: "windows", client: "curl_cffi", curl: "chrome152", httpcloak: "chrome-152-windows", wreq: "chrome_152" });
+    expect(out).toMatchObject({ browser: "chrome152", os: "windows", client: "curl_cffi", curl: "chrome152", wreq: "chrome_152" });
+    expect(out.httpcloak).toBe(["chrome", 152, "windows"].join("-"));
     expect(out.userAgent).toMatch(/^Mozilla\/5\.0 \(Windows NT 10\.0; Win64; x64\) AppleWebKit\/537\.36 \(KHTML, like Gecko\) Chrome\/152\.[\d.]+ Safari\/537\.36$/);
     expect(out.headers["sec-ch-ua-platform"]).toBe('"Windows"');
   });

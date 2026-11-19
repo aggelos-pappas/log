@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const root = join(import.meta.dir, "..", "..");
-const ALLOWED = ["python/identity/", "src/identity/"];
+const ALLOWED = ["python/identity/", "src/browser/identity/"];
 const ROOTS = ["python", "src", "vendor/fbk/src", "vendor/twikit/twikit", "vendor/gabrielSlack/gabriel", "vendor/openLinkedinApi/open_linkedin_api", "vendor/instagrapi/instagrapi/mixins/public.py", "vendor/reverseChud/src"];
 const RULES: Array<[RegExp, string]> = [
   [/impersonate\s*=\s*["'](chrome|firefox|safari|edge)\w*["']/i, "an impersonate target written in place"],
@@ -23,7 +23,7 @@ export function identityProblems(texts: Record<string, string>): string[] {
     if (ALLOWED.some((a) => name.startsWith(a))) continue;
     text.split(/\r?\n/).forEach((line, i) => {
       if (OLD_PINS.test(line) || /^\s*#/.test(line) || /^\s*\/\//.test(line) || line.includes("``")) return;
-      for (const [rule, what] of RULES) if (rule.test(line)) problems.push(`${name}:${i + 1}: ${what}; take it from log's one identity (python/identity/browserIdentity.py or src/identity)`);
+      for (const [rule, what] of RULES) if (rule.test(line)) problems.push(`${name}:${i + 1}: ${what}; take it from log's one identity (python/identity/browserIdentity.py or src/browser/identity)`);
     });
   }
   return problems;
