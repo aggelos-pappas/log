@@ -11,7 +11,7 @@
   },
   "chat": {
     "ask": "apply to every co-op posted this week",
-    "done": "58 submitted today, 3 need your answer.",
+    "done": "68 submitted today, 3 need your answer.",
     "rows": [
       { "who": "Global Relay", "status": "Applied" },
       { "who": "Workday", "status": "Applied" },

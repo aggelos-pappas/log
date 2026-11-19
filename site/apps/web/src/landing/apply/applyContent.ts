@@ -8,14 +8,18 @@ export const APPLY_GITHUB_URL = 'https://github.com/matthewdonsemail-lab/log-app
 export const APPLY_LEDGER_URL = 'https://coop-ledger-five.vercel.app'
 export const APPLY_AGENT_LINE = 'set up log apply - https://log.listeningkit.com/apply.txt'
 
-export const APPLY_STATS = ['196 applied', '152 companies', '58 in one day', 'open source']
+export const APPLY_NUMBERS = { applied: 206, companies: 112, bestDay: 68 }
+
+export const APPLY_STATS = [`${APPLY_NUMBERS.applied} applied`, `${APPLY_NUMBERS.companies} companies`, `${APPLY_NUMBERS.bestDay} in one day`, 'open source']
 
 export const APPLY_INSTALL = ['/plugin marketplace add matthewdonsemail-lab/log-apply', '/plugin install log-apply@log-apply', '/apply-setup']
+
+export const APPLY_TERMINAL = ['npx github:matthewdonsemail-lab/log-apply setup', 'log-apply doctor']
 
 export const APPLY_USAGE = ['/apply <posting url>', '/apply co-op software Vancouver', '/loop /apply']
 
 export const APPLY_ASK = 'apply to every co-op posted this week'
-export const APPLY_DONE = '58 submitted today, 3 need your answer.'
+export const APPLY_DONE = `${APPLY_NUMBERS.bestDay} submitted today, 3 need your answer.`
 
 export type DemoRow = { company: string; role: string; city: string; via: 'Workday' | 'Greenhouse' }
 
@@ -55,7 +59,7 @@ export const APPLY_COMPARE = {
   },
   with: {
     label: 'With log apply',
-    headline: '58 in a day',
+    headline: `${APPLY_NUMBERS.bestDay} in a day`,
     points: ['A one-page resume and cover letter for each job', 'Workday and Greenhouse filled in your own browser', 'Codes and links read from your inbox', 'A public ledger with every resume sent'],
   },
 }
@@ -82,25 +86,17 @@ export const APPLY_FAQ: FaqItem[] = [
 export const APPLY_LEDGER_DAYS: Record<string, number> = {
   '2026-09-15': 3,
   '2026-09-16': 9,
-  '2026-09-17': 6,
+  '2026-09-17': 5,
   '2026-09-18': 1,
-  '2026-09-20': 2,
-  '2026-09-23': 2,
-  '2026-09-24': 1,
-  '2026-09-30': 1,
-  '2026-10-06': 1,
   '2026-10-09': 1,
   '2026-10-13': 2,
   '2026-10-14': 6,
   '2026-10-15': 11,
   '2026-10-20': 5,
   '2026-10-21': 10,
-  '2026-10-26': 1,
   '2026-10-27': 5,
-  '2026-11-04': 2,
-  '2026-11-05': 1,
-  '2026-11-17': 57,
-  '2026-11-18': 61,
+  '2026-11-17': 56,
+  '2026-11-18': 68,
 }
 
 export const APPLY_LEDGER_FROM = '2026-09-13'
