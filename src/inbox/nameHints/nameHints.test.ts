@@ -59,6 +59,12 @@ describe('names in a prompt become pointers to the stored chats, typos included'
     expect(nameHints('is it meant to be there', named, undefined, undefined, uses)).toEqual([])
     expect(nameHints('ask mats_kk', named, undefined, undefined, uses).map((h) => h.chat.name)).toEqual(['mats_k'])
   })
+
+  test('a typo of an everyday word is never read as a typo of a name', () => {
+    const named = [chat('Nedra_L', { conversationId: '900000000000000007' })]
+    expect(nameHints('we nened to fix it', named)).toEqual([])
+    expect(nameHints('ask nedra_l', named).map((h) => h.chat.name)).toEqual(['Nedra_L'])
+  })
 })
 
 describe('the stored chats come from log.db, dms and groups only, counted only when they match', () => {

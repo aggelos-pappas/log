@@ -10,6 +10,8 @@ import { clipContext, contextOutput, harnessOf, harnessTable, hookHostOf, hostBo
 import { HARNESS_CAPABILITIES, HARNESS_IDS, HARNESSES, HOOK_HOSTS } from "./types.ts";
 
 const root = join(import.meta.dir, "..", "..", "..");
+const HERMES_HOME_WITH_LOG = mkdtempSync(join(tmpdir(), "harnessContract-hermesHome-"));
+writeFileSync(join(HERMES_HOME_WITH_LOG, "config.yaml"), ["mcp_servers:", "  log:", "    command: logMcp", ""].join("\n"));
 
 describe("the harness table", () => {
   test("names every harness once, with every capability and a doc page that exists", () => {
@@ -154,7 +156,7 @@ describe("the native Hermes plugin's pre_llm_call", () => {
         "later = hooks['pre_llm_call'](session_id='s', user_message='hi', is_first_turn=False)",
         "print(json.dumps({'names': sorted(hooks), 'first': first, 'later': later}))",
       ].join("\n");
-      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot, LOG_CONTEXT_SERVICE: "off" } });
+      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, HERMES_HOME: HERMES_HOME_WITH_LOG, LOG_ROOT: stubRoot, LOG_CONTEXT_SERVICE: "off" } });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout.trim()) as { names: string[]; first: { context: string }; later: { context: string } };
       expect(out.names).toEqual(["post_llm_call", "pre_llm_call", "pre_tool_call", "transform_llm_output", "transform_tool_result"]);
@@ -187,7 +189,7 @@ describe("the native Hermes plugin's pre_llm_call", () => {
       "module.post_llm_call()",
       "print(json.dumps({'mid': mid, 'during': during, 'after': sent}))",
     ].join("\n");
-    const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: join(tmpdir(), "harnessContract-noRoot"), LOG_CONTEXT_SERVICE: "off" } });
+    const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, HERMES_HOME: HERMES_HOME_WITH_LOG, LOG_ROOT: join(tmpdir(), "harnessContract-noRoot"), LOG_CONTEXT_SERVICE: "off" } });
     expect(run.status).toBe(0);
     const out = JSON.parse(run.stdout.trim()) as { mid: string; during: string[]; after: string[] };
     expect(out.mid.startsWith("ls")).toBe(true);
@@ -216,7 +218,7 @@ describe("the native Hermes plugin's pre_llm_call", () => {
         "other = module.transform_tool_result(tool_name='mcp__terminal', args={}, result='ls', session_id='s')",
         "print(json.dumps({'direct': direct, 'wrapped': wrapped, 'other': other}))",
       ].join("\n");
-      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot, LOG_CONTEXT_SERVICE: "off" } });
+      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, HERMES_HOME: HERMES_HOME_WITH_LOG, LOG_ROOT: stubRoot, LOG_CONTEXT_SERVICE: "off" } });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout.trim()) as { direct: string; wrapped: string; other: string | null };
       expect(out.direct.startsWith("sent")).toBe(true);
@@ -248,7 +250,7 @@ describe("the native Hermes plugin's pre_llm_call", () => {
         "[t.join(20) for t in threading.enumerate() if t is not threading.current_thread()]",
         "print(json.dumps({'grep': grep, 'parse': parse, 'fine': fine}))",
       ].join("\n");
-      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot, LOG_CONTEXT_SERVICE: "off" } });
+      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, HERMES_HOME: HERMES_HOME_WITH_LOG, LOG_ROOT: stubRoot, LOG_CONTEXT_SERVICE: "off" } });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout.trim()) as { grep: { action: string; message: string }; parse: { message: string }; fine: unknown[] };
       expect(out.grep.action).toBe("block");
@@ -288,7 +290,7 @@ describe("the native Hermes plugin's pre_llm_call", () => {
         "spec.loader.exec_module(module)",
         "print(json.dumps(module.pre_llm_call(session_id='s', user_message='hi', is_first_turn=True)))",
       ].join("\n");
-      const run = (port: number) => Bun.spawn([process.env.LOG_PYTHON || "python", "-c", script], { stdout: "pipe", stderr: "pipe", windowsHide: true, env: { ...process.env, LOG_ROOT: stubRoot, LOG_CONTEXT_PORT: String(port), LOG_CONTEXT_SERVICE: "" } });
+      const run = (port: number) => Bun.spawn([process.env.LOG_PYTHON || "python", "-c", script], { stdout: "pipe", stderr: "pipe", windowsHide: true, env: { ...process.env, HERMES_HOME: HERMES_HOME_WITH_LOG, LOG_ROOT: stubRoot, LOG_CONTEXT_PORT: String(port), LOG_CONTEXT_SERVICE: "" } });
       const warm = run(server.port ?? 0);
       const warmOut = await new Response(warm.stdout).text();
       expect(await warm.exited).toBe(0);
@@ -327,7 +329,7 @@ describe("the native Hermes plugin installed on its own, with no log launch --se
         "spec.loader.exec_module(module)",
         "print(json.dumps({'root': str(module.log_root()), 'answer': module.pre_llm_call(session_id='s', user_message='hi', is_first_turn=False)}))",
       ].join("\n");
-      const env: Record<string, string | undefined> = { ...process.env, BUN_INSTALL: bunHome, LOG_ROOT: "", LOG_CONTEXT_SERVICE: "off" };
+      const env: Record<string, string | undefined> = { ...process.env, HERMES_HOME: HERMES_HOME_WITH_LOG, BUN_INSTALL: bunHome, LOG_ROOT: "", LOG_CONTEXT_SERVICE: "off" };
       const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env });
       expect(run.status).toBe(0);
       const out = JSON.parse(run.stdout.trim()) as { root: string; answer: { context: string } };

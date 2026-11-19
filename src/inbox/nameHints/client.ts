@@ -39,10 +39,18 @@ export function nameScore(edits: number, mentions: number): number {
   return Math.min(1, 1 - 0.25 * edits + (mentions > 0 ? FTS_BOOST : 0))
 }
 
+export function nearCommonWord(said: string): boolean {
+  const word = plain(said)
+  for (const common of [...NOT_NAMES, ...EVERYDAY_WORDS]) {
+    if (common.length >= 4 && Math.abs(common.length - word.length) <= 1 && editDistance(word, common, 1) <= 1) return true
+  }
+  return false
+}
+
 export function nameHints(prompt: string, chats: readonly NamedChat[], count: CountMessages = (chat) => chat.messages, mentions: MentionsOf = () => 0, uses: WordUses = () => 0): NameHint[] {
   const hints: NameHint[] = []
   for (const said of promptWords(prompt)) {
-    const limit = uses(said) > TYPO_MAX_USES ? 0 : plain(said).length >= 5 ? 2 : 1
+    const limit = uses(said) > TYPO_MAX_USES || nearCommonWord(said) ? 0 : plain(said).length >= 5 ? 2 : 1
     const found = chats.map((chat) => ({ said, chat, edits: editsFor(said, chat.name) })).filter((h) => h.edits <= limit)
     if (!found.length) continue
     const fewest = Math.min(...found.map((h) => h.edits))
