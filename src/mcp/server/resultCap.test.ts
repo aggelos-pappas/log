@@ -35,4 +35,18 @@ describe("every log tool result is capped at 40 KB, whatever the platform", () =
     const small: CallToolResult = { content: [{ type: "text", text: "ok" }], structuredContent: { exit: 0 } };
     expect(capResult("discordChats", small, [])).toBe(small);
   });
+
+  test("rows that each carry a long thread still fit: the whole answer, text and structured together, stays under the cap", () => {
+    const message = (i: number) => ({ conversationId: "1000000000000000001", seq: i, at: "2026-11-19T13:55:46Z", fromOwner: false, senderLabel: "grace_ships", text: "a long message about the retainer and the base ".repeat(40), files: 0 });
+    const waiting = Array.from({ length: 100 }, (_, r) => ({ platform: "discord", with: `linus_k${r}`, messages: Array.from({ length: 60 }, (_, i) => message(i)) }));
+    const stdoutText = JSON.stringify({ waiting, followUps: [], totals: { waiting: 100 } }, null, 1);
+    const huge: CallToolResult = { content: [{ type: "text", text: `Browsers: none open.\n\n${stdoutText}` }], structuredContent: { exit: 0, ok: true, stdout: stdoutText, log: [], progress: [], json: { waiting, followUps: [], totals: { waiting: 100 } } } };
+    const capped = capResult("inboxWaiting", huge, ["platform", "limit", "tail"]);
+    const total = Buffer.byteLength(JSON.stringify(capped.content), "utf8") + Buffer.byteLength(JSON.stringify(capped.structuredContent), "utf8");
+    expect(total).toBeLessThan(RESULT_CAP_BYTES);
+    const json = (capped.structuredContent as { json: { waiting: { count: number; first: { messages: unknown[] }[] } } }).json;
+    expect(json.waiting.count).toBe(100);
+    expect(json.waiting.first[0].messages.length).toBeLessThanOrEqual(4);
+    expect((capped.content![0] as { text: string }).text).toContain("inboxWaiting's flags: --platform, --limit, --tail");
+  });
 });

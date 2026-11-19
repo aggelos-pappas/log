@@ -3,6 +3,8 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 export const RESULT_CAP_BYTES = 40_000;
 
 const HEAD_ROWS = 8;
+const NESTED_ROWS = 3;
+const STRING_CHARS = 280;
 const QUIET_FLAGS = new Set(["account", "json", "confirmLive", "confirmBypass", "approvedBy", "waitMs", "live"]);
 
 export function narrowingFlags(flags: readonly { name: string }[]): string[] {
@@ -17,15 +19,39 @@ function sizeOf(value: unknown): number {
   }
 }
 
-export function jsonHead(json: unknown, rows: number = HEAD_ROWS): unknown {
-  if (Array.isArray(json)) return { count: json.length, first: json.slice(0, rows) };
-  if (!json || typeof json !== "object") return json;
+function trimmed(value: unknown, depth: number): unknown {
+  if (typeof value === "string") return value.length > STRING_CHARS ? `${value.slice(0, STRING_CHARS)}…` : value;
+  if (Array.isArray(value)) {
+    if (depth === 0) return value.map((v) => trimmed(v, depth + 1));
+    const kept = value.slice(0, NESTED_ROWS).map((v) => trimmed(v, depth + 1));
+    return value.length > NESTED_ROWS ? [...kept, `(${value.length - NESTED_ROWS} more left out)`] : kept;
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(value as Record<string, unknown>)) out[key] = trimmed(v, depth + 1);
+    return out;
+  }
+  return value;
+}
+
+function headOf(json: unknown, rows: number): unknown {
+  if (Array.isArray(json)) return { count: json.length, first: trimmed(json.slice(0, rows), 0) };
+  if (!json || typeof json !== "object") return trimmed(json, 1);
   const head: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(json as Record<string, unknown>)) {
-    if (Array.isArray(value)) head[key] = { count: value.length, first: value.slice(0, rows) };
+    if (Array.isArray(value)) head[key] = { count: value.length, first: trimmed(value.slice(0, rows), 0) };
     else head[key] = sizeOf(value) > 2_000 ? `(${sizeOf(value)} bytes left out)` : value;
   }
   return head;
+}
+
+export function jsonHead(json: unknown, rows: number = HEAD_ROWS, budget: number = Math.floor(RESULT_CAP_BYTES / 2)): unknown {
+  for (let n = rows; n >= 1; n = Math.floor(n / 2)) {
+    const head = headOf(json, n);
+    if (sizeOf(head) <= budget) return head;
+  }
+  const smallest = headOf(json, 0);
+  return sizeOf(smallest) <= budget ? smallest : `(${sizeOf(json)} bytes left out)`;
 }
 
 function textHead(text: string, budget: number): string {
@@ -51,16 +77,16 @@ export function capResult(tool: string, result: CallToolResult, flags: readonly 
   const texts = (result.content ?? []).filter((c): c is { type: "text"; text: string } => c.type === "text");
   const textBytes = texts.reduce((n, c) => n + Buffer.byteLength(c.text, "utf8"), 0);
   const structured = result.structuredContent as Record<string, unknown> | undefined;
-  const bytes = Math.max(textBytes, sizeOf(structured));
+  const bytes = textBytes + sizeOf(structured);
   if (bytes <= cap) return result;
   const note = capLine(tool, bytes, flags);
-  const json = structured && "json" in structured ? jsonHead(structured.json) : undefined;
-  const headText = json !== undefined ? JSON.stringify(json, null, 1) : textHead(String(structured?.stdout ?? texts[0]?.text ?? ""), Math.floor(cap / 2));
+  const json = structured && "json" in structured ? jsonHead(structured.json, HEAD_ROWS, Math.floor(cap * 0.35)) : undefined;
+  const headText = json !== undefined ? JSON.stringify(json, null, 1) : textHead(String(structured?.stdout ?? texts[0]?.text ?? ""), Math.floor(cap * 0.35));
   const firstText = texts[0]?.text ?? "";
   const lead = firstText.slice(0, firstText.indexOf("\n\n") + 1 || 0);
-  const content = [{ type: "text" as const, text: textHead(`${lead}\n${headText}`, Math.floor(cap * 0.8)) + `\n\n${note}` }, ...(result.content ?? []).filter((c) => c.type !== "text")];
+  const content = [{ type: "text" as const, text: textHead(`${lead}\n${headText}`, Math.floor(cap * 0.4)) + `\n\n${note}` }, ...(result.content ?? []).filter((c) => c.type !== "text")];
   const shrunk = structured
-    ? { ...structured, stdout: textHead(String(structured.stdout ?? ""), 2_000), ...(json !== undefined ? { json } : {}), log: (structured.log as unknown[] | undefined)?.slice(-5) ?? [], progress: (structured.progress as unknown[] | undefined)?.slice(-5) ?? [] }
+    ? { ...structured, stdout: textHead(String(structured.stdout ?? ""), 2_000), ...(json !== undefined ? { json } : {}), log: [], progress: [] }
     : undefined;
   return { ...result, content, ...(shrunk ? { structuredContent: shrunk } : {}) };
 }
