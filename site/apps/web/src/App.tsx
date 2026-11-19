@@ -11,6 +11,7 @@ import { DevlogIndexPage } from './landing/devlog/DevlogIndexPage'
 import { ShareCardPage } from './landing/shareCard/ShareCardPage'
 import { McpPage } from './landing/mcp/McpPage'
 import { McpPromo } from './landing/mcp/McpPromo'
+import { ApplyPage } from './landing/apply/ApplyPage'
 import Dither from './components/Dither'
 import { AuthPage } from './pages/auth/AuthPage'
 import { SsoCallbackPage } from './pages/auth/SsoCallbackPage'
@@ -53,7 +54,7 @@ const VERCEL_ANALYTICS_DOMAIN = 'log.listeningkit.com'
 
 function SitePromo() {
   const { pathname } = useLocation()
-  if (pathname.startsWith('/console') || pathname === '/teams') return null
+  if (pathname.startsWith('/console') || pathname === '/teams' || pathname === '/apply') return null
   return <McpPromo />
 }
 
@@ -100,6 +101,7 @@ export function App() {
             <Route path="/hermes" element={<UseCasesPage key="hermes" platform="hermes" />} />
             <Route path="/grok" element={<UseCasesPage key="grok" platform="grok" />} />
             <Route path="/mcp" element={<McpPage />} />
+            <Route path="/apply" element={<ApplyPage />} />
             <Route path="/rea-looksmaxxing" element={<ReaLooksmaxxingPage />} />
             <Route path="/devlog" element={<DevlogIndexPage />} />
             <Route path="/devlog/xreacher-alternative" element={<XreacherAlternativePage />} />
