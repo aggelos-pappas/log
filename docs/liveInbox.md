@@ -51,6 +51,16 @@ A contact writes a short question on Discord while a reply to them is going out 
 | Claude Code | a `Monitor` on `bun <log>/scripts/hooks/push.ts --host claudeCode --reader <session id>`: every line it prints wakes the session |
 | Codex, Cursor, Antigravity | no way for a plugin to start a turn yet, so messages wait for the next prompt hook |
 
+**Replies: ask or auto.** A pushed message always tells the agent to say who wrote and what about. Whether it may then send is the owner's setting, `ask` by default: the agent drafts and gates the reply, shows it, and sends only when the owner says to in that chat. `auto` brings back sending straight away (rule 108). Set it per harness, one word for every platform or per platform with a default:
+
+| Where | Setting |
+|---|---|
+| Hermes `config.yaml` | `plugins.entries.log.replies: ask`, or `replies: {default: ask, discord: auto}` |
+| any harness (env) | `LOG_REPLIES=ask` or `LOG_REPLIES=discord=auto,default=ask` |
+| fallback for all harnesses | `~/.logCli/settings.json`: `{"replies": "ask"}` or `{"replies": {"default": "ask", "twitter": "auto"}}` |
+
+The harness setting wins over the file. Turning off `allow_gateway_injection` in Hermes stops pushed messages starting turns on their own; they then wait for your next message.
+
 **Unknown events (rule one).** An event type nobody has catalogued yet is stored with its raw payload and raised as an alert, so it can be named from rea, the docs and SubQ instead of being dropped.
 
 ## Being built now

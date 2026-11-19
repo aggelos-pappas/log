@@ -112,6 +112,7 @@ def ask_script(parts, argv, event, payload):
             encoding="utf-8",
             timeout=HOOK_TIMEOUT_SECONDS,
             cwd=str(root),
+            env=hook_env(),
         )
     except (OSError, subprocess.TimeoutExpired):
         return ""
@@ -220,6 +221,7 @@ class Push:
                     text=True,
                     encoding="utf-8",
                     cwd=str(log_root()),
+                    env=hook_env(),
                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                 )
             except OSError:
@@ -277,6 +279,27 @@ def mcp_configured(config_path=None):
     except Exception:
         block = re.search(r"^mcp_servers:\s*\n((?:[ \t]+.*\n?|\s*\n)*)", text, re.M)
         return bool(block and re.search(rf"^[ \t]+{MCP_SERVER}:", block.group(1), re.M))
+
+
+def replies_setting(config_path=None):
+    path = Path(config_path) if config_path else hermes_home() / "config.yaml"
+    try:
+        import yaml
+        config = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return ""
+    entry = ((config.get("plugins") or {}).get("entries") or {}).get(MCP_SERVER) or {}
+    value = entry.get("replies") if isinstance(entry, dict) else None
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, dict):
+        return ",".join(f"{k}={v}" for k, v in value.items() if isinstance(v, str))
+    return ""
+
+
+def hook_env():
+    replies = replies_setting()
+    return {**os.environ, "LOG_REPLIES": replies} if replies else None
 
 
 def pre_llm_call(session_id="", user_message="", conversation_history=None, is_first_turn=False, **kwargs):
