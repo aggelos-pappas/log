@@ -10,7 +10,6 @@ export const APPLY_AGENT_LINE = 'set up log apply - https://log.listeningkit.com
 
 export const APPLY_NUMBERS = { applied: 206, companies: 112, bestDay: 68 }
 
-export const APPLY_STATS = [`${APPLY_NUMBERS.applied} applied`, `${APPLY_NUMBERS.companies} companies`, `${APPLY_NUMBERS.bestDay} in one day`, 'open source']
 
 export const APPLY_INSTALL = ['/plugin marketplace add matthewdonsemail-lab/log-apply', '/plugin install log-apply@log-apply', '/apply-setup']
 

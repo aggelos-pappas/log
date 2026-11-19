@@ -18,7 +18,6 @@ import {
   APPLY_LEDGER_TO,
   APPLY_LEDGER_URL,
   APPLY_NUMBERS,
-  APPLY_STATS,
   APPLY_STEPS,
   APPLY_TITLE,
 } from './applyContent'
@@ -64,17 +63,13 @@ function Hero() {
       </div>
       <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center px-4 pb-20 pt-28 text-center md:px-6 md:pb-24 md:pt-36">
         <a
-          href={APPLY_LEDGER_URL}
+          href={APPLY_GITHUB_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-0.5 rounded-full bg-white/95 px-4 py-1.5 text-[13px] font-bold text-[#0D2A4C] shadow-[0_2px_0_#1A5FC8] transition-transform hover:-translate-y-px sm:text-[14px]"
+          className="inline-flex items-center gap-2 rounded-full bg-white/95 px-4 py-1.5 text-[13px] font-bold text-[#0D2A4C] shadow-[0_2px_0_#1A5FC8] transition-transform hover:-translate-y-px sm:text-[14px]"
         >
-          {APPLY_STATS.map((stat, index) => (
-            <span key={stat} className="inline-flex items-center gap-2">
-              {index > 0 ? <span aria-hidden className="text-[#2A8CFF]/60">·</span> : null}
-              <span className={index === 0 ? 'text-[#2A8CFF]' : undefined}>{stat}</span>
-            </span>
-          ))}
+          <span aria-hidden className="h-2 w-2 rounded-full bg-[#22C55E]" />
+          Open source
         </a>
         <h1
           className="mt-6 flex flex-col items-center gap-1 text-[clamp(2.1rem,0.5rem+6.6vw,6rem)] leading-[0.95] text-white [-webkit-text-stroke:2px_#fff]"
