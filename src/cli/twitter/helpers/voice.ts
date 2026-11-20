@@ -21,6 +21,9 @@ import type { VoiceScore } from "../../../voice/score/index.ts";
 import { BASELINE_REPLIES, convergenceOf } from "../../../voice/converge/index.ts";
 import type { Convergence } from "../../../voice/converge/index.ts";
 import { calibrate, chatWho, gradeOptions, lastMessageIdOf, openLinesOf, OPTIONS_MAX, packFor, renderPackResult } from "./voiceOptions.ts";
+import { aiTellsMode, ensureConventions, recordDrafts, runVoiceTrain } from "./voiceTrain.ts";
+import { conventionsLine, readConventionsOf } from "../../../voice/conventions/index.ts";
+import type { ConventionsReading } from "../../../voice/conventions/index.ts";
 import { matchChat } from "../../../discord/chat/match/index.ts";
 import type { DiscordChat } from "../../../discord/chat/match/index.ts";
 import { loadConversations, localEmbedder } from "../../../search/conversations/index.ts";
@@ -44,10 +47,11 @@ import type { Command, CommandContext, CommandInput, CommandResult } from "../..
 export const VOICE_USAGE = [
   "Usage: log voice --to <handle> [--text \"<draft>\"] [--options \"<option>\" ...] [--context \"<what they said>\"] [--with <person or chat>] [--spoken] [--json]",
   "       log voice calibrate [--count <n>] [--json]   (sets the score's pass threshold so 95% of his held-out replies pass, stored dated)",
-  "       log voice aiIndex [--json]   (builds the AI tells index from vendor/aiTells with Jina, and his own replies' p50 and p99 closeness to it; rule 137)",
+  "       log voice train [--fresh <n>] [--spend <usd>] [--drafts <file>] [--json]",
+  "       log voice aiIndex [--json]   (old Jina index, LOG_AI_TELLS=jina)",
   "       log voice index [--json]   (builds his voice from the saved conversations: each reply paired with what came before, and a profile per chat, person and platform)",
-  "Gates a draft before anything is sent as the owner, sending nothing: one score over his phrasing, his nearest real reply, distance from AI phrases, SubQ's voice reading and whether it answers them, against a calibrated threshold; a never-said phrase, watermark characters or an ask in a first message fail it outright.",
-  "--with names the chat or person as the owner says it. Without --text it returns the grounding pack: his real replies to messages like this (this chat first), how he talks to this person, how they talk, his facts there, and the ask to write 3-5 options. --options grades them in one call, ranked, with the fix for the best when none passes.",
+  "Gates a draft before anything is sent as the owner, sending nothing: one score over his phrasing, his nearest real reply, AI conventions, SubQ's voice and whether it answers them, against a calibrated threshold; a never-said phrase, watermark characters or an ask in a first message fail it outright.",
+  "--with names the chat or person. Without --text it returns the grounding pack (his real replies, this chat first; how he and they talk; his facts; the ask for 3-5 options). --options grades them in one call, ranked, with the fix for the best when none passes.",
   "--spoken gates a voice note: its length never counts, and it must build on the chat, not repeat it (rule 137).",
   "Exit 0 when it passes, 1 when it doesn't.",
 ].join("\n");
@@ -71,7 +75,7 @@ export const VOICE_INPUT: CommandInput = {
     },
     {
       words: ["aiIndex"],
-      summary: "Build the AI tells index with Jina and measure the owner's own messages against it",
+      summary: "Build the old Jina AI tells index (LOG_AI_TELLS=jina)",
       positionals: [],
       flags: [JSON_FLAG],
     },
@@ -80,6 +84,17 @@ export const VOICE_INPUT: CommandInput = {
       summary: "Build the owner's voice per chat and person from the conversations log search saved",
       positionals: [],
       flags: [JSON_FLAG],
+    },
+    {
+      words: ["train"],
+      summary: "Retrain the AI-conventions check on the owner's messages",
+      positionals: [],
+      flags: [
+        { name: "fresh", kind: "integer", min: 1, max: 1000, description: "Moments for frontier models to answer" },
+        { name: "spend", kind: "number", description: "USD cap for --fresh (3)" },
+        { name: "drafts", kind: "string", description: "JSON file of AI drafts" },
+        JSON_FLAG,
+      ],
     },
     {
       words: ["calibrate"],
@@ -94,12 +109,12 @@ let warmEmbedder: Embedder | null = null;
 
 export const voiceDeps: { decisions: () => DecisionsClient; embedder: () => Embedder; aiEmbedder: () => AiEmbedder; aiBuilder: () => AiEmbedder; scrambler: (text: string) => ScramblerReading; howOwnerTalks: () => string[]; jinaMs: number } = { jinaMs: JINA_GATE_MS, decisions: () => createDecisionsClient(), embedder: () => (warmEmbedder ??= storedEmbedder(localEmbedder(), "voice")), aiEmbedder: () => jinaEmbedder(undefined, undefined, { timeoutMs: JINA_GATE_MS, retries: 0 }), aiBuilder: () => jinaEmbedder(), scrambler: (text) => scramblerReadingOf(text), howOwnerTalks: () => howOwnerTalks() };
 
-export function renderVoice(reading: VoiceReading & { notHere?: string[]; aiTells?: AiReading; phrases?: PhraseReading; scrambler?: ScramblerReading; score?: VoiceScore }): string {
+export function renderVoice(reading: VoiceReading & { notHere?: string[]; aiTells?: AiReading; conventions?: ConventionsReading; phrases?: PhraseReading; scrambler?: ScramblerReading; score?: VoiceScore }): string {
   const scores = `voice ${reading.voice.toFixed(2)} · answers them ${reading.inContext.toFixed(2)} · reads like a mate ${reading.friendLike.toFixed(2)} · opener only ${reading.openerOnly.toFixed(2)}${reading.toThem === null ? "" : ` · like his replies there ${reading.toThem.toFixed(2)}`}${reading.buildsOn === null || reading.buildsOn === undefined ? "" : ` · builds on the chat ${reading.buildsOn.toFixed(2)}`}`;
   const never = reading.neverSays.length ? ` · the owner never says: ${reading.neverSays.join(", ")}` : "";
   const notHere = reading.notHere?.length ? `\n  he never writes it here: ${reading.notHere.join("; ")}` : "";
   const watermark = reading.watermark ? `\n  ${watermarkLine(reading.watermark)}` : "";
-  const ai = reading.aiTells ? `\n  ${aiTellsLine(reading.aiTells)}` : "";
+  const ai = reading.aiTells ? `\n  ${aiTellsLine(reading.aiTells)}` : reading.conventions ? `\n  ${conventionsLine(reading.conventions)}` : "";
   const phrases = reading.phrases ? `\n  ${phrasesLine(reading.phrases)}` : "";
   const scrambler = reading.scrambler ? `\n  ${scramblerLine(reading.scrambler)}` : "";
   const table = reading.score ? `\n${scoreTable(reading.score)}` : "";
@@ -242,10 +257,10 @@ export const voiceCommand: Command = {
   effect: "read",
   input: VOICE_INPUT,
   summary: "Gate a draft against the owner's own writing guide with SubQ before anything is sent as the owner, sending nothing",
-  args: "--to <handle> [--text \"<draft>\"] [--options <o> ...] [--context \"<what they said>\"] [--with <chat>] [--json] | index | aiIndex | calibrate",
+  args: "--to <handle> [--text \"<draft>\"] [--options <o> ...] [--context \"<what they said>\"] [--with <chat>] [--json] | index | train | aiIndex | calibrate",
   async run(context, argv) {
     if (argv[0] === "calibrate") {
-      const parsed = parseArgs(argv.slice(1), parserSpecOf({ forms: [{ ...VOICE_INPUT.forms[3], words: [] }] }));
+      const parsed = parseArgs(argv.slice(1), parserSpecOf({ forms: [{ ...VOICE_INPUT.forms[4], words: [] }] }));
       if (!parsed.ok) return refuseInput("voice calibrate", parsed.error, VOICE_USAGE);
       const guide = readGuide();
       if (!guide) return refuse("voice calibrate", "voiceGuideMissing", `the owner's writing guide isn't at ${guidePath()}`);
@@ -253,6 +268,18 @@ export const voiceCommand: Command = {
         return await calibrate(context, { guide, ...(typeof parsed.values["count"] === "number" ? { count: parsed.values["count"] } : {}), json: parsed.flags["json"] === true });
       } catch (error) {
         return refuseError("voice calibrate", error);
+      }
+    }
+    if (argv[0] === "train") {
+      const parsed = parseArgs(argv.slice(1), parserSpecOf({ forms: [{ ...VOICE_INPUT.forms[3], words: [] }] }));
+      if (!parsed.ok) return refuseInput("voice train", parsed.error, VOICE_USAGE);
+      const fresh = typeof parsed.values["fresh"] === "number" ? parsed.values["fresh"] : undefined;
+      const spend = typeof parsed.values["spend"] === "number" ? parsed.values["spend"] : undefined;
+      const drafts = typeof parsed.flags["drafts"] === "string" ? parsed.flags["drafts"] : undefined;
+      try {
+        return await runVoiceTrain(context, { ...(fresh ? { fresh } : {}), ...(spend !== undefined ? { spend } : {}), ...(drafts ? { drafts } : {}), json: parsed.flags["json"] === true });
+      } catch (error) {
+        return refuseError("voice train", error);
       }
     }
     if (argv[0] === "aiIndex") {
@@ -321,6 +348,7 @@ export const voiceCommand: Command = {
         }
       }
       const reading = await gateReading(context, { to, text, said, guide, card, ...(evidence ? { evidence } : {}), ...(parsed.flags["spoken"] === true ? { spoken: true } : {}) });
+      if (!parsed.flags["spoken"]) recordDrafts([text], chat || to, null);
       if (reading.pass && text.trim()) recordPass(text, to, reading.voice);
       if (gated) recordVerdict(text, lastMessageIdOf(gated.platform, gated.account, chatWho(gated)), { pass: reading.pass, score: reading.score?.score ?? 0, threshold: reading.score?.threshold ?? 0, voice: reading.voice });
       if (parsed.flags["json"]) return { code: reading.pass ? 0 : 1, stdout: JSON.stringify(reading, null, 2) };
@@ -331,7 +359,7 @@ export const voiceCommand: Command = {
   },
 };
 
-export type GateReading = VoiceReading & { notHere: string[]; aiTells?: AiReading; phrases?: PhraseReading; scrambler: ScramblerReading; ranked: RankedMoment[]; room?: Room; strictPass?: boolean; score?: VoiceScore; nearest?: { cosine: number; reply: string } | null; convergence?: Convergence };
+export type GateReading = VoiceReading & { notHere: string[]; aiTells?: AiReading; conventions?: ConventionsReading; phrases?: PhraseReading; scrambler: ScramblerReading; ranked: RankedMoment[]; room?: Room; strictPass?: boolean; score?: VoiceScore; nearest?: { cosine: number; reply: string } | null; convergence?: Convergence };
 
 export interface RankedMoment {
   from: string;
@@ -396,10 +424,14 @@ export async function gateReadings(context: CommandContext, draft: Omit<GateDraf
   context.err(`voice: SubQ reading ${texts.length > 1 ? `${texts.length} options in one request` : "the draft"} for @${to.replace(/^@/, "")}${draft.card ? " against this chat's conversation card" : ""}${everywhere ? " and the owner's writing across all his conversations" : ""}${evidence ? ` and his real replies in ${evidence.chat}` : ""}${ranked.length ? `, with ${ranked.length} moment(s) of this chat ranked against what is being answered` : ""}, with his writing guide`);
   const phraseIndex = timedSync("voice.phraseIndex", () => ensurePhraseIndex(context));
   if (!phraseIndex) context.err("voice: no voice index yet, so the owner's own phrasing isn't measured: build it with `log voice index`");
-  await ensureAiIndex(context);
-  const aiIndex = openAiIndex(aiIndexDir(), JINA_EMBED_MODEL);
-  if (!aiIndex) context.err("voice: the AI tells index couldn't be built, so AI phrasing isn't checked");
+  const jina = aiTellsMode() === "jina";
+  if (jina) await ensureAiIndex(context);
+  const aiIndex = jina ? openAiIndex(aiIndexDir(), JINA_EMBED_MODEL) : null;
+  if (jina && !aiIndex) context.err("voice: the AI tells index couldn't be built, so AI phrasing isn't checked");
+  const conventions = jina ? null : timedSync("voice.conventionsOpen", () => ensureConventions(context));
+  const conventionReadings = conventions ? timed("voice.conventions", () => readConventionsOf(conventions, texts, (batch) => voiceDeps.embedder().embed(batch))).catch(() => null) : Promise.resolve(null);
   const locals = await Promise.all(texts.map((text) => localReading(text, draft, phraseIndex, aiIndex)));
+  const conventionsRead = await conventionReadings;
   const baseline = (await baselinePairs()).filter((p) => p.reply.trim() !== draft.leaveOut?.reply.trim());
   const hisBaseline = baseline.map((p) => p.reply);
   const hisHere = [...(evidence?.recent ?? []), ...(evidence?.replies ?? []).filter((r) => r.tier === "sameChat")].filter((p) => p.reply.trim() !== draft.leaveOut?.reply.trim());
@@ -411,10 +443,11 @@ export async function gateReadings(context: CommandContext, draft: Omit<GateDraf
   const threshold = currentThreshold();
   return readings.map((scored, i) => {
     const local = locals[i];
-    const strictPass = scored.pass && !local.notHere.length && (local.aiTells?.pass ?? true) && (local.phrases?.pass ?? true) && local.scrambler.suspicious === 0;
-    const input = { ...scored, nobodyToAnswer: nobodyToAnswer({ room: draft.room }), scrambler: local.scrambler, notHere: local.notHere, nearestCosine: local.nearest?.cosine ?? null, convergence: converging[i].signal, theyWrote: theirLast.some((t) => t.trim().length > 0), ...(local.phrases ? { phrases: local.phrases } : {}), ...(local.aiTells ? { aiTells: local.aiTells } : {}) };
+    const convention = conventionsRead?.[i];
+    const strictPass = scored.pass && !local.notHere.length && (local.aiTells?.pass ?? true) && !convention?.flagged && (local.phrases?.pass ?? true) && local.scrambler.suspicious === 0;
+    const input = { ...scored, nobodyToAnswer: nobodyToAnswer({ room: draft.room }), scrambler: local.scrambler, notHere: local.notHere, nearestCosine: local.nearest?.cosine ?? null, convergence: converging[i].signal, theyWrote: theirLast.some((t) => t.trim().length > 0), ...(local.phrases ? { phrases: local.phrases } : {}), ...(local.aiTells ? { aiTells: local.aiTells } : {}), ...(convention ? { conventions: convention } : {}) };
     const score = scoreOf(signalsOf(input), hardBlocks(input, CONTEXT_PASS), threshold);
-    return { ...scored, notHere: local.notHere, ...(local.aiTells ? { aiTells: local.aiTells } : {}), ...(local.phrases ? { phrases: local.phrases } : {}), scrambler: local.scrambler, ranked, ...(draft.room ? { room: draft.room } : {}), nearest: local.nearest, convergence: converging[i], strictPass, score, pass: score.pass };
+    return { ...scored, notHere: local.notHere, ...(local.aiTells ? { aiTells: local.aiTells } : {}), ...(convention ? { conventions: convention } : {}), ...(local.phrases ? { phrases: local.phrases } : {}), scrambler: local.scrambler, ranked, ...(draft.room ? { room: draft.room } : {}), nearest: local.nearest, convergence: converging[i], strictPass, score, pass: score.pass };
   });
 }
 
@@ -446,6 +479,7 @@ export function failedParts(reading: GateReading): string[] {
   if (reading.toThem !== null && reading.toThem < CONTEXT_PASS) out.push(`not how the owner writes in this chat (toThem ${reading.toThem.toFixed(2)})`);
   if (reading.notHere.length) out.push(`never used by the owner here: ${reading.notHere.join(", ")}`);
   if (reading.aiTells && !reading.aiTells.pass) out.push(aiTellsLine(reading.aiTells));
+  if (reading.conventions?.flagged) out.push(conventionsLine(reading.conventions));
   if (reading.phrases && !reading.phrases.pass) out.push(phrasesLine(reading.phrases));
   if (reading.scrambler.suspicious) out.push(scramblerLine(reading.scrambler));
   return out;

@@ -15,6 +15,8 @@ import type { ConversationCard } from "../../../inbox/card/index.ts";
 import type { VoiceEvidence } from "../../../twitter/copy/voice/index.ts";
 import type { CommandContext, CommandResult } from "../../runner/types.ts";
 import { baselineReplies, evidenceFor, gateReadings, momentAnswered, profileLine, saidOnly, voiceDeps } from "./voice.ts";
+import { aiTellsMode, recordDrafts } from "./voiceTrain.ts";
+import { conventionsNear, openConventions } from "../../../voice/conventions/index.ts";
 import { convergenceLine, hisFacts, styleOf } from "../../../voice/converge/index.ts";
 import type { GateReading } from "./voice.ts";
 
@@ -72,7 +74,7 @@ export async function packFor(context: CommandContext, input: { said: string; ch
     const said = input.said || chat.said;
     const found = said && said !== (input.said || input.chat) ? await evidenceFor(context, said, input.chat, "", PACK_NEAR) : first;
     if (!found.ok) return found;
-    const aiPhrases = await aiLinesNear(said || found.near[0]?.pair.said || "");
+    const aiPhrases = aiTellsMode() === "jina" ? await aiLinesNear(said || found.near[0]?.pair.said || "") : conventionsNear(openConventions(), said || found.near[0]?.pair.said || "");
     const his = styleOf(await baselineReplies());
     const hisHere = chat.mine.length ? chat.mine : found.chatReplies;
     const style = his ? { his, hisHere: styleOf(hisHere), theirs: styleOf(chat.theirs) } : null;
@@ -103,6 +105,7 @@ export function failingSpans(reading: GateReading): { span: string; why: string 
   const out: { span: string; why: string }[] = [];
   for (const phrase of reading.neverSays) out.push({ span: phrase, why: "a phrase he never says" });
   for (const hit of reading.aiTells?.hits ?? []) out.push({ span: hit.match, why: `an AI tell (${hit.rule})` });
+  for (const flag of reading.conventions?.flags ?? []) if (flag.kind !== "rule") out.push({ span: flag.what, why: flag.kind === "gram" ? `models over-use it (${flag.why})` : `an AI habit (${flag.why})` });
   const close = reading.aiTells?.closest[0];
   if (close && reading.aiTells && close.cosine > reading.aiTells.p50) out.push({ span: close.chunk, why: `close to the AI phrase "${close.phrase}"` });
   for (const pair of reading.phrases?.newPhrasing ?? []) out.push({ span: pair, why: "word pair he has never written" });
@@ -142,6 +145,7 @@ export async function gradeOptions(context: CommandContext, input: { to: string;
     }
   }
   const readings = await gateReadings(context, { to: input.to, said, guide: input.guide, card, ...(evidence ? { evidence } : {}), ...(input.spoken ? { spoken: true } : {}) }, input.options);
+  if (!input.spoken) recordDrafts(input.options, input.chat || input.to, lastId);
   const ranked = rankOptions(input.options, readings);
   for (const o of ranked) {
     recordVerdict(o.text, lastId, { pass: o.pass, score: o.score, threshold: o.reading.score?.threshold ?? 0, voice: o.reading.voice });

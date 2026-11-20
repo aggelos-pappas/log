@@ -29,13 +29,19 @@ export function valeRules(dir = join(aiTellsDir(), 'valeAiTells', 'styles')): Ai
   return rules
 }
 
+const PATTERNS = new WeakMap<AiTellRule, RegExp | null>()
+
 function patternOf(rule: AiTellRule): RegExp | null {
+  if (PATTERNS.has(rule)) return PATTERNS.get(rule)!
   const body = rule.tokens.map((t) => `(?:${t})`).join('|')
+  let pattern: RegExp | null = null
   try {
-    return new RegExp(rule.nonword ? body : `\\b(?:${body})\\b`, rule.ignorecase ? 'gi' : 'g')
+    pattern = new RegExp(rule.nonword ? body : `\\b(?:${body})\\b`, rule.ignorecase ? 'gi' : 'g')
   } catch {
-    return null
+    pattern = null
   }
+  PATTERNS.set(rule, pattern)
+  return pattern
 }
 
 export function ruleHits(text: string, rules: readonly AiTellRule[], muted: ReadonlySet<string> = new Set()): AiTellHit[] {

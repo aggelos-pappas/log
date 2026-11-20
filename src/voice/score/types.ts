@@ -21,7 +21,7 @@ export const SIGNAL_WORDS: Readonly<Record<SignalName, string>> = {
 export const SIGNAL_FIX: Readonly<Record<SignalName, string>> = {
   phrasing: 'word pairs he has never written: swap them for his own phrasing below',
   nearest: 'far from anything he has written: borrow the shape of his nearest real reply',
-  notAiTell: 'close to a known AI phrase: drop or reword that bit',
+  notAiTell: 'reads like a frontier model wrote it: swap the words and habits named for his own phrasing',
   subqVoice: 'does not read like him typing it: shorter, his register, his length here',
   answersThem: 'does not answer what they said: name their point in his words',
   convergence: 'mirrors their words or style more than he does with them: answer in his own words and shape, not theirs',

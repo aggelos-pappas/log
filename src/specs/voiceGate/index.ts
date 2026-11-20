@@ -10,7 +10,7 @@ const OPTIONS = 'src/cli/twitter/helpers/voiceOptions.ts'
 export const voiceGate = {
   description: 'The voice gate every message to send as the owner passes',
   specPath: 'docs/specs/voiceGate.md',
-  codePaths: ['src/voice/brief/client.ts', 'src/voice/brief/types.ts', 'src/cli/discord/index.ts', 'src/voice/passes/client.ts', 'src/voice/sameness/client.ts', 'src/voice/sameness/types.ts', 'src/twitter/queue/plan/client.ts', 'src/inbox/store/client.ts', 'src/voice/aiTells/helpers/jina.ts', 'src/cli/discord/index.ts', 'src/cli/slack/index.ts', 'src/cli/instagram/index.ts', 'src/cli/twitter/helpers/send.ts', 'src/cli/twitter/helpers/queue.ts', 'src/twitter/copy/voice/client.ts', 'src/twitter/copy/voice/types.ts', 'src/cli/twitter/helpers/voice.ts', 'src/voice/phrases/client.ts', 'src/voice/phrases/types.ts', 'src/twitter/copy/scrambler/client.ts', 'src/twitter/copy/scrambler/types.ts', 'src/voice/room/index.ts', 'src/voice/room/types.ts', 'src/cli/voiceNote/index.ts', 'src/voice/aiTells/helpers/bounded.ts', 'src/voice/aiTells/types.ts', 'src/voice/aiTells/client.ts', 'src/voice/pack/client.ts', 'src/voice/pack/types.ts', 'src/voice/score/client.ts', 'src/voice/score/types.ts', 'src/voice/converge/client.ts', 'src/voice/converge/types.ts', 'src/cli/twitter/helpers/voiceOptions.ts'],
+  codePaths: ['src/voice/brief/client.ts', 'src/voice/brief/types.ts', 'src/cli/discord/index.ts', 'src/voice/passes/client.ts', 'src/voice/sameness/client.ts', 'src/voice/sameness/types.ts', 'src/twitter/queue/plan/client.ts', 'src/inbox/store/client.ts', 'src/voice/aiTells/helpers/jina.ts', 'src/cli/discord/index.ts', 'src/cli/slack/index.ts', 'src/cli/instagram/index.ts', 'src/cli/twitter/helpers/send.ts', 'src/cli/twitter/helpers/queue.ts', 'src/twitter/copy/voice/client.ts', 'src/twitter/copy/voice/types.ts', 'src/cli/twitter/helpers/voice.ts', 'src/voice/phrases/client.ts', 'src/voice/phrases/types.ts', 'src/twitter/copy/scrambler/client.ts', 'src/twitter/copy/scrambler/types.ts', 'src/voice/room/index.ts', 'src/voice/room/types.ts', 'src/cli/voiceNote/index.ts', 'src/voice/aiTells/helpers/bounded.ts', 'src/voice/aiTells/types.ts', 'src/voice/aiTells/client.ts', 'src/voice/pack/client.ts', 'src/voice/pack/types.ts', 'src/voice/score/client.ts', 'src/voice/score/types.ts', 'src/voice/converge/client.ts', 'src/voice/converge/types.ts', 'src/cli/twitter/helpers/voiceOptions.ts', 'src/cli/twitter/helpers/voiceTrain.ts'],
   anchors: {
     'REQ-VOICE-09': [
       { kind: 'symbol', file: COMMAND, name: 'gateSend' },
@@ -137,6 +137,13 @@ export const voiceGate = {
       { kind: 'symbol', file: OPTIONS, name: 'rankOptions' },
       { kind: 'symbol', file: OPTIONS, name: 'fixFor' },
     ],
+    'REQ-VOICE-34': [
+      { kind: 'uses', file: COMMAND, name: 'ensureConventions' },
+      { kind: 'uses', file: COMMAND, name: 'readConventionsOf' },
+      { kind: 'symbol', file: 'src/cli/twitter/helpers/voiceTrain.ts', name: 'trainInBackground' },
+      { kind: 'uses', file: OPTIONS, name: 'recordDrafts' },
+      { kind: 'uses', file: 'src/voice/score/client.ts', name: 'clamp' },
+    ],
     'REQ-VOICE-33': [
       { kind: 'symbol', file: 'src/voice/converge/client.ts', name: 'convergenceOf' },
       { kind: 'symbol', file: 'src/voice/converge/client.ts', name: 'compareLines' },
@@ -157,6 +164,7 @@ export const voiceGate = {
     'REQ-VOICE-30': noul('Does calibrate leave each held-out reply out of its own evidence, word pairs and nearest replies, set the threshold with thresholdFrom so HELD_OUT_PASS of them pass, and store it dated with the before and after pass rates?'),
     'REQ-VOICE-31': noul('Is every verdict recorded by the exact text and the chat last message id, and does gateSend reuse it only when the chat last message id is unchanged?'),
     'REQ-VOICE-32': noul('Does voice with options grade them all in one SubQ request, rank them passing first and by score, fail only when none passes, and then give the fix for the best one with his nearest real phrasing per failing span?'),
+    'REQ-VOICE-34': noul('Does gateReadings read every option with readConventionsOf when aiTellsMode is not jina and pass its value as the notAiTell signal, does ensureConventions start trainInBackground without waiting when the detector is missing or older than pairs.json, and do failedParts and failingSpans name the flags?'),
     'REQ-VOICE-33': noul('Does convergenceOf compare the draft reuse of their words and its style shift toward them with his own in this chat (or everywhere when this chat is thin), and does the not-mirroring signal drop as that gap grows?'),
     'REQ-VOICE-07': noul('Does buildPhraseIndex count every word pair in the replies of the owner and set a p10 baseline from his replies with the own pairs of each reply left out, does readPhrases leave out pairs using words from what they said and fail a draft whose share of pairs the owner wrote at least FAMILIAR_MIN_USES times is below that floor, and does the voice command fail the draft then and hand the unfamiliar pairs to readVoice?'),
     'REQ-VOICE-08': noul('Does the voice command run scramblerReadingOf on the draft through the vendored aiWatermarkScrambler inspect_text script, fail the draft when it finds any suspicious character, and hand its count and kinds to readVoice?'),
@@ -208,6 +216,7 @@ export const voiceGate = {
     'REQ-VOICE-31': MET,
     'REQ-VOICE-32': MET,
     'REQ-VOICE-33': MET,
+    'REQ-VOICE-34': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

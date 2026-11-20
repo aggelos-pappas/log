@@ -20,6 +20,7 @@ export interface ScoreInput {
   phrases?: { familiarity: number | null; floor: number; median?: number }
   notHere?: string[]
   aiTells?: { score: number; p50: number; p99: number; hits: unknown[]; closest: unknown[]; skipped?: string }
+  conventions?: { value: number | null }
   nearestCosine?: number | null
   convergence?: number | null
   theyWrote?: boolean
@@ -33,7 +34,7 @@ export function signalsOf(input: ScoreInput): ScoreSignals {
   const nearest = typeof input.nearestCosine === 'number' ? clamp((input.nearestCosine - NEAREST_LOW) / (NEAREST_HIGH - NEAREST_LOW)) : null
   const ai = input.aiTells
   const closeness = ai && !ai.skipped && ai.closest.length ? (ai.score <= ai.p50 ? 1 : ai.score >= ai.p99 ? 0 : (ai.p99 - ai.score) / Math.max(ai.p99 - ai.p50, 1e-6)) : null
-  const notAiTell = ai ? (closeness === null && !ai.hits.length ? null : clamp((closeness ?? 1) - RULE_HIT_COST * ai.hits.length)) : null
+  const notAiTell = input.conventions ? (input.conventions.value === null ? null : clamp(input.conventions.value)) : ai ? (closeness === null && !ai.hits.length ? null : clamp((closeness ?? 1) - RULE_HIT_COST * ai.hits.length)) : null
   const subqVoice = mean([input.voice, input.friendLike, ...(input.toThem === null ? [] : [input.toThem])])
   const owed = [...(input.answerRequired && !input.nobodyToAnswer ? [input.inContext] : []), ...(typeof input.fitsTheRoom === 'number' ? [input.fitsTheRoom] : []), ...(input.buildsOn === null ? [] : [input.buildsOn])]
   return { phrasing, nearest, notAiTell, subqVoice, answersThem: owed.length ? mean(owed) : null, convergence: typeof input.convergence === 'number' ? clamp(input.convergence) : null }

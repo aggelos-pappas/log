@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 55 domains, 631 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 55 domains, 638 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -510,6 +510,7 @@ Every message log sends as the owner passes the voice gate first (`log voice`, M
 - **REQ-VOICE-31** The same text gets the same verdict at gate and at send
 - **REQ-VOICE-32** Options are graded together and ranked
 - **REQ-VOICE-33** A draft that mirrors them more than he does loses
+- **REQ-VOICE-34** Not an AI tell comes from the detector trained on him
 
 ## [AI tells and watermark](./aiTells.md)
 
@@ -527,7 +528,13 @@ Every X and Discord send's copy is read for what AI chat interfaces leave in tex
 - **REQ-AITELLS-09** Phrases the owner says himself never fail a draft
 - **REQ-AITELLS-10** Each chunk's closest AI phrase is found and reranked
 - **REQ-AITELLS-11** A draft closer to AI phrasing than the owner's p99 fails
-- **REQ-AITELLS-12** The voice gate keeps the index current and fails on AI tells
+- **REQ-AITELLS-12** The Jina index is read only when asked for
+- **REQ-AITELLS-14** The training corpus lives in log.db
+- **REQ-AITELLS-15** Fresh drafts are paired with his real reply and capped in spend
+- **REQ-AITELLS-16** An over-use profile and structural habits, each with his own phrasing
+- **REQ-AITELLS-17** A small classifier head trained in Python and applied in TypeScript
+- **REQ-AITELLS-18** One line per length band, set on his held-out messages
+- **REQ-AITELLS-19** The reading names the words and habits beside his phrasing
 
 ## [Message split and the opener](./messageSplit.md)
 
