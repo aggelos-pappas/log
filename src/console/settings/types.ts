@@ -17,4 +17,5 @@ export interface ConsoleSettings {
   requestsPerDay: number;
   governors: ConsoleGovernor[];
   webConsole: { command: string; url: string };
+  browserWindow: { streamed: "hidden" | "visible"; setting: string };
 }

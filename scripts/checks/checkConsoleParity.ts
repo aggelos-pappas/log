@@ -89,7 +89,8 @@ export function consoleBrowserProblems(files: ParityFiles, drivers: readonly str
   if (!/data-browser-picker/.test(list)) problems.push("ConnectionList.tsx has no browser picker (data-browser-picker) in the table and cards");
   if (!/data-browser-entry/.test(page) || !/browser\.logo/.test(page)) problems.push("ConnectionsPage.tsx doesn't list every browser with its logo from the view (data-browser-entry)");
   if (!/data-browser-logo/.test(list)) problems.push("ConnectionList.tsx's browser picker doesn't show the picked browser's logo (data-browser-logo)");
-  if (!/data-browser-badge/.test(dialog)) problems.push("BrowserCheckDialog.tsx doesn't show which browser the account opens in (data-browser-badge)");
+  const sharedView = files.read(SHARED_VIEW) ?? "";
+  if (!/data-browser-badge/.test(dialog) && !(dialog.includes(SHARED_VIEW_IMPORT) && /data-browser-badge/.test(sharedView))) problems.push("BrowserCheckDialog.tsx doesn't show which browser the account opens in (data-browser-badge, in it or in the shared view it mounts)");
   for (const rel of [`${WEB}/pages/console/ConnectionsPage.tsx`, `${WEB}/pages/console/connectionsData.ts`, `${WEB}/pages/console/ConnectionList.tsx`, `${WEB}/pages/console/BrowserCheckDialog.tsx`, `${WEB}/pages/console/browserCheckData.ts`]) {
     const text = files.read(rel) ?? "";
     for (const literal of text.matchAll(/\[([^\[\]]*)\]/g)) {
@@ -101,6 +102,28 @@ export function consoleBrowserProblems(files: ParityFiles, drivers: readonly str
   const routes = files.read("python/controlService/consoleRoutes.py") ?? "";
   if (!tools.includes('"accountBrowser"')) problems.push("python/controlService/tools.py CONSOLE_TOOLS has no accountBrowser: the hosted console can't pick a browser");
   if (!routes.includes("/console/accountBrowser")) problems.push("python/controlService/consoleRoutes.py has no /console/accountBrowser route: the hosted console can't pick a browser");
+  return problems;
+}
+
+export const SHARED_VIEW = "src/mcp/apps/browserView/widget/view.ts";
+export const SHARED_VIEW_IMPORT = "src/mcp/apps/browserView/widget/view'";
+const OWN_MARKUP = [/Waiting for page/, /aria-label="Browser address"/, /<header\b/, /<footer\b/, /class="(bar|head|foot|cover|address)"/, /Live browser'\s*:\s*busy/];
+
+export function browserViewParityProblems(files: ParityFiles): string[] {
+  const problems: string[] = [];
+  const dialogPath = `${WEB}/pages/console/BrowserCheckDialog.tsx`;
+  const widgetPath = "src/mcp/apps/browserView/widget/main.ts";
+  const dialog = files.read(dialogPath);
+  const widget = files.read(widgetPath);
+  const view = files.read(SHARED_VIEW);
+  if (view === null) return [`${SHARED_VIEW} is missing: the console's browser dialog and the chat's browser view render one shared view`];
+  if (!/export function mountBrowserFrame/.test(view) || !/export function frameModel|export \* from "\.\/viewModel\.ts"/.test(view)) problems.push(`${SHARED_VIEW} doesn't export mountBrowserFrame and frameModel`);
+  if (dialog === null || !dialog.includes(SHARED_VIEW_IMPORT) || !/mountBrowserFrame\(/.test(dialog) || !/frameModel\(/.test(dialog)) problems.push(`${dialogPath} doesn't render the shared view (import mountBrowserFrame and frameModel from ${SHARED_VIEW}): the console dialog and the chat's view must not drift`);
+  if (widget === null || !widget.includes('from "./view.ts"') || !/mountBrowserFrame\(/.test(widget) || !/frameModel\(/.test(widget)) problems.push(`${widgetPath} doesn't render the shared view (mountBrowserFrame and frameModel from ./view.ts): the chat's view and the console dialog must not drift`);
+  for (const [path, text] of [[dialogPath, dialog], [widgetPath, widget]] as const) {
+    const own = OWN_MARKUP.filter((pattern) => pattern.test(text ?? ""));
+    if (own.length) problems.push(`${path} draws its own browser header, address bar or footer (${own.map((p) => p.source).join(", ")}): draw them only in ${SHARED_VIEW}`);
+  }
   return problems;
 }
 
@@ -131,10 +154,10 @@ if (import.meta.main) {
   const [{ COMMANDS }, { appTools }, { BROWSER_DRIVERS }, { browserChoices }] = await Promise.all([import("../../src/cli/runner/index.ts"), import("../../src/mcp/apps/browserView/index.ts"), import("../../src/browser/driver/types.ts"), import("../../src/console/connections/index.ts")]);
   const tools = commandToolNames(COMMANDS);
   const apps = new Set(appTools().map((tool) => tool.name));
-  const problems = [...consoleParityProblems(files), ...consoleTwinProblems(CONSOLE_OPERATIONS, CONSOLE_TWINS, tools, apps), ...consoleTwinProblems(Object.keys(RUNTIME_TWINS), RUNTIME_TWINS, tools, apps, "RUNTIME_TWINS"), ...consoleBrowserProblems(files, BROWSER_DRIVERS, browserChoices({}).map((choice) => choice.name))];
+  const problems = [...consoleParityProblems(files), ...consoleTwinProblems(CONSOLE_OPERATIONS, CONSOLE_TWINS, tools, apps), ...consoleTwinProblems(Object.keys(RUNTIME_TWINS), RUNTIME_TWINS, tools, apps, "RUNTIME_TWINS"), ...consoleBrowserProblems(files, BROWSER_DRIVERS, browserChoices({}).map((choice) => choice.name)), ...browserViewParityProblems(files)];
   if (problems.length) {
     console.error(`Console parity:\n${problems.map((problem) => `  - ${problem}`).join("\n")}`);
     process.exit(1);
   }
-  console.log(`consoleParity: ${CONSOLE_SCREENS.length} web console pages each have a clack screen, and both read the same src/console loader; ${CONSOLE_OPERATIONS.length} console operations and ${Object.keys(RUNTIME_TWINS).length} runtime tool each have a command twin (or an MCP App twin); the console lists, shows and picks every browser in BROWSER_DRIVERS.`);
+  console.log(`consoleParity: ${CONSOLE_SCREENS.length} web console pages each have a clack screen, and both read the same src/console loader; ${CONSOLE_OPERATIONS.length} console operations and ${Object.keys(RUNTIME_TWINS).length} runtime tool each have a command twin (or an MCP App twin); the console lists, shows and picks every browser in BROWSER_DRIVERS; the console's browser dialog and the chat's browser view render one shared view.`);
 }

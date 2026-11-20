@@ -3,7 +3,7 @@ import type { BrowserBrand, BrowserCapabilities } from '../driver/types'
 export const camoufoxBrand = { label: 'Camoufox', logo: '/logos/camoufox.png' } as const satisfies BrowserBrand
 
 export const camoufoxCapabilities = {
-  headedWindow: { status: 'built', how: 'visibleBrowser.launch_kwargs: headless False, humanize, showcursor (rule 11)' },
+  headedWindow: { status: 'built', how: 'visibleBrowser.launch_kwargs: headless False, humanize, showcursor (rule 11); streamed: browserWindow.WindowKeeper hides the window (SW_HIDE), frames measured unchanged' },
   proxyGate: { status: 'built', how: 'proxyGate.apply() builds the only launch options; the launch guard refuses any other' },
   selfCheck: { status: 'built', how: "proxyGate's new_context guard runs _self_check before the caller gets the context" },
   sessionHar: { status: 'built', how: "Playwright's record_har_path, forced on every context by the gate" },

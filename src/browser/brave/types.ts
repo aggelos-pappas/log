@@ -11,7 +11,7 @@ export const BRAVE_INSTALL_PATHS: Readonly<Record<'win32' | 'darwin' | 'linux', 
 export const braveBrand = { label: 'Brave', logo: '/logos/brave.svg' } as const satisfies BrowserBrand
 
 export const braveCapabilities = {
-  headedWindow: { status: 'built', how: 'launch_persistent_context with headless False; proxyGate refuses any other launch' },
+  headedWindow: { status: 'built', how: 'launch_persistent_context with headless False; proxyGate refuses any other launch; streamed: off-screen args plus browserWindow.WindowKeeper' },
   proxyGate: { status: 'built', how: "proxyGate.chromium_launch(): gate_attached() checks the exit, then builds the only launch options (the account's proxy)" },
   selfCheck: { status: 'built', how: "the gate's launch_persistent_context guard runs _self_check before the caller gets the context" },
   sessionHar: { status: 'built', how: "Playwright's record_har_path, forced on the persistent context by the gate" },

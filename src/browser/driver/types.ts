@@ -21,7 +21,7 @@ export class BrowserDriverError extends Error {
 }
 
 export const BROWSER_CAPABILITIES = {
-  headedWindow: 'A visible window you can watch, never headless (rule 11)',
+  headedWindow: 'Always headed, never headless (rule 11); a streamed session hides its window, the owner chose that on 2026-11-20 (LOG_BROWSER_WINDOW)',
   proxyGate: "The account's proxy, exit IP in its country and speed checked before the browser starts (rule 12)",
   selfCheck: 'Timezone, language, Intl and exit IP agree in a page and a worker before Facebook loads (rule 17)',
   sessionHar: 'The raw session HAR of every request (rules 19, 22)',

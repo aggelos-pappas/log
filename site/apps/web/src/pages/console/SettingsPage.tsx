@@ -222,6 +222,10 @@ function LocalSettings() {
           </div>
         ) : <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-600">No account has a governor count yet.</p>}
       </section>
+      <section className="mb-10">
+        <SectionHeading title="Streamed browser" />
+        <p className="text-sm leading-6 text-slate-600" data-browser-window={data.browserWindow?.streamed ?? 'hidden'}>A browser opened to stream into a chat or this console runs {(data.browserWindow?.streamed ?? 'hidden') === 'hidden' ? 'with its window hidden: no window or taskbar entry, the stream is its only view' : 'with its window visible on this machine'}. Set <code className="rounded bg-slate-100 px-1">{data.browserWindow?.setting ?? 'LOG_BROWSER_WINDOW'}=hidden|visible</code> in <code className="rounded bg-slate-100 px-1">{data.paths.env}</code>.</p>
+      </section>
       <section>
         <SectionHeading title="Web console" />
         <p className="text-sm leading-6 text-slate-600">This page is served by <code className="rounded bg-slate-100 px-1">{data.webConsole.command}</code> on this machine only.</p>

@@ -150,8 +150,8 @@ export async function runFast(argv: string[], context?: Partial<CommandContext>,
   const command = entry ? await loadIndexed(entry) : undefined;
   if (!entry || !command || command.name !== entry.name) return (await full())(argv, context);
   if (command.longRunning) {
-    const [{ gateCli }, { busyJob }] = await Promise.all([import("../../platformKit/gates/client.ts"), import("../../mcp/jobs/index.ts")]);
-    const held = gateCli(command, rest, { busy: (account) => busyJob(account) });
+    const [{ gateCli }, { busyJob, heldByOther }] = await Promise.all([import("../../platformKit/gates/client.ts"), import("../../mcp/jobs/index.ts")]);
+    const held = gateCli(command, rest, { busy: (account) => heldByOther(busyJob(account)) });
     if (held) {
       (context?.err ?? ((line: string) => console.error(line)))(held.message);
       context?.refused?.(held.code);

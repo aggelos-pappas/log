@@ -29,6 +29,7 @@ export interface InspectSessionConfig {
   startUrl: string | null
   site?: { platform: string; domain: string; hosts: readonly string[] }
   browser?: { driver: BrowserDriverName; profileId: string | null }
+  window?: 'hidden' | 'visible'
 }
 
 export interface CurrentInspect {

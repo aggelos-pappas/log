@@ -1,4 +1,4 @@
-import { ViewerError, viewerFrame, viewerInput, viewerState, viewerStream } from "../../browser/viewer/index.ts";
+import { streamedWindow, ViewerError, viewerFrame, viewerInput, viewerState, viewerStream } from "../../browser/viewer/index.ts";
 import type { ViewerView } from "../../browser/viewer/index.ts";
 import { BROWSER_BRANDS, driverOrNull } from "../../browser/driver/index.ts";
 import type { BrowserDriverName } from "../../browser/driver/index.ts";
@@ -7,7 +7,7 @@ import { localAccountsPath, readLocalAccounts } from "../../twenty/graphql/index
 import { credentialValue } from "../connections/index.ts";
 import type { ConnectionAccount } from "../connections/index.ts";
 import { recordCheck } from "../accountCheck/index.ts";
-import { PLATFORM_SITES } from "../../cli/runner/helpers/platforms.ts";
+import { PLATFORM_LABELS, PLATFORM_SITES } from "../../cli/runner/helpers/platforms.ts";
 import { sessionGate } from "../../platformKit/sessionCheck/index.ts";
 import { db } from "../../inbox/store/index.ts";
 import { deleteState, getState, putState } from "../../storage/state/index.ts";
@@ -69,6 +69,7 @@ function base(account: ConnectionAccount, viewer: ViewerView | null, env: Env): 
   return {
     accountId: account.id,
     account: account.name,
+    platform: PLATFORM_LABELS[account.platform],
     browser: driver ? { name: driver, ...BROWSER_BRANDS[driver] } : null,
     phase: "browserMissing",
     location: browserViewLocation(),
@@ -113,7 +114,7 @@ export async function openBrowser(account: ConnectionAccount, callTool: BrowserT
   if (!gate.ok) throw new Error(gate.code);
   const before = await browserCheckView(account, env);
   if (before.phase !== "browserMissing") return before;
-  confirmed(await callTool("inspectStart", { account: account.name, detach: true, goal: GOAL, waitMs: 50000, ...(account.platform === "facebook" ? { url: "https://www.facebook.com/" } : {}) }));
+  confirmed(await callTool("inspectStart", { account: account.name, detach: true, goal: GOAL, window: streamedWindow(), waitMs: 50000, ...(account.platform === "facebook" ? { url: "https://www.facebook.com/" } : {}) }));
   return browserCheckView(account, env);
 }
 

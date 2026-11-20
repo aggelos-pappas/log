@@ -136,11 +136,13 @@ def brave_profile_dir(config: dict[str, Any]) -> Path:
 
 @asynccontextmanager
 async def open_brave(config: dict[str, Any], own_trajectory: bool) -> AsyncIterator[Opened]:
+    from browser import browserWindow
     from playwright.async_api import async_playwright
 
     executable = brave_path()
     profile = brave_profile_dir(config)
     options = proxyGate.chromium_launch(executable)
+    options["args"] = [*options["args"], *browserWindow.chromium_args(browserWindow.window_mode(config))]
     proxyGate.log(f"Brave {executable}: opening the account's own profile headed")
     async with async_playwright() as playwright:
         context = await playwright.chromium.launch_persistent_context(str(profile), viewport=BRAVE_VIEWPORT, **options)
@@ -194,6 +196,15 @@ async def carry_session_once(context: Any, state: Path, site: dict[str, Any] | N
 OPENERS = {"camoufox": open_camoufox, "adsPower": open_ads_power, "brave": open_brave}
 
 
-def open_browser(config: dict[str, Any], own_trajectory: bool = True):
+@asynccontextmanager
+async def open_browser(config: dict[str, Any], own_trajectory: bool = True) -> AsyncIterator[Opened]:
+    from browser import browserWindow
+
     driver, _profile = driver_of(config)
-    return OPENERS[driver](config, own_trajectory)
+    keeper = browserWindow.keep_hidden(browserWindow.window_mode(config), proxyGate.log)
+    try:
+        async with OPENERS[driver](config, own_trajectory) as opened:
+            yield opened
+    finally:
+        if keeper is not None:
+            keeper.stop()

@@ -8,7 +8,7 @@ import { runConsoleOperation } from "../../console/operations/index.ts";
 import { runToolCall } from "../../mcp/server/index.ts";
 import type { SessionReport, SessionToolAnswer } from "../../platformKit/sessionCheck/index.ts";
 import { createContext } from "../runner/client.ts";
-import { signInActorsOf } from "./helpers/index.ts";
+import { showBrowserOf, signInActorsOf } from "./helpers/index.ts";
 import type { SignInWiring } from "./helpers/index.ts";
 import { sessionsCommand, sessionsDeps } from "./index.ts";
 
@@ -69,6 +69,7 @@ beforeAll(() => {
   mkdirSync(process.env.LOG_PLATFORM_STATE, { recursive: true });
   sessionsDeps.callTool = async () => callTool;
   sessionsDeps.actors = (_context, tool, route) => signInActorsOf({ ...wiring(), callTool: tool }, route);
+  sessionsDeps.show = (tool) => showBrowserOf({ callTool: tool, viewerPhase: wiring().viewerPhase });
 });
 
 afterAll(() => {
@@ -120,6 +121,21 @@ describe("one check state on every surface", () => {
     const fromCli = verdicts((await cli(["check", "--account", "fakeGuild", "--json"])).json.accounts as SessionReport[]);
     expect(fromConsole.fakeGuild).toBe("signedIn");
     expect(fromCli.fakeGuild).toBe("signedIn");
+  });
+
+  test("show me the browser: a signed-in account opens its browser to watch with --open, once, and without it nothing opens", async () => {
+    signedInNow = new Set([...signedInNow, "fakeGuild"]);
+    open.delete("fakeGuild");
+    const quiet = await cli(["signIn", "--account", "fakeGuild", "--json"]);
+    expect(quiet.json).toMatchObject({ signIn: { state: "signedIn" } });
+    expect(quiet.json.browser).toBeUndefined();
+    expect(open.has("fakeGuild")).toBe(false);
+    const shown = await cli(["signIn", "--account", "fakeGuild", "--open", "--json"]);
+    expect(shown.json).toMatchObject({ ok: true, signIn: { state: "signedIn" }, browser: "opened" });
+    expect(open.has("fakeGuild")).toBe(true);
+    const again = await cli(["signIn", "--account", "fakeGuild", "--open", "--json"]);
+    expect(again.json.browser).toBe("alreadyOpen");
+    open.delete("fakeGuild");
   });
 
   test("X has no browser, so sign-in by browser is refused with the routes it has", async () => {

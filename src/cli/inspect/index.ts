@@ -17,9 +17,11 @@ import type { StepReading } from "../../subq/stepReading/index.ts";
 import type { CommandContext } from "../runner/types.ts";
 import { watchCheckpoint } from "./helpers/index.ts";
 import { logHome } from "../../config/logHome/index.ts";
+import { PARENT_PID_ENV } from "../../mcp/jobs/index.ts";
+import { BROWSER_WINDOWS, windowOf } from "../../browser/viewer/window.ts";
 
 export const INSPECT_USAGE = [
-  "Usage: log inspect start --account <accountName> [--goal <text>] [--url <the platform's own page>] [--bypass] [--now] [--noIdleMouse] [--detach]   (one session per account: two accounts can be open at once; --detach runs it as its own process and returns once it is open)",
+  "Usage: log inspect start --account <accountName> [--goal <text>] [--url <the platform's own page>] [--bypass] [--now] [--noIdleMouse] [--detach] [--window <w>]   (one session per account; --detach runs it as its own process, returning once it is open)",
   "       log inspect map [<runDir>] [--all]  (the recorded steps as states and transitions: flow.md, machine.json; default the latest run; --all collates every run)",
   "       log inspect do <goto <url>|snapshot|back|wait [s]|click <ref>|type <ref> <text>|press <key>|upload <ref> <file>|highlight <role> <name>|solve|signIn|code|pin|stop> [--live] [--goal <text>] [--timeout <s>] [--json] [--account <accountName>]   (--account picks the session when more than one is open; every step's internal API calls are read, and a step no known state names is read by SubQ against the goal, rule 73)",
   "       log inspect read <stepFolder> --account <accountName> [--goal <text>] [--json]   (read a recorded step again: its internal API calls, the page and the earlier steps, by SubQ when no known state names it)",
@@ -47,7 +49,7 @@ export const inspectDetachDeps: {
   start(argv, logPath) {
     mkdirSync(dirname(logPath), { recursive: true });
     const out = openSync(logPath, "a");
-    const child = spawn(process.execPath, [LOG_BIN, ...argv], { detached: true, stdio: ["ignore", out, out], windowsHide: true });
+    const child = spawn(process.execPath, [LOG_BIN, ...argv], { detached: true, stdio: ["ignore", out, out], windowsHide: true, env: { ...process.env, [PARENT_PID_ENV]: String(process.pid) } });
     let code: number | null = null;
     child.on("exit", (c) => (code = c ?? 1));
     child.unref();
@@ -93,6 +95,7 @@ export const INSPECT_INPUT: CommandInput = {
         { name: "noIdleMouse", kind: "boolean", description: "No idle mouse loop between steps" },
         { name: "detach", kind: "boolean", description: "Run as its own process and return once open: set it over MCP" },
         { name: "goal", kind: "string", description: "What this session is for, in plain words: every step is read against it (rule 74)" },
+        { name: "window", kind: "enum", values: BROWSER_WINDOWS, description: "hidden: no window, streamed only" },
         PROXY_MS_FLAG,
       ],
     },
@@ -240,6 +243,7 @@ export const inspectCommand: Command = {
             startUrl: url ?? (platformOfAccount(account) === "facebook" ? null : siteOfAccount(account).home),
             site: { platform: platformOfAccount(account), domain: siteOfAccount(account).domain, hosts: siteOfAccount(account).hosts },
             browser: browserFor(account),
+            window: windowOf(parsed.flags["window"]),
           });
         } finally {
           await checkpointWatch.stop();

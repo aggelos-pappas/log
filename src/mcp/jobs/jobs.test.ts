@@ -8,7 +8,7 @@ import type { WorkerClient } from "../../camofox/worker/index.ts";
 import { emitLog } from "../../observability/processLog/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { runToolCall } from "../server/index.ts";
-import { accountOfArgv, appendProgress, busyJob, finishJob, jobView, readJob, requestCancel, startJob, statusOf } from "./index.ts";
+import { accountOfArgv, appendProgress, busyJob, finishJob, heldByOther, jobView, PARENT_PID_ENV, readJob, requestCancel, startJob, statusOf } from "./index.ts";
 
 const doctorReply = { ok: true, checks: { python: "3.12", facebookCamofoxClient: "/fcc", camoufoxBrowser: "/c.exe", camoufoxVersion: "1" } };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -87,6 +87,22 @@ describe("one job per account, cancel at the next browser step", () => {
     expect(readJob(id)?.text).toContain("jobCancelled");
     expect(steps).toBeLessThan(5);
     expect(busyJob("galwayOne")).toBeNull();
+  });
+});
+
+describe("a detached child is not blocked by its parent's job", () => {
+  test("inspectStart detach: the CLI child the MCP spawned sees its parent's job as its own, any other holder still refuses", async () => {
+    const { gateCli } = await import("../../platformKit/gates/client.ts");
+    const parent = startJob({ tool: "inspectStart", argv: ["inspect", "start", "--account", "detachOne", "--detach"], account: "detachOne", live: false });
+    const command = { longRunning: true } as const;
+    const argv = ["start", "--account", "detachOne"];
+    const own = gateCli(command, argv, { busy: (account) => heldByOther(busyJob(account), { [PARENT_PID_ENV]: String(process.pid) }) });
+    expect(own).toBeNull();
+    const other = gateCli(command, argv, { busy: (account) => heldByOther(busyJob(account), { [PARENT_PID_ENV]: String(process.pid + 1) }) });
+    expect(other?.code).toBe("accountBusy");
+    expect(other?.message).toContain(parent.id);
+    expect(gateCli(command, argv, { busy: (account) => heldByOther(busyJob(account), {}) })?.code).toBe("accountBusy");
+    finishJob(parent.id, "completed", {}, "done");
   });
 });
 

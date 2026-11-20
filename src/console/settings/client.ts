@@ -8,6 +8,7 @@ import { DEFAULT_CONSOLE_PORT } from "../screens/index.ts";
 import { consoleDbPath } from "../store/index.ts";
 import type { ConsoleGovernor, ConsoleSettings } from "./types.ts";
 import { logHome } from "../../config/logHome/index.ts";
+import { BROWSER_WINDOW_ENV, streamedWindow } from "../../browser/viewer/window.ts";
 
 export const REQUESTS_PER_DAY = 500;
 
@@ -37,5 +38,6 @@ export function loadConsoleSettings(port: number = DEFAULT_CONSOLE_PORT): Consol
     requestsPerDay: REQUESTS_PER_DAY,
     governors: readConsoleGovernors(),
     webConsole: { command: "log console --web", url: `http://127.0.0.1:${port}/console/start` },
+    browserWindow: { streamed: streamedWindow(), setting: BROWSER_WINDOW_ENV },
   };
 }

@@ -113,7 +113,8 @@ export function prepareRun(account: FacebookAccount, purpose: RunPurpose, option
   const action = options.action ?? purpose
   const captureDir = purpose === 'check' ? null : captureDirFor(account.accountName, action, options.now ?? new Date(), options.captureRoot, browser)
   writeFileSync(proxyPath, JSON.stringify(check.proxy), { mode: 0o600 })
-  if (cookies.length) writeFileSync(statePath, JSON.stringify({ cookies, origins: toOrigins(account.storageOrigins) }), { mode: 0o600 })
+  const seeded = cookies.length ? JSON.stringify({ cookies, origins: toOrigins(account.storageOrigins) }) : null
+  if (seeded) writeFileSync(statePath, seeded, { mode: 0o600 })
   if (device) writeFileSync(devicePath, JSON.stringify(device), { mode: 0o600 })
   if (loginPath) writeFileSync(loginPath, JSON.stringify(options.login), { mode: 0o600 })
   return {
@@ -132,6 +133,14 @@ export function prepareRun(account: FacebookAccount, purpose: RunPurpose, option
           return toFacebookCookies((JSON.parse(readFileSync(statePath, 'utf8')) as { cookies?: unknown }).cookies)
         } catch {
           return []
+        }
+      },
+      browserWrote(): boolean {
+        if (!existsSync(statePath)) return false
+        try {
+          return readFileSync(statePath, 'utf8') !== seeded
+        } catch {
+          return false
         }
       },
       readStorageState(): { cookies: PlaywrightCookie[]; origins: unknown[] } {

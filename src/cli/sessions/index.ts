@@ -10,11 +10,11 @@ import { PLATFORMS } from "../runner/helpers/platforms.ts";
 import type { Platform } from "../runner/helpers/platforms.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandInput } from "../runner/types.ts";
-import { cookieSaveBy, liveWiring, signInActorsOf } from "./helpers/index.ts";
+import { cookieSaveBy, liveWiring, showBrowserOf, signInActorsOf } from "./helpers/index.ts";
 
 export const SESSIONS_USAGE = [
   "Usage: log sessions check [--platform <p>] [--account <accountName>] [--json]",
-  "       log sessions signIn --account <accountName> [--platform <p>] [--route browser|cookies] [--done] [--wait <seconds>] [--json]",
+  "       log sessions signIn --account <account> [--platform <p>] [--route browser|cookies] [--done] [--wait <s>] [--open] [--json]",
   "check: checks every account's saved session through its platform's own check (X, Discord, Instagram, Slack, Reddit, LinkedIn), one account after another, and says for each: signed in, needs signing in (a 401, or no session saved), stopped (the platform refused: nothing retries, rule 94) or unknown. One gate decides which accounts may be checked: a deactivated account is skipped, and one held stopped (by its status, its session or its last check) is never checked again until the owner says so. A check holds the account while it runs, so a second check of it is refused as busy; a check whose process died is read back as unknown. An account that needs signing in comes with its next step, sessionsSignIn. Facebook is checked in its browser. Each result is also the console's last check for that account, so the console, the CLI and the MCP tool sessionsCheck say the same. Sends nothing.",
   "signIn: one sign-in, as a machine: it checks the account first (signed in: done; held stopped: nothing is opened), then opens the account's own browser on the platform's login screen for the owner to sign in themself (route browser, every platform with a browser), or takes the masked cookie prompt in a terminal (route cookies: X, LinkedIn and Slack; X has no browser yet). The session is saved from the browser when it closes, and only when the platform's own sign-in cookies are in it, so a signed-out browser never overwrites a stored session; then it is checked again. With no --wait it returns while the owner signs in; --done (or the owner closing the window) finishes it. An account that isn't set up answers accountNotConfigured with the step that adds it. browserView streams a waiting sign-in into the chat on any runtime. Through MCP on a remote runtime, it also shows the live browser inline where the host draws MCP Apps, asks the host to open a console link where it supports URL requests, and otherwise gives that link as text: it works once, for ten minutes, only for the person who asked. Sends nothing.",
 ].join("\n");
@@ -42,7 +42,8 @@ export const SESSIONS_INPUT: CommandInput = {
         { name: "platform", kind: "enum", values: PLATFORMS, description: "The account's platform, when its name is on more than one" },
         { name: "route", kind: "enum", values: SIGN_IN_ROUTE_NAMES, description: "browser (the default where the platform has one) or cookies (the masked prompt, in a terminal)" },
         { name: "done", kind: "boolean", description: "The owner has finished signing in: close the browser, save its session and check again" },
-        { name: "wait", kind: "integer", min: 0, max: 900, description: "Seconds to wait for the owner to finish and close the browser (default 0: return while they sign in)" },
+        { name: "wait", kind: "integer", min: 0, max: 900, description: "Seconds to wait for the owner to finish (default 0: return at once)" },
+        { name: "open", kind: "boolean", description: "Open it even when signed in, to watch" },
         JSON_FLAG,
       ],
     },
@@ -54,11 +55,13 @@ export const sessionsDeps: {
   callTool: () => Promise<SessionToolCaller>;
   actors: (context: CommandContext, callTool: SessionToolCaller, route: SignInRoute, waitMs: number) => SignInActors;
   signInStore: () => SignInStore | undefined;
+  show: (callTool: SessionToolCaller) => (account: SessionCheckAccount) => Promise<"opened" | "alreadyOpen">;
 } = {
   accounts: () => readConnectionRows().map((row) => ({ id: row.id, name: row.name, platform: row.platform, status: row.status, state: row.state, checkedAt: row.checkedAt, lastCheck: row.lastCheck })),
   callTool: () => inProcessToolCaller(),
   actors: (context, callTool, route, waitMs) => signInActorsOf(liveWiring(callTool, cookieSaveBy(async () => context), { waitMs, sleep: context.sleep, now: context.now }), route),
   signInStore: () => undefined,
+  show: (callTool) => showBrowserOf(liveWiring(callTool, async () => ({ saved: false, code: null, detail: null, at: new Date().toISOString() }))),
 };
 
 function errorOf(error: unknown): { code: string; detail: string } {
@@ -115,7 +118,10 @@ async function signIn(context: CommandContext, flags: Record<string, unknown>, s
     });
     const failed = result.state === "failed";
     const error = failed ? (isErrorCode(result.code) ? result.code : "commandFailed") : undefined;
-    const stdout = flags["json"] === true ? JSON.stringify({ ok: !failed, signIn: result, next: result.next }, null, 2) : signInText(result);
+    const shown = flags["open"] === true && result.state === "signedIn" && route === "browser" ? await sessionsDeps.show(callTool)(account) : null;
+    const showText = shown ? `
+  browser: ${shown === "opened" ? "opened to watch" : "already open"}; show it with browserView { account: "${account.name}" }` : "";
+    const stdout = flags["json"] === true ? JSON.stringify({ ok: !failed, signIn: result, next: result.next, ...(shown ? { browser: shown } : {}) }, null, 2) : `${signInText(result)}${showText}`;
     return failed ? { code: 1, error, stdout, stderr: `log sessions signIn: ${result.code ?? "signInFailed"}${result.detail ? `: ${result.detail}` : ""}` } : { code: 0, stdout };
   } catch (error) {
     const { code, detail } = errorOf(error);

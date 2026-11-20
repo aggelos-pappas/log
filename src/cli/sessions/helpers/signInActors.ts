@@ -1,4 +1,4 @@
-import { viewerState } from "../../../browser/viewer/index.ts";
+import { streamedWindow, viewerState } from "../../../browser/viewer/index.ts";
 import { PLATFORM_SITES } from "../../runner/helpers/platforms.ts";
 import type { Platform } from "../../runner/helpers/platforms.ts";
 import { runSessionCheck } from "../../../platformKit/sessionCheck/index.ts";
@@ -8,6 +8,8 @@ import type { SaveOutcome, SignInAccount, SignInActors, SignInRoute } from "../.
 import type { Command, CommandContext } from "../../runner/types.ts";
 
 export const SIGN_IN_GOAL = "Open the account's browser on the platform's sign-in page so the owner signs in, then save the new session";
+
+export const SHOW_GOAL = "Open the signed-in account's browser so the owner watches it in the live view";
 
 export interface SignInWiring {
   callTool: SessionToolCaller;
@@ -45,7 +47,7 @@ export function signInActorsOf(wiring: SignInWiring, route: SignInRoute): SignIn
     recheck: (account) => checked(account, wiring.callTool),
     async open(account) {
       if (!(await gone(account))) return;
-      const why = refused(await wiring.callTool("inspectStart", { account: account.name, url: signInUrlOf(account.platform), detach: true, goal: SIGN_IN_GOAL, waitMs: 50000 }));
+      const why = refused(await wiring.callTool("inspectStart", { account: account.name, url: signInUrlOf(account.platform), detach: true, goal: SIGN_IN_GOAL, window: streamedWindow(), waitMs: 50000 }));
       if (why) throw new Error(`browserOperationRefused: ${why}`);
     },
     async waitForOwner(account, finish) {
@@ -70,6 +72,15 @@ export function signInActorsOf(wiring: SignInWiring, route: SignInRoute): SignIn
         await wiring.sleep(wiring.pollMs);
       }
     },
+  };
+}
+
+export function showBrowserOf(wiring: Pick<SignInWiring, "callTool" | "viewerPhase">): (account: SignInAccount) => Promise<"opened" | "alreadyOpen"> {
+  return async (account) => {
+    if ((await wiring.viewerPhase(account.name)) !== "browserMissing") return "alreadyOpen";
+    const why = refused(await wiring.callTool("inspectStart", { account: account.name, url: signInUrlOf(account.platform), detach: true, noIdleMouse: true, goal: SHOW_GOAL, window: streamedWindow(), waitMs: 50000 }));
+    if (why) throw new Error(`browserOperationRefused: ${why}`);
+    return "opened";
   };
 }
 

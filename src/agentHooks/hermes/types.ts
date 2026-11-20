@@ -2,6 +2,8 @@ export const HERMES_PLUGIN_FILES = ["plugin.yaml", "__init__.py", "dashboard/man
 
 export const HERMES_DESKTOP_SOURCE = "desktop/plugin.js";
 
+export const HERMES_ROUTES_FILE = "dashboard/plugin_api.py";
+
 export const HERMES_DESKTOP_DIR = ["desktop", "plugins"].join("-");
 
 export const RETIRED_HERMES_PLUGIN = "logHooks";
