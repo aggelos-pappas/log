@@ -52,6 +52,8 @@ A partner's MCP server (private code, read with access granted to the owner; des
 
 The hosted origin is `https://mcp.listeningkit.com` (`python/controlService`, live with OAuth and dynamic client registration). It relays every call to the owner's machine over `log runtime connect`, and that bridge isn't running, so a ChatGPT or Claude connector added today authenticates and then has nowhere to run a tool. Its tool list is a hand-kept allow-list (48 tools against about 300 local), and like the local server it lists views only for clients that declare the MCP Apps extension, which claude.ai doesn't. Details and the issues other servers hit: `docs/decisions/genuiEverywhere/research.md`.
 
+Partly closed (#112): the relay's tool list and resources now come from the runtime's registry (`toolManifest { all }`, built from `statelessTools` and `CARDS`), cards are listed to every client, and a report's `_meta["log/view"]` reaches clients that declare nothing. Still open: the origin routes `/mcp` and `/oauth` to an older Twenty-OAuth `logMcp`, not the relay, and `log runtime connect` isn't kept running.
+
 ### 2. The whole view goes to the model
 
 Closed: the view goes in `_meta["log/view"]`, the model gets a summary (`docs/mcp.md`, Cards).

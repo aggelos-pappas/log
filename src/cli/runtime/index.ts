@@ -45,8 +45,25 @@ export function accountsList(args: Record<string, unknown>): ResultPayload {
   return { state: "succeeded", result: workspaceAccounts(args) };
 }
 
+type ManifestTool = { name: string; annotations?: { readOnlyHint?: boolean; destructiveHint?: boolean; idempotentHint?: boolean }; outputSchema?: unknown; _meta?: Record<string, unknown> };
+
+export function hostedRead(tool: ManifestTool): boolean {
+  const hints = tool.annotations;
+  return hints?.readOnlyHint === true && hints.destructiveHint === false && hints.idempotentHint === true;
+}
+
+export async function hostedManifest(names: Set<string>): Promise<ResultPayload> {
+  const [{ statelessTools }, { appTools, REPORT_TOOL }] = await Promise.all([import("../../mcp/server/index.ts"), import("../../mcp/apps/index.ts")]);
+  const app = new Set<string>(appTools().map((tool) => tool.name));
+  const tools = (statelessTools() as unknown as ManifestTool[])
+    .filter((tool) => app.has(tool.name) || names.has(tool.name) || hostedRead(tool))
+    .map(({ outputSchema, ...tool }) => (tool.name === REPORT_TOOL && outputSchema ? { ...tool, outputSchema } : tool));
+  return { state: "succeeded", result: { tools, reads: tools.filter((tool) => !app.has(tool.name) && hostedRead(tool)).map((tool) => tool.name) } };
+}
+
 export async function toolManifest(args: Record<string, unknown>): Promise<ResultPayload> {
   const names = new Set(Array.isArray(args.names) ? args.names.map(String) : []);
+  if (args.all === true) return hostedManifest(names);
   const [{ COMMANDS }, { GUIDE_TOOL, guideTool, toolsFromCommands }, { catalogTools }] = await Promise.all([import("../runner/index.ts"), import("../../mcp/server/helpers/index.ts"), import("../../mcp/catalog/index.ts")]);
   const tools = [...catalogTools(), ...toolsFromCommands(COMMANDS, { shell: false })]
     .filter((tool) => names.has(tool.name))
@@ -80,12 +97,14 @@ export async function guideOperation(args: Record<string, unknown>, scope?: Play
 
 export async function reportOperation(args: Record<string, unknown>): Promise<ResultPayload> {
   const { REPORT_VIEW_META_KEY, runReport } = await import("../../mcp/apps/index.ts");
-  const { ui, ...spec } = args;
+  const { ui, markdown, ...spec } = args;
   const answer = await runReport(spec, ui === true);
-  const text = answer.content.map((part) => (part.type === "text" ? part.text : "")).join("\n");
+  const textOf = (result: typeof answer) => result.content.map((part) => (part.type === "text" ? part.text : "")).join("\n");
+  const text = textOf(answer);
   if (answer.isError) return { state: "failed", error: { code: text.split(":")[0] || "reportFieldInvalid", message: text.slice(0, 2000) } };
   const view = answer._meta?.[REPORT_VIEW_META_KEY];
-  if (view && typeof view === "object") return { state: "succeeded", result: { text, spec: view, summary: answer.structuredContent ?? null } };
+  const plain = markdown === true && ui === true ? await runReport(spec, false) : null;
+  if (view && typeof view === "object") return { state: "succeeded", result: { text, spec: view, summary: answer.structuredContent ?? null, ...(plain && !plain.isError ? { markdown: textOf(plain) } : {}) } };
   return { state: "succeeded", result: { text, spec: answer.structuredContent ?? null } };
 }
 

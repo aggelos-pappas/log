@@ -23,7 +23,6 @@ SESSION_HEADER = "mcp-session-id"
 MAX_TEXT = 200_000
 UI_ARGUMENT_TOOLS = {"report", "sessionsSignIn"}
 VIEW_TOOLS = {"browserView", "sessionsSignIn"}
-BROWSER_VIEW_URI = "ui://log/browserView"
 SIGN_IN_TOOL = "sessionsSignIn"
 SIGN_IN_INPUT_KEY = "signIn"
 PENDING_FIELD = "inputRequired"
@@ -95,32 +94,41 @@ def mcp_router(settings: Settings, engine: Engine, dispatcher: Dispatcher) -> AP
                 return None
             return Actor(teamId=team.id, userId=user.id, grantId=grant.id, scopes=frozenset(grant.scopes))
 
-    async def list_tools(actor: Actor, ui: bool) -> list[dict]:
-        names = sorted(READ_TOOLS - HIDDEN)
+    async def manifest(actor: Actor, args: dict) -> dict | None:
         try:
-            view = await dispatcher.run(actor, uuid.uuid4(), "toolManifest", {"names": names, "views": True, **({"ui": True} if ui else {})}, record=False)
-            listed = (view.result or {}).get("tools") if view.state == "succeeded" else None
+            view = await dispatcher.run(actor, uuid.uuid4(), "toolManifest", args, record=False)
         except ApiError:
-            listed = None
-        tools = listed if isinstance(listed, list) and listed else [fallback_tool(name) for name in names]
-        allowed = (READ_TOOLS - HIDDEN) | APP_TOOLS
+            return None
+        return view.result if view.state == "succeeded" and isinstance(view.result, dict) else None
+
+    async def list_tools(actor: Actor) -> list[dict]:
+        names = sorted(READ_TOOLS - HIDDEN)
+        listed = await manifest(actor, {"all": True, "names": names, "views": True, "ui": True})
+        reads = listed.get("reads") if listed else None
+        if isinstance(reads, list):
+            dispatcher.remember_reads(actor.teamId, reads)
+        else:
+            listed = await manifest(actor, {"names": names, "views": True, "ui": True})
+        tools = listed.get("tools") if listed else None
+        if not isinstance(tools, list) or not tools:
+            tools = [fallback_tool(name) for name in names]
+        candidates = (READ_TOOLS | set(reads if isinstance(reads, list) else [])) - HIDDEN
+        allowed = {name for name in candidates if dispatcher.kind_of(actor.teamId, name) == "read"} | APP_TOOLS
         kept = [tool for tool in tools if isinstance(tool, dict) and tool.get("name") in allowed]
-        if not ui:
-            kept = [tool if tool.get("name") in VIEW_TOOLS | APP_TOOLS else {key: value for key, value in tool.items() if key != "_meta"} for tool in kept]
         accounts = next((tool for tool in kept if tool.get("name") == "accountsList"), None) or fallback_tool("accountsList")
         return [accounts, *[tool for tool in kept if tool.get("name") != "accountsList"]]
 
-    async def list_resources(actor: Actor, ui: bool) -> list[dict]:
+    async def list_resources(actor: Actor) -> list[dict]:
         try:
             view = await dispatcher.run(actor, uuid.uuid4(), "uiResourcesList", {}, record=False)
         except ApiError:
             return []
         resources = (view.result or {}).get("resources") if view.state == "succeeded" else None
-        return [item for item in resources if isinstance(item, dict) and str(item.get("uri", "")).startswith("ui://") and (ui or item.get("uri") == BROWSER_VIEW_URI)] if isinstance(resources, list) else []
+        return [item for item in resources if isinstance(item, dict) and str(item.get("uri", "")).startswith("ui://")] if isinstance(resources, list) else []
 
-    async def read_resource(actor: Actor, ui: bool, params: dict) -> dict | None:
+    async def read_resource(actor: Actor, params: dict) -> dict | None:
         uri = params.get("uri")
-        if not isinstance(uri, str) or not uri.startswith("ui://") or (not ui and uri != BROWSER_VIEW_URI):
+        if not isinstance(uri, str) or not uri.startswith("ui://"):
             return None
         try:
             view = await dispatcher.run(actor, uuid.uuid4(), "uiResourceRead", {"uri": uri}, record=False)
@@ -147,7 +155,11 @@ def mcp_router(settings: Settings, engine: Engine, dispatcher: Dispatcher) -> AP
             return {"isError": True, "content": [{"type": "text", "text": "unknown tool"}]}
         if name in APP_TOOLS:
             return await call_app_tool(actor, name, arguments)
-        if name in UI_ARGUMENT_TOOLS:
+        if not dispatcher.knows(actor.teamId, name):
+            await list_tools(actor)
+        if name == "report":
+            arguments = {**arguments, "ui": True, **({} if ui else {"markdown": True})}
+        elif name in UI_ARGUMENT_TOOLS:
             arguments = {**arguments, "ui": ui}
         if name == SIGN_IN_TOOL:
             arguments = {**{key: value for key, value in arguments.items() if key not in SIGN_IN_SERVER_ARGUMENTS}, **(extra or {})}
@@ -163,7 +175,8 @@ def mcp_router(settings: Settings, engine: Engine, dispatcher: Dispatcher) -> AP
             return {"content": [{"type": "text", "text": view.result["text"]}]}
         if name == "report" and isinstance(view.result, dict):
             spec = view.result.get("spec")
-            answer = {"content": [{"type": "text", "text": str(view.result.get("text") or "")}]}
+            text = view.result.get("text") if ui else view.result.get("markdown") or view.result.get("text")
+            answer = {"content": [{"type": "text", "text": str(text or "")}]}
             summary = view.result.get("summary")
             if isinstance(spec, dict) and isinstance(summary, dict):
                 answer["structuredContent"] = summary
@@ -210,11 +223,11 @@ def mcp_router(settings: Settings, engine: Engine, dispatcher: Dispatcher) -> AP
         if method == DISCOVER_METHOD:
             return ok(discover_result({"tools": {}, "resources": {}, "extensions": {UI_EXTENSION_ID: {"mimeTypes": [MCP_APP_MIME_TYPE]}}}, INSTRUCTIONS))
         if method == "tools/list":
-            return ok(complete({"tools": await list_tools(actor, True), **LIST_CACHE}))
+            return ok(complete({"tools": await list_tools(actor), **LIST_CACHE}))
         if method == "resources/list":
-            return ok(complete({"resources": await list_resources(actor, True), **LIST_CACHE}))
+            return ok(complete({"resources": await list_resources(actor), **LIST_CACHE}))
         if method == "resources/read":
-            read = await read_resource(actor, True, params)
+            read = await read_resource(actor, params)
             if read is None:
                 return failed({"code": INVALID_PARAMS, "message": "resource not found"})
             return ok(complete({**read, **LIST_CACHE}))
@@ -264,19 +277,19 @@ def mcp_router(settings: Settings, engine: Engine, dispatcher: Dispatcher) -> AP
             version = asked if asked in MCP_PROTOCOL_VERSIONS else MCP_PROTOCOL_VERSIONS[0]
             ui = ui_capable(params.get("capabilities") if isinstance(params, dict) else None)
             headers["Mcp-Session-Id"] = session_id(settings.sessionSecret, actor.grantId, ui)
-            return JSONResponse(rpc(id_, {"protocolVersion": version, "capabilities": {"tools": {"listChanged": False}, "resources": {"listChanged": False}}, "serverInfo": {"name": "log", "title": "log by ListeningKit", "version": "1"}, "instructions": INSTRUCTIONS}), headers=headers)
+            return JSONResponse(rpc(id_, {"protocolVersion": version, "capabilities": {"tools": {"listChanged": False}, "resources": {"listChanged": False}, "extensions": {UI_EXTENSION_ID: {"mimeTypes": [MCP_APP_MIME_TYPE]}}}, "serverInfo": {"name": "log", "title": "log by ListeningKit", "version": "1"}, "instructions": INSTRUCTIONS}), headers=headers)
         ui = session_ui(settings.sessionSecret, actor.grantId, request.headers.get(SESSION_HEADER))
         if method == "resources/list":
-            return JSONResponse(rpc(id_, {"resources": await list_resources(actor, ui)}), headers=headers)
+            return JSONResponse(rpc(id_, {"resources": await list_resources(actor)}), headers=headers)
         if method == "resources/read":
-            read = await read_resource(actor, ui, params if isinstance(params, dict) else {})
+            read = await read_resource(actor, params if isinstance(params, dict) else {})
             if read is None:
                 return JSONResponse(rpc(id_, error={"code": -32002, "message": "resource not found"}), headers=headers)
             return JSONResponse(rpc(id_, read), headers=headers)
         if method == "ping":
             return JSONResponse(rpc(id_, {}), headers=headers)
         if method == "tools/list":
-            return JSONResponse(rpc(id_, {"tools": await list_tools(actor, ui)}), headers=headers)
+            return JSONResponse(rpc(id_, {"tools": await list_tools(actor)}), headers=headers)
         if method == "tools/call":
             return JSONResponse(rpc(id_, await call_tool(actor, params if isinstance(params, dict) else {}, ui)), headers=headers)
         return JSONResponse(rpc(id_, error={"code": -32601, "message": f"{method} is not supported"}), headers=headers)

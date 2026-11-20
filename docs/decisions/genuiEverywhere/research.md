@@ -59,15 +59,30 @@ Checked live and in code on 20 November 2026. The hosted side exists and is depl
 | `openai/codex#19154`, `#13200` | Codex's `mcp login` needs dynamic client registration | the hosted server has it |
 | `openai/codex#31573` (open) | OAuth fails at issuer validation | our `issuer` equals the origin; keep it so |
 
+### Checked again on the wire, 20 November 2026 (issue #112)
+
+The origin is two servers behind one path router, not one:
+
+| Path | Served by | How we know |
+| --- | --- | --- |
+| `/mcp`, `/oauth/*`, `/.well-known/oauth-*` | `logMcp --http` with OAuth through Twenty (`src/mcp/oauth`) | `resource_name: "logCli"`, scopes `log`, client ids `mcp_…`, a text `Unauthorized` 401, and `/oauth/authorize` redirects to a Twenty sign-in on a tailnet address |
+| `/api/v1/*`, `/bridge` | the control service (`python/controlService`) | FastAPI `{"detail":"Not Found"}`, `{"code":"unauthenticated"}` on `/api/v1/session`, the bridge accepts `log runtime connect` (lease held, route generation 75) |
+
+So the control service's own `/mcp` (the relay with the 48-name list) is shadowed and no MCP client reaches the relay today. The Twenty server's registration refuses every redirect but Claude's (`https://chatgpt.com/...` gets `invalid_redirect_uri`), so ChatGPT can't add it, and its sign-in page is only reachable from the tailnet. To put the relay live, the origin's router sends `/mcp`, `/oauth/*` and `/.well-known/*` to the control service too (an infra change, not made here).
+
+Rehearsed instead on this machine: the control service on `http://127.0.0.1:8790` (sqlite), a second runtime paired to it under its own `LOG_RUNTIME_DIR` and `LOG_DB` running this branch's `log runtime connect`, and the official MCP Python SDK (`mcp` 2.3.0, `OAuthClientProvider`) as the client: discovery, registration, PKCE, consent, token, then `initialize`, `tools/list` (154 tools, 124 of them missing from the old list, seven with a card), `resources/list` (`ui://log/browserView`, `ui://log/report`), `tools/call` of `accountsList`, `getGuide`, `report` (a fake spec; `_meta["log/view"]` arrived with the compiled view) and `runsList`, and `resources/read ui://log/report` (`text/html;profile=mcp-app` with the ChatGPT keys). Once as a client declaring nothing, once declaring MCP Apps.
+
+The first run found a bug a real client trips on: the registry's tools carry `outputSchema`, the relay answers with text only, and the SDK refuses such a result. The hosted manifest now drops `outputSchema` except on `report`, whose summary matches it.
+
 ## Progress
 
 | Step | State |
 | --- | --- |
 | Spec (`docs/proposals/genuiEverywhere.md`) | written, prior art added, blocks card (section I) added, hosted origin corrected |
 | Research (this file) | written, hosted server checked live |
-| UI tools listed whatever the client declares (both servers) | not started |
-| Hosted relay kept running (`log runtime connect` supervised like the watchers) | not started |
-| Hosted tool list generated from the local catalog instead of a hand list | not started |
+| UI tools listed whatever the client declares (both servers) | hosted relay done (#112); the local session server still gates on the extension |
+| Hosted relay kept running (`log runtime connect` supervised like the watchers) | not started; connects to the live bridge when run by hand |
+| Hosted tool list generated from the local catalog instead of a hand list | done (#112): `toolManifest { all }` from `statelessTools`; the origin's `/mcp` still routes to the Twenty server |
 | Live browser (J): voxl by default, local streaming, Camoufox kiosk, take control, server/VM setup | specced; today no voxl runs (`LOG_VOXL_URL` unset), local streaming is refused, input is sign-in only |
 | Card registration helper, view in `_meta`, ChatGPT keys (B, D) | not started |
 | Blocks card `ui://log/blocks` (I) | not started |
