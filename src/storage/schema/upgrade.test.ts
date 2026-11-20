@@ -1,0 +1,79 @@
+import { Database } from 'bun:sqlite'
+import { afterEach, describe, expect, test } from 'bun:test'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { INBOX_TABLES, MIGRATIONS, PLATFORM_TABLES, SCHEMA_VERSION, migrate, missingObjectsOf, schemaVersionOf } from './index'
+import { recordTyping, typingNow } from '../../inbox/typing/index'
+
+const SHIPPED_LISTS: readonly { version: number; list: readonly string[]; objects: readonly string[] }[] = [
+  { version: 1, list: INBOX_TABLES, objects: ['events', 'eventsByChat', 'cursors', 'owners', 'claims', 'chatGenerations', 'actions', 'actionsByChat', 'alerts', 'timings', 'eventTypes', 'searchIndex', 'positions', 'gaps', 'gapsOpen', 'embeddings', 'aiIndexes', 'media', 'mediaByStatus', 'people', 'spans', 'spansByTool', 'spansByCall'] },
+  { version: 2, list: PLATFORM_TABLES, objects: ['eventsByConversation', 'blobs', 'blobChunks', 'identities', 'identitiesByPerson', 'identitiesByHandle', 'chats', 'messages', 'messagesByChat', 'messagesBySender', 'messagesBySentAt', 'attachments', 'interactions', 'interactionsByActor', 'interactionsByAccount', 'memberships', 'membershipsByUser', 'ledger', 'ledgerByKind', 'ledgerByAccount', 'transcripts', 'imports'] },
+]
+
+function objectsOf(handle: Database): string[] {
+  return (handle.prepare("SELECT type || ' ' || name AS name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name").all() as { name: string }[]).map((r) => r.name)
+}
+
+function columnsOf(handle: Database): Record<string, string[]> {
+  const tables = (handle.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all() as { name: string }[]).map((r) => r.name)
+  return Object.fromEntries(tables.map((table) => [table, (handle.prepare(`PRAGMA table_xinfo(${table})`).all() as { name: string }[]).map((c) => c.name).sort()]))
+}
+
+function databaseAt(version: number, handle: Database = new Database(':memory:')): Database {
+  for (const migration of MIGRATIONS) {
+    if (migration.version > version) break
+    migration.apply(handle)
+  }
+  handle.exec(`PRAGMA user_version = ${version}`)
+  return handle
+}
+
+const savedDb = process.env.LOG_DB
+
+afterEach(() => {
+  if (savedDb === undefined) delete process.env.LOG_DB
+  else process.env.LOG_DB = savedDb
+})
+
+describe('a database made before a table was added catches up', () => {
+  test('a database at 21 without the typing table gets it from migration 22, and the typing check before a Discord send works', () => {
+    const path = join(mkdtempSync(join(tmpdir(), 'typingUpgrade')), 'log.db')
+    const old = databaseAt(21, new Database(path, { create: true }))
+    old.exec('DROP TABLE IF EXISTS typing')
+    expect(() => old.prepare('SELECT userId FROM typing').all()).toThrow('no such table: typing')
+    const now = new Date('2026-11-20T00:00:00Z')
+    expect(migrate(old, now)).toEqual([{ version: 22, name: 'typing', appliedAt: now.toISOString() }])
+    expect(schemaVersionOf(old)).toBe(SCHEMA_VERSION)
+    expect(missingObjectsOf(old, ['typing'])).toEqual([])
+    old.close()
+    process.env.LOG_DB = path
+    const chat = { platform: 'discord', account: 'upgradeAccount', conversationId: 'c1' }
+    recordTyping(chat, 'ada', now)
+    expect(typingNow(chat, new Date(now.getTime() + 1_000))).toEqual(['ada'])
+  })
+
+  test('a database already at the latest version that lost the typing table has it repaired', () => {
+    const handle = databaseAt(SCHEMA_VERSION)
+    handle.exec('DROP TABLE typing')
+    const now = new Date('2026-11-20T00:00:00Z')
+    expect(migrate(handle, now)).toEqual([{ version: 22, name: 'typing', appliedAt: now.toISOString(), repaired: ['typing'] }])
+    expect(missingObjectsOf(handle, ['typing'])).toEqual([])
+  })
+
+  test('a database left at any earlier version ends with the same tables, indexes and columns as a fresh one', () => {
+    const fresh = new Database(':memory:')
+    migrate(fresh)
+    const want = { objects: objectsOf(fresh), columns: columnsOf(fresh) }
+    for (let version = 0; version < SCHEMA_VERSION; version++) {
+      const old = databaseAt(version)
+      migrate(old)
+      expect({ version, objects: objectsOf(old), columns: columnsOf(old) }).toEqual({ version, ...want })
+    }
+  })
+
+  test('a list an early migration runs keeps exactly the objects it shipped with, so a new one comes in a new migration', () => {
+    const safe = /^\s*CREATE\s+(?:UNIQUE\s+)?(?:VIRTUAL\s+)?(?:TABLE|INDEX)\s+IF\s+NOT\s+EXISTS\s+(\w+)/i
+    for (const shipped of SHIPPED_LISTS) expect({ version: shipped.version, objects: shipped.list.map((s) => safe.exec(s)?.[1]) }).toEqual({ version: shipped.version, objects: [...shipped.objects] })
+  })
+})

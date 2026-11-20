@@ -128,6 +128,10 @@ export function releaseQueueLock(path: string, pid: number, handle: Database = d
   inWrite(handle, () => handle.prepare('DELETE FROM queueLocks WHERE name = ? AND pid = ?').run(queueName(path), pid))
 }
 
+export function heldQueueLocks(alive: (pid: number) => boolean, handle: Database = db()): { name: string; pid: number }[] {
+  return (handle.prepare('SELECT name, pid FROM queueLocks').all() as { name: string; pid: number }[]).filter((r) => alive(r.pid))
+}
+
 export function clearDeadQueueLockRows(alive: (pid: number) => boolean, handle: Database = db()): string[] {
   return inWrite(handle, () => {
     const rows = handle.prepare('SELECT name, pid FROM queueLocks').all() as { name: string; pid: number }[]

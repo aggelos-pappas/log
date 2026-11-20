@@ -48,6 +48,7 @@ const SAMPLES: Readonly<Record<string, string>> = {
   reels: "8-20",
   watch: "4-25",
   posts: "8-15",
+  to: "0.2.2",
 };
 
 function alone(form: InputForm, base: Record<string, unknown>, name: string): Record<string, unknown> {
@@ -251,7 +252,7 @@ describe("every form tool, driven through its command's own run", () => {
     const live = toolsFromCommands(COMMANDS).filter((t) => t.name.endsWith("Live"));
     const entries = commandTools(COMMANDS).filter((t) => t.live && t.form);
     const approving = entries.filter((t) => t.form!.flags.some((f) => f.approval));
-    expect(approving.length).toBe(28);
+    expect(approving.length).toBe(30);
     for (const entry of approving) {
       const schema = live.find((t) => t.name === entry.tool)!.inputSchema as { required: string[] };
       expect(schema.required).toContain("approvedBy");

@@ -17,7 +17,7 @@ sequenceDiagram
   owner->>Agent: a prompt
   Agent->>Hook: UserPromptSubmit
   Note over Hook: where every open browser is, with each of the owner's prompts
-  Note over Hook: the same storage check with each of the owner's prompts (measured at most every 15 minutes)
+  Note over Hook: the same storage check with each of the owner's prompts (measured at most every 15 minutes), and once per session a newer log release to ask the owner about (docs/updates.md)
   Note over Hook: the same engine line with the owner's prompt, only when an account's session state, its governor use or the MCP server's freshness changed
   Note over Hook: the same inbox check with each of the owner's prompts: a poll starts when one is due, and new messages from the last poll are put in front of the agent
   Note over Hook: the play the owner's prompt asks for, matched against every use case's own #quot;How the owner asks for it#quot; phrases and title, named with getGuide to load it before anything is done (rule 158)
