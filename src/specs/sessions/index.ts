@@ -119,6 +119,14 @@ export const sessions = {
       { kind: 'symbol', file: 'src/cli/sessions/helpers/signInActors.ts', name: 'showBrowserOf' },
       { kind: 'uses', file: 'src/cli/live/index.ts', name: 'browserWrote' },
       { kind: 'symbol', file: 'src/mcp/jobs/client.ts', name: 'heldByOther' },
+      { kind: 'uses', file: 'src/mcp/server/index.ts', name: 'jobScope' },
+    ],
+    'REQ-SESSIONS-15': [
+      { kind: 'symbol', file: 'src/browser/viewer/inputMode.ts', name: 'ownerDrivenOf' },
+      { kind: 'symbol', file: 'src/browser/viewer/inputMode.ts', name: 'browserInputMode' },
+      { kind: 'uses', file: 'src/cli/sessions/helpers/signInActors.ts', name: 'ownerDriven' },
+      { kind: 'symbol', file: 'src/browser/viewer/client.ts', name: 'viewOf' },
+      { kind: 'symbol', file: 'src/mcp/apps/browserView/widget/viewModel.ts', name: 'phaseLabel' },
     ],
   },
   rubrics: {
@@ -135,7 +143,8 @@ export const sessions = {
     'REQ-SESSIONS-11': noul('Does the viewer classify a password field as <platform>Login and a code field as <platform>TwoStep off facebook.com, keep Facebook classification on facebook.com, and treat a checkpoint or suspended address as a stop?'),
     'REQ-SESSIONS-12': noul('Do the browser-view app tools and the console frame and state polls run through the bridge without an operations row, while every other tool is journaled?'),
     'REQ-SESSIONS-13': noul('Do the console browser dialog and the browser view widget both mount mountBrowserFrame and build their state with frameModel from the one shared view module, and does the parity check fail when either draws its own header, address bar or footer?'),
-    'REQ-SESSIONS-14': noul('Does sessionsSignIn with open start the account browser through inspectStart only when no browser is open, does keepSession save nothing when the run never wrote a browser state, and does the detached inspect child ignore only the job held by its own parent process?'),
+    'REQ-SESSIONS-14': noul('Does sessionsSignIn with open start the account browser through inspectStart only when no browser is open, does keepSession save nothing when the run never wrote a browser state, does the detached inspect child ignore only the job held by its own parent process, and is a tool a job calls in its own process not refused by that job while any other job still refuses it?'),
+    'REQ-SESSIONS-15': noul('Does a browser opened for the owner to drive (sessionsSignIn open, the console Browser check, inspect start ownerDriven) take viewer input on every page in the Python viewer and in viewOf alike, each a recorded step, while a browser the agent opened takes input only on a sign-in page, and does LOG_BROWSER_INPUT signInOnly turn it off?'),
     unspecifiedBehavior: noul('Does a check or a sign-in retry a refused account, save a session with no sign-in cookies, or keep check state in module memory, by a route the specification does not describe?'),
   },
   assertions: {
@@ -153,6 +162,7 @@ export const sessions = {
     'REQ-SESSIONS-12': MET,
     'REQ-SESSIONS-13': MET,
     'REQ-SESSIONS-14': MET,
+    'REQ-SESSIONS-15': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

@@ -96,6 +96,10 @@ Checked by: code and SubQ
 
 ### REQ-SESSIONS-14: Showing a signed-in account's browser, and saving only what a browser wrote
 
-`sessionsSignIn` with `open` opens a signed-in account's browser anyway (`showBrowserOf`, through `inspectStart` and its gates, hidden when streamed), so "show me the browser" reaches `browserView`. A run that never opened a browser saves nothing: `keepSession` returns before saving unless `browserWrote()` says the state file differs from what the run seeded. A detached `inspectStart` child is not refused by the job its own parent holds (`heldByOther` with `LOG_PARENT_PID`).
+`sessionsSignIn` with `open` opens a signed-in account's browser anyway (`showBrowserOf`, through `inspectStart` and its gates, hidden when streamed), so "show me the browser" reaches `browserView`. A run that never opened a browser saves nothing: `keepSession` returns before saving unless `browserWrote()` says the state file differs from what the run seeded. A detached `inspectStart` child is not refused by the job its own parent holds (`heldByOther` with `LOG_PARENT_PID`), and a tool a job calls in its own process (`sessionsSignIn` open calling `inspectStart`) is not refused by that job: `runGuarded` runs the job inside `jobScope`, and `gateDeps.busy` passes over the holder whose id is the scope's.
+
+### REQ-SESSIONS-15: The owner drives the browser he opened
+
+A browser opened for the owner to watch and drive (`showBrowserOf` and the console's `openBrowser` pass `ownerDriven` to `inspectStart`; `--ownerDriven` on `log inspect start`) is owner-driven when `browserInputMode` (`LOG_BROWSER_INPUT`, default `owner`) allows it (`ownerDrivenOf`). Its viewer reports `ownerDriven` in `/state`, takes clicks, keys, text and scrolls on every page (`BrowserViewer.input`), each still a recorded `viewerInput` step, and `viewOf` gives `canInteract` on every phase but busy; a browser the agent opened keeps input to sign-in pages (`browserInputStopped`). The shared view's footer then reads `DRIVE_LABEL` (`phaseLabel`). The owner, 2026-11-20.
 
 Checked by: code and SubQ

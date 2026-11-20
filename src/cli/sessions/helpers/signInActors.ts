@@ -78,7 +78,7 @@ export function signInActorsOf(wiring: SignInWiring, route: SignInRoute): SignIn
 export function showBrowserOf(wiring: Pick<SignInWiring, "callTool" | "viewerPhase">): (account: SignInAccount) => Promise<"opened" | "alreadyOpen"> {
   return async (account) => {
     if ((await wiring.viewerPhase(account.name)) !== "browserMissing") return "alreadyOpen";
-    const why = refused(await wiring.callTool("inspectStart", { account: account.name, url: signInUrlOf(account.platform), detach: true, noIdleMouse: true, goal: SHOW_GOAL, window: streamedWindow(), waitMs: 50000 }));
+    const why = refused(await wiring.callTool("inspectStart", { account: account.name, url: signInUrlOf(account.platform), detach: true, noIdleMouse: true, ownerDriven: true, goal: SHOW_GOAL, window: streamedWindow(), waitMs: 50000 }));
     if (why) throw new Error(`browserOperationRefused: ${why}`);
     return "opened";
   };

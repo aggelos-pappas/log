@@ -103,10 +103,12 @@ class BrowserViewerTests(unittest.TestCase):
     def setUp(self):
         os.environ.pop("LOG_VOXL_URL", None)
 
-    def run_with(self, signals, scenario):
+    def run_with(self, signals, scenario, owner_driven=False):
         async def main():
             with tempfile.TemporaryDirectory() as folder:
                 owner = FakeOwner(folder, signals)
+                if owner_driven:
+                    owner.config["ownerDriven"] = True
                 viewer = BrowserViewer(owner)
                 await viewer.start()
                 try:
@@ -178,6 +180,24 @@ class BrowserViewerTests(unittest.TestCase):
             self.assertEqual(status, 409)
             self.assertEqual(json.loads(body)["error"], "browserInputStopped")
             self.assertEqual(owner.page.actions, [])
+        self.run_with(HOME_PAGE, scenario)
+
+    def test_a_browser_the_owner_opened_to_drive_takes_a_click_on_any_page(self):
+        async def scenario(owner, viewer, descriptor):
+            _status, _headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/state")
+            state = json.loads(body)
+            self.assertTrue(state["ownerDriven"])
+            self.assertFalse(state["inputAllowed"])
+            status, _headers, body = await call(descriptor["port"], descriptor["token"], "POST", "/input", {"type": "click", "x": 10, "y": 20, "generation": viewer.generation, "revision": state["revision"]})
+            self.assertEqual(status, 200, body)
+            self.assertEqual(owner.page.actions, [("click", 10.0, 20.0)])
+            self.assertEqual(owner.steps, [("viewerInput", "click")])
+        self.run_with(HOME_PAGE, scenario, owner_driven=True)
+
+    def test_a_browser_the_agent_opened_reports_it_is_not_owner_driven(self):
+        async def scenario(_owner, _viewer, descriptor):
+            _status, _headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/state")
+            self.assertFalse(json.loads(body)["ownerDriven"])
         self.run_with(HOME_PAGE, scenario)
 
     def test_a_checkpoint_is_blocked(self):

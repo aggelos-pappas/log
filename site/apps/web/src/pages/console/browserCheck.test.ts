@@ -10,7 +10,9 @@ afterEach(() => { vi.unstubAllGlobals() })
 describe('the console browser check', () => {
   it('reads a view, lets only a sign-in page take input and drops an unsafe stream', () => {
     expect(parseView(view)).toMatchObject({ phase: 'signInRequired', canInteract: true, canResolve: true, location: 'remote' })
-    expect(parseView({ ...view, phase: 'needsAttention' })).toMatchObject({ canInteract: false, canResolve: false })
+    expect(parseView({ ...view, phase: 'needsAttention', canInteract: false })).toMatchObject({ canInteract: false, canResolve: false })
+    expect(parseView({ ...view, phase: 'ready' })).toMatchObject({ canInteract: true })
+    expect(parseView({ ...view, phase: 'busy' })).toMatchObject({ canInteract: false })
     expect(parseView({ ...view, phase: 'ready', canComplete: true }).canComplete).toBe(false)
     expect(() => parseView({ ...view, phase: 'launchBlocked' })).toThrow('browserResponseInvalid')
     expect(parseView({ ...view, stream: { kind: 'voxl', url: 'javascript:alert(1)', page: { width: 1, height: 1 }, window: {} } }).stream).toBeNull()

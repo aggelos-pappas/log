@@ -18,7 +18,7 @@ import type { BrowserView } from "../../browser/inspect/index.ts";
 import type { FlowDefinition } from "../../browser/flow/index.ts";
 import { appendLiveLine, liveLogDir } from "../../observability/liveLog/index.ts";
 import { msText, timeCall } from "../../observability/timing/index.ts";
-import { accountOfArgv, appendProgress, busyJob, cancelRequested, DEFAULT_WAIT_MS, finishJob, MAX_WAIT_MS, startJob } from "../jobs/index.ts";
+import { accountOfArgv, appendProgress, busyJob, cancelRequested, DEFAULT_WAIT_MS, finishJob, heldByOther, jobScope, MAX_WAIT_MS, startJob } from "../jobs/index.ts";
 import type { JobRecord } from "../jobs/index.ts";
 import { oauthFromEnv } from "../oauth/index.ts";
 import type { OAuthServer } from "../oauth/index.ts";
@@ -123,7 +123,8 @@ export interface ToolImage {
 }
 
 function runGuarded(name: string, argv: string[], context: Partial<CommandContext>, onLine: OnLogLine, progress: ProgressLine[], job: JobRecord | null, identity: ResultIdentity, signal?: AbortSignal): Promise<Ran> {
-  return timeCall(name, (call) => runTimed(name, argv, context, onLine, progress, job, call, identity, signal), { account: accountOfArgv(argv) || undefined, job: job?.id });
+  const timed = () => timeCall(name, (call) => runTimed(name, argv, context, onLine, progress, job, call, identity, signal), { account: accountOfArgv(argv) || undefined, job: job?.id });
+  return job ? jobScope.run(job.id, timed) : timed();
 }
 
 async function runTimed(name: string, argv: string[], context: Partial<CommandContext>, onLine: OnLogLine, progress: ProgressLine[], job: JobRecord | null, call: ActiveCall, identity: ResultIdentity, signal?: AbortSignal): Promise<Ran> {
@@ -219,7 +220,7 @@ async function runTimed(name: string, argv: string[], context: Partial<CommandCo
 
 export const gateDeps: Pick<GateDeps, "accounts" | "busy" | "session"> = {
   accounts: () => capabilityDeps.accounts(),
-  busy: (account) => busyJob(account),
+  busy: (account) => heldByOther(busyJob(account), {}),
   session: (account, platform) => {
     try {
       return loadConnectionsView().accounts.find((a) => a.platform === platform && a.name.toLowerCase() === account.trim().replace(/^@/, "").toLowerCase()) ?? null;

@@ -96,8 +96,8 @@ export async function browserCheckView(account: ConnectionAccount, env: Env = pr
   if (viewer.phase === "browserMissing") return { ...view, ...missingPhase(account, env) };
   if (viewer.phase === "viewerUnavailable") return { ...view, phase: "viewerUnavailable", reason: { code: "viewerUnavailable", message: "This running browser has no live view. It has been left open." } };
   if (viewer.phase === "busy") return { ...view, phase: "busy" };
-  if (viewer.phase === "needsAttention") return { ...view, phase: "needsAttention", canNavigate: true, canGoBack: true, reason: { code: "needsPerson", message: "This page needs a person. Input stays off and the run is stopped." } };
-  const navigable = { canNavigate: true, canGoBack: true };
+  if (viewer.phase === "needsAttention") return { ...view, phase: "needsAttention", canInteract: viewer.canInteract, canNavigate: true, canGoBack: true, reason: { code: "needsPerson", message: viewer.canInteract ? "This page needs a person. You can answer it here; the run stays stopped." : "This page needs a person. Input stays off and the run is stopped." } };
+  const navigable = { canNavigate: true, canGoBack: true, canInteract: viewer.canInteract };
   if (viewer.phase === "signInRequired") return { ...view, ...navigable, phase: "signInRequired", canInteract: true, canResolve: hasLogin(rowOf(account, env)) };
   const proof = proofOf(account.id);
   if (proof && proof.generation === viewer.generation && proof.revision === viewer.revision && browserCheckDeps.now() - proof.at < VERIFIED_FOR_MS) return { ...view, ...navigable, phase: "verified", canComplete: true };
@@ -114,7 +114,7 @@ export async function openBrowser(account: ConnectionAccount, callTool: BrowserT
   if (!gate.ok) throw new Error(gate.code);
   const before = await browserCheckView(account, env);
   if (before.phase !== "browserMissing") return before;
-  confirmed(await callTool("inspectStart", { account: account.name, detach: true, goal: GOAL, window: streamedWindow(), waitMs: 50000, ...(account.platform === "facebook" ? { url: "https://www.facebook.com/" } : {}) }));
+  confirmed(await callTool("inspectStart", { account: account.name, detach: true, ownerDriven: true, goal: GOAL, window: streamedWindow(), waitMs: 50000, ...(account.platform === "facebook" ? { url: "https://www.facebook.com/" } : {}) }));
   return browserCheckView(account, env);
 }
 

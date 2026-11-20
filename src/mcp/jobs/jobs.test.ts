@@ -8,7 +8,7 @@ import type { WorkerClient } from "../../camofox/worker/index.ts";
 import { emitLog } from "../../observability/processLog/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { runToolCall } from "../server/index.ts";
-import { accountOfArgv, appendProgress, busyJob, finishJob, heldByOther, jobView, PARENT_PID_ENV, readJob, requestCancel, startJob, statusOf } from "./index.ts";
+import { accountOfArgv, appendProgress, busyJob, finishJob, heldByOther, jobScope, jobView, PARENT_PID_ENV, readJob, requestCancel, startJob, statusOf } from "./index.ts";
 
 const doctorReply = { ok: true, checks: { python: "3.12", facebookCamofoxClient: "/fcc", camoufoxBrowser: "/c.exe", camoufoxVersion: "1" } };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -103,6 +103,18 @@ describe("a detached child is not blocked by its parent's job", () => {
     expect(other?.message).toContain(parent.id);
     expect(gateCli(command, argv, { busy: (account) => heldByOther(busyJob(account), {}) })?.code).toBe("accountBusy");
     finishJob(parent.id, "completed", {}, "done");
+  });
+});
+
+describe("a tool a job calls in its own process", () => {
+  test("is not refused by that job, and still is by any other job on the account", async () => {
+    const { gateDeps } = await import("../server/index.ts");
+    const outer = startJob({ tool: "sessionsSignIn", argv: ["sessions", "signIn", "--account", "scopeOne", "--open"], account: "scopeOne", live: false });
+    expect(gateDeps.busy("scopeOne")?.id).toBe(outer.id);
+    expect(jobScope.run(outer.id, () => gateDeps.busy("scopeOne"))).toBeNull();
+    expect(await jobScope.run(outer.id, async () => (await sleep(5), gateDeps.busy("scopeOne")))).toBeNull();
+    expect(jobScope.run("jobSomeoneElse", () => gateDeps.busy("scopeOne"))?.id).toBe(outer.id);
+    finishJob(outer.id, "completed", {}, "done");
   });
 });
 

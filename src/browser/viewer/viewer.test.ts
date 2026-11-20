@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { addressOf, eventOf, streamOf, viewerDeps, viewerFrame, viewerInput, viewerState, viewerStream, viewOf, voxlOrigins } from "./index.ts";
+import { addressOf, browserInputMode, eventOf, ownerDrivenOf, streamOf, viewerDeps, viewerFrame, viewerInput, viewerState, viewerStream, viewOf, voxlOrigins } from "./index.ts";
 import { ViewerError } from "./types.ts";
 import { consoleBrowserAnswer, consoleStreamDeps } from "../../console/web/helpers/browser.ts";
 import type { ConnectionAccount } from "../../console/connections/index.ts";
@@ -86,6 +86,23 @@ describe("the viewer's stream and address", () => {
     expect(viewOf("a", { ...base, state: "checkpoint", blocked: true, inputAllowed: false })).toMatchObject({ phase: "needsAttention", needsHuman: true, canInteract: false });
     expect(viewOf("a", { ...base, state: "loggedIn", inputAllowed: false })).toMatchObject({ phase: "ready", needsHuman: false });
     expect(viewOf("a", { ...base, busy: true })).toMatchObject({ phase: "busy", canInteract: false });
+  });
+
+  test("a browser the owner opened to drive takes input on every page; one the agent opened only on sign-in", () => {
+    const home = { generation: GENERATION, revision: REVISION, state: "unknown", blocked: false, inputAllowed: false, busy: false };
+    expect(viewOf("a", home)).toMatchObject({ phase: "ready", canInteract: false });
+    expect(viewOf("a", { ...home, ownerDriven: false })).toMatchObject({ phase: "ready", canInteract: false });
+    expect(viewOf("a", { ...home, ownerDriven: true })).toMatchObject({ phase: "ready", needsHuman: false, canInteract: true });
+    expect(viewOf("a", { ...home, ownerDriven: true, blocked: true })).toMatchObject({ phase: "needsAttention", canInteract: true });
+    expect(viewOf("a", { ...home, ownerDriven: true, busy: true })).toMatchObject({ phase: "busy", canInteract: false });
+  });
+
+  test("LOG_BROWSER_INPUT picks who drives an opened browser, the owner by default", () => {
+    expect(browserInputMode({})).toBe("owner");
+    expect(browserInputMode({ LOG_BROWSER_INPUT: "signInOnly" })).toBe("signInOnly");
+    expect(ownerDrivenOf(true, {})).toBe(true);
+    expect(ownerDrivenOf(true, { LOG_BROWSER_INPUT: "signInOnly" })).toBe(false);
+    expect(ownerDrivenOf(undefined, {})).toBe(false);
   });
 
   test("events are checked before anything is sent", () => {

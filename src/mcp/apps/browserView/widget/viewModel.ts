@@ -50,6 +50,11 @@ export const CONNECTING = "Connecting to browser…";
 export const ADDRESS_WAITING = "Waiting for page…";
 export const ADDRESS_NONE = "This page has no web address";
 export const TAKE_CONTROL = "Click to take control";
+export const DRIVE_LABEL = "Click and type here; it goes to the account's browser";
+
+export function phaseLabel(phase: FramePhase, canInteract: boolean): string {
+  return canInteract && phase !== "signInRequired" && phase !== "busy" ? DRIVE_LABEL : PHASE_LABELS[phase];
+}
 
 export function addressText(view: { address: string | null; generation: string | null } | null, live: boolean): string {
   if (view?.address) return view.address;
@@ -113,7 +118,8 @@ export function frameModel(input: FrameInput): FrameModel {
   const phase = input.phase;
   const stopped = phase === "needsAttention";
   const busy = input.connecting || phase === "busy";
-  const label = input.label ?? (input.connecting ? CONNECTING : phase ? PHASE_LABELS[phase] : CONNECTING);
+  const driving = input.canInteract && phase !== null && phase !== "signInRequired" && phase !== "busy";
+  const label = input.label ?? (input.connecting ? CONNECTING : phase ? phaseLabel(phase, input.canInteract) : CONNECTING);
   const note = input.note ?? (phase ? PHASE_NOTES[phase] : "");
   const showCover = !input.live || busy || Boolean(input.failed);
   return {
@@ -126,7 +132,7 @@ export function frameModel(input: FrameInput): FrameModel {
     nav: { back: input.canNavigate && input.canGoBack, reload: input.canNavigate, spinning: Boolean(input.navigating) },
     cover: { hidden: !showCover, spin: busy, shade: input.live, title: label, note: busy ? "" : note },
     take: input.live && input.canInteract && !input.hasControl && !busy,
-    bubble: input.live && !showCover && phase && phase !== "signInRequired" ? note || null : null,
+    bubble: input.live && !showCover && phase && phase !== "signInRequired" && !driving ? note || null : null,
     status: { tone: busy ? "busy" : input.failed || stopped ? "stop" : phase === "verified" || phase === "ready" ? "ok" : "idle", text: label },
     actions: input.actions,
     coverActions: input.coverActions ?? [],

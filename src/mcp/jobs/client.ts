@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { randomBytes } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -133,7 +134,10 @@ export function busyJob(account: string | null, alive: (pid: number) => boolean 
 
 export const PARENT_PID_ENV = "LOG_PARENT_PID";
 
-export function heldByOther(holder: JobRecord | null, env: Record<string, string | undefined> = process.env): JobRecord | null {
+export const jobScope = new AsyncLocalStorage<string>();
+
+export function heldByOther(holder: JobRecord | null, env: Record<string, string | undefined> = process.env, ownJob: string | undefined = jobScope.getStore()): JobRecord | null {
+  if (holder && ownJob && holder.id === ownJob) return null;
   return holder && env[PARENT_PID_ENV] && String(holder.pid) === env[PARENT_PID_ENV] ? null : holder;
 }
 
