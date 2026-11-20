@@ -13,6 +13,7 @@ export const OUTSIDE_PLATFORMS: Readonly<Record<string, string>> = {
   "python/twitterApi/host.py": "the account's own host on 127.0.0.1",
   "scripts/browserView/hostBench.py": "waits for its own servers on 127.0.0.1",
   "scripts/cards/cardShots.py": "waits for its own server on 127.0.0.1",
+  "scripts/browserView/routeBench.py": "times the Hermes plugin routes on 127.0.0.1, no account",
 };
 
 export const GATED_LAUNCHERS: Readonly<Record<string, RegExp>> = {
@@ -28,10 +29,13 @@ export const NO_ACCOUNT_BROWSERS: Readonly<Record<string, string>> = {
   "scripts/browserView/hostBench.py": "benchmarks the viewer on 127.0.0.1, no account",
   "scripts/browserView/inputBench.py": "benchmarks input on a local page, no account",
   "scripts/cards/cardShots.py": "screenshots cards on 127.0.0.1, no account",
+  "scripts/browserView/openBench.py": "times a bare headless launch on a local page, no account",
+  "scripts/browserView/stateBench.py": "times the viewer state on a local busy page, no account",
 };
 
 export const ENGINE_SPAWNERS_WITHOUT_SPEC: Readonly<Record<string, string>> = {
   "src/scaffold/platform/helpers/templates.ts": "text of a generated test, which passes a route",
+  "scripts/bench/agentPaths.ts": "times hooks, the router and logMcp on a scratch db; it never runs a platform engine",
 };
 
 const OTHER_CLIENT = /^\s*(import|from)\s+(urllib\.request|urllib3|requests|httpx|aiohttp|websockets?|http\.client)\b|\burlopen\(|\bsocket\.create_connection\(|\bwebsocket\.create_connection\(/;
