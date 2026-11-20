@@ -17,7 +17,7 @@ function call(action: string): Record<string, unknown> {
   const cookiesPath = join(dir, 'cookies.json')
   writeFileSync(cookiesPath, JSON.stringify({ auth_token: 'a'.repeat(40), ct0: 'b'.repeat(40), twid: 'u%3D1' }))
   const spec = join(dir, 'spec.json')
-  writeFileSync(spec, JSON.stringify({ action, account, cookiesPath, text: 'hello', userId: '1' }))
+  writeFileSync(spec, JSON.stringify({ action, account, route: { proxy: null }, cookiesPath, text: 'hello', userId: '1' }))
   const run = spawnSync(process.env.LOG_PYTHON || 'python', [engine, spec], { encoding: 'utf8', env, timeout: 60_000 })
   return JSON.parse(run.stdout.trim().split('\n').pop() || '{}')
 }
@@ -58,7 +58,7 @@ describe('one X session per account: every call goes through the same host', () 
     const dir = mkdtempSync(join(tmpdir(), 'logTwitterHostDirect'))
     const cookiesPath = join(dir, 'cookies.json')
     writeFileSync(cookiesPath, JSON.stringify({ auth_token: 'a'.repeat(40), ct0: 'b'.repeat(40), twid: 'u%3D1' }))
-    const called = await callHost(info!, { action: 'dm', account, cookiesPath, text: 'hello', userId: '1' })
+    const called = await callHost(info!, { action: 'dm', account, route: { proxy: null }, cookiesPath, text: 'hello', userId: '1' })
     expect(called.reached).toBe(true)
     if (!called.reached) return
     expect(called.answer.code).toBe('notLive')

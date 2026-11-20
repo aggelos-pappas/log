@@ -21,7 +21,7 @@ from platformKit import media as media_kit
 from platformKit import reactions
 from platformKit import timing
 from logHome import log_home
-from identity import browserIdentity as _identity
+from identity import accountRoute as _route
 
 SECRET_KEYS = ("auth_token", "ct0", "twid", "kdt", "att", "password", "cookie")
 READS = ("ping", "follows", "inbox", "followers", "userPosts", "notifications", "postEngagers", "webClient", "xchatContacts", "xchatUnlock", "xchatWatch", "lists")
@@ -520,7 +520,6 @@ MEDIA_LINK = re.compile(r"^https?://\S+?\.(mp4|mov|gif|jpe?g|png|webp)(\?\S*)?$"
 
 def media_links_out(spec: dict[str, Any]) -> tuple[str, list[str]]:
     import hashlib
-    import urllib.request
 
     kept, links = [], []
     for line in str(spec.get("text") or "").split("\n"):
@@ -532,8 +531,7 @@ def media_links_out(spec: dict[str, Any]) -> tuple[str, list[str]]:
         suffix = Path(link.split("?")[0]).suffix.lower()
         path = folder / f"{hashlib.sha1(link.encode()).hexdigest()[:16]}{suffix}"
         if not path.exists():
-            with urllib.request.urlopen(urllib.request.Request(link, headers={"User-Agent": _identity.user_agent("twitter")}), timeout=60) as answer:
-                path.write_bytes(answer.read())
+            path.write_bytes(_route.download(link, "twitter"))
         print(f"media link {link} sent as media, not as text ({path.stat().st_size} bytes)", file=sys.stderr, flush=True)
         media.append(str(path))
     return "\n".join(kept).strip(), media
@@ -1917,6 +1915,10 @@ async def run(spec: dict[str, Any]) -> dict[str, Any]:
     action = spec.get("action")
     if action not in ACTIONS:
         return {"ok": False, "code": "actionUnknown", "detail": f"{action} is not one of {', '.join(ACTIONS)}"}
+    try:
+        _route.arm("twitter", spec)
+    except _route.RouteError as e:
+        return {"ok": False, "code": e.code, "detail": e.detail}
     cookies = normalize_cookies(json.loads(Path(spec["cookiesPath"]).read_text(encoding="utf-8")))
     if not has_session(cookies):
         return {"ok": False, "code": "noSession", "detail": "the saved cookies have no auth_token + ct0", "loginState": "loggedOut"}
@@ -1967,6 +1969,8 @@ async def run_locked(spec: dict[str, Any], cookies: dict[str, str], action: str,
             out = await act(client, cookies, spec, governor)
     except TooManyRequests as e:
         out = {"ok": False, "code": "rateLimited", "event": "throttled", "detail": redact(e, cookies), "rateLimitReset": getattr(e, "rate_limit_reset", None)}
+    except (_route.RouteError, _route.RouteRefused) as e:
+        out = {"ok": False, "code": e.code, "detail": redact(e.detail, cookies)[:300]}
     except Exception as e:
         text = redact(e, cookies)
         out = blocked_answer(e, "request", "unknown") or {"ok": False, "code": type(e).__name__, "detail": (page_title(text) or text)[:300]}

@@ -1579,6 +1579,33 @@ export const ERROR_CATALOG = {
     monitor: 'failed',
     action: 'Tell the owner. Every launch goes through python/browser/proxyGate.py apply(); find the caller in the detail.'
   },
+  routeMissing: {
+    layer: 'runtime',
+    meaning: "An engine call came without the account's route (its proxy, or none for a direct account), so it was refused before anything left the machine.",
+    retryable: false,
+    raisedIn: ['identity/accountRoute', 'platformKit/session', 'twitterApi/engine', 'directApi/engine'],
+    publish: 'failed',
+    monitor: 'failed',
+    action: 'Tell the owner. Every engine spec is built through engineRoute (src/platformKit/socialAccount); find the caller that spawned the engine without it.'
+  },
+  routeBypass: {
+    layer: 'runtime',
+    meaning: "A client inside an engine tried to reach the network another way than the account's route: a different proxy, no proxy for a proxied account, or a direct socket. Refused.",
+    retryable: false,
+    raisedIn: ['identity/accountRoute', 'discordApi/browserRest'],
+    publish: 'failed',
+    monitor: 'failed',
+    action: 'Tell the owner. The detail names the host; route that client through python/identity/accountRoute.py.'
+  },
+  mediaDownloadFailed: {
+    layer: 'runtime',
+    meaning: "A media link in a send could not be fetched through the account's route (its proxy and browser identity), so nothing was sent.",
+    retryable: true,
+    raisedIn: ['identity/accountRoute', 'twitterApi/engine', 'discordApi/engine'],
+    publish: 'failed',
+    monitor: 'failed',
+    action: 'Check the link opens in a browser; send the file itself instead of its link.'
+  },
   crashed: {
     layer: 'runtime',
     meaning: "A step threw an error the command didn't expect, so nothing after it ran (a publish that throws after its Publish click is crashedAfterPublish instead).",

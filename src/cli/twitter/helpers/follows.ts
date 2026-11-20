@@ -5,7 +5,7 @@ import { governorLine, openTwitterAccount } from "./account.ts";
 
 export const FOLLOWS_USAGE = [
   "Usage: log twitter follows --account <accountName> --handles <handle,handle…> [--json]",
-  "Reads, for each handle, whether it follows the account and whether the account follows it, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80). Sends nothing.",
+  "Reads, for each handle, whether it follows the account and whether the account follows it, on the direct-API engine (no browser; direct unless it has a proxy, rule 80). Sends nothing.",
   "X's own answer decides: one friendships/show read per handle, 1.5 s apart, after the session check. Handles come from treg research or the owner, never a guess (rule 53).",
 ].join("\n");
 

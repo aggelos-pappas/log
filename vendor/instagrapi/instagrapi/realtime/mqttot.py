@@ -281,7 +281,7 @@ class SocketMQTToTTransport:
             proxy_type,
             parsed.hostname,
             parsed.port,
-            rdns=parsed.scheme in {"socks4a", "socks5h"},
+            rdns=parsed.scheme in {"socks4a", "socks5h", "http", "https"},
             username=unquote(parsed.username) if parsed.username else None,
             password=unquote(parsed.password) if parsed.password else None,
         )

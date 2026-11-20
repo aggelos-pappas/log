@@ -129,26 +129,26 @@ A command on the direct-API engine calls the platform's internal API with the ac
 
 **X.** X's own answer decides: the session check's HTTP status first (401 or 403 is loggedOut, 200 or 404 loggedIn), then the call's own answer, read into one event (sent, dropped, throttled, dailyLimit, gone, automated, duplicate, sessionDead, restricted). Each account has its own governor under ~/.logCli/twitter/<account> (sends count as writes, 240 a day), refreshed cookies are merged back into its Twenty row, and the session state is written to socialAccounts.sessionState.
 
-- `log twitter session`: the direct-API engine only (twikit, vendored in vendor/twikit, account.ping for the session check; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter follows`: the direct-API engine only (twikit, vendored in vendor/twikit, friendships.show for the follows read; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter dms`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.inbox for the dms read (the inbox, or one conversation); no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter chat`: the direct-API engine only (twikit, vendored in vendor/twikit, xchat.unlock_xchat for the chat pin (the PIN is checked against Juicebox before it is saved), chat watch (X pushes each message over wss://chat-ws.x.com, nothing polled); no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter cookies`: the direct-API engine only (twikit, vendored in vendor/twikit, account.ping for the cookies save (the cookies are checked with X before they are saved); no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter followers`: the direct-API engine only (twikit, vendored in vendor/twikit, friendships.followers for the followers read; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter posts`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.get_user_tweets for the posts read; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter notifications`: the direct-API engine only (twikit, vendored in vendor/twikit, notifications.get_notifications_page for the notifications read (new, or back through the history with --full); no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter reply`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.create_tweet for the reply; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter quote`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.create_tweet for the quote; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter post`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.create_tweet for the post (media uploaded first with upload_media); no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter like`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.favorite_tweet for the like; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter list`: the direct-API engine only (twikit, vendored in vendor/twikit, lists.get_lists, create_list, add_list_member for the list show, list create --live, list add --live; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter repost`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.retweet for the repost; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter delete`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.delete_tweet for the delete; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter follow`: the direct-API engine only (twikit, vendored in vendor/twikit, users.follow_user for the follow; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter dm`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.send_dm for the dm; no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter react`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.add_reaction_to_message for the react --live (--remove takes it off); no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter queue`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.create_tweet for the queue run --live (each like and reply); no browser and no proxy: X accounts call X directly, rule 80).
-- `log twitter voice`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.SendMessageCreateMutation for the voice --live (a voice note in the voice cloned from the owner, encrypted with chat-xdk and sent as an X Chat AUDIO attachment); no browser and no proxy: X accounts call X directly, rule 80).
+- `log twitter session`: the direct-API engine only (twikit, vendored in vendor/twikit, account.ping for the session check; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter follows`: the direct-API engine only (twikit, vendored in vendor/twikit, friendships.show for the follows read; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter dms`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.inbox for the dms read (the inbox, or one conversation); no browser; direct unless the account has a proxy, rule 80).
+- `log twitter chat`: the direct-API engine only (twikit, vendored in vendor/twikit, xchat.unlock_xchat for the chat pin (the PIN is checked against Juicebox before it is saved), chat watch (X pushes each message over wss://chat-ws.x.com, nothing polled); no browser; direct unless the account has a proxy, rule 80).
+- `log twitter cookies`: the direct-API engine only (twikit, vendored in vendor/twikit, account.ping for the cookies save (the cookies are checked with X before they are saved); no browser; direct unless the account has a proxy, rule 80).
+- `log twitter followers`: the direct-API engine only (twikit, vendored in vendor/twikit, friendships.followers for the followers read; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter posts`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.get_user_tweets for the posts read; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter notifications`: the direct-API engine only (twikit, vendored in vendor/twikit, notifications.get_notifications_page for the notifications read (new, or back through the history with --full); no browser; direct unless the account has a proxy, rule 80).
+- `log twitter reply`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.create_tweet for the reply; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter quote`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.create_tweet for the quote; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter post`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.create_tweet for the post (media uploaded first with upload_media); no browser; direct unless the account has a proxy, rule 80).
+- `log twitter like`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.favorite_tweet for the like; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter list`: the direct-API engine only (twikit, vendored in vendor/twikit, lists.get_lists, create_list, add_list_member for the list show, list create --live, list add --live; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter repost`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.retweet for the repost; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter delete`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.delete_tweet for the delete; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter follow`: the direct-API engine only (twikit, vendored in vendor/twikit, users.follow_user for the follow; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter dm`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.send_dm for the dm; no browser; direct unless the account has a proxy, rule 80).
+- `log twitter react`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.add_reaction_to_message for the react --live (--remove takes it off); no browser; direct unless the account has a proxy, rule 80).
+- `log twitter queue`: the direct-API engine only (twikit, vendored in vendor/twikit, tweets.create_tweet for the queue run --live (each like and reply); no browser; direct unless the account has a proxy, rule 80).
+- `log twitter voice`: the direct-API engine only (twikit, vendored in vendor/twikit, messages.SendMessageCreateMutation for the voice --live (a voice note in the voice cloned from the owner, encrypted with chat-xdk and sent as an X Chat AUDIO attachment); no browser; direct unless the account has a proxy, rule 80).
 
 **Reddit.** Reddit's own answer decides. Each account has its own governor under ~/.logCli/reddit/<account>, refreshed cookies are merged back into its Twenty row, and the session state is written to socialAccounts.sessionState.
 
@@ -1756,7 +1756,7 @@ Check that X still accepts an account's saved session, on the direct-API engine,
 ```text
 log twitter session check --account <accountName> [--json]
 log twitter session webClient --account <accountName> [--json]   (loads x.com/home through the account's one X session, as twikit already does to sign its calls, and saves the page and every script it lists from abs.twimg.com to ~/.logCli/twitter/<account>/webClient/<time>, reads spaced 0.8 to 2.5 s, so rea can read X's own signed-in client: what its composer sends; rule 105)
-Checks that X still accepts the account's saved session, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80). Sends nothing.
+Checks that X still accepts the account's saved session, on the direct-API engine (no browser; direct unless it has a proxy, rule 80). Sends nothing.
 X's own answer decides: the session check's HTTP status (401 or 403 loggedOut, 200 or 404 loggedIn), then the account's profile read (suspended or locked: restricted). The result goes to socialAccounts.sessionState, and X's refreshed cookies are merged back into the row.
 ```
 
@@ -1766,7 +1766,7 @@ Read whether handles follow an X account and it follows them, on the direct-API 
 
 ```text
 log twitter follows --account <accountName> --handles <handle,handle…> [--json]
-Reads, for each handle, whether it follows the account and whether the account follows it, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80). Sends nothing.
+Reads, for each handle, whether it follows the account and whether the account follows it, on the direct-API engine (no browser; direct unless it has a proxy, rule 80). Sends nothing.
 X's own answer decides: one friendships/show read per handle, 1.5 s apart, after the session check. Handles come from treg research or the owner, never a guess (rule 53).
 ```
 
@@ -1776,7 +1776,7 @@ Read an X account's direct messages and who is waiting on a reply, on the direct
 
 ```text
 log twitter dms --account <accountName> [--limit <n>] [--waiting] [--with <handle>] [--conversation <id>] [--full] [--force] [--json]
-Reads the account's X direct messages on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80). Sends nothing and marks nothing read.
+Reads the account's X direct messages on the direct-API engine (no browser; direct unless it has a proxy, rule 80). Sends nothing and marks nothing read.
 Without --conversation it syncs the inbox the way X's own chat app does (dm-core): the first read takes the whole X Chat inbox (GetInitialXChatPageQuery, then GetInboxPageRequestQuery pages) and the old DM inbox (dm/inbox_initial_state, then dm/inbox_timeline pages, 1.5 s apart) and keeps them in ~/.logCli/twitter/<account>/inboxSync.json with the newest event's sequence id; every read after that asks X only for what is newer (GetMessageEventsPageQuery from that sequence id, beside one dm/inbox_initial_state), unlocks the PIN and decrypts only when something is new, opening just those conversations' keys (GetInboxPageConversationDataQuery), and keeps each event once by its id. --full reads everything again. Each read saves its conversations for log search and updates the search index in the background with only the chunks that changed. It then lists the newest conversations first, one row per person (their old DM thread and X Chat thread merged): who, when, the last message from either and whether it was yours. --waiting keeps only the ones whose last message isn't yours, the people waiting on a reply, and lists apart the ones that opened your last message, by reacting to it or reading it without replying (read receipts, where the person keeps them on): so each is a follow-up to send, not a reply they're waiting on (--json: followUps). --conversation <id> reads one conversation's messages, oldest first: a legacy id (two user ids joined by a dash) through dm/conversation, an X Chat id (joined by a colon) the same way --with reads it, never the whole inbox.
 --with <handle> reads everything with one person by their handle and nobody else: their user id, their legacy thread (dm/conversation) and their X Chat thread (read the way X's own chat app opens a chat, from its dm-core: GetInboxPageConversationDataQuery for that one conversation, then GetConversationPageQuery from the oldest message held, its fetchOlderMessages, up to 5 pages 1.5 s apart while X says there is more), merged into one timeline, oldest first, a message mirrored into both shown once. It never reads the whole inbox. A 429 stops the read with nothing retried, as X's app does (it retries only 5xx), and pauses the account's governor (rule 94). X Chat (encrypted DMs) is opened with the account's X Chat PIN from Twenty (`log twitter chat pin`), recovered through Juicebox by the vendored chat-xdk; without a PIN its text stays encrypted. An old DM thread (<a>-<b>) and its X Chat thread (<a>:<b>) with one person are one conversation: X shows them in the same place, and a dm sent through the old DM API shows in their X Chat too. A sent answer is delivered whichever conversation id it names: never resend it and never call it the wrong inbox. X's own answer decides: the session check first, then the inbox's answer. --limit is how many conversations (or messages) to show, default 20, at most 200.
 ```
@@ -1788,7 +1788,7 @@ X Chat's PIN for the account's encrypted DMs: asked in a Clack prompt, kept in T
 ```text
 log twitter chat pin --account <accountName> [--show]
 log twitter chat watch --account <accountName> [--seconds <n>] [--inbox] [--json]
-Saves the account's X Chat PIN (the 4-digit code X asks for to open encrypted DMs) to Twenty, asked twice in a masked Clack prompt and never printed or passed as a flag. It is checked first: the direct-API engine (no browser, no proxy, rule 80) unlocks the account's keys with it through Juicebox (a wrong PIN uses one of X's limited guesses), and only a PIN that opens them is saved. `log twitter dms` uses it to recover the account's X Chat keys through Juicebox (vendor/chatXdk) and read the encrypted messages. --show says only whether one is set.
+Saves the account's X Chat PIN (the 4-digit code X asks for to open encrypted DMs) to Twenty, asked twice in a masked Clack prompt and never printed or passed as a flag. It is checked first: the direct-API engine (no browser; direct unless it has a proxy, rule 80) unlocks the account's keys with it through Juicebox (a wrong PIN uses one of X's limited guesses), and only a PIN that opens them is saved. `log twitter dms` uses it to recover the account's X Chat keys through Juicebox (vendor/chatXdk) and read the encrypted messages. --show says only whether one is set.
 watch keeps one socket open to X Chat, the way X's own chat app does (read with rea from X's shipped code, issue #68): a token from GenerateXChatTokenMutation, wss://chat-ws.x.com/ws, a KeepAlive every 30 s, a fresh token and a new socket when it drops. X pushes each message the moment it lands, so nothing is polled and no inbox read can hit X's 429. Each message is decrypted with the saved PIN and printed as it arrives (who, when, what they said). --inbox also hands each new message from someone else to the inbox hook, which puts it in front of the agent with what to do next. --seconds stops it after that long; without it, it watches until stopped.
 ```
 
@@ -1798,7 +1798,7 @@ Add or refresh an X account in Twenty: its session cookies from a masked prompt,
 
 ```text
 log twitter cookies save --account <handle> [--style <copyStyle>] [--name <label>]
-Saves an X account's session to Twenty from a masked Clack prompt: its auth_token, ct0 and twid cookies (twid carries the account's id), copied from a browser signed in to x.com, never passed as flags or printed. They are checked first: the direct-API engine (no browser, no proxy, rule 80) pings X with them, and only cookies X accepts for that same handle are saved. A handle Twenty doesn't have yet gets a new TWITTER socialAccounts row (rule 13); one it has gets its cookies replaced. --style sets the account's copyStyle, the writing style every send and queue check holds its copy to (empty: house). The account's governor starts under ~/.logCli/twitter/<handle>.
+Saves an X account's session to Twenty from a masked Clack prompt: its auth_token, ct0 and twid cookies (twid carries the account's id), copied from a browser signed in to x.com, never passed as flags or printed. They are checked first: the direct-API engine (no browser; direct unless it has a proxy, rule 80) pings X with them, and only cookies X accepts for that same handle are saved. A handle Twenty doesn't have yet gets a new TWITTER socialAccounts row (rule 13); one it has gets its cookies replaced. --style sets the account's copyStyle, the writing style every send and queue check holds its copy to (empty: house). The account's governor starts under ~/.logCli/twitter/<handle>.
 ```
 
 #### log voice
@@ -1986,7 +1986,7 @@ Read an X account's own followers on the direct-API engine, sending nothing MCP 
 
 ```text
 log twitter followers --account <accountName> [--limit <n>] [--json]
-Reads the account's own followers on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80), newest first: handle, name, bio, location, follower and post counts, whether they take DMs. Sends nothing. Each follower's profile is kept in log.db (identityProfiles), so report draws it later with no X call.
+Reads the account's own followers on the direct-API engine (no browser; direct unless it has a proxy, rule 80), newest first: handle, name, bio, location, follower and post counts, whether they take DMs. Sends nothing. Each follower's profile is kept in log.db (identityProfiles), so report draws it later with no X call.
 X's own answer decides: the session check first, then X's followers list, 100 a page, 1.5 s apart. --limit is how many to read, default 200, at most 4000.
 ```
 
@@ -1996,7 +1996,7 @@ Read one person's recent posts on X on the direct-API engine, sending nothing MC
 
 ```text
 log twitter posts --account <accountName> --user <handle> [--limit <n>] [--media] [--json]
-Reads one person's recent posts on X through the account's own session on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80), newest first: when, the text, likes, reposts, replies and views, and each photo or video with its best MP4 link. Sends nothing, and the person is never told.
+Reads one person's recent posts on X through the account's own session on the direct-API engine (no browser; direct unless it has a proxy, rule 80), newest first: when, the text, likes, reposts, replies and views, and each photo or video with its best MP4 link. Sends nothing, and the person is never told.
 --media reads their Media tab (posts with a photo or video) instead of their posts. X's own answer decides: the session check first, then X's own user and timeline answers, up to 40 a page, 1.5 s apart. --limit is how many posts to read, default 20, at most 200.
 ```
 
@@ -2006,7 +2006,7 @@ Read who liked, reposted, replied to, quoted or followed an X account, new and h
 
 ```text
 log twitter notifications --account <accountName> [--type likes|reposts|replies|quotes|follows|all] [--since <date>] [--post <id|url>] [--full] [--pages <n>] [--stored] [--limit <n>] [--json]
-Reads the account's X notifications on the direct-API engine through its one X session, the engine host (rule 105: no session of its own; no browser, no proxy, rule 80) and keeps them in ~/.logCli/twitter/<account>/notifications.json: one row per person per thing they did (like, repost, reply, quote, follow, mention), with which of the account's posts it was on and when. Sends nothing.
+Reads the account's X notifications on the direct-API engine through its one X session, the engine host (rule 105: no session of its own; no browser; direct unless it has a proxy, rule 80) and keeps them in ~/.logCli/twitter/<account>/notifications.json: one row per person per thing they did (like, repost, reply, quote, follow, mention), with which of the account's posts it was on and when. Sends nothing.
 Without --full it reads only what is new: the newest page, then older pages until it meets rows already kept (the first run reads up to 5 pages). --full then pages back through the history from where the last --full stopped, as far as X gives, at most --pages pages a run (default 25). The read is one engine call (rule 104: one call per account at a time); its pages are 40 notifications, 4 to 11 s apart, each through the account's governor; a 429 or a governor stop ends the read and keeps what came.
 X's notifications name only some of the people behind "@a and 12 others liked your post", so the read unrolls: with --post it pages that post's whole likers and reposters lists (X's post engagements screen, which shows the author everyone), and with --full it does so for every post of the account's with an aggregated like or repost notification (since --since when given). A person a notification named stays one row; a person only the list names is kept with source engagements and no time, so --since leaves them out. One state machine drives it: the feed, which posts, then likers and reposters, five pages a call through the same session and governor, at most 40 pages a run. Each post's line says how many came from notifications, how many unrolling added, the total, and whether its lists were read to the end. A 429, a governor stop or the page cap stops the run there, said plainly, with every row and the place kept so the next run goes on from it; nothing retries.
 --stored answers from what is kept, calling nothing. --type, --since, --post and --limit (default 50 shown, at most 5000) narrow what is shown; --json gives the rows, counts by kind and the people who engaged most.
@@ -2018,7 +2018,7 @@ Reply to one post on X with approved copy, on the direct-API engine; a dry run u
 
 ```text
 log twitter reply --account <accountName> --tweet <postUrl> --text "<copy>" [--media <file>[,<file>]] [--approvedBy <who>] [--skipStyleCheck] [--force] [--live] [--json]
-Reply to one post on X with approved copy, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
+Reply to one post on X with approved copy, on the direct-API engine (no browser; direct unless it has a proxy, rule 80).
 Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's create answer decides: a tweet id is sent, an empty result is a drop (nothing posted, usually the author's reply limits). Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
@@ -2029,7 +2029,7 @@ Quote one post on X with approved copy, on the direct-API engine; a dry run unle
 
 ```text
 log twitter quote --account <accountName> --tweet <postUrl> --text "<copy>" [--media <file>[,<file>]] [--approvedBy <who>] [--skipStyleCheck] [--force] [--live] [--json]
-Quote one post on X with approved copy, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
+Quote one post on X with approved copy, on the direct-API engine (no browser; direct unless it has a proxy, rule 80).
 Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's create answer decides: a tweet id is sent, an empty result is a drop. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
@@ -2040,7 +2040,7 @@ Make one original post on X with approved copy and optional media (a video, a gi
 
 ```text
 log twitter post --account <accountName> --text "<copy>" [--media <file>[,<file>]] [--approvedBy <who>] [--skipStyleCheck] [--force] [--live] [--json]
-Make one original post on X with approved copy and optional media (a video, a gif or up to 4 images), on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
+Make one original post on X with approved copy and optional media (a video, a gif or up to 4 images), on the direct-API engine (no browser; direct unless it has a proxy, rule 80).
 Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 Each file is uploaded first (a video in chunks, then X's own processing status must say succeeded before the post is made; a video over 2:20 goes up the way x.com sends a long video, as amplify_video with its length from its own header in 8 MB APPENDMULTI parts, which X takes from an account that may post long video), then the post is created with the media ids. X's create answer decides: a tweet id is sent, an empty result is a drop and nothing was posted. A file X refuses stops it before anything is posted. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
@@ -2051,7 +2051,7 @@ Like one post on X, on the direct-API engine; a dry run unless --live MCP tools:
 
 ```text
 log twitter like --account <accountName> --tweet <postUrl> [--approvedBy <who>] [--force] [--live] [--json]
-Like one post on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
+Like one post on X, on the direct-API engine (no browser; direct unless it has a proxy, rule 80).
 Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's favorite answer decides: Done (or already liked, code 139) is sent. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
@@ -2073,7 +2073,7 @@ Repost one post on X, on the direct-API engine; a dry run unless --live MCP tool
 
 ```text
 log twitter repost --account <accountName> --tweet <postUrl> [--approvedBy <who>] [--force] [--live] [--json]
-Repost one post on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
+Repost one post on X, on the direct-API engine (no browser; direct unless it has a proxy, rule 80).
 Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's retweet answer decides: a created retweet (or already reposted, code 327) is sent. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
@@ -2084,7 +2084,7 @@ Delete one of the account's own posts on X, on the direct-API engine; a dry run 
 
 ```text
 log twitter delete --account <accountName> --tweet <postUrl> [--approvedBy <who>] [--force] [--live] [--json]
-Delete one of the account's own posts on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
+Delete one of the account's own posts on X, on the direct-API engine (no browser; direct unless it has a proxy, rule 80).
 Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's DeleteTweet answer decides: a deleted post is sent, and a post X no longer has (code 144) is sent too, as already gone. X refuses a post the account didn't write. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
@@ -2095,7 +2095,7 @@ Follow one person on X, on the direct-API engine; a dry run unless --live MCP to
 
 ```text
 log twitter follow --account <accountName> --userId <id> [--approvedBy <who>] [--force] [--live] [--json]
-Follow one person on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
+Follow one person on X, on the direct-API engine (no browser; direct unless it has a proxy, rule 80).
 Without --live it is a dry run: the target are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 X's follow answer decides: the followed user back is sent, already following is sent too. Follow before a cold dm: nobody gets a cold message from an account that doesn't follow them. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
@@ -2106,7 +2106,7 @@ Send one approved direct message on X, on the direct-API engine; a dry run unles
 
 ```text
 log twitter dm --account <accountName> --userId <id> --text "<copy>" [--media <file|url>] [--approvedBy <who>] [--skipStyleCheck] [--asOne] [--overGate] [--followUp] [--force] [--live] [--json]
-Send one approved direct message on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
+Send one approved direct message on X, on the direct-API engine (no browser; direct unless it has a proxy, rule 80).
 Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 A draft written on several lines goes out one message per line, and a one-line draft is split the way the owner writes in that chat (log voice index), with his usual gap between them; --asOne sends it as one, only when the owner asked (rule 90). X's answer decides: a conversation id is sent, none is a drop, and a drop stops the rest: what was sent stays sent, nothing is retried (rule 94). An old DM thread (<a>-<b>) and its X Chat thread (<a>:<b>) with one person are one conversation: X shows them in the same place, and a dm sent through the old DM API shows in their X Chat too. A sent answer is delivered whichever conversation id it names: never resend it and never call it the wrong inbox. A refusal before X is called (styleFailed, a dry run) sent nothing, so that dm is sent once its copy is fixed. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
 ```
@@ -2136,7 +2136,7 @@ log twitter queue run <queue.json> [--alertChannel <uuid>] [--alertReplyTo <even
 log twitter queue add <queue.json> --targets <targets.json> --by <who> [--action reply|quote|dm|voice] [--window <2h|90m>] [--minGap <s>]
 log twitter queue nudge <queue.json> [--replies <n>]
 log twitter queue edit <queue.json> --n <n> --text "<new copy>" --by <who> [--window <30m>]
-A queue of approved X replies, quotes or dms, sent one at a time at random moments inside a window, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80). Targets come from treg research, never from X (rule 53).
+A queue of approved X replies, quotes or dms, sent one at a time at random moments inside a window, on the direct-API engine (no browser; direct unless it has a proxy, rule 80). Targets come from treg research, never from X (rule 53).
 build pairs each target with one unique line from the variations, shuffled; a target that carries its own text (written for that person's post) keeps it. show and status read it; check runs every pending item through the house style and target checks and contacts nothing. approve records who approved it as it stands: a fingerprint of the account and every item's action, target and copy, and any edit afterwards voids it. plan draws every like and reply a time with the system random source, at least --minGap apart (with --like, each post may get a like before or after its reply). nudge tells a running run to send the next replies now. One account has one queue: add puts more in (dms, replies, quotes together), even while it runs, each fitted between what is planned at least minGap apart, and the run takes them in as it waits; run --keepOpen stays running for more, so all of an account's sending is one run through its one X session (rule 105). Right before each send the run reads that person's full context again (their dm thread and X Chat, and what they did on the account's posts from its notifications) and holds the item when anything happened since it was drafted: a message either way, a like, retweet, reply, quote, mention or follow (rule 109). edit puts new copy on a pending or held item (no queue file is ever edited by hand), plans a held one again inside --window, and approves the queue as it then stands.
 run walks the plan as an XState machine (planned, waiting, liking, replying, retrying, finished, halted), every transition on the live log: without --live a dry run lists what it would send and when; --live sends, only when the owner asked (rule 8). Each answer is X's own event: any refusal (a 429, 226 looks automated, 344 daily limit, a soft block, the governor, a dead session) stops the run at once with X's answer and the time, the item stays pending, and nothing goes out on that account until the owner starts a run again (rule 94); with --alertChannel it tags the owner in buzz. A deleted post or replies off (385/433) is skipped. A dropped connection with no answer from X is tried again after 1 to 3 min, at most 3 drops in a row. It saves after every step, so running it again resumes. --force sends every event past the account's governor (its pause and caps), only when the owner asked (rule 86); X's answers still stop the run.
 ```
@@ -2350,7 +2350,7 @@ Add or refresh a LinkedIn account in Twenty: every cookie and the browser's head
 ```text
 log linkedin cookies save --account <publicId> [--name <label>] [--har <file>]
 Saves a LinkedIn account's session to Twenty: every cookie and the browser's headers (user agent, client hints, x-li-track) from one www.linkedin.com request, never passed as flags or printed. The request is copied as cURL from Chrome's DevTools and read off the clipboard after a Clack prompt, or, with --har, taken from a recording of the account's own browser (a `log inspect` step's HAR, the account signed in there). --account is the profile's public id, the part after linkedin.com/in/.
-They are checked first: the direct-API engine (openLinkedinApi, no browser, no proxy) reads /voyager/api/me with them, and only cookies LinkedIn accepts for that same profile are saved. A profile Twenty doesn't have yet gets a new LINKEDIN socialAccounts row (rule 13); one it has gets its cookies replaced.
+They are checked first: the direct-API engine (openLinkedinApi, no browser) reads /voyager/api/me with them, and only cookies LinkedIn accepts for that same profile are saved. A profile Twenty doesn't have yet gets a new LINKEDIN socialAccounts row (rule 13); one it has gets its cookies replaced.
 ```
 
 #### log linkedin post
@@ -2519,7 +2519,7 @@ Add or refresh a Slack account locally: its d cookie from a masked prompt, check
 ```text
 log slack cookies save --account <accountName> [--name <label>] [--workspace <domain>]
 Saves a Slack account's session locally (~/.logCli/localAccounts.json, rule 97) from a masked Clack prompt: its d cookie (xoxd-…), copied from a browser signed in to app.slack.com, never passed as a flag or printed.
-It is checked first: the direct-API engine (vendor/gabrielSlack, no browser, no proxy) exchanges it with Slack for the workspaces it is signed in to, and only a cookie Slack accepts is saved. An account log doesn't have yet gets a new local SLACK row; one it has gets its d cookie replaced and keeps the rest.
+It is checked first: the direct-API engine (vendor/gabrielSlack, no browser) exchanges it with Slack for the workspaces it is signed in to, and only a cookie Slack accepts is saved. An account log doesn't have yet gets a new local SLACK row; one it has gets its d cookie replaced and keeps the rest.
 ```
 
 #### log slack react

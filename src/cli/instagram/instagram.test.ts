@@ -54,7 +54,7 @@ describe("log instagram session check", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({ session: "x" }));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "ping", account: "instagramOne", platform: "instagram", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "ping", account: "instagramOne", platform: "instagram", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [INSTAGRAM_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "sessionDead", loginState: "loggedOut" });
@@ -110,7 +110,7 @@ describe("log instagram dms", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({ sessionid: "x".repeat(40) }));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "thread", account: "instagramOne", platform: "instagram", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "thread", account: "instagramOne", platform: "instagram", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [INSTAGRAM_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "threadNeeded" });
@@ -178,7 +178,7 @@ describe("log instagram watch", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({ sessionid: "x".repeat(40) }));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "send", with: "someone", live: true, approvedBy: "the owner", account: "instagramOne", platform: "instagram", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "send", with: "someone", live: true, approvedBy: "the owner", account: "instagramOne", platform: "instagram", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [INSTAGRAM_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "nothingToSend" });

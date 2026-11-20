@@ -69,7 +69,7 @@ describe("log linkedin session check", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({ li_at: "x".repeat(40), JSESSIONID: '"ajax:1234567890"' }));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "ping", account: "linkedinOne", platform: "linkedin", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "ping", account: "linkedinOne", platform: "linkedin", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [LINKEDIN_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     const answer = JSON.parse(engine.stdout.trim().split(/\r?\n/).pop()!);
@@ -82,7 +82,7 @@ describe("log linkedin session check", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({ session: "x" }));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "ping", account: "linkedinOne", platform: "linkedin", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "ping", account: "linkedinOne", platform: "linkedin", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [LINKEDIN_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split(/\r?\n/).pop()!)).toMatchObject({ ok: false, code: "sessionDead", loginState: "loggedOut" });

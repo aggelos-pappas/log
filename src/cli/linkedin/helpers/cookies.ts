@@ -17,7 +17,7 @@ import type { Command, CommandInput } from "../../runner/types.ts";
 export const LINKEDIN_COOKIES_USAGE = [
   "Usage: log linkedin cookies save --account <publicId> [--name <label>] [--har <file>]",
   "Saves a LinkedIn account's session to Twenty: every cookie and the browser's headers (user agent, client hints, x-li-track) from one www.linkedin.com request, never passed as flags or printed. The request is copied as cURL from Chrome's DevTools and read off the clipboard after a Clack prompt, or, with --har, taken from a recording of the account's own browser (a `log inspect` step's HAR, the account signed in there). --account is the profile's public id, the part after linkedin.com/in/.",
-  "They are checked first: the direct-API engine (openLinkedinApi, no browser, no proxy) reads /voyager/api/me with them, and only cookies LinkedIn accepts for that same profile are saved. A profile Twenty doesn't have yet gets a new LINKEDIN socialAccounts row (rule 13); one it has gets its cookies replaced.",
+  "They are checked first: the direct-API engine (openLinkedinApi, no browser) reads /voyager/api/me with them, and only cookies LinkedIn accepts for that same profile are saved. A profile Twenty doesn't have yet gets a new LINKEDIN socialAccounts row (rule 13); one it has gets its cookies replaced.",
 ].join("\n");
 
 interface CookiePrompts {

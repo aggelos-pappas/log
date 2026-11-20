@@ -49,7 +49,7 @@ describe('one warm read host per account for the kit engines', () => {
     const dir = mkdtempSync(join(scratch, 'call-'))
     const cookiesPath = join(dir, 'cookies.json')
     writeFileSync(cookiesPath, '{}')
-    const spec = { action: 'read', chat: 'grace_ships', account, platform: 'fake', stateRoot, cookiesPath }
+    const spec = { action: 'read', chat: 'grace_ships', account, platform: 'fake', route: { proxy: null }, stateRoot, cookiesPath }
     const first = askReadHost<{ ok: boolean; pid?: number; chat?: string; kitHost?: { calls: number } }>(info, spec)
     const second = askReadHost<{ ok: boolean; pid?: number; kitHost?: { calls: number } }>(info, spec)
     expect(first).toMatchObject({ ok: true, chat: 'grace_ships', pid: info.pid })

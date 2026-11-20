@@ -87,3 +87,5 @@ export interface RunProxy {
 }
 
 export type RunnableCheck = { ok: true; proxy: RunProxy } | { ok: false; code: ErrorCode; detail: string }
+
+export type EngineRoute = { ok: true; route: { proxy: string | null } } | { ok: false; code: ErrorCode; detail: string }
