@@ -51,9 +51,12 @@ $LogHome = if ($env:LOG_HOME) { $env:LOG_HOME } else { Join-Path $HOME ".logCli"
 $Package = if ($env:LOG_PACKAGE) { $env:LOG_PACKAGE } else { "@listeningkit/log" }
 $LogRepo = if ($env:LOG_REPO) { $env:LOG_REPO } else { "matthewdonsemail-lab/log" }
 New-Item -ItemType Directory -Force -Path $LogHome | Out-Null
+$Track = if ($env:LOG_TRACK) { $env:LOG_TRACK } else { "stable" }
+if ($Track -ne "stable" -and $Track -ne "nightly") { Fail "LOG_TRACK is stable or nightly, not $Track" }
 
 function ReleaseVersion {
   if ($env:LOG_VERSION) { return $env:LOG_VERSION.TrimStart("v") }
+  if ($Track -eq "nightly") { try { $next = (Invoke-RestMethod -UseBasicParsing "https://registry.npmjs.org/$Package/next").version; if ($next) { return $next } } catch {} }
   try { $tag = (Invoke-RestMethod -UseBasicParsing "https://api.github.com/repos/$LogRepo/releases/latest").tag_name; if ($tag) { return $tag.TrimStart("v") } } catch {}
   try { return (Invoke-RestMethod -UseBasicParsing "https://registry.npmjs.org/$Package/latest").version } catch { return "" }
 }
@@ -68,7 +71,7 @@ if (-not (Get-Command bun -ErrorAction SilentlyContinue)) { Fail "Bun didn't ins
 $Version = ReleaseVersion
 if ($Version) {
   $Spec = "$Package@$Version"
-  if ($env:LOG_VERSION) { Say "installing $Package $Version (pinned by LOG_VERSION)" } else { Say "installing $Package $Version, the newest release" }
+  if ($env:LOG_VERSION) { Say "installing $Package $Version (pinned by LOG_VERSION)" } else { Say "installing $Package $Version, the newest $Track release" }
 } else {
   $Spec = $Package
   Say "no release answered on GitHub or npm; installing $Package as npm has it"
@@ -108,6 +111,11 @@ $PostInstall = Join-Path $Root "scripts\update\postInstall.ts"
 $env:LOG_PYTHON = $Python
 & bun $PostInstall
 if ($LASTEXITCODE -ne 0) { Say "some after-install steps need a look (above); run bun $PostInstall again any time" }
+if ($env:LOG_TRACK) {
+  $env:LOG_HOME = $LogHome
+  & bun (Join-Path $Root "scripts\update\track.ts") $Track
+  if ($LASTEXITCODE -ne 0) { Say "couldn't save the track; run log update --track $Track" }
+}
 
 Say "done. Your settings are in $EnvFile and your accounts will live in $LogHome."
 if (Get-Command log -ErrorAction SilentlyContinue) { Say "log is on your PATH" } else { Say "open a new terminal so 'log' is on your PATH" }

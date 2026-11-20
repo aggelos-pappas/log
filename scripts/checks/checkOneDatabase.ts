@@ -32,6 +32,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'scripts/docs/syncSiteDocs.mjs': { writes: 4, kind: 'repo' },
   'scripts/docs/syncSiteSkills.mjs': { writes: 3, kind: 'repo' },
   'scripts/privacy/redactDocs.mjs': { writes: 1, kind: 'repo' },
+  'scripts/release/nightlyVersion.ts': { writes: 1, kind: 'repo' },
   'scripts/fbk/tryAccount.ts': { writes: 1, kind: 'capture' },
   'scripts/media/personaPictures.ts': { writes: 1, kind: 'dataset' },
   'scripts/useCases/benchRouter.ts': { writes: 1, kind: 'dataset' },
