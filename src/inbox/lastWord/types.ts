@@ -49,4 +49,5 @@ export interface PersonChat {
 export interface LastWordQuery {
   platform?: string
   account?: string
+  conversationIds?: string[]
 }

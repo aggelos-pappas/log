@@ -9,3 +9,5 @@ export interface PendingRead {
 }
 
 export type ChatRead = (platform: string, account: string, conversationId: string, limit: number) => DbMessage[]
+
+export type WhoLine = (platform: string, account: string, conversationId: string) => string | null

@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 55 domains, 638 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 56 domains, 645 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -874,6 +874,18 @@ log-cli is read-only on Facebook except where the owner asked for an action. Pos
 - **REQ-LISTING-21** Anything but full access is the account's suspended issue
 - **REQ-LISTING-22** Each listing's state on Selling goes into Twenty
 - **REQ-LISTING-23** Seller chats are counted and kept as sent
+
+## [Who each person is and where they are](./pipeline.md)
+
+Every chat in the owner's inbox carries two fields: `who` the person is to the owner and, only for a lead or a client, `where` they are in the sales cycle. A small model on the CPU fills both on every new message, the owner's own labels always win and train it, and SubQ labels the rest once. Nothing here sends a message on any platform. The design and the measured CPU stack: [the pipeline proposal](../decisions/pipeline/proposal.md); how to use it: [Pipeline labels](../pipelineLabels.md).
+
+- **REQ-PIPELINE-01** Two owner-editable lists, and no sales stage for a bot, friend, partner or community
+- **REQ-PIPELINE-02** Old labels still read the same
+- **REQ-PIPELINE-03** Day one is nearest-prototype on the shipped MiniLM, with the counting signals and a bot detector as features
+- **REQ-PIPELINE-04** A trained head, applied on the CPU, wins once it exists
+- **REQ-PIPELINE-05** Stored per chat on every new message, cached by the last message
+- **REQ-PIPELINE-06** The owner labels what log is least sure of
+- **REQ-PIPELINE-07** SubQ labels every chat once, as a dry run until applied
 
 ## [Slack](./slack.md)
 

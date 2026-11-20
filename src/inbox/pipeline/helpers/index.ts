@@ -1,0 +1,6 @@
+export { botSignal, featuresOf, openAskIn, turnsIn, windowOf, windowText } from './features'
+export { applyLayer, buildPrototypes, cosine, entropyOf, guessOf, headInput, prototypeScores, prototypeTexts, softmax, stageAllowed, withExemplars } from './model'
+export { chatsMovedSince, lastMessageSeq, latestHead, messageIdOf, putRow, saveHead, setEmotions, storedRow, storedRows } from './store'
+export { localEmotions } from './emotion'
+export { teach, teachPlan, teachState, trainAndSave, trainingSet, uvTrainer } from './teach'
+export type { HeadTrainer, TeachItem, TeachPlan, TrainingRow } from './teach'

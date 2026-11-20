@@ -92,7 +92,7 @@ Checked by: code and SubQ
 
 ### REQ-AITELLS-14: The training corpus lives in log.db
 
-`log voice train` (MCP `voiceTrain`) keeps the AI side of its corpus in log.db's `conventionCorpus` table (migration 24): the drafts an agent wrote for his chats, read from the agent host's own tool calls (`agentSessionDrafts`: every `voice` text and option and every `…SendLive`/`…DmLive` text, with the session's model family), every draft the gate grades (`recordDrafts`, source `gate`), a JSON file of drafts (`--drafts`, `draftsFromFile`), and fresh paired drafts (REQ-AITELLS-15). His side is his own messages from `messages` (`ownerMessages`), leaving out any text an agent drafted and any message stored within `SEND_WINDOW_MS` of a send made through log, recent ones weighted more (`ownerSample`).
+`log voice train` (MCP `voiceTrain`) keeps the AI side of its corpus in log.db's `conventionCorpus` table (migration 25): the drafts an agent wrote for his chats, read from the agent host's own tool calls (`agentSessionDrafts`: every `voice` text and option and every `…SendLive`/`…DmLive` text, with the session's model family), every draft the gate grades (`recordDrafts`, source `gate`), a JSON file of drafts (`--drafts`, `draftsFromFile`), and fresh paired drafts (REQ-AITELLS-15). His side is his own messages from `messages` (`ownerMessages`), leaving out any text an agent drafted and any message stored within `SEND_WINDOW_MS` of a send made through log, recent ones weighted more (`ownerSample`).
 
 Checked by: code and SubQ
 

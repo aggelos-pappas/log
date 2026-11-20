@@ -101,6 +101,14 @@
       "summary": "Ignoring a server or a chat"
     },
     {
+      "name": "log-inbox-label-queue",
+      "description": "Teaching log who your people are. A log play (docs/useCases/inbox/labelQueue.md): log reads who each person is and where they are on every new message, with a small model on this machine. It is only as good as the labels it learns from, so it asks the owner about the chats it is least sure of, about ten minutes of his time, then trains on his answers. SubQ can label the rest once, as a paid pass he approves after seeing the cost.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Teaching log who your people are"
+    },
+    {
       "name": "log-inbox-quiet-push",
       "description": "Quieting the live push. A log play (docs/useCases/inbox/quietPush.md): The live push brings every new message into the owner's session the moment it lands. When the owner wants a break from it, the push goes quiet for as many minutes as he says: the watchers keep hearing and storing everything, nothing is pushed into any session until then, and what came in arrives as one batch when it ends.",
       "files": [
@@ -174,7 +182,7 @@
     },
     {
       "name": "log-inbox-warm-people",
-      "description": "Working the warm people in your dms. A log play (docs/useCases/inbox/warmPeople.md): The people already in the owner's dms are the easiest yes. Every one of them carries a label worked out from log.db: warming (talking, no ask yet), readyToAsk (enough back and forths and they still write), askedWaiting (he asked and they haven't answered), cold (quiet for three weeks), skip (never wrote back). The owner sets friend (never pitch) and client (money, he answers) by hand, and his label always wins. The agent pulls the readyToAsk people, reads each chat, and drafts the ask in his words.",
+      "description": "Working the warm people in your dms. A log play (docs/useCases/inbox/warmPeople.md): The people already in the owner's dms are the easiest yes. Every one of them carries who they are (lead, client, partner, friend, community, bot) and, for a lead or client, where they are (new, warming, needFound, offered, callBooked, won, lost, goneQuiet), read by a small local model on every new message, plus the old label: warming, readyToAsk, askedWaiting, cold, skip, friend or client. A bot, friend or partner never gets a sales stage, and the owner's own label always wins. The agent pulls the readyToAsk leads, reads each chat, and drafts the ask in his words.",
       "files": [
         "SKILL.md"
       ],

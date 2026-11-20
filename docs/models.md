@@ -7,6 +7,7 @@ log uses six models. Two run on your own machine, with no key and no internet on
 | Model | Runs | What it does in log | Size | Key |
 |---|---|---|---|---|
 | [all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) (8-bit) | your machine | turns text into meaning vectors: `log search`, your voice index, the knowledge base, matching what you typed to a play, and (with char n-grams) the voice gate's AI-conventions detector trained on you | 23 MB | none |
+| [roberta-base-go_emotions](https://huggingface.co/SamLowe/roberta-base-go_emotions-onnx) (8-bit) | your machine | the top three emotions of each new message someone sends you, a feature of who they are and where they are ([pipeline labels](./pipelineLabels.md)) | 125 MB | none |
 | [LFM2.5-VL-450M](https://huggingface.co/onnx-community/LFM2.5-VL-450M-ONNX) (4-bit) | your machine | describes every picture, gif and video frame someone sends you, as text | 352 MB | none |
 | SubQ `subq-snap-1.1` | hosted | the voice gate (does a draft sound like you), reading an unknown page state, briefs, meme taste | n/a | `SUBQ_API_KEY` |
 | Jina `jina-embeddings-v5-omni-small` and `jina-reranker-v3.5` | hosted | ranking a chat's history for the voice gate, and the old AI tells index (read only with `LOG_AI_TELLS=jina`) | n/a | `JINA_API_KEY` |
@@ -39,6 +40,7 @@ Measured on this project's own machine on 2026-11-09 (Windows 11, 16 threads, CP
 | | Load | Each use | Memory |
 |---|---|---|---|
 | MiniLM | 0.17 s | 2.8 ms p50, 9.8 ms p95 to embed one message (20 runs) | small, inside the process using it |
+| go_emotions RoBERTa | 1.3 s | 24 ms p50, 35 ms p95 per message on a quiet machine; run after the who and where labels so it never holds the push | inside the push process |
 | LFM2.5-VL | 5.7 s | 6.3 to 7.4 s per picture (3 runs) | peaked at 1.25 GB |
 | The describer idle, between pictures | n/a | n/a | about 100 MB |
 

@@ -3,7 +3,7 @@ import { readPending } from '../pending/index'
 import { deleteState, getState, putState } from '../../storage/state/index'
 import { db } from '../store/index'
 import { inboxRoot } from '../watch/index'
-import { PUSH_FALLBACK_MS, PUSH_MARK_MS, PUSH_SETTLE_MS, type InboxMark, type InboxWait, type PendingReader, type PushBatch, type PushQuiet, type QuietUntil } from './types'
+import { PUSH_FALLBACK_MS, PUSH_LABEL_WAIT_MS, PUSH_MARK_MS, PUSH_SETTLE_MS, type InboxMark, type InboxWait, type PendingReader, type PushBatch, type PushLabel, type PushQuiet, type QuietUntil } from './types'
 
 export function batchOf(reader: string, host: string, read: PendingReader = readPending): PushBatch | null {
   const pending = read(reader)
@@ -76,7 +76,7 @@ export async function pushLoop(
   reader: string,
   host: string,
   emit: (batch: PushBatch) => void,
-  options: { root?: string; fallbackMs?: number; read?: PendingReader; wait?: InboxWait; mark?: InboxMark | null; rounds?: number; quiet?: QuietUntil; now?: () => number } = {},
+  options: { root?: string; fallbackMs?: number; read?: PendingReader; wait?: InboxWait; mark?: InboxMark | null; rounds?: number; quiet?: QuietUntil; now?: () => number; label?: PushLabel } = {},
 ): Promise<number> {
   const root = options.root ?? inboxRoot()
   const wait = options.wait ?? waitForInbox
@@ -91,6 +91,7 @@ export async function pushLoop(
       continue
     }
     const since = mark ? mark() : undefined
+    if (options.label) await Promise.race([options.label().catch(() => 0), new Promise((resolve) => setTimeout(resolve, PUSH_LABEL_WAIT_MS))])
     const batch = batchOf(reader, host, options.read)
     if (batch) {
       emit(batch)
