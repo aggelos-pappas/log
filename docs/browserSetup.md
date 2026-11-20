@@ -17,7 +17,10 @@ that opens a browser, such as `log inspect` or `log facebook host`.
   - the account must pass the account check first;
   - its proxy and cookies are copied into a private temporary folder for the
     run and deleted afterwards;
-  - every launch is a visible window with the cursor shown, never headless.
+  - every launch is headed with the cursor shown, never headless. A browser
+    opened to be streamed (the live view in a chat or the console) hides its
+    window, so the stream is its only view; set `LOG_BROWSER_WINDOW=visible`
+    to keep the window (the owner's change to rule 11, 2026-11-20).
 
 ## AdsPower
 

@@ -12,6 +12,7 @@ export interface PreparedRun {
   captureDir: string | null
   hasSession: boolean
   readCookies(): PlaywrightCookie[]
+  browserWrote(): boolean
   readStorageState(): { cookies: PlaywrightCookie[]; origins: unknown[] }
   newDeviceProfile(): DeviceProfile | null
   cleanup(): void

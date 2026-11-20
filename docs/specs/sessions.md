@@ -87,3 +87,15 @@ Checked by: code and SubQ
 The bridge runs a tool in `UNJOURNALED_TOOLS` (`src/console/operations/types.ts`: the four browser-view app tools and the console's `browserFrame` and `browserState`) without writing an `operations` row (`unjournaled` in `connectOnce`, `src/runtime/bridge/client.ts`), so a view polling about twice a second writes nothing. Every other tool is journaled as before.
 
 Checked by: code and SubQ
+
+### REQ-SESSIONS-13: One live browser view for the console and the chat
+
+The console's browser dialog (`BrowserCheckDialog.tsx`) and the chat's browser view (the MCP App widget, which Hermes draws through `::logbrowser`) both mount `mountBrowserFrame` and build their state with `frameModel` from `src/mcp/apps/browserView/widget/view.ts`: one header (platform, account, browser badge, live pill), one address bar, one stage with the same waiting, signing-in, ready, view-unavailable and busy states, and one footer, styled by `FRAME_CSS` from the host's variables in light and dark. A page in view never reads "Waiting for page…": `addressText` says the page has no web address, and the dialog keeps the last address it saw for the same browser. `check:consoleParity` (`browserViewParityProblems`) fails when either surface stops importing the shared view or draws its own header, address bar or footer.
+
+Checked by: code and SubQ
+
+### REQ-SESSIONS-14: Showing a signed-in account's browser, and saving only what a browser wrote
+
+`sessionsSignIn` with `open` opens a signed-in account's browser anyway (`showBrowserOf`, through `inspectStart` and its gates, hidden when streamed), so "show me the browser" reaches `browserView`. A run that never opened a browser saves nothing: `keepSession` returns before saving unless `browserWrote()` says the state file differs from what the run seeded. A detached `inspectStart` child is not refused by the job its own parent holds (`heldByOther` with `LOG_PARENT_PID`).
+
+Checked by: code and SubQ

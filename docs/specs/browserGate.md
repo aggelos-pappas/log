@@ -10,7 +10,7 @@ Before an account's browser loads anything, it goes through one gate: a headed l
 
 ### REQ-GATE-01: A Camoufox launch is never headless
 
-Every Camoufox launch is headed with the cursor shown. Humanize is on, except for a launch whose session moves the pointer itself (`own_trajectory`) while Myuri is installed: Myuri already paces every move, key and wheel step, so Camoufox's humanize is turned off there rather than pacing twice. A launch that asks for headless is refused with `unguardedLaunch`, and there is no flag that turns the headed window off. Rule 11.
+Every Camoufox launch is headed with the cursor shown. Humanize is on, except for a launch whose session moves the pointer itself (`own_trajectory`) while Myuri is installed: Myuri already paces every move, key and wheel step, so Camoufox's humanize is turned off there rather than pacing twice. A launch that asks for headless is refused with `unguardedLaunch`. Rule 11. On 2026-11-20 the owner changed rule 11 for streamed sessions: a browser opened to be streamed (the live view in a chat or the console) stays headed, with the same fingerprint and rendering, but its window is hidden (`browserWindow.WindowKeeper` hides every top-level window the session's browser opens, so it has no window and no taskbar entry, and Brave also starts off-screen). The stream is its only view. `LOG_BROWSER_WINDOW=hidden|visible` picks it for streamed sessions (default hidden); an inspect session the owner watches directly stays visible.
 
 Checked by: code and SubQ
 

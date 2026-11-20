@@ -14,6 +14,7 @@ export const browserGate = {
     'python/browser/proxyGate.py',
     'python/browser/visibleBrowser.py',
     'python/browser/browserDriver.py',
+    'python/browser/browserWindow.py',
     'python/device/deviceProfile.py',
     'src/browser/run/client.ts',
     'src/platformKit/home/helpers/homeOf.ts',
@@ -25,6 +26,8 @@ export const browserGate = {
       { kind: 'string', file: vis, includes: 'showcursor' },
       { kind: 'symbol', file: gate, name: 'apply' },
       { kind: 'string', file: gate, includes: 'unguardedLaunch' },
+      { kind: 'symbol', file: 'python/browser/browserWindow.py', name: 'WindowKeeper' },
+      { kind: 'symbol', file: 'python/browser/browserWindow.py', name: 'keep_hidden' },
     ],
     'REQ-GATE-02': [
       { kind: 'symbol', file: gate, name: 'ALLOWED_CALLER_KEYS' },
@@ -103,7 +106,7 @@ export const browserGate = {
     ],
   },
   rubrics: {
-    'REQ-GATE-01': noul('Does proxyGate.apply refuse a launch whose headless option is anything other than None or False, and is the visible launch always headed with humanize and the cursor on, with no option that turns it off?'),
+    'REQ-GATE-01': noul('Does proxyGate.apply refuse a launch whose headless option is anything other than None or False, and is the visible launch always headed with humanize and the cursor on, and does a streamed session only hide the headed window (browserWindow.keep_hidden) rather than launch headless?'),
     'REQ-GATE-02': noul('Does proxyGate.apply refuse any caller launch option that is not in the allowed caller keys?'),
     'REQ-GATE-03': noul('Is a Playwright launch, persistent context or new context refused when the gate has not armed a launch, when its options differ from the env, proxy and executable path the gate built, or when it is not headed?'),
     'REQ-GATE-04': noul('Do both the Camoufox launch path and the attached-browser path refuse when no proxy file is found?'),

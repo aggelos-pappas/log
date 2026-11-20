@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, searchForWorkspaceRoot } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { consoleEvents, localConsoleMode } from './server/consoleEvents'
@@ -21,6 +21,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    fs: { allow: [searchForWorkspaceRoot(process.cwd()), path.resolve(__dirname, '../../../src/mcp/apps/browserView/widget')] },
     proxy: {
       ...localConsoleProxy,
       '/api/v1': controlServiceProxy,

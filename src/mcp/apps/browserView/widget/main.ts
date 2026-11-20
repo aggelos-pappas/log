@@ -1,13 +1,16 @@
 import { App, applyDocumentTheme, applyHostStyleVariables } from "@modelcontextprotocol/ext-apps";
 import type { McpUiHostContext } from "@modelcontextprotocol/ext-apps";
-import { addressText } from "./address.ts";
 import { drawBlob, jpegBlob, readCast } from "./cast.ts";
+import { ERROR_TITLES, frameModel, ICONS, mountBrowserFrame } from "./view.ts";
+import type { FramePhase } from "./view.ts";
 import { connectVoxl, voxlSupported } from "./voxl.ts";
 import type { VoxlConnection, VoxlStream } from "./voxl.ts";
 
 type Phase = "browserMissing" | "viewerUnavailable" | "signInRequired" | "needsAttention" | "busy" | "ready";
 interface View {
   account: string;
+  platform?: string | null;
+  browser?: { name: string; label: string; logo: string | null } | null;
   phase: Phase;
   needsHuman: boolean;
   generation: string | null;
@@ -27,59 +30,38 @@ interface ToolAnswer {
   _meta?: Record<string, unknown>;
 }
 
-const KEYS = ["Enter", "Tab", "Backspace", "Delete", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Escape", "Home", "End"];
-const TITLES: Record<Phase, string> = { browserMissing: "No browser is open", viewerUnavailable: "Browser view unavailable", signInRequired: "Sign in here", needsAttention: "This page needs a person", busy: "The browser is working", ready: "Signed in" };
-const NOTES: Record<Phase, string> = {
-  browserMissing: "Ask the agent to open this account's browser, then it shows here.",
-  viewerUnavailable: "The browser is open, but its view could not be reached. Nothing was sent to the page.",
-  signInRequired: "Click a field in the page and type. Your clicks and keys go to this account's browser, each one a recorded step.",
-  needsAttention: "This page is a stop: input is off. Clear it yourself, then tell the agent.",
-  busy: "The browser is running a step. It shows here in a moment.",
-  ready: "The page no longer asks for sign-in. Press Done so the agent carries on.",
-};
-const ERRORS: Record<string, string> = {
-  browserStateChanged: "The page changed before your input, so it was not sent.",
-  browserInputStopped: "The page no longer asks for sign-in, so input is off.",
-  browserBusy: "The browser is running another step. Try again in a moment.",
-  browserGenerationChanged: "The account's browser was restarted.",
-  browserViewerUnavailable: "The browser view could not be reached.",
-  browserInputInvalid: "That input was rejected.",
-  browserInputFailed: "That input failed in the browser.",
-  browserMissing: "No browser is open for this account.",
-};
-const ICON = {
-  screen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
-  expand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
-  shrink: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>',
-  pip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1"/></svg>',
-  pointer: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M5 3l14 7-6 2-2 6z"/></svg>',
-};
+const LOGOS: Record<string, string> = (() => {
+  try {
+    return JSON.parse(document.getElementById("browserLogos")?.textContent ?? "{}") as Record<string, string>;
+  } catch {
+    return {};
+  }
+})();
 
 const root = document.getElementById("app") as HTMLElement;
-root.innerHTML = `
-<div class="head">
-  <div class="bar">
-    <span class="mark">${ICON.screen}</span>
-    <span class="who"><strong data-ref="title">Live browser</strong><span data-ref="account">Waiting for the agent…</span></span>
-    <span class="pill" data-ref="pill"><i></i><span data-ref="pillText">Connecting</span></span>
-    <button class="icon" data-ref="pip" type="button" title="Picture in picture" aria-label="Picture in picture" hidden>${ICON.pip}</button>
-    <button class="icon" data-ref="full" type="button" title="Full screen" aria-label="Full screen" hidden>${ICON.expand}</button>
-  </div>
-  <div class="address" data-ref="address" role="group" aria-label="Browser address">Waiting for page…</div>
-</div>
-<div class="stage" data-ref="stage">
-  <canvas data-ref="canvas" width="1280" height="800" role="application" aria-label="Live browser. Click into the page, then type."></canvas>
-  <textarea class="keys" data-ref="keys" aria-label="Type into the page" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-  <button class="take" data-ref="take" type="button" hidden>${ICON.pointer}Click to take control</button>
-  <div class="cover" data-ref="cover"><div class="spin" data-ref="spin"></div><h2 data-ref="coverTitle">Connecting to the browser…</h2><p data-ref="coverNote"></p></div>
-  <p class="note" data-ref="note" hidden></p>
-  <div class="toast" data-ref="toast" role="alert" hidden><strong data-ref="toastTitle"></strong><span data-ref="toastBody"></span></div>
-</div>
-<div class="foot"><p data-ref="hint">The agent waits while you sign in.</p><button class="done" data-ref="done" type="button" disabled>Done, carry on</button></div>`;
-const ref = <T extends HTMLElement>(name: string) => root.querySelector(`[data-ref="${name}"]`) as T;
-const canvas = ref<HTMLCanvasElement>("canvas");
-const keys = ref<HTMLTextAreaElement>("keys");
-const context2d = canvas.getContext("2d");
+const frame = mountBrowserFrame(root, {
+  onAction: (id) => {
+    if (id === "done") void done();
+    if (id === "full") void setMode(state.mode === "fullscreen" ? "inline" : "fullscreen");
+    if (id === "pip") void setMode("pip");
+  },
+  onPoint: (fx, fy) => {
+    if (!state.view?.canInteract) return;
+    state.hasControl = true;
+    enqueue({ type: "click", ...pagePoint(fx, fy) });
+    render();
+  },
+  onText: (text) => enqueue({ type: "text", text }),
+  onKey: (key) => enqueue({ type: "key", key }),
+  onScroll: (deltaY) => enqueue({ type: "scroll", deltaY }),
+  onTake: () => {
+    state.hasControl = true;
+    render();
+  },
+});
+frame.tools.innerHTML = `<button class="lbvIcon" type="button" data-action="pip" data-ref="pip" title="Picture in picture" aria-label="Picture in picture" hidden>${ICONS.pip}</button><button class="lbvIcon" type="button" data-action="full" data-ref="full" title="Full screen" aria-label="Full screen" hidden>${ICONS.expand}</button>`;
+const tool = (name: string) => frame.tools.querySelector(`[data-ref="${name}"]`) as HTMLButtonElement;
+const canvas = frame.canvas;
 
 type Source = "cast" | "pull" | "voxl" | null;
 const state: { account: string | null; view: View | null; revision: string | null; live: boolean; hasControl: boolean; pending: boolean; queue: Input[]; stream: VoxlStream | null; voxl: VoxlConnection | null; finished: boolean; autoMode: boolean; mode: string; streamAsked: boolean; seq: number; cast: AbortController | null; castTried: boolean; looping: boolean; torn: boolean; frames: number; source: Source; stateAt: number } = {
@@ -90,13 +72,8 @@ const IDLE_MS = 1500;
 
 const app = new App({ name: "logBrowserView", version: "1.0.0" }, { availableDisplayModes: ["inline", "fullscreen", "pip"] }, { autoResize: true });
 
-let toastTimer: number | null = null;
 function toast(code: string): void {
-  ref("toastTitle").textContent = ERRORS[code] ?? "The browser operation failed.";
-  ref("toastBody").textContent = ERRORS[code] ? "" : code;
-  ref("toast").hidden = false;
-  if (toastTimer !== null) clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => (ref("toast").hidden = true), 4000);
+  frame.toast(ERROR_TITLES[code] ?? "The browser operation failed.", ERROR_TITLES[code] ? "" : code);
 }
 
 function modes(): string[] {
@@ -105,35 +82,32 @@ function modes(): string[] {
 
 function render(): void {
   const view = state.view;
-  const phase = view?.phase;
+  const phase = view?.phase ?? null;
   const connecting = !view || (Boolean(view.generation) && !state.live && phase !== "browserMissing" && phase !== "viewerUnavailable");
-  ref("account").textContent = view ? `${view.account}${view.pageState ? ` · ${view.pageState}` : ""}` : "Waiting for the agent…";
-  ref("title").textContent = phase ? TITLES[phase] : "Live browser";
-  ref("address").textContent = addressText(view, state.live);
-  const pill = ref("pill");
-  pill.dataset.tone = phase === "needsAttention" ? "stop" : state.live ? "live" : "";
-  ref("pillText").textContent = phase === "needsAttention" ? "Stopped" : state.live ? (state.source === "pull" ? "Live (frames)" : "Live") : "Not connected";
+  const browser = view?.browser ? { ...view.browser, logo: LOGOS[view.browser.name] ?? null } : null;
+  frame.paint(frameModel({
+    platform: view?.platform ?? null,
+    account: view?.account ?? state.account,
+    pageState: view?.pageState ?? null,
+    browser,
+    phase: phase as FramePhase | null,
+    live: state.live,
+    connecting,
+    address: view?.address ?? null,
+    generation: view?.generation ?? null,
+    canNavigate: false,
+    canGoBack: false,
+    canInteract: Boolean(view?.canInteract),
+    hasControl: state.hasControl,
+    actions: [{ id: "done", label: state.finished ? "Agent told" : "Done, carry on", icon: "check", primary: true, disabled: !view || state.pending || state.finished }],
+    mode: state.mode,
+  }));
   root.dataset.source = state.source ?? "";
   root.dataset.frames = String(state.frames);
-  canvas.dataset.live = String(state.live);
-  canvas.dataset.input = String(Boolean(view?.canInteract) && state.live);
-  ref("cover").hidden = state.live && !connecting;
-  ref("spin").hidden = !connecting && phase !== "busy";
-  ref("coverTitle").textContent = connecting ? "Connecting to the browser…" : phase ? TITLES[phase] : "";
-  ref("coverNote").textContent = phase && !connecting ? NOTES[phase] : "";
-  ref("take").hidden = !(state.live && view?.canInteract && !state.hasControl);
-  const note = ref("note");
-  note.hidden = !(state.live && phase && phase !== "signInRequired");
-  note.textContent = phase ? NOTES[phase] : "";
-  const done = ref<HTMLButtonElement>("done");
-  done.disabled = !view || state.pending || state.finished;
-  done.textContent = state.finished ? "Agent told" : "Done, carry on";
-  ref("hint").textContent = state.finished ? "The agent was told to carry on." : phase === "needsAttention" ? "Input is off on this page." : "The agent waits while you sign in.";
   const available = modes();
-  ref("full").hidden = !available.includes("fullscreen");
-  ref("pip").hidden = !available.includes("pip") || state.mode === "pip";
-  ref("full").innerHTML = state.mode === "fullscreen" ? ICON.shrink : ICON.expand;
-  root.dataset.mode = state.mode;
+  tool("full").hidden = !available.includes("fullscreen");
+  tool("pip").hidden = !available.includes("pip") || state.mode === "pip";
+  tool("full").innerHTML = state.mode === "fullscreen" ? ICONS.shrink : ICONS.expand;
 }
 
 async function call(name: string, args: Record<string, unknown>): Promise<ToolAnswer> {
@@ -347,43 +321,12 @@ function enqueue(input: Input): void {
   void pump();
 }
 
-function pagePoint(event: MouseEvent): { x: number; y: number } {
-  const rect = canvas.getBoundingClientRect();
-  const x = ((event.clientX - rect.left) * canvas.width) / rect.width;
-  const y = ((event.clientY - rect.top) * canvas.height) / rect.height;
+function pagePoint(fx: number, fy: number): { x: number; y: number } {
+  const x = fx * canvas.width;
+  const y = fy * canvas.height;
   if (state.voxl && state.stream) return { x: x - state.stream.window.left, y: y - state.stream.window.top };
   return { x, y };
 }
-
-canvas.addEventListener("click", (event) => {
-  if (!state.view?.canInteract) return;
-  keys.focus({ preventScroll: true });
-  state.hasControl = true;
-  enqueue({ type: "click", ...pagePoint(event) });
-  render();
-});
-canvas.addEventListener("wheel", (event) => {
-  if (!state.view?.canInteract) return;
-  event.preventDefault();
-  enqueue({ type: "scroll", deltaY: Math.max(-600, Math.min(600, event.deltaY)) });
-}, { passive: false });
-keys.addEventListener("input", () => {
-  const text = keys.value;
-  keys.value = "";
-  if (text && text.length <= 2048) enqueue({ type: "text", text });
-});
-keys.addEventListener("keydown", (event) => {
-  if (event.isComposing || event.altKey || event.metaKey || event.ctrlKey || !state.view?.canInteract) return;
-  if (KEYS.includes(event.key)) {
-    event.preventDefault();
-    enqueue({ type: "key", key: event.key });
-  }
-});
-ref("take").addEventListener("click", () => {
-  state.hasControl = true;
-  keys.focus({ preventScroll: true });
-  render();
-});
 
 async function setMode(mode: "inline" | "fullscreen" | "pip"): Promise<void> {
   if (!modes().includes(mode)) return;
@@ -395,9 +338,7 @@ async function setMode(mode: "inline" | "fullscreen" | "pip"): Promise<void> {
   render();
 }
 
-ref("full").addEventListener("click", () => void setMode(state.mode === "fullscreen" ? "inline" : "fullscreen"));
-ref("pip").addEventListener("click", () => void setMode("pip"));
-ref("done").addEventListener("click", async () => {
+async function done(): Promise<void> {
   if (!state.account) return;
   state.pending = true;
   render();
@@ -420,7 +361,7 @@ ref("done").addEventListener("click", async () => {
     state.pending = false;
     render();
   }
-});
+}
 
 type OpenAiGlobals = { theme?: unknown; displayMode?: unknown };
 function openAi(): OpenAiGlobals | undefined {

@@ -111,7 +111,7 @@ table.
 
 | Capability | What it means | camoufox | adsPower (deprecated) | brave |
 | --- | --- | --- | --- | --- |
-| `headedWindow` | A visible window you can watch, never headless (rule 11) | built: visibleBrowser.launch_kwargs: headless False, humanize, showcursor (rule 11) | built: Local API start with headless "0" (python/browser/adsPowerBrowser.py); on a server the window renders on Xvfb | built: launch_persistent_context with headless False; proxyGate refuses any other launch |
+| `headedWindow` | Always headed, never headless (rule 11); a streamed session hides its window, the owner chose that on 2026-11-20 (LOG_BROWSER_WINDOW) | built: visibleBrowser.launch_kwargs: headless False, humanize, showcursor (rule 11); streamed: browserWindow.WindowKeeper hides the window (SW_HIDE), frames measured unchanged | built: Local API start with headless "0" (python/browser/adsPowerBrowser.py); on a server the window renders on Xvfb; AdsPower starts its own window, so a streamed session still shows it | built: launch_persistent_context with headless False; proxyGate refuses any other launch; streamed: off-screen args plus browserWindow.WindowKeeper |
 | `proxyGate` | The account's proxy, exit IP in its country and speed checked before the browser starts (rule 12) | built: proxyGate.apply() builds the only launch options; the launch guard refuses any other | built: proxyGate.gate_attached() before the profile starts; the proxy is put on the profile only then | built: proxyGate.chromium_launch(): gate_attached() checks the exit, then builds the only launch options (the account's proxy) |
 | `selfCheck` | Timezone, language, Intl and exit IP agree in a page and a worker before Facebook loads (rule 17) | built: proxyGate's new_context guard runs _self_check before the caller gets the context | built: proxyGate.check_attached() on the CDP context, the same verdict as Camoufox | built: the gate's launch_persistent_context guard runs _self_check before the caller gets the context |
 | `sessionHar` | The raw session HAR of every request (rules 19, 22) | built: Playwright's record_har_path, forced on every context by the gate | built: harRecorder.SessionHar from the context events, written as session.har at close | built: Playwright's record_har_path, forced on the persistent context by the gate |
@@ -166,6 +166,28 @@ The two capabilities still to build are tracked: `syncSessions` in [#43](https:/
 
 Setting a browser up: [Browser setup](browserSetup.md). The rules behind this
 are in AGENTS.md.
+
+## A streamed browser has no window
+
+The owner changed rule 11 on 2026-11-20: a browser opened to be streamed (the
+sign-in or "show me the browser" path from a chat, and the console's browser
+check) stays headed, so its fingerprint and rendering are the same as before,
+but it has no window on the screen and no taskbar entry. The stream is its only
+view. `python/browser/browserWindow.py` does it: `keep_hidden` starts a
+`WindowKeeper` thread before the launch that hides (`SW_HIDE`) every shown
+top-level window owned by the session's own child processes, every 50 ms for
+the first 15 s and every 300 ms after, so popups and new windows are hidden too.
+Brave also starts off-screen with occlusion throttling off
+(`chromium_args`). AdsPower starts its own window outside log, so it is not
+hidden. `LOG_BROWSER_WINDOW=hidden|visible` picks the mode for streamed opens
+(default hidden; the console's Settings page shows it); `log inspect start`
+without `--window hidden` keeps the window, for a session the owner watches
+directly. Hiding is built for Windows; elsewhere the window stays.
+
+Measured on Windows (one session, an animated canvas page, frames counted over
+4 s per mode): Camoufox 19.2 fps visible, 19.8 off-screen as a tool window,
+19.2 minimised, 20.2 hidden; Brave 102 visible, 99.8 off-screen, 100.8
+minimised, 100.8 hidden. Clicks and typing reach a hidden window's page.
 
 ## The live browser viewer
 

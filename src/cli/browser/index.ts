@@ -1,5 +1,6 @@
 import { viewerState } from "../../browser/viewer/index.ts";
 import { createAdsPowerClient } from "../../browser/adsPower/index.ts";
+import { BROWSER_BRANDS, driverOrNull } from "../../browser/driver/index.ts";
 import { logDbMoveLedger, MOVE_TARGETS, moveAccounts, movePlanText, moveResultText, planMoves, readStateOverCdp, releaseMoved } from "../../browser/move/index.ts";
 import type { MoveCheck, MoveDeps, MoveTarget } from "../../browser/move/index.ts";
 import { inProcessToolCaller } from "../../console/accountCheck/index.ts";
@@ -55,6 +56,17 @@ export function browserViewLocation(env: Record<string, string | undefined> = pr
   return env.LOG_BROWSER_VIEW_LOCATION === "remote" ? "remote" : "local";
 }
 
+export function browserBrandOf(account: string): { name: string; label: string; logo: string | null } | null {
+  try {
+    const row = readLocalAccounts().find((item) => String(item.accountName ?? "") === account);
+    if (!row) return null;
+    const driver = driverOrNull({ browserDriver: typeof row.browserDriver === "string" ? row.browserDriver : null, adsPowerProfileId: typeof row.adsPowerProfileId === "string" ? row.adsPowerProfileId : null });
+    return driver ? { name: driver, label: BROWSER_BRANDS[driver].label, logo: BROWSER_BRANDS[driver].logo ?? null } : null;
+  } catch {
+    return null;
+  }
+}
+
 export function platformNameOf(account: string): string {
   try {
     const row = readLocalAccounts().find((item) => String(item.accountName ?? "") === account);
@@ -66,7 +78,7 @@ export function platformNameOf(account: string): string {
 }
 
 const REMOTE: Record<ViewerView["phase"], string> = {
-  browserMissing: "No browser is open for this account. Open it for sign-in with sessionsSignIn { account }, on the local and the hosted server alike, then call browserView again.",
+  browserMissing: "No browser is open for this account. Open it with sessionsSignIn { account } (add open: true when it is signed in already), on the local and the hosted server alike, then call browserView again.",
   viewerUnavailable: "The account's browser is open but its viewer could not be reached, so it cannot be shown. Nothing was sent to the page.",
   signInRequired: "The page asks for sign-in. The person signs in inside the browser view; their clicks and keys go to the page only while it still asks for sign-in, each one a recorded step. Wait for them, then call browserView again before carrying on.",
   needsAttention: "The page needs a person and is a stop (rule 94): input is off. Tell the person what the page shows; do not continue this account until they clear it.",
@@ -86,12 +98,13 @@ export function browserViewText(view: ViewerView, location: BrowserViewLocation 
   return [head, REMOTE[view.phase], ...(view.needsHuman ? ["Without an inline view (a host without MCP Apps), sessionsSignIn answers with a console link that works once, for ten minutes, for the person who asked; the console's Connections page shows the same live browser."] : [])].join("\n");
 }
 
-export type BrowserViewJson = Omit<ViewerView, "stream"> & { location: BrowserViewLocation; streamKind: "voxl" | "cast" | "frames" | "none" };
+export type BrowserViewJson = Omit<ViewerView, "stream"> & { location: BrowserViewLocation; streamKind: "voxl" | "cast" | "frames" | "none"; platform: string; browser: { name: string; label: string; logo: string | null } | null };
 
 export function browserViewJson(view: ViewerView, location: BrowserViewLocation = browserViewLocation()): BrowserViewJson {
   const { stream, ...rest } = view;
-  if (location === "local") return { ...rest, location, streamKind: rest.generation ? "cast" : "none" };
-  return { ...rest, location, streamKind: stream ? "voxl" : "frames" };
+  const named = { platform: platformNameOf(view.account), browser: browserBrandOf(view.account) };
+  if (location === "local") return { ...rest, ...named, location, streamKind: rest.generation ? "cast" : "none" };
+  return { ...rest, ...named, location, streamKind: stream ? "voxl" : "frames" };
 }
 
 export async function checkMovedAccount(account: FacebookAccount): Promise<MoveCheck> {

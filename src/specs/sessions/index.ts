@@ -33,7 +33,7 @@ const RUNTIME = 'src/cli/runtime/index.ts'
 export const sessions = {
   description: 'Whether an account is signed in, and signing it back in: one state, one gate and one machine on every surface',
   specPath: 'docs/specs/sessions.md',
-  codePaths: [CHECK_TYPES, CHECK_CLIENT, CHECK_MACHINE, CHECK_ROWS, SIGN_IN_MACHINE, SIGN_IN_CLIENT, SIGN_IN_STORE, SHAPES, START, LIVE, SOCIAL, SESSIONS, ACTORS, CONSOLE_CHECK, CONSOLE_SIGN_IN, BROWSER_CHECK, OPERATIONS, TOOLS_FROM, PAGE_STATE, SURFACE, LINK, LINK_STORE, VIEWER_STATE, BRIDGE, OPERATION_TYPES],
+  codePaths: [CHECK_TYPES, CHECK_CLIENT, CHECK_MACHINE, CHECK_ROWS, SIGN_IN_MACHINE, SIGN_IN_CLIENT, SIGN_IN_STORE, SHAPES, START, LIVE, SOCIAL, SESSIONS, ACTORS, CONSOLE_CHECK, CONSOLE_SIGN_IN, BROWSER_CHECK, OPERATIONS, TOOLS_FROM, PAGE_STATE, SURFACE, LINK, LINK_STORE, VIEWER_STATE, BRIDGE, OPERATION_TYPES, 'src/mcp/apps/browserView/widget/view.ts', 'src/mcp/apps/browserView/widget/viewModel.ts', 'src/mcp/jobs/client.ts'],
   anchors: {
     'REQ-SESSIONS-01': [
       { kind: 'symbol', file: CHECK_TYPES, name: 'CHECK_STATES' },
@@ -109,6 +109,17 @@ export const sessions = {
       { kind: 'symbol', file: OPERATION_TYPES, name: 'UNJOURNALED_TOOLS' },
       { kind: 'symbol', file: BRIDGE, name: 'connectOnce' },
     ],
+    'REQ-SESSIONS-13': [
+      { kind: 'symbol', file: 'src/mcp/apps/browserView/widget/view.ts', name: 'mountBrowserFrame' },
+      { kind: 'symbol', file: 'src/mcp/apps/browserView/widget/viewModel.ts', name: 'frameModel' },
+      { kind: 'symbol', file: 'src/mcp/apps/browserView/widget/viewModel.ts', name: 'addressText' },
+      { kind: 'symbol', file: 'scripts/checks/checkConsoleParity.ts', name: 'browserViewParityProblems' },
+    ],
+    'REQ-SESSIONS-14': [
+      { kind: 'symbol', file: 'src/cli/sessions/helpers/signInActors.ts', name: 'showBrowserOf' },
+      { kind: 'uses', file: 'src/cli/live/index.ts', name: 'browserWrote' },
+      { kind: 'symbol', file: 'src/mcp/jobs/client.ts', name: 'heldByOther' },
+    ],
   },
   rubrics: {
     'REQ-SESSIONS-01': noul('Is CHECK_STATES exactly signedIn, signInNeeded, stopped, unknown, checking and skipped, do the console and the session check use that one type, and are the old stored names read as signedIn, checking and unknown?'),
@@ -123,6 +134,8 @@ export const sessions = {
     'REQ-SESSIONS-10': noul('Does sessionsSignIn pick MCP Apps, then URL elicitation, then text from what the host declares, and is the link a console page that holds no secret, works once, expires in ten minutes, is refused to anyone but the person it was made for, and never carries the stream URL?'),
     'REQ-SESSIONS-11': noul('Does the viewer classify a password field as <platform>Login and a code field as <platform>TwoStep off facebook.com, keep Facebook classification on facebook.com, and treat a checkpoint or suspended address as a stop?'),
     'REQ-SESSIONS-12': noul('Do the browser-view app tools and the console frame and state polls run through the bridge without an operations row, while every other tool is journaled?'),
+    'REQ-SESSIONS-13': noul('Do the console browser dialog and the browser view widget both mount mountBrowserFrame and build their state with frameModel from the one shared view module, and does the parity check fail when either draws its own header, address bar or footer?'),
+    'REQ-SESSIONS-14': noul('Does sessionsSignIn with open start the account browser through inspectStart only when no browser is open, does keepSession save nothing when the run never wrote a browser state, and does the detached inspect child ignore only the job held by its own parent process?'),
     unspecifiedBehavior: noul('Does a check or a sign-in retry a refused account, save a session with no sign-in cookies, or keep check state in module memory, by a route the specification does not describe?'),
   },
   assertions: {
@@ -138,6 +151,8 @@ export const sessions = {
     'REQ-SESSIONS-10': MET,
     'REQ-SESSIONS-11': MET,
     'REQ-SESSIONS-12': MET,
+    'REQ-SESSIONS-13': MET,
+    'REQ-SESSIONS-14': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

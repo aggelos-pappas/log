@@ -103,7 +103,7 @@ export interface ProfileSyncResult {
 export const adsPowerBrand = { label: 'AdsPower', logo: '/logos/adsPower.svg' } as const satisfies BrowserBrand
 
 export const adsPowerCapabilities = {
-  headedWindow: { status: 'built', how: 'Local API start with headless "0" (python/browser/adsPowerBrowser.py); on a server the window renders on Xvfb' },
+  headedWindow: { status: 'built', how: 'Local API start with headless "0" (python/browser/adsPowerBrowser.py); on a server the window renders on Xvfb; AdsPower starts its own window, so a streamed session still shows it' },
   proxyGate: { status: 'built', how: 'proxyGate.gate_attached() before the profile starts; the proxy is put on the profile only then' },
   selfCheck: { status: 'built', how: 'proxyGate.check_attached() on the CDP context, the same verdict as Camoufox' },
   sessionHar: { status: 'built', how: 'harRecorder.SessionHar from the context events, written as session.har at close' },

@@ -43,7 +43,7 @@ export function parseView(value: unknown): BrowserCheckView {
   const reason = row.reason && typeof row.reason === 'object' ? row.reason as Record<string, unknown> : null
   const phase = row.phase as BrowserCheckView['phase']
   return {
-    accountId: row.accountId, account: row.account, browser: browserOf(row.browser), phase, location: row.location === 'remote' ? 'remote' : 'local',
+    accountId: row.accountId, account: row.account, platform: typeof row.platform === 'string' ? row.platform : undefined, browser: browserOf(row.browser), phase, location: row.location === 'remote' ? 'remote' : 'local',
     viewerId: row.viewerId as string | null, generation: row.generation as string | null, revision: row.revision as string | null, pageState: row.pageState as string | null, address: text(row.address, 2048),
     width: size('width'), height: size('height'),
     canInteract: row.canInteract === true && phase === 'signInRequired', canResolve: row.canResolve === true && ['signInRequired', 'needsResolution'].includes(phase), canComplete: row.canComplete === true && phase === 'verified', canNavigate: row.canNavigate === true, canGoBack: row.canGoBack === true,

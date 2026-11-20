@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { harnessesText, refreshHarnesses } from './index'
+import { gatewayStartsOf, harnessesText, hermesSetupNotes, refreshHarnesses } from './index'
 import type { FileInstall, HarnessRefreshDeps, StepAnswer } from './index'
 
 function fakes(present: string[], answers: Record<string, StepAnswer> = {}) {
@@ -44,5 +44,28 @@ describe('log update refreshes every harness log installs', () => {
     const hermes = refreshHarnesses('/root', deps).find((r) => r.id === 'hermes')!
     expect(hermes.ok).toBe(true)
     expect(hermes.reloaded).toContain('no hermes command here')
+  })
+})
+
+describe('the Hermes setup note: switch the Desktop half on, restart the gateway when its routes change', () => {
+  test('a new Desktop plugin asks to switch log on; changed routes ask for a gateway restart', () => {
+    const notes = hermesSetupNotes({ changed: true, configPath: '/x', desktopPlugin: { path: '/d', changed: true, created: true }, routesChanged: true }, null, null)
+    expect(notes[0]).toContain('Settings > Plugins')
+    expect(notes[1]).toContain('hermes gateway restart')
+    expect(hermesSetupNotes({ changed: false, configPath: '/x', desktopPlugin: { path: '/d', changed: false, created: false }, routesChanged: false }, null, null)).toEqual([])
+  })
+
+  test('a running gateway older than the routes on disk is named, a newer one is not', () => {
+    const got = { changed: false, configPath: '/x', routesChanged: false, routesPath: '/r' }
+    const older = hermesSetupNotes(got, new Date('2026-11-20T08:00:00Z'), new Date('2026-11-20T09:00:00Z'))
+    expect(older.join(' ')).toContain('started 2026-11-20T08:00:00.000Z, before its routes changed')
+    expect(hermesSetupNotes(got, new Date('2026-11-20T10:00:00Z'), new Date('2026-11-20T09:00:00Z'))).toEqual([])
+    expect(gatewayStartsOf(['2026-11-20T10:00:00.0000000Z', 'not a time', '2026-11-20T08:00:00Z'])?.toISOString()).toBe('2026-11-20T08:00:00.000Z')
+  })
+
+  test('the notes reach the harness line log update prints', () => {
+    const { deps } = fakes(['/h'])
+    deps.installHermes = () => ({ changed: true, configPath: '/x', desktopPlugin: { path: '/d', changed: true, created: true }, routesChanged: true, routesPath: '/r' })
+    expect(harnessesText(refreshHarnesses('/root', deps))).toContain('switch log on in Hermes Settings > Plugins')
   })
 })

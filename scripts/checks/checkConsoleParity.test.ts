@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { COMMANDS } from "../../src/cli/runner/index.ts";
 import { CONSOLE_OPERATIONS, CONSOLE_TWINS, RUNTIME_TWINS } from "../../src/console/operations/index.ts";
 import { appTools } from "../../src/mcp/apps/browserView/index.ts";
-import { commandToolNames, consoleBrowserProblems, consoleTwinProblems } from "./checkConsoleParity.ts";
+import { browserViewParityProblems, commandToolNames, consoleBrowserProblems, consoleTwinProblems } from "./checkConsoleParity.ts";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { BROWSER_DRIVERS } from "../../src/browser/driver/index.ts";
@@ -57,5 +57,25 @@ describe("every browser reaches the console", () => {
     expect(problems.some((problem) => problem.includes("differ from BROWSER_DRIVERS"))).toBe(true);
     expect(problems.some((problem) => problem.includes("hard-codes a list of browsers (camoufox, brave)"))).toBe(true);
     expect(problems.some((problem) => problem.includes("no browser picker"))).toBe(true);
+  });
+});
+
+describe("the console's browser dialog and the chat's browser view are one view", () => {
+  const root = join(import.meta.dir, "..", "..");
+  const real = (rel: string) => (existsSync(join(root, rel)) ? readFileSync(join(root, rel), "utf8").replace(/\r\n/g, "\n") : null);
+  test("both mount the shared view today", () => {
+    expect(browserViewParityProblems({ read: real })).toEqual([]);
+  });
+
+  test("a dialog that draws its own address bar, or a widget that stops importing the shared view, fails", () => {
+    const drifted = (rel: string) => {
+      const text = real(rel);
+      if (rel.endsWith("BrowserCheckDialog.tsx")) return `${text}\nconst bar = <div role="group" aria-label="Browser address">Waiting for page…</div>`;
+      if (rel.endsWith("widget/main.ts")) return (text ?? "").replaceAll('from "./view.ts"', 'from "./ownView.ts"');
+      return text;
+    };
+    const problems = browserViewParityProblems({ read: drifted });
+    expect(problems.some((p) => p.includes("BrowserCheckDialog.tsx draws its own browser header"))).toBe(true);
+    expect(problems.some((p) => p.includes("widget/main.ts doesn't render the shared view"))).toBe(true);
   });
 });

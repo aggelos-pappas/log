@@ -131,6 +131,12 @@ export function busyJob(account: string | null, alive: (pid: number) => boolean 
   return running.find((r) => statusOf(r, alive) === "running") ?? null;
 }
 
+export const PARENT_PID_ENV = "LOG_PARENT_PID";
+
+export function heldByOther(holder: JobRecord | null, env: Record<string, string | undefined> = process.env): JobRecord | null {
+  return holder && env[PARENT_PID_ENV] && String(holder.pid) === env[PARENT_PID_ENV] ? null : holder;
+}
+
 export function cancelRequested(id: string): boolean {
   const row = db().prepare("SELECT cancelRequested FROM jobs WHERE id = ?").get(id) as { cancelRequested: number } | null;
   return row?.cancelRequested === 1;

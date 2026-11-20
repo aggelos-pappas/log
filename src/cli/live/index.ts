@@ -109,6 +109,7 @@ export async function keepNewDevice(context: CommandContext, account: FacebookAc
 }
 
 export async function keepSession(context: CommandContext, account: FacebookAccount, run: PreparedRun): Promise<string | null> {
+  if (!run.browserWrote()) return null;
   const state = run.readStorageState();
   const now = (context.now ?? (() => new Date()))();
   const facebook = !account.platform || account.platform === "FACEBOOK";

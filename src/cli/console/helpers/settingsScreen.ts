@@ -22,6 +22,7 @@ export function renderSettings(data: ConsoleSettings): string {
     governors,
     "",
     `Web console: ${data.webConsole.command} (${data.webConsole.url})`,
+    `Streamed browser window: ${data.browserWindow.streamed} (${data.browserWindow.setting}=hidden|visible in ${data.paths.env})`,
   ].join("\n");
 }
 

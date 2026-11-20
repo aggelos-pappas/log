@@ -17,6 +17,7 @@ export interface BrowserCheckReason {
 export interface BrowserCheckView {
   accountId: string;
   account: string;
+  platform: string;
   browser: { name: BrowserDriverName; label: string; logo: string } | null;
   phase: BrowserCheckPhase;
   location: BrowserLocation;

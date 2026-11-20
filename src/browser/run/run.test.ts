@@ -139,6 +139,22 @@ describe('prepareRun: home, hours and device', () => {
   })
 })
 
+describe('browserWrote: only a browser that ran writes a session to save', () => {
+  test('the seeded state is not a browser write; a written state is, and no state at all is not', async () => {
+    const seeded = prepareRun(await account('galwayOne', { cookies: [{ name: 'c_user', value: '1', domain: '.facebook.com', path: '/' }] }), 'run', { now: DAY, root: ROOT })
+    if (!seeded.ok) throw new Error(seeded.code)
+    expect(seeded.run.hasSession).toBe(true)
+    expect(seeded.run.browserWrote()).toBe(false)
+    writeFileSync(seeded.run.statePath, JSON.stringify({ cookies: [{ name: 'c_user', value: '2', domain: '.facebook.com', path: '/' }], origins: [] }))
+    expect(seeded.run.browserWrote()).toBe(true)
+    seeded.run.cleanup()
+    const empty = prepareRun(await account('galwayOne', { cookies: [] }), 'connect', { now: DAY, root: ROOT })
+    if (!empty.ok) throw new Error(empty.code)
+    expect(empty.run.browserWrote()).toBe(false)
+    empty.run.cleanup()
+  })
+})
+
 describe('launch budget (rule 24)', () => {
   const launchAt = (root: string, action: string, at: string, account = 'phillyOne') => {
     const dir = join(root, action, `${at.replace(/[-:]/g, '').slice(0, 15)}_${account}`, 'firefox')
