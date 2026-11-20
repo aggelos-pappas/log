@@ -115,14 +115,17 @@ async def scenario(edge, host, cpage, surface, theme, mode, shots, measure_secon
     page = await edge.new_page(viewport={"width": 960, "height": 900}, color_scheme=theme)
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
+    opened = time.monotonic()
     await page.goto(f"{host}/{PAGES[surface]}?theme={theme}&mode={mode}")
     until = time.monotonic() + 30
-    count, source = 0, ""
+    count, source, first_frame = 0, "", None
     while time.monotonic() < until:
         count, source = await frames_of(page, surface)
+        if count >= 1 and first_frame is None:
+            first_frame = round((time.monotonic() - opened) * 1000)
         if count >= 3:
             break
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.05)
     start, _ = await frames_of(page, surface)
     began = time.monotonic()
     await asyncio.sleep(measure_seconds)
@@ -163,7 +166,7 @@ async def scenario(edge, host, cpage, surface, theme, mode, shots, measure_secon
     address = await app_address(page, surface)
     view_error = await app_error(page)
     await page.close()
-    return {"viewError": view_error, "surface": surface, "theme": theme, "mode": mode, "fps": round(fps, 1), "frames": end, "source": source, "clickReached": clicked, "clickMs": latency, "clicksMs": latencies, "clickToFrameMs": frame_ms, "clicksToFrameMs": framed, "address": address, "screenshot": shot, "errors": errors[:3]}
+    return {"viewError": view_error, "surface": surface, "theme": theme, "mode": mode, "firstFrameMs": first_frame, "fps": round(fps, 1), "frames": end, "source": source, "clickReached": clicked, "clickMs": latency, "clicksMs": latencies, "clickToFrameMs": frame_ms, "clicksToFrameMs": framed, "address": address, "screenshot": shot, "errors": errors[:3]}
 
 
 async def app_address(page, surface):

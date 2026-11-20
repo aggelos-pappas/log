@@ -487,9 +487,29 @@ Measured on this project's own `log.db` on 2026-11-08, not estimated:
 | Claim a chat so no other agent answers it | 1 ms | 5 ms | 16 ms | 27 ms | `log timing` (79 claims) |
 | Lock the account for one call | 0.2 ms | 0.3 ms | 0.4 ms | 0.5 ms | `log timing` (62 calls) |
 | Match what you typed to a play (in the warm service) | 12 ms | 36 ms | 47 ms | n/a | `bun scripts/useCases/benchRouter.ts` |
+| A new message reaches the session's push (watcher store to push loop, 25 messages, 2026-11-20) | 248 ms | 354 ms | 408 ms | n/a | inbox push bench, see `docs/browsers.md` |
+| First live-browser or report card resource in Hermes (warm host) | 16 ms | 31 ms | 31 ms | n/a | `scripts/browserView/routeBench.py` |
 | Read the same Discord chat from Discord itself | 2.3 s | 3.6 s | 5.1 s | 6.0 s | `log timing` (190 reads) |
 
 That last row is why log reads its own database: asking the platform takes thousands of times longer. Sends are slower again, on purpose. Each account keeps human pacing between actions, and a refusal from a platform stops the run.
+
+#### The agent's own paths: hooks, router, MCP and Python
+
+Every prompt and tool call also passes through log's hooks, the play router and the MCP proxy. `bun scripts/bench/agentPaths.ts` times them on scratch state (no account is touched); `--repo` points it at another checkout, so a branch can be compared with `main`. Measured 2026-11-20 on the same machine, 40 prompts per run, two runs per side taken in turn while another agent's benchmark held the CPU near 100%, so read the ranges, not single numbers:
+
+| Path | Before p50 / p95 / p99 | After p50 / p95 / p99 | What changed |
+|---|---|---|---|
+| Prompt hook, whole answer (UserPromptSubmit) | 383-665 ms / 2.0-7.4 s / 12.6-28.1 s | 389-655 ms / 0.8-2.1 s / 1.8-5.2 s | the runs-size walk (1.3 s idle, 17 s under load) and `git status` left the hook's path |
+| The router inside it | 181-324 ms / 1.3-2.4 s / 7.0-27.5 s | 197-306 ms / 0.55-1.5 s / 1.2-3.9 s | no longer held up by the other hooks; a window both routers ask for is embedded once (a typo fix makes the play route's windows differ). Under this load it still missed its 150 ms budget on 18 of 80 prompts, against 16 of 80 before |
+| Storage notice inside it | 2-3 ms / 40-142 ms / 0.24-17.2 s | 4-15 ms / 19-80 ms / 54-118 ms | the size is answered from cache and measured again behind |
+| Engines notice inside it | 7-8 ms / 0.24-1.6 s / 5.5-8.6 s | 10-23 ms / 61-120 ms / 85-183 ms | the uncommitted-files listing and code stamp refresh behind |
+| After-tool hook (PostToolUse) | 170-205 ms / 0.74-2.5 s / 1.4-5.4 s | 112-309 ms / 0.49-0.67 s / 0.86-1.06 s | no hook in the same service blocks it any more |
+| Hand-rolled check per terminal call (Hermes) | a Bun process: 470-790 ms / 0.94-1.2 s / 1.07-1.21 s | 18-28 ms / 99-138 ms / 200-258 ms | served by the warm service |
+| MCP tools/list (proxy + server) | 92 ms / 108 ms / 123 ms | unchanged | |
+| MCP cheap call (accountsList) | 35 ms / 46 ms / 51 ms | unchanged | |
+| Python engine start + imports (a call no host serves) | 838 ms / 876 ms | unchanged | |
+
+On the owner's real sessions (`log timing`, 48 h before this change) the prompt hook was p50 598 ms, p95 3.40 s, p99 3.64 s, and the router missed its 150 ms budget on 168 of 186 prompts because the other hooks held the event loop. The same check found 26, then 29, `push.ts` loops running for one Hermes session reader: the plugin started another each time a prompt arrived while its loop was between restarts. It now keeps one per session.
 
 Every call is timed: `log timing` shows p50, p95 and p99 for every tool and each step inside it, and `log timing --call <id>` shows one call step by step.
 

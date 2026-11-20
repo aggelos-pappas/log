@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { backfillAll, countDomains, domainsInHar, listRuns, pruneRuns, storageVerdict } from './index'
+import { backfillAll, countDomains, domainsInHar, listRuns, pruneRuns, remeasureRunsBytes, servedRunsBytes, storageVerdict } from './index'
 import { readRecords } from '../../storage/records/index'
 
 const NOW = Date.parse('2026-10-22T12:00:00Z')
@@ -111,5 +111,19 @@ describe('runStore', () => {
     expect(storageVerdict(9.7e9, 50e9)).toContain('9.7 GB')
     expect(storageVerdict(1e9, 2e9)).toContain('2.0 GB free')
     expect(storageVerdict(1e9, null)).toBeNull()
+  })
+})
+
+describe('the hook reads the runs size without walking the folder', () => {
+  test('a stale size is answered at once and measured again behind, a missing one is measured in place', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'runsSize'))
+    run(root, 'inspect', '20261020T100000_one', { 'a.har': 'x'.repeat(1000) })
+    expect(servedRunsBytes(root, NOW)).toBe(1000)
+    run(root, 'inspect', '20261020T100000_two', { 'b.har': 'y'.repeat(500) })
+    expect(servedRunsBytes(root, NOW + 60_000)).toBe(1000)
+    const later = NOW + 16 * 60_000
+    expect(servedRunsBytes(root, later)).toBe(1000)
+    expect(await remeasureRunsBytes(root, () => later)).toBeGreaterThanOrEqual(1500)
+    expect(servedRunsBytes(root, later)).toBeGreaterThanOrEqual(1500)
   })
 })

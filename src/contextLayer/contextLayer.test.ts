@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { hookAnswer, hookOutput } from './hook/index'
 import { playReminder, sessionPlayOf } from './session/index'
-import { serviceHookCommand } from './service/index'
+import { serviceHookCommand, sharedEmbed } from './service/index'
 import { correctTypos, editDistance, windowsOf } from '../useCases/router/helpers/index'
 import { isPrompt, playMatchText } from '../useCases/router/index'
 
@@ -88,5 +88,33 @@ describe('the play comes back after compaction', () => {
     const command = serviceHookCommand('/hook', 'bun x.ts')
     expect(command.startsWith('curl -sf')).toBe(true)
     expect(command.endsWith('|| bun x.ts')).toBe(true)
+  })
+})
+
+describe('the service embeds each prompt window once', () => {
+  test('the play route and the meaning router asking for the same windows share one embed call, case folded for an uncased model', async () => {
+    const asked: string[][] = []
+    const embed = sharedEmbed(async (texts) => {
+      asked.push(texts)
+      await Bun.sleep(5)
+      return texts.map((t) => Float32Array.from([t.length]))
+    }, { uncased: true })
+    const [a, b] = await Promise.all([embed(['Reply to Grace', 'about the demo']), embed(['reply to grace', 'about the demo', 'and the call'])])
+    expect(asked).toEqual([['reply to grace', 'about the demo'], ['and the call']])
+    expect(Array.from(a[0])).toEqual(Array.from(b[0]))
+    await embed(['about the demo'])
+    expect(asked).toHaveLength(2)
+  })
+
+  test('a failed embed is not kept, so the next prompt asks again', async () => {
+    let calls = 0
+    const embed = sharedEmbed(async (texts) => {
+      calls += 1
+      if (calls === 1) throw new Error('worker gone')
+      return texts.map(() => Float32Array.from([1]))
+    })
+    await expect(embed(['hello there'])).rejects.toThrow('worker gone')
+    expect(await embed(['hello there'])).toHaveLength(1)
+    expect(calls).toBe(2)
   })
 })

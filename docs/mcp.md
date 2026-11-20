@@ -76,6 +76,43 @@ claude mcp add --transport http log http://127.0.0.1:7337/mcp
 
 `--host` and `--port` change where it listens. Off your own machine (not `127.0.0.1`) it won't start without a token: set `LOG_MCP_TOKEN` in `~/.logCli/.env`, and clients send `Authorization: Bearer <token>`.
 
+## ChatGPT and claude.ai: the hosted connector
+
+ChatGPT and claude.ai reach a server from their own cloud, so they can't start `logMcp` on your machine. They connect to the hosted server, `https://mcp.listeningkit.com/mcp`, which signs you in with OAuth and runs each call on your own machine through `log runtime connect`.
+
+**What has to be running first.** Your machine is paired (`log runtime status` says `paired`) and `log runtime connect` is open. Without it, the connector signs you in and every tool answers `workspaceOffline`.
+
+**The tool list comes from your machine.** `tools/list` asks your runtime for its registry (`toolManifest` with `all`, built from `statelessTools`): every read tool, the card tools with their `ui://` meta (`browserView`, `sessionsSignIn`, `report`) and the app-only browser tools. Write tools are never listed; a live write is refused with `approvalRequired` until approvals exist. A runtime too old to send its registry gets the short built-in list instead.
+
+**Cards draw in both, whether or not the host says it can.** claude.ai draws views without declaring the MCP Apps extension, so the hosted server lists every card and `ui://` resource to every client. A `report` always carries its view in `_meta["log/view"]`; a host that declared MCP Apps gets a one-line summary as text, any other gets the markdown table too.
+
+### Add it to claude.ai
+
+1. Go to **Customize > Connectors** (on Team or Enterprise, an Owner does this in **Organization settings > Connectors**, then each member clicks **Connect**).
+2. Select **Add**, then **Add custom connector**.
+3. Name: `log`. Remote MCP server URL: `https://mcp.listeningkit.com/mcp`. Click **Continue**.
+4. Authentication: **Sign in now**. OAuth client: **Register automatically** (log's server registers clients itself; leave client ID and secret empty). Keep anything marked **Detected**.
+5. Click **Add**, then **Connect**, sign in and allow access.
+6. In a chat, open the **+** menu, then **Connectors**, and switch `log` on. Ask "show me a chart of who messaged me this week": the answer is a drawn card.
+
+### Add it to ChatGPT
+
+1. On ChatGPT on the web, go to **Plugins** (`chatgpt.com/plugins`).
+2. Select **+**, then **Add custom MCP server**.
+3. Name: `log`. Under **Connection**, Server URL: `https://mcp.listeningkit.com/mcp`.
+4. Authentication: **OAuth**, with dynamic client registration (no client ID or secret).
+5. Read the risk warning, select **I understand and want to continue**, then **Create as a plugin**.
+6. Install the plugin, sign in and allow access.
+7. In a chat, type `@` and pick `log`. Tools marked read-only (`readOnlyHint`) run without asking; a card answer draws inline.
+
+After log adds tools, open the app's details page in ChatGPT and refresh it; in claude.ai, disconnect and connect again.
+
+If ChatGPT's sign-in stops at `invalid_redirect_uri ... isn't Claude's callback`, or the sign-in page is a Twenty login, the origin is still sending `/mcp`, `/oauth/*` and `/.well-known/*` to an older `logMcp --http` with Twenty OAuth instead of the control service (`python/controlService`); that server only accepts Claude's callback. The routing to fix is in `docs/decisions/genuiEverywhere/research.md`.
+
+### Check it from a script
+
+Any MCP client can run the same flow. The official Python SDK (`mcp`) with its `OAuthClientProvider` reads `/.well-known/oauth-protected-resource/mcp`, registers itself at `/oauth/register`, opens `/oauth/authorize` with PKCE and sends the token on every call; after sign-in, `tools/list`, `tools/call accountsList` and `resources/read ui://log/report` should all answer.
+
 ## First call
 
 Your agent's first call is `getGuide({ topic: "logMcpInstructions" })`. It lists every use case and how to ask for it. `getGuide({ useCase: "<platform>/<page>" })` reads one [use case](useCases/README.md). Every tool's description names its guide, the use cases that call it and the AGENTS.md rules it falls under; AGENTS.md itself is the resource `log://agents` ([MCP server](specs/mcpServer.md)).

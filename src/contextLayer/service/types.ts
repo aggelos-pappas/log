@@ -5,6 +5,10 @@ export const SERVICE_START_GRACE_MS = 30_000
 export const SOURCE_CHECK_MS = 30_000
 export const CODE_CHECK_MS = 30_000
 
+export const EMBED_KEEP = 512
+
+export const UNCASED_MODELS: ReadonlySet<string> = new Set(['Xenova/all-MiniLM-L6-v2'])
+
 export const HOST = '127.0.0.1'
 
 export const CONTEXT_PORT = Number(process.env.LOG_CONTEXT_PORT || 47317)

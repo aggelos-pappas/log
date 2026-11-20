@@ -71,8 +71,15 @@ PACKAGE="${LOG_PACKAGE:-@listeningkit/log}"
 LOG_REPO="${LOG_REPO:-matthewdonsemail-lab/log}"
 mkdir -p "$LOG_HOME"
 
+TRACK="${LOG_TRACK:-stable}"
+case "$TRACK" in stable|nightly) ;; *) fail "LOG_TRACK is stable or nightly, not $TRACK" ;; esac
+
 release_version() {
   if [ -n "${LOG_VERSION:-}" ]; then printf '%s' "${LOG_VERSION#v}"; return 0; fi
+  if [ "$TRACK" = nightly ]; then
+    next=$(curl -fsSL "https://registry.npmjs.org/$PACKAGE/next" 2>/dev/null | grep -o '"version": *"[^"]*"' | head -n 1 | cut -d '"' -f 4)
+    if [ -n "$next" ]; then printf '%s' "$next"; return 0; fi
+  fi
   tag=$(curl -fsSL "https://api.github.com/repos/$LOG_REPO/releases/latest" 2>/dev/null | grep -o '"tag_name": *"[^"]*"' | head -n 1 | cut -d '"' -f 4 | sed 's/^v//')
   if [ -n "$tag" ]; then printf '%s' "$tag"; return 0; fi
   curl -fsSL "https://registry.npmjs.org/$PACKAGE/latest" 2>/dev/null | grep -o '"version": *"[^"]*"' | head -n 1 | cut -d '"' -f 4
@@ -89,7 +96,7 @@ command -v bun >/dev/null 2>&1 || fail "Bun didn't install. Install it from http
 VERSION=$(release_version || true)
 if [ -n "$VERSION" ]; then
   SPEC="$PACKAGE@$VERSION"
-  if [ -n "${LOG_VERSION:-}" ]; then say "installing $PACKAGE $VERSION (pinned by LOG_VERSION)"; else say "installing $PACKAGE $VERSION, the newest release"; fi
+  if [ -n "${LOG_VERSION:-}" ]; then say "installing $PACKAGE $VERSION (pinned by LOG_VERSION)"; else say "installing $PACKAGE $VERSION, the newest $TRACK release"; fi
 else
   SPEC="$PACKAGE"
   say "no release answered on GitHub or npm; installing $PACKAGE as npm has it"
@@ -122,6 +129,7 @@ grep -q '^LOG_ACCOUNTS=' "$ENV_FILE" || printf 'LOG_ACCOUNTS=local\n' >> "$ENV_F
 
 say "running the after-install steps log update runs too: the Python engines, database migrations, skills, harness plugins and the pinned local models"
 LOG_PYTHON="$PYTHON" bun "$ROOT/scripts/update/postInstall.ts" || say "some after-install steps need a look (above); run bun $ROOT/scripts/update/postInstall.ts again any time"
+if [ -n "${LOG_TRACK:-}" ]; then LOG_HOME="$LOG_HOME" bun "$ROOT/scripts/update/track.ts" "$TRACK" || say "couldn't save the track; run log update --track $TRACK"; fi
 
 say "done. Your settings are in $ENV_FILE and your accounts will live in $LOG_HOME."
 log --help >/dev/null 2>&1 && say "log is on your PATH" || say "open a new terminal so 'log' is on your PATH"

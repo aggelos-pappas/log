@@ -13,6 +13,8 @@ import { lastWordOf, waitingOf } from '../lastWord/index'
 import { POLL_LOCK_SECONDS, POLL_MAX_SECONDS, POLL_MIN_SECONDS } from './types'
 import type { InboxMessage, InboxReader, InboxThread, PollPlan, SeenThreads } from './types'
 import { logHome } from '../../config/logHome/index'
+import { readEngineStore } from '../../storage/engineStore/index'
+import { getState, putState } from '../../storage/state/index'
 
 export function inboxRoot(): string {
   return process.env.LOG_INBOX_STATE || join(logHome(), 'inbox')
@@ -22,7 +24,6 @@ const pendingPath = () => join(inboxRoot(), 'pending.jsonl')
 const deliveredPath = () => join(inboxRoot(), 'delivered')
 const SHARED_READER = 'shared'
 const planPath = () => join(inboxRoot(), 'next.json')
-const lockPath = () => join(inboxRoot(), 'poll.lock')
 const seenPath = (platform: string, account: string) => join(inboxRoot(), platform, account, 'seen.json')
 const watchPidPath = (platform: string, account: string) => join(inboxRoot(), platform, account, 'watch.pid')
 
@@ -97,11 +98,11 @@ export function pollReaders(readers: readonly InboxReader[], now: Date = new Dat
     for (const account of reader.accounts()) {
       const threads = reader.read(account)
       if (!threads) continue
-      const path = seenPath(reader.platform, account)
-      const first = !existsSync(path)
-      const { messages, seen } = newMessages(reader.platform, account, threads, readJson<SeenThreads>(path, {}), now)
-      writeJson(path, seen)
-      if (first) continue
+      const key = `${reader.platform}:${account}`
+      const held = getState<SeenThreads>('inboxSeen', key, { legacyFile: seenPath(reader.platform, account) }, db())
+      const { messages, seen } = newMessages(reader.platform, account, threads, held?.body ?? {}, now)
+      putState('inboxSeen', key, seen, now.getTime(), db())
+      if (!held) continue
       const fresh = messages.filter((m) => !found.some((f) => f.account === m.account && f.with === m.with && f.text === m.text))
       found.push(...fresh.filter((m, i) => fresh.findIndex((o) => o.with === m.with && o.text === m.text) === i))
     }
@@ -124,32 +125,37 @@ export function hookReaderOf(raw: string): string {
 export function takePending(reader?: string): InboxMessage[] {
   migrated()
   const key = reader ?? SHARED_READER
-  const cursor = readCursor(key)
-  const latest = latestSeq()
-  if (cursor === null && reader !== undefined) {
-    writeCursor(key, latest)
-    return []
-  }
-  const rows = eventsAfter(cursor ?? 0, { type: 'message' }).filter((row) => row.source !== 'backfill')
-  if (latest !== cursor) writeCursor(key, latest)
-  const now = new Date()
-  for (const row of rows) markStage(row.eventId, 'shown', now)
-  return rows.map(messageOf)
+  return immediate(() => {
+    const cursor = readCursor(key)
+    const latest = latestSeq()
+    if (cursor === null && reader !== undefined) {
+      writeCursor(key, latest)
+      return []
+    }
+    const rows = eventsAfter(cursor ?? 0, { type: 'message' }).filter((row) => row.source !== 'backfill')
+    if (latest !== cursor) writeCursor(key, latest)
+    const now = new Date()
+    for (const row of rows) markStage(row.eventId, 'shown', now)
+    return rows.map(messageOf)
+  })
 }
 
 export function claimPoll(now: Date = new Date(), random: () => number = Math.random): boolean {
   if (process.env.LOG_INBOX_POLL === 'off') return false
-  const plan = readJson<PollPlan | null>(planPath(), null)
-  if (plan && Date.parse(plan.nextAt) > now.getTime()) return false
-  if (existsSync(lockPath()) && now.getTime() - statSync(lockPath()).mtimeMs < POLL_LOCK_SECONDS * 1000) return false
-  const wait = POLL_MIN_SECONDS + random() * (POLL_MAX_SECONDS - POLL_MIN_SECONDS)
-  writeJson(planPath(), { nextAt: new Date(now.getTime() + wait * 1000).toISOString() })
-  writeFileSync(lockPath(), now.toISOString())
-  return true
+  getState<PollPlan>('inboxPoll', 'plan', { legacyFile: planPath() }, db())
+  return immediate((handle) => {
+    const plan = getState<PollPlan & { lockedAt?: number | null }>('inboxPoll', 'plan', {}, handle)?.body
+    if (plan && Date.parse(plan.nextAt) > now.getTime()) return false
+    if (plan?.lockedAt && now.getTime() - plan.lockedAt < POLL_LOCK_SECONDS * 1000) return false
+    const wait = POLL_MIN_SECONDS + random() * (POLL_MAX_SECONDS - POLL_MIN_SECONDS)
+    putState('inboxPoll', 'plan', { nextAt: new Date(now.getTime() + wait * 1000).toISOString(), lockedAt: now.getTime() }, now.getTime(), handle)
+    return true
+  })
 }
 
 export function releasePoll(): void {
-  rmSync(lockPath(), { force: true })
+  const plan = getState<PollPlan & { lockedAt?: number | null }>('inboxPoll', 'plan', {}, db())?.body
+  if (plan?.lockedAt) putState('inboxPoll', 'plan', { ...plan, lockedAt: null }, Date.now(), db())
 }
 
 const WATCHER_FATAL = /: (accountNotFound|sessionDead): |didn't send READY/
@@ -256,12 +262,14 @@ export function releaseWatcher(platform: string, account: string, pid: number = 
 
 export function takeAlerts(reader: string): string[] {
   const key = ALERTS_READER(reader)
-  const cursor = readCursor(key)
-  const latest = (db().prepare('SELECT COALESCE(MAX(id), 0) AS id FROM alerts').get() as { id: number }).id
-  const from = cursor === null ? Math.max(0, latest - 5) : cursor
-  if (latest !== cursor) writeCursor(key, latest)
-  const rows = db().prepare('SELECT * FROM alerts WHERE id > ? ORDER BY id').all(from) as { platform: string; account: string; kind: string; detail: string; at: string }[]
-  return rows.map((a) => `!!! ${a.kind.toUpperCase()} ${a.platform} ${a.account} at ${a.at}: ${a.detail}`)
+  return immediate(() => {
+    const cursor = readCursor(key)
+    const latest = (db().prepare('SELECT COALESCE(MAX(id), 0) AS id FROM alerts').get() as { id: number }).id
+    const from = cursor === null ? Math.max(0, latest - 5) : cursor
+    if (latest !== cursor) writeCursor(key, latest)
+    const rows = db().prepare('SELECT * FROM alerts WHERE id > ? AND id <= ? ORDER BY id').all(from, latest) as { platform: string; account: string; kind: string; detail: string; at: string }[]
+    return rows.map((a) => `!!! ${a.kind.toUpperCase()} ${a.platform} ${a.account} at ${a.at}: ${a.detail}`)
+  })
 }
 
 export function ensureLiveWatchers(platform: string, accounts: readonly string[], start: (account: string) => number | null, alive: (pid: number) => boolean = processAlive): string[] {
@@ -308,11 +316,10 @@ function newestIn(dir: string): number {
 }
 
 export function codeStamp(repo: string, platform: string, now: Date = new Date(), everyMs = 60_000): number {
-  const kept = readJson<{ stamp: number; checkedAt: number } | null>(stampPath(platform), null)
+  const kept = getState<{ stamp: number; checkedAt: number }>('watcherCodeStamp', platform, { legacyFile: stampPath(platform) }, db())?.body
   if (kept && now.getTime() - kept.checkedAt < everyMs) return kept.stamp
   const stamp = Math.max(0, ...(WATCHER_CODE[platform] ?? []).map((d) => join(repo, d)).filter((d) => existsSync(d)).map(newestIn))
-  mkdirSync(join(inboxRoot(), platform), { recursive: true })
-  writeJson(stampPath(platform), { stamp, checkedAt: now.getTime() })
+  putState('watcherCodeStamp', platform, { stamp, checkedAt: now.getTime() }, now.getTime(), db())
   return stamp
 }
 
@@ -506,7 +513,7 @@ export interface StoredWaiting {
 }
 
 export function storedWaiting(account: string, root: string = twitterStateRoot(), limit = 12): { syncedAt: string | null; waiting: StoredWaiting[]; total: number } {
-  const state = readJson<{ syncedAt?: string | null; userId?: string; xchat?: Record<string, StoredConversation> } | null>(join(root, account, 'inboxSync.json'), null)
+  const state = readEngineStore<{ syncedAt?: string | null; userId?: string; xchat?: Record<string, StoredConversation> }>('xInbox', account, join(root, account, 'inboxSync.json'), db())
   const words = lastWordOf({ platform: 'twitter', account })
   if (words.length) {
     const { waiting } = waitingOf(words)

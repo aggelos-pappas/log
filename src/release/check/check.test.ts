@@ -2,7 +2,8 @@ import { afterAll, describe, expect, test } from 'bun:test'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { agentNotice, checkDue, checkForUpdate, claimBackgroundCheck, cliNotice, consoleNotice, fetchLatest, readUpdateState, updateSettings, writeUpdateState } from './index'
+import { readFileSync } from 'node:fs'
+import { agentNotice, checkDue, checkForUpdate, claimBackgroundCheck, cliNotice, consoleNotice, fetchLatest, readUpdateState, saveTrack, updateSettings, writeUpdateState } from './index'
 import type { CheckDeps, FetchLike, UpdateSettings } from './index'
 
 const dir = mkdtempSync(join(tmpdir(), 'logUpdateCheck'))
@@ -10,7 +11,7 @@ afterAll(() => rmSync(dir, { recursive: true, force: true }))
 let n = 0
 const scratch = () => join(dir, `update${n++}.json`)
 const facts = { name: '@listeningkit/log', repo: 'someOrg/log' }
-const ASK: UpdateSettings = { check: true, auto: 'ask', channel: 'stable' }
+const ASK: UpdateSettings = { check: true, auto: 'ask', track: 'stable' }
 const DAY = 24 * 3600 * 1000
 
 function fakeRegistry(answers: Record<string, unknown>, calls: string[] = []): FetchLike {
@@ -26,15 +27,27 @@ function fakeRegistry(answers: Record<string, unknown>, calls: string[] = []): F
 const deps = (fetch: FetchLike, now = Date.parse('2026-11-20T00:00:00Z')): CheckDeps => ({ fetch, now: () => now, timeoutMs: 2000 })
 
 describe('settings', () => {
-  test('defaults to checking, asking first and the stable channel', () => {
-    expect(updateSettings({}, join(dir, 'none.json'))).toEqual({ check: true, auto: 'ask', channel: 'stable' })
+  test('defaults to checking, asking first and the stable track', () => {
+    expect(updateSettings({}, join(dir, 'none.json'))).toEqual({ check: true, auto: 'ask', track: 'stable' })
+  })
+
+  test('saveTrack keeps the other settings and drops the old channel key', () => {
+    const file = join(dir, 'saved.json')
+    writeFileSync(file, JSON.stringify({ identity: { browser: 'chrome' }, update: { auto: 'notify', channel: 'beta' } }))
+    expect(updateSettings({}, file).track).toBe('nightly')
+    saveTrack('stable', file)
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ identity: { browser: 'chrome' }, update: { auto: 'notify', track: 'stable' } })
+    expect(updateSettings({ LOG_TRACK: 'nightly' }, file).track).toBe('nightly')
+    saveTrack('nightly', join(dir, 'fresh', 'settings.json'))
+    expect(updateSettings({}, join(dir, 'fresh', 'settings.json')).track).toBe('nightly')
   })
 
   test('reads update from settings.json and lets the environment win', () => {
     const file = join(dir, 'settings.json')
-    writeFileSync(file, JSON.stringify({ update: { check: 'off', auto: 'notify', channel: 'beta' } }))
-    expect(updateSettings({}, file)).toEqual({ check: false, auto: 'notify', channel: 'beta' })
-    expect(updateSettings({ LOG_UPDATE_CHECK: 'on', LOG_UPDATE_AUTO: 'auto' }, file)).toEqual({ check: true, auto: 'auto', channel: 'beta' })
+    writeFileSync(file, JSON.stringify({ update: { check: 'off', auto: 'notify', track: 'nightly' } }))
+    expect(updateSettings({}, file)).toEqual({ check: false, auto: 'notify', track: 'nightly' })
+    expect(updateSettings({ LOG_UPDATE_CHECK: 'on', LOG_UPDATE_AUTO: 'auto' }, file)).toEqual({ check: true, auto: 'auto', track: 'nightly' })
+    expect(updateSettings({ LOG_TRACK: 'stable' }, file).track).toBe('stable')
     expect(updateSettings({ LOG_UPDATE_AUTO: 'sometimes' }, join(dir, 'none.json')).auto).toBe('ask')
   })
 })
@@ -50,9 +63,17 @@ describe('the newest release', () => {
     expect(found).toEqual({ version: '0.2.0', notesUrl: 'https://www.npmjs.com/package/@listeningkit/log/v/0.2.0', source: 'npm' })
   })
 
-  test('the beta channel takes the newest release, prereleases included', async () => {
-    const found = await fetchLatest(facts, 'beta', deps(fakeRegistry({ 'releases?per_page': [{ tag_name: 'v0.3.0-beta.1', html_url: 'u', prerelease: true }, { tag_name: 'v0.2.2', html_url: 'v' }] })))
-    expect(found?.version).toBe('0.3.0-beta.1')
+  test('the nightly track takes the newest release by semver, nightlies included', async () => {
+    const list = [{ tag_name: 'v0.3.0', html_url: 'v' }, { tag_name: 'v0.3.1-nightly.202611201200.a1b2c3d', html_url: 'u', prerelease: true }, { tag_name: 'v0.2.2-nightly.202611190900.ffffff0', prerelease: true }]
+    const found = await fetchLatest(facts, 'nightly', deps(fakeRegistry({ 'releases?per_page': list })))
+    expect(found?.version).toBe('0.3.1-nightly.202611201200.a1b2c3d')
+  })
+
+  test('npm next on the nightly track, latest when it is newer; stable never takes a nightly', async () => {
+    const npm = (tags: Record<string, string>) => deps(fakeRegistry({ 'releases': null, 'registry.npmjs.org': tags }))
+    expect((await fetchLatest(facts, 'nightly', npm({ latest: '0.3.0', next: '0.3.1-nightly.202611201200.a1b2c3d' })))?.version).toBe('0.3.1-nightly.202611201200.a1b2c3d')
+    expect((await fetchLatest(facts, 'nightly', npm({ latest: '0.3.1', next: '0.3.1-nightly.202611201200.a1b2c3d' })))?.version).toBe('0.3.1')
+    expect((await fetchLatest(facts, 'stable', npm({ latest: '0.3.0', next: '0.3.1-nightly.202611201200.a1b2c3d' })))?.version).toBe('0.3.0')
   })
 
   test('offline is silent: nothing found, nothing thrown', async () => {
@@ -90,7 +111,7 @@ describe('the 24 h cache', () => {
     const now = Date.parse('2026-11-20T00:00:00Z')
     expect(claimBackgroundCheck(path, ASK, now)).toBe(true)
     expect(claimBackgroundCheck(path, ASK, now + 1000)).toBe(false)
-    expect(checkDue(readUpdateState(path), { ...ASK, channel: 'beta' }, now)).toBe(true)
+    expect(checkDue(readUpdateState(path), { ...ASK, track: 'nightly' }, now)).toBe(true)
   })
 })
 

@@ -246,6 +246,7 @@ def _genui_router() -> APIRouter | None:
 APP_TOOL = re.compile(r"^[A-Za-z][A-Za-z0-9]{0,63}$")
 APP_HOST = ("scripts", "hermes", "appHost.ts")
 APP_ANSWER_SECONDS = 130
+APP_RESTART_AFTER_SECONDS = 5
 APP_STATUS = {"logAppInvalid": 400, "logAppUnknown": 404, "logAppViewMissing": 404, "logAppToolRefused": 403}
 
 
@@ -284,10 +285,14 @@ class AppHost:
             return None
         argv = self.command(script) if self.command else [_bun(), str(script)]
         self.proc = subprocess.Popen(argv, cwd=str(script.parents[2]), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, encoding="utf-8", bufsize=1, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        threading.Thread(target=self._read, args=(self.proc,), daemon=True).start()
+        threading.Thread(target=self._read, args=(self.proc, time.monotonic()), daemon=True).start()
         return self.proc
 
-    def _read(self, proc: subprocess.Popen) -> None:
+    def warm(self) -> bool:
+        with self.lock:
+            return self._start() is not None
+
+    def _read(self, proc: subprocess.Popen, started: float = 0.0) -> None:
         for line in proc.stdout:
             try:
                 answer = json.loads(line)
@@ -303,6 +308,8 @@ class AppHost:
             if slot["proc"] is proc:
                 self.pending.pop(key, None)
                 slot["done"].set()
+        if proc.wait() == 0 and started and time.monotonic() - started >= APP_RESTART_AFTER_SECONDS and self.proc is None:
+            self.warm()
 
     def ask(self, request: dict[str, Any], seconds: float = APP_ANSWER_SECONDS) -> dict[str, Any]:
         answer = self._ask(request, seconds)
@@ -345,6 +352,11 @@ def _app_answer(answer: dict[str, Any], key: str):
 
 def _app_tool(tool: str) -> JSONResponse | None:
     return None if APP_TOOL.fullmatch(tool or "") else JSONResponse({"error": "logAppInvalid", "message": "tool must be a log tool name"}, status_code=400)
+
+
+@router.post("/apps/warm")
+def app_warm():
+    return {"ok": _apps.warm()}
 
 
 @router.get("/apps/{tool}/resource")

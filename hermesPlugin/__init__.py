@@ -120,7 +120,7 @@ def context_of(raw):
     return context if isinstance(context, str) else ""
 
 
-def ask_service(event, body):
+def ask_service_path(path, body):
     if os.environ.get("LOG_CONTEXT_SERVICE", "").strip() == "off":
         return None
     try:
@@ -131,7 +131,7 @@ def ask_service(event, body):
     conn.sock = sock
     sock.settimeout(SERVICE_ANSWER_SECONDS)
     try:
-        conn.request("POST", f"/hooks/{event}?host=hermes", body=body.encode("utf-8"), headers={"content-type": "application/json"})
+        conn.request("POST", path, body=body.encode("utf-8"), headers={"content-type": "application/json"})
         response = conn.getresponse()
         raw = response.read().decode("utf-8", errors="replace")
         return context_of(raw) if response.status == 200 else None
@@ -139,6 +139,10 @@ def ask_service(event, body):
         return ""
     finally:
         conn.close()
+
+
+def ask_service(event, body):
+    return ask_service_path(f"/hooks/{event}?host=hermes", body)
 
 
 def ask_log(event, payload):
@@ -180,12 +184,44 @@ def push_state_path():
     return Path(os.environ.get("LOG_INBOX_STATE", "").strip() or Path.home() / ".logCli" / "inbox") / "hermesPush.json"
 
 
+def put_push_state(body, db=None):
+    path = db or log_db()
+    if not path.is_file():
+        return False
+    try:
+        handle = sqlite3.connect(f"{path.resolve().as_uri()}?mode=rw", uri=True, timeout=5)
+        try:
+            handle.execute("INSERT INTO state (scope, key, body, updatedAt) VALUES ('hermesPush', 'current', ?, ?) ON CONFLICT(scope, key) DO UPDATE SET body = excluded.body, updatedAt = excluded.updatedAt", (body, int(time.time() * 1000)))
+            handle.commit()
+        finally:
+            handle.close()
+        return True
+    except (sqlite3.Error, ValueError, OSError):
+        return False
+
+
+def stored_push_state(db=None):
+    path = db or log_db()
+    if not path.is_file():
+        return None
+    try:
+        handle = sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True, timeout=2)
+        try:
+            row = handle.execute("SELECT body FROM state WHERE scope = 'hermesPush' AND key = 'current'").fetchone()
+        finally:
+            handle.close()
+        return row[0] if row else None
+    except (sqlite3.Error, ValueError, OSError):
+        return None
+
+
 class Push:
     def __init__(self):
         self.ctx = None
         self.key = ""
         self.reader = ""
         self.proc = None
+        self.runner = None
         self.lock = threading.Lock()
         self.busy_since = 0.0
         self.held = []
@@ -223,16 +259,19 @@ class Push:
         self.deliver(context)
 
     def remember(self, key, reader):
+        body = json.dumps({"sessionKey": key, "reader": reader})
+        if put_push_state(body):
+            return
         try:
             path = push_state_path()
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps({"sessionKey": key, "reader": reader}), encoding="utf-8")
+            path.write_text(body, encoding="utf-8")
         except OSError:
             pass
 
     def recall(self):
         try:
-            saved = json.loads(push_state_path().read_text(encoding="utf-8"))
+            saved = json.loads(stored_push_state() or push_state_path().read_text(encoding="utf-8"))
             return str(saved.get("sessionKey") or ""), str(saved.get("reader") or "")
         except (OSError, ValueError):
             return "", ""
@@ -241,12 +280,16 @@ class Push:
         if not self.ctx or not key or not reader or not hasattr(self.ctx, "inject_message"):
             return
         with self.lock:
-            if key == self.key and reader == self.reader and self.proc and self.proc.poll() is None:
+            if key == self.key and reader == self.reader and self.runner and self.runner.is_alive():
                 return
             self.key, self.reader = key, reader
             self.remember(key, reader)
             self.stop()
-            threading.Thread(target=self.run, args=(key, reader), daemon=True).start()
+            self.runner = threading.Thread(target=self.run, args=(key, reader), daemon=True)
+            self.runner.start()
+
+    def current(self, key, reader):
+        return self.key == key and self.reader == reader and self.runner is threading.current_thread()
 
     def stop(self):
         proc, self.proc = self.proc, None
@@ -258,7 +301,7 @@ class Push:
 
     def run(self, key, reader):
         script = log_root().joinpath(*PUSH_SCRIPT)
-        while self.key == key and self.reader == reader and script.exists():
+        while self.current(key, reader) and script.exists():
             try:
                 proc = subprocess.Popen(
                     [bun_command(), str(script), "--host", "hermes", "--reader", reader],
@@ -274,12 +317,12 @@ class Push:
                 time.sleep(PUSH_RETRY_SECONDS)
                 continue
             with self.lock:
-                if self.key != key or self.reader != reader:
+                if not self.current(key, reader):
                     proc.kill()
                     return
                 self.proc = proc
             for line in proc.stdout:
-                if self.key != key:
+                if not self.current(key, reader):
                     break
                 try:
                     batch = json.loads(line)
@@ -288,7 +331,7 @@ class Push:
                 context = batch.get("context") if isinstance(batch, dict) else None
                 if isinstance(context, str) and context.strip():
                     self.arrived(context)
-            if self.key == key:
+            if self.current(key, reader):
                 time.sleep(PUSH_RETRY_SECONDS)
 
 
@@ -394,7 +437,11 @@ def hand_rolled_advice(tool_name, args, session_id=""):
         return ""
     if not HAND_ROLLED_HINT.search(text):
         return ""
-    return ask_script(HAND_ROLLED_SCRIPT, [], "PreToolUse", {"session_id": session_id or "", "tool_name": tool_name, "tool_input": args, "cwd": os.getcwd()})
+    payload = {"session_id": session_id or "", "tool_name": tool_name, "tool_input": args, "cwd": os.getcwd()}
+    answered = ask_service_path("/hooks/PreToolUse/handRolled?host=hermes", json.dumps({"hook_event_name": "PreToolUse", **payload}))
+    if answered is not None:
+        return answered
+    return ask_script(HAND_ROLLED_SCRIPT, [], "PreToolUse", payload)
 
 
 def transform_tool_result(tool_name="", args=None, result=None, session_id="", **kwargs):

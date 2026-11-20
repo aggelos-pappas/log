@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
+import { readEngineStore } from '../../../storage/engineStore/index'
 import { extname, join } from 'node:path'
 import { AUDIO_MARKER } from '../types'
 import { isAudio } from '../../../platformKit/media/index'
@@ -28,16 +29,9 @@ export function discordMediaPath(stateRoot: string, account: string, channelId: 
 
 export function xchatStoredMedia(stateRoot: string, account: string): Map<string, XchatMedia[]> {
   const out = new Map<string, XchatMedia[]>()
-  const path = join(stateRoot, account, 'inboxSync.json')
-  if (!existsSync(path)) return out
-  let state: { xchat?: Record<string, { messages?: { event_id?: string | number; media?: XchatMedia[] }[] }> }
-  try {
-    state = JSON.parse(readFileSync(path, 'utf8'))
-  } catch {
-    return out
-  }
-  for (const [conversationId, conv] of Object.entries(state.xchat ?? {})) {
-    for (const m of conv.messages ?? []) {
+  const state = readEngineStore<{ xchat?: Record<string, { messages?: { event_id?: string | number; media?: XchatMedia[] }[] }> }>('xInbox', account, join(stateRoot, account, 'inboxSync.json'))
+  for (const [conversationId, conv] of Object.entries(state?.xchat ?? {})) {
+    for (const m of conv?.messages ?? []) {
       if (m.event_id && m.media?.length) out.set(`${conversationId}:${m.event_id}`, m.media)
     }
   }

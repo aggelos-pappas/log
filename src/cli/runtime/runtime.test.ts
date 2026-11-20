@@ -15,6 +15,31 @@ describe("the hosted relay serves the report widget", () => {
     expect(report?._meta?.ui?.resourceUri).toBe(REPORT_URI);
   });
 
+  test("the hosted manifest is the stateless registry's reads, every card on, and the app tools", async () => {
+    const manifest = await toolManifest({ all: true, names: ["sessionsSignIn"] });
+    const { tools, reads } = manifest.result as { tools: { name: string; annotations?: { readOnlyHint?: boolean }; _meta?: { ui?: { resourceUri?: string } } }[]; reads: string[] };
+    const byName = new Map(tools.map((tool) => [tool.name, tool]));
+    expect(byName.get("report")?._meta?.ui?.resourceUri).toBe(REPORT_URI);
+    expect(byName.get("browserView")?._meta?.ui?.resourceUri).toBe("ui://log/browserView");
+    expect(byName.get("sessionsSignIn")?._meta?.ui?.resourceUri).toBe("ui://log/browserView");
+    expect(byName.has("browserViewStream")).toBe(true);
+    expect(reads).toContain("accountsList");
+    expect(reads).toContain("getGuide");
+    expect(reads).not.toContain("sessionsSignIn");
+    expect(reads).not.toContain("browserViewStream");
+    expect(tools.some((tool) => tool.name.endsWith("Live"))).toBe(false);
+    expect(reads.every((name) => byName.get(name)?.annotations?.readOnlyHint === true)).toBe(true);
+    expect(tools.filter((tool) => "outputSchema" in tool).map((tool) => tool.name)).toEqual(["report"]);
+  });
+
+  test("a report asked for markdown too carries the view and the text table", async () => {
+    const both = await reportOperation({ ...SPEC, ui: true, markdown: true });
+    const result = both.result as { text: string; markdown: string; spec: { compiled: string } };
+    expect(result.spec.compiled).toContain("require('log')");
+    expect(result.markdown).toContain("Messages by person");
+    expect(result.text).not.toBe(result.markdown);
+  });
+
   test("the report resource is listed and readable", async () => {
     const listed = await uiResources("uiResourcesList", {});
     expect((listed.result as { resources: { uri: string }[] }).resources.map((item) => item.uri)).toContain(REPORT_URI);

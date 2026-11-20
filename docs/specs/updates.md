@@ -14,13 +14,13 @@ Checked by: code and SubQ
 
 ### REQ-UPDATE-02: The newest release is checked at most once a day, never in front of a command
 
-`fetchLatest` reads the repo's newest GitHub Release (the `releases/latest` endpoint on `stable`, the newest release on `beta`), falls back to npm's dist-tags, times each request out after `CHECK_TIMEOUT_MS` (2 s) and answers null offline. `checkForUpdate` asks only when `checkDue` (24 h since `checkedAt`, or the channel changed) or forced, and keeps the answer in `update.json` (`updateStatePath`, `LOG_UPDATE_STATE`). After a CLI command (`afterCommand` in `bin/log.ts`) and in the prompt hook, `refreshInBackground` claims the check once (`claimBackgroundCheck`) and runs `scripts/update/check.ts` detached. Versions compare as semver (`compareVersions`).
+`fetchLatest` reads the repo's newest GitHub Release (the `releases/latest` endpoint on `stable`, the highest version among recent releases on `nightly`), falls back to npm's dist-tags (`latest`; on `nightly` the higher of `next` and `latest`), times each request out after `CHECK_TIMEOUT_MS` (2 s) and answers null offline. `checkForUpdate` asks only when `checkDue` (24 h since `checkedAt`, or the track changed) or forced, and keeps the answer in `update.json` (`updateStatePath`, `LOG_UPDATE_STATE`). After a CLI command (`afterCommand` in `bin/log.ts`) and in the prompt hook, `refreshInBackground` claims the check once (`claimBackgroundCheck`) and runs `scripts/update/check.ts` detached. Versions compare as semver (`compareVersions`).
 
 Checked by: code and SubQ
 
 ### REQ-UPDATE-03: The CLI, the agent and the console are told; the agent once per session
 
-`cliNotice` gives one stderr line after a command when a newer release is known and stderr is a terminal. `agentNotice`, called by `storageAnswer` (the storage hook, next to the storage line) and `scripts/hooks/storage.ts`, adds one `log-cli update:` line the first time each session prompts per release, recording the session in `toldSessions`, and the `updated A -> B, resumed: ...` line once after an update. `consoleNotice` ends `console start`. `updateSettings` reads `update.check`, `update.auto` (`ask` by default) and `update.channel` from settings.json, with `LOG_UPDATE_CHECK`, `LOG_UPDATE_AUTO` and `LOG_UPDATE_CHANNEL` winning.
+`cliNotice` gives one stderr line after a command when a newer release is known and stderr is a terminal. `agentNotice`, called by `storageAnswer` (the storage hook, next to the storage line) and `scripts/hooks/storage.ts`, adds one `log-cli update:` line the first time each session prompts per release, recording the session in `toldSessions`, and the `updated A -> B, resumed: ...` line once after an update. `consoleNotice` ends `console start`. `updateSettings` reads `update.check`, `update.auto` (`ask` by default) and `update.track` (`stable` or `nightly`, `trackOf`; an old `update.channel` of `beta` counts as `nightly`) from settings.json, with `LOG_UPDATE_CHECK`, `LOG_UPDATE_AUTO` and `LOG_TRACK` winning.
 
 Checked by: code and SubQ
 
@@ -51,5 +51,11 @@ Checked by: code and SubQ
 ### REQ-UPDATE-08: The README lists every release in order, with its models
 
 `CHANGELOG.md` holds one section per release (release-please writes them); each carries a `Models:` line, the pins of that release (`recordModels`, from `modelPins`). `scripts/docs/releasesTable.ts` (`bun run docs:releases`, part of `docs:build`) renders the README's Releases table between its markers (`renderReleases`, `withReleases`): Version, Date, What's in it (the first note, plus how many more) and Models (`modelsCell`: not pinned, first pinned, same as the previous release, or changed/added/removed), newest first by semver. `check:docs` runs it with `--check` and fails when the table is stale, when a release has no `Models:` line, or when the newest section isn't `.release-please-manifest.json`'s version (`releaseProblems`). The release workflow runs it on the release PR's branch and pushes the result.
+
+Checked by: code and SubQ
+
+### REQ-UPDATE-09: Every merge to main that passed CI is a nightly, and an install picks its track
+
+`.github/workflows/nightly.yml` runs on the `check` workflow's completion for a push to `main`, only when it succeeded and the commit is not a release-please one (`isReleaseCommit`). `nightlyVersion` makes `<next patch>-nightly.<UTC yyyymmddhhmm>.<sha7>` (`shortSha` adds a `g` to an all-digit sha), which `scripts/release/nightlyVersion.ts` writes to `package.json` and the dashboard manifest (`withVersion`); the workflow then runs `npm publish --tag next --provenance --ignore-scripts` with `NPM_TOKEN` and makes a GitHub prerelease that is never marked latest. `log update --track stable|nightly` saves `update.track` (`saveTrack`) and plans against it; `--apply` refuses to move a clone to a nightly. `install.sh` and `install.ps1` read `LOG_TRACK`: on `nightly` they install npm's `next` unless `LOG_VERSION` pins one, and save the track through `scripts/update/track.ts`.
 
 Checked by: code and SubQ

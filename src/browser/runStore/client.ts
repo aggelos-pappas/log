@@ -1,5 +1,5 @@
 import { appendRecord } from '../../storage/records/index'
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statfsSync, statSync, writeFileSync } from 'node:fs'
+import { appendFileSync, promises as fsp, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statfsSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { knownRequests } from '../../subq/stepReading/client.ts'
@@ -186,16 +186,67 @@ export function diskFree(path = logCliRoot()): number | null {
   }
 }
 
+const RUNS_SIZE_FRESH_MS = 15 * 60_000
+
+function savedRunsSize(runs: string): { at: number; bytes: number } | null {
+  try {
+    return JSON.parse(readFileSync(join(runs, '.size.json'), 'utf8')) as { at: number; bytes: number }
+  } catch {
+    return null
+  }
+}
+
+function saveRunsSize(runs: string, bytes: number, at: number): void {
+  try {
+    if (existsSync(runs)) writeFileSync(join(runs, '.size.json'), JSON.stringify({ at, bytes }))
+  } catch {}
+}
+
 export function runsBytes(root = logCliRoot(), now = Date.now()): number {
   const runs = join(root, 'runs')
-  const cache = join(runs, '.size.json')
-  try {
-    const saved = JSON.parse(readFileSync(cache, 'utf8')) as { at: number; bytes: number }
-    if (now - saved.at < 15 * 60_000) return saved.bytes
-  } catch {}
+  const saved = savedRunsSize(runs)
+  if (saved && now - saved.at < RUNS_SIZE_FRESH_MS) return saved.bytes
   const bytes = sizeOf(runs)
-  try {
-    if (existsSync(runs)) writeFileSync(cache, JSON.stringify({ at: now, bytes }))
-  } catch {}
+  saveRunsSize(runs, bytes, now)
   return bytes
+}
+
+async function sizeOfAsync(path: string): Promise<number> {
+  let stat
+  try {
+    stat = await fsp.stat(path)
+  } catch {
+    return 0
+  }
+  if (!stat.isDirectory()) return stat.size
+  let names: string[] = []
+  try {
+    names = await fsp.readdir(path)
+  } catch {
+    return 0
+  }
+  let total = 0
+  for (const name of names) total += await sizeOfAsync(join(path, name))
+  return total
+}
+
+const sizing = new Map<string, Promise<number>>()
+
+export function remeasureRunsBytes(root = logCliRoot(), now: () => number = Date.now): Promise<number> {
+  const runs = join(root, 'runs')
+  const running = sizing.get(runs)
+  if (running) return running
+  const work = sizeOfAsync(runs)
+    .then((bytes) => (saveRunsSize(runs, bytes, now()), bytes))
+    .finally(() => sizing.delete(runs))
+  sizing.set(runs, work)
+  return work
+}
+
+export function servedRunsBytes(root = logCliRoot(), now = Date.now()): number {
+  const runs = join(root, 'runs')
+  const saved = savedRunsSize(runs)
+  if (!saved) return runsBytes(root, now)
+  if (now - saved.at >= RUNS_SIZE_FRESH_MS) void remeasureRunsBytes(root).catch(() => 0)
+  return saved.bytes
 }

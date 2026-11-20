@@ -38,8 +38,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `storageRebuild` | Clear the typed tables and replay every event into them, in one… | `log storage rebuild [--apply] [--json]   (clears the typed tables and replays every event into them in order, in one transaction; a verify unless --apply)` |
 | `storageRebuildLive` | Clear the typed tables and replay every event into…, live on the platform | `log storage rebuild [--apply] [--json]   (clears the typed tables and replays every event into them in order, in one transaction; a verify unless --apply)` |
 | `version` | Installed version, commit, install kind and newest release | `log version [--check] [--json]` |
-| `updateLog` | Plan or apply a log update | `log update log [--to <version>] [--apply --approvedBy <who>] [--json]   (the word log may be left out)` |
-| `updateLogLive` | Plan or apply a log update, live on the platform | `log update log [--to <version>] [--apply --approvedBy <who>] [--json]   (the word log may be left out)` |
+| `updateLog` | Plan or apply a log update | `log update log [--to <v>] [--track <t>] [--apply --approvedBy <who>] [--json]   (log may be left out)` |
+| `updateLogLive` | Plan or apply a log update, live on the platform | `log update log [--to <v>] [--track <t>] [--apply --approvedBy <who>] [--json]   (log may be left out)` |
 | `models` | Local models and their pins | `log models [--fetch --approvedBy <who>] [--json]` |
 | `modelsLive` | Local models and their pins, live on the platform | `log models [--fetch --approvedBy <who>] [--json]` |
 | `timing` | How slow log is | `log timing [--tool <name>] [--hours <n>] [--stages <n>] [--top <n>] [--all] [--json]   (p50, p95 and p99 per tool call and per stage inside it; the slowest --top tools by p99, default 12, or --all; newest --hours, default 24)` |

@@ -290,9 +290,14 @@ export function runReloadProxy(root: string): void {
     now: () => Date.now(),
   });
   proxy.start();
+  let checking = false;
   const timer = setInterval(() => {
-    stamps.refresh();
-    proxy.tick();
+    if (checking) return;
+    checking = true;
+    void stamps.refreshAsync().finally(() => {
+      checking = false;
+      proxy.tick();
+    });
   }, CHECK_EVERY_MS);
   const input = createInterface({ input: process.stdin });
   input.on("line", (line) => proxy.fromClient(line));

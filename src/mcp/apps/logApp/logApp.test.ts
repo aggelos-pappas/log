@@ -6,7 +6,7 @@ import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { ViewerError } from "../../../browser/viewer/index.ts";
 import { appToolDeps, BROWSER_VIEW_URI } from "../browserView/index.ts";
-import { answerAppRequest, appCall, appCallRefusal, appResource, appResult, appUriOf, logAppDeps } from "./index.ts";
+import { answerAppRequest, appCall, appCallRefusal, appResource, appResult, appUriOf, logAppDeps, warmApps } from "./index.ts";
 import type { LogAppDeps, LogAppTool } from "./index.ts";
 
 const TOOLS: LogAppTool[] = [
@@ -37,6 +37,13 @@ function fakeDeps(over: Partial<LogAppDeps> = {}) {
 const textOf = (result: CallToolResult) => (result.content as { text?: string }[]).map((c) => c.text ?? "").join("\n");
 
 describe("::logapp, log's own MCP App views in Hermes", () => {
+  test("warming the host reads each of log's own views once, so the first card finds them built", async () => {
+    const read: string[] = [];
+    const { deps } = fakeDeps({ read: async (uri) => (read.push(uri), { contents: [{ uri, text: "<html></html>" }] }) });
+    expect(await warmApps(deps)).toEqual([BROWSER_VIEW_URI, "ui://log/report"]);
+    expect(read).toEqual([BROWSER_VIEW_URI, "ui://log/report"]);
+  });
+
   test("only a tool whose view is log's own ui://log/ resource is opened", async () => {
     const { deps } = fakeDeps();
     const opened = await appResource("browserView", deps);
@@ -153,5 +160,38 @@ describe("the plugin's warm app host", () => {
     expect(out.again.echo).toMatchObject({ name: "stopOnce" });
     expect(out.restarted).toBe(true);
     expect(out.bad).toEqual([400, { error: "logAppInvalid", message: "tool must be a log tool name" }]);
+  });
+
+  test("the warm route starts the child before any card asks, and a child that ends cleanly after a while is started again at once", () => {
+    const root = join(scratch, "warmRoot");
+    mkdirSync(join(root, "scripts", "hermes"), { recursive: true });
+    writeFileSync(join(root, "scripts", "hermes", "appHost.ts"), "");
+    writeFileSync(join(scratch, "fakeHost.py"), FAKE_HOST);
+    const api = join(import.meta.dir, "..", "..", "..", "..", "hermesPlugin", "dashboard", "plugin_api.py");
+    const script = [
+      "import importlib.util, json, sys, time, types",
+      "fastapi = types.ModuleType('fastapi'); responses = types.ModuleType('fastapi.responses')",
+      "class APIRouter:",
+      "    def __init__(self): pass",
+      "    def get(self, path): return lambda f: f",
+      "    def post(self, path): return lambda f: f",
+      "    def include_router(self, router): pass",
+      "fastapi.APIRouter, fastapi.Body, responses.JSONResponse = APIRouter, (lambda default=None: default), dict",
+      "sys.modules['fastapi'], sys.modules['fastapi.responses'] = fastapi, responses",
+      `spec = importlib.util.spec_from_file_location('logPluginApi', ${JSON.stringify(api)})`,
+      "module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)",
+      "module.APP_RESTART_AFTER_SECONDS = 0",
+      `module._apps = module.AppHost(roots=lambda: [module.Path(${JSON.stringify(root)})], command=lambda script: [sys.executable, ${JSON.stringify(join(scratch, "fakeHost.py"))}, ${JSON.stringify(join(scratch, "warm.marker"))}])`,
+      "warmed = module.app_warm()",
+      "first = module._apps.proc.pid",
+      "module._apps.proc.stdin.write(json.dumps({'id': 999, 'name': 'stopOnce'}) + chr(10)); module._apps.proc.stdin.flush()",
+      "until = time.monotonic() + 20",
+      "while time.monotonic() < until and (module._apps.proc is None or module._apps.proc.pid == first): time.sleep(0.05)",
+      "print(json.dumps({'warmed': warmed, 'restarted': module._apps.proc is not None and module._apps.proc.pid != first}))",
+      "module._apps.proc.stdin.close(); module._apps.proc.wait(5)",
+    ].join("\n");
+    const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, timeout: 60_000 });
+    expect(run.stderr).toBe("");
+    expect(JSON.parse(run.stdout.trim())).toEqual({ warmed: { ok: true }, restarted: true });
   });
 });

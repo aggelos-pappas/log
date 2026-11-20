@@ -3,10 +3,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { logHome } from '../../config/logHome/index'
 import { settingsPath } from '../../browser/identity/index'
-import { isNewer, isPrerelease, LOG_ROOT, packageFacts, parseVersion } from '../version/index'
+import { compareVersions, isNewer, isPrerelease, LOG_ROOT, packageFacts, parseVersion } from '../version/index'
 import type { PackageFacts } from '../version/index'
-import { CHECK_EVERY_MS, CHECK_TIMEOUT_MS, CHECKING_GRACE_MS, DEFAULT_UPDATE_SETTINGS, EMPTY_UPDATE_STATE, TOLD_SESSIONS_KEPT, UPDATE_CHANNELS, UPDATE_MODES } from './types'
-import type { CheckDeps, FetchLike, LatestRelease, UpdateChannel, UpdateMode, UpdateSettings, UpdateState } from './types'
+import { CHECK_EVERY_MS, CHECK_TIMEOUT_MS, CHECKING_GRACE_MS, DEFAULT_UPDATE_SETTINGS, EMPTY_UPDATE_STATE, NIGHTLY_DIST_TAG, TOLD_SESSIONS_KEPT, UPDATE_MODES, UPDATE_TRACKS } from './types'
+import type { CheckDeps, FetchLike, LatestRelease, UpdateMode, UpdateSettings, UpdateState, UpdateTrack } from './types'
 
 export function updateStatePath(env: Record<string, string | undefined> = process.env): string {
   return env.LOG_UPDATE_STATE?.trim() || join(logHome(env), 'update.json')
@@ -22,9 +22,13 @@ export function readUpdateState(path: string = updateStatePath()): UpdateState {
   }
 }
 
-export function writeUpdateState(state: UpdateState, path: string = updateStatePath()): void {
+function writeJson(path: string, body: unknown): void {
   mkdirSync(dirname(path), { recursive: true })
-  writeFileSync(path, `${JSON.stringify({ ...state, toldSessions: state.toldSessions.slice(-TOLD_SESSIONS_KEPT) }, null, 2)}\n`)
+  writeFileSync(path, `${JSON.stringify(body, null, 2)}\n`)
+}
+
+export function writeUpdateState(state: UpdateState, path: string = updateStatePath()): void {
+  writeJson(path, { ...state, toldSessions: state.toldSessions.slice(-TOLD_SESSIONS_KEPT) })
 }
 
 const pick = <T extends string>(values: readonly T[], value: unknown): T | null => (typeof value === 'string' && (values as readonly string[]).includes(value.trim()) ? (value.trim() as T) : null)
@@ -49,8 +53,27 @@ export function updateSettings(env: Record<string, string | undefined> = process
   return {
     check: onOff(env.LOG_UPDATE_CHECK) ?? onOff(saved.check) ?? DEFAULT_UPDATE_SETTINGS.check,
     auto: pick<UpdateMode>(UPDATE_MODES, env.LOG_UPDATE_AUTO) ?? pick<UpdateMode>(UPDATE_MODES, saved.auto) ?? DEFAULT_UPDATE_SETTINGS.auto,
-    channel: pick<UpdateChannel>(UPDATE_CHANNELS, env.LOG_UPDATE_CHANNEL) ?? pick<UpdateChannel>(UPDATE_CHANNELS, saved.channel) ?? DEFAULT_UPDATE_SETTINGS.channel,
+    track: trackOf(env.LOG_TRACK) ?? trackOf(env.LOG_UPDATE_CHANNEL) ?? trackOf(saved.track) ?? trackOf(saved.channel) ?? DEFAULT_UPDATE_SETTINGS.track,
   }
+}
+
+export function trackOf(value: unknown): UpdateTrack | null {
+  if (typeof value === 'string' && value.trim() === 'beta') return 'nightly'
+  return pick<UpdateTrack>(UPDATE_TRACKS, value)
+}
+
+export function saveTrack(track: UpdateTrack, file: string = settingsPath()): UpdateTrack {
+  let body: Record<string, unknown> = {}
+  if (existsSync(file)) {
+    try {
+      const parsed = JSON.parse(readFileSync(file, 'utf8')) as unknown
+      if (parsed && typeof parsed === 'object') body = parsed as Record<string, unknown>
+    } catch {}
+  }
+  const update = body.update && typeof body.update === 'object' ? { ...(body.update as Record<string, unknown>) } : {}
+  delete update.channel
+  writeJson(file, { ...body, update: { ...update, track } })
+  return track
 }
 
 export const defaultCheckDeps: CheckDeps = {
@@ -77,15 +100,17 @@ function fromGithub(release: GithubRelease | null | undefined): LatestRelease | 
   return release && !release.draft && parseVersion(version) ? { version, notesUrl: release.html_url ?? null, source: 'github' } : null
 }
 
-export async function fetchLatest(facts: Pick<PackageFacts, 'name' | 'repo'>, channel: UpdateChannel, deps: CheckDeps = defaultCheckDeps): Promise<LatestRelease | null> {
+const newest = (found: (LatestRelease | null)[]): LatestRelease | null => found.filter((r): r is LatestRelease => Boolean(r)).sort((a, b) => compareVersions(b.version, a.version))[0] ?? null
+
+export async function fetchLatest(facts: Pick<PackageFacts, 'name' | 'repo'>, track: UpdateTrack, deps: CheckDeps = defaultCheckDeps): Promise<LatestRelease | null> {
   if (facts.repo) {
     try {
-      if (channel === 'stable') {
+      if (track === 'stable') {
         const found = fromGithub((await getJson(deps.fetch, `https://api.github.com/repos/${facts.repo}/releases/latest`, deps.timeoutMs)) as GithubRelease | null)
         if (found) return found
       } else {
-        const list = (await getJson(deps.fetch, `https://api.github.com/repos/${facts.repo}/releases?per_page=10`, deps.timeoutMs)) as GithubRelease[] | null
-        const found = Array.isArray(list) ? list.map(fromGithub).find(Boolean) : null
+        const list = (await getJson(deps.fetch, `https://api.github.com/repos/${facts.repo}/releases?per_page=20`, deps.timeoutMs)) as GithubRelease[] | null
+        const found = Array.isArray(list) ? newest(list.map(fromGithub)) : null
         if (found) return found
       }
     } catch {}
@@ -93,9 +118,10 @@ export async function fetchLatest(facts: Pick<PackageFacts, 'name' | 'repo'>, ch
   if (!facts.name) return null
   try {
     const tags = ((await getJson(deps.fetch, `https://registry.npmjs.org/-/package/${facts.name.replace('/', '%2f')}/dist-tags`, deps.timeoutMs)) ?? {}) as Record<string, string>
-    const version = (channel === 'beta' ? tags.beta ?? tags.next : null) ?? tags.latest
-    if (!version || !parseVersion(version)) return null
-    if (channel === 'stable' && isPrerelease(version)) return null
+    const candidates = [tags.latest, track === 'nightly' ? tags[NIGHTLY_DIST_TAG] : null].filter((v): v is string => Boolean(v && parseVersion(v)))
+    const version = candidates.sort((a, b) => compareVersions(b, a))[0]
+    if (!version) return null
+    if (track === 'stable' && isPrerelease(version)) return null
     return { version, notesUrl: `https://www.npmjs.com/package/${facts.name}/v/${version}`, source: 'npm' }
   } catch {
     return null
@@ -104,7 +130,7 @@ export async function fetchLatest(facts: Pick<PackageFacts, 'name' | 'repo'>, ch
 
 export function checkDue(state: UpdateState, settings: UpdateSettings, now: number): boolean {
   if (!settings.check) return false
-  if (state.channel !== settings.channel) return true
+  if (state.track !== settings.track) return true
   const at = state.checkedAt ? Date.parse(state.checkedAt) : NaN
   return !Number.isFinite(at) || now - at >= CHECK_EVERY_MS
 }
@@ -123,8 +149,8 @@ export async function checkForUpdate(options: CheckOptions = {}): Promise<Update
   const deps = options.deps ?? defaultCheckDeps
   const state = readUpdateState(path)
   if (!options.force && !checkDue(state, settings, deps.now())) return state
-  const found = await fetchLatest(options.facts ?? packageFacts(), settings.channel, deps)
-  const next: UpdateState = { ...readUpdateState(path), checkedAt: new Date(deps.now()).toISOString(), checkingAt: null, channel: settings.channel }
+  const found = await fetchLatest(options.facts ?? packageFacts(), settings.track, deps)
+  const next: UpdateState = { ...readUpdateState(path), checkedAt: new Date(deps.now()).toISOString(), checkingAt: null, track: settings.track }
   if (found) {
     next.latest = found.version
     next.notesUrl = found.notesUrl

@@ -18,6 +18,7 @@ TICKET_SECONDS = 60
 TICKET_MAX_SECONDS = 900
 TICKET_LIMIT = 64
 STREAM_LIMIT = 2
+STATE_BUDGET_SECONDS = 0.6
 INPUT_LOG = "inputs.jsonl"
 INPUT_KEYS = {"Enter", "Tab", "Backspace", "Delete", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Escape", "Space", "Home", "End"}
 CORS_HEADERS = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Private-Network": "true", "Access-Control-Expose-Headers": "X-Log-Browser-Generation", "Access-Control-Max-Age": "600"}
@@ -149,6 +150,8 @@ class BrowserViewer:
         self.known: dict[str, Any] | None = None
         self.knownAt = 0.0
         self.knownFor = 0.75
+        self.stateBudget = STATE_BUDGET_SECONDS
+        self.reading: asyncio.Task[dict[str, Any]] | None = None
         self.streams: list[CastClient] = []
         self.streamLimit = STREAM_LIMIT
 
@@ -208,6 +211,17 @@ class BrowserViewer:
         known = {"generation": self.generation, "revision": revision, "state": state, "url": signals["url"], "historyLength": signals["historyLength"], "blocked": seen["blocked"], "inputAllowed": seen["inputAllowed"], "ownerDriven": self.owner.config.get("ownerDriven") is True, "width": signals["width"], "height": signals["height"], "busy": self.agentBusy(), "stream": await streamSurface.surface(self.owner)}
         self.known, self.knownAt = known, time.monotonic()
         return known
+
+    async def answer(self) -> dict[str, Any]:
+        if self.reading is None or self.reading.done():
+            self.reading = asyncio.ensure_future(self.state())
+            self.reading.add_done_callback(lambda task: task.cancelled() or task.exception())
+        if self.known is None:
+            return await asyncio.wait_for(asyncio.shield(self.reading), 5)
+        try:
+            return await asyncio.wait_for(asyncio.shield(self.reading), self.stateBudget)
+        except asyncio.TimeoutError:
+            return {**self.known, "busy": self.agentBusy(), "settling": True}
 
     async def recent(self) -> dict[str, Any]:
         if self.known is not None and time.monotonic() - self.knownAt < self.knownFor:
@@ -486,7 +500,7 @@ class BrowserViewer:
                 contentType = "image/jpeg"
                 status = 200
             elif method == "GET" and path == "/state":
-                body = json.dumps(await asyncio.wait_for(self.state(), 5)).encode()
+                body = json.dumps(await self.answer()).encode()
                 status = 200
             elif method == "POST" and path == "/ticket":
                 length = int(headers.get("content-length", "0"))

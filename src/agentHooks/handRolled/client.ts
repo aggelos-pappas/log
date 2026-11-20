@@ -106,3 +106,17 @@ export function handRolledAdvice(verdict: HandRolledVerdict, seen = 0): string {
     `log should have a tool for this. You may go on: this is advice, not a block, and the owner isn't asked (rule ${HAND_ROLLED_RULE}). Once it has worked, make it a real log command and MCP tool: getGuide({ useCase: "${HAND_ROLLED_GUIDE}" }), then toolScaffold { name, summary } (a dry run) and toolScaffoldLive to write it.`,
   ].join('\n')
 }
+
+export function handRolledText(raw: string, record: (verdict: HandRolledVerdict) => number): string {
+  let input: { tool_name?: string; tool_input?: Record<string, unknown>; cwd?: string } = {}
+  try {
+    input = JSON.parse(raw || '{}') as typeof input
+  } catch {}
+  const verdict = classifyCall(input.tool_name ?? '', input.tool_input ?? {}, { cwd: input.cwd })
+  if (!verdict.handRolled) return ''
+  let seen = 0
+  try {
+    seen = record(verdict)
+  } catch {}
+  return handRolledAdvice(verdict, seen)
+}

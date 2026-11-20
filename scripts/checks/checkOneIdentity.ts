@@ -8,6 +8,7 @@ const RULES: Array<[RegExp, string]> = [
   [/impersonate\s*=\s*["'](chrome|firefox|safari|edge)\w*["']/i, "an impersonate target written in place"],
   [/IMPERSONATE\w*\s*=\s*["'](chrome|firefox|safari|edge)/i, "an IMPERSONATE constant pinned in place"],
   [/(Chrome|Firefox)\/1\d\d\.0/, "a browser user agent written in place"],
+  [/["']Discord Client["']|get_default_properties\(|\bElectron\/\d/, "the Discord desktop app's identity, which a web sign-in must never be sent as"],
 ];
 const OLD_PINS = /else\s+\{?\s*["'](chrome\d+|safari\w+|Mozilla\/5\.0)/;
 

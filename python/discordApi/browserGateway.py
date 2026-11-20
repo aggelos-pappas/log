@@ -82,7 +82,7 @@ class BrowserGateway:
             return self.session_factory()
         from curl_cffi.requests import AsyncSession
 
-        return AsyncSession(impersonate=browserIdentity.IMPERSONATE)
+        return AsyncSession(impersonate=browserIdentity.impersonate_of(self.identity))
 
     def headers(self) -> dict[str, str]:
         named = self.identity["headers"]

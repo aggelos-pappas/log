@@ -11,6 +11,7 @@ import { TwentyError, accountStore } from '../../twenty/graphql/index'
 import type { TwentyClient } from '../../twenty/graphql/index'
 import { timedEngine, timedEngineSync, timedSync } from '../../observability/timing/index'
 import { askReadHost, hostable, readHostOf, startReadHost } from '../readHost/index'
+import { driverOrNull } from '../../browser/driver/index'
 import type { EngineTrace } from '../../observability/timing/index'
 import type { PlatformAnswer, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from './types'
 
@@ -114,7 +115,7 @@ function spawnPlatformEngine(shape: PlatformShape, account: PlatformAccount, req
     const storagePath = shape.sessionStorage ? join(dir, 'storage.json') : null
     if (storagePath) writeFileSync(storagePath, JSON.stringify(sessionStorageOf(account.storageOrigins, shape.sessionStorage)), { mode: 0o600 })
     const spec = join(dir, 'spec.json')
-    const body = { ...request, account: account.accountName, platform: shape.platform, route: routed.route, stateRoot: platformStateRoot(shape.platform), writesPerDay: writesPerDayOf(shape.platform), cookiesPath, refreshedPath, ...(storagePath ? { storagePath } : {}), ...(trace ? { trace } : {}) }
+    const body = { ...request, account: account.accountName, platform: shape.platform, route: routed.route, browserDriver: driverOrNull(account), stateRoot: platformStateRoot(shape.platform), writesPerDay: writesPerDayOf(shape.platform), cookiesPath, refreshedPath, ...(storagePath ? { storagePath } : {}), ...(trace ? { trace } : {}) }
     const hosted = hostedRun(shape, account, request, body, refreshedPath)
     if (hosted) return hosted
     writeFileSync(spec, JSON.stringify(body), { mode: 0o600 })
@@ -161,7 +162,7 @@ function spawnPlatformEngineLive(shape: PlatformShape, account: PlatformAccount,
   const storagePath = shape.sessionStorage ? join(dir, 'storage.json') : null
   if (storagePath) writeFileSync(storagePath, JSON.stringify(sessionStorageOf(account.storageOrigins, shape.sessionStorage)), { mode: 0o600 })
   const spec = join(dir, 'spec.json')
-  writeFileSync(spec, JSON.stringify({ ...request, account: account.accountName, platform: shape.platform, route: routed.route, stateRoot: platformStateRoot(shape.platform), writesPerDay: writesPerDayOf(shape.platform), cookiesPath, refreshedPath, ...(storagePath ? { storagePath } : {}), ...(trace ? { trace } : {}) }), { mode: 0o600 })
+  writeFileSync(spec, JSON.stringify({ ...request, account: account.accountName, platform: shape.platform, route: routed.route, browserDriver: driverOrNull(account), stateRoot: platformStateRoot(shape.platform), writesPerDay: writesPerDayOf(shape.platform), cookiesPath, refreshedPath, ...(storagePath ? { storagePath } : {}), ...(trace ? { trace } : {}) }), { mode: 0o600 })
   return new Promise((resolve) => {
     const child = spawn(process.env.LOG_PYTHON || 'python', ['-u', shape.engine, spec], { windowsHide: true })
     let buffer = ''

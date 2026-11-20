@@ -46,6 +46,7 @@ export function hasMessengerPin(loginPath: string | null): boolean {
 export const inspectDetachDeps: {
   start: (argv: string[], logPath: string) => { exited: () => number | null };
   timeoutMs: number;
+  pollMs: number;
 } = {
   start(argv, logPath) {
     mkdirSync(dirname(logPath), { recursive: true });
@@ -58,6 +59,7 @@ export const inspectDetachDeps: {
     return { exited: () => code };
   },
   timeoutMs: 240_000,
+  pollMs: 100,
 };
 
 async function startDetached(accountName: string, argv: string[]): Promise<{ code: number; stdout?: string; stderr?: string }> {
@@ -77,7 +79,7 @@ async function startDetached(accountName: string, argv: string[]): Promise<{ cod
     }
     const exited = child.exited();
     if (exited !== null) return { code: exited || 1, stderr: `log inspect: the session ended before its browser was ready (exit ${exited}):\n${tail()}` };
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, inspectDetachDeps.pollMs));
   }
   return { code: 2, stderr: `log inspect: no ready browser after ${Math.round(inspectDetachDeps.timeoutMs / 1000)} s (it may still be starting):\n${tail()}` };
 }

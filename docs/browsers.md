@@ -264,6 +264,38 @@ changing is 73 ms p50 (89 ms p95). A checkpoint or other blocked page is shown
 but takes no input unless the owner drives the browser: it stays a stop for the
 agent (rule 94).
 
+**Whole-ask speed, end to end.** Measured on one Windows machine on loopback,
+before and after the same change, with the benches in `scripts/browserView`:
+
+| Path | Before p50 / p95 / p99 | After p50 / p95 / p99 | Bench |
+| --- | --- | --- | --- |
+| `browserView` state while the page's main thread is busy loading (4.5 s busy chunks) | 46 / 4015 / 4282 ms | 47 / 625 / 625 ms | `stateBench.py` |
+| First card resource in Hermes after the gateway starts (`/apps/{tool}/resource`) | 1297 / 2375 / 2375 ms | 16 / 31 / 31 ms | `routeBench.py` |
+| Warm card resource (637 KB live browser, 956 KB report) | 31 / 330 / 437 ms | 31 / 47 / 63 ms | `routeBench.py` |
+| Warm `/apps/{tool}/call` and `/result` | 63-93 / 157 / 265 ms | 63-78 / 157 / 234 ms | `routeBench.py` |
+| A watcher stores a message, the session's push loop has it | 7629 / 14711 / 14888 ms | 248 / 354 / 408 ms | inbox push bench |
+| Owner click to the card's canvas changing (Hermes replica) | 73 / 89 ms | unchanged | `hostBench.py` |
+
+What changed: the viewer answers `/state` within 0.6 s with the last state it
+read (marked `settling`) while a busy page is still answering, and shares one
+read between callers, instead of waiting up to 5 s and failing; the Hermes
+plugin starts `appHost.ts` from the Desktop plugin's `POST /apps/warm`, the
+host builds every `ui://log/` view as soon as it is up (`warmApps`), and a host
+that ended cleanly for a code change is started again at once instead of on
+the next card; the Desktop card keeps a view's HTML for 30 s so cards drawn
+together share one read; the push loop wakes when log.db's newest event or
+alert moves (`inboxMark`, polled every 200 ms) instead of only on files under
+the inbox folder or the 15 s fallback; and taking pending messages is one
+`BEGIN IMMEDIATE` transaction, so several push loops for one reader woken by
+the same message deliver it once (before: 65 duplicates over 30 messages with
+six loops).
+
+Opening a browser is still the slow part: a bare headless Camoufox took
+(`openBench.py`) 20.5 s p50 / 34.5 s p95 to the first frame, of which Python
+imports ~1.9 s, the Firefox launch ~9-11 s and the first page ~9-10 s; the
+viewer and the first screencast frame add under 100 ms. That launch cost is
+Camoufox's own on this machine and is not changed here.
+
 **One live view per account.** A view costs a stream and a state poll, so old
 ones must not keep running. In Hermes the host card keeps one registry per
 window (`windowLiveCards` in `src/mcp/apps/report/view/liveCards.ts`): the
