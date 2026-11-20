@@ -38,7 +38,8 @@ export const handRolled = {
     ],
     'REQ-HANDROLLED-04': [
       { kind: 'uses', file: SCRIPT, name: 'classifyCall' },
-      { kind: 'uses', file: SCRIPT, name: 'handRolledAdvice' },
+      { kind: 'uses', file: SCRIPT, name: 'handRolledText' },
+      { kind: 'uses', file: CLIENT, name: 'freshBlock' },
       { kind: 'uses', file: REGISTRY, name: 'HAND_ROLLED_MATCHER' },
       { kind: 'string', file: CLIENT, includes: 'advice, not a block' },
     ],

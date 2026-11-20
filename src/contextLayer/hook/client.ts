@@ -1,7 +1,8 @@
 import { playReminder, sessionPlayOf, transcriptTail } from '../session/index'
 import { listUseCases, readUseCase } from '../../mcp/server/helpers/guides.ts'
 import { logTiming } from '../service/client'
-import { askOf, isPrompt, loadToolFacts, outcomeOf, playMatchText, routerSection, route as wordRoute } from '../../useCases/router/client'
+import { askOf, isPrompt, loadToolFacts, outcomeOf, playMatchText, routerSection, route as wordRoute, useCaseVocabulary } from '../../useCases/router/client'
+import { playSkipOf } from '../../useCases/router/helpers/index'
 import type { MeaningAnswer, PlayMatch, RoutableUseCase, ToolFacts } from '../../useCases/router/types'
 import type { HookInput, HookResult } from './types'
 import { promptNameHints, promptWords } from '../../inbox/nameHints/index'
@@ -32,17 +33,18 @@ export async function hookAnswer(input: HookInput, route: RouteFn, useCases: Use
   const served = await route(prompt)
   const known = useCases()
   const answer = served ?? wordRoute(prompt, { useCases: known })
-  const play = answer.play ?? null
-  const menu = answer.menu ?? []
+  const skip = playSkipOf(prompt, useCaseVocabulary(known))
+  const play = skip ? null : (answer.play ?? null)
+  const menu = skip ? [] : (answer.menu ?? [])
   const outcome = answer.skipped ?? outcomeOf({ play, menu })
   const namesStarted = performance.now()
   const named = names(prompt)
   const namesMs = Math.round(performance.now() - namesStarted)
   const sectionStarted = performance.now()
   const meaning = served?.meaning ?? null
-  const tools = routerSection(prompt, known, meaning?.meaning ?? null, { decision: answer.ranked ? { ranked: answer.ranked } : null, playShown: Boolean(play || menu.length), facts: toolFacts(), play: play?.id ?? null })
+  const tools = routerSection(prompt, known, meaning?.meaning ?? null, { decision: answer.ranked ? { ranked: answer.ranked } : null, playShown: Boolean(play || menu.length), noPlay: Boolean(skip), facts: toolFacts(), play: play?.id ?? null })
   const fallback = !served ? 'noService' : meaning?.meaning ? null : meaning ? (meaning.fallback ?? 'nothingToEmbed') : 'notLoaded'
-  logTiming({ event, provider: 'router', ms: (meaning?.ms ?? 0) + performance.now() - sectionStarted, chars: tools.text.length, outcome: fallback ? `lexical:${fallback}` : 'fused', attrs: { meaning: fallback ?? 'used', meaningMs: Math.round((meaning?.ms ?? 0) * 10) / 10, play: tools.play, tools: tools.tools, skills: tools.skills } })
+  logTiming({ event, provider: 'router', ms: (meaning?.ms ?? 0) + performance.now() - sectionStarted, chars: tools.text.length, outcome: fallback ? `lexical:${fallback}` : 'fused', attrs: { ...(skip ? { playSkipped: skip } : {}), meaning: fallback ?? 'used', meaningMs: Math.round((meaning?.ms ?? 0) * 10) / 10, play: tools.play, tools: tools.tools, skills: tools.skills } })
   const text = [[playMatchText(play ? [play] : [], menu), tools.text].filter(Boolean).join('\n'), named].filter(Boolean).join('\n\n')
   return { event, text, outcome: `${served ? outcome : `wordsOnly ${outcome}`}${named ? ' named' : ''}`, namesMs, ...(menu.length && !play ? { menu: menu.map((m) => m.id) } : {}), ...(tools.tools.length ? { tools: tools.tools } : {}), ...(tools.skills.length ? { skills: tools.skills } : {}) }
 }

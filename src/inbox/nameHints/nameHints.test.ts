@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { Database } from 'bun:sqlite'
 import { closestNamed, nameHints, nameHintsText, nameScore, promptWords, storedNameHints } from './index'
+import { commonWordNear, labelMatch, promptTokens, typoShare } from './helpers/index'
 import type { NamedChat } from './index'
 
 const chat = (name: string, over: Partial<NamedChat> = {}): NamedChat => ({ platform: 'discord', account: 'discordAccount', conversationId: '900000000000000001', kind: 'dm', name, messages: 40, lastMessageAt: '2026-11-19T13:33:51Z', ...over })
@@ -41,7 +42,8 @@ describe('names in a prompt become pointers to the stored chats, typos included'
   })
 
   test('common words, platform names and short words never become names, and no match says nothing', () => {
-    expect(promptWords('summarise the discord convo with joe, show opportunities and stats')).toEqual([])
+    expect(promptWords('summarise the discord convo, show opportunities and stats')).toEqual([])
+    expect(promptWords('summarise the discord convo with joe')).toEqual(['joe'])
     expect(nameHintsText('show me the discord chats and stats', chats)).toBe('')
     expect(nameHintsText('refactor the parser', chats)).toBe('')
   })
@@ -90,5 +92,68 @@ describe('a list narrowed to the names closest to what was typed', () => {
     expect(closestNamed(list, 'jaovo', (c) => [c.name]).map((c) => c.name)).toEqual(['joavo'])
     expect(closestNamed(list, 'grace', (c) => [c.name]).map((c) => c.name)).toEqual(['grace_ships'])
     expect(closestNamed(list, 'zzzzzz', (c) => [c.name])).toEqual([])
+  })
+})
+
+describe('a typo of a common word is never a name; a real mention still is', () => {
+  const named = [
+    chat('Mose', { conversationId: '900000000000000011' }),
+    chat('Utils Hub', { kind: 'group', conversationId: '900000000000000012' }),
+    chat('Coffee_and_Code', { kind: 'group', conversationId: '900000000000000013' }),
+    chat('Jet', { conversationId: '900000000000000014' }),
+    chat('QX', { conversationId: '900000000000000015' }),
+    chat('Qin', { conversationId: '900000000000000016' }),
+    chat('grace_ships', { conversationId: '900000000000000017' }),
+    chat('linus_k', { conversationId: '900000000000000018' }),
+  ]
+  const names = (prompt: string) => nameHints(prompt, named).map((h) => h.chat.name)
+
+  test('a fast, garbled prompt full of typos of everyday words points at nobody', () => {
+    expect(names("so we need to mvoe on, im not tawre how to coemd asand it units train qiyzn")).toEqual([])
+    expect(names('i want mose of it and the jet fuel is fine')).toEqual([])
+  })
+
+  test('a capital, an @, a handle shape or a word like with/ask/tell before it makes it a name', () => {
+    expect(names('what did Jet say')).toEqual(['Jet'])
+    expect(names('ask QX about it')).toEqual(['QX'])
+    expect(names('@grace_ships replied?')).toEqual(['grace_ships'])
+    expect(names('did linus_k answer')).toEqual(['linus_k'])
+    expect(names('message mose about the call')).toEqual(['Mose'])
+  })
+
+  test('a short word only matches a name exactly, and a long typo never matches a short name', () => {
+    expect(names('ask qinn')).toEqual([])
+    expect(names('what did Qin say')).toEqual(['Qin'])
+  })
+
+  test('a later common word of a chat name is not a token of it', () => {
+    expect(names('this and that')).toEqual([])
+  })
+
+  test('a fuzzy match to a chat quiet for months loses to the threshold; an exact one does not', () => {
+    const old = [chat('grace_ships', { lastMessageAt: '2025-01-01T00:00:00Z' }), chat('linus_k', { conversationId: '9', lastMessageAt: '2026-11-19T00:00:00Z' })]
+    expect(nameHints('summarise grase_shps', old)).toEqual([])
+    expect(nameHints('summarise grace_ships', old).map((h) => h.chat.name)).toEqual(['grace_ships'])
+  })
+})
+
+describe('the bench labels each pointer from the prompt alone', () => {
+  test('common words and their typos are found, names are not', () => {
+    expect(commonWordNear('mvoe')).not.toBeNull()
+    expect(commonWordNear('coemd')).not.toBeNull()
+    expect(commonWordNear('units')).toBe('units')
+    expect(commonWordNear('grace_ships')).toBeNull()
+  })
+
+  test('a typo with no name context is wrong, a cued or exact uncommon name is right', () => {
+    expect(labelMatch('we are mose of the way', 'mose', 'Mose').label).toBe('wrong')
+    expect(labelMatch('ask mose', 'mose', 'Mose').label).toBe('right')
+    expect(labelMatch('read grace_ships', 'grace_ships', 'grace_ships').label).toBe('right')
+    expect(promptTokens('Hi. Jet said').map((t) => t.strong)).toEqual([false, true, false])
+  })
+
+  test('the share of unknown words is high for a garbled prompt and low for a clean one', () => {
+    expect(typoShare('so how much lnoger tliek hwe ahve teh')).toBeGreaterThan(0.4)
+    expect(typoShare('so how much longer will it take')).toBe(0)
   })
 })

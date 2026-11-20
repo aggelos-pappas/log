@@ -162,6 +162,9 @@ The agent hooks put log-cli's state in front of the agent (Claude Code or Codex)
 - **REQ-HOOKS-30** The prompt router ranks plays, tools and skills by meaning as well as words
 - **REQ-HOOKS-28** Setup installs the hooks for each harness it finds
 - **REQ-HOOKS-31** The warm service never makes a hook wait on a walk, a git run or a second embed
+- **REQ-HOOKS-32** A typo of a common word is never pointed at a chat
+- **REQ-HOOKS-33** A typo-heavy prompt or one about building log names no play
+- **REQ-HOOKS-34** An unchanged block is said once per session
 
 ## [Inspect rule one](./inspectRuleOne.md)
 
