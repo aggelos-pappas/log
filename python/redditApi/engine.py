@@ -13,6 +13,7 @@ REPO = ROOT.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from identity import accountRoute
 from platformKit import engine as kit
 
 PLATFORM = "reddit"
@@ -28,7 +29,7 @@ def bun() -> str:
 
 
 def bridge(spec: dict[str, Any], cookies: dict[str, str], **fields: Any) -> dict[str, Any]:
-    request = {"action": spec["action"], "account": spec.get("account"), "cookies": cookies, "proxy": spec.get("proxy") or None, "readSpacingMs": READ_SPACING_MS, **fields}
+    request = {"action": spec["action"], "account": spec.get("account"), "cookies": cookies, "proxy": accountRoute.proxy(), "readSpacingMs": READ_SPACING_MS, **fields}
     try:
         run = subprocess.run([bun(), str(BRIDGE)], input=json.dumps(request), capture_output=True, text=True, encoding="utf-8", timeout=BRIDGE_TIMEOUT_S, cwd=str(REPO), creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     except subprocess.TimeoutExpired:

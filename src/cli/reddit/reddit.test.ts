@@ -52,7 +52,7 @@ describe("log reddit session check", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({ session: "x" }));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "dance", account: "redditOne", platform: "reddit", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "dance", account: "redditOne", platform: "reddit", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [REDDIT_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "actionUnknown" });
@@ -65,7 +65,7 @@ describe("log reddit session check", () => {
     writeFileSync(cookiesPath, JSON.stringify({ session: "x" }));
     for (const [action, extra, code] of [["create", {}, "notLive"], ["reply", {}, "notLive"], ["vote", { live: true }, "notApproved"]] as const) {
       const spec = join(dir, `${action}.json`);
-      writeFileSync(spec, JSON.stringify({ action, account: "redditOne", platform: "reddit", stateRoot: join(dir, "state"), cookiesPath, ...extra }));
+      writeFileSync(spec, JSON.stringify({ action, account: "redditOne", platform: "reddit", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath, ...extra }));
       const engine = spawnSync(process.env.LOG_PYTHON || "python", [REDDIT_PLATFORM.engine, spec], { encoding: "utf8" });
       if (engine.error) return;
       expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code });

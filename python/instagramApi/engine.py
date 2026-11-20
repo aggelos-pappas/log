@@ -19,6 +19,7 @@ for p in (str(ROOT), str(VENDOR / "instagrapi")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
+from identity import accountRoute
 from platformKit import engine as kit
 from platformKit import media
 from platformKit import reactions
@@ -48,6 +49,8 @@ def client_of() -> Any:
 
     client = Client()
     client.set_retry_config(private_transport=TRANSPORT, public_transport=TRANSPORT, public_request_retries_count=0)
+    if accountRoute.proxy():
+        client.set_proxy(accountRoute.proxy())
     return client
 
 
@@ -66,7 +69,7 @@ def refused(error: Exception) -> dict[str, Any] | None:
 
 def signed_in(cookies: dict[str, str]) -> tuple[Any, dict[str, Any]]:
     held = SESSION.get("held")
-    if held and held["sessionid"] == cookies["sessionid"]:
+    if held and held["sessionid"] == cookies["sessionid"] and held.get("proxy") == accountRoute.proxy():
         return held["client"], {**held["answer"], "reused": True}
     client = client_of()
     try:
@@ -82,7 +85,7 @@ def signed_in(cookies: dict[str, str]) -> tuple[Any, dict[str, Any]]:
     if cookies.get("ds_user_id") and user_id and cookies["ds_user_id"] != user_id:
         return None, {"ok": False, "code": "sessionMismatch", "detail": f"Instagram says this sessionid is user {user_id}, the account's cookies say {cookies['ds_user_id']}", "loginState": "unknown"}
     answer = {"ok": True, "loginState": "loggedIn", "screenName": client.username, "userId": user_id, "transport": TRANSPORT}
-    SESSION["held"] = {"sessionid": cookies["sessionid"], "client": client, "answer": answer}
+    SESSION["held"] = {"sessionid": cookies["sessionid"], "proxy": accountRoute.proxy(), "client": client, "answer": answer}
     return client, {**answer, "reused": False}
 
 

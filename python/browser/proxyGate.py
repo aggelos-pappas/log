@@ -225,32 +225,30 @@ def slow_ms() -> int:
 
 def facebook_ms(proxy: dict[str, Any]) -> int | None:
     import time
-    import urllib.error
-    import urllib.request
+
+    from curl_cffi.requests import Session
 
     if not str(proxy["server"]).lower().startswith("http"):
         return None
     url = proxy_url(proxy)
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({"http": url, "https": url}))
 
-    def one_round() -> int:
+    def one_round(client: Any) -> int:
         worst = 0
         for probe in FACEBOOK_PROBES:
             started = time.monotonic()
             try:
-                opener.open(urllib.request.Request(probe, headers={"User-Agent": _identity.user_agent()}), timeout=15).read(256)
-            except urllib.error.HTTPError:
-                pass
+                client.get(probe, timeout=15).content[:256]
             except Exception:
                 return 15_000
             worst = max(worst, int((time.monotonic() - started) * 1000))
         return worst
 
     best = 15_000
-    for _ in range(PROBE_ROUNDS):
-        best = min(best, one_round())
-        if best <= slow_ms():
-            break
+    with Session(impersonate=_identity.curl_target("facebook"), proxies={"all": url}) as client:
+        for _ in range(PROBE_ROUNDS):
+            best = min(best, one_round(client))
+            if best <= slow_ms():
+                break
     return best
 
 

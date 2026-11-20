@@ -1,6 +1,6 @@
 import { isKnownPlatformAccount, platformOfAccount, PLATFORM_LABELS, siteOfAccount } from '../../../cli/runner/helpers/platforms'
 import { USABLE_STATUSES } from '../types'
-import type { FacebookAccount, RunPurpose, RunProxy, RunnableCheck } from '../types'
+import type { EngineRoute, FacebookAccount, RunPurpose, RunProxy, RunnableCheck } from '../types'
 
 const COUNTRY = /^[A-Z]{2}$/
 
@@ -55,6 +55,7 @@ export function checkRunnable(account: FacebookAccount, purpose: RunPurpose): Ru
       if (purpose !== 'check' && account.status && !USABLE_STATUSES[purpose].includes(account.status)) {
         return { ok: false, code: 'accountNotUsable', detail: `${account.accountName} is ${account.status}; ${purpose === 'connect' ? 'signing in' : 'a run'} needs ${USABLE_STATUSES[purpose].join(', ')}` }
       }
+      if (account.proxy?.trim()) return ownProxy(account)
       return { ok: true, proxy: { server: '', direct: true, platform: platformOfAccount(account), country: account.homeCountry ?? '' } }
     }
   }
@@ -68,10 +69,34 @@ export function checkRunnable(account: FacebookAccount, purpose: RunPurpose): Ru
   if (!account.proxy?.trim()) {
     return { ok: false, code: 'noProxy', detail: `${account.accountName} has no proxy in Twenty: no browser opens without one` }
   }
-  const proxy = parseProxyUrl(account.proxy)
+  return ownProxy(account)
+}
+
+function ownProxy(account: FacebookAccount): RunnableCheck {
+  const proxy = parseProxyUrl(account.proxy ?? '')
   if (!proxy) return { ok: false, code: 'proxyMalformed', detail: `${account.accountName}: use scheme://user:pass@host:port` }
   if (!account.homeCountry || !COUNTRY.test(account.homeCountry)) {
     return { ok: false, code: 'noHomeCountry', detail: `${account.accountName} has ${account.homeCountry ? `"${account.homeCountry}"` : 'no homeCountry'}` }
   }
   return { ok: true, proxy: { ...proxy, country: account.homeCountry } }
+}
+
+export function engineProxyUrl(raw: string): string | null {
+  const proxy = parseProxyUrl(raw)
+  if (!proxy) return null
+  if (!proxy.username) return proxy.server
+  const [scheme, hostPort] = proxy.server.split('//')
+  const auth = encodeURIComponent(proxy.username) + (proxy.password ? `:${encodeURIComponent(proxy.password)}` : '')
+  return `${scheme}//${auth}@${hostPort}`
+}
+
+export function engineRoute(account: Pick<FacebookAccount, 'accountName' | 'platform' | 'proxy'>): EngineRoute {
+  const raw = account.proxy?.trim()
+  if (!raw) {
+    if (account.platform === 'FACEBOOK') return { ok: false, code: 'noProxy', detail: `${account.accountName} has no proxy in Twenty: a Facebook account never calls out without one (rule 12). Nothing was sent.` }
+    return { ok: true, route: { proxy: null } }
+  }
+  const proxy = engineProxyUrl(raw)
+  if (!proxy) return { ok: false, code: 'proxyMalformed', detail: `${account.accountName}: its proxy can't be read, so nothing was sent (use scheme://user:pass@host:port)` }
+  return { ok: true, route: { proxy } }
 }

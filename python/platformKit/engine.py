@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
+from identity import accountRoute
 from platformKit import timing
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,6 +93,10 @@ async def run(spec: dict[str, Any], actions: dict[str, Action], writes: tuple[st
         return {"ok": False, "code": "notLive", "detail": f"{action} acts on {spec.get('platform')}: the engine only acts with live set (rule 8)"}
     if action in writes and not str(spec.get("approvedBy") or "").strip():
         return {"ok": False, "code": "notApproved", "detail": f"{action} needs the name of who approved it"}
+    try:
+        accountRoute.arm(spec.get("platform"), spec)
+    except accountRoute.RouteError as e:
+        return {"ok": False, "code": e.code, "detail": e.detail}
     cookies = normalize_cookies(json.loads(Path(spec["cookiesPath"]).read_text(encoding="utf-8")))
     if spec.get("storagePath"):
         cookies.update({str(k): str(v) for k, v in json.loads(Path(spec["storagePath"]).read_text(encoding="utf-8")).items() if v})
@@ -104,6 +109,8 @@ async def run(spec: dict[str, Any], actions: dict[str, Action], writes: tuple[st
     try:
         with timing.span(f"action {action}"):
             out = await actions[action](spec, cookies)
+    except (accountRoute.RouteError, accountRoute.RouteRefused) as e:
+        out = {"ok": False, "code": e.code, "detail": redact(e.detail, cookies)[:300]}
     except Exception as e:
         out = {"ok": False, "code": type(e).__name__, "detail": redact(e, cookies)[:300]}
     refreshed = out.pop("refreshedCookies", None)

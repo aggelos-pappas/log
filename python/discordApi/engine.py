@@ -22,7 +22,7 @@ from platformKit import media
 from platformKit import reactions
 from discordApi import browserGateway, browserIdentity, browserRest
 from logHome import log_home
-from identity import browserIdentity as _identity
+from identity import accountRoute
 
 PLATFORM = "discord"
 LIBRARY = "vendor/endcord"
@@ -235,13 +235,11 @@ OUTGOING_MEDIA = log_home() / "discord" / "media" / "outgoing"
 
 def media_file_of(link: str) -> Path:
     import hashlib
-    import urllib.request
 
     OUTGOING_MEDIA.mkdir(parents=True, exist_ok=True)
     path = OUTGOING_MEDIA / f"{hashlib.sha1(link.encode()).hexdigest()[:16]}{Path(link.split('?')[0]).suffix.lower()}"
     if not path.exists():
-        with urllib.request.urlopen(urllib.request.Request(link, headers={"User-Agent": _identity.user_agent("discord")}), timeout=60) as answer:
-            path.write_bytes(answer.read())
+        path.write_bytes(accountRoute.download(link, "discord"))
     return path
 
 

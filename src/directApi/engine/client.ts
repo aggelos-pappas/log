@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { commandBrowser } from '../../browser/run/index'
 import { commandWordOfKey, isPlatform, PLATFORM_LABELS, PLATFORMS } from '../../cli/runner/helpers/platforms'
 import { homeOf, outsideActiveHours } from '../../platformKit/home/index'
-import { parseProxyUrl } from '../../platformKit/socialAccount/index'
+import { engineRoute, parseProxyUrl } from '../../platformKit/socialAccount/index'
 import type { FacebookAccount } from '../../platformKit/socialAccount/index'
 import { setStatusAndReplace } from '../../facebook/marketplace/replacement/index'
 import { accountStore } from '../../twenty/graphql/index'
@@ -103,7 +103,7 @@ export function commandEngine(command: string, name: string = command): CommandE
 }
 
 export function engineHead(route: DirectRoute): string {
-  if (route.platform === 'twitter') return `the direct-API engine only (twikit, vendored in vendor/twikit, ${route.surface}.${route.method} for the ${route.when}; no browser and no proxy: X accounts call X directly, rule 80)`
+  if (route.platform === 'twitter') return `the direct-API engine only (twikit, vendored in vendor/twikit, ${route.surface}.${route.method} for the ${route.when}; no browser; direct unless the account has a proxy, rule 80)`
   if (route.platform !== 'facebook') return `the direct-API engine only (${route.library}, vendored in vendor/${route.library}, ${route.surface}.${route.method} for the ${route.when}; no browser)`
   return `the direct-API engine first (fbk ${route.surface}.${route.method}, no browser) for ${route.when}, when the account has a saved c_user + xs session, a proxy in its home country and is inside its hours (--bypass skips the hours)`
 }
@@ -237,8 +237,9 @@ function spawnFbk(spec: object): EngineAnswer {
 }
 
 export function runEngine(account: FacebookAccount, spec: EngineSpec): EngineAnswer {
-  if (!account.proxy) return { ok: false, code: 'noProxy', detail: 'no proxy' }
-  return spawnEngine({ ...spec, account: account.accountName, proxy: account.proxy, cookies: netscape(cookiesOf(account)) })
+  const routed = engineRoute(account)
+  if (!routed.ok) return { ok: false, code: routed.code, detail: routed.detail }
+  return spawnEngine({ ...spec, account: account.accountName, route: routed.route, cookies: netscape(cookiesOf(account)) })
 }
 
 export function governorStatus(accountName: string): GovernorStatus | null {

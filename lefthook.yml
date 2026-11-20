@@ -13,6 +13,8 @@ pre-commit:
       run: bun run check:reverseChudTransport
     oneIdentity:
       run: bun run check:oneIdentity
+    identityGate:
+      run: bun run check:identityGate
 
     linkedinTransport:
       run: bun run check:linkedinTransport
@@ -88,6 +90,8 @@ pre-push:
       run: bun run check:reverseChudTransport
     oneIdentity:
       run: bun run check:oneIdentity
+    identityGate:
+      run: bun run check:identityGate
 
     linkedinTransport:
       run: bun run check:linkedinTransport

@@ -12,7 +12,7 @@ import type { Command, CommandInput } from "../../runner/types.ts";
 export const SLACK_COOKIES_USAGE = [
   "Usage: log slack cookies save --account <accountName> [--name <label>] [--workspace <domain>]",
   "Saves a Slack account's session locally (~/.logCli/localAccounts.json, rule 97) from a masked Clack prompt: its d cookie (xoxd-…), copied from a browser signed in to app.slack.com, never passed as a flag or printed.",
-  "It is checked first: the direct-API engine (vendor/gabrielSlack, no browser, no proxy) exchanges it with Slack for the workspaces it is signed in to, and only a cookie Slack accepts is saved. An account log doesn't have yet gets a new local SLACK row; one it has gets its d cookie replaced and keeps the rest.",
+  "It is checked first: the direct-API engine (vendor/gabrielSlack, no browser) exchanges it with Slack for the workspaces it is signed in to, and only a cookie Slack accepts is saved. An account log doesn't have yet gets a new local SLACK row; one it has gets its d cookie replaced and keeps the rest.",
 ].join("\n");
 
 interface CookiePrompts {

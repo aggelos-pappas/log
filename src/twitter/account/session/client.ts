@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { TwentyError, accountStore } from '../../../twenty/graphql/index'
 import type { TwentyClient } from '../../../twenty/graphql/index'
-import { SOCIAL_ACCOUNTS, toFacebookAccount } from '../../../platformKit/socialAccount/index'
+import { SOCIAL_ACCOUNTS, engineRoute, toFacebookAccount } from '../../../platformKit/socialAccount/index'
 import type { FacebookAccount, SocialAccountRow } from '../../../platformKit/socialAccount/index'
 import { twitterStateRoot, writeLocalSession, writesPerDayOf } from '../../../directApi/engine/index'
 import { timedEngine } from '../../../observability/timing/index'
@@ -84,7 +84,7 @@ interface PreparedCall {
   refreshedPath: string
 }
 
-function prepareCall(account: TwitterAccount, request: TwitterEngineSpec, trace: EngineTrace | null): PreparedCall {
+function prepareCall(account: TwitterAccount, request: TwitterEngineSpec, trace: EngineTrace | null, route: { proxy: string | null }): PreparedCall {
   const dir = mkdtempSync(join(tmpdir(), 'twitterApi'))
   const cookiesPath = join(dir, 'cookies.json')
   const refreshedPath = join(dir, 'refreshed.json')
@@ -92,7 +92,7 @@ function prepareCall(account: TwitterAccount, request: TwitterEngineSpec, trace:
   const { chatPin, ...rest } = request
   const pinPath = chatPin ? join(dir, 'chatPin.txt') : undefined
   if (pinPath) writeFileSync(pinPath, chatPin!, { mode: 0o600 })
-  const spec = { ...rest, account: account.accountName, writesPerDay: writesPerDayOf('twitter'), cookiesPath, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }
+  const spec = { ...rest, account: account.accountName, route, writesPerDay: writesPerDayOf('twitter'), cookiesPath, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }
   const specPath = join(dir, 'spec.json')
   writeFileSync(specPath, JSON.stringify(spec), { mode: 0o600 })
   return { dir, spec, specPath, refreshedPath }
@@ -113,7 +113,9 @@ async function viaHost(account: TwitterAccount, prepared: PreparedCall, onLive?:
 
 export function runTwitterEngine(account: TwitterAccount, request: TwitterEngineSpec): Promise<TwitterEngineRun> {
   return timedEngine(`engine twitter ${String(request.action ?? '')}`.trim(), { account: account.accountName }, async (trace) => {
-    const prepared = prepareCall(account, request, trace)
+    const routed = engineRoute(account)
+    if (!routed.ok) return { answer: { ok: false, code: routed.code, detail: routed.detail }, refreshed: null }
+    const prepared = prepareCall(account, request, trace, routed.route)
     try {
       return (await viaHost(account, prepared)) ?? spawnPrepared(prepared)
     } finally {
@@ -136,18 +138,20 @@ function spawnPrepared(prepared: PreparedCall): TwitterEngineRun {
 
 export function runTwitterEngineLive(account: TwitterAccount, request: TwitterEngineSpec, onLive: (event: XChatLiveEvent) => void): Promise<TwitterEngineRun> {
   return timedEngine(`engine twitter ${String(request.action ?? '')}`.trim(), { account: account.accountName, live: true }, async (trace) => {
-    const prepared = prepareCall(account, request, trace)
+    const routed = engineRoute(account)
+    if (!routed.ok) return { answer: { ok: false, code: routed.code, detail: routed.detail }, refreshed: null }
+    const prepared = prepareCall(account, request, trace, routed.route)
     const direct = await viaHost(account, prepared, onLive)
     if (direct) {
       rmSync(prepared.dir, { recursive: true, force: true })
       return direct
     }
     rmSync(prepared.dir, { recursive: true, force: true })
-    return spawnTwitterEngineLive(account, request, onLive, trace)
+    return spawnTwitterEngineLive(account, request, onLive, trace, routed.route)
   }, (run) => run.answer)
 }
 
-function spawnTwitterEngineLive(account: TwitterAccount, request: TwitterEngineSpec, onLive: (event: XChatLiveEvent) => void, trace: EngineTrace | null): Promise<TwitterEngineRun> {
+function spawnTwitterEngineLive(account: TwitterAccount, request: TwitterEngineSpec, onLive: (event: XChatLiveEvent) => void, trace: EngineTrace | null, route: { proxy: string | null }): Promise<TwitterEngineRun> {
   const dir = mkdtempSync(join(tmpdir(), 'twitterApi'))
   const cookiesPath = join(dir, 'cookies.json')
   const refreshedPath = join(dir, 'refreshed.json')
@@ -156,7 +160,7 @@ function spawnTwitterEngineLive(account: TwitterAccount, request: TwitterEngineS
   const pinPath = chatPin ? join(dir, 'chatPin.txt') : undefined
   if (pinPath) writeFileSync(pinPath, chatPin!, { mode: 0o600 })
   const spec = join(dir, 'spec.json')
-  writeFileSync(spec, JSON.stringify({ ...rest, account: account.accountName, writesPerDay: writesPerDayOf('twitter'), cookiesPath, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }), { mode: 0o600 })
+  writeFileSync(spec, JSON.stringify({ ...rest, account: account.accountName, route, writesPerDay: writesPerDayOf('twitter'), cookiesPath, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }), { mode: 0o600 })
   return new Promise((resolve) => {
     const child = spawn(process.env.LOG_PYTHON || 'python', ['-u', ENGINE, spec], { windowsHide: true })
     let buffer = ''

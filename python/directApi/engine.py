@@ -152,14 +152,26 @@ def run_surface(surface: str, method: str, args: list[Any], cookies_path: str, *
 
 
 def main() -> int:
+    from identity import accountRoute
+
     spec = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
     if spec.get("governorStatus"):
         out = governor_status(spec["account"])
-    elif spec.get("surface"):
-        out = run_surface(spec["surface"], spec["method"], spec.get("args", []), spec["cookiesPath"], proxy=spec.get("proxy"), account=spec.get("account"))
-    else:
-        out = run(spec["friendly"], spec["cookiesPath"], proxy=spec.get("proxy"),
-                  account=spec.get("account"), variables=spec.get("variables"), dry_run=bool(spec.get("dryRun")))
+        print(json.dumps(out, default=str))
+        return 0 if out.get("ok") else 1
+    try:
+        route = accountRoute.arm("facebook", spec)
+    except accountRoute.RouteError as e:
+        print(json.dumps({"ok": False, "code": e.code, "detail": e.detail}))
+        return 1
+    try:
+        if spec.get("surface"):
+            out = run_surface(spec["surface"], spec["method"], spec.get("args", []), spec["cookiesPath"], proxy=route["proxy"], account=spec.get("account"))
+        else:
+            out = run(spec["friendly"], spec["cookiesPath"], proxy=route["proxy"],
+                      account=spec.get("account"), variables=spec.get("variables"), dry_run=bool(spec.get("dryRun")))
+    except (accountRoute.RouteError, accountRoute.RouteRefused) as e:
+        out = {"ok": False, "code": e.code, "detail": e.detail}
     print(json.dumps(out, default=str))
     return 0 if out.get("ok") else 1
 

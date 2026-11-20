@@ -5,7 +5,7 @@ import { governorLine, openTwitterAccount } from "./account.ts";
 
 export const POSTS_USAGE = [
   "Usage: log twitter posts --account <accountName> --user <handle> [--limit <n>] [--media] [--json]",
-  "Reads one person's recent posts on X through the account's own session on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80), newest first: when, the text, likes, reposts, replies and views, and each photo or video with its best MP4 link. Sends nothing, and the person is never told.",
+  "Reads one person's recent posts on X through the account's own session on the direct-API engine (no browser; direct unless it has a proxy, rule 80), newest first: when, the text, likes, reposts, replies and views, and each photo or video with its best MP4 link. Sends nothing, and the person is never told.",
   "--media reads their Media tab (posts with a photo or video) instead of their posts. X's own answer decides: the session check first, then X's own user and timeline answers, up to 40 a page, 1.5 s apart. --limit is how many posts to read, default 20, at most 200.",
 ].join("\n");
 
