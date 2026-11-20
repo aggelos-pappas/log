@@ -259,11 +259,16 @@ def connects_path(spec: dict[str, Any]) -> Path:
     return Path(spec["stateRoot"]) / spec["account"] / "connects.json"
 
 
+def merge_connects(into: dict[str, Any], held: dict[str, Any]) -> None:
+    into["sent"] = sorted(set(float(t) for t in (held.get("sent") or []) + (into.get("sent") or [])))
+
+
 def connects_sent(spec: dict[str, Any]) -> list[float]:
-    path = connects_path(spec)
+    from logDb import engineStore
+
     try:
-        return [float(t) for t in json.loads(path.read_text(encoding="utf-8")).get("sent") or []]
-    except (OSError, ValueError):
+        return [float(t) for t in (engineStore.load("linkedinConnects", connects_path(spec)) or {}).get("sent") or []]
+    except (TypeError, ValueError):
         return []
 
 
@@ -280,9 +285,9 @@ def connect_pace(spec: dict[str, Any], now: float) -> dict[str, Any] | None:
 
 def connect_noted(spec: dict[str, Any], now: float) -> None:
     sent = [t for t in connects_sent(spec) if now - t < 7 * 24 * 3600] + [now]
-    path = connects_path(spec)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"sent": sent}), encoding="utf-8")
+    from logDb import engineStore
+
+    engineStore.save("linkedinConnects", connects_path(spec), {"sent": sent}, merge_connects)
 
 
 async def suggestions(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:

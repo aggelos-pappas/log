@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 55 domains, 617 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 55 domains, 618 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -888,6 +888,7 @@ How log keeps what it reads and does: one SQLite database, `~/.logCli/log.db`, w
 - **REQ-STORAGE-15** The small logs are records, and hook timings are spans
 - **REQ-STORAGE-16** Nothing new writes shared state outside log.db
 - **REQ-STORAGE-17** The small shared state is keyed rows in log.db
+- **REQ-STORAGE-20** The engines' own stores are rows in log.db
 
 ## [TikTok](./tiktok.md)
 

@@ -180,6 +180,37 @@ def push_state_path():
     return Path(os.environ.get("LOG_INBOX_STATE", "").strip() or Path.home() / ".logCli" / "inbox") / "hermesPush.json"
 
 
+def put_push_state(body, db=None):
+    path = db or log_db()
+    if not path.is_file():
+        return False
+    try:
+        handle = sqlite3.connect(f"{path.resolve().as_uri()}?mode=rw", uri=True, timeout=5)
+        try:
+            handle.execute("INSERT INTO state (scope, key, body, updatedAt) VALUES ('hermesPush', 'current', ?, ?) ON CONFLICT(scope, key) DO UPDATE SET body = excluded.body, updatedAt = excluded.updatedAt", (body, int(time.time() * 1000)))
+            handle.commit()
+        finally:
+            handle.close()
+        return True
+    except (sqlite3.Error, ValueError, OSError):
+        return False
+
+
+def stored_push_state(db=None):
+    path = db or log_db()
+    if not path.is_file():
+        return None
+    try:
+        handle = sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True, timeout=2)
+        try:
+            row = handle.execute("SELECT body FROM state WHERE scope = 'hermesPush' AND key = 'current'").fetchone()
+        finally:
+            handle.close()
+        return row[0] if row else None
+    except (sqlite3.Error, ValueError, OSError):
+        return None
+
+
 class Push:
     def __init__(self):
         self.ctx = None
@@ -223,16 +254,19 @@ class Push:
         self.deliver(context)
 
     def remember(self, key, reader):
+        body = json.dumps({"sessionKey": key, "reader": reader})
+        if put_push_state(body):
+            return
         try:
             path = push_state_path()
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps({"sessionKey": key, "reader": reader}), encoding="utf-8")
+            path.write_text(body, encoding="utf-8")
         except OSError:
             pass
 
     def recall(self):
         try:
-            saved = json.loads(push_state_path().read_text(encoding="utf-8"))
+            saved = json.loads(stored_push_state() or push_state_path().read_text(encoding="utf-8"))
             return str(saved.get("sessionKey") or ""), str(saved.get("reader") or "")
         except (OSError, ValueError):
             return "", ""

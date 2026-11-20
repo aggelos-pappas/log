@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 VERSION = 1
+STORE = "xInbox"
 
 
 def shown(m: dict[str, Any]) -> bool:
@@ -16,23 +17,40 @@ def empty_state() -> dict[str, Any]:
     return {"version": VERSION, "maxSequenceId": "0", "syncedAt": None, "xchat": {}, "legacy": {"conversations": {}, "users": {}, "messages": [], "boxes": {}}}
 
 
+def valid_state(state: Any) -> bool:
+    return isinstance(state, dict) and state.get("version") == VERSION and str(state.get("maxSequenceId") or "").isdigit()
+
+
 def read_state(path: Path | None) -> dict[str, Any] | None:
-    if path is None or not path.exists():
+    if path is None:
+        return None
+    from logDb import engineStore
+
+    used, held = engineStore.read(STORE, path.parent.name, path, merge_states, valid_state)
+    if used:
+        return held
+    return read_file(path)
+
+
+def read_file(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
         return None
     try:
         state = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    if not isinstance(state, dict) or state.get("version") != VERSION or not str(state.get("maxSequenceId") or "").isdigit():
-        return None
-    return state
+    return state if valid_state(state) else None
 
 
 def write_state(path: Path | None, state: dict[str, Any]) -> None:
     if path is None:
         return
+    from logDb import engineStore
+
+    if engineStore.write(STORE, path.parent.name, state, path, merge_states, valid_state):
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
-    on_disk = read_state(path)
+    on_disk = read_file(path)
     if on_disk is not None:
         merge_states(state, on_disk)
     temp = path.with_name(f"{path.name}.{os.getpid()}.tmp")

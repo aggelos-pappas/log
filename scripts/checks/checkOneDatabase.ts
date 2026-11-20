@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 
-type Kind = 'repo' | 'capture' | 'dataset' | 'index' | 'media' | 'log' | 'session'
+type Kind = 'repo' | 'capture' | 'dataset' | 'index' | 'media' | 'log' | 'session' | 'fallback'
 
 const WHY: Record<Kind, string> = {
   repo: 'writes files inside the repo (docs, skills, scaffolds)',
@@ -11,6 +11,7 @@ const WHY: Record<Kind, string> = {
   media: 'a media file (audio, image, video)',
   log: 'a log people watch as it is written (the live log, rule 26), a process log, or the private day log (~/.logCli/devlog)',
   session: 'a private per-run or per-account session file (cookies, specs, OAuth), never shared state',
+  fallback: 'writes its old file only when log.db or its table is not there yet; the store itself lives in log.db',
 }
 
 const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
@@ -36,14 +37,14 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'scripts/media/personaPictures.ts': { writes: 1, kind: 'dataset' },
   'scripts/useCases/benchRouter.ts': { writes: 1, kind: 'dataset' },
   'scripts/useCases/evalSkillRouter.ts': { writes: 1, kind: 'dataset' },
-  'src/agentHooks/opencode/client.ts': { writes: 1, kind: 'repo' },
+  'src/agentHooks/opencode/client.ts': { writes: 2, kind: 'repo' },
   'src/agentHooks/hermes/client.ts': { writes: 2, kind: 'repo' },
   'src/agentHooks/harness/client.ts': { writes: 1, kind: 'session' },
   'src/auth/session/client.ts': { writes: 2, kind: 'session' },
   'src/browser/flow/client.ts': { writes: 2, kind: 'capture' },
   'src/browser/inspect/client.ts': { writes: 5, kind: 'capture' },
-  'src/browser/run/client.ts': { writes: 4, kind: 'capture' },
-  'src/browser/runStore/client.ts': { writes: 3, kind: 'capture' },
+  'src/browser/run/client.ts': { writes: 5, kind: 'capture' },
+  'src/browser/runStore/client.ts': { writes: 7, kind: 'capture' },
   'src/cli/capture/index.ts': { writes: 1, kind: 'capture' },
   'src/cli/launch/index.ts': { writes: 1, kind: 'session' },
   'src/cli/lifecycle/index.ts': { writes: 1, kind: 'repo' },
@@ -57,7 +58,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'src/extensions/voiceClone/helpers/voiceNote.ts': { writes: 1, kind: 'media' },
   'src/facebook/group/members/client.ts': { writes: 2, kind: 'capture' },
   'src/facebook/marketplace/check/client.ts': { writes: 1, kind: 'capture' },
-  'src/inbox/watch/client.ts': { writes: 3, kind: 'log' },
+  'src/inbox/watch/client.ts': { writes: 2, kind: 'log' },
   'src/facebook/marketplace/host/helpers/progress.ts': { writes: 2, kind: 'capture' },
   'src/mcp/oauth/client.ts': { writes: 1, kind: 'session' },
   'src/media/persona/client.ts': { writes: 3, kind: 'dataset' },
@@ -66,7 +67,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'src/platformKit/session/client.ts': { writes: 6, kind: 'session' },
   'src/release/apply/client.ts': { writes: 1, kind: 'session' },
   'src/release/check/client.ts': { writes: 1, kind: 'session' },
-  'src/rea/capture/client.ts': { writes: 7, kind: 'capture' },
+  'src/rea/capture/client.ts': { writes: 8, kind: 'capture' },
   'src/runtime/bridge/client.ts': { writes: 1, kind: 'session' },
   'src/rea/facebookClient/client.ts': { writes: 6, kind: 'capture' },
   'src/rea/inspectMap/client.ts': { writes: 6, kind: 'capture' },
@@ -84,15 +85,54 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'src/voice/pairs/client.ts': { writes: 3, kind: 'index' },
   'src/voice/phrases/client.ts': { writes: 1, kind: 'index' },
   'src/warmup/viewer/client.ts': { writes: 1, kind: 'dataset' },
+  'src/models/store/helpers/effects.ts': { writes: 2, kind: 'index' },
+  'scripts/twenty/emitTwentyClient.mjs': { writes: 1, kind: 'repo' },
+  'scripts/twenty/lightenTwentyClient.mjs': { writes: 1, kind: 'repo' },
+  'python/browser/browserViewer.py': { writes: 3, kind: 'capture' },
+  'python/browser/harRecorder.py': { writes: 1, kind: 'capture' },
+  'python/checks/comments.py': { writes: 1, kind: 'repo' },
+  'python/checks/slackTransport.py': { writes: 1, kind: 'repo' },
+  'python/checks/twikitTransport.py': { writes: 2, kind: 'repo' },
+  'python/device/deviceProfile.py': { writes: 1, kind: 'capture' },
+  'python/discordApi/browserIdentity.py': { writes: 1, kind: 'session' },
+  'python/discordApi/engine.py': { writes: 1, kind: 'media' },
+  'python/human/recordMouse.py': { writes: 2, kind: 'dataset' },
+  'python/instagramApi/engine.py': { writes: 1, kind: 'media' },
+  'python/instagramApi/host.py': { writes: 2, kind: 'session' },
+  'python/judge/server.py': { writes: 1, kind: 'session' },
+  'python/linkedinApi/share.py': { writes: 1, kind: 'capture' },
+  'python/platformKit/engine.py': { writes: 1, kind: 'session' },
+  'python/platformKit/host.py': { writes: 1, kind: 'session' },
+  'python/session/inspectSession.py': { writes: 12, kind: 'capture' },
+  'python/session/profileSession.py': { writes: 1, kind: 'capture' },
+  'python/session/publishSession.py': { writes: 2, kind: 'capture' },
+  'python/slackApi/engine.py': { writes: 1, kind: 'media' },
+  'python/twitterApi/engine.py': { writes: 9, kind: 'capture' },
+  'python/twitterApi/host.py': { writes: 1, kind: 'session' },
+  'python/logDb/engineStore.py': { writes: 1, kind: 'fallback' },
+  'python/twitterApi/inboxSync.py': { writes: 1, kind: 'fallback' },
+  'python/twitterApi/notifications.py': { writes: 1, kind: 'fallback' },
+  'hermesPlugin/__init__.py': { writes: 1, kind: 'fallback' },
+  'scripts/browserView/hostBench.py': { writes: 3, kind: 'capture' },
 }
 
-const WRITE = /appendFileSync\(|writeFileSync\(/g
+export const TS_WRITE = /appendFileSync\(|writeFileSync\(|Bun\.write\(|\bwriteFile\(|createWriteStream\(|copyFileSync\(|cpSync\(/g
+export const PY_WRITE = /\.write_text\(|\.write_bytes\(|json\.dump\(|\bopen\([^)\n]*["'](?:w|a|x)[bt+]?["']|os\.fdopen\(|shutil\.copy\w*\(/g
 
-const files = spawnSync('git', ['ls-files', 'src/**/*.ts', 'scripts/**/*.ts', 'scripts/**/*.mjs', 'bin/*.ts'], { windowsHide: true, encoding: 'utf8' }).stdout.split(/\r?\n/).filter((f) => f && !f.endsWith('.test.ts'))
+function writesIn(file: string, text: string): number {
+  return (text.match(file.endsWith('.py') ? PY_WRITE : TS_WRITE) ?? []).length
+}
+
+function checkedFile(file: string): boolean {
+  if (/\.py$/.test(file)) return !/(^|\/)test_[^/]*\.py$|Test\.py$|^python\/fixtures\//.test(file)
+  return /\.(ts|mjs)$/.test(file) && !file.endsWith('.test.ts') && !file.endsWith('.d.ts')
+}
+
+const files = spawnSync('git', ['ls-files', 'src', 'scripts', 'bin', 'python', 'hermesPlugin'], { windowsHide: true, encoding: 'utf8' }).stdout.split(/\r?\n/).filter((f) => f && checkedFile(f))
 const problems: string[] = []
 const looser: string[] = []
 for (const file of files) {
-  const writes = (readFileSync(file, 'utf8').match(WRITE) ?? []).length
+  const writes = writesIn(file, readFileSync(file, 'utf8'))
   const allowed = ALLOWED[file]
   if (!writes) {
     if (allowed) looser.push(`${file} no longer writes to disk; drop it from ALLOWED`)
@@ -108,5 +148,5 @@ if (problems.length) {
   for (const p of problems) console.error(`  - ${p}`)
   process.exit(1)
 }
-console.log(`oneDatabase: no new loose store; every shared state is in log.db, and the ${Object.keys(ALLOWED).length} listed writers keep only repo files, captures, datasets, indexes, media, logs and private session files`)
+console.log(`oneDatabase: no new loose store in TypeScript or Python; every shared state is in log.db, and the ${Object.keys(ALLOWED).length} listed writers keep only repo files, captures, datasets, indexes, media, logs, private session files and the old-file fallback for a machine whose log.db is not made yet`)
 for (const l of looser) console.log(`  note: ${l}`)

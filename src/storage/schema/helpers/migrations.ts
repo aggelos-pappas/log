@@ -109,6 +109,10 @@ export const IDENTITY_PROFILE_TABLES: readonly string[] = [
   'CREATE INDEX IF NOT EXISTS identityProfilesByFetchedAt ON identityProfiles (fetchedAt)',
 ]
 
+export const ENGINE_STATE_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS engineState (platform TEXT NOT NULL, account TEXT NOT NULL, store TEXT NOT NULL, part TEXT NOT NULL, body TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (platform, account, store, part)) WITHOUT ROWID',
+]
+
 export const MIN_READER_VERSION = 1
 
 export const MIGRATIONS: readonly Migration[] = [
@@ -314,6 +318,14 @@ export const MIGRATIONS: readonly Migration[] = [
     creates: ['typing'],
     apply(handle) {
       for (const statement of TYPING_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 23,
+    name: 'engineStores',
+    creates: ['engineState'],
+    apply(handle) {
+      for (const statement of ENGINE_STATE_TABLES) handle.exec(statement)
     },
   },
 ]
