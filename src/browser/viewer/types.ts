@@ -41,6 +41,7 @@ export interface ViewerView {
   width: number | null
   height: number | null
   canInteract: boolean
+  ownerDriven?: boolean
   stream: ViewerStream | null
 }
 

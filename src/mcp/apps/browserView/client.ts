@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { relayOrigin, relayTicket, ViewerError, VIEWER_ERROR_TEXT, viewerFrame, viewerInput, viewerState, voxlOrigins } from "../../../browser/viewer/index.ts";
 import type { ViewerView } from "../../../browser/viewer/index.ts";
@@ -13,7 +14,13 @@ const ACCOUNT = { type: "string", description: "The account whose browser this i
 const GENERATION = { type: "string", description: "The viewer generation from browserView: a restarted browser has a new one and older input is refused" };
 const LOOPBACK_BINDS = new Set(["127.0.0.1", "localhost", "::1"]);
 
-export const appToolDeps = { state: viewerState, frame: viewerFrame, input: viewerInput, ticket: relayTicket };
+async function closeOwnerBrowser(account: string): Promise<boolean> {
+  const root = join(import.meta.dir, "..", "..", "..", "..");
+  const run = Bun.spawn([process.execPath, join(root, "bin", "log.ts"), "inspect", "do", "stop", "--account", account], { cwd: root, stdout: "ignore", stderr: "ignore" });
+  return (await run.exited) === 0;
+}
+
+export const appToolDeps = { state: viewerState, frame: viewerFrame, input: viewerInput, ticket: relayTicket, close: closeOwnerBrowser };
 export const BROWSER_VIEW_DESCRIPTION = "An account's live browser, streamed from the page so a person can watch it and sign in without leaving the chat";
 
 export function uiCapable(capabilities: unknown): boolean {
@@ -59,7 +66,7 @@ export function appTools(): AppToolDefinition[] {
       ["account", "generation", "revision", "event"],
       false,
     ),
-    appTool(BROWSER_VIEW_DONE_TOOL, "Browser view state", "Reads the page again: the view polls it, and calls it when the person says they are finished, to say whether the page still needs them.", { account: ACCOUNT }, ["account"], true),
+    appTool(BROWSER_VIEW_DONE_TOOL, "Browser view state", "Reads the page again: the view polls it, and calls it when the person says they are finished, to say whether the page still needs them. With close, the owner closes the browser he opened: its session is saved and the browser stops.", { account: ACCOUNT, close: { type: "boolean", description: "Close the browser the owner opened to drive it" } }, ["account"], false),
   ];
 }
 
@@ -112,6 +119,11 @@ export async function runAppTool(name: AppToolName, input: Record<string, unknow
       return { content: [{ type: "text", text: `${view.account}: ${view.phase}` }], structuredContent: { view: browserViewJson(view, location) } };
     }
     const view = await appToolDeps.state(account);
+    if (fields.close === true) {
+      if (!view.ownerDriven) return refusal("browserCloseRefused", "Only a browser the owner opened to drive can be closed from the view.");
+      const closed = await appToolDeps.close(account);
+      return { content: [{ type: "text", text: closed ? `${account}: browser closed` : `${account}: the browser did not close` }], structuredContent: { view: null, closed } };
+    }
     return { content: [{ type: "text", text: browserViewText(view, location) }], structuredContent: { view: browserViewJson(view, location), done: !view.needsHuman && view.phase !== "busy" } };
   } catch (error) {
     return failed(error);

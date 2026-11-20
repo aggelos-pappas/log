@@ -22,6 +22,7 @@ interface View {
   width: number | null;
   height: number | null;
   canInteract: boolean;
+  ownerDriven?: boolean;
   location: "local" | "remote";
   streamKind: "voxl" | "cast" | "frames" | "none";
 }
@@ -44,6 +45,7 @@ const root = document.getElementById("app") as HTMLElement;
 const frame = mountBrowserFrame(root, {
   onAction: (id) => {
     if (id === "done") void done();
+    if (id === "close") void closeBrowser();
     if (id === "full") void setMode(state.mode === "fullscreen" ? "inline" : "fullscreen");
     if (id === "pip") void setMode("pip");
     if (id === "here") showHere();
@@ -56,7 +58,11 @@ const frame = mountBrowserFrame(root, {
   },
   onText: (text) => enqueue({ type: "text", text }),
   onKey: (key) => enqueue({ type: "key", key }),
-  onScroll: (deltaY) => enqueue({ type: "scroll", deltaY }),
+  onScroll: (deltaY) => {
+    const last = state.queue[state.queue.length - 1];
+    if (last && last.type === "scroll") last.deltaY = Math.max(-1200, Math.min(1200, last.deltaY + deltaY));
+    else enqueue({ type: "scroll", deltaY });
+  },
   onTake: () => {
     state.hasControl = true;
     render();
@@ -67,8 +73,8 @@ const tool = (name: string) => frame.tools.querySelector(`[data-ref="${name}"]`)
 const canvas = frame.canvas;
 
 type Source = "cast" | "pull" | "voxl" | null;
-const state: { account: string | null; view: View | null; revision: string | null; live: boolean; hasControl: boolean; pending: boolean; queue: Input[]; stream: VoxlStream | null; voxl: VoxlConnection | null; finished: boolean; autoMode: boolean; mode: string; streamAsked: boolean; seq: number; cast: AbortController | null; castTried: boolean; looping: boolean; torn: boolean; frames: number; source: Source; stateAt: number; error: string | null; castAt: number; moved: boolean; visible: boolean; claim: LiveClaim | null } = {
-  account: null, view: null, revision: null, live: false, hasControl: false, pending: false, queue: [], stream: null, voxl: null, finished: false, autoMode: false, mode: "inline", streamAsked: false, seq: 0, cast: null, castTried: false, looping: false, torn: false, frames: 0, source: null, stateAt: 0, error: null, castAt: 0, moved: false, visible: true, claim: null,
+const state: { account: string | null; view: View | null; revision: string | null; live: boolean; hasControl: boolean; pending: boolean; queue: Input[]; stream: VoxlStream | null; voxl: VoxlConnection | null; finished: boolean; closed: boolean; autoMode: boolean; mode: string; streamAsked: boolean; seq: number; cast: AbortController | null; castTried: boolean; looping: boolean; torn: boolean; frames: number; source: Source; stateAt: number; error: string | null; castAt: number; moved: boolean; visible: boolean; claim: LiveClaim | null } = {
+  account: null, view: null, revision: null, live: false, hasControl: false, pending: false, queue: [], stream: null, voxl: null, finished: false, closed: false, autoMode: false, mode: "inline", streamAsked: false, seq: 0, cast: null, castTried: false, looping: false, torn: false, frames: 0, source: null, stateAt: 0, error: null, castAt: 0, moved: false, visible: true, claim: null,
 };
 const MOUNTED = `${Date.now()}${Math.random().toString(36).slice(2, 10)}`;
 const STATE_EVERY_MS = 1000;
@@ -109,7 +115,7 @@ function render(): void {
     canGoBack: false,
     canInteract: Boolean(view?.canInteract),
     hasControl: state.hasControl,
-    actions: [{ id: "done", label: state.finished ? "Agent told" : "Done, carry on", icon: "check", primary: true, disabled: !view || state.pending || state.finished }],
+    actions: view?.ownerDriven || state.closed ? [{ id: "close", label: state.closed ? "Browser closed" : "Close browser", icon: "check", primary: true, disabled: state.pending || state.closed }] : [{ id: "done", label: state.finished ? "Agent told" : "Done, carry on", icon: "check", primary: true, disabled: !view || state.pending || state.finished }],
     mode: state.mode,
   }));
   root.dataset.source = state.source ?? "";
@@ -398,6 +404,27 @@ async function setMode(mode: "inline" | "fullscreen" | "pip"): Promise<void> {
   } catch {
   }
   render();
+}
+
+async function closeBrowser(): Promise<void> {
+  if (!state.account || state.closed) return;
+  state.pending = true;
+  render();
+  try {
+    const answer = await call("browserViewDone", { account: state.account, close: true });
+    if (answer.isError || answer.structuredContent?.closed !== true) toast("The browser did not close. Try again.");
+    else {
+      state.closed = true;
+      state.torn = true;
+      stopVoxl();
+      stopCast();
+    }
+  } catch {
+    toast("The browser did not close. Try again.");
+  } finally {
+    state.pending = false;
+    render();
+  }
 }
 
 async function done(): Promise<void> {

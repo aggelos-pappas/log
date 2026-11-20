@@ -19,9 +19,9 @@ export const FRAME_CSS = `
 .lbvWho{display:flex;align-items:baseline;gap:8px;min-width:0;flex:1}
 .lbvWho strong{font-size:15px;font-weight:700;white-space:nowrap}
 .lbvWho span{font-size:13px;color:var(--lbvMuted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lbvBadge{display:inline-flex;align-items:center;gap:6px;flex:none;border:1px solid var(--lbvLine);border-radius:999px;background:var(--lbvBg);padding:2px 8px;font-size:12px;font-weight:700;color:var(--lbvMuted)}
+.lbvBadge{display:inline-flex;align-items:center;gap:6px;flex:none;border:1px solid var(--lbvLine);border-radius:var(--lbvRadius-sm);background:var(--lbvBg);padding:2px 8px;font-size:12px;font-weight:700;color:var(--lbvMuted)}
 .lbvBadge img{width:14px;height:14px;object-fit:contain}
-.lbvPill{display:inline-flex;align-items:center;gap:6px;flex:none;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:700;background:var(--lbvHover,var(--lbvD-hover));color:var(--lbvMuted);white-space:nowrap}
+.lbvPill{display:inline-flex;align-items:center;gap:6px;flex:none;border-radius:var(--lbvRadius-sm);padding:4px 9px;font-size:12px;font-weight:700;background:var(--lbvHover,var(--lbvD-hover));color:var(--lbvMuted);white-space:nowrap}
 .lbvPill i{width:6px;height:6px;border-radius:50%;background:currentColor}
 .lbvPill[data-tone="live"]{background:var(--lbvOk-bg);color:var(--lbvOk)}
 .lbvPill[data-tone="live"] i{background:var(--lbvD-ok-dot);animation:lbvPulse 1.6s ease-in-out infinite}
@@ -37,13 +37,13 @@ export const FRAME_CSS = `
 .lbvAddress svg{width:12px;height:12px;flex:none;opacity:.7}
 .lbvAddress span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lbvStage{position:relative;display:flex;align-items:center;justify-content:center;min-height:300px;margin:14px;border:1px solid var(--lbvLine);border-radius:12px;background:var(--lbvStage);overflow:hidden;flex:1}
-.lbvCanvas{display:block;max-width:100%;max-height:70vh;height:auto;outline:none;visibility:hidden}
+.lbvCanvas{display:block;width:100%;height:auto;outline:none;visibility:hidden}
 .lbvCanvas[data-live="true"]{visibility:visible}
 .lbvCanvas[data-input="true"]{cursor:pointer}
 .lbvStage:focus-within .lbvCanvas[data-input="true"]{box-shadow:0 0 0 3px var(--lbvAccent)}
 .lbvFrame{position:absolute;inset:0;width:100%;height:100%;border:0}
 .lbvKeys{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;resize:none;pointer-events:none}
-.lbvTake{position:absolute;left:50%;top:16px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;border:1px solid var(--lbvLine);border-radius:999px;background:var(--lbvBg);padding:9px 16px;font-size:13px;font-weight:700;color:var(--lbvText);box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;white-space:nowrap}
+.lbvTake{position:absolute;left:50%;top:16px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;border:1px solid var(--lbvLine);border-radius:var(--lbvRadius-sm);background:var(--lbvBg);padding:9px 16px;font-size:13px;font-weight:700;color:var(--lbvText);box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;white-space:nowrap}
 .lbvTake svg{width:13px;height:13px;color:var(--lbvAccent)}
 .lbvCover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;background:var(--lbvStage)}
 .lbvCover[data-shade="true"]{background:var(--lbvD-shade)}
@@ -52,7 +52,7 @@ export const FRAME_CSS = `
 .lbvCover p{margin:0;max-width:440px;font-size:14px;line-height:1.55;color:var(--lbvMuted)}
 .lbvCoverActions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 .lbvSpin{width:26px;height:26px;border-radius:50%;border:3px solid var(--lbvLine);border-top-color:var(--lbvAccent);animation:lbvSpin .9s linear infinite}
-.lbvNote{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);max-width:calc(100% - 24px);margin:0;border-radius:999px;background:var(--lbvText);padding:6px 12px;font-size:12px;font-weight:700;color:var(--lbvBg);text-align:center;opacity:.92}
+.lbvNote{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);max-width:calc(100% - 24px);margin:0;border-radius:var(--lbvRadius-sm);background:var(--lbvText);padding:6px 12px;font-size:12px;font-weight:700;color:var(--lbvBg);text-align:center;opacity:.92}
 .lbvToast{position:absolute;right:12px;top:12px;max-width:min(360px,calc(100% - 24px));border-radius:12px;background:var(--lbvText);color:var(--lbvBg);padding:10px 12px;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .lbvToast strong{display:block;font-weight:700}
 .lbvFoot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-top:1px solid var(--lbvLine);background:var(--lbvBg)}
@@ -71,6 +71,7 @@ export const FRAME_CSS = `
 .lbvButton[data-busy="true"] svg{animation:lbvSpin .9s linear infinite}
 .lbv[data-mode="fullscreen"]{border:0;border-radius:0;height:100vh}
 .lbv[data-mode="fullscreen"] .lbvStage{min-height:0}
+.lbv[data-mode="fullscreen"] .lbvCanvas{width:auto;max-width:100%;max-height:100%}
 @keyframes lbvSpin{to{transform:rotate(360deg)}}
 @keyframes lbvPulse{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.lbvSpin,.lbvPill i,.lbvIcon svg,.lbvStatus svg,.lbvButton svg{animation:none!important}}
