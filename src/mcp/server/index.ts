@@ -22,7 +22,7 @@ import { accountOfArgv, appendProgress, busyJob, cancelRequested, DEFAULT_WAIT_M
 import type { JobRecord } from "../jobs/index.ts";
 import { oauthFromEnv } from "../oauth/index.ts";
 import type { OAuthServer } from "../oauth/index.ts";
-import { activePlay, currentToolName, FLOW_LIVE_TOOL, forgetPlayScope, gatedToolOf, guideAnswer, handleOf, PLAY_HANDLE_FIELD, playMeta, playRefusal, actingAsOwnerTools, capabilityPlayGateMode, folderOfPlay, namedByPlay, platformOfTool, playGateMode, stepToolsOf, playScope, processPlayScope, renamedTool, touchPlay, withoutHandle, withPlayFooter, withRenamedNote } from "./helpers/index.ts";
+import { activePlay, capResult, currentToolName, narrowingFlags, FLOW_LIVE_TOOL, forgetPlayScope, gatedToolOf, guideAnswer, handleOf, PLAY_HANDLE_FIELD, playMeta, playRefusal, actingAsOwnerTools, capabilityPlayGateMode, folderOfPlay, namedByPlay, platformOfTool, playGateMode, stepToolsOf, playScope, processPlayScope, renamedTool, touchPlay, withoutHandle, withPlayFooter, withRenamedNote } from "./helpers/index.ts";
 import type { PlayScope } from "./helpers/index.ts";
 import { isPlatform } from "../../cli/runner/helpers/index.ts";
 import { capabilityDeps } from "../../cli/capabilities/index.ts";
@@ -39,7 +39,7 @@ import { readConsoleEvents } from "../../observability/console/index.ts";
 import { viewerState } from "../../browser/viewer/index.ts";
 import { accountOfArgs, appTools, BROWSER_VIEW_TOOL, BROWSER_VIEW_URI, browserViewResource, httpLocation, isAppTool, MCP_APP_MIME_TYPE, readBrowserViewResource, runAppTool, settleLocation, UI_EXTENSION_ID, uiCapable, withBrowserView, withBrowserViewUi } from "../apps/browserView/index.ts";
 import { browserViewLocation } from "../../cli/browser/index.ts";
-import { readReportResource, REPORT_TOOL, REPORT_URI, reportResource, reportTool, runReport, withReportUi } from "../apps/report/index.ts";
+import { hermesClient, readReportResource, REPORT_TOOL, REPORT_URI, reportResource, reportTool, runReport, withReportUi } from "../apps/report/index.ts";
 import { deferredElicitation, isSignInCall, localSignInSurface, SIGN_IN_INPUT_KEY, signInCall } from "../apps/signIn/index.ts";
 import { answeredAction, argumentsDigest, dualEraTransport, hostAllowed, isModernHttp, statelessHttp, urlInputRequired } from "../stateless/index.ts";
 import type { StatelessHandlers } from "../stateless/index.ts";
@@ -206,6 +206,7 @@ async function runTimed(name: string, argv: string[], context: Partial<CommandCo
   }
   if (job && !cancelled && code !== 0 && cancelRequested(job.id)) cancelled = true;
   call.attrs.exit = code;
+  if (code !== 0) call.attrs.code = refusal ?? "commandFailed";
   const keptJob = kept as JobRecord | null;
   onLine(name, "out", `■ exit ${code} in ${msText(performance.now() - began)} (call ${call.callId}: timing { call: "${call.callId}" } shows where the time went)${keptJob ? `; the client had cancelled it, so its answer is job ${keptJob.id}` : ""}`);
   const text = [out.join("\n"), processLog.length ? `log:\n${processLog.join("\n")}` : "", err.length ? `stderr:\n${err.join("\n")}` : "", `exit ${code}`].filter(Boolean).join("\n\n");
@@ -252,13 +253,14 @@ export async function runToolCall(
   scope: PlayScope = processPlayScope(),
   shell: boolean = true,
   caller: Exclude<GateCaller, "cli"> = "mcp",
+  client: string = "",
 ): Promise<CallToolResult> {
   const handle = handleOf(input);
   const given = withoutHandle(input);
-  const again = (tool: string, next: LogToolInput | undefined, app: boolean = appCaller, by: Exclude<GateCaller, "cli"> = caller) => runToolCall(tool, handle && next ? { ...next, [PLAY_HANDLE_FIELD]: handle } : next, context, onLine, readBrowsers, signal, app, scope, shell, by);
+  const again = (tool: string, next: LogToolInput | undefined, app: boolean = appCaller, by: Exclude<GateCaller, "cli"> = caller) => runToolCall(tool, handle && next ? { ...next, [PLAY_HANDLE_FIELD]: handle } : next, context, onLine, readBrowsers, signal, app, scope, shell, by, client);
   if (renamedTool(name)) return withRenamedNote(name, await again(currentToolName(name), input, appCaller, caller === "mcp" ? "alias" : caller));
   if (isAppTool(name)) return runAppTool(name, given, appCaller);
-  if (name === REPORT_TOOL) return runReport(given, appCaller);
+  if (name === REPORT_TOOL) return runReport(given, appCaller, {}, { hermes: hermesClient(client) });
   if (name === GUIDE_TOOL) {
     const answer = guideAnswer(input, scope, shell);
     const play = answer.play === undefined ? undefined : playMeta(answer.play);
@@ -325,7 +327,8 @@ export async function runToolCall(
 export function withCallFooter(name: string, input: LogToolInput | undefined, result: CallToolResult, scope: PlayScope = processPlayScope()): CallToolResult {
   if (name === GUIDE_TOOL || name === REPORT_TOOL) return result;
   const target = name === CALL_TOOL ? resolveCall(catalog(COMMANDS, savedFlows()), withoutHandle(input)) : null;
-  return withPlayFooter(target?.ok ? target.tool : currentToolName(name), result, activePlay(scope, handleOf(input)));
+  const tool = target?.ok ? target.tool : currentToolName(name);
+  return withPlayFooter(tool, capResult(tool, result, narrowingFlags(commandOfTool(tool)?.form?.flags ?? [])), activePlay(scope, handleOf(input)));
 }
 
 async function withViewer(result: CallToolResult, input: LogToolInput | undefined): Promise<CallToolResult> {
@@ -383,7 +386,7 @@ export function createLogMcpServer(context: Partial<CommandContext> = {}, option
   });
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const input = request.params.arguments as LogToolInput | undefined;
-    const run = (given: LogToolInput | undefined) => runToolCall(request.params.name, given, context, onLine, options.readBrowsers ?? browserViews, extra.signal, uiCapable(server.getClientCapabilities()), scope, hasShell(server.getClientVersion()?.name));
+    const run = (given: LogToolInput | undefined) => runToolCall(request.params.name, given, context, onLine, options.readBrowsers ?? browserViews, extra.signal, uiCapable(server.getClientCapabilities()), scope, hasShell(server.getClientVersion()?.name), "mcp", server.getClientVersion()?.name ?? "");
     const result = isSignInCall(request.params.name) ? await signInCall(input, run, localSignInSurface(server.getClientCapabilities(), (params) => extra.sendRequest({ method: "elicitation/create", params }, ElicitResultSchema))) : await run(input);
     return withCallFooter(request.params.name, input, result, scope);
   });
@@ -450,7 +453,7 @@ export function statelessLogHandlers(context: Partial<CommandContext> = {}, opti
     },
     callTool: async (params, caller) => {
       const input = params.arguments as LogToolInput | undefined;
-      const run = (given: LogToolInput | undefined) => runToolCall(params.name, given, context, onLine, options.readBrowsers ?? browserViews, caller.signal, uiCapable(caller.capabilities), scope, hasShell(caller.clientInfo?.name), "stateless");
+      const run = (given: LogToolInput | undefined) => runToolCall(params.name, given, context, onLine, options.readBrowsers ?? browserViews, caller.signal, uiCapable(caller.capabilities), scope, hasShell(caller.clientInfo?.name), "stateless", caller.clientInfo?.name ?? "");
       if (!isSignInCall(params.name)) return withCallFooter(params.name, input, await run(input), scope);
       const expect = { tool: params.name, digest: argumentsDigest(withoutHandle(input)), principal, key: SIGN_IN_INPUT_KEY };
       const answered = answeredAction(caller, expect, stateKey);

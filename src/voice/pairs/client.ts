@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { BM25, tokenize } from 'bm25s'
 import { VectorDB } from 'verso-db'
@@ -108,6 +108,7 @@ function situationOf(pair: VoicePair): string {
 
 export async function buildVoiceIndex(conversations: readonly Conversation[], embedder: Embedder, dir = voiceDir(), batch = 64): Promise<{ pairs: number; profiles: number; ms: number; current?: boolean }> {
   const started = performance.now()
+  await closeSharedVoiceIndex()
   const pairs = pairsOf(conversations)
   const answered = pairs.filter((p) => p.reply.trim())
   const newest = pairs.reduce((latest, p) => (String(p.at ?? '') > latest ? String(p.at ?? '') : latest), '')
@@ -143,6 +144,40 @@ export async function buildVoiceIndex(conversations: readonly Conversation[], em
   }
   await db.close()
   return { pairs: pairs.length, profiles: Object.keys(profiles).length, ms: performance.now() - started }
+}
+
+let shared: { key: string; index: Promise<VoiceIndex> } | null = null
+
+export function voiceIndexStamp(dir = voiceDir()): string {
+  const stampOf = (name: string) => {
+    try {
+      return statSync(join(dir, name)).mtimeMs
+    } catch {
+      return 0
+    }
+  }
+  return ['pairs.json', 'profiles.json', 'bm25', 'vectors'].map(stampOf).join(':')
+}
+
+export async function closeSharedVoiceIndex(): Promise<void> {
+  const held = shared
+  shared = null
+  if (held) await held.index.then((index) => index.close()).catch(() => {})
+}
+
+export async function openSharedVoiceIndex(embedder: Embedder, dir = voiceDir()): Promise<VoiceIndex> {
+  const key = `${dir}|${embedder.model}|${voiceIndexStamp(dir)}`
+  if (shared?.key !== key) {
+    const older = shared
+    const opening = openVoiceIndex(embedder, dir)
+    shared = { key, index: opening }
+    opening.catch(() => {
+      if (shared?.index === opening) shared = null
+    })
+    if (older) void older.index.then((index) => index.close()).catch(() => {})
+  }
+  const index = await shared.index
+  return { ...index, close: async () => {} }
 }
 
 export async function openVoiceIndex(embedder: Embedder, dir = voiceDir()): Promise<VoiceIndex> {

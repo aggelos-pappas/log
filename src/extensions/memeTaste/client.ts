@@ -1,12 +1,12 @@
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { getState, putState } from '../../storage/state/index'
 import type { DecisionImage, DecisionsClient } from '../../subq/decisions/index'
 import { MEME_AT, TASTE_OTHER, TASTE_STYLES } from './types'
 import type { TasteCandidate, TasteFit, TasteIndex, TasteMeme, TasteRating, TasteStyle } from './types'
+import { logHome } from '../../config/logHome/index'
 
 export function tastePath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_MEME_TASTE || join(homedir(), '.logCli', 'memes', 'taste.json')
+  return env.LOG_MEME_TASTE || join(logHome(), 'memes', 'taste.json')
 }
 
 export function readTaste(path = tastePath()): TasteIndex | null {

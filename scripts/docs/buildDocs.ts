@@ -11,6 +11,8 @@ import { renderSurface, withSurface } from "../../src/surface/readme/index.ts";
 import { withStepsDiagrams } from "../../src/surface/stepsDiagram/index.ts";
 import { SPEC_ORDER, specDomains, specsIndex, specSummary } from "../../src/specs/index.ts";
 import { REPORT_TOOL, reportTool } from "../../src/mcp/apps/index.ts";
+import { DESKTOP_BUNDLES, desktopBundle } from "../hermes/desktopBundles.ts";
+import { toolFactsOf } from "../../src/useCases/router/client.ts";
 
 const SERVER_TOOLS: Record<string, { name: string; title: string; description: string }> = { [REPORT_TOOL]: reportTool() };
 
@@ -50,6 +52,8 @@ for (const file of readdirSync(diagramDir)) {
   const pages = (dir: string): string[] => readdirSync(join(root, dir)).flatMap((name) => (statSync(join(root, dir, name)).isDirectory() ? pages(`${dir}/${name}`) : name.endsWith(".md") ? [`${dir}/${name}`] : []));
   for (const rel of pages("docs/useCases")) put(rel, withStepsDiagrams(readFileSync(join(root, rel), "utf8")));
 }
+
+for (const bundle of DESKTOP_BUNDLES) put(bundle.out, await desktopBundle(bundle.entry));
 
 put("docs/specs/README.md", specsIndex(specDomains(root).filter((d) => existsSync(join(root, "docs/specs", `${d}.md`))).map((d) => specSummary(d, readFileSync(join(root, "docs/specs", `${d}.md`), "utf8"))), SPEC_ORDER));
 
@@ -110,7 +114,7 @@ put("docs/specs/README.md", specsIndex(specDomains(root).filter((d) => existsSyn
         ? [
             "## Use cases: the work the owner asks for, tool by tool",
             "",
-            "This is how the owner works. Each use case is something the owner asks for again and again, written as its steps in order, each step naming its tool and what counts as done. When the owner asks for work a use case covers, read that use case and follow it step by step instead of improvising. Work no use case covers yet, done for the owner more than once, gets a page of its own in docs/useCases/<platform>/.",
+            "This is how the owner works. Each use case is something the owner asks for again and again, written as its steps in order, each step naming its tool and what counts as done. When the owner asks for work a use case covers, follow it step by step instead of improvising. Repeated work no use case covers gets its own page in docs/useCases/<platform>/.",
             "",
             "With no prompt hook, getGuide({ ask }) routes the owner's words to the one that fits; each page's own asks line holds the words it is matched on.",
             "",
@@ -156,6 +160,8 @@ put("docs/specs/README.md", specsIndex(specDomains(root).filter((d) => existsSyn
     }
   }
 }
+
+put("src/useCases/router/fixtures/tools.json", `[\n${toolFactsOf(commandTools(COMMANDS), isPlatform).map((f) => JSON.stringify(f)).join(",\n")}\n]\n`);
 
 put(HOSTED_INSTRUCTIONS_FILE, `${serverInstructions("hosted")}\n`);
 

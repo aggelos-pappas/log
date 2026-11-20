@@ -96,6 +96,14 @@ export const JOB_TABLES: readonly string[] = [
   'CREATE TABLE IF NOT EXISTS jobLines (jobId TEXT NOT NULL, n INTEGER NOT NULL, at TEXT NOT NULL, source TEXT NOT NULL, line TEXT NOT NULL, PRIMARY KEY (jobId, n)) WITHOUT ROWID',
 ]
 
+export const PEOPLE_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS persons (personId TEXT PRIMARY KEY, name TEXT, createdAt TEXT NOT NULL, updatedAt TEXT NOT NULL) WITHOUT ROWID',
+  'CREATE TABLE IF NOT EXISTS identityLinks (personId TEXT NOT NULL, platform TEXT NOT NULL, userId TEXT NOT NULL, evidence TEXT, linkedBy TEXT NOT NULL, linkedAt TEXT NOT NULL, linkedEventId TEXT NOT NULL, revokedAt TEXT, revokedBy TEXT, PRIMARY KEY (personId, platform, userId, linkedEventId)) WITHOUT ROWID',
+  'CREATE UNIQUE INDEX IF NOT EXISTS identityLinksActive ON identityLinks (platform, userId) WHERE revokedAt IS NULL',
+  'CREATE INDEX IF NOT EXISTS identityLinksByPerson ON identityLinks (personId) WHERE revokedAt IS NULL',
+  'CREATE TABLE IF NOT EXISTS identityNotLinked (platformA TEXT NOT NULL, userIdA TEXT NOT NULL, platformB TEXT NOT NULL, userIdB TEXT NOT NULL, decidedBy TEXT NOT NULL, decidedAt TEXT NOT NULL, PRIMARY KEY (platformA, userIdA, platformB, userIdB)) WITHOUT ROWID',
+]
+
 export const IDENTITY_PROFILE_TABLES: readonly string[] = [
   'CREATE TABLE IF NOT EXISTS identityProfiles (platform TEXT NOT NULL, userId TEXT NOT NULL, bio TEXT, avatarHash TEXT REFERENCES blobs (hash), followerCount INTEGER, verified INTEGER, extra TEXT CHECK (extra IS NULL OR json_valid(extra)), fetchedAt TEXT NOT NULL, PRIMARY KEY (platform, userId)) WITHOUT ROWID',
   'CREATE INDEX IF NOT EXISTS identityProfilesByFetchedAt ON identityProfiles (fetchedAt)',
@@ -290,6 +298,14 @@ export const MIGRATIONS: readonly Migration[] = [
       handle.exec('CREATE TABLE IF NOT EXISTS conversationCards (key TEXT PRIMARY KEY, platform TEXT NOT NULL, account TEXT NOT NULL, throughSeq INTEGER NOT NULL, card TEXT NOT NULL, builtAt TEXT NOT NULL) WITHOUT ROWID')
       handle.exec('DELETE FROM conversationCards')
       handle.exec('CREATE INDEX IF NOT EXISTS conversationCardsByAccount ON conversationCards (platform, account)')
+    },
+  },
+  {
+    version: 21,
+    name: 'people',
+    creates: ['persons', 'identityLinks', 'identityLinksActive', 'identityLinksByPerson', 'identityNotLinked'],
+    apply(handle) {
+      for (const statement of PEOPLE_TABLES) handle.exec(statement)
     },
   },
 ]

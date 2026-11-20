@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { defaultReaRunner, evidenceIdOf, writeCaptureScripts } from "../capture/client";
 import { exportScripts, parseSteps, splitHarBySteps } from "../capture/helpers/index";
@@ -15,6 +14,7 @@ import { exchangesOf } from "../../subq/stepReading/helpers/exchangesOf";
 import type { StepExchange } from "../../subq/stepReading/types";
 import { redactDoc } from "../../privacy/redact/index";
 import { loadDenylist } from "../../privacy/scan/client";
+import { logHome } from "../../config/logHome/index";
 
 export interface RunCapture {
   dir: string;
@@ -34,7 +34,7 @@ export interface BuildClientMapOptions {
 export const DOCS_INDEX = "operations.json";
 
 export function capturesRoot(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_CAPTURES_ROOT || join(homedir(), ".logCli");
+  return env.LOG_CAPTURES_ROOT || logHome();
 }
 
 export function findRunCaptures(root: string): RunCapture[] {
@@ -230,7 +230,7 @@ function existingDoc(docsDir: string, name: string): string | null {
 }
 
 export function clientFactsPath(): string {
-  return join(process.env.LOG_CAPTURES_ROOT || join(homedir(), ".logCli"), "rea", "clientFacts.json");
+  return join(process.env.LOG_CAPTURES_ROOT || logHome(), "rea", "clientFacts.json");
 }
 
 export function writeOperationDocs(operations: ClientOperation[], docsDir: string, runs: number, storePath = clientFactsPath(), reasoning?: ReasoningPrompts): { written: number; toWrite: number } {

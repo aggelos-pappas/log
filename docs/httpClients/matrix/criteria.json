@@ -1,0 +1,178 @@
+[
+ {
+  "id": "matchesRealChrome",
+  "question": "How closely does the TLS + HTTP/2 fingerprint match the real current Chrome on this machine (JA4, peetprint, Akamai)?",
+  "levels": [
+   "Different browser",
+   "Old version, JA4 differs",
+   "JA4 matches, peetprint differs",
+   "JA4 and peetprint match an older Chrome",
+   "JA4 and peetprint match current Chrome"
+  ]
+ },
+ {
+  "id": "oneIdentity",
+  "question": "Do all of log's clients present one consistent browser, version and OS?",
+  "levels": [
+   "Five different identities",
+   "Several identities",
+   "One TLS target but mixed UA/OS",
+   "One identity, easy to drift",
+   "One identity, enforced by a check"
+  ]
+ },
+ {
+  "id": "osCoherence",
+  "question": "Do user agent, sec-ch-ua-platform and TLS agree on the OS (Windows here)?",
+  "levels": [
+   "Contradict",
+   "Mostly macOS by default",
+   "Fixable per client by hand",
+   "Set from one place",
+   "Set from one place, OS-specific presets"
+  ]
+ },
+ {
+  "id": "websocket",
+  "question": "Can it carry log's WebSocket paths (Discord gateway, Slack RTM, Facebook MQTT/DGW) with the same fingerprint?",
+  "levels": [
+   "No WebSocket support",
+   "Needs a separate library with another fingerprint",
+   "Possible with custom work",
+   "Supported",
+   "Supported and already used by log"
+  ]
+ },
+ {
+  "id": "asyncio",
+  "question": "Does it fit log's asyncio clients (fbk, twikit, gabrielSlack, discord gateway)?",
+  "levels": [
+   "No",
+   "Threads only",
+   "Partly",
+   "Yes",
+   "Yes, already used"
+  ]
+ },
+ {
+  "id": "migrationEffort",
+  "question": "How small is the change to log and its vendored clients? Higher means less work.",
+  "levels": [
+   "Rewrite most clients",
+   "Rewrite several clients",
+   "Moderate shims plus new code",
+   "A few lines per client",
+   "Config only"
+  ]
+ },
+ {
+  "id": "vendorDiff",
+  "question": "How small and upstream-friendly are the edits inside vendor/? Higher is smaller.",
+  "levels": [
+   "Large forks",
+   "Many edits",
+   "Moderate",
+   "One shim per client",
+   "None"
+  ]
+ },
+ {
+  "id": "freshness",
+  "question": "How easily does it keep up with new Chrome releases?",
+  "levels": [
+   "Stuck",
+   "Manual, slow",
+   "New releases every few months",
+   "Releases plus a fingerprint update command",
+   "Tracks latest Chrome within days"
+  ]
+ },
+ {
+  "id": "proxyH2",
+  "question": "Does it keep HTTP/2 through the account's proxy (CONNECT tunnel), so Akamai sees h2?",
+  "levels": [
+   "Unknown",
+   "Downgrades",
+   "Depends on proxy, untested",
+   "Yes over CONNECT",
+   "Yes, with a self-check"
+  ]
+ },
+ {
+  "id": "communityBacking",
+  "question": "How strongly do Scraping Enthusiasts back it, in their own messages?",
+  "levels": [
+   "Warned against",
+   "Not mentioned",
+   "Mentioned",
+   "Recommended by some",
+   "Recommended by the Camoufox maintainer and widely used"
+  ]
+ },
+ {
+  "id": "maturity",
+  "question": "How mature and widely used is it (age, users, integrations)?",
+  "levels": [
+   "New, few users",
+   "Young",
+   "Established in a niche",
+   "Widely used",
+   "Default choice in Python scraping"
+  ]
+ },
+ {
+  "id": "cookieMatch",
+  "question": "Can the HTTP identity be made to match the browser that minted the cookies (Chrome or Camoufox Firefox 156)?",
+  "levels": [
+   "No",
+   "Only Chrome",
+   "Close to both",
+   "Chrome exactly, Firefox close",
+   "Both exactly"
+  ]
+ },
+ {
+  "id": "newPlatforms",
+  "question": "How easy is it for a new platform added to log to get the same identity?",
+  "levels": [
+   "Copy code by hand",
+   "Copy constants",
+   "Import a helper",
+   "One call, documented",
+   "One call, enforced by a check"
+  ]
+ },
+ {
+  "id": "silentFlagDetection",
+  "question": "Does the option include a way to catch a flagged fingerprint that fails silently?",
+  "levels": [
+   "No",
+   "Manual only",
+   "Status codes only",
+   "Self-check against tls.peet",
+   "Self-check through the account's proxy, saved per run"
+  ]
+ },
+ {
+  "id": "reversible",
+  "question": "How easily can it be rolled back per platform if a platform starts blocking?",
+  "levels": [
+   "Not reversible",
+   "Hard",
+   "One release",
+   "Per platform by config",
+   "Per platform by env, instantly"
+  ]
+ },
+ {
+  "id": "risk",
+  "question": "How low is the risk of breaking working logins and sessions? Higher is safer.",
+  "levels": [
+   "Breaks most",
+   "Breaks some",
+   "Needs re-sign-in everywhere",
+   "Re-sign-in per account, staged",
+   "No change to sessions until staged per account"
+  ]
+ }
+]

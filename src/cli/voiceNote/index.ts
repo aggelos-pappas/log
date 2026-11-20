@@ -5,7 +5,8 @@ import { labelOf, matchChat } from "../../discord/chat/match/index.ts";
 import type { DiscordChat } from "../../discord/chat/match/index.ts";
 import { PLATFORM_AUDIO, providerOf, readClone, renderVoiceNote, textOnlyProblem, VOICE_PROVIDERS, voiceProvider } from "../../extensions/voiceClone/index.ts";
 import type { Rendered, VoiceNote, VoiceNotePlatform, VoiceProvider } from "../../extensions/voiceClone/index.ts";
-import { waitCaughtUp } from "../../inbox/catchUp/index.ts";
+import { catchUpOneChat, waitCaughtUp } from "../../inbox/catchUp/index.ts";
+import type { ReadMessage } from "../../inbox/catchUp/index.ts";
 import { guardSend } from "../../inbox/claims/index.ts";
 import type { SendGuard } from "../../inbox/claims/index.ts";
 import { isErrorCode } from "../../errors/catalog/index.ts";
@@ -22,7 +23,7 @@ import { gateDeps } from "../twitter/helpers/voice.ts";
 
 type VoiceHeld = { guard: Extract<SendGuard, { ok: true }>; note: VoiceNote };
 
-type Resolved = { ok: true; account: string; chatId: string; label: string; claimWith?: string; gateHandle?: string; room?: () => Room | undefined; send: (note: VoiceNote, approvedBy: string) => PlatformAnswer | Promise<PlatformAnswer> } | { ok: false; result: CommandResult };
+type Resolved = { ok: true; account: string; chatId: string; label: string; claimWith?: string; gateHandle?: string; room?: () => Room | undefined; catchUp?: () => { ok: true; how?: string; stored?: number } | { ok: false; refused: string }; send: (note: VoiceNote, approvedBy: string) => PlatformAnswer | Promise<PlatformAnswer> } | { ok: false; result: CommandResult };
 
 interface VoiceShape {
   platform: VoiceNotePlatform;
@@ -104,8 +105,9 @@ export function voiceNoteCommandOf(shape: VoiceShape): Command {
             context.err(`${resolved.account}: voice note to ${resolved.label}, approved by ${approvedBy}`);
             context.err(`${resolved.account}: saying it in the owner's cloned voice on ${provider} and converting it to ${PLATFORM_AUDIO[shape.platform].container}, while the account catches up and the gate reads it`);
             const rendering = voiceNoteDeps.render(provider, shape.platform, text, language || undefined).catch((error): Rendered => ({ ok: false, code: "voiceProcessingFailed", detail: error instanceof Error ? error.message : String(error) }) as Rendered);
-            const caught = await waitCaughtUp(shape.platform, resolved.account);
+            const caught = resolved.catchUp ? resolved.catchUp() : await waitCaughtUp(shape.platform, resolved.account);
             if (!caught.ok) return { ok: false, code: "accountBehind", detail: caught.refused };
+            if ("how" in caught && caught.how === "chatRead") context.err(`${resolved.account}: still catching up, so this one chat was read first (${caught.stored ?? 0} new message(s) stored) instead of waiting for the whole account`);
             if (ownersWords) context.err(`${resolved.account}: the owner's own dictated words (--ownersWords): the voice gate's read of his typing is skipped, the AI artifact check passed`);
             else {
               if (translationOf) context.err(`${resolved.account}: a translation into ${language} (--translationOf): the voice gate grades the original words`);
@@ -174,7 +176,8 @@ export const discordVoiceCommand = voiceNoteCommandOf({
       kind = found.chat.kind === "dm" || found.chat.kind === "group" || found.chat.kind === "channel" ? found.chat.kind : "unknown";
     }
     const room = () => roomFromRead(shown, kind, direct(account, { action: "read", channel: target, limit: 20, saveAudio: false } as never).answer);
-    return { ok: true, account: account.accountName, chatId: target, label: shown, room, send: (note, approvedBy) => direct(account, { action: "voice", channel: target, path: note.path, seconds: note.seconds, waveform: note.waveform, live: true, approvedBy }).answer };
+    const catchUp = kind === "channel" ? undefined : () => catchUpOneChat("discord", account.accountName, target, () => direct(account, { action: "read", channel: target, limit: 20, saveAudio: false, saveImages: false } as never).answer as { ok: boolean; messages?: ReadMessage[] }, context.now?.() ?? new Date());
+    return { ok: true, account: account.accountName, chatId: target, label: shown, room, catchUp, send: (note, approvedBy) => direct(account, { action: "voice", channel: target, path: note.path, seconds: note.seconds, waveform: note.waveform, live: true, approvedBy }).answer };
   },
 });
 

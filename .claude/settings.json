@@ -65,6 +65,19 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Bash|PowerShell|Monitor|Write|shell|apply_patch|run_command|write_to_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/scripts/hooks/handRolled.ts"
+            ],
+            "timeout": 10
+          }
+        ]
       }
     ],
     "Stop": [

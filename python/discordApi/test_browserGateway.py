@@ -120,6 +120,19 @@ def test_the_gateway_signs_on_as_the_browser_and_hands_over_messages() -> None:
     assert event and event["op"] == "MESSAGE_CREATE" and event["d"]["user_id"] == "7" and event["d"]["referenced_message"]["user_id"] == "1"
 
 
+def test_typing_in_a_chat_is_handed_over_with_who_and_where() -> None:
+    typing = {"channel_id": "5", "user_id": "7", "timestamp": 1763596800}
+    socket = FakeSocket([json.dumps({"op": 10, "d": {"heartbeat_interval": 41250}}).encode()] + stream({"op": 0, "s": 1, "t": "READY", "d": {"user": {"id": "1"}, "guilds": []}}, {"op": 0, "s": 2, "t": "TYPING_START", "d": typing}))
+    gateway = run(socket)
+    started = time.time()
+    event = None
+    while time.time() - started < 5 and event is None:
+        event = gateway.get_messages()
+        time.sleep(0.02)
+    gateway.stop()
+    assert event == {"op": "TYPING_START", "d": {"channel_id": "5", "user_id": "7", "guild_id": None, "timestamp": 1763596800}}
+
+
 def test_a_4004_close_is_a_dead_session() -> None:
     socket = FakeSocket(stream({"op": 10, "d": {"heartbeat_interval": 41250}}), close_code=4004)
     gateway = run(socket)

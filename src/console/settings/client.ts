@@ -1,4 +1,3 @@
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { PLATFORMS } from "../../cli/runner/helpers/platforms.ts";
 import { userEnvPath } from "../../config/userEnv/index.ts";
@@ -8,11 +7,12 @@ import { localAccountsPath } from "../../twenty/graphql/index.ts";
 import { DEFAULT_CONSOLE_PORT } from "../screens/index.ts";
 import { consoleDbPath } from "../store/index.ts";
 import type { ConsoleGovernor, ConsoleSettings } from "./types.ts";
+import { logHome } from "../../config/logHome/index.ts";
 
 export const REQUESTS_PER_DAY = 500;
 
 export function runsPath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_RUNS_DIR || join(homedir(), ".logCli", "runs");
+  return env.LOG_RUNS_DIR || join(logHome(), "runs");
 }
 
 export function readConsoleGovernors(platforms: readonly string[] = PLATFORMS): ConsoleGovernor[] {

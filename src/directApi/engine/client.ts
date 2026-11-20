@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { commandBrowser } from '../../browser/run/index'
 import { commandWordOfKey, isPlatform, PLATFORM_LABELS, PLATFORMS } from '../../cli/runner/helpers/platforms'
@@ -14,6 +14,7 @@ import { accountHasSession, cookiesOf, lastJsonLine, netscape, sessionStateOf } 
 import type { LocalEngineState, CommandEngine, DirectGate, DirectOutcome, DirectRoute, EngineAnswer, EngineSpec, GovernorStatus, SessionState } from './types'
 import { WRITES_PER_DAY_DEFAULT, writesPerDayOf } from './types'
 import { timedEngineSync } from '../../observability/timing/index'
+import { logHome } from '../../config/logHome/index'
 
 
 function localClock(iso: string): string {
@@ -123,15 +124,15 @@ export function engineLine(command: string): string | null {
 }
 
 export function fbkStateRoot(): string {
-  return process.env.LOG_FBK_STATE || join(homedir(), '.logCli', 'fbk')
+  return process.env.LOG_FBK_STATE || join(logHome(), 'fbk')
 }
 
 export function twitterStateRoot(): string {
-  return process.env.LOG_TWITTER_STATE || join(homedir(), '.logCli', 'twitter')
+  return process.env.LOG_TWITTER_STATE || join(logHome(), 'twitter')
 }
 
 export function platformStateRoot(platform: string): string {
-  return process.env.LOG_PLATFORM_STATE ? join(process.env.LOG_PLATFORM_STATE, platform) : join(homedir(), '.logCli', platform)
+  return process.env.LOG_PLATFORM_STATE ? join(process.env.LOG_PLATFORM_STATE, platform) : join(logHome(), platform)
 }
 
 export function allEngineStates(now: Date = new Date()): LocalEngineState[] {

@@ -1,5 +1,5 @@
 import { wordPairsOf, wordsOf } from '../phrases/client'
-import { SAMENESS_LIMIT, SAMENESS_MIN_PAIRS } from './types'
+import { OPENER_REPEAT_LIMIT, OPENER_WORDS, SAMENESS_LIMIT, SAMENESS_MIN_PAIRS } from './types'
 import type { SamenessReading, SentText } from './types'
 
 export function pairSetOf(text: string): Set<string> {
@@ -14,7 +14,22 @@ export function overlapOf(a: ReadonlySet<string>, b: ReadonlySet<string>): { sco
   return { score: shared.length / smaller.size, shared }
 }
 
+export function openerOf(text: string): string {
+  const line = text.split('\n').map((l) => l.replace(/https?:\/\/\S+/g, ' ').trim()).find((l) => wordsOf(l).length > 0) ?? ''
+  return wordsOf(line).slice(0, OPENER_WORDS).join(' ').toLowerCase()
+}
+
+export function openerRepeat(text: string, others: readonly SentText[], limit: number = OPENER_REPEAT_LIMIT): SamenessReading | null {
+  const opener = openerOf(text)
+  if (opener.split(' ').length < OPENER_WORDS) return null
+  const same = others.filter((o) => openerOf(o.text) === opener)
+  if (same.length < limit) return null
+  return { score: 1, limit: 0, closestTo: same.map((o) => o.to).slice(0, 4).join(', '), shared: [`opens "${opener}" like ${same.length} other message(s): a run of one opener reads as a bot`], pass: false }
+}
+
 export function samenessOf(text: string, others: readonly SentText[], limit: number = SAMENESS_LIMIT): SamenessReading {
+  const repeat = openerRepeat(text, others)
+  if (repeat) return repeat
   const mine = pairSetOf(text)
   let best: SamenessReading = { score: 0, limit, closestTo: null, shared: [], pass: true }
   for (const other of others) {

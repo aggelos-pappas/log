@@ -1,6 +1,6 @@
 # knowledgeAndSearch
 
-Finding context: the knowledge base, the conversation search (keyword and meaning at once) and every voice note transcribed into it.
+Finding context: the knowledge base, the conversation search (keyword and meaning at once), the Relate graph of who connects to whom, one person across platforms (people), and every voice note transcribed into it.
 
 Written by `bun run docs:build` from the code, the skills and AGENTS.md. Not edited by hand: change the command's usage, its skill or the rule, and rebuild.
 
@@ -12,7 +12,9 @@ When the owner asks for one of these, follow its page step by step.
 |---|---|---|
 | `getGuide({ useCase: "discord/serverReply" })` | Replying in a Discord server channel | "reply to <someone> in <server>", "answer him in the general", "message the guy in <server> #<channel> who mentioned me", "reply in the <server> server", "find what <someone> said in <server> and answer it" |
 | `getGuide({ useCase: "discord/serverSearch" })` | Finding a conversation in a Discord server | "find the conversation I had with <someone> in <server> about <thing>", "what did <someone> say in <server> about <thing>", "search <server> for <words>", "read through the <server> server and find <thing>" |
+| `getGuide({ useCase: "inbox/saidBy" })` | Someone's messages on every platform, found by name, newest first | "what did he say", "find his messages", "everything they said" |
 | `getGuide({ useCase: "inbox/scopeAJob" })` | Scoping a job out of someone in a DM | "probe <person> so we can scope out what the task is", "scope it out with him", "find out what he actually wants done", "go through and then scope it out". |
+| `getGuide({ useCase: "log/toolFromOneOff" })` | Turning a hand-rolled one-off into a log tool | "turn that one-off into a tool", "make that script a log command", "stop hand-rolling that", "vendor that query into log" |
 | `getGuide({ useCase: "twitter/affiliateMarketing" })` | Affiliate marketing through your DMs | "answer the people asking about <tool> in my dms with my affiliate link", "turn the dms about <tool> into affiliate money", "follow up everyone who asked about the tool", "get me onto <company>'s affiliate program and book the call". |
 | `getGuide({ useCase: "twitter/collabMaxxing" })` | Collab maxxing: turn open conversations into collabs | "position a collab first then be like just a few quid so i can make a video about it", "start network maxxing and collab maxxing and trying to see what hes doing get him to reveal it all", "follow up on <someone> and the other people, small commitment from deals, not just new people but already open convos", "respond with the collabmaxxing", "selling the outcome", "let him name it", "check in with <someone> whats good there he is keen but isnt liquid", "just be nice to them there the poor people", "ask <someone> if i could become a contributor", "look on my twitter for missed opportunities". |
 | `getGuide({ useCase: "twitter/dmInbox" })` | Reading the DM inbox: who is waiting on you | "who is waiting on me", "check my x dms", "go through my twitter inbox and tell me who needs a reply", "who am I waiting on in my dms". |
@@ -25,12 +27,24 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 
 | Tool | What it does | Usage |
 |---|---|---|
+| `routerIndex` | Is the prompt router's meaning index of plays, tools and skills… | `log router index [--apply] [--json]   (is the prompt router's meaning index current; --apply builds it)` |
+| `relateBuild` | Project log.db into a new Relate graph file and make it the current… | `log relate build [--json]            (projects log.db's people, rooms, posts and who said or engaged what into a new Relate graph file, then points at it)` |
+| `relateStatus` | Show the current Relate graph file, the event it was built through… | `log relate status [--json]           (which graph file is current, through which event, and how far behind log.db it is)` |
+| `relateVerify` | Compare every node and edge count in the Relate graph with what… | `log relate verify [--json]           (compares every node and edge count in the graph with what log.db derives now)` |
+| `relateAsk` | Show the connected context | `log relate ask "<text>" [--json]     (the connected context the hook injects for the people that text names, e.g. "@someone")` |
+| `relateQuery` | Run a read-only Cypher query on the current Relate graph | `log relate query "<cypher>" [--json] (a read-only Cypher query on the current graph, at most 100 rows)` |
+| `people` | List everyone linked across platforms, with each person's identities | `log people [--json]                                        (everyone linked across platforms: each person and their identities)` |
+| `peopleShow` | The person card for someone across every platform | `log people show <who> [--json]                             (the person card: every platform, one-to-one chats and groups, who is waiting, the last lines across platforms)` |
+| `peopleSuggest` | Identities on different platforms that are probably one person | `log people suggest [--limit <n>] [--json]                  (identities on different platforms that are probably one person, scored with Fellegi-Sunter record linkage, with the evidence)` |
+| `peopleLink` | Make these identities one person, after the owner says yes | `log people link <identity> <identity>... --approvedBy "<the owner's words>" [--name "<name>"] [--evidence "<why>"]   (one person across these identities, appended to log.db as events)` |
+| `peopleUnlink` | Take an identity out of its person, after the owner says so | `log people unlink <identity> --approvedBy "<the owner's words>"   (that identity is no longer part of its person; the link stays in the history)` |
+| `peopleDifferent` | Record that two identities are not the same person, after the owner… | `log people different <identity> <identity> --approvedBy "<the owner's words>"   (not the same person, so they are never suggested again)` |
 | `mediaDescriber` | Run the one media describer on this machine | `log media describer [--json]` |
 | `mediaDescribe` | Queue one local image or video for the describer and wait for its… | `log media describe <path> [--wait <seconds>] [--json]` |
 | `mediaStatus` | The media queue | `log media status [--json]` |
 | `mediaView` | One media item | `log media view <id> [--json]` |
-| `search` | Search every conversation by keyword and meaning at once, fused with… | `log search "<query>" [--limit <n>] [--platform <p>] [--account <a>] [--with <handle>] [--after <YYYY-MM-DD>] [--json]` |
-| `searchIndex` | Read every conversation through the platform's engine | `log search index [--platform <twitter\|discord>] [--account <a>] [--saved] [--rebuild]   (only the chunks that are new or changed are embedded, and the ones gone are removed, so the index stays deduplicated; --rebuild embeds everything again. --saved indexes the conversations already kept, reading nothing; otherwise reads every conversation through the platform's engine: X's DMs with X Chat decrypted with the saved PIN, and every Discord DM and group (its whole history, up to 20,000 messages each), keeps them in ~/.logCli/conversations, and builds the keyword and meaning indexes in ~/.logCli/search)` |
+| `search` | Find where someone talked about something | `log search "<query>" [--limit <n>] [--fusion <rrf\|bayes>] [--platform <p>] [--account <a>] [--with <handle>] [--after <YYYY-MM-DD>] [--kind <k>] [--server <s>] [--channel <c>] [--full] [--json]` |
+| `searchIndex` | Read every conversation through the platform's engine | `log search index [--platform <twitter\|discord>] [--account <a>] [--saved] [--rebuild]   (only new or changed chunks are embedded and gone ones removed; --rebuild embeds all again. --saved indexes the conversations already kept, reading nothing; otherwise reads every conversation through the platform's engine: X's DMs with X Chat decrypted with the saved PIN, and every Discord DM and group (its whole history, up to 20,000 messages each), keeps them in log.db, and builds the keyword and meaning indexes in ~/.logCli/search)` |
 | `searchBench` | Time realistic queries on the built index, cold and warm, with p50… | `log search bench [--rounds <n>]   (times realistic queries on the built index, cold and warm, and prints p50, p95 and p99 beside a plain linear scan)` |
 | `kbSearch` | Search the knowledge base | `log kb search "<query>" [--kind <kind>] [--limit <n>] [--json]` |
 | `kbSync` | Collect every source into the knowledge base in Twenty and index what… | `log kb sync [--noAccounts] [--json]   (collects AGENTS.md rules and sections, skills, docs, infra notes, every Claude memory file, the known page states and the accounts from log-cli's Twenty, writes them to the knowledge base in ListeningKit's Twenty, and indexes what changed into Redis)` |
@@ -38,6 +52,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `kbShow` | Show one knowledge base article in full | `log kb show <key> [--json]   (one article in full, e.g. rule:73, skill:inspect, pageState:messengerPinCreate)` |
 | `transcribe` | Transcribe every voice note in the saved X and Discord conversations… | `log transcribe [--platform twitter\|discord] [--account <a>] [--list] [--noIndex] [--json]` |
 | `transcribeFile` | Transcribe one audio file with AssemblyAI, kept by its hash | `log transcribe file <path> [--json]   (one audio file, transcribed and kept by its hash)` |
+| `saidBy` | Someone's messages on every platform, found by name, newest first | `log saidBy [--name <name>] [--limit <n>] [--json]   (Someone's messages on every platform, found by name, newest first)` |
 
 ## The work, step by step: knowledgeBase
 
@@ -139,9 +154,12 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 - **Rule 39.** Use only the scope, options and intent The owner stated or implied.
 - **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
+- **Rule 73.** For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence.
 - **Rule 89.** Find conversational context by scoped search and existing private records.
 - **Rule 94.** Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies.
 - **Rule 105.** One platform/account owns one continuous engine session and push connection.
+- **Rule 134.** Existing workspace log.db is the native private record/coordination foundation.
 - **Rule 137.** Preserve current context-aware voice and AI-artifact gates for messages sent as The owner.
 - **Rule 138.** Media and voice-note context uses the existing private media descriptions and transcripts.
+- **Rule 154.** Show people/chats by meaningful names and handles; keep routing ids internal unless needed for the specific technical artifact.
 - **Rule 163.** Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients.

@@ -11,4 +11,7 @@ export interface HookResult {
   text: string
   outcome: string
   menu?: string[]
+  namesMs?: number
+  tools?: string[]
+  skills?: string[]
 }

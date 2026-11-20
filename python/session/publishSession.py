@@ -17,6 +17,7 @@ _sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
 from errors.errorCodes import checked, failure
 from browser import proxyGate
 from location.placeName import pick_suggestion, place_problem
+from human import myuriInput
 from human.humanMouse import SyncHumanMouse, human_click, human_scroll_by, human_scroll_into_view
 from browser.visibleBrowser import launch_kwargs
 
@@ -492,7 +493,7 @@ class Session:
         human_click(loc)
         self.page.keyboard.press("ControlOrMeta+A")
         self.page.keyboard.press("Backspace")
-        self.page.keyboard.type(value, delay=delay)
+        myuriInput.type_text_sync(self.page, value)
         if check(loc.input_value()):
             return True
         loc.fill(value)
@@ -610,7 +611,7 @@ def set_marketplace_location(s: Session, place: str) -> str | None:
         human_click(box, circle=False)
         page.keyboard.press("ControlOrMeta+A")
         page.keyboard.press("Backspace")
-        page.keyboard.type(place, delay=90)
+        myuriInput.type_text_sync(page, place)
         page.wait_for_timeout(2500)
         options = page.get_by_role("option")
         offered = [options.nth(i).inner_text().split("\n")[0] for i in range(options.count())]
@@ -782,7 +783,7 @@ def solve_text_image(s: Session, solver) -> dict[str, Any]:
     if not answer:
         return {"solved": False, "code": checked("unsolvable"), "detail": "2Captcha returned an empty answer"}
     human_click(field)
-    s.page.keyboard.type(answer, delay=90)
+    myuriInput.type_text_sync(s.page, answer, secret=True)
     submitted = s.submit_text_captcha()
     return {"solved": True, "detail": f"{len(answer)} characters typed" + ("" if submitted else ", Continue not found")}
 
@@ -896,7 +897,7 @@ def step_fill_fields(s: Session, params: dict[str, Any]) -> dict[str, Any]:
             human_click(loc)
             s.page.keyboard.press("ControlOrMeta+A")
             s.page.keyboard.press("Backspace")
-            s.page.keyboard.type(query, delay=30)
+            myuriInput.type_text_sync(s.page, query)
             try:
                 options.first.wait_for(state="visible", timeout=6000)
             except Exception:

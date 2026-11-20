@@ -3,14 +3,14 @@ import { claimState, deleteState, getState, putState } from '../../storage/state
 import { spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { openDatabase } from '../../storage/schema/client'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { CONTEXT_PORT, CURL_CONNECT_SECONDS, CURL_MAX_SECONDS, HOST, SERVICE_START_GRACE_MS, SERVICE_TIMEOUT_MS } from './types'
 import type { ServiceInfo, TimingLine } from './types'
-import type { PlayMatch } from '../../useCases/router/index'
+import type { MeaningAnswer, PlayMatch } from '../../useCases/router/index'
+import { logHome } from '../../config/logHome/index'
 
 export function contextLayerRoot(): string {
-  return process.env.LOG_CONTEXT_LAYER || join(homedir(), '.logCli', 'contextLayer')
+  return process.env.LOG_CONTEXT_LAYER || join(logHome(), 'contextLayer')
 }
 
 export const servicePath = (root = contextLayerRoot()) => join(root, 'service.json')
@@ -46,7 +46,10 @@ export function logTiming(line: Omit<TimingLine, 'at'>, _root = contextLayerRoot
   try {
     const id = randomBytes(8).toString('hex')
     const startedAt = Date.now() - line.ms
-    openDatabase().prepare("INSERT OR IGNORE INTO spans (spanId, traceId, callId, parentId, tool, name, source, pid, startedAt, ms, ok, attrs) VALUES (?, ?, ?, NULL, ?, 'call', 'hook', ?, ?, ?, ?, ?)").run(id, id, id.slice(0, 12), `hook:${line.event}:${line.provider}`, process.pid, startedAt, line.ms, line.outcome.endsWith('!') ? 0 : 1, JSON.stringify({ event: line.event, provider: line.provider, chars: line.chars, outcome: line.outcome }))
+    const tool = `hook:${line.event}:${line.provider}`
+    const insert = openDatabase().prepare("INSERT OR IGNORE INTO spans (spanId, traceId, callId, parentId, tool, name, source, pid, startedAt, ms, ok, attrs) VALUES (?, ?, ?, ?, ?, ?, 'hook', ?, ?, ?, ?, ?)")
+    insert.run(id, id, id.slice(0, 12), null, tool, 'call', process.pid, line.stages?.length ? Math.min(startedAt, ...line.stages.map((s) => s.startedAt)) : startedAt, line.ms, line.outcome.endsWith('!') ? 0 : 1, JSON.stringify({ ...line.attrs, event: line.event, provider: line.provider, chars: line.chars, outcome: line.outcome }))
+    for (const stage of line.stages ?? []) insert.run(randomBytes(8).toString('hex'), id, id.slice(0, 12), id, tool, stage.name, process.pid, stage.startedAt, Math.max(0, stage.ms), stage.ok === false ? 0 : 1, '{}')
   } catch {}
 }
 
@@ -79,6 +82,7 @@ export function serviceStarted(root = contextLayerRoot()): void {
 }
 
 export interface RouteAnswer {
+  meaning?: MeaningAnswer
   play: PlayMatch | null
   menu: PlayMatch[]
   matches: PlayMatch[]

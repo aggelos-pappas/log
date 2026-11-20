@@ -3,17 +3,20 @@ import { readIdentityProfile } from "../../../../inbox/profiles/index.ts";
 import type { IdentityProfileView, ProfileQuery } from "../../../../inbox/profiles/index.ts";
 import { readPlatformSenders, readTwitterSenders, SENDERS_MAX_LIMIT } from "../../../../inbox/senders/index.ts";
 import type { SendersOptions, SendersReport } from "../../../../inbox/senders/index.ts";
+import { readWaiting } from "../../../../inbox/waiting/index.ts";
+import type { WaitingOptions, WaitingReport } from "../../../../inbox/waiting/index.ts";
 import { PLATFORMS } from "../../../../cli/runner/helpers/platforms.ts";
-import { profileBlocks, sendersBlocks } from "../presets.ts";
+import { profileBlocks, sendersBlocks, waitingBlocks } from "../presets.ts";
 import type { ReportBlock, ReportRefusal } from "../types.ts";
 
 export interface ReportDeps {
   readSenders: (options: SendersOptions) => SendersReport;
   readPlatformSenders: (platform: string, options: SendersOptions) => SendersReport;
   readProfile: (query: ProfileQuery) => IdentityProfileView;
+  readWaiting: (options: WaitingOptions) => WaitingReport;
 }
 
-export const REPORT_DEPS: ReportDeps = { readSenders: readTwitterSenders, readPlatformSenders, readProfile: readIdentityProfile };
+export const REPORT_DEPS: ReportDeps = { readSenders: readTwitterSenders, readPlatformSenders, readProfile: readIdentityProfile, readWaiting };
 
 export class ReportSourceRefusal extends Error {
   constructor(readonly code: ReportRefusal, message: string) {
@@ -48,7 +51,15 @@ const identityProfile = z.strictObject({
   handle: line(120).optional().describe("Their handle on that platform (give userId or handle)"),
 });
 
-type SourceInputs = { twitterDmsBySender: z.infer<typeof twitterDmsBySender>; dmsBySender: z.infer<typeof dmsBySender>; identityProfile: z.infer<typeof identityProfile> };
+const waitingOnYou = z.strictObject({
+  source: z.literal("waitingOnYou").describe("Who is waiting on the owner across every platform and account (the last word in the chat is theirs), and who opened his message without answering, each with who it is, the platform and account it is on, what they said and when, from log.db"),
+  platform: platform.optional().describe("Only this platform (default every platform)"),
+  account: line(80).optional().describe("Only this account's accountName (default every account)"),
+  since: line(40).optional().describe("Only chats whose last message is from this date or span on (default 14d)"),
+  limit,
+});
+
+type SourceInputs = { twitterDmsBySender: z.infer<typeof twitterDmsBySender>; dmsBySender: z.infer<typeof dmsBySender>; identityProfile: z.infer<typeof identityProfile>; waitingOnYou: z.infer<typeof waitingOnYou> };
 
 export type ReportSourceName = keyof SourceInputs;
 
@@ -81,11 +92,17 @@ export const REPORT_SOURCES: { readonly [K in ReportSourceName]: ReportSource<So
     },
     blocks: (read) => profileBlocks(read as IdentityProfileView),
   },
+  waitingOnYou: {
+    schema: waitingOnYou,
+    starter: "waiting",
+    read: (input, deps) => deps.readWaiting({ platform: input.platform ?? null, account: input.account ?? null, since: input.since ?? null, ...(input.limit ? { limit: input.limit } : {}) }),
+    blocks: (read) => waitingBlocks(read as WaitingReport),
+  },
 };
 
 export const REPORT_SOURCE_NAMES = Object.keys(REPORT_SOURCES) as ReportSourceName[];
 
-export const reportDataSource = z.discriminatedUnion("source", [twitterDmsBySender, dmsBySender, identityProfile]);
+export const reportDataSource = z.discriminatedUnion("source", [twitterDmsBySender, dmsBySender, identityProfile, waitingOnYou]);
 
 export type ReportDataSource = z.infer<typeof reportDataSource>;
 

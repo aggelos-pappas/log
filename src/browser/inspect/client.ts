@@ -1,18 +1,18 @@
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { appendFileSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { pipeProcessLog } from '../../observability/processLog/index'
 import type { StepReading } from '../../subq/stepReading/types'
 import { goalProgressOf, peeMarkdown } from './helpers/goal'
 import type { CurrentInspect, GoalEvent, GoalProgress, InspectAction, InspectSessionConfig, InspectSessionRunner, InspectStepOptions, InspectStepResult } from './types'
+import { logHome } from '../../config/logHome/index'
 
 export const INSPECT_SESSION_PATH = fileURLToPath(new URL('../../../python/session/inspectSession.py', import.meta.url))
 
 export function currentInspectPath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_INSPECT_CURRENT || join(homedir(), '.logCli', 'runs', 'inspect', 'current.json')
+  return env.LOG_INSPECT_CURRENT || join(logHome(), 'runs', 'inspect', 'current.json')
 }
 
 export function inspectSessionsDir(path = currentInspectPath()): string {

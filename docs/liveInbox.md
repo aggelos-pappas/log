@@ -42,6 +42,25 @@ A contact writes a short question on Discord while a reply to them is going out 
 
 **Claim before acting (rule 133).** A session claims a chat before drafting a reply. Only one session can hold it. Every send claims the chat itself, checks before each line that it still holds it, and releases it when done.
 
+**Pushed into the session between turns.** A prompt hook only runs when the owner types, so on its own a message that lands while he is away waits for his next word. `scripts/hooks/push.ts --host <host> --reader <session reader>` (`src/inbox/push`) wakes on every watcher write under `~/.logCli/inbox` (and every 15 s if a write is missed), takes what is new from the same cursor the prompt hook reads, so nothing is shown twice, and prints one JSON line per batch: `{ reader, host, count, context }`, where `context` is the same `>>> NEW MESSAGE` block the hook shows. Each harness turns a line into a turn the same way it would take a message from the owner:
+
+| Harness | How a pushed batch starts a turn |
+|---|---|
+| Hermes | the `log` plugin runs `push.ts` with the reader of the chat the owner last wrote in and calls `ctx.inject_message(context, session_key=...)`; needs `plugins.entries.log.allow_gateway_injection: true`, and picks the same chat up again after a restart from `~/.logCli/inbox/hermesPush.json` |
+| opencode | the `log` plugin runs `push.ts` for each session it starts and sends each batch with `session.synthetic` |
+| Claude Code | a `Monitor` on `bun <log>/scripts/hooks/push.ts --host claudeCode --reader <session id>`: every line it prints wakes the session |
+| Codex, Cursor, Antigravity | no way for a plugin to start a turn yet, so messages wait for the next prompt hook |
+
+**Replies: ask or auto.** A pushed message always tells the agent to say who wrote and what about. Whether it may then send is the owner's setting, `ask` by default: the agent drafts and gates the reply, shows it, and sends only when the owner says to in that chat. `auto` brings back sending straight away (rule 108). Set it per harness, one word for every platform or per platform with a default:
+
+| Where | Setting |
+|---|---|
+| Hermes `config.yaml` | `plugins.entries.log.replies: ask`, or `replies: {default: ask, discord: auto}` |
+| any harness (env) | `LOG_REPLIES=ask` or `LOG_REPLIES=discord=auto,default=ask` |
+| fallback for all harnesses | `~/.logCli/settings.json`: `{"replies": "ask"}` or `{"replies": {"default": "ask", "twitter": "auto"}}` |
+
+The harness setting wins over the file. Turning off `allow_gateway_injection` in Hermes stops pushed messages starting turns on their own; they then wait for your next message.
+
 **Unknown events (rule one).** An event type nobody has catalogued yet is stored with its raw payload and raised as an alert, so it can be named from rea, the docs and SubQ instead of being dropped.
 
 ## Being built now

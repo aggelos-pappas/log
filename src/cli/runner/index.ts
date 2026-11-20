@@ -39,9 +39,13 @@ import { transcribeCommand } from "../transcribe/index.ts";
 import { pollCommand } from "../poll/index.ts";
 import { proxyCommand } from "../proxy/index.ts";
 import { readCommand } from "../read/index.ts";
+import { routerCommand } from "../router/index.ts";
 import { runsCommand } from "../runs/index.ts";
 import { storageCommand } from "../storage/index.ts";
+import { relateCommand } from "../relate/index.ts";
+import { peopleCommand } from "../people/index.ts";
 import { timingCommand } from "../timing/index.ts";
+import { toolCommand } from "../tool/index.ts";
 import { inboxCommand } from "../inbox/index.ts";
 import { mediaCommand } from "../media/index.ts";
 import { browsersCommand } from "../browsers/index.ts";
@@ -61,6 +65,7 @@ import { linkedinConnectCommand, linkedinCookiesCommand, linkedinDeleteCommand, 
 import { slackChatsCommand, slackCookiesCommand, slackReadCommand, slackSendCommand, slackSessionCommand, slackWatchCommand, slackWorkspacesCommand } from "../slack/index.ts";
 import { instagramDmsCommand, instagramSendCommand, instagramSessionCommand, instagramWatchCommand } from "../instagram/index.ts";
 import { discordReactCommand, instagramReactCommand, slackReactCommand, twitterReactCommand } from "../react/index.ts";
+import { saidByCommand } from "../saidBy/index.ts";
 import { tiktokDeleteCommand, tiktokPostCommand, tiktokSessionCommand, tiktokStatsCommand } from "../tiktok/index.ts";
 
 export * from "./helpers/index.ts";
@@ -103,9 +108,13 @@ export const COMMANDS: Command[] = [
   errorsCommand,
   graphCommand,
   captureCommand,
+  routerCommand,
   runsCommand,
   storageCommand,
+  relateCommand,
+  peopleCommand,
   timingCommand,
+  toolCommand,
   inboxCommand,
   mediaCommand,
   browsersCommand,
@@ -198,6 +207,7 @@ export const COMMANDS: Command[] = [
   instagramVoiceCommand,
   twitterVoiceCommand,
   tiktokSessionCommand,
+  saidByCommand,
   tiktokStatsCommand,
   tiktokPostCommand,
   tiktokDeleteCommand,

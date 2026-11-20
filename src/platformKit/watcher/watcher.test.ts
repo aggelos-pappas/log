@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ownOrAttach } from "../../inbox/relay/index.ts";
 import { db, openGap } from "../../inbox/store/index.ts";
 import { claimWatcher } from "../../inbox/watch/index.ts";
-import { holdWatcher, reconcileWatchers, recordWatcherEnd, startAccountWatcher, superviseWatchers, watchArgvOf, watchEndOf, watcherHeld, watcherRows, watcherStateOf } from "./index.ts";
+import { holdWatcher, liveRepoOf, reconcileWatchers, recordWatcherEnd, startAccountWatcher, superviseWatchers, watchArgvOf, watchEndOf, watcherHeld, watcherRows, watcherStateOf } from "./index.ts";
 import type { SuperviseDeps, WatcherActors, WatcherEnd, WatcherPlatform, WatcherState } from "./index.ts";
 
 beforeEach(() => {
@@ -241,4 +241,26 @@ describe("one start for every harness", () => {
 
 afterEach(() => {
   delete process.env.LOG_INBOX_POLL;
+});
+
+describe("the account watchers always run from the live install, never a worktree", () => {
+  test("a git worktree hands the watchers its main clone, so a branch's code never takes over the live accounts", () => {
+    const root = mkdtempSync(join(tmpdir(), "liveRepo"));
+    const main = join(root, "logCli");
+    const tree = join(root, "featureTree");
+    mkdirSync(join(main, "bin"), { recursive: true });
+    mkdirSync(join(main, ".git", "worktrees", "featureTree"), { recursive: true });
+    writeFileSync(join(main, "bin", "log.ts"), "");
+    mkdirSync(tree, { recursive: true });
+    writeFileSync(join(tree, ".git"), `gitdir: ${join(main, ".git", "worktrees", "featureTree").replace(/\\/g, "/")}\n`);
+    expect(liveRepoOf(tree).replace(/\\/g, "/")).toBe(main.replace(/\\/g, "/"));
+    expect(liveRepoOf(main)).toBe(main);
+  });
+
+  test("a folder that isn't a worktree, or whose main clone has no log, is kept as it is", () => {
+    const plain = mkdtempSync(join(tmpdir(), "plainRepo"));
+    expect(liveRepoOf(plain)).toBe(plain);
+    writeFileSync(join(plain, ".git"), "gitdir: /nowhere/.git/worktrees/gone\n");
+    expect(liveRepoOf(plain)).toBe(plain);
+  });
 });

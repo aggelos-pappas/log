@@ -1,10 +1,10 @@
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { deleteState, getState, putState } from '../../../storage/state/index'
 import type { CloneStore, ProviderClone, VoiceProvider } from '../types'
+import { logHome } from '../../../config/logHome/index'
 
 export function voiceDir(): string {
-  return process.env.LOG_VOICE_CLONE_DIR || join(homedir(), '.logCli', 'voice')
+  return process.env.LOG_VOICE_CLONE_DIR || join(logHome(), 'voice')
 }
 
 export function clonePath(): string {
@@ -12,11 +12,11 @@ export function clonePath(): string {
 }
 
 export function voiceNotesDir(): string {
-  return process.env.LOG_VOICE_NOTES_DIR || join(homedir(), '.logCli', 'voiceNotes')
+  return process.env.LOG_VOICE_NOTES_DIR || join(logHome(), 'voiceNotes')
 }
 
 export function platformStateRoot(platform: string): string {
-  return process.env.LOG_PLATFORM_STATE ? join(process.env.LOG_PLATFORM_STATE, platform) : join(homedir(), '.logCli', platform)
+  return process.env.LOG_PLATFORM_STATE ? join(process.env.LOG_PLATFORM_STATE, platform) : join(logHome(), platform)
 }
 
 export function readClones(path = clonePath()): CloneStore {

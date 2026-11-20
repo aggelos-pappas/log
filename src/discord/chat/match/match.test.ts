@@ -64,4 +64,18 @@ describe('a chat said the way the owner says it', () => {
     expect(matchChat(CHATS, '1000000000000000001')).toMatchObject({ ok: true, how: 'id' })
     expect(matchChat(CHATS, 'nobody here')).toMatchObject({ ok: false, code: 'chatNotFound' })
   })
+
+  test('a typo of a name finds it when nothing closer does, and two near names are refused, never guessed', () => {
+    const chats = [
+      { id: '1000000000000000021', kind: 'dm', name: 'tovrik', members: ['tovrik'] },
+      { id: '1000000000000000022', kind: 'dm', name: 'Wren', members: ['Wren'] },
+    ] as never
+    expect(matchChat(chats, 'tvorik')).toMatchObject({ ok: true, chat: { id: '1000000000000000021' }, how: 'typo' })
+    expect(matchChat(chats, 'xyzzy')).toMatchObject({ ok: false, code: 'chatNotFound' })
+    const twins = [
+      { id: '1000000000000000023', kind: 'dm', name: 'marlo', members: ['marlo'] },
+      { id: '1000000000000000024', kind: 'dm', name: 'marla', members: ['marla'] },
+    ] as never
+    expect(matchChat(twins, 'marly')).toMatchObject({ ok: false, code: 'chatAmbiguous' })
+  })
 })

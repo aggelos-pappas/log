@@ -10,8 +10,9 @@ if str(FBK_SRC) not in sys.path:
     sys.path.insert(0, str(FBK_SRC))
 
 from governor import GovernorBlockedError, GovernorConfig, RequestGovernor
+from logHome import log_home
 
-STATE_DIR = Path.home() / ".logCli" / "fbk"
+STATE_DIR = log_home() / "fbk"
 _lock = threading.Lock()
 _governors: dict[str, RequestGovernor] = {}
 

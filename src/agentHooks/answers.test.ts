@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { answerEvent, cachedFreshness, hooksForEvent, mergeAnswers } from "./answers/index.ts";
+import { answerEvent, cachedFreshness, hookStages, hooksForEvent, mergeAnswers, sentAtOf, waitingHooksFirst } from "./answers/index.ts";
 import { REFUSING_HOOKS } from "./answers/index.ts";
 import type { AgentHook } from "./registry/types.ts";
 import { claudeCodeHooks, EVENT_SCRIPT, HOOK_SERVICE_URL, hooksFor, joinedMatcher } from "./registry/index.ts";
@@ -98,5 +98,26 @@ describe("the service's freshness cache", () => {
     expect(source.changes()).toEqual(["file3"]);
     expect(source.stamp()).toBe(2);
     source.close();
+  });
+});
+
+describe("a hook event's own time, split into stages", () => {
+  test("hooks that wait on I/O start first so their wait overlaps the hooks that only compute", () => {
+    const hook = (script: string): AgentHook => ({ event: "UserPromptSubmit", script, timeout: 10, why: "" });
+    const order = waitingHooksFirst([hook("scripts/hooks/pageState.ts"), hook("scripts/hooks/engines.ts"), hook("scripts/hooks/useCases.ts"), hook("scripts/hooks/inbox.ts")]);
+    expect(order.map((h) => h.script.replace(/^.*\//, ""))).toEqual(["useCases.ts", "pageState.ts", "engines.ts", "inbox.ts"]);
+  });
+
+  test("the caller's send time becomes the spawn and Bun start stages of a process hook, and the sent stage of a service hook", () => {
+    const raw = JSON.stringify({ prompt: "hi", log_sent_at: 1000 });
+    expect(sentAtOf(raw)).toBe(1000);
+    expect(sentAtOf("{}")).toBeNull();
+    const timings = [{ hook: "inbox", ms: 30, ok: true, startedAt: 1300 }];
+    expect(hookStages(raw, timings, { processAt: 1100, bootedAt: 1290 })).toEqual([
+      { name: "spawn", startedAt: 1000, ms: 100 },
+      { name: "bunStart", startedAt: 1100, ms: 190 },
+      { name: "hook inbox", startedAt: 1300, ms: 30, ok: true },
+    ]);
+    expect(hookStages(raw, timings, { arrivedAt: 1004 }).map((s) => [s.name, s.ms])).toEqual([["sent", 4], ["hook inbox", 30]]);
   });
 });

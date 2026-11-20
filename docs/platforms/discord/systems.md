@@ -1,6 +1,6 @@
 # How Discord works: the systems map
 
-Read from Discord's own internal calls, never guessed (rules 73, 85): the 2026-10-28 inspect runs (sign-in, chats, paging, the gateway push) and the 2026-11-13 run `~/.logCli/runs/inspect/20261113T231616_deepman2` (hCaptcha, a refused password, the QR sign-in, the gateway sign-on, two sessions lost). Each call has its own doc beside this one, read by rea from the code that sends it.
+Read from Discord's own internal calls, never guessed (rules 73, 85): the 2026-10-28 inspect runs (sign-in, chats, paging, the gateway push) and the 2026-11-13 run `~/.logCli/runs/inspect/20261113T231616_discordAccount` (hCaptcha, a refused password, the QR sign-in, the gateway sign-on, two sessions lost). Each call has its own doc beside this one, read by rea from the code that sends it.
 
 ## 1. One account, one token, many sessions
 

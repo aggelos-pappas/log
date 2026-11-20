@@ -9,6 +9,7 @@ export interface HookTiming {
   hook: string
   ms: number
   ok: boolean
+  startedAt?: number
 }
 
 export interface EventAnswer {
@@ -19,4 +20,6 @@ export interface EventAnswer {
 
 export type RouteAsk = (prompt: string) => Promise<unknown>
 
-export const REFUSING_HOOKS: readonly string[] = ['scripts/hooks/chatNames.ts', 'scripts/hooks/liveLogs.ts']
+export const WAITING_HOOKS: readonly string[] = ['useCases', 'knowledge']
+
+export const REFUSING_HOOKS: readonly string[] = ['scripts/hooks/chatNames.ts', 'scripts/hooks/liveLogs.ts', 'scripts/hooks/handRolled.ts']

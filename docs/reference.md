@@ -76,7 +76,7 @@ flowchart LR
   anyB --> b_slack
   anyB --> b_instagram
   anyB --> b_tiktok
-  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, runs, storage, timing, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new"]
+  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, router, runs, storage, relate, people, timing, tool, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy"]
   anyN -.-> twenty
   newP["log new platform name: one more platform, wired whole (rule 83)"] -.-> twenty
   drivers --> api
@@ -112,7 +112,7 @@ Source: [`docs/diagrams/browsers.mmd`](diagrams/browsers.mmd).
 
 - **The account's browser, through the driver:** `facebook host`, `inspect`, `flow`, `<platform> warmup`, `facebook join`, `facebook read`, `facebook poll`, `facebook check`, `reddit read`, `discord read`, `slack read`. They run on whichever browser the account uses: AdsPower when it has a linked profile (`socialAccounts.adsPowerProfileId`), Camoufox otherwise, or what `socialAccounts.browserDriver` says.
 - **Camoufox only, not on the driver yet:** `facebook doctor`, `facebook connect`, `facebook profile`, `facebook scan`, `facebook status`, `facebook watch`, `facebook publish`, `facebook campaign`, `discord watch`, `linkedin connect`, `slack watch`, `instagram watch`. They launch Camoufox themselves (facebook-camofox-client's worker, or the publish, connect and profile sessions), so on an AdsPower account they don't open its AdsPower profile. Moving one onto the driver is moving it into `OPENER_ACTIONS` (`src/browser/run`).
-- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `runs`, `storage`, `timing`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `tiktok stats`, `tiktok post`, `tiktok delete`.
+- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `relate`, `people`, `timing`, `tool`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`.
 - **No browser path at all:** X. Its accounts run on the direct API only (rule 80).
 
 Each browser's capabilities, built or not: [`docs/browsers.md`](browsers.md) (generated, `bun run check:browsers`). AdsPower's setup: [`docs/adsPower.md`](adsPower.md).
@@ -224,9 +224,9 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 274 command tools + saved flows"]
+  mcp["MCP server log: 295 command tools + saved flows"]
   bin["bin/log.ts"]
-  runCli["runCli: 133 commands (COMMANDS)"]
+  runCli["runCli: 138 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
   engine{"commandEngine: DIRECT_ROUTES"}
   direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi, tiktokApi (curl_cffi, TikTok Studio calls) (vendor/), the account's saved session, a governor per account"]
@@ -250,6 +250,7 @@ flowchart LR
   live -.->|tail -f, under Monitor| agent
   pre0{{"PreToolUse: chatNames.ts"}} -.->|before| shell
   pre1{{"PreToolUse: liveLogs.ts"}} -.->|before| shell
+  pre2{{"PreToolUse: handRolled.ts"}} -.->|before| shell
   post0{{"PostToolUse: inbox.ts"}} -.->|after| agent
   post1{{"PostToolUse: queue.ts"}} -.->|after| agent
   post2{{"PostToolUse: xLive.ts"}} -.->|after| agent
@@ -266,10 +267,11 @@ flowchart LR
   turn9{{"SessionStart: queue.ts"}} -.-> agent
   turn10{{"SessionStart: useCases.ts"}} -.-> agent
   turn11{{"UserPromptSubmit: useCases.ts"}} -.-> agent
-  turn12{{"UserPromptSubmit: queue.ts"}} -.-> agent
-  turn13{{"SessionStart: xLive.ts"}} -.-> agent
-  turn14{{"UserPromptSubmit: xLive.ts"}} -.-> agent
-  turn15{{"Stop: pageState.ts"}} -.-> agent
+  turn12{{"UserPromptSubmit: relate.ts"}} -.-> agent
+  turn13{{"UserPromptSubmit: queue.ts"}} -.-> agent
+  turn14{{"SessionStart: xLive.ts"}} -.-> agent
+  turn15{{"UserPromptSubmit: xLive.ts"}} -.-> agent
+  turn16{{"Stop: pageState.ts"}} -.-> agent
   browser -.->|each step's snapshot| post0
 ```
 
@@ -316,14 +318,18 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log errors`](#log-errors) | List every error code: meaning, retryable, where each machine ends up | any (none) | `[--layer <account|listing|photo|form|captcha|runtime|twenty|proxyVendor|auth|profile|tool>]` `[--code <code>]` `[--json]` `[--markdown]` | none | none | `errors` | PreToolUse, PostToolUse · PostToolUse | no | 25, 30, 38, 39, 40, 41 |
 | [`log graph`](#log-graph) | Print a machine's states and transitions as a Mermaid diagram | any (none) | none | none | none | `graph` | PreToolUse, PostToolUse · PostToolUse | no | 25, 30, 38, 39, 40, 41 |
 | [`log capture`](#log-capture) | Read a run's raw HAR and scripts with offline rea (any platform or browser driver), settle a run's capture, or build every platform's client docs. No browser. | any (none) | `[--out <dir>]` `[--noRea]` `[--json]` | none | none | `captureHar`, `captureSettle`, `captureDocs` | PreToolUse, PostToolUse · PostToolUse | yes: watch it | 19, 26, 73, 30, 38, 39, 40, 41 |
-| [`log runs`](#log-runs) | The recorded runs on this machine, and pruning the ones rea settled and the request docs hold, keeping each one's findings and domains | any (none) | `[--json]` `[--before <date>]` `[--apply]` | none | none | `runsList`, `runsExchanges`, `runsPrune`, `runsPruneLive`, `runsSpace` | PreToolUse, PostToolUse · PostToolUse | no | 19, 25, 66, 73, 30, 38, 39, 40, 41 |
+| [`log router`](#log-router) | The prompt router's meaning index | any (none) | `[--apply]` `[--json]` | none | none | `routerIndex` | PreToolUse, PostToolUse · PostToolUse | no | 26, 73, 30, 38, 39, 40, 41 |
+| [`log runs`](#log-runs) | Recorded runs, and pruning the ones rea settled and the request docs hold | any (none) | `[--json]` `[--before <date>]` `[--apply]` | none | none | `runsList`, `runsExchanges`, `runsPrune`, `runsPruneLive`, `runsSpace` | PreToolUse, PostToolUse · PostToolUse | no | 19, 25, 66, 73, 30, 38, 39, 40, 41 |
 | [`log storage`](#log-storage) | Check that log.db's typed tables are exactly what its events derive, and rebuild them from the events | any (none) | `[--json]` `[--apply]` | none | none | `storageVerify`, `storageRebuild`, `storageRebuildLive` | PreToolUse, PostToolUse · PostToolUse | no | 73, 134, 30, 38, 39, 40, 41 |
-| [`log timing`](#log-timing) | Where the time goes in every call: p50, p95 and p99 per tool and per stage, from the timings every call stores in log.db, or one call as a waterfall | any (none) | `[--tool <name>]` `[--hours <number>]` `[--stages <number>]` `[--call <callId>]` `[--json]` | none | none | `timing` | PreToolUse, PostToolUse · PostToolUse | no | 26, 73, 165, 30, 38, 39, 40, 41 |
-| [`log inbox`](#log-inbox) | Claim a chat before acting on it, release it, list the live claims, read the log of every action taken in a chat, and read what the watchers heard | any (none) | `[--platform <twitter|discord|slack|instagram>]` `[--account <a>]` `[--chat <conversationId|handle>]` `[--event <eventId>]` `[--json]` `--by <who>` `[--limit <integer 1..1000>]` `[--oldest]` `--reader <name>` | none | none | `inboxClaim`, `inboxRelease`, `inboxResume`, `inboxWaiting`, `inboxPending`, `inboxClaims`, `inboxActions` | PreToolUse, PostToolUse · PostToolUse | no | 94, 105, 109, 133, 134, 138, 30, 38, 39, 40, 41 |
+| [`log relate`](#log-relate) | A Relate (Neo4j) graph of who talks, engages and shares rooms with the owner's accounts, projected from log.db and injected as connected context | any (none) | `[--json]` | none | none | `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk`, `relateQuery` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
+| [`log people`](#log-people) | One person across platforms: the owner links identities (Discord, X, Instagram…) into a person, suggestions come from Fellegi-Sunter record linkage, and the person card shows the whole relationship | any (none) | `[--json]` `[--limit <integer 1..200>]` `[--approvedBy <text>]` `[--name <text>]` `[--evidence <text>]` | none | none | `people`, `peopleShow`, `peopleSuggest`, `peopleLink`, `peopleUnlink`, `peopleDifferent` | PreToolUse, PostToolUse · PostToolUse | no | 30, 89, 134, 154, 163, 30, 38, 39, 40, 41 |
+| [`log timing`](#log-timing) | Where the time goes in every call: p50, p95 and p99 per tool and per stage, from the timings every call stores in log.db, or one call as a waterfall | any (none) | `[--tool <name>]` `[--hours <number>]` `[--stages <number>]` `[--top <number>]` `[--all]` `[--call <callId>]` `[--turns]` `[--json]` | none | none | `timing` | PreToolUse, PostToolUse · PostToolUse | no | 26, 73, 165, 30, 38, 39, 40, 41 |
+| [`log tool`](#log-tool) | Turn a one-off into a log tool, and see which tools are used | any (none) | `[--summary <text>]` `[--acts]` `[--flags <a,b,…>]` `[--area <f>]` `[--asks <a,b,…>]` `[--guide <g>]` `[--apply]` `[--json]` `[--days <integer 1..90>]` | none | none | `toolScaffold`, `toolScaffoldLive`, `toolHealth` | PreToolUse, PostToolUse · PostToolUse | no | 30, 73, 163, 165, 30, 38, 39, 40, 41 |
+| [`log inbox`](#log-inbox) | Chat claims and their action log, who is waiting on a reply, what the watchers heard, quiet the push | any (none) | `[--platform <twitter|discord|slack|instagram>]` `[--account <a>]` `[--chat <conversationId|handle>]` `[--event <eventId>]` `[--json]` `--by <who>` `[--limit <integer 1..1000>]` `[--tail <integer 0..60>]` `[--oldest]` `--reader <name>` `--minutes <integer 0..720>` `[--server <id>]` `[--undo]` `[--label <warming|readyToAsk|askedWaiting|friend|client|cold|skip>]` `[--as <warming|readyToAsk|askedWaiting|friend|client|cold|skip>]` | none | none | `inboxClaim`, `inboxRelease`, `inboxResume`, `inboxWaiting`, `inboxPending`, `inboxQuiet`, `inboxIgnore`, `inboxIgnored`, `inboxLabels`, `inboxLabel`, `inboxClaims`, `inboxActions` | PreToolUse, PostToolUse · PostToolUse | no | 94, 105, 109, 133, 134, 138, 30, 38, 39, 40, 41 |
 | [`log media`](#log-media) | Turn every image, meme and video into text any model reads, kept in the .db with a small preview, so replies read what was sent | any (none) | `[--json]` `[--wait <number 0..>]` | none | none | `mediaDescriber`, `mediaDescribe`, `mediaStatus`, `mediaView` | PreToolUse, PostToolUse · PostToolUse | no | 26, 41, 138, 105, 137, 30, 38, 39, 40, 41 |
 | [`log browsers`](#log-browsers) | Where every open browser is: its page, the known page state it sits on, the call that resolves it, and what only the owner can clear (rule 35) | any (none) | `[--json]` | none | none | `browsers` | PreToolUse, PostToolUse · PostToolUse | no | 29, 35, 30, 38, 39, 40, 41 |
 | [`log browser`](#log-browser) | One account's live browser: whether it needs a person to sign in, in the window on this machine or inline from a remote runtime | any (none) | `--account <accountName>` `[--json]` | none | none | `browserView` | PreToolUse, PostToolUse · PostToolUse | no | 8, 19, 35, 94, 105, 30, 38, 39, 40, 41 |
-| [`log report`](#log-report) | The numbers behind a report, read from log.db only (who messaged an account and how often, or one person's stored profile, by source), for the MCP report view | any (none) | `--source <twitterDmsBySender|dmsBySender|identityProfile>` `[--platform <facebook|twitter|reddit|discord|linkedin|slack|instagram|tiktok>]` `[--account <accountName>]` `[--since <dateOrSpan>]` `[--limit <integer 1..200>]` `[--userId <id>]` `[--handle <handle>]` `[--json]` | none | none | `reportData` | PreToolUse, PostToolUse · PostToolUse | no | 134, 154, 160, 30, 38, 39, 40, 41 |
+| [`log report`](#log-report) | The numbers behind a report, read from log.db only (who messaged an account and how often, or one person's stored profile, by source), for the MCP report view | any (none) | `--source <twitterDmsBySender|dmsBySender|identityProfile|waitingOnYou>` `[--platform <facebook|twitter|reddit|discord|linkedin|slack|instagram|tiktok>]` `[--account <accountName>]` `[--since <dateOrSpan>]` `[--limit <integer 1..200>]` `[--userId <id>]` `[--handle <handle>]` `[--json]` | none | none | `reportData` | PreToolUse, PostToolUse · PostToolUse | no | 134, 154, 160, 30, 38, 39, 40, 41 |
 | [`log job`](#log-job) | Follow or stop a long MCP run: each runs as a job when it outlasts its call's wait | any (none) | `[--afterLine <integer 0..>]` `[--waitMs <integer 0..>]` `[--json]` | none | none | `jobStatus`, `jobCancel`, `jobList` | PreToolUse, PostToolUse · PostToolUse | no | 8, 26, 35, 30, 38, 39, 40, 41 |
 | [`log mcp`](#log-mcp) | This server's MCP sign-ins over OAuth (through Twenty, the owner only): list the clients, revoke them | any (none) | `[--json]` | none | none | terminal only: manages who may sign in to this server's MCP (OAuth through Twenty). The owner runs `log mcp clients` or `mcp revoke <clientId\|all>` in a terminal on the server. | PreToolUse, PostToolUse · n/a | no | 35, 47, 167, 30, 38, 39, 40, 41 |
 | [`log login`](#log-login) | Only for a team on Twenty: sign in to its Twenty through its sign-in app (OAuth). Local accounts need no sign-in, and without Twenty set up it says so | any (none) | `--webUrl <url>` `--apiUrl <url>` `--token <accessToken>` `--json` | none | none | terminal only: opens a browser for Twenty OAuth and waits for it. Run `log login` in a terminal. | PreToolUse, PostToolUse · n/a | no | 30, 38, 39, 40, 41 |
@@ -335,7 +341,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log twitter chat`](#log-twitter-chat) | X Chat's PIN for the account's encrypted DMs: asked in a Clack prompt, kept in Twenty, never printed | `twitter` first | `--account <accountName>` `[--show]` `[--seconds <number 5..>]` `[--inbox]` `[--json]` | direct API only | none | terminal only: asks the owner for the X Chat PIN in a Clack prompt (masked). The owner runs `log twitter chat pin --account <a>` in a terminal. | PreToolUse, PostToolUse · n/a | no | 35, 26, 73, 89, 94, 105, 30, 38, 39, 40, 41 |
 | [`log twitter cookies`](#log-twitter-cookies) | Add or refresh an X account in Twenty: its session cookies from a masked prompt, checked against X, and its copy style | `twitter` first | `--account <handle>` `[--style <copyStyle>]` `[--name <label>]` | direct API only | none | terminal only: asks for an X account's session cookies (auth_token, ct0 and twid) in a Clack prompt (masked) and checks them with X before saving. Run `log twitter cookies save --account <handle>` in a terminal. | PreToolUse, PostToolUse · n/a | no | 35, 73, 105, 30, 38, 39, 40, 41 |
 | [`log voice`](#log-voice) | Gate a draft against the owner's own writing guide with SubQ before anything is sent as the owner, sending nothing | any (none) | `--to <handle>` `[--text <text>]` `[--context <text>]` `[--with <person or chat>]` `[--spoken]` `[--json]` | none | none | `voice`, `voiceAiIndex`, `voiceIndex` | PreToolUse, PostToolUse · PostToolUse | no | 30, 39, 41, 109, 137, 142, 30, 38, 39, 40, 41 |
-| [`log search`](#log-search) | Hybrid search across every conversation (BM25 keyword + vector meaning, fused with RRF), and building its indexes | any (none) | `[--limit <integer 1..100>]` `[--platform <p>]` `[--account <a>]` `[--with <handle>]` `[--after <date>]` `[--json]` `[--saved]` `[--rebuild]` `[--rounds <integer 1..1000>]` | none | none | `search`, `searchIndex`, `searchBench` | PreToolUse, PostToolUse · PostToolUse | no | 26, 89, 105, 30, 38, 39, 40, 41 |
+| [`log search`](#log-search) | Hybrid search across every conversation (BM25 keyword + vector meaning, fused with RRF), and building its indexes | any (none) | `[--limit <integer 1..100>]` `[--fusion <rrf|bayes>]` `[--platform <p>]` `[--account <a>]` `[--with <handle>]` `[--after <date>]` `[--kind <k>]` `[--server <s>]` `[--channel <c>]` `[--full]` `[--json]` `[--saved]` `[--rebuild]` `[--rounds <integer 1..1000>]` | none | none | `search`, `searchIndex`, `searchBench` | PreToolUse, PostToolUse · PostToolUse | no | 26, 89, 105, 30, 38, 39, 40, 41 |
 | [`log kb`](#log-kb) | The knowledge base: search it, sync every source into Twenty and Redis, remember a note, show an article | any (none) | `[--kind <rule|section|skill|doc|infra|memory|pageState|account|note>]` `[--limit <integer 1..50>]` `[--json]` `[--noAccounts]` `[--title <t>]` `[--tags <a,b,…>]` | none | none | `kbSearch`, `kbSync`, `kbRemember`, `kbShow` | PreToolUse, PostToolUse · PostToolUse | no | 26, 30, 30, 38, 39, 40, 41 |
 | [`log runtime`](#log-runtime) | Pair this workspace with hosted log and keep its outbound bridge open, so the team's console and AI clients run their requests here | any (none) | `[--origin <https://app.log.listeningkit.com>]` `[--json]` `[--token <pairing token>]` | none | none | terminal only: pairs this workspace with hosted log and keeps its outbound bridge open as a long-lived service. Run `log runtime init --origin <url>`, `log runtime pair --token <t>` and `log runtime connect` in the workspace's terminal or its service manager. | PreToolUse, PostToolUse · n/a | no | 26, 73, 171, 172, 30, 38, 39, 40, 41 |
 | [`log memelord`](#log-memelord) | The Memelord extension: search memes for a moment, read one template, see what is trending, list the image tools (free tools only) | any (none) | `[--type <meme|video|sticker>]` `[--method <context|combined|media|fulltext|fuzzy>]` `[--limit <integer 1..100>]` `[--noTaste]` `[--json]` `[--media <image|video>]` `[--category <imageToImage|imageTextToImage|textToImage>]` `[--build]` `[--from <posts.json>]` | none | none | `memelordSearch`, `memelordTemplate`, `memelordTrending`, `memelordTools`, `memelordTaste` | PreToolUse, PostToolUse · PostToolUse | no | 41, 94, 142, 30, 38, 39, 40, 41 |
@@ -360,7 +366,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log twitter repost`](#log-twitter-repost) | Repost one post on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--tweet <postUrl>` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterRepost`, `twitterRepostLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 53, 73, 86, 94, 105, 30, 38, 39, 40, 41 |
 | [`log twitter delete`](#log-twitter-delete) | Delete one of the account's own posts on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--tweet <postUrl>` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterDelete`, `twitterDeleteLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 86, 94, 105, 30, 38, 39, 40, 41 |
 | [`log twitter follow`](#log-twitter-follow) | Follow one person on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--userId <id>` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterFollow`, `twitterFollowLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 53, 73, 86, 94, 105, 30, 38, 39, 40, 41 |
-| [`log twitter dm`](#log-twitter-dm) | Send one approved direct message on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--userId <id>` `--text <text>` `[--skipStyleCheck]` `[--media <file|url,…>]` `[--asOne]` `[--overGate]` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterDm`, `twitterDmLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 53, 73, 86, 94, 109, 105, 137, 133, 138, 30, 38, 39, 40, 41 |
+| [`log twitter dm`](#log-twitter-dm) | Send one approved direct message on X, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--userId <id>` `--text <text>` `[--skipStyleCheck]` `[--media <file|url,…>]` `[--asOne]` `[--overGate]` `[--followUp]` `[--approvedBy <who>]` `[--force]` `[--live]` `[--json]` | direct API only | none | `twitterDm`, `twitterDmLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 53, 73, 86, 94, 109, 105, 137, 133, 138, 30, 38, 39, 40, 41 |
 | [`log twitter react`](#log-twitter-react) | React to a X message with an emoji, on the direct-API engine; a dry run unless --live | `twitter` first | `--account <accountName>` `--chat <chat>` `--message <id>` `--emoji <emoji>` `[--remove]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `twitterReact`, `twitterReactLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 105, 133, 30, 38, 39, 40, 41 |
 | [`log twitter queue`](#log-twitter-queue) | Build, approve, plan and run a queue of approved X replies, quotes or dms at random moments, on the direct-API engine | `twitter` first | `--targets <targets.json>` `[--variations <a.json,b.json,…>]` `--out <queue.json>` `--account <accountName>` `[--action <reply|quote|dm|voice>]` `[--seed <integer>]` `[--json]` `[--skipXChatCheck]` `--by <who>` `[--window <5h|90m>]` `[--limit <integer>]` `[--start <time>]` `[--minGap <integer>]` `[--like]` `[--likeChance <number 0..1>]` `[--alertChannel <uuid>]` `[--alertReplyTo <eventId>]` `[--alertMention <hex,hex,…>]` `[--force]` `[--keepOpen]` `[--live]` `[--replies <integer>]` `--n <integer>` `--text <text>` | direct API only | none | `twitterQueueBuild`, `twitterQueueShow`, `twitterQueueCheck`, `twitterQueueStatus`, `twitterQueueApprove`, `twitterQueuePlan`, `twitterQueueRun`, `twitterQueueRunLive`, `twitterQueueAdd`, `twitterQueueNudge`, `twitterQueueEdit` | PreToolUse, PostToolUse · PostToolUse | yes: watch it | 8, 26, 53, 73, 86, 109, 94, 105, 137, 133, 138, 30, 38, 39, 40, 41 |
 | [`log new`](#log-new) | Make a new platform (session, command, MCP tool, engine, docs), wired into the repo through its syntax tree | any (none) | `[--label <shown name>]` `[--twentyPlatform <ENUM>]` `[--library <vendor/folder>]` `[--sessionCookies <a,b,…>]` `[--cookieDomain <.site.com>]` `[--hosts <a.com,b.com,…>]` `[--home <https://…>]` `[--noProxy]` `[--noBrowser]` `[--apply]` `[--json]` | none | none | `newPlatform`, `newPlatformLive` | PreToolUse, PostToolUse · PostToolUse | no | 1, 2, 63, 83, 30, 38, 39, 40, 41 |
@@ -371,14 +377,14 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log reddit vote`](#log-reddit-vote) | Vote on a Reddit post or comment through the account's direct-API engine; a dry run unless --live | `reddit` first | `--account <accountName>` `[--url <post permalink>]` `[--target <t3_id|t1_id>]` `[--direction <up|down|none>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `redditVote`, `redditVoteLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord session`](#log-discord-session) | Check that Discord still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `discord` first | `--account <accountName>` `[--json]` | direct API only | none | `discordSessionCheck` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord secrets`](#log-discord-secrets) | The Discord account's email, password and 2FA secret, asked in a Clack prompt and kept in Twenty for its sign-in, never printed | `discord` first | `--account <accountName>` `--show` | direct API only | none | terminal only: asks for a Discord account's email, password and 2FA secret in a Clack prompt (masked). Run `log discord secrets --account <a>` in a terminal. | PreToolUse, PostToolUse · n/a | no | 35, 94, 30, 38, 39, 40, 41 |
-| [`log discord chats`](#log-discord-chats) | List the account's DMs and group DMs with their ids, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `[--json]` | direct API only | none | `discordChats` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
+| [`log discord chats`](#log-discord-chats) | The account's chats with their ids, on the direct-API engine; sends nothing | `discord` first | `--account <accountName>` `[--kind <kinds,…>]` `[--name <text>]` `[--json]` | direct API only | none | `discordChats` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord servers`](#log-discord-servers) | List the Discord servers the account is in, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `[--json]` | direct API only | none | `discordServers` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord channels`](#log-discord-channels) | List one Discord server's channels by category and kind (text, forum, media, voice), on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--server <server name>` `[--json]` | direct API only | none | `discordChannels` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord posts`](#log-discord-posts) | List the posts in a Discord forum (or a channel's threads) with each one's opening message, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--channel <text>` `[--limit <integer 1..200>]` `[--archived <true|false>]` `[--json]` | direct API only | none | `discordPosts` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord search`](#log-discord-search) | Search a whole Discord server (channels, forum posts and threads) with Discord's own search, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--server <server name>` `--query <text>` `[--channel <text>]` `[--from <name>]` `[--limit <integer 1..200>]` `[--json]` | direct API only | none | `discordSearch` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord read`](#log-discord-read) | Read a Discord chat or channel's latest messages, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--channel <channelId|chat name>` `[--limit <integer 1..1000>]` `[--after <messageId>]` `[--noMedia]` `[--json]` | direct API only | the account's | `discordRead` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | yes: watch it | 73, 94, 138, 30, 38, 39, 40, 41 |
 | [`log discord watch`](#log-discord-watch) | Watch the account's Discord messages as Discord pushes them over its gateway, nothing polled, sending nothing | `discord` first | `--account <accountName>` `[--channel <channelId|chat name>]` `[--seconds <number 0..>]` `[--inbox]` `[--json]` | direct API only | Camoufox only | `discordWatch` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | yes: watch it | 26, 73, 94, 138, 105, 30, 38, 39, 40, 41 |
-| [`log discord send`](#log-discord-send) | Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channelId|chat name>` `--text <text>` `[--approvedBy <who>]` `[--file <value,…>]` `[--brief]` `[--asOne]` `[--overGate]` `[--live]` `[--json]` | direct API only | none | `discordSend`, `discordSendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 90, 94, 105, 133, 134, 109, 137, 138, 30, 38, 39, 40, 41 |
+| [`log discord send`](#log-discord-send) | Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channelId|chat name>` `--text <text>` `[--approvedBy <who>]` `[--file <value,…>]` `[--brief]` `[--asOne]` `[--overGate]` `[--followUp]` `[--live]` `[--json]` | direct API only | none | `discordSend`, `discordSendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 90, 94, 105, 133, 134, 109, 137, 138, 30, 38, 39, 40, 41 |
 | [`log discord delete`](#log-discord-delete) | Delete the account's own Discord messages by id, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channelId|chat name>` `--message <messageId,…>` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordDelete`, `discordDeleteLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord react`](#log-discord-react) | React to a Discord message with an emoji, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channel>` `--message <id>` `--emoji <emoji>` `[--remove]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordReact`, `discordReactLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 30, 38, 39, 40, 41 |
 | [`log discord voice`](#log-discord-voice) | Send a voice note in the owner's cloned voice as Discord's own voice note, from text; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channel>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordVoice`, `discordVoiceLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
@@ -411,6 +417,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log instagram voice`](#log-instagram-voice) | Send a voice note in the owner's cloned voice as Instagram's own voice note, from text; a dry run unless --live | `instagram` first | `--account <accountName>` `--with <with>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `instagramVoice`, `instagramVoiceLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 105, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log twitter voice`](#log-twitter-voice) | Send a voice note in the owner's cloned voice as Twitter's own voice note, from text; a dry run unless --live | `twitter` first | `--account <accountName>` `--with <with>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `twitterVoice`, `twitterVoiceLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 89, 94, 105, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log tiktok session`](#log-tiktok-session) | Check that TikTok still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `tiktok` first | `--account <accountName>` `[--json]` | direct API only | none | `tiktokSessionCheck` | PreToolUse, PostToolUse · PostToolUse | no | 73, 30, 38, 39, 40, 41 |
+| [`log saidBy`](#log-saidby) | Someone's messages on every platform, found by name, newest first | any (none) | `[--name <name>]` `[--limit <integer 1..500>]` `[--json]` | none | none | `saidBy` | PreToolUse, PostToolUse · PostToolUse | no | 30, 163, 30, 38, 39, 40, 41 |
 | [`log tiktok stats`](#log-tiktok-stats) | Read an account's TikTok followers and its own posts' views, likes, comments, shares and saves, on the direct-API engine | `tiktok` first | `--account <accountName>` `[--limit <integer 1..500>]` `[--json]` | direct API only | none | `tiktokStats` | PreToolUse, PostToolUse · PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log tiktok post`](#log-tiktok-post) | Post one video on TikTok on the direct-API engine, with no browser; a dry run unless --live | `tiktok` first | `--account <accountName>` `--video <path>` `--caption <text>` `[--visibility <text>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `tiktokPost`, `tiktokPostLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
 | [`log tiktok delete`](#log-tiktok-delete) | Delete one of the account's own TikTok posts on the direct-API engine, with no browser; a dry run unless --live | `tiktok` first | `--account <accountName>` `--id <postId>` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `tiktokDelete`, `tiktokDeleteLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
@@ -464,9 +471,13 @@ flowchart TB
     c_errors["errors"]
     c_graph["graph"]
     c_capture["capture"]
+    c_router["router"]
     c_runs["runs"]
     c_storage["storage"]
+    c_relate["relate"]
+    c_people["people"]
     c_timing["timing"]
+    c_tool["tool"]
     c_inbox["inbox"]
     c_media["media"]
     c_browsers["browsers"]
@@ -493,6 +504,7 @@ flowchart TB
     c_clone["clone"]
     c_transcribe["transcribe"]
     c_new["new"]
+    c_saidBy["saidBy"]
   end
   subgraph g_byArgument["Platform named first"]
     c_warmup["#lt;platform#gt; warmup"]
@@ -691,12 +703,20 @@ flowchart TB
   cli --> c_capture
   mcp --> c_capture
   c_capture --> live
+  cli --> c_router
+  mcp --> c_router
   cli --> c_runs
   mcp --> c_runs
   cli --> c_storage
   mcp --> c_storage
+  cli --> c_relate
+  mcp --> c_relate
+  cli --> c_people
+  mcp --> c_people
   cli --> c_timing
   mcp --> c_timing
+  cli --> c_tool
+  mcp --> c_tool
   cli --> c_inbox
   mcp --> c_inbox
   cli --> c_media
@@ -890,6 +910,8 @@ flowchart TB
   mcp --> c_twitterVoice
   cli --> c_tiktokSession
   mcp --> c_tiktokSession
+  cli --> c_saidBy
+  mcp --> c_saidBy
   cli --> c_tiktokStats
   mcp --> c_tiktokStats
   cli --> c_tiktokPost
@@ -982,6 +1004,7 @@ One list (`src/agentHooks/registry`) writes Claude Code's `.claude/settings.json
 | SessionStart | `startup\|resume\|clear\|compact` | [`scripts/hooks/queue.ts`](../scripts/hooks/queue.ts) | what every account's queue did since the last look (held, sent, cooling off, stopped), so a queue is never running out of the agent's sight (rule 109) |
 | SessionStart | `startup\|resume\|clear\|compact` | [`scripts/hooks/useCases.ts`](../scripts/hooks/useCases.ts) | the play this session loaded, read from its own transcript, put back with the step it reached when the session comes back from compaction or resumes, and the context layer service started (rule 158) |
 | UserPromptSubmit | every turn | [`scripts/hooks/useCases.ts`](../scripts/hooks/useCases.ts) | the play the owner's prompt asks for, matched against every use case's own "How the owner asks for it" phrases and title, named with getGuide to load it before anything is done (rule 158) |
+| UserPromptSubmit | every turn | [`scripts/hooks/relate.ts`](../scripts/hooks/relate.ts) | the people the owner's prompt names (@handle or a known handle), looked up in the Relate graph projected from log.db: which accounts talk with them, what they engaged, the groups they share, who could introduce them and who is in the same orbit; silent when nobody is named, and the graph rebuilt in the background when log.db has moved on |
 | UserPromptSubmit | every turn | [`scripts/hooks/queue.ts`](../scripts/hooks/queue.ts) | the same queue events with each of the owner's prompts |
 | PostToolUse | `Bash\|PowerShell\|Monitor\|mcp__log__.*` | [`scripts/hooks/queue.ts`](../scripts/hooks/queue.ts) | the same queue events after a log tool or shell call, so a held item or a cool-off is acted on at once |
 | SessionStart | `startup\|resume\|clear\|compact` | [`scripts/hooks/xLive.ts`](../scripts/hooks/xLive.ts) | what X's own client shows on each X account right now (its unread notifications, DMs and X Chat, read through the account's one session the way x.com polls it), and every new like, retweet, reply, quote, mention or follow since this Claude session last looked (rule 109) |
@@ -989,10 +1012,11 @@ One list (`src/agentHooks/registry`) writes Claude Code's `.claude/settings.json
 | PostToolUse | `Bash\|PowerShell\|Monitor\|mcp__log__.*` | [`scripts/hooks/xLive.ts`](../scripts/hooks/xLive.ts) | the same X live state after a log tool or shell call, so a reply on a post is answered mid-task |
 | PreToolUse | `mcp__log__(discord\|slack\|instagram).*` | [`scripts/hooks/chatNames.ts`](../scripts/hooks/chatNames.ts) | a Discord, Slack or Instagram call that names its chat by a bare id is refused and told to pass the name (a person, a group, or "<server> #<channel>"), so the owner sees where every call goes (rule 154) |
 | PreToolUse | `Bash\|PowerShell\|Monitor` | [`scripts/hooks/liveLogs.ts`](../scripts/hooks/liveLogs.ts) | a log-cli run that would hide its lines (piped through tail or head) is refused before it starts; a long one off a Monitor is told to start one (rule 26); any log action run by hand from a shell is refused and pointed at its MCP tool (rule 163) |
+| PreToolUse | `Bash\|PowerShell\|Monitor\|Write\|shell\|apply_patch\|run_command\|write_to_file` | [`scripts/hooks/handRolled.ts`](../scripts/hooks/handRolled.ts) | a hand-rolled data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off python or bun -e), unwrapped from heredocs, written files and execute_code, is labelled readsData or actsOnData with its target, counted in log.db, and advised, never blocked, to become a log tool through getGuide({ useCase: "log/toolFromOneOff" }) (rule 163) |
 | PostToolUse | `Bash\|PowerShell\|Monitor\|mcp__log__.*` | [`scripts/hooks/pageState.ts`](../scripts/hooks/pageState.ts) | a browser landed on a known state (checkpoint, captcha, prompt) or a step failed: its resolver, at once |
 | Stop | every turn | [`scripts/hooks/pageState.ts`](../scripts/hooks/pageState.ts) | the turn does not end while a browser sits on a state log-cli can resolve (rule 35) |
 
-Around every turn, whatever is called: SessionStart (pageState.ts, storage.ts, engines.ts, knowledge.ts, inbox.ts, queue.ts, useCases.ts, xLive.ts), UserPromptSubmit (pageState.ts, storage.ts, engines.ts, inbox.ts, useCases.ts, queue.ts, xLive.ts), Stop (pageState.ts).
+Around every turn, whatever is called: SessionStart (pageState.ts, storage.ts, engines.ts, knowledge.ts, inbox.ts, queue.ts, useCases.ts, xLive.ts), UserPromptSubmit (pageState.ts, storage.ts, engines.ts, inbox.ts, useCases.ts, relate.ts, queue.ts, xLive.ts), Stop (pageState.ts).
 
 ### The hooks in one turn
 
@@ -1020,12 +1044,14 @@ sequenceDiagram
   Note over Hook: the same engine line with the owner's prompt, only when an account's session state, its governor use or the MCP server's freshness changed
   Note over Hook: the same inbox check with each of the owner's prompts: a poll starts when one is due, and new messages from the last poll are put in front of the agent
   Note over Hook: the play the owner's prompt asks for, matched against every use case's own #quot;How the owner asks for it#quot; phrases and title, named with getGuide to load it before anything is done (rule 158)
+  Note over Hook: the people the owner's prompt names (@handle or a known handle), looked up in the Relate graph projected from log.db: which accounts talk with them, what they engaged, the groups they share, who could introduce them and who is in the same orbit#59; silent when nobody is named, and the graph rebuilt in the background when log.db has moved on
   Note over Hook: the same queue events with each of the owner's prompts
   Note over Hook: the same X live state with each of the owner's prompts, only what is new for this session
   loop each tool call
     Agent->>Hook: PreToolUse
     Note over Hook: a Discord, Slack or Instagram call that names its chat by a bare id is refused and told to pass the name (a person, a group, or #quot;#lt;server#gt; ##lt;channel#gt;#quot;), so the owner sees where every call goes (rule 154)
     Note over Hook: a log-cli run that would hide its lines (piped through tail or head) is refused before it starts#59; a long one off a Monitor is told to start one (rule 26)#59; any log action run by hand from a shell is refused and pointed at its MCP tool (rule 163)
+    Note over Hook: a hand-rolled data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off python or bun -e), unwrapped from heredocs, written files and execute_code, is labelled readsData or actsOnData with its target, counted in log.db, and advised, never blocked, to become a log tool through getGuide({ useCase: #quot;log/toolFromOneOff#quot; }) (rule 163)
     alt a log run piped through tail/head
       Hook-->>Agent: refused (exit 2), run it live
     else
@@ -1501,14 +1527,22 @@ log capture docs [--noRea]  (every run's requests → docs/platforms/<platform>/
 The HAR is the one Playwright writes from the account browser that ran, on any platform and any browser driver. It is copied raw, and rea reads it. No browser opens.
 ```
 
+#### log router
+
+The prompt router's meaning index MCP tools: `routerIndex`, one per form, with named fields.
+
+```text
+log router index [--apply] [--json]   (is the prompt router's meaning index current; --apply builds it)
+```
+
 #### log runs
 
-The recorded runs on this machine, and pruning the ones rea settled and the request docs hold, keeping each one's findings and domains MCP tools: `runsList`, `runsExchanges`, `runsPrune`, `runsPruneLive`, `runsSpace`, one per form, with named fields.
+Recorded runs, and pruning the ones rea settled and the request docs hold MCP tools: `runsList`, `runsExchanges`, `runsPrune`, `runsPruneLive`, `runsSpace`, one per form, with named fields.
 
 ```text
 log runs [list] [--json]   (every recorded run: its size, settled by rea, in the request docs, and why it is kept or that it may go)
 log runs exchanges   (takes every recorded step's internal API calls, what was sent and what came back, out of its HAR into exchanges.json, for every run still on disk; prune does it first too)
-log runs prune [--before <YYYY-MM-DD>] [--apply]   (deletes each analysed run, started before the day when given, after taking out every step's exchanges, keeping its findings.md, steps.jsonl, settle.json, every step's exchanges.json, reading.json and readingState.json, its goalFindings and its requests by domain; a dry run unless --apply)
+log runs prune [--before <YYYY-MM-DD>] [--apply]   (deletes each analysed run, before the day when given, after taking out its exchanges; keeps findings.md, steps.jsonl, settle.json, each step's exchanges and readings, goalFindings and requests by domain; a dry run unless --apply)
 log runs space   (the size of ~/.logCli/runs and the disk's free space, as the storage hook says them)
 ```
 
@@ -1518,8 +1552,35 @@ Check that log.db's typed tables are exactly what its events derive, and rebuild
 
 ```text
 log storage verify [--json]   (replays every event in ~/.logCli/log.db into a scratch copy and compares each typed table, row by row, with the live one; nothing is changed)
-log storage rebuild [--apply] [--json]   (clears the typed tables (messages, attachments, chats, identities, memberships, interactions) and replays every event into them in order, in one transaction; a verify unless --apply)
+log storage rebuild [--apply] [--json]   (clears the typed tables and replays every event into them in order, in one transaction; a verify unless --apply)
 The events are the record: every typed row is derived from them, so a rebuild loses nothing (docs/storageAgainstTheBook.md, item 2).
+```
+
+#### log relate
+
+A Relate (Neo4j) graph of who talks, engages and shares rooms with the owner's accounts, projected from log.db and injected as connected context MCP tools: `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk`, `relateQuery`, one per form, with named fields.
+
+```text
+log relate build [--json]            (projects log.db's people, rooms, posts and who said or engaged what into a new Relate graph file, then points at it)
+log relate status [--json]           (which graph file is current, through which event, and how far behind log.db it is)
+log relate verify [--json]           (compares every node and edge count in the graph with what log.db derives now)
+log relate ask "<text>" [--json]     (the connected context the hook injects for the people that text names, e.g. "@someone")
+log relate query "<cypher>" [--json] (a read-only Cypher query on the current graph, at most 100 rows)
+The graph is a projection: log.db's events stay the record, and a build can always be thrown away and redone (docs/relateGraph.md).
+```
+
+#### log people
+
+One person across platforms: the owner links identities (Discord, X, Instagram…) into a person, suggestions come from Fellegi-Sunter record linkage, and the person card shows the whole relationship MCP tools: `people`, `peopleShow`, `peopleSuggest`, `peopleLink`, `peopleUnlink`, `peopleDifferent`, one per form, with named fields.
+
+```text
+log people [--json]                                        (everyone linked across platforms: each person and their identities)
+log people show <who> [--json]                             (the person card: every platform, one-to-one chats and groups, who is waiting, the last lines across platforms)
+log people suggest [--limit <n>] [--json]                  (identities on different platforms that are probably one person, scored with Fellegi-Sunter record linkage, with the evidence)
+log people link <identity> <identity>... --approvedBy "<the owner's words>" [--name "<name>"] [--evidence "<why>"]   (one person across these identities, appended to log.db as events)
+log people unlink <identity> --approvedBy "<the owner's words>"   (that identity is no longer part of its person; the link stays in the history)
+log people different <identity> <identity> --approvedBy "<the owner's words>"   (not the same person, so they are never suggested again)
+<who> is a person id (p_…), a linked person's name, or an identity. An identity is platform:handle or platform:id, e.g. discord:someone, twitter:@someone, twitter:1234567890.
 ```
 
 #### log timing
@@ -1527,13 +1588,24 @@ The events are the record: every typed row is derived from them, so a rebuild lo
 Where the time goes in every call: p50, p95 and p99 per tool and per stage, from the timings every call stores in log.db, or one call as a waterfall MCP tools: `timing`, one per form, with named fields.
 
 ```text
-log timing [--tool <name>] [--hours <n>] [--stages <n>] [--json]   (p50, p95 and p99 for every tool call, and for every stage inside it: the guards, the voice gate, each fetch, the Python start, the session host's queue, lock, spacing and governor, each platform request; newest --hours, default 24)
+log timing [--tool <name>] [--hours <n>] [--stages <n>] [--top <n>] [--all] [--json]   (p50, p95 and p99 per tool call and per stage inside it; the slowest --top tools by p99, default 12, or --all; newest --hours, default 24)
 log timing --call <callId> [--json]   (one call as a waterfall: every stage in order, when it started and how long it took; the id is on the call's ▶ and ■ lines in the live log)
+log timing --turns [--hours <n>] [--json]   (p50, p95 and p99 per agent turn, each split into log's tool time and agent time)
+```
+
+#### log tool
+
+Turn a one-off into a log tool, and see which tools are used MCP tools: `toolScaffold`, `toolScaffoldLive`, `toolHealth`, one per form, with named fields.
+
+```text
+log tool scaffold [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]
+A hand-rolled one-off as a command and MCP tool with its test and use case, each edit made through the syntax tree and checked before anything is written; no name lists the one-offs the hook counted. Without --apply it writes nothing.
+log tool health [--days <n>] [--json]
 ```
 
 #### log inbox
 
-Claim a chat before acting on it, release it, list the live claims, read the log of every action taken in a chat, and read what the watchers heard MCP tools: `inboxClaim`, `inboxRelease`, `inboxResume`, `inboxWaiting`, `inboxPending`, `inboxClaims`, `inboxActions`, one per form, with named fields.
+Chat claims and their action log, who is waiting on a reply, what the watchers heard, quiet the push MCP tools: `inboxClaim`, `inboxRelease`, `inboxResume`, `inboxWaiting`, `inboxPending`, `inboxQuiet`, `inboxIgnore`, `inboxIgnored`, `inboxLabels`, `inboxLabel`, `inboxClaims`, `inboxActions`, one per form, with named fields.
 
 ```text
 log inbox claim --platform <twitter|discord|slack|instagram> --account <a> --chat <conversationId|handle> [--event <eventId>] [--json]
@@ -1541,10 +1613,15 @@ log inbox release --platform <p> --account <a> --chat <conversationId|handle> [-
 log inbox claims [--json]
 log inbox resume --platform <p> --account <a> --by <who> [--json]
 log inbox actions [--platform <p>] [--account <a>] [--chat <conversationId|handle>] [--limit <n>] [--json]
-log inbox waiting [--platform <p>] [--account <a>] [--limit <n>] [--oldest] [--json]
+log inbox waiting [--platform <p>] [--account <a>] [--limit <n>] [--tail <n>] [--oldest] [--json]
 log inbox pending --reader <name> [--json]
+log inbox quiet --minutes <n> --by <who> [--json]
+log inbox ignore --platform <p> (--server <id> | --chat <id>) --by <who> [--undo] [--json]
+log inbox ignored [--json]
+log inbox labels [--label <l>] [--platform <p>] [--account <a>] [--limit <n>] [--json]
+log inbox label --platform <p> --account <a> --chat <id> --as <l> --by <who> [--undo] [--json]
 pending is what the account watchers heard since this reader last asked, with what to do next for each message: the one delivery every harness reads, the prompt hook's included. A reader is one name per session or harness; a new one starts from now.
-Only the session that claims a chat acts on it (rule 133). Every message the push channels bring in has an event id (shown in >>> NEW MESSAGE). claim takes the chat for this session for 10 minutes before you draft or send; a second session is refused (chatClaimedElsewhere). Every send claims the chat itself and releases it once it is sent, interrupted or failed, so two sessions never answer the same chat. A claim held by a session that ended frees itself. resume is the owner's go-ahead after a refused catch-up (rule 94): the account's gap opens again and its owner catches up through its own session within 30 s; only when the owner says so. claims lists who holds what; actions is the log of every claim, refusal, send and release, oldest first, to search what was already done in a chat before acting. waiting is who wrote last on every platform, read from log.db and nothing else: each chat's messages in time order (never the order they were stored in, since a backfill stores older messages later), one person's chats judged together (an X user's old DM and X Chat), a message mirrored into the other side counted once as whoever sent it first, reactions, read markers and call notices never counted as the last word. It lists the people waiting on a reply, then apart the ones who reacted to your last message (a follow-up), newest first unless --oldest.
+Only the session that claims a chat acts on it (rule 133). Every message the push channels bring in has an event id (shown in >>> NEW MESSAGE). claim takes the chat for this session for 10 minutes before you draft or send; a second session is refused (chatClaimedElsewhere). Every send claims the chat itself and releases it once it is sent, interrupted or failed, so two sessions never answer the same chat. A claim held by a session that ended frees itself. resume is the owner's go-ahead after a refused catch-up (rule 94): the account's gap opens again and its owner catches up through its own session within 30 s; only when the owner says so. claims lists who holds what; actions logs every claim, refusal, send and release, to see what was already done in a chat. quiet holds the live push for n minutes. waiting is who wrote last on every platform, read from log.db and nothing else: each chat's messages in time order (never the order they were stored in, since a backfill stores older messages later), one person's chats judged together (an X user's old DM and X Chat), a message mirrored into the other side counted once as whoever sent it first, reactions, read markers and call notices never counted as the last word. It lists the people waiting on a reply, then apart the ones who reacted to your last message (a follow-up), newest first unless --oldest.
 ```
 
 #### log media
@@ -1581,7 +1658,7 @@ Where the runtime is comes from LOG_BROWSER_VIEW_LOCATION (local or remote), whi
 The numbers behind a report, read from log.db only (who messaged an account and how often, or one person's stored profile, by source), for the MCP report view MCP tools: `reportData`, one per form, with named fields.
 
 ```text
-log report data --source <twitterDmsBySender|dmsBySender|identityProfile> [--platform <p>] [--account <accountName>] [--since <7d|4w|12h|2026-11-01>] [--limit <n>] [--userId <id>] [--handle <handle>] [--json]
+log report data --source <twitterDmsBySender|dmsBySender|identityProfile|waitingOnYou> [--platform <p>] [--account <accountName>] [--since <7d|4w|12h|2026-11-01>] [--limit <n>] [--userId <id>] [--handle <handle>] [--json]
 The numbers behind a report, read from log.db only: no platform call, no governor use, nothing sent. The sources are the report tool's (REPORT_SOURCES). twitterDmsBySender counts who messaged the account in its one-to-one DMs (the old DM thread and the Chat thread with one person counted as one, a message mirrored into both counted once; group chats left out), most messages first, with each person's first and last message time, the totals and the count per day. dmsBySender counts the same on the --platform named, for any platform with chats in log.db (reportSourceNoData when it has none). identityProfile reads one person's stored profile on --platform by --userId or --handle (identityProfileMissing when none is stored). Each holds only what log.db has: read the platform's inbox first if it may be behind.
 --account keeps one account (default every account the source covers in log.db). --since keeps messages from that date or span on. --limit is how many people to list, default 20, at most 200; the totals count everyone.
 Show it with the MCP tool report (getGuide({ topic: "ui" })): an MCP Apps host draws it inline, any other host gets markdown with unicode bars.
@@ -1701,10 +1778,10 @@ Exit 0 when it passes, 1 when it doesn't: rewrite and gate again.
 Hybrid search across every conversation (BM25 keyword + vector meaning, fused with RRF), and building its indexes MCP tools: `search`, `searchIndex`, `searchBench`, one per form, with named fields.
 
 ```text
-log search "<query>" [--limit <n>] [--platform <p>] [--account <a>] [--with <handle>] [--after <YYYY-MM-DD>] [--json]
-log search index [--platform <twitter|discord>] [--account <a>] [--saved] [--rebuild]   (only the chunks that are new or changed are embedded, and the ones gone are removed, so the index stays deduplicated; --rebuild embeds everything again. --saved indexes the conversations already kept, reading nothing; otherwise reads every conversation through the platform's engine: X's DMs with X Chat decrypted with the saved PIN, and every Discord DM and group (its whole history, up to 20,000 messages each), keeps them in ~/.logCli/conversations, and builds the keyword and meaning indexes in ~/.logCli/search)
+log search "<query>" [--limit <n>] [--fusion <rrf|bayes>] [--platform <p>] [--account <a>] [--with <handle>] [--after <YYYY-MM-DD>] [--kind <k>] [--server <s>] [--channel <c>] [--full] [--json]
+log search index [--platform <twitter|discord>] [--account <a>] [--saved] [--rebuild]   (only new or changed chunks are embedded and gone ones removed; --rebuild embeds all again. --saved indexes the conversations already kept, reading nothing; otherwise reads every conversation through the platform's engine: X's DMs with X Chat decrypted with the saved PIN, and every Discord DM and group (its whole history, up to 20,000 messages each), keeps them in log.db, and builds the keyword and meaning indexes in ~/.logCli/search)
 log search bench [--rounds <n>]   (times realistic queries on the built index, cold and warm, and prints p50, p95 and p99 beside a plain linear scan)
-Hybrid search across every conversation: BM25 keyword ranking (bm25s) and meaning ranking (verso-db HNSW over local all-MiniLM-L6-v2 embeddings) run in parallel and are fused with reciprocal rank fusion. Each hit names the conversation, who it was with, when, and the messages it covers.
+Hybrid search across every conversation: BM25 keyword ranking (bm25s) and meaning ranking (verso-db HNSW over local all-MiniLM-L6-v2 embeddings) run in parallel and are fused with reciprocal rank fusion. Each hit names where it was said (DM, group or channel), when, and its matching lines.
 ```
 
 #### log kb
@@ -1858,7 +1935,7 @@ Transcribe every voice note in the saved X and Discord conversations with Assemb
 log transcribe [--platform twitter|discord] [--account <a>] [--list] [--noIndex] [--json]
 log transcribe file <path> [--json]   (one audio file, transcribed and kept by its hash)
 Transcribes every voice note in the saved conversations with AssemblyAI (upload, transcript, polled until done) and writes each into the conversation store as (voice note: "<what was said>") in place of its (audio: <name>) marker, so log search, voice and SubQ matrices see what was said. X voice notes come from the X Chat files the account's one session saved, and a missing one is fetched through that session (the conversation read again, its audio events reopened). Discord voice notes are found with Discord's own sound search, one chat at a time through log's Discord engine, and each file is fetched from its fresh attachment url there; any refusal stops it (rule 94). Each transcript is kept once by its file's hash in ~/.logCli/transcripts, so nothing is sent to AssemblyAI twice. The search index is then updated with what changed (--noIndex skips it).
---list only lists the voice notes the store holds and which have their file, calling nothing. The key is ASSEMBLYAI_API_KEY or ASSEMBLY_AI_KEY (the environment, .env.local, ~/.buzz/.env.local or ~/filmcraft/.env.local), never printed; without it the command refuses with assemblyAiKeyMissing.
+--list only lists the voice notes the store holds and which have their file, calling nothing. The key is ASSEMBLYAI_API_KEY or ASSEMBLY_AI_KEY (the environment, .env.local, ~/.logCli/.env or a file in LOG_ENV_FILES), never printed; without it the command refuses with assemblyAiKeyMissing.
 ```
 
 #### log twitter followers
@@ -1986,7 +2063,7 @@ X's follow answer decides: the followed user back is sent, already following is 
 Send one approved direct message on X, on the direct-API engine; a dry run unless --live MCP tools: `twitterDm`, `twitterDmLive`, one per form, with named fields.
 
 ```text
-log twitter dm --account <accountName> --userId <id> --text "<copy>" [--media <file|url>] [--approvedBy <who>] [--skipStyleCheck] [--asOne] [--overGate] [--force] [--live] [--json]
+log twitter dm --account <accountName> --userId <id> --text "<copy>" [--media <file|url>] [--approvedBy <who>] [--skipStyleCheck] [--asOne] [--overGate] [--followUp] [--force] [--live] [--json]
 Send one approved direct message on X, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80).
 Without --live it is a dry run: the target, the text and its house style are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (240 a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.
 A draft written on several lines goes out one message per line, and a one-line draft is split the way the owner writes in that chat (log voice index), with his usual gap between them; --asOne sends it as one, only when the owner asked (rule 90). X's answer decides: a conversation id is sent, none is a drop, and a drop stops the rest: what was sent stays sent, nothing is retried (rule 94). An old DM thread (<a>-<b>) and its X Chat thread (<a>:<b>) with one person are one conversation: X shows them in the same place, and a dm sent through the old DM API shows in their X Chat too. A sent answer is delivered whichever conversation id it names: never resend it and never call it the wrong inbox. A refusal before X is called (styleFailed, a dry run) sent nothing, so that dm is sent once its copy is fixed. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.
@@ -2108,11 +2185,11 @@ Asks for the Discord account's email, password and 2FA secret (the base32 key fr
 
 #### log discord chats
 
-List the account's DMs and group DMs with their ids, on the direct-API engine, sending nothing MCP tools: `discordChats`, one per form, with named fields.
+The account's chats with their ids, on the direct-API engine; sends nothing MCP tools: `discordChats`, one per form, with named fields.
 
 ```text
-log discord chats --account <accountName> [--json]
-Lists the account's DMs and group DMs with their ids, names and members, on the direct-API engine (no browser). Sends nothing.
+log discord chats --account <accountName> [--kind <kinds>] [--name <text>] [--json]
+Lists the account's chats with ids, names and members, on the direct-API engine. Sends nothing.
 ```
 
 #### log discord servers
@@ -2174,7 +2251,7 @@ Opens the account's Discord gateway on the direct-API engine (wss://gateway.disc
 Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live MCP tools: `discordSend`, `discordSendLive`, one per form, with named fields.
 
 ```text
-log discord send --account <accountName> --channel <channelId|chat name> --text "<message>" [--asOne] [--overGate] [--approvedBy <who>] [--live] [--json]
+log discord send --account <accountName> --channel <channelId|chat name> --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]
 Sends one message to a DM, a group DM (by its id or its name, from log discord chats) or a server channel (by its id), on the direct-API engine (no browser). Each message is typed first, as Discord's own app does: the typing signal (POST channels/<id>/typing, so the chat shows the account typing) goes out, then the account waits as long as the text takes to type, sending the signal again every 8 s, before the message. A typing signal Discord refuses or doesn't answer stops it before the message, nothing retried (rule 94).
 --brief says the message hands someone a task, not a casual reply: the gate reads it as a brief instead of the owner's chat voice (rule 162), asking SubQ whether it says clearly what to do, why, what done looks like and by when, kindly, and how to ask when stuck, with the attached files read beside it. The sameness, AI artifact and scrambler checks still run.
 --file attaches files (a guide, a spreadsheet) to the last message, uploaded through the account's own session: only files under OUTBOX or ~/.logCli, at most 10 MB each, refused before anything is sent otherwise (fileRefused).
@@ -2506,6 +2583,14 @@ Check that TikTok still accepts an account's saved session, on the direct-API en
 log tiktok session check --account <accountName> [--json]
 Checks that TikTok still accepts the account's saved session, on the direct-API engine (no browser): TikTok Studio's own /tiktokstudio/api/web/user, whose userId is 0 when the cookies aren't signed in. Sends nothing.
 TikTok's own answer decides. The result goes to socialAccounts.sessionState, and refreshed cookies are merged back into the row.
+```
+
+#### log saidBy
+
+Someone's messages on every platform, found by name, newest first MCP tools: `saidBy`, one per form, with named fields.
+
+```text
+log saidBy [--name <name>] [--limit <n>] [--json]   (Someone's messages on every platform, found by name, newest first)
 ```
 
 #### log tiktok stats

@@ -1,14 +1,14 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { db } from '../../../inbox/store/index'
 import { hashOf } from '../client'
 import { AUDIO_LEFTOVER, AUDIO_MARKER } from '../types'
 import type { AssemblyAiClient, MessageLink, Transcript, TranscribeAnswer } from '../types'
 import type { Conversation } from '../../../search/conversations/types'
+import { logHome } from '../../../config/logHome/index'
 
 export function transcriptsRoot(): string {
-  return process.env.LOG_TRANSCRIPTS_DIR || join(homedir(), '.logCli', 'transcripts')
+  return process.env.LOG_TRANSCRIPTS_DIR || join(logHome(), 'transcripts')
 }
 
 const importedRoots = new Set<string>()

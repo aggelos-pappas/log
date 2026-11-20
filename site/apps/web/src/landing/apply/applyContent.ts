@@ -4,7 +4,8 @@ import applyShare from './applyShare.json'
 export const APPLY_PATH = '/apply'
 export const APPLY_TITLE = applyShare.title
 export const APPLY_DESCRIPTION = applyShare.description
-export const APPLY_GITHUB_URL = 'https://github.com/deepmroot/log-apply'
+export const APPLY_REPO = 'deepmroot/log-apply'
+export const APPLY_GITHUB_URL = `https://github.com/${APPLY_REPO}`
 export const APPLY_AGENT_LINE = 'set up log apply - https://log.listeningkit.com/apply.txt'
 
 

@@ -77,6 +77,13 @@ describe('the play comes back after compaction', () => {
     expect(hookOutput(nothing)).toBe('')
   })
 
+  test('a person the prompt names is resolved next to the play, even when no play matches', async () => {
+    const names = (prompt: string) => (prompt.includes('grase') ? '"grase" is probably grace_ships: discord dm 1 on account discordAccount' : '')
+    const named = await hookAnswer({ hook_event_name: 'UserPromptSubmit', prompt: 'summarise the convo with grase' }, async () => null, () => [], names)
+    expect(named.outcome).toBe('wordsOnly none named')
+    expect(JSON.parse(hookOutput(named)).hookSpecificOutput.additionalContext).toContain('is probably grace_ships')
+  })
+
   test('the per-prompt hook is one curl to the service, with bun only as the fallback', () => {
     const command = serviceHookCommand('/hook', 'bun x.ts')
     expect(command.startsWith('curl -sf')).toBe(true)

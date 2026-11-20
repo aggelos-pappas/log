@@ -49,8 +49,8 @@
       "description": "How log works inside, for contributors",
       "sections": [
         { "title": "Specs", "folder": "specs" },
-        { "title": "The ideas", "pages": ["howItWorks.md", "models.md", "liveInbox.md", "unifyStorage.md", "storageAgainstTheBook.md", "storageReadPath.md", "hookStartup.md", "antigravityHooks.md", "toolCallSpeed.md", "accountsAndListings.md", "lifecycle.md", "twenty.md", "signingIn.md", "status.md"] },
-        { "title": "Browsers and proxies", "pages": ["browsers.md", "browserSetup.md", "adsPower.md", "proxies.md"], "folders": ["proxyVendors"] },
+        { "title": "The ideas", "pages": ["howItWorks.md", "models.md", "liveInbox.md", "unifyStorage.md", "storageAgainstTheBook.md", "storageReadPath.md", "hookStartup.md", "antigravityHooks.md", "toolCallSpeed.md", "toolCallsAgainstTheBook.md", "accountsAndListings.md", "lifecycle.md", "twenty.md", "signingIn.md", "status.md"] },
+        { "title": "Browsers and proxies", "pages": ["browsers.md", "browserSetup.md", "adsPower.md", "proxies.md", "browserIdentity.md"], "folders": ["proxyVendors", "httpClients"] },
         {
           "title": "Facebook in depth",
           "pages": ["groupListening.md", "groupMembers.md", "groupRead.md", "conversations.md", "voiceNotes.md", "listingMonitor.md", "listingMedia.md", "recordToFlow.md"],
@@ -60,7 +60,7 @@
         { "title": "Diagrams", "folder": "diagrams" },
         {
           "title": "Working on log",
-          "pages": ["layout.md", "namingConventions.md", "contextLayer.md", "callTiming.md", "knowledgeBase.md", "deployment.md", "twitterPlatform.md", "opencodeHooks.md"],
+          "pages": ["layout.md", "namingConventions.md", "contextLayer.md", "callTiming.md", "knowledgeBase.md", "relateGraph.md", "deployment.md", "twitterPlatform.md", "opencodeHooks.md"],
           "folders": ["rea", "voice"]
         }
       ]

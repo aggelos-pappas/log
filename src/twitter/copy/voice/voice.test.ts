@@ -62,6 +62,37 @@ describe('the voice gate', () => {
     expect(reading.openerOnly).toBe(1)
     expect(reading.pass).toBe(true)
     expect((asked[0].state as Record<string, unknown>).alreadyTalkedInThisChat).toBe(true)
+    expect(reading.firstContact).toBe(false)
+    expect((asked[0].state as Record<string, unknown>).neverMessagedBefore).toBeUndefined()
+  })
+
+  test('a public reply to someone who commented is never judged as a cold dm, and a link in it is no pitch', async () => {
+    const asked: DecisionRequest[] = []
+    const decide = async (request: DecisionRequest) => {
+      asked.push(request)
+      return { model: 'subq-snap-1.1', answers: { voice: { type: 'noul' as const, noul: 0.9 }, inContext: { type: 'noul' as const, noul: 0.9 }, friendLike: { type: 'noul' as const, noul: 0.9 }, openerOnly: { type: 'noul' as const, noul: 0.1 } }, usage: { input_tokens: 1, output_tokens: 1 } }
+    }
+    const reading = await readVoice({ to: 'grace_ships', text: 'fair point\nget to the person before the applicants do', context: 'the issue is the competition', publicReply: true }, 'GUIDE', decide)
+    const state = asked[0].state as Record<string, unknown>
+    expect(reading.firstContact).toBe(false)
+    expect(reading.openerOnly).toBe(1)
+    expect(reading.pass).toBe(true)
+    expect(state.neverMessagedBefore).toBeUndefined()
+    expect(state.dmAsItWillBeSent).toBeUndefined()
+    expect(String(state.thisIsAPublicReply)).toContain('public reply')
+  })
+
+  test('a person the owner has never messaged is told to the gate, and a failed first message names the cold way', async () => {
+    const asked: DecisionRequest[] = []
+    const decide = async (request: DecisionRequest) => {
+      asked.push(request)
+      return { model: 'subq-snap-1.1', answers: { voice: { type: 'noul' as const, noul: 0.5 }, inContext: { type: 'noul' as const, noul: 0.95 }, friendLike: { type: 'noul' as const, noul: 0.95 }, openerOnly: { type: 'noul' as const, noul: 0.95 } }, usage: { input_tokens: 1, output_tokens: 1 } }
+    }
+    const reading = await readVoice({ to: 'stranger', text: 'cheers for the like' }, 'GUIDE', decide)
+    expect(reading.firstContact).toBe(true)
+    expect(String((asked[0].state as Record<string, unknown>).neverMessagedBefore)).toContain('first message')
+    const { failedParts } = await import('../../../cli/twitter/helpers/voice')
+    expect(failedParts({ ...reading, notHere: [], scrambler: { ran: false, suspicious: 0, hits: [] }, ranked: [] } as never)[0]).toContain('twitterPosts { user: "stranger" }')
   })
 
   test('a draft that sounds like ai fails on voice', async () => {
@@ -148,5 +179,30 @@ describe('the conversation card in the gate', () => {
     const owed = await readVoice({ ...share, cardAnswerOwed: true }, 'GUIDE', decide)
     expect(owed.pass).toBe(false)
     expect(owed.answerRequired).toBe(true)
+  })
+})
+
+describe('a send the owner already made is never made twice', () => {
+  test('the owner spoke last within the window: refused, with what went out', async () => {
+    const { alreadyAnswered } = await import('../../../cli/twitter/helpers/voice')
+    const now = Date.parse('2026-11-17T16:40:00Z')
+    const chat = [{ fromMe: false, time: '2026-11-17T16:23:00Z', text: 'leads_25.tsv' }, { fromMe: true, time: '2026-11-17T16:30:00Z', text: 'finish these 5 first' }]
+    expect(alreadyAnswered(chat, now)).toEqual({ at: '2026-11-17T16:30:00Z', text: 'finish these 5 first' })
+  })
+
+  test('they wrote after the owner, or the owner last spoke hours ago: allowed', async () => {
+    const { alreadyAnswered } = await import('../../../cli/twitter/helpers/voice')
+    const now = Date.parse('2026-11-17T16:40:00Z')
+    expect(alreadyAnswered([{ fromMe: true, time: '2026-11-17T16:30:00Z', text: 'x' }, { fromMe: false, time: '2026-11-17T16:35:00Z', text: 'y' }], now)).toBeNull()
+    expect(alreadyAnswered([{ fromMe: true, time: '2026-11-15T10:00:00Z', text: 'old nudge' }], now)).toBeNull()
+    expect(alreadyAnswered([], now)).toBeNull()
+  })
+})
+
+describe('a chat the owner already wrote in is never a first message', () => {
+  test('the conversation card counting his messages is enough, even when the voice index has none of them yet', () => {
+    expect(alreadyTalkedIn({ ownerWroteHere: 6 })).toBe(true)
+    expect(alreadyTalkedIn({ ownerWroteHere: 0 })).toBe(false)
+    expect(alreadyTalkedIn({})).toBe(false)
   })
 })

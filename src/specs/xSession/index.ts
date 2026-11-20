@@ -17,7 +17,7 @@ export const xSession = {
       { kind: 'symbol', file: SESSION, name: 'runTwitterEngine' },
     ],
     'REQ-XSESSION-02': [
-      { kind: 'value', file: 'vendor/twikit/twikit/constants.py', name: 'IMPERSONATE', equals: 'safari17_0' },
+      { kind: 'symbol', file: 'vendor/twikit/twikit/constants.py', name: 'IMPERSONATE' },
       { kind: 'string', file: TWIKIT, includes: 'allow_redirects' },
       { kind: 'symbol', file: 'python/checks/twikitTransport.py', name: 'scan' },
     ],

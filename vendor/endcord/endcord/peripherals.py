@@ -40,7 +40,10 @@ RUNTIME_TEMP = False   # forces all temp files to be written to runtime dir
 # windows specific init
 have_termux_notify = False
 if sys.platform == "win32":
-    import win32clipboard
+    try:
+        import win32clipboard
+    except ImportError:
+        win32clipboard = None
     toaster = None
     # for pasting
     user32 = ctypes.windll.user32
@@ -145,9 +148,14 @@ if sys.platform == "linux":
         filedialog = None
 elif sys.platform == "win32":
     runner = "explorer"
-    import win32con
-    import win32gui
-    filedialog = "windows"
+    try:
+        import win32con
+        import win32gui
+        filedialog = "windows"
+    except ImportError:
+        win32con = None
+        win32gui = None
+        filedialog = None
 elif sys.platform == "darwin":
     runner = "open"
     filedialog = "mac"
@@ -288,7 +296,7 @@ def copy_to_clipboard(text):
             except FileNotFoundError:
                 logger.warning("Cant copy: xclip not found on system")
 
-    elif sys.platform == "win32":
+    elif sys.platform == "win32" and win32clipboard:
         win32clipboard.OpenClipboard()
         try:
             win32clipboard.EmptyClipboard()
@@ -335,7 +343,7 @@ def copy_file_to_clipboard(path):
             except FileNotFoundError:
                 logger.warning("Cant copy: xclip not found on system")
 
-    elif sys.platform == "win32":
+    elif sys.platform == "win32" and win32clipboard and win32con:
         path_utf16 = path.encode("utf-16le") + b"\x00\x00"
         header = struct.pack("<Illii", 20, 0, 0, 0, 1)   # pFiles, pt_x, pt_y, fNC, fWide (utf16)
         data = header + path_utf16

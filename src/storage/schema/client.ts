@@ -1,11 +1,11 @@
 import { Database } from 'bun:sqlite'
 import type { Statement } from 'bun:sqlite'
 import { mkdirSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { MIGRATIONS, runBackfill, SCHEMA_VERSION } from './helpers'
 import { SchemaTooNewError } from './types'
 import type { AppliedMigration } from './types'
+import { logHome } from '../../config/logHome/index'
 
 export function schemaVersionOf(handle: Database): number {
   return (handle.prepare('PRAGMA user_version').get() as { user_version: number }).user_version
@@ -74,7 +74,7 @@ export function repairSkipped(handle: Database, now: Date = new Date()): Applied
 export function defaultDbPath(env: Record<string, string | undefined> = process.env): string {
   if (env.LOG_DB) return env.LOG_DB
   if (env.LOG_INBOX_STATE) return join(env.LOG_INBOX_STATE, 'log.db')
-  return join(homedir(), '.logCli', 'log.db')
+  return join(logHome(), 'log.db')
 }
 
 const handles = new Map<string, Database>()

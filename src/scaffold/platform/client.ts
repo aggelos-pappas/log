@@ -100,7 +100,7 @@ export function planNewPlatform(root: string, options: NewPlatformOptions): Plat
   return { names: n, files, edits, notes };
 }
 
-export function applyPlan(root: string, plan: PlatformPlan): string[] {
+export function applyPlan(root: string, plan: Pick<PlatformPlan, "files" | "edits">): string[] {
   const sources = new Map<string, string>();
   for (const edit of plan.edits) sources.set(edit.path, sources.get(edit.path) ?? read(root, edit.path));
   for (const edit of plan.edits) sources.set(edit.path, edit.apply(sources.get(edit.path)!));

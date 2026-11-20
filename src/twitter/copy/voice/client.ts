@@ -36,13 +36,14 @@ export function outsideXVoice(draft: Pick<VoiceDraft, 'evidence'>): { where: str
   return { where: `${platform} ${draft.evidence?.kind ?? 'chat'}` }
 }
 
-export function alreadyTalkedIn(draft: Pick<VoiceDraft, 'evidence' | 'conversation'>): boolean {
+export function alreadyTalkedIn(draft: Pick<VoiceDraft, 'evidence' | 'conversation' | 'ownerWroteHere'>): boolean {
+  if ((draft.ownerWroteHere ?? 0) > 0) return true
   if ((draft.evidence?.recent?.length ?? 0) > 0) return true
   if ((draft.conversation ?? []).some((m) => m.from === 'the owner')) return true
   return (draft.evidence?.replies ?? []).some((r) => r.tier === 'sameChat' || r.tier === 'samePerson')
 }
 
-export function nothingWaiting(draft: Pick<VoiceDraft, 'evidence' | 'conversation' | 'context'>, now = Date.now()): boolean {
+export function nothingWaiting(draft: Pick<VoiceDraft, 'evidence' | 'conversation' | 'context' | 'ownerWroteHere'>, now = Date.now()): boolean {
   if (!alreadyTalkedIn(draft)) return false
   const moments = [...(draft.conversation ?? [])].sort((a, b) => a.at.localeCompare(b.at))
   const last = moments.at(-1)
@@ -57,7 +58,9 @@ export function nobodyToAnswer(draft: Pick<VoiceDraft, 'room'>): boolean {
 
 export async function readVoice(draft: VoiceDraft, guide: string, decide: DecisionsClient): Promise<VoiceReading> {
   const neverSays = neverSaysIn(draft.text)
+  const publicReply = draft.publicReply === true
   const alreadyTalked = alreadyTalkedIn(draft)
+  const coldDm = !alreadyTalked && !publicReply
   const burst = burstOf(draft.text)
   const outside = outsideXVoice(draft)
   const notX = outside ? ` howOwnerWrites is how he writes on X only, his public posts and replies; this is ${outside.where}, where he writes in bursts of shorter lines and does ask questions, so read howOwnerWritesInThisChat (its burst median, messageWords and medianWords) and ownersRealRepliesHere first, and use howOwnerWrites only for his vocabulary and his spelling.` : ''
@@ -66,7 +69,8 @@ export async function readVoice(draft: VoiceDraft, guide: string, decide: Decisi
     state: {
       howOwnerWrites: guide,
       dmsOwnerWroteHimself: OWNER_DMS,
-      ...(burst.messages.length > 1 ? { dmAsItWillBeSent: burst.messages, wordsInEachMessageAsSent: burst.words } : {}),
+      ...(publicReply ? { thisIsAPublicReply: 'This is not a dm. It is a public reply on X, posted under a comment or post and read by everyone, sent as one post however many lines it has. Judge it against howOwnerWrites, his public posts and replies on X, not against how he writes dms: short, lowercase, about what they said. A link in it is normal for him there.' } : {}),
+      ...(!publicReply && burst.messages.length > 1 ? { dmAsItWillBeSent: burst.messages, wordsInEachMessageAsSent: burst.words } : {}),
       ...(outside ? { howOwnerWritesIsOnlyHisX: true, thisChatIsNotX: outside.where } : {}),
       ...(draft.everywhere ? { howOwnerWritesEverywhere: draft.everywhere.profile, ownersRealRepliesEverywhere: draft.everywhere.replies, ownersClosestWordingEverywhere: draft.everywhere.wording ?? [] } : {}),
       ...(draft.evidence ? { thisChat: draft.evidence.chat, howOwnerWritesInThisChat: draft.evidence.profile, ownersRealRepliesHere: draft.evidence.replies, ownersClosestRealWording: draft.evidence.wording ?? [], ownersLatestMessagesHere: draft.evidence.recent ?? [] } : {}),
@@ -75,6 +79,7 @@ export async function readVoice(draft: VoiceDraft, guide: string, decide: Decisi
       ...(draft.scrambler ? { watermarkScramblerLayerA: draft.scrambler } : {}),
       recipient: draft.to,
       alreadyTalkedInThisChat: alreadyTalked,
+      ...(coldDm ? { neverMessagedBefore: `The owner has never messaged ${draft.to} before: this is his first message to them, so there is no chat of theirs to match. Judge it as his cold opener to a stranger (short, lowercase, about their post or what they did), not against how he banters in chats he already has.` } : {}),
       whatTheySaid: draft.context ?? null,
       ...(draft.card ? { thisConversation: draft.card } : {}),
       ...(draft.conversation ? { thisConversationRankedForThisMoment: draft.conversation } : {}),
@@ -96,11 +101,11 @@ export async function readVoice(draft: VoiceDraft, guide: string, decide: Decisi
   const voice = answers.voice?.noul ?? 0
   const inContext = answers.inContext?.noul ?? 0
   const friendLike = answers.friendLike?.noul ?? 0
-  const openerOnly = alreadyTalked ? 1 : answers.openerOnly?.noul ?? 0
+  const openerOnly = alreadyTalked || publicReply ? 1 : answers.openerOnly?.noul ?? 0
   const toThem = draft.evidence ? answers.toThem?.noul ?? 0 : null
   const buildsOn = draft.spoken ? answers.buildsOn?.noul ?? 0 : null
   const fitsTheRoom = draft.room ? answers.fitsTheRoom?.noul ?? 0 : null
   const watermark = watermarkReadingOf(draft.text)
   const answerRequired = !nobodyToAnswer(draft) && (draft.cardAnswerOwed ?? !nothingWaiting(draft))
-  return { to: draft.to, voice, inContext, answerRequired, friendLike, openerOnly, toThem, buildsOn, fitsTheRoom, neverSays, watermark, pass: !neverSays.length && watermark.level !== 'artifacts' && voice >= VOICE_PASS && (!answerRequired || inContext >= CONTEXT_PASS) && friendLike >= CONTEXT_PASS && openerOnly >= CONTEXT_PASS && (toThem === null || toThem >= CONTEXT_PASS) && (buildsOn === null || buildsOn >= CONTEXT_PASS) && (fitsTheRoom === null || fitsTheRoom >= CONTEXT_PASS), model: response.model ?? null }
+  return { firstContact: coldDm, to: draft.to, voice, inContext, answerRequired, friendLike, openerOnly, toThem, buildsOn, fitsTheRoom, neverSays, watermark, pass: !neverSays.length && watermark.level !== 'artifacts' && voice >= VOICE_PASS && (!answerRequired || inContext >= CONTEXT_PASS) && friendLike >= CONTEXT_PASS && openerOnly >= CONTEXT_PASS && (toThem === null || toThem >= CONTEXT_PASS) && (buildsOn === null || buildsOn >= CONTEXT_PASS) && (fitsTheRoom === null || fitsTheRoom >= CONTEXT_PASS), model: response.model ?? null }
 }

@@ -14,10 +14,17 @@ import { newQueueEvents, queueContext } from '../../twitter/queue/events/index'
 import { newLiveEvents, xLiveContext } from '../../twitter/live/feed/index'
 import { clearDeadQueueLocks, ensureLiveWatchers, hookReaderOf, startDescriber } from '../../inbox/watch/index'
 import { readPending } from '../../inbox/pending/index'
+import { quietUntil } from '../../inbox/push/index'
 import { superviseLocalWatchers } from '../../platformKit/watcher/index'
 import { hookAnswer } from '../../contextLayer/hook/index'
 import type { HookInput } from '../../contextLayer/hook/index'
-import { REFUSING_HOOKS } from './types'
+import { refreshGraph, relateContext } from '../../relate/graph/index'
+import { connectedSearch } from '../../relate/search/index'
+import { cardsNamedIn } from '../../people/index'
+import { defaultDbPath, openDatabase } from '../../storage/schema/index'
+import type { ConnectedSearch } from '../../relate/search/index'
+import type { TimingStage } from '../../contextLayer/service/types'
+import { REFUSING_HOOKS, WAITING_HOOKS } from './types'
 import type { EventAnswer, HookAnswer, HookTiming, RouteAsk } from './types'
 
 export function storageAnswer(): HookAnswer {
@@ -101,6 +108,7 @@ export function queueAnswer(raw: string): HookAnswer {
 }
 
 export function xLiveAnswer(event: HookEvent, raw: string): HookAnswer {
+  if (quietUntil(Date.now())) return {}
   const text = xLiveContext(newLiveEvents(undefined, sessionIdOf(raw)), { sessionStart: event === 'SessionStart' })
   return text ? { context: text } : {}
 }
@@ -122,6 +130,7 @@ export function inboxAnswer(event: HookEvent, raw: string, repo: string): HookAn
   superviseLocalWatchers(repo)
   clearDeadQueueLocks()
   ensureLiveWatchers('model', ['describer'], () => startDescriber(repo))
+  if (quietUntil(Date.now())) return {}
   const { text } = readPending(hookReaderOf(raw), { stored: event === 'SessionStart' })
   return text ? { context: text } : {}
 }
@@ -134,6 +143,30 @@ export async function useCasesAnswer(raw: string, route: RouteAsk): Promise<Hook
   if (!raw.trim()) return {}
   const result = await hookAnswer(input, route as never)
   return result.text ? { context: result.text } : {}
+}
+
+export function promptOf(raw: string): string {
+  try {
+    return String((JSON.parse(raw || '{}') as { prompt?: string }).prompt ?? '')
+  } catch {
+    return ''
+  }
+}
+
+export async function relateAnswer(raw: string, repo: string, searched: (prompt: string) => Promise<ConnectedSearch | null> = connectedSearch, dbPath?: string): Promise<HookAnswer> {
+  const prompt = promptOf(raw)
+  if (!prompt.trim() || prompt.trimStart().startsWith('<')) return {}
+  const answer = relateContext(prompt, dbPath)
+  let cards = ''
+  try {
+    cards = cardsNamedIn(openDatabase(dbPath ?? defaultDbPath()), prompt).map((c) => c.text).join('\n')
+  } catch {}
+  const found = answer.outcome === 'answered' ? await searched(prompt).catch(() => null) : null
+  try {
+    if (!dbPath) refreshGraph(repo)
+  } catch {}
+  const text = [cards, answer.text, found?.text ?? ''].filter(Boolean).join('\n')
+  return text ? { context: text } : {}
 }
 
 function toolOf(raw: string): string {
@@ -167,6 +200,7 @@ export function answerOne(hook: AgentHook, event: HookEvent, raw: string, repo: 
   if (name === 'pageState') return pageStateAnswer(event, raw)
   if (name === 'inbox') return inboxAnswer(event, raw, repo)
   if (name === 'useCases') return useCasesAnswer(raw, route)
+  if (name === 'relate') return relateAnswer(raw, repo)
   return {}
 }
 
@@ -186,22 +220,61 @@ export function mergeAnswers(event: HookEvent, answers: readonly HookAnswer[]): 
   return { ...decision, ...(contexts.length ? { hookSpecificOutput: { hookEventName: event, additionalContext: contexts.join('\n\n') } } : {}) }
 }
 
+export function sentAtOf(raw: string): number | null {
+  try {
+    const sent = Number((JSON.parse(raw || '{}') as { log_sent_at?: unknown }).log_sent_at)
+    return Number.isFinite(sent) && sent > 0 ? sent : null
+  } catch {
+    return null
+  }
+}
+
+export function hookStages(raw: string, timings: readonly HookTiming[], at: { processAt?: number; bootedAt?: number; arrivedAt?: number }): TimingStage[] {
+  const sentAt = sentAtOf(raw)
+  const stages: TimingStage[] = []
+  const between = (name: string, from: number | null | undefined, to: number | undefined) => {
+    if (from && to && to >= from) stages.push({ name, startedAt: from, ms: to - from })
+  }
+  between('spawn', sentAt, at.processAt)
+  between('bunStart', at.processAt, at.bootedAt)
+  between('sent', sentAt, at.arrivedAt)
+  for (const t of timings) stages.push({ name: `hook ${t.hook}`, startedAt: t.startedAt ?? at.bootedAt ?? at.arrivedAt ?? Date.now(), ms: t.ms, ok: t.ok })
+  return stages
+}
+
+export function waitingHooksFirst(chosen: readonly AgentHook[]): AgentHook[] {
+  const waits = (hook: AgentHook) => WAITING_HOOKS.includes(hookName(hook))
+  return [...chosen.filter(waits), ...chosen.filter((hook) => !waits(hook))]
+}
+
+const hookName = (hook: AgentHook) => hook.script.replace(/^.*\//, '').replace(/\.ts$/, '')
+
+const failedAnswer = (name: string, event: HookEvent, error: unknown): HookAnswer => ({ context: `log hook ${name} failed on ${event}: ${error instanceof Error ? error.message : String(error)}` })
+
 export async function answerEvent(event: HookEvent, raw: string, repo: string, route: RouteAsk, hooks: readonly AgentHook[] = AGENT_HOOKS): Promise<EventAnswer> {
   const chosen = hooksForEvent(event, raw, hooks)
+  const order = waitingHooksFirst(chosen)
   const timings: HookTiming[] = []
-  const settled = await Promise.all(
-    chosen.map(async (hook) => {
-      const started = performance.now()
-      const name = hook.script.replace(/^.*\//, '').replace(/\.ts$/, '')
-      try {
-        const answer = await answerOne(hook, event, raw, repo, route)
-        timings.push({ hook: name, ms: performance.now() - started, ok: true })
+  const pending = order.map((hook) => {
+    const name = hookName(hook)
+    const startedAt = Date.now()
+    const began = performance.now()
+    try {
+      const answer = answerOne(hook, event, raw, repo, route)
+      if (!(answer instanceof Promise)) {
+        timings.push({ hook: name, ms: performance.now() - began, ok: true, startedAt })
         return answer
-      } catch (error) {
-        timings.push({ hook: name, ms: performance.now() - started, ok: false })
-        return { context: `log hook ${name} failed on ${event}: ${error instanceof Error ? error.message : String(error)}` } satisfies HookAnswer
       }
-    }),
-  )
-  return { event, body: mergeAnswers(event, settled), timings }
+      return answer.then(
+        (done) => (timings.push({ hook: name, ms: performance.now() - began, ok: true, startedAt }), done),
+        (error) => (timings.push({ hook: name, ms: performance.now() - began, ok: false, startedAt }), failedAnswer(name, event, error)),
+      )
+    } catch (error) {
+      timings.push({ hook: name, ms: performance.now() - began, ok: false, startedAt })
+      return failedAnswer(name, event, error)
+    }
+  })
+  const settled = await Promise.all(pending)
+  const byHook = new Map(order.map((hook, i) => [hook, settled[i]] as const))
+  return { event, body: mergeAnswers(event, chosen.map((hook) => byHook.get(hook) ?? {})), timings }
 }

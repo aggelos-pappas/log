@@ -19,12 +19,28 @@ export interface StoredMessage {
   attachments?: StoredAttachment[]
 }
 
+export interface StoredPlace {
+  kind: 'dm' | 'group' | 'channel' | 'thread' | 'forumPost' | 'replies' | 'post'
+  server?: string
+  serverId?: string
+  channel?: string
+}
+
+const SERVER_KINDS: readonly string[] = ['channel', 'thread', 'forumPost']
+
+function placeOfChat(c: ChatRowOut): StoredPlace | undefined {
+  if (c.kind === 'group' && !(c.box ?? '').startsWith('group')) return { kind: 'group' }
+  if (!SERVER_KINDS.includes(c.kind)) return undefined
+  return { kind: c.kind as 'channel' | 'thread' | 'forumPost', ...(c.serverId ? { serverId: c.serverId } : {}), ...(c.name ? { channel: c.name } : {}) }
+}
+
 export interface StoredConversation {
   platform: string
   account: string
   conversationId: string
   box: string
   with: string[]
+  place?: StoredPlace
   messages: StoredMessage[]
 }
 
@@ -64,6 +80,7 @@ interface ChatRowOut {
   kind: string
   box: string | null
   name: string | null
+  serverId: string | null
 }
 
 interface MessageRowOut {
@@ -77,7 +94,7 @@ interface MessageRowOut {
 }
 
 export function readConversations(handle: Database, account?: string): StoredConversation[] {
-  const chats = handle.prepare(`SELECT chatId, platform, account, conversationId, kind, box, name FROM chats ${account ? 'WHERE account = ?' : ''} ORDER BY chatId`).all(...(account ? [account] : [])) as ChatRowOut[]
+  const chats = handle.prepare(`SELECT chatId, platform, account, conversationId, kind, box, name, serverId FROM chats ${account ? 'WHERE account = ?' : ''} ORDER BY chatId`).all(...(account ? [account] : [])) as ChatRowOut[]
   const messages = handle.prepare('SELECT chatId, messageKey, platformMessageId, senderLabel, fromOwner, sentAt, text FROM messages ORDER BY chatId, sentAtMs, seq').all() as MessageRowOut[]
   const attachments = handle.prepare('SELECT messageKey, name, contentType, durationMs FROM attachments ORDER BY messageKey, n').all() as { messageKey: string; name: string | null; contentType: string | null; durationMs: number | null }[]
   const members = handle.prepare('SELECT m.roomId, m.userId, m.position, i.handle FROM memberships m LEFT JOIN identities i ON i.platform = m.platform AND i.userId = m.userId ORDER BY m.position IS NULL, m.position, m.firstSeenAt').all() as { roomId: string; userId: string; position: number | null; handle: string | null }[]
@@ -105,12 +122,14 @@ export function readConversations(handle: Database, account?: string): StoredCon
   }
   return chats.filter((c) => byChat.has(c.chatId)).map((c) => {
     const named = (withOf.get(c.chatId) ?? []).filter((l) => !isBareId(l))
+    const place = placeOfChat(c)
     return {
       platform: c.platform,
       account: c.account,
       conversationId: c.conversationId,
       box: c.box ?? c.kind,
       with: named.length ? named : withOf.get(c.chatId) ?? (c.name ? [c.name] : []),
+      ...(place ? { place } : {}),
       messages: (byChat.get(c.chatId) ?? []).map((m) => {
         const files = filesOf.get(m.messageKey)
         return { id: m.platformMessageId ?? m.messageKey, at: m.sentAt || null, from: m.fromOwner ? c.account : m.senderLabel, fromMe: m.fromOwner === 1, text: m.text, ...(files ? { attachments: files } : {}) }

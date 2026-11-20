@@ -22,6 +22,7 @@ for p in (str(ROOT), str(VENDOR / "instagrapi")):
 from platformKit import engine as kit
 from platformKit import media
 from platformKit import reactions
+from logHome import log_home
 
 PLATFORM = "instagram"
 LIBRARY = "vendor/instagrapi"
@@ -247,7 +248,7 @@ def log_db_path() -> Path:
         return Path(os.environ["LOG_DB"])
     if os.environ.get("LOG_INBOX_STATE"):
         return Path(os.environ["LOG_INBOX_STATE"]) / "log.db"
-    return Path.home() / ".logCli" / "log.db"
+    return log_home() / "log.db"
 
 
 def heard_since(account: str, thread: str, since: str) -> list[dict[str, Any]]:

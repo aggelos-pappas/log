@@ -87,7 +87,7 @@ export const HARNESSES: readonly Harness[] = [
     contextLimit: UNSTATED_LIMIT,
     limitSource: "Hermes states no limit for pre_llm_call context, so the strictest stated one (Codex's) is used",
     connects: "both",
-    hookFile: "hermesPlugin/native/plugin.yaml",
+    hookFile: "hermesPlugin/plugin.yaml",
     installedBy: "launchSetup",
   },
   {

@@ -12,6 +12,7 @@ export interface VoiceEvidence {
 export interface VoiceDraft {
   to: string
   text: string
+  ownerWroteHere?: number
   context?: string
   evidence?: VoiceEvidence
   everywhere?: VoiceEvidence
@@ -23,6 +24,7 @@ export interface VoiceDraft {
   room?: import('../../../voice/room/index').Room
   card?: string
   cardAnswerOwed?: boolean
+  publicReply?: boolean
 }
 
 export interface VoiceReading {
@@ -39,6 +41,7 @@ export interface VoiceReading {
   watermark: WatermarkReading
   pass: boolean
   model: string | null
+  firstContact?: boolean
 }
 
 export const VOICE_PASS = 0.8

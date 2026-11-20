@@ -1,13 +1,13 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { ownerReasonOf } from "./helpers/index.ts";
 import type { GroupMember, MembersPlan, MembersReadOutput, SavedMembers } from "./types.ts";
+import { logHome } from "../../../config/logHome/index.ts";
 
 export const MEMBER_COLUMNS = ["id", "name", "url", "bio", "category", "followers", "joined", "owner"] as const;
 
 export function membersDirOf(env: NodeJS.ProcessEnv = process.env): string {
-  return env.LOG_MEMBERS_DIR || join(homedir(), ".logCli", "members");
+  return env.LOG_MEMBERS_DIR || join(logHome(), "members");
 }
 
 export const runStampOf = (now: Date): string => now.toISOString().replace(/[-:]/g, "").slice(0, 15);

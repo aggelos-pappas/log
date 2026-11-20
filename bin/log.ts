@@ -20,6 +20,9 @@ let callId = "";
 const code = await timeCall(`cli ${words || "help"}`, async (call) => {
   callId = call.callId;
   const exit = await runFast(argv, {
+    refused: (said) => {
+      call.attrs.code ??= said;
+    },
     out: (line) => {
       console.log(line);
       appendLiveLine(dir, tool, "out", line);

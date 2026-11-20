@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import { db, handleOfIdentity, isBareId, namedLabel, UNNAMED } from '../store/index'
 import { MIN_MIRROR_CHARS, NOT_SAID, REACTION, RECENT_PER_CHAT } from './types'
-import type { LastWord, LastWordMessage, LastWordQuery } from './types'
+import type { LastWord, LastWordMessage, LastWordQuery, PersonChat } from './types'
 
 export function personKeyOf(conversationId: string): string {
   const pair = conversationId.match(/^(\d+)[-:](\d+)$/)
@@ -107,16 +107,15 @@ function labelOf(kind: 'dm' | 'group', rows: readonly Row[], name: Namer): strin
   return name(names[0] ?? null, other ?? '')
 }
 
-export function lastWordOf(query: LastWordQuery = {}, on: Database = db()): LastWord[] {
-  const rows = on.prepare(RECENT_SQL).all(query.platform ?? null, query.account ?? null, RECENT_PER_CHAT) as Row[]
+export function chatsOf(query: LastWordQuery = {}, on: Database = db(), perChat: number = RECENT_PER_CHAT): PersonChat[] {
+  const rows = on.prepare(RECENT_SQL).all(query.platform ?? null, query.account ?? null, perChat) as Row[]
   const groups = new Map<string, Row[]>()
   for (const r of rows) {
     const key = `${r.platform}\u0000${r.account}\u0000${personKeyOf(r.conversationId)}`
     groups.set(key, [...(groups.get(key) ?? []), r])
   }
-  const words: LastWord[] = []
   const namers = new Map<string, { quick: Namer; thorough: Namer }>()
-  for (const group of groups.values()) {
+  return [...groups.values()].map((group) => {
     const { platform, account } = group[0]
     const namer = namers.get(`${platform}\u0000${account}`) ?? { quick: namerFor(platform, account, on, false), thorough: namerFor(platform, account, on, true) }
     namers.set(`${platform}\u0000${account}`, namer)
@@ -124,11 +123,23 @@ export function lastWordOf(query: LastWordQuery = {}, on: Database = db()): Last
     const kind: 'dm' | 'group' = group.some((r) => r.kind === 'group') || others.size > 1 ? 'group' : 'dm'
     const conversationIds = [...new Set(group.map((r) => r.conversationId))]
     const messages = group.map((r) => ({ conversationId: r.conversationId, seq: r.seq, ms: r.ms, at: r.at, fromOwner: r.fromOwner === 1, senderUserId: r.senderUserId, senderLabel: r.senderLabel, text: r.text ?? '', files: r.files }))
-    const word = lastWordOfMessages({ platform, account, kind, with: labelOf(kind, group, namer.quick), conversationIds }, messages)
+    const quick = labelOf(kind, group, namer.quick)
+    return { platform, account, kind, storedAsGroup: group.some((r) => r.kind === 'group'), with: quick, personKey: personKeyOf(group[0].conversationId), conversationIds, messages, named: () => (quick === UNNAMED ? labelOf(kind, group, namer.thorough) : quick) }
+  })
+}
+
+export function lastWordOf(query: LastWordQuery = {}, on: Database = db()): LastWord[] {
+  const words: LastWord[] = []
+  for (const chat of chatsOf(query, on)) {
+    const word = lastWordOfMessages(chat, chat.messages)
     if (!word) continue
-    words.push(word.with === UNNAMED && (word.waiting || word.followUp) ? { ...word, with: labelOf(kind, group, namer.thorough) } : word)
+    words.push(word.with === UNNAMED && (word.waiting || word.followUp) ? { ...word, with: chat.named() } : word)
   }
   return words.sort((a, b) => Date.parse(b.lastAt) - Date.parse(a.lastAt))
+}
+
+export function saidOnly(messages: readonly LastWordMessage[]): LastWordMessage[] {
+  return withoutMirrors(messages).filter(isSaid)
 }
 
 export function waitingOf(words: readonly LastWord[]): { waiting: LastWord[]; followUps: LastWord[] } {

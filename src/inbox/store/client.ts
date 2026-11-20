@@ -2,7 +2,6 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { Database } from 'bun:sqlite'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, renameSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { defaultDbPath, openDatabase } from '../../storage/schema'
 import { accountIdentifiedEvent, attachmentsSeenEvent, eventIdFrom, identityLearnedEvent, insertEventRow, isBareId, MESSAGE_TYPES, messageKeyOf, msOf, platformMessageIdOf, profileFieldsOf, profileSeenEvent } from '../../storage/platform'
@@ -10,6 +9,7 @@ import type { ProfileSighting } from '../../storage/platform'
 import { refreshWorkedCards } from '../card/client'
 import { INTERNAL_TYPES, KNOWN_TYPES } from './types'
 import type { GapRow, GapStatus, Stage, StoredEvent } from './types'
+import { logHome } from '../../config/logHome/index'
 
 let opened: { path: string; db: Database } | null = null
 
@@ -383,7 +383,7 @@ export function handleOfUserId(platform: string, account: string, userId: string
   return platform === 'twitter' ? xInboxHandleOf(account, String(userId)) : null
 }
 
-export function xInboxHandleOf(account: string, userId: string, root: string = process.env.LOG_TWITTER_STATE || join(homedir(), '.logCli', 'twitter')): string | null {
+export function xInboxHandleOf(account: string, userId: string, root: string = process.env.LOG_TWITTER_STATE || join(logHome(), 'twitter')): string | null {
   const file = join(root, account, 'inboxSync.json')
   if (!userId || !existsSync(file)) return null
   try {

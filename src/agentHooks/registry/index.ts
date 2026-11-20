@@ -1,6 +1,7 @@
 import { serviceHookCommand } from "../../contextLayer/service/client.ts";
 import { CONTEXT_PORT } from "../../contextLayer/service/types.ts";
 import { HARNESS_TABLE_START, withHarnessTable } from "../harness/client.ts";
+import { HAND_ROLLED_MATCHER } from "../handRolled/types.ts";
 import type { AgentHook, HookEvent, HookFile } from "./types.ts";
 
 export const HARNESS_README = "docs/harnesses/README.md";
@@ -23,6 +24,8 @@ const QUEUE = "scripts/hooks/queue.ts";
 const X_LIVE = "scripts/hooks/xLive.ts";
 const CHAT_NAMES = "scripts/hooks/chatNames.ts";
 const USE_CASES = "scripts/hooks/useCases.ts";
+const RELATE = "scripts/hooks/relate.ts";
+const HAND_ROLLED = "scripts/hooks/handRolled.ts";
 export const EVENT_SCRIPT = "scripts/hooks/event.ts";
 
 export const AGENT_HOOKS: readonly AgentHook[] = [
@@ -39,6 +42,7 @@ export const AGENT_HOOKS: readonly AgentHook[] = [
   { event: "SessionStart", matcher: "startup|resume|clear|compact", script: QUEUE, timeout: 10, why: "what every account's queue did since the last look (held, sent, cooling off, stopped), so a queue is never running out of the agent's sight (rule 109)" },
   { event: "SessionStart", matcher: "startup|resume|clear|compact", script: USE_CASES, timeout: 10, why: "the play this session loaded, read from its own transcript, put back with the step it reached when the session comes back from compaction or resumes, and the context layer service started (rule 158)" },
   { event: "UserPromptSubmit", script: USE_CASES, service: "/hook", timeout: 10, why: "the play the owner's prompt asks for, matched against every use case's own \"How the owner asks for it\" phrases and title, named with getGuide to load it before anything is done (rule 158)" },
+  { event: "UserPromptSubmit", script: RELATE, timeout: 10, why: "the people the owner's prompt names (@handle or a known handle), looked up in the Relate graph projected from log.db: which accounts talk with them, what they engaged, the groups they share, who could introduce them and who is in the same orbit; silent when nobody is named, and the graph rebuilt in the background when log.db has moved on" },
   { event: "UserPromptSubmit", script: QUEUE, timeout: 10, why: "the same queue events with each of the owner's prompts" },
   { event: "PostToolUse", matcher: TOOL_MATCHER, script: QUEUE, timeout: 10, why: "the same queue events after a log tool or shell call, so a held item or a cool-off is acted on at once" },
   { event: "SessionStart", matcher: "startup|resume|clear|compact", script: X_LIVE, timeout: 10, why: "what X's own client shows on each X account right now (its unread notifications, DMs and X Chat, read through the account's one session the way x.com polls it), and every new like, retweet, reply, quote, mention or follow since this Claude session last looked (rule 109)" },
@@ -46,6 +50,7 @@ export const AGENT_HOOKS: readonly AgentHook[] = [
   { event: "PostToolUse", matcher: TOOL_MATCHER, script: X_LIVE, timeout: 10, why: "the same X live state after a log tool or shell call, so a reply on a post is answered mid-task" },
   { event: "PreToolUse", matcher: `mcp__${MCP_SERVER_NAME}__(discord|slack|instagram).*`, script: CHAT_NAMES, timeout: 10, why: "a Discord, Slack or Instagram call that names its chat by a bare id is refused and told to pass the name (a person, a group, or \"<server> #<channel>\"), so the owner sees where every call goes (rule 154)" },
   { event: "PreToolUse", matcher: SHELL_MATCHER, script: LIVE_LOGS, timeout: 10, why: "a log-cli run that would hide its lines (piped through tail or head) is refused before it starts; a long one off a Monitor is told to start one (rule 26); any log action run by hand from a shell is refused and pointed at its MCP tool (rule 163)" },
+  { event: "PreToolUse", matcher: HAND_ROLLED_MATCHER, script: HAND_ROLLED, timeout: 10, why: "a hand-rolled data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off python or bun -e), unwrapped from heredocs, written files and execute_code, is labelled readsData or actsOnData with its target, counted in log.db, and advised, never blocked, to become a log tool through getGuide({ useCase: \"log/toolFromOneOff\" }) (rule 163)" },
   { event: "PostToolUse", matcher: TOOL_MATCHER, script: PAGE_STATE, timeout: 20, why: "a browser landed on a known state (checkpoint, captcha, prompt) or a step failed: its resolver, at once" },
   { event: "Stop", script: PAGE_STATE, timeout: 20, why: "the turn does not end while a browser sits on a state log-cli can resolve (rule 35)" },
 ];
@@ -61,7 +66,7 @@ export const HOOK_SERVICE_URL = `http://127.0.0.1:${CONTEXT_PORT}/hooks`;
 
 const SERVED_EVENTS: readonly HookEvent[] = ["UserPromptSubmit", "PostToolUse", "Stop"];
 
-const REFUSING: readonly string[] = [CHAT_NAMES, LIVE_LOGS];
+const REFUSING: readonly string[] = [CHAT_NAMES, LIVE_LOGS, HAND_ROLLED];
 
 function execHook(script: string, timeout: number, extra: string[] = []): Record<string, unknown> {
   return { type: "command", command: "bun", args: [`\${CLAUDE_PROJECT_DIR}/${script}`, ...extra], timeout };
@@ -132,17 +137,25 @@ export function antigravityHooks(hooks: readonly AgentHook[] = AGENT_HOOKS): Rec
   return { "log-hooks": out };
 }
 
-export const HERMES_PLUGIN_NAME = "logHooks";
+export const HERMES_PLUGIN_NAME = "log";
 
-export const HERMES_PLUGIN_DIR = "hermesPlugin/native";
+export const HERMES_PLUGIN_DIR = "hermesPlugin";
+
+export const HERMES_GENUI_TOOLS = ["assistant_calendar", "assistant_ideas", "assistant_inbox", "assistant_items", "assistant_open", "assistant_report", "assistant_setup", "board_page", "dashboard", "find_photos", "market_history", "save_recipe", "show_blocks"] as const;
 
 export function hermesPluginYaml(version: string): string {
   return [
     `name: ${HERMES_PLUGIN_NAME}`,
     `version: ${version}`,
-    `description: "log's hooks for Hermes. Before each model call, pre_llm_call puts the play the prompt asks for, pending inbox messages and browser states in front of the model. Written from src/agentHooks/registry (bun run check:agentHooks --write)."`,
+    `description: "log by ListeningKit for Hermes, as one plugin: every play as a log:<play> skill, log's GenUI blocks and report views (tools, recipes, the dashboard tab and the Desktop half), and the hooks. Before each model call, pre_llm_call puts the play the prompt asks for, names it resolves, pending inbox messages and browser states in front of the model; pre_tool_call refuses a script that parses log output and names the flag that narrows it; transform_tool_result adds the messages that landed while a log tool ran and advises turning a hand-rolled read into a log tool; post_llm_call times the turn; a message the account watchers hear between turns starts a turn in that chat through ctx.inject_message (needs plugins.entries.log.allow_gateway_injection: true); on chats that can't draw, transform_llm_output swaps a view's tag for its text. log's tools come from the log MCP server in config.yaml (hermes mcp add log --command logMcp), which a native plugin can't declare; the hook says so when it's missing. Written from src/agentHooks/registry (bun run check:agentHooks --write)."`,
+    "provides_tools:",
+    ...HERMES_GENUI_TOOLS.map((tool) => `  - ${tool}`),
     "provides_hooks:",
     "  - pre_llm_call",
+    "  - pre_tool_call",
+    "  - transform_tool_result",
+    "  - post_llm_call",
+    "  - transform_llm_output",
     "",
   ].join("\n");
 }
@@ -171,7 +184,7 @@ function wholeFile(path: string, wanted: Record<string, unknown>): HookFile {
   return { path, format: "json", same: (current) => JSON.stringify(parsedOrNull(current)) === JSON.stringify(wanted), wanted: () => jsonText(wanted) };
 }
 
-export function hookFiles(hooks: readonly AgentHook[] = AGENT_HOOKS, hermesVersion = "0.2.0"): HookFile[] {
+export function hookFiles(hooks: readonly AgentHook[] = AGENT_HOOKS, hermesVersion = "0.2.1"): HookFile[] {
   const yaml = hermesPluginYaml(hermesVersion);
   return [
     hooksKeyFile(".claude/settings.json", hooksFor("claudeCode", hooks)),

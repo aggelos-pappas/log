@@ -1,13 +1,13 @@
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { loadSessionHome } from "../../auth/session/index.ts";
 import { basicAuthHeader, challengeOf, hashToken, randomToken, userIdOf } from "./helpers/index.ts";
 import type { IssuedCode, OAuthClient, OAuthDeps, OAuthServer, OAuthStore, PendingAuthorization, TwentyOAuthConfig } from "./types.ts";
 import { ACCESS_TTL_S, CLAUDE_CALLBACK, CODE_TTL_MS, LOOPBACK_CALLBACK, PENDING_TTL_MS, REFRESH_TTL_S, SCOPES, TWENTY_SCOPE } from "./types.ts";
+import { logHome } from "../../config/logHome/index.ts";
 
 export function oauthStorePath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_MCP_OAUTH_FILE || join(homedir(), ".logCli", "mcp", "oauth.json");
+  return env.LOG_MCP_OAUTH_FILE || join(logHome(), "mcp", "oauth.json");
 }
 
 export function readStore(path: string): OAuthStore {

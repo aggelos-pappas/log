@@ -28,7 +28,7 @@ export function cloneBodyOf(displayName: string, samples: readonly ReferenceAudi
 }
 
 export function createInworldClient(key: string | null = inworldKey(), fetcher: VoiceFetch = fetch as unknown as VoiceFetch) {
-  const missing = <T>(): VoiceAnswer<T> => ({ ok: false, status: 0, code: 'voiceKeyMissing', error: `${INWORLD_KEY_NAME} is not set (the environment, .env.local in the repo, or ~/.buzz/.env.local)`, data: null })
+  const missing = <T>(): VoiceAnswer<T> => ({ ok: false, status: 0, code: 'voiceKeyMissing', error: `${INWORLD_KEY_NAME} is not set (the environment, .env.local in the repo, or ~/.logCli/.env)`, data: null })
   const headers = () => ({ Authorization: `Basic ${key}`, 'Content-Type': 'application/json' })
   return {
     async cloneVoice(displayName: string, samples: readonly ReferenceAudio[], settings: VoiceSettings = voiceSettingsOf()): Promise<VoiceAnswer<{ voiceId: string; warnings: unknown; language: string; refused: string[] }>> {

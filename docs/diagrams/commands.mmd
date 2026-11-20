@@ -18,9 +18,13 @@ flowchart TB
     c_errors["errors"]
     c_graph["graph"]
     c_capture["capture"]
+    c_router["router"]
     c_runs["runs"]
     c_storage["storage"]
+    c_relate["relate"]
+    c_people["people"]
     c_timing["timing"]
+    c_tool["tool"]
     c_inbox["inbox"]
     c_media["media"]
     c_browsers["browsers"]
@@ -47,6 +51,7 @@ flowchart TB
     c_clone["clone"]
     c_transcribe["transcribe"]
     c_new["new"]
+    c_saidBy["saidBy"]
   end
   subgraph g_byArgument["Platform named first"]
     c_warmup["#lt;platform#gt; warmup"]
@@ -245,12 +250,20 @@ flowchart TB
   cli --> c_capture
   mcp --> c_capture
   c_capture --> live
+  cli --> c_router
+  mcp --> c_router
   cli --> c_runs
   mcp --> c_runs
   cli --> c_storage
   mcp --> c_storage
+  cli --> c_relate
+  mcp --> c_relate
+  cli --> c_people
+  mcp --> c_people
   cli --> c_timing
   mcp --> c_timing
+  cli --> c_tool
+  mcp --> c_tool
   cli --> c_inbox
   mcp --> c_inbox
   cli --> c_media
@@ -444,6 +457,8 @@ flowchart TB
   mcp --> c_twitterVoice
   cli --> c_tiktokSession
   mcp --> c_tiktokSession
+  cli --> c_saidBy
+  mcp --> c_saidBy
   cli --> c_tiktokStats
   mcp --> c_tiktokStats
   cli --> c_tiktokPost

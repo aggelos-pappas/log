@@ -198,6 +198,15 @@ function spawnTwitterEngineLive(account: TwitterAccount, request: TwitterEngineS
   })
 }
 
+export function ownUserIdOf(cookies: unknown): string | null {
+  const twid = twitterCookies(cookies).twid ?? ''
+  let decoded = twid
+  try {
+    decoded = decodeURIComponent(twid)
+  } catch {}
+  return /u=(\d+)/.exec(decoded)?.[1] ?? null
+}
+
 export const SESSION_REWRITE_MS = 60 * 60 * 1000
 
 function sameCookies(a: unknown, b: unknown): boolean {
@@ -218,8 +227,10 @@ export async function recordTwitterSession(twenty: TwentyClient, account: Twitte
   const checkedAt = account.sessionCheckedAt ? Date.parse(account.sessionCheckedAt) : NaN
   const fresh = state === account.sessionState && !cookiesChanged && Number.isFinite(checkedAt) && now.getTime() - checkedAt < SESSION_REWRITE_MS
   writeLocalSession(account.accountName, state, now, twitterStateRoot(), { accountId: account.id })
-  if (run.answer.ok && state === 'loggedIn' && run.answer.userId) identifyAccount('twitter', account.accountName, String(run.answer.userId), now)
-  if (run.answer.ok && state === 'loggedIn') rememberProfiles('twitter', account.accountName, [sessionProfileOf('twitter', run.answer as unknown as Record<string, unknown>)], now)
+  const ownId = ownUserIdOf(account.cookies)
+  const aboutTheOwner = !ownId || !run.answer.userId || String(run.answer.userId) === ownId
+  if (run.answer.ok && state === 'loggedIn' && run.answer.userId && aboutTheOwner) identifyAccount('twitter', account.accountName, String(run.answer.userId), now)
+  if (run.answer.ok && state === 'loggedIn' && aboutTheOwner) rememberProfiles('twitter', account.accountName, [sessionProfileOf('twitter', run.answer as unknown as Record<string, unknown>)], now)
   if (fresh) return []
   account.sessionState = state
   account.sessionCheckedAt = now.toISOString()
