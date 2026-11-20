@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { join } from 'node:path'
 import { answerEvent } from '../../src/agentHooks/answers/index'
-import { clipContext, contextOf } from '../../src/agentHooks/harness/index'
+import { antigravityPromptPayload, clipContext, contextOf } from '../../src/agentHooks/harness/index'
 import { chatNameVerdict } from '../../src/agentHooks/chatNames/index'
 import { liveLogVerdict } from '../../src/agentHooks/liveLog/index'
 import { classifyCall, handRolledAdvice } from '../../src/agentHooks/handRolled/client'
@@ -43,8 +43,7 @@ if (event === 'SessionStart') {
   }
   process.stdout.write(JSON.stringify(output))
 } else if (event === 'PreInvocation') {
-  const prompt = typeof input.lastUserInput === 'string' ? input.lastUserInput : ''
-  const payload = JSON.stringify({ hook_event_name: 'UserPromptSubmit', prompt })
+  const payload = antigravityPromptPayload(input)
   const answered = await answerEvent('UserPromptSubmit', payload, repo, route)
   const additionalContext = clipContext(contextOf(answered.body), 'antigravity')
   const output = {

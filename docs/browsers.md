@@ -272,11 +272,15 @@ opens a page behind the real viewer in the browser `BENCH_BROWSER` names
 the `brave` driver with a direct scratch gate and its self-check; `braveCdp`,
 Brave attached over CDP the way an AdsPower profile is), then loads the built
 MCP App inside a replica MCP Apps host (a sandboxed iframe with the host's CSP
-and bridge) and the `::logbrowser` card inside a replica Hermes transcript, each
-in light and dark, streamed and pulled. It reports frames a second, which source
-drew them, click to frame and click to page (p50/p95 over `BENCH_PROBES`
-clicks), and saves `light.png`, `dark.png`, `hermes-light.png` and
-`hermes-dark.png`, prefixed with the browser's name for any but the default.
+and bridge) and the `::logapp` card (log's vendored Hermes host card, through
+the real plugin routes) inside a replica Hermes transcript, each in light and
+dark. It reports frames a second, which source drew them, the median of five
+clicks on the picture reaching the page and reaching the view's own canvas
+(click to frame), the address bar text, and the report view through `::logapp`
+following a theme flip, and saves `light.png`, `dark.png`,
+`logapp-browserView-light.png`, `logapp-browserView-dark.png`,
+`logapp-report-light.png` and `logapp-report-dark.png`, prefixed with the
+browser's name for any but the default.
 
 **In the local console.** `log console --web` serves `/api/console/browser`
 (the view), `/api/console/browser/frame` and `POST /api/console/browser/input`

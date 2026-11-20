@@ -3,11 +3,15 @@ import { join } from 'node:path'
 import type { Offsets, SessionOffsets } from './types'
 
 export const SHARED_SESSION = 'shared'
+
+export const SESSION_KEYS = ['session_id', 'sessionId', 'sessionID', 'conversation_id', 'conversationId'] as const
 const KEEP_MS = 3 * 24 * 3600 * 1000
 
 export function sessionIdOf(raw: string): string {
   try {
-    const id = (JSON.parse(raw || '{}') as { session_id?: string }).session_id
+    const input = JSON.parse(raw || '{}') as Record<string, unknown>
+    const found = SESSION_KEYS.map((key) => input[key]).find((value) => typeof value === 'string' && value.trim())
+    const id = typeof found === 'string' ? found : ''
     return id ? id.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80) || SHARED_SESSION : SHARED_SESSION
   } catch {
     return SHARED_SESSION

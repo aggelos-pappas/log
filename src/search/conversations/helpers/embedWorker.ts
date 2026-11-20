@@ -1,7 +1,11 @@
-import { pipeline } from '@huggingface/transformers'
+import { env, pipeline } from '@huggingface/transformers'
+import { revisionOf } from '../../../models/manifest/index'
+import { hfCacheDir, pinnedModelReady } from '../../../models/store/index'
 
 const model = process.argv[2]
-const extractor = (await pipeline('feature-extraction', model, { dtype: 'q8' })) as unknown as (texts: string[], options: Record<string, unknown>) => Promise<{ data: Float32Array; dims: number[] }>
+env.cacheDir = hfCacheDir()
+await pinnedModelReady(model)
+const extractor = (await pipeline('feature-extraction', model, { dtype: 'q8', revision: revisionOf(model) })) as unknown as (texts: string[], options: Record<string, unknown>) => Promise<{ data: Float32Array; dims: number[] }>
 process.stdout.write(JSON.stringify({ ready: true }) + '\n')
 
 let buffer = ''

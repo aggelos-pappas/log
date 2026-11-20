@@ -41,7 +41,7 @@ const SPEC = {
 
 const HERMES_CLIENT_NAME = ["hermes", "agent"].join("-");
 const views = (path: string) => (openDatabase(path).prepare("SELECT count(*) AS n FROM state WHERE scope = ?").get(HERMES_VIEW_SCOPE) as { n: number }).n;
-const TAG = /::logview\{id="([0-9a-f]{8})"\}/;
+const TAG = /::logapp\{tool="report" view="([0-9a-f]{8})"\}/;
 const textOf = (result: { content: unknown }) => (result.content as { type: string; text?: string }[]).map((part) => part.text ?? "").join("\n");
 
 describe("a report drawn for Hermes", () => {
@@ -60,18 +60,20 @@ describe("a report drawn for Hermes", () => {
     expect(id).toBeDefined();
     expect(text).toContain(hermesViewTag(id as string));
     expect((result.structuredContent as { hermesView?: string }).hermesView).toBe(id);
-    const stored = getState<{ title: string; html: string; text: string }>(HERMES_VIEW_SCOPE, id as string, {}, db)?.body as { title: string; html: string; text: string };
+    const stored = getState<{ title: string; html: string; text: string; compiled?: string; data?: Record<string, unknown> }>(HERMES_VIEW_SCOPE, id as string, {}, db)?.body as { title: string; html: string; text: string; compiled?: string; data?: Record<string, unknown> };
     expect(stored.title).toBe(SPEC.title);
+    expect(stored.compiled).toContain("exports");
+    expect(stored.data?.blocks).toHaveLength(2);
     expect(stored.html).toContain('class="sb-page');
     expect(stored.html).toContain("Messages in");
     expect(stored.text).toContain("Messages in");
-    expect(stored.text).not.toContain("::logview");
+    expect(stored.text).not.toContain("::logapp");
   });
 
   test("other hosts get the text alone and nothing is saved", async () => {
     const path = dbAt("other.db");
     const result = await runReport(SPEC, false, {}, { hermes: false, db: openDatabase(path) });
-    expect(textOf(result)).not.toContain("::logview");
+    expect(textOf(result)).not.toContain("::logapp");
     expect(views(path)).toBe(0);
   });
 
@@ -156,7 +158,9 @@ describe("the Desktop half shipped in hermesPlugin", () => {
     expect(log).toContain(".dark .logview");
     expect(log).toContain('"hermes-genui-tag"');
     expect(log).toContain('"logbrowser"');
-    expect(log).toContain(".dark .logbrowser");
+    expect(log).toContain('"logapp"');
+    expect(log).toContain(".logapp iframe");
+    expect(log).toContain("ui/notifications/tool-result");
     const genui = readFileSync(join(root, DESKTOP_BUNDLES[1].out), "utf8");
     expect(genui).toContain("--hb-chart-1: #16181d");
   });
@@ -199,6 +203,29 @@ describe("the logHooks text fallback", () => {
     expect(run.status).toBe(0);
     const out = JSON.parse(run.stdout.trim()) as Record<string, string | null>;
     expect(out.telegram).toBe("Sign in here:\n(fakeSeller's live browser, which shows only in Hermes Desktop)");
+    expect(out.desktop).toBeNull();
+  });
+
+  test("swaps a ::logapp line for the kept report's text, the browser note or a short note", () => {
+    const path = dbAt("pyApp.db");
+    putState(HERMES_VIEW_SCOPE, "0a1b2c3d", { title: "T", html: "<div></div>", text: "# T\nMessages in 120" }, Date.now(), openDatabase(path));
+    const plugin = join(root, "hermesPlugin", "__init__.py");
+    const script = [
+      "import importlib.util, json",
+      `spec = importlib.util.spec_from_file_location("logHooksApp", ${JSON.stringify(plugin)})`,
+      "module = importlib.util.module_from_spec(spec)",
+      "spec.loader.exec_module(module)",
+      "report = 'Here:\\n::logapp{tool=\"report\" view=\"0a1b2c3d\"}'",
+      "browser = 'Sign in:\\n::logapp{tool=\"browserView\" args=\\'{\"account\":\"fakeSeller\"}\\'}'",
+      "other = '::logapp{tool=\"someView\"}'",
+      "print(json.dumps({'report': module.transform_llm_output(response_text=report, platform='telegram'), 'browser': module.transform_llm_output(response_text=browser, platform='cli'), 'other': module.transform_llm_output(response_text=other, platform='cli'), 'desktop': module.transform_llm_output(response_text=report, platform='desktop')}))",
+    ].join("\n");
+    const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, LOG_DB: path } });
+    expect(run.status).toBe(0);
+    const out = JSON.parse(run.stdout.trim()) as Record<string, string | null>;
+    expect(out.report).toBe("Here:\n# T\nMessages in 120");
+    expect(out.browser).toBe("Sign in:\n(fakeSeller's live browser, which shows only in Hermes Desktop)");
+    expect(out.other).toBe("(log's someView view, which shows only in Hermes Desktop)");
     expect(out.desktop).toBeNull();
   });
 });

@@ -6,6 +6,7 @@ from pathlib import Path
 from logHome import log_home
 
 MODEL_REPO = "patronus-studio/wolf-defender-prompt-injection-small"
+MODEL_REVISION = "2484cc9a13550aa4f2c29b577ff3ef331dc6ba07"
 MODEL_FILE = "onnx/int8_int4_embeddings_x86/model.onnx"
 MODEL_FILES = ["onnx/int8_int4_embeddings_x86/*", "tokenizer.json", "tokenizer_config.json", "config.json", "special_tokens_map.json"]
 MAX_TOKENS = 512
@@ -29,11 +30,28 @@ def port():
     return int(os.environ.get("LOG_JUDGE_PORT") or 47615)
 
 
-def ensure_model(path):
-    if (path / MODEL_FILE).exists() and (path / "tokenizer.json").exists():
+def downloaded_revision(path):
+    marker = path / ".cache" / "huggingface" / "download" / (MODEL_FILE + ".metadata")
+    try:
+        return marker.read_text(encoding="utf-8").splitlines()[0].strip()
+    except (OSError, IndexError):
+        return None
+
+
+def on_pinned_revision(path):
+    if not ((path / MODEL_FILE).exists() and (path / "tokenizer.json").exists()):
+        return False
+    said = downloaded_revision(path)
+    return said is None or said == MODEL_REVISION
+
+
+def ensure_model(path, download=None):
+    if on_pinned_revision(path):
         return path
-    from huggingface_hub import snapshot_download
-    snapshot_download(MODEL_REPO, allow_patterns=MODEL_FILES, local_dir=str(path))
+    if download is None:
+        from huggingface_hub import snapshot_download
+        download = snapshot_download
+    download(MODEL_REPO, revision=MODEL_REVISION, allow_patterns=MODEL_FILES, local_dir=str(path))
     return path
 
 
@@ -83,7 +101,7 @@ def handler_of(judge):
 
         def do_GET(self):
             if self.path == "/health":
-                return self.answer(200, {"ok": True, "model": MODEL_REPO, "pid": os.getpid()})
+                return self.answer(200, {"ok": True, "model": MODEL_REPO, "revision": MODEL_REVISION, "pid": os.getpid()})
             return self.answer(404, {"ok": False})
 
         def do_POST(self):
@@ -105,7 +123,7 @@ def main():
     server = ThreadingHTTPServer((HOST, port()), handler_of(judge))
     state = state_file()
     state.parent.mkdir(parents=True, exist_ok=True)
-    state.write_text(json.dumps({"pid": os.getpid(), "port": port(), "model": MODEL_REPO}), encoding="utf-8")
+    state.write_text(json.dumps({"pid": os.getpid(), "port": port(), "model": MODEL_REPO, "revision": MODEL_REVISION}), encoding="utf-8")
     try:
         server.serve_forever()
     finally:

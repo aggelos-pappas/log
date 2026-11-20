@@ -185,6 +185,36 @@ Built (20 Nov 2026, PR #207):
 | Replica-host bench: `scripts/browserView/hostBench.py` (real Camoufox viewer, Edge headless, replica MCP Apps host and replica Hermes transcript, light and dark, a click reaching the page) | built; run by hand |
 | voxl started by log (1), Camoufox kiosk (3), take control on any page (4), server setup (5) | not built |
 
+### K. One view everywhere: log's MCP Apps drawn in Hermes Desktop (`::logapp`, #210)
+
+Hermes Desktop doesn't draw MCP Apps (NousResearch/hermes-agent#61095). The host PR that would add it (NousResearch/hermes-agent#75828, MIT, by oriliz, head `2f62fb5a`) is parked on a maintainer decision. So far log drew its two views twice: the MCP App widget (`ui://log/browserView`, `ui://log/report`) for ChatGPT and Claude, and a hand-made Hermes copy (`::logbrowser` drawn by `LogBrowser`, `::logview` drawn as static markup). Two views per feature drift.
+
+log takes only the card half of #75828 into its own Desktop plugin and leaves Hermes's core alone:
+
+| Part of #75828 | Files | In log |
+| --- | --- | --- |
+| Sandboxed iframe card, `ui/*` postMessage bridge, CSP from `_meta.ui.csp`, per-card message rate limit | `mcp-app-card.tsx`, `store/mcp-app.ts`, `mcp-app-security.test.ts` | vendored (adapted) into `src/mcp/apps/report/view/appBridge.ts` + `hermesApp.tsx`, MIT notice and commit in `mcpAppsHostLicense.txt` |
+| Keep tool `_meta.ui` at discovery, fetch `ui://` resources, route iframe tool calls through Hermes's approvals | `tools/mcp_tool.py`, `tools/approval.py`, `tui_gateway/server.py` | not taken (core); log's plugin routes reach log directly |
+| Attach cards to tool results in the transcript, keep them across sessions | `lib/chat-messages.ts`, `thread/message-parts.tsx` | not taken (core); log uses a transcript directive, which Hermes keeps with the message |
+
+Design:
+
+1. **One directive.** `::logapp{tool="browserView" args='{"account":"..."}'}` (and `::logapp{tool="report" view="<id>"}` for a kept report) is claimed through the plugin SDK's `TRANSCRIPT_DIRECTIVE_AREA` in `hermesDesktop.tsx`. `::logbrowser{account}` stays as the documented shortcut and draws through the same card with `browserView`.
+2. **The card** fetches the tool's `ui://log/...` resource HTML, injects a CSP built only from the resource's `_meta.ui.csp` (`default-src 'none'`, scripts inline only, `connect-src` only the listed origins), and loads it in an `allow-scripts`-only iframe. It answers `ui/initialize` with a `hostContext` carrying the theme and the MCP Apps style variables read from Hermes's own CSS variables, sends `tool-input` and `tool-result` after `initialized`, follows `size-changed`, turns `ui/message` into a composer send (two seconds apart per card, the staged `ui/update-model-context` text in front), opens only http(s) links, and sends `host-context-changed` whenever Hermes's theme class changes.
+3. **The routes** are new in `hermesPlugin/dashboard/plugin_api.py`: `GET /apps/{tool}/resource`, `POST /apps/{tool}/result` (the tool run with the directive's arguments, or a kept report view) and `POST /apps/{tool}/call` (the iframe's `tools/call`). They talk to one warm Bun child, `scripts/hermes/appHost.ts`, which runs log's own `runToolCall`, so every gate is the one the MCP server applies. Allow-lists: a view opens only for a tool whose `_meta.ui.resourceUri` is a `ui://log/` resource, and a view may call only its own tools (same `resourceUri`) and read tools; any send, and `logCall`, is refused `logAppToolRefused` without running. `browserViewInput` still reaches the page only while it asks for sign-in (rule 94, `BrowserViewer.input`).
+4. **The report** draws through the same card: `saveHermesView` also keeps the compiled view and its data, and the model's line is `::logapp{tool="report" view="<id>"}`. `::logview{id}` lines already in transcripts still draw as before.
+5. **Parity first.** `hermesBrowser.tsx` and its `/browser/*` routes go once the replica-host bench shows `::logapp` at the MCP App host's numbers (about 20 fps, clicks under 100 ms), light and dark.
+
+Scope: log's own views only. Other servers' MCP Apps in Hermes still need upstream (#61095); log doesn't patch Hermes or wait on it.
+
+Done when (#210):
+
+- [ ] `::logapp` renders browserView in Hermes Desktop on the bench at the MCP App host's fps and click latency (about 20 fps, under 100 ms)
+- [ ] the report view renders in Hermes through `::logapp`, light and dark
+- [ ] a view's tool call from inside the iframe is refused when the gate refuses it (test)
+- [ ] MIT notice and source commit recorded; check:privacy, naming and agnostic pass
+- [ ] checked live in the owner's Hermes Desktop after merge
+
 ## Verification
 
 A host matrix test per release, each cell a check with a pass/fail:
@@ -211,6 +241,7 @@ A host matrix test per release, each cell a check with a pass/fail:
 8. The `.mcpb` Desktop extension (H).
 9. The host matrix and replica-host bench in CI (Verification).
 10. The app-submission challenge route on `mcp.listeningkit.com`, when the app is listed.
+11. `::logapp` in Hermes Desktop (K, #210): the vendored MCP Apps host card, so browserView and report draw in Hermes from the same widget ChatGPT and Claude get; then `hermesBrowser.tsx` goes.
 
 ## Open questions
 

@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite'
 import type { Migration } from '../types'
-import { INBOX_TABLES } from './inbox'
+import { INBOX_TABLES, TYPING_TABLES } from './inbox'
 import { PLATFORM_TABLES } from './platformTables'
 
 function hasColumn(handle: Database, table: string, column: string): boolean {
@@ -306,6 +306,14 @@ export const MIGRATIONS: readonly Migration[] = [
     creates: ['persons', 'identityLinks', 'identityLinksActive', 'identityLinksByPerson', 'identityNotLinked'],
     apply(handle) {
       for (const statement of PEOPLE_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 22,
+    name: 'typing',
+    creates: ['typing'],
+    apply(handle) {
+      for (const statement of TYPING_TABLES) handle.exec(statement)
     },
   },
 ]

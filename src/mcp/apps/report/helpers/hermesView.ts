@@ -4,6 +4,7 @@ import { defaultDbPath, openDatabase } from "../../../../storage/schema/index.ts
 import { getState, pruneState, putState } from "../../../../storage/state/index.ts";
 
 export const HERMES_VIEW_DIRECTIVE = "logview";
+export const HERMES_APP_DIRECTIVE = "logapp";
 export const HERMES_VIEW_SCOPE = "hermesView";
 export const HERMES_VIEW_ID = /^[0-9a-f]{8}$/;
 export const HERMES_VIEW_LIMIT = 512 * 1024;
@@ -15,6 +16,8 @@ export interface HermesView {
   subtitle?: string;
   html: string;
   text: string;
+  compiled?: string;
+  data?: Record<string, unknown>;
 }
 
 export function hermesClient(clientName: string | undefined): boolean {
@@ -22,7 +25,7 @@ export function hermesClient(clientName: string | undefined): boolean {
 }
 
 export function hermesViewTag(id: string): string {
-  return `::${HERMES_VIEW_DIRECTIVE}{id="${id}"}`;
+  return `::${HERMES_APP_DIRECTIVE}{tool="report" view="${id}"}`;
 }
 
 export function saveHermesView(view: HermesView, handle: Database = openDatabase(defaultDbPath()), now: number = Date.now()): string | null {

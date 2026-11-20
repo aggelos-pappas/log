@@ -65,7 +65,7 @@ The GeoIP database camoufox uses to place each proxy exit (`GeoIP AIO by daijro`
 ### Human input: Myuri
 
 ```bash
-pip install "myuri>=4,<6"         # human mouse, typing and scroll (LGPL-3.0)
+pip install "myuri==5.0.0"         # human mouse, typing and scroll (LGPL-3.0)
 ```
 
 With [Myuri](https://github.com/JWriter20/Myuri) installed, every session that

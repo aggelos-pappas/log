@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 54 domains, 602 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 55 domains, 611 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -59,6 +59,7 @@ The log MCP server is how every agent works with log-cli: it carries the owner's
 - **REQ-MCP-15** The loaded use case is the caller's play, kept under a handle, and a send needs a play that names it
 - **REQ-MCP-19** browserView shows an account's live browser where the person is, and only their own gated input reaches it
 - **REQ-MCP-20** report draws a report from log's block catalog in every host, inline where the host can and as markdown where it can't
+- **REQ-MCP-27** log's MCP App views draw in Hermes Desktop through one vendored host card (`::logapp`)
 - **REQ-MCP-22** Guides are scoped by capability and platform, fit every host, and say "the owner"
 - **REQ-MCP-23** Every result carries its code, platform and capability
 - **REQ-MCP-24** Both servers serve revision 2026-07-28 statelessly beside the older revisions
@@ -782,6 +783,19 @@ When an agent hand-rolls a data read or action (a scratch script or raw query ag
 - **REQ-HANDROLLED-03** Each hit is counted in log.db
 - **REQ-HANDROLLED-04** The hook advises on every host and never blocks
 - **REQ-HANDROLLED-05** log tool scaffold writes the tool through the syntax tree
+
+## [Updates](./updates.md)
+
+log knows its own version, hears about a newer release at most once a day without slowing a command, tells the CLI, the agent and the console, and updates only after the owner's yes, then resumes what was running. docs/updates.md explains it for people.
+
+- **REQ-UPDATE-01** The version and the install are known
+- **REQ-UPDATE-02** The newest release is checked at most once a day, never in front of a command
+- **REQ-UPDATE-03** The CLI, the agent and the console are told; the agent once per session
+- **REQ-UPDATE-04** An update asks first, refuses while busy, rolls back and resumes
+- **REQ-UPDATE-05** Every harness is refreshed, and every harness's agent is told
+- **REQ-UPDATE-06** Every local model is pinned to one revision, and log models says whether it is here
+- **REQ-UPDATE-07** Install and update run one after-install routine, at one release
+- **REQ-UPDATE-08** The README lists every release in order, with its models
 
 ## [Instagram](./instagram.md)
 

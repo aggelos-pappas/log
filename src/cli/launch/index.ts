@@ -281,7 +281,8 @@ async function setUpAdsPower(context: CommandContext): Promise<SetupOutcome | nu
 async function setUpHarness(harness: SetupHarness): Promise<SetupOutcome> {
   try {
     const got = launchDeps.installHarness(harness);
-    const detail = got.changed ? `wired: ${got.configPath}` : `already wired: ${got.configPath}`;
+    const desktop = got.desktopPlugin ? `; Desktop plugin ${got.desktopPlugin.changed ? "copied to" : "already at"} ${got.desktopPlugin.path}` : "";
+    const detail = `${got.changed ? `wired: ${got.configPath}` : `already wired: ${got.configPath}`}${desktop}`;
     return { label: harness.label, ok: true, detail: `${detail}, hooks in ${got.pluginDir}` };
   } catch (error) {
     return { label: harness.label, ok: false, detail: `couldn't wire it: ${String(error).slice(0, 200)}` };
