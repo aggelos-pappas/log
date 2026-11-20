@@ -1,0 +1,63 @@
+name: nightly
+
+on:
+  workflow_run:
+    workflows: [check]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  nightly:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      !contains(github.event.workflow_run.head_commit.message, 'release-please--branches--') &&
+      !startsWith(github.event.workflow_run.head_commit.message, 'chore(main): release')
+    runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Nightly version from the next patch, the time and the commit
+        id: version
+        env:
+          MESSAGE: ${{ github.event.workflow_run.head_commit.message }}
+        run: echo "version=$(bun scripts/release/nightlyVersion.ts --sha "$SHA" --message "$MESSAGE" --write)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to npm under the next dist-tag
+        if: ${{ steps.version.outputs.version != 'skip' && env.NPM_TOKEN != '' }}
+        run: npm publish --tag next --provenance --access public --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: GitHub prerelease for the nightly
+        if: ${{ steps.version.outputs.version != 'skip' && env.NPM_TOKEN != '' }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "v$VERSION" --target "$SHA" --prerelease --latest=false \
+            --title "nightly $VERSION" \
+            --notes "Nightly from main at $SHA. Install: \`bun add -g @listeningkit/log@$VERSION\`, or follow the track with \`log update --track nightly\`."

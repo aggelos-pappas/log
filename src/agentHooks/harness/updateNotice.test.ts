@@ -18,7 +18,7 @@ beforeAll(() => {
   for (const key of ["LOG_UPDATE_STATE", "LOG_UPDATE_CHECK"]) saved[key] = process.env[key];
   process.env.LOG_UPDATE_STATE = join(dir, "update.json");
   process.env.LOG_UPDATE_CHECK = "on";
-  writeFileSync(process.env.LOG_UPDATE_STATE, JSON.stringify({ latest: "9.9.9", notesUrl: "https://example.com/notes", checkedAt: new Date().toISOString(), channel: "stable" }));
+  writeFileSync(process.env.LOG_UPDATE_STATE, JSON.stringify({ latest: "9.9.9", notesUrl: "https://example.com/notes", checkedAt: new Date().toISOString(), track: "stable" }));
 });
 
 afterAll(() => {

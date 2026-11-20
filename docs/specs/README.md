@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 55 domains, 617 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 55 domains, 618 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -802,6 +802,7 @@ log knows its own version, hears about a newer release at most once a day withou
 - **REQ-UPDATE-06** Every local model is pinned to one revision, and log models says whether it is here
 - **REQ-UPDATE-07** Install and update run one after-install routine, at one release
 - **REQ-UPDATE-08** The README lists every release in order, with its models
+- **REQ-UPDATE-09** Every merge to main that passed CI is a nightly, and an install picks its track
 
 ## [Instagram](./instagram.md)
 

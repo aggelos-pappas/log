@@ -16,7 +16,7 @@ log tells you when a newer release is out, asks before it installs anything, and
 
 ## How the check works
 
-- It reads the newest GitHub Release of the repo named in `package.json` (`api.github.com/repos/<owner>/<repo>/releases/latest`). When the repo has no release yet, it reads npm's `latest` dist-tag. On the `beta` channel it takes the newest release, prereleases included (npm's `beta` or `next` tag as the fallback).
+- It reads the newest GitHub Release of the repo named in `package.json` (`api.github.com/repos/<owner>/<repo>/releases/latest`, which never answers a prerelease). When the repo has no release yet, it reads npm's `latest` dist-tag. On the `nightly` track it takes the highest version among the recent GitHub Releases, nightly prereleases included, with npm's `next` dist-tag (or `latest` when that is higher) as the fallback.
 - Each request has a 2 s timeout. Offline it says nothing and keeps the last answer.
 - It runs at most once every 24 hours, and never in front of a command: after a CLI command finishes, or when the prompt hook runs, a detached `scripts/update/check.ts` does it in the background.
 - The answer is kept in `~/.logCli/update.json` (`LOG_UPDATE_STATE` moves it): `latest`, `notesUrl`, `source`, `checkedAt`, and which sessions were already told.
@@ -36,11 +36,13 @@ In `~/.logCli/settings.json` (or `LOG_SETTINGS`), under `update`; the environmen
 | --- | --- | --- | --- |
 | `update.check` | `on` / `off` | `on` | `LOG_UPDATE_CHECK` |
 | `update.auto` | `ask`, `notify`, `auto` | `ask` | `LOG_UPDATE_AUTO` |
-| `update.channel` | `stable`, `beta` | `stable` | `LOG_UPDATE_CHANNEL` |
+| `update.track` | `stable`, `nightly` | `stable` | `LOG_TRACK` |
 
 ```json
-{ "update": { "check": "on", "auto": "ask", "channel": "stable" } }
+{ "update": { "check": "on", "auto": "ask", "track": "stable" } }
 ```
+
+`log update --track nightly` (or `stable`) saves `update.track` and plans against that track straight away. An older `update.channel` of `beta` (or `LOG_UPDATE_CHANNEL`) still counts as `nightly`; saving a track drops it.
 
 - `ask`: the agent asks the owner and updates only after a yes. Nothing installs by itself.
 - `notify`: the agent only says a release is out.
@@ -106,6 +108,17 @@ Where the files live: the judge in `~/.logCli/models/wolfDefenderSmall` (`LOG_JU
 
 To move a model to a new revision: change its `revision`, files, sizes and hashes in `src/models/manifest` (read them from `https://huggingface.co/api/models/<id>/revision/<sha>?blobs=true`), keep `MODEL_REVISION` in `python/judge/server.py` equal for the judge, run its tests, and the next release's `Models:` line and README row say `changed`.
 
+## Tracks: stable and nightly
+
+| Track | What it is | npm dist-tag | GitHub | Pick it |
+| --- | --- | --- | --- | --- |
+| `stable` | a release-please release, `X.Y.Z` | `latest` | a Release, tag `vX.Y.Z` | the default |
+| `nightly` | every merge to `main` whose `check` passed, `X.Y.(Z+1)-nightly.<UTC yyyymmddhhmm>.<sha7>` | `next` | a prerelease, tag `v<that version>`, never marked latest | `log update --track nightly`, `LOG_TRACK=nightly` for the installer, or `bun add -g @listeningkit/log@next` |
+
+A nightly sorts above the stable release it follows and below the next one, so moving back to `stable` waits for the next release rather than going down a version. A nightly lives on npm only: its version is set in CI and never committed, so a clone keeps following its branch with `git pull`, and `log update --apply` refuses to move a clone to one.
+
+`.github/workflows/nightly.yml` makes them. It runs when the `check` workflow finishes on a push to `main` and does nothing unless that check passed; a release-please commit (the release PR's merge) is skipped, since the release workflow publishes that one. `bun scripts/release/nightlyVersion.ts --sha <sha> --write` (`nightlyVersion` in `src/release/nightly`) sets the version in `package.json` and the Hermes dashboard manifest, then `npm publish --tag next --provenance --ignore-scripts` and `gh release create --prerelease --latest=false`. Without `NPM_TOKEN` neither is made.
+
 ## How a release is made
 
 Releases come from `main` with [release-please](https://github.com/googleapis/release-please):
@@ -113,7 +126,7 @@ Releases come from `main` with [release-please](https://github.com/googleapis/re
 1. Merged pull requests with conventional commit titles (`feat:`, `fix:`, `feat!:`) make release-please open or update a release PR that bumps `package.json` and writes `CHANGELOG.md`.
 2. On the release PR's branch, the same workflow runs `bun scripts/docs/releasesTable.ts` (`bun run docs:releases`): it adds the release's `Models:` line (the pins from `src/models/manifest`) to its `CHANGELOG.md` section, rebuilds the README's Releases table and pushes both to the release PR.
 3. Merging the release PR tags `vX.Y.Z` and creates the GitHub Release with its notes.
-4. The same workflow (`.github/workflows/release.yml`) then runs `npm publish --provenance --access public` for that tag. From then on the install scripts install that version, and `log update` moves installs to it.
+4. The same workflow (`.github/workflows/release.yml`) then runs `npm publish --provenance --access public --ignore-scripts` for that tag (`--ignore-scripts` because the `prepare` script installs git hooks with bun and lefthook, which the publish runner doesn't have). From then on the install scripts install that version, and `log update` moves installs to it.
 
 The workflow needs one repository secret, `NPM_TOKEN` (an npm automation token for `@listeningkit/log`). Without it the tag and the GitHub Release are still made, and the check still finds them; only the npm half is skipped. The contributor steps are in [contributing.md](contributing.md).
 

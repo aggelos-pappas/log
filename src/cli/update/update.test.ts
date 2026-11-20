@@ -9,7 +9,8 @@ afterEach(() => Object.assign(updateCommandDeps, saved))
 function fake(calls: string[]): void {
   updateCommandDeps.installed = () => ({ version: '0.2.1', kind: 'bunGlobal', root: '/fake/log', commit: null })
   updateCommandDeps.target = async () => ({ version: '0.2.2', notesUrl: null })
-  updateCommandDeps.settings = () => ({ check: true, auto: 'ask', channel: 'stable' })
+  updateCommandDeps.settings = () => ({ check: true, auto: 'ask', track: 'stable' })
+  updateCommandDeps.saveTrack = (track) => (calls.push(`saveTrack ${track}`), track)
   updateCommandDeps.effects = () =>
     ({
       busy: () => [],
@@ -70,5 +71,35 @@ describe('log update', () => {
     expect(result.code).toBe(0)
     expect(result.out).toBe('updated 0.2.1 -> 0.2.2, resumed: nothing was running; harnesses: Hermes plugin rewritten; models: none pinned in this release')
     expect(calls).toEqual(['writeResume', 'writeResume', 'install', 'writeResume', 'writeResume'])
+  })
+
+  test('--track saves the track and plans against it, installing nothing', async () => {
+    const calls: string[] = []
+    fake(calls)
+    updateCommandDeps.target = async () => ({ version: '0.2.2-nightly.202611201200.a1b2c3d', notesUrl: null })
+    const result = await run(['update', '--track', 'nightly'])
+    expect(result.code).toBe(0)
+    expect(result.out).toStartWith('track saved: nightly. ')
+    expect(result.out).toContain('0.2.1 -> 0.2.2-nightly.202611201200.a1b2c3d')
+    expect(calls).toEqual(['saveTrack nightly'])
+  })
+
+  test('an unknown track is refused before anything is saved', async () => {
+    const calls: string[] = []
+    fake(calls)
+    const result = await run(['update', '--track', 'beta'])
+    expect(result.code).toBe(1)
+    expect(calls).toEqual([])
+  })
+
+  test('a clone is not moved to a nightly, which lives only on npm', async () => {
+    const calls: string[] = []
+    fake(calls)
+    updateCommandDeps.installed = () => ({ version: '0.2.1', kind: 'gitClone', root: '/fake/log', commit: 'a'.repeat(40) })
+    updateCommandDeps.target = async () => ({ version: '0.2.2-nightly.202611201200.a1b2c3d', notesUrl: null })
+    const result = await run(['update', '--apply', '--approvedBy', 'the owner'])
+    expect(result.code).toBe(1)
+    expect(result.err).toContain('a clone follows its branch with git pull')
+    expect(calls).toEqual([])
   })
 })

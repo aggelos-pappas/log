@@ -21,3 +21,5 @@ A release that changes a local model changes `src/models/manifest` (and `MODEL_R
 The workflow needs the repository secret `NPM_TOKEN`: an npm automation token with publish rights on `@listeningkit/log` (Settings → Secrets and variables → Actions). Provenance needs nothing else: the job has `id-token: write`.
 
 Installs hear about the release within a day through the update check; see [updates.md](updates.md).
+
+Every merge to `main` whose `check` passed is also published as a nightly (`.github/workflows/nightly.yml`, npm dist-tag `next`, a GitHub prerelease); nobody runs it by hand either.
