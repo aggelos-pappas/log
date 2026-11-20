@@ -13,12 +13,24 @@ export interface ConversationAttachment {
   duration?: number
 }
 
+export const PLACE_KINDS = ['dm', 'group', 'channel', 'thread', 'forumPost', 'replies', 'post'] as const
+
+export type PlaceKind = (typeof PLACE_KINDS)[number]
+
+export interface Place {
+  kind: PlaceKind
+  server?: string
+  serverId?: string
+  channel?: string
+}
+
 export interface Conversation {
   platform: string
   account: string
   conversationId: string
   box: string
   with: string[]
+  place?: Place
   messages: ConversationMessage[]
 }
 
@@ -28,6 +40,7 @@ export interface Chunk {
   account: string
   conversationId: string
   with: string[]
+  place?: Place
   at: string | null
   messageIds: string[]
   text: string
@@ -38,6 +51,9 @@ export interface SearchFilters {
   account?: string
   with?: string
   after?: string
+  kind?: string
+  server?: string
+  channel?: string
 }
 
 export type Fusion = 'rrf' | 'bayes'

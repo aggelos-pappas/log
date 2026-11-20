@@ -510,6 +510,11 @@ def watch_of(token: str, seconds: float, spec: dict[str, Any]) -> dict[str, Any]
             if socket.dead():
                 return {"ok": False, "code": "sessionDead", "detail": "Discord's gateway closed with 4004 (authentication failed)", "loginState": "loggedOut", "messages": count}
             break
+        if event.get("op") == "TYPING_START":
+            t = event.get("d") or {}
+            if str(t.get("user_id")) != me and not t.get("guild_id") and t.get("channel_id"):
+                live({"kind": "typing", "channelId": t.get("channel_id"), "fromId": str(t.get("user_id")), "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(float(t.get("timestamp") or time.time())))})
+            continue
         if event.get("op") != "MESSAGE_CREATE":
             continue
         d = event.get("d") or {}

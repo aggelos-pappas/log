@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { BM25, tokenize } from 'bm25s'
 import { VectorDB } from 'verso-db'
 import type { Collection } from 'verso-db'
-import { bayesFusion, chunksOf, onePerPerson, percentiles, reciprocalRankFusion } from './helpers/index'
+import { bayesFusion, chunkPlace, chunksOf, onePerPerson, percentiles, placeFromBox, placeMatches, reciprocalRankFusion } from './helpers/index'
 import type { Scored } from './helpers/index'
 import { RELATION_TRUST, SEARCH_DEPTH } from './types'
 import type { Chunk, Conversation, Embedder, Latency, SearchHit, SearchOptions } from './types'
@@ -164,9 +164,10 @@ export async function updateIndex(conversations: Conversation[], embedder: Embed
   const chunks = merged.flatMap((c) => chunksOf(c))
   const held = new Map((JSON.parse(readFileSync(join(dir, 'chunks.json'), 'utf8')) as Chunk[]).map((c) => [c.id, c]))
   const fresh = chunks.filter((c) => held.get(c.id)?.text !== c.text)
+  const relabelled = chunks.some((c) => JSON.stringify(held.get(c.id)?.place ?? null) !== JSON.stringify(c.place ?? null))
   const ids = new Set(chunks.map((c) => c.id))
   const gone = [...held.keys()].filter((id) => !ids.has(id))
-  if (!fresh.length && !gone.length) return { chunks: chunks.length, conversations: merged.length, embedded: 0, removed: 0, ms: performance.now() - started, rebuilt: false }
+  if (!fresh.length && !gone.length && !relabelled) return { chunks: chunks.length, conversations: merged.length, embedded: 0, removed: 0, ms: performance.now() - started, rebuilt: false }
   const db = await VectorDB.open({ path: join(dir, 'vectors') })
   const collection = await db.collection<ChunkMeta>('chunks')
   if (gone.length) await collection.delete(gone)
@@ -191,6 +192,7 @@ export function twitterConversationOf(account: string, c: TwitterDmConversation)
     conversationId: c.conversationId,
     box: c.box ?? 'inbox',
     with: c.with.map((p) => p.handle ?? p.userId),
+    place: placeFromBox('twitter', c.box ?? 'inbox', c.conversationId),
     messages: c.messages.map((m) => ({ id: m.id, at: m.time ?? null, from: m.from ?? null, fromMe: m.fromMe === true, text: m.text ?? '' })),
   }
 }
@@ -209,7 +211,7 @@ function passes(chunk: Chunk, options: SearchOptions): boolean {
   if (options.account && chunk.account !== options.account) return false
   if (options.with && !chunk.with.some((w) => w.toLowerCase() === options.with!.toLowerCase().replace(/^@/, ''))) return false
   if (options.after && (chunk.at ?? '') < options.after) return false
-  return true
+  return placeMatches(chunkPlace(chunk), options)
 }
 
 export function relationList(index: ConversationIndex, relation: (chunk: Chunk) => number, options: SearchOptions = {}): Scored[] {
@@ -224,7 +226,7 @@ export function relationList(index: ConversationIndex, relation: (chunk: Chunk) 
 
 export async function search(index: ConversationIndex, query: string, options: SearchOptions = {}): Promise<SearchHit[]> {
   const limit = options.limit ?? 10
-  const filtered = Boolean(options.platform || options.account || options.with || options.after)
+  const filtered = Boolean(options.platform || options.account || options.with || options.after || options.kind || options.server || options.channel)
   const depth = Math.min(index.chunks.length, (options.depth ?? SEARCH_DEPTH) * (filtered ? 4 : 1))
   if (!depth) return []
   const keywordList = (async () => {

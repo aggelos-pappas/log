@@ -152,6 +152,8 @@ class BrowserGateway:
             self.ready.set()
         elif kind == "MESSAGE_CREATE":
             self.events.put({"op": "MESSAGE_CREATE", "d": flat_message(d)})
+        elif kind == "TYPING_START":
+            self.events.put({"op": "TYPING_START", "d": {"channel_id": d.get("channel_id"), "user_id": d.get("user_id"), "guild_id": d.get("guild_id"), "timestamp": d.get("timestamp")}})
         return beat
 
     async def heartbeat(self, ws: Any, interval: float) -> None:

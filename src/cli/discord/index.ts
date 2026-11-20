@@ -1,4 +1,5 @@
 import { cancel, intro, isCancel, outro, password, text } from "@clack/prompts";
+import { TYPING_HOLD_MS, clearTyping, recordTyping, typingNow, waitOutTyping } from "../../inbox/typing/index.ts";
 import { shouldPrompt } from "../launch/helpers/index.ts";
 import type { LaunchTTY } from "../launch/helpers/index.ts";
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -91,10 +92,11 @@ export const discordSessionCommand: Command = {
   },
 };
 
-export const discordDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, channel: string, since: string) => InboxMessage[]; now: () => string; mark: (account: string) => { log: string; offset: number } } = {
+export const discordDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, channel: string, since: string) => InboxMessage[]; typing: (account: string, channel: string) => string[]; now: () => string; mark: (account: string) => { log: string; offset: number } } = {
   profiles: () => readProfiles(),
   wait: (ms) => new Promise((done) => setTimeout(done, ms)),
   incoming: (account, channel, since) => incomingSince("discord", account, channel, since),
+  typing: (account, channel) => typingNow({ platform: "discord", account, conversationId: channel }),
   now: () => new Date().toISOString(),
   mark: (account) => watchLogMark("discord", account),
 };
@@ -429,6 +431,11 @@ export const discordWatchCommand: Command = {
           context.err(`${account.accountName}: the one owner of Discord's gateway as the account's own browser${only ? `, showing only ${only}` : ""}${seconds ? `, for ${seconds} s` : ", until stopped"}; new DMs, group messages, mentions and replies go to the inbox and every event to every attached subscriber`);
           const talks = new ServerTalks();
           return directDiscordLive(account, { action: "watch", seconds }, (event) => {
+            if (event.kind === "typing") {
+              if (event.channelId && event.fromId) recordTyping({ platform: "discord", account: account.accountName, conversationId: String(event.channelId) }, String(event.fromId), context.now?.() ?? new Date());
+              return;
+            }
+            if (event.kind === "message" && !event.fromMe && event.channelId && event.fromId) clearTyping({ platform: "discord", account: account.accountName, conversationId: String(event.channelId) }, String(event.fromId));
             emit(event);
             if (event.kind === "message" && !event.guildId && event.channelId && event.id) {
               recordPosition("discord", account.accountName, String(event.id), String(event.channelId));
@@ -668,7 +675,7 @@ export const discordSendCommand: Command = {
       if (!context.directDiscord) return { code: 1, stderr: "log discord send: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: send to ${label} ${planLine} on the direct-API engine, approved by ${approvedBy}`);
       const direct = context.directDiscord;
-      const sending = { movedOn: [] as string[], sent: [] as PlatformAnswer[], interrupted: [] as InboxMessage[], fenced: false };
+      const sending = { movedOn: [] as string[], sent: [] as PlatformAnswer[], interrupted: [] as InboxMessage[], fenced: false, stillTyping: false };
       const acted = await runAction<HeldGuard, typeof sending>({
         gate: async () => {
           const caught = kind === "channel" ? await waitCaughtUp("discord", account.accountName) : catchUpOneChat("discord", account.accountName, target, () => direct(account, { action: "read", channel: target, limit: 20, saveAudio: false, saveImages: false } as never).answer as { ok: boolean; messages?: ReadMessage[] }, context.now?.() ?? new Date());
@@ -698,6 +705,12 @@ export const discordSendCommand: Command = {
               sending.interrupted = discordDeps.incoming(account.accountName, target, startedAt);
               if (sending.interrupted.length) break;
             }
+            const turn = await waitOutTyping({ typing: () => discordDeps.typing(account.accountName, target), wrote: () => (sending.interrupted = discordDeps.incoming(account.accountName, target, startedAt)).length > 0, wait: discordDeps.wait });
+            if (turn === "wrote") break;
+            if (turn === "stillTyping") {
+              sending.stillTyping = true;
+              break;
+            }
             const step = guard.part(i, part);
             if (step === "lost") {
               sending.fenced = true;
@@ -724,11 +737,11 @@ export const discordSendCommand: Command = {
           }
           return sending;
         },
-        confirm: (s) => confirmParts({ sent: s.sent.filter((a) => a.ok && a.event === "sent").length, total: plan.parts.length, interrupted: s.interrupted.length > 0, movedOn: s.movedOn.length > 0, lost: s.fenced, last: s.sent[s.sent.length - 1] }),
+        confirm: (s) => confirmParts({ sent: s.sent.filter((a) => a.ok && a.event === "sent").length, total: plan.parts.length, interrupted: s.interrupted.length > 0 || s.stillTyping, movedOn: s.movedOn.length > 0, lost: s.fenced, last: s.sent[s.sent.length - 1] }),
       });
       if (acted.held) {
         const ok = sending.sent.filter((a) => a.ok && a.event === "sent").length;
-        acted.held.done(sending.interrupted.length ? "interrupted" : ok === plan.parts.length ? "sent" : "failed", `${ok} of ${plan.parts.length}${sending.fenced ? ", then the claim on this chat was lost, so the rest was held" : ""}: ${plan.parts.slice(0, ok).join(" / ").slice(0, 300)}`);
+        acted.held.done(sending.interrupted.length || sending.stillTyping ? "interrupted" : ok === plan.parts.length ? "sent" : "failed", `${ok} of ${plan.parts.length}${sending.fenced ? ", then the claim on this chat was lost, so the rest was held" : ""}: ${plan.parts.slice(0, ok).join(" / ").slice(0, 300)}`);
       }
       rethrowFailure(acted);
       if (!acted.held) return refuseGated("discord send", acted, "chatClaimedElsewhere");
@@ -738,6 +751,7 @@ export const discordSendCommand: Command = {
       const done = sent.filter((a) => a.ok && a.event === "sent");
       const code = done.length === plan.parts.length ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, approvedBy, split: { parts: plan.parts, gapSeconds: plan.gapSeconds, why: plan.why }, watermark, sent, interrupted }, null, 2) };
+      if (sending.stillTyping && !interrupted.length) return { code, stdout: `>>> STILL TYPING: ${account.accountName}: ${done.length} of ${plan.parts.length} sent, then they were typing for ${TYPING_HOLD_MS / 1000} s without sending, so the rest was held for when they finish:\n${plan.parts.slice(done.length).map((p) => `  ${p}`).join("\n")}` };
       if (interrupted.length) return { code, stdout: interruptedLines(account.accountName, interrupted, plan.parts.slice(done.length), done.length, plan.parts.length).join("\n") };
       if (code === 0) return { code, stdout: `log discord send: ${account.accountName} sent ${done.length === 1 ? `message ${last.messageId}` : `${done.length} messages (${done.map((a) => a.messageId).join(", ")})`} to ${shown}${done.length > 1 ? `, ${plan.gapSeconds} s apart` : ""}, the last at ${last.timestamp}.` };
       return { code, stdout: `log discord send: ${account.accountName}: ${done.length} of ${plan.parts.length} sent, then ${last.code}: ${last.detail ?? ""}. What was sent stays sent; nothing is retried.` };
