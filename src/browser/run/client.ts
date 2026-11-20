@@ -1,5 +1,5 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { hasStoredDevice, toDeviceProfile } from '../../camofox/device/index'
 import type { DeviceProfile, DeviceRunFile } from '../../camofox/device/index'
@@ -13,6 +13,7 @@ import { LAUNCH_LIMITS, listLaunches, overLaunchBudget } from './helpers/index'
 import type { PrepareRunOptions, PrepareRunResult } from './types'
 import { driverNameOf } from '../driver/client'
 import type { BrowserDriverName } from '../driver/types'
+import { logHome } from '../../config/logHome/index'
 
 export function toOrigins(raw: unknown): unknown[] {
   let value = raw
@@ -29,7 +30,7 @@ export function toOrigins(raw: unknown): unknown[] {
 
 export function captureDirFor(accountName: string, action: string, now: Date, root?: string, browser: BrowserDriverName = 'camoufox'): string {
   const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '')
-  return join(root ?? (process.env.LOG_RUNS_DIR || join(homedir(), '.logCli', 'runs')), action, `${stamp}_${accountName.replace(/\W/g, '')}`, browser)
+  return join(root ?? (process.env.LOG_RUNS_DIR || join(logHome(), 'runs')), action, `${stamp}_${accountName.replace(/\W/g, '')}`, browser)
 }
 
 export const OPENER_ACTIONS: ReadonlySet<string> = new Set(['inspect', 'flow', 'warmup', 'host'])
@@ -149,7 +150,7 @@ export function prepareRun(account: FacebookAccount, purpose: RunPurpose, option
       keep(): string {
         if (loginPath) rmSync(loginPath, { force: true })
         const stamp = (options.now ?? new Date()).toISOString().replace(/[-:]/g, '').slice(0, 15)
-        const target = join(process.env.LOG_UNSAVED_DIR || join(homedir(), '.logCli', 'runs', 'unsaved'), `${stamp}_${account.accountName}`)
+        const target = join(process.env.LOG_UNSAVED_DIR || join(logHome(), 'runs', 'unsaved'), `${stamp}_${account.accountName}`)
         mkdirSync(join(target, '..'), { recursive: true })
         try {
           renameSync(dir, target)

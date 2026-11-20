@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Communications",
 ]
 dependencies = [
-    "curl_cffi>=0.15",
+    "curl_cffi>=0.17",
     "pydantic>=2.6",
 ]
 

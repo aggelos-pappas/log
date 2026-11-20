@@ -28,6 +28,12 @@ Checked by: code and SubQ
 
 ### REQ-TIMING-04: Timings are stored and reported, never lost to a failure
 
-When a call ends, `timeCall` writes every span to log.db's `spans` table in one transaction and deletes spans older than 90 days once per process. Storing or exporting never fails the call. With `LOG_OTLP_URL` set, the spans are also posted as OTLP JSON to `<url>/v1/traces`. `log timing` (MCP `timing`) reads them: p50, p95 and p99 per tool, and per stage with its share of the tool's time and an `unaccounted` stage for the call's own time outside every stage. `--call <id>` shows one call as a waterfall, and an unknown id is refused with `callTimingMissing`.
+When a call ends, `timeCall` writes every span to log.db's `spans` table in one transaction and deletes spans older than 90 days once per process. Storing or exporting never fails the call. With `LOG_OTLP_URL` set, the spans are also posted as OTLP JSON to `<url>/v1/traces`. `log timing` (MCP `timing`) reads them: p50, p95 and p99 per tool, and per stage with its share of the tool's time and an `unaccounted` stage for the call's own time outside every stage. `--call <id>` shows one call as a waterfall, and an unknown id is refused with `callTimingMissing`. A failed call's root span keeps its refusal code as `code` in its attributes (`commandFailed` when there is none). `log tool health` (MCP `toolHealth`) reads the root spans of the last `--days` (default 14) and only reads: per tool its calls, failures, commonest code, p50, p95 and last use, and flags tools no call touched, tools failing more than 20% of at least 5 calls, and guides whose last commit is older than an input change of a tool they name or that call a tool nothing registers, each with a suggested fix.
+
+Checked by: code and SubQ
+
+### REQ-TIMING-05: Whole agent turns are timed and split into tool and agent time
+
+The prompt hook (`UserPromptSubmit`) starts a turn per session (`turnStarted`, state `turnStart`) and the `Stop` hook ends it (`turnEnded`; Hermes sends `Stop` from `post_llm_call` with the turn's tool-call count). The turn is one `spans` row with source `turn` and tool `turn:<host>`, carrying how many of log's top-level tool calls fell inside it, their summed ms and the rest as agent time. `log timing --turns` prints p50, p95 and p99 per turn and each turn's split.
 
 Checked by: code and SubQ

@@ -7,7 +7,8 @@ import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { SLACK_PLATFORM } from "../../slack/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
-import { slackDeps, slackToInboxOf } from "./index.ts";
+import { slackDeps, slackToInboxOf, slackTypingOf } from "./index.ts";
+import { typingNow } from "../../inbox/typing/index.ts";
 import { withD } from "./helpers/index.ts";
 import { liveLogVerdict } from "../../agentHooks/liveLog/index.ts";
 import { chatEvents } from "../../inbox/store/index.ts";
@@ -137,6 +138,64 @@ describe("log slack chats, read and send", () => {
       Object.assign(slackDeps, saved);
     }
   });
+
+  test("a line waits while they are typing, then goes out once they stop", async () => {
+    const saved = { ...slackDeps };
+    let waits = 0;
+    slackDeps.profiles = () => ({});
+    slackDeps.wait = async () => void waits++;
+    slackDeps.now = () => "2026-11-03T19:00:00.000Z";
+    slackDeps.incoming = () => [];
+    slackDeps.typing = () => (waits >= 1 && waits < 4 ? ["U0ADA"] : []);
+    try {
+      let n = 0;
+      const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo", "--live", "--approvedBy", "the owner"], () => ({ answer: { ok: true, sent: [{ ts: String(++n) }] }, refreshed: null }));
+      expect(r.code).toBe(0);
+      expect(r.calls).toEqual(["slackOne:send", "slackOne:send"]);
+      expect(waits).toBeGreaterThan(1);
+    } finally {
+      Object.assign(slackDeps, saved);
+    }
+  });
+
+  test("a one-line send waits out their typing too", async () => {
+    const saved = { ...slackDeps };
+    let waits = 0;
+    slackDeps.profiles = () => ({});
+    slackDeps.wait = async () => void waits++;
+    slackDeps.now = () => "2026-11-03T19:00:00.000Z";
+    slackDeps.incoming = () => [];
+    slackDeps.typing = () => (waits < 3 ? ["U0ADA"] : []);
+    try {
+      const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one", "--asOne", "--live", "--approvedBy", "the owner"], { answer: { ok: true, sent: [{ ts: "1" }] }, refreshed: null });
+      expect(r.code).toBe(0);
+      expect(r.calls).toEqual(["slackOne:send"]);
+      expect(waits).toBe(3);
+    } finally {
+      Object.assign(slackDeps, saved);
+    }
+  });
+
+  test("still typing at the limit holds the rest and says so", async () => {
+    const saved = { ...slackDeps };
+    let waits = 0;
+    slackDeps.profiles = () => ({});
+    slackDeps.wait = async () => void waits++;
+    slackDeps.now = () => "2026-11-03T19:00:00.000Z";
+    slackDeps.incoming = () => [];
+    slackDeps.typing = () => (waits ? ["U0ADA"] : []);
+    try {
+      let n = 0;
+      const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo\nthree", "--live", "--approvedBy", "the owner"], () => ({ answer: { ok: true, sent: [{ ts: String(++n) }] }, refreshed: null }));
+      expect(r.code).toBe(1);
+      expect(r.calls).toEqual(["slackOne:send"]);
+      expect(r.out).toContain(">>> STILL TYPING");
+      expect(r.out).toContain("  two");
+      expect(r.out).toContain("  three");
+    } finally {
+      Object.assign(slackDeps, saved);
+    }
+  });
 });
 
 describe("the Slack watch and the d cookie", () => {
@@ -146,6 +205,21 @@ describe("the Slack watch and the d cookie", () => {
     expect(slackToInboxOf({ type: "message", channel: "C1", fromMe: false, mentionsMe: false })).toBe(false);
     expect(slackToInboxOf({ type: "message", channel: "C1", fromMe: false, mentionsMe: true })).toBe(true);
     expect(slackToInboxOf({ type: "message", channel: "D1", fromMe: false, subtype: "message_changed" })).toBe(false);
+  });
+
+  test("the watcher keeps their typing in a DM or group, and their message clears it", () => {
+    const at = new Date("2026-11-20T02:00:00Z");
+    const later = new Date(at.getTime() + 2_000);
+    const dm = { platform: "slack", account: "slackTyping", conversationId: "D0TYPING01" };
+    slackTypingOf("slackTyping", { type: "user_typing", channel: "D0TYPING01", user: "U0ADA", fromMe: false }, at);
+    slackTypingOf("slackTyping", { type: "user_typing", channel: "D0TYPING01", user: "U0ME", fromMe: true }, at);
+    slackTypingOf("slackTyping", { type: "user_typing", channel: "C0TYPING01", user: "U0LINUS", fromMe: false }, at);
+    slackTypingOf("slackTyping", { type: "user_typing", channel: "G0TYPING01", user: "U0LINUS", fromMe: false }, at);
+    expect(typingNow(dm, later)).toEqual(["U0ADA"]);
+    expect(typingNow({ ...dm, conversationId: "C0TYPING01" }, later)).toEqual([]);
+    expect(typingNow({ ...dm, conversationId: "G0TYPING01" }, later)).toEqual(["U0LINUS"]);
+    slackTypingOf("slackTyping", { type: "message", channel: "D0TYPING01", user: "U0ADA", fromMe: false, text: "ok" }, later);
+    expect(typingNow(dm, later)).toEqual([]);
   });
 
   test("a saved d cookie replaces the old one and keeps the rest", () => {

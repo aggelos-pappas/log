@@ -21,6 +21,6 @@ Claude Code starts the log MCP server (`bun bin/logMcp.ts`, `.mcp.json`) once, w
 ## Done when
 
 - A code change to log reaches the next tool call **without restarting Claude Code or T3**.
-- A running job (a queue run) is never killed by a reload. The swap waits for it.
+- A running job (a queue run) is never killed by a reload. It finishes on the old server while every new call runs the new code.
 - The stale-server hook line no longer fires after a change. It's replaced by a line saying the server reloaded.
 - A new tool is reachable at once through `logCall`, and directly if Claude Code honours `list_changed`.

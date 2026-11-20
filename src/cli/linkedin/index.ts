@@ -5,8 +5,8 @@ import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseError, refuseInput } 
 import type { Command, CommandContext, CommandInput } from "../runner/types.ts";
 import type { PlatformAccount } from "../../platformKit/session/index.ts";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { logHome } from "../../config/logHome/index.ts";
 
 export const LINKEDIN_SESSION_USAGE = [
   "Usage: log linkedin session check --account <accountName> [--json]",
@@ -49,7 +49,7 @@ async function scriptsOf(context: CommandContext, account: PlatformAccount, json
   const run = context.directLinkedin!(account, { action: "scripts" });
   const scripts = Array.isArray(run.answer["scripts"]) ? (run.answer["scripts"] as string[]) : [];
   if (!run.answer.ok) return { code: 1, error: isErrorCode(run.answer.code) ? run.answer.code : "commandFailed", stderr: render(account.accountName, run.answer) };
-  const dir = join(process.env.LOG_CLI_HOME || join(homedir(), ".logCli"), "linkedin", account.accountName);
+  const dir = join(process.env.LOG_CLI_HOME || logHome(), "linkedin", account.accountName);
   mkdirSync(dir, { recursive: true });
   const file = join(dir, "appScripts.json");
   writeFileSync(file, JSON.stringify({ at: (context.now?.() ?? new Date()).toISOString(), scripts }, null, 2));

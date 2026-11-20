@@ -10,6 +10,7 @@ from typing import Any
 
 from device import deviceProfile
 from errors.errorCodes import checked, redact, register_secret
+from identity import browserIdentity as _identity
 
 _armed: dict[str, Any] = {
     "path": None,
@@ -152,9 +153,20 @@ def twocaptcha_proxy() -> dict[str, str] | None:
 
 
 def locate_ip(ip: str) -> dict[str, Any]:
-    from camoufox.geolocation import get_geolocation
+    from camoufox import geolocation
+    from camoufox.exceptions import UnknownIPLocation
 
-    geo = get_geolocation(ip)
+    try:
+        geo = geolocation.get_geolocation(ip)
+    except UnknownIPLocation:
+        raise
+    except Exception as exc:
+        kept = geolocation.get_mmdb_path("ipv6" if ":" in ip else "ipv4", geolocation.load_geoip_config())
+        if not kept.exists():
+            raise
+        log(f"GeoIP update failed ({type(exc).__name__}: {str(exc)[:120]}); keeping the database already on this machine")
+        os.utime(kept)
+        geo = geolocation.get_geolocation(ip)
     return {"country": str(geo.locale.region or "").upper(), "timezone": str(geo.timezone or ""),
             "latitude": geo.latitude, "longitude": geo.longitude}
 
@@ -226,7 +238,7 @@ def facebook_ms(proxy: dict[str, Any]) -> int | None:
         for probe in FACEBOOK_PROBES:
             started = time.monotonic()
             try:
-                opener.open(urllib.request.Request(probe, headers={"User-Agent": "Mozilla/5.0"}), timeout=15).read(256)
+                opener.open(urllib.request.Request(probe, headers={"User-Agent": _identity.user_agent()}), timeout=15).read(256)
             except urllib.error.HTTPError:
                 pass
             except Exception:

@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { transform } from "sucrase";
 import { KitProvider, setHost } from "./kit.tsx";
+import type { KitHost } from "./kit.tsx";
 import { VIEW_MODULES, viewFromModule } from "./run.ts";
 
 export const VIEW_IMPORTS = ["log", "react"] as const;
@@ -68,15 +69,54 @@ export function htmlText(html: string): string {
     .trim();
 }
 
-export function viewText(compiled: string, data: Record<string, unknown>, title?: string, subtitle?: string): string {
-  const host = { call: async () => Promise.reject(new Error("no live calls in text")), data };
+function staticMarkup(compiled: string, data: Record<string, unknown>, title: string | undefined, subtitle: string | undefined, host: KitHost): string {
   setHost(host);
   const View = viewFromModule(new Function("require", "module", "exports", compiled) as Parameters<typeof viewFromModule>[0]);
-  return htmlText(renderToStaticMarkup(
+  return renderToStaticMarkup(
     <KitProvider value={host}>
       <View data={data} title={title} subtitle={subtitle} />
     </KitProvider>,
-  ));
+  );
+}
+
+export function viewText(compiled: string, data: Record<string, unknown>, title?: string, subtitle?: string): string {
+  return htmlText(staticMarkup(compiled, data, title, subtitle, { call: async () => Promise.reject(new Error("no live calls in text")), data }));
+}
+
+export function viewMarkup(compiled: string, data: Record<string, unknown>, title?: string, subtitle?: string): string {
+  return staticMarkup(compiled, data, title, subtitle, { call: async () => Promise.reject(new Error("no live calls in a drawn view")), data, ask: async () => {} });
+}
+
+const DARK_MEDIA = "@media (prefers-color-scheme: dark) {";
+
+function closingBrace(css: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === "{") depth++;
+    else if (css[i] === "}" && --depth === 0) return i;
+  }
+  return css.length;
+}
+
+export function scopeKitCss(css: string, scope = ".logview"): string {
+  let out = css
+    .replace(/:root,\s*\[data-sb-theme='classic'\]/g, scope)
+    .replace(/:root/g, scope)
+    .replace(/html, body/g, scope)
+    .replace(/#root/g, scope);
+  for (let at = out.indexOf(DARK_MEDIA); at !== -1; at = out.indexOf(DARK_MEDIA, at)) {
+    const open = at + DARK_MEDIA.length - 1;
+    const close = closingBrace(out, open);
+    const inner = out.slice(open + 1, close).replace(/([^{}]+)\{/g, (_, selectors: string) => `${selectors.split(",").map((s) => `.dark ${s.trim()}`).join(", ")} {`);
+    out = out.slice(0, at) + inner + out.slice(close + 1);
+  }
+  return out;
+}
+
+const HERMES_FRAME = ".logview { display: block; margin: 8px 0; border-radius: 16px; overflow: hidden; max-width: 1100px; line-height: 1.45; } .logview .sb-page { padding: 20px 22px 24px; } .logview button { font: inherit; }";
+
+export function hermesKitCss(): string {
+  return `${geistFace()}${scopeKitCss(readFileSync(KIT_CSS, "utf8"))}${HERMES_FRAME}`;
 }
 
 let built: Promise<string> | null = null;

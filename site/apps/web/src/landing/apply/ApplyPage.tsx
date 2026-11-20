@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import { faCheck, faEnvelope, faFileLines, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { SiteHeader } from '../SiteHeader'
 import { SiteFooter } from '../SiteFooter'
@@ -9,6 +8,7 @@ import { DitherFade } from '../useCases/DitherFade'
 import { StoryFaq } from '../story/StorySections'
 import { ApplyDemo } from './ApplyDemo'
 import { InstallCard } from './InstallCard'
+import { StarButton } from './StarButton'
 import { BuiltWithMap } from './BuiltWith'
 import {
   APPLY_COMPARE,
@@ -80,15 +80,10 @@ function Hero() {
         <div className="relative z-30 mt-8 w-full max-w-2xl">
           <InstallCard id="installTop" />
         </div>
-        <a
-          href={APPLY_GITHUB_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="relative z-30 mt-5 inline-flex items-center gap-2 text-[15px] font-bold text-white/90 underline decoration-white/40 underline-offset-4 transition-colors hover:text-white hover:decoration-white"
-        >
-          <FontAwesomeIcon icon={faGithub} className="text-[16px]" />
-          github.com/deepmroot/log-apply
-        </a>
+        <div className="relative z-30 mt-6 flex flex-col items-center gap-2">
+          <StarButton />
+          <p className="text-[14px] font-medium text-white/85 [text-shadow:0_1px_2px_rgba(13,42,76,0.4)]">Free and open source. A star helps more people find it.</p>
+        </div>
         <div className="mt-14 w-full md:mt-20">
           <ApplyDemo />
         </div>
@@ -310,15 +305,10 @@ function FinalInstall() {
         <div className="mt-9 w-full max-w-2xl">
           <InstallCard id="installBottom" />
         </div>
-        <a
-          href={APPLY_GITHUB_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-6 inline-flex items-center gap-2 text-[15px] font-bold text-white/90 underline decoration-white/40 underline-offset-4 transition-colors hover:text-white hover:decoration-white"
-        >
-          <FontAwesomeIcon icon={faGithub} className="text-[16px]" />
-          Star it on GitHub, MIT licensed
-        </a>
+        <div className="mt-8 flex flex-col items-center gap-2">
+          <StarButton />
+          <p className="text-[14px] font-medium text-white/85">If it saved you an evening of forms, leave a star. MIT licensed.</p>
+        </div>
       </div>
     </section>
   )

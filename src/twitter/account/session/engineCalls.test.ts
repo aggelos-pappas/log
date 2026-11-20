@@ -40,25 +40,40 @@ describe('every X engine call on one account waits its turn, spaced like a perso
   })
 
   test('the gap is drawn between 4 and 11 seconds', () => {
-    expect(engine('print(json.dumps(list(e.SPACING_SECONDS)))')).toEqual([4, 11])
-    expect(engine('print(json.dumps(list(e.READ_SPACING_SECONDS)))')).toEqual([0.8, 2.5])
-    expect(engine("e.mark_call('acct', now=1000.0)\nprint(json.dumps(e.spacing_wait('acct', now=1000.0, action='inbox')))")).toBeLessThanOrEqual(2.5)
-    expect(engine("e.mark_call('acct', now=1000.0)\nprint(json.dumps(e.spacing_wait('acct', now=1000.0, action='dm')))")).toBeGreaterThanOrEqual(4)
-  }, 30_000)
+    const [spacing, readSpacing, inbox, dm] = engine("e.mark_call('acct', now=1000.0)\nprint(json.dumps([list(e.SPACING_SECONDS), list(e.READ_SPACING_SECONDS), e.spacing_wait('acct', now=1000.0, action='inbox'), e.spacing_wait('acct', now=1000.0, action='dm')]))") as [number[], number[], number, number]
+    expect(spacing).toEqual([4, 11])
+    expect(readSpacing).toEqual([0.8, 2.5])
+    expect(inbox).toBeLessThanOrEqual(2.5)
+    expect(dm).toBeGreaterThanOrEqual(4)
+  })
 
   test('a second call on the same account waits until the first lets go', () => {
     const order = engine(`
 order = []
-async def call(name, hold):
-    async with e.AccountLock('acct'):
-        order.append(name + ' in')
-        await asyncio.sleep(hold)
-        order.append(name + ' out')
+clock = [1000.0]
+async def tick(seconds):
+    clock[0] += seconds
+    await asyncio.sleep(0)
+held = asyncio.Event()
+release = asyncio.Event()
+async def first():
+    async with e.AccountLock('acct', clock=lambda: clock[0], sleep=tick):
+        order.append('first in')
+        held.set()
+        await release.wait()
+        order.append('first out')
+async def second():
+    await held.wait()
+    waiting = asyncio.create_task(e.AccountLock('acct', clock=lambda: clock[0], sleep=tick).__aenter__())
+    for _ in range(5):
+        await asyncio.sleep(0)
+    release.set()
+    lock = await waiting
+    order.append('second in')
+    await lock.__aexit__(None, None, None)
+    order.append('second out')
 async def both():
-    first = asyncio.create_task(call('first', 1.2))
-    await asyncio.sleep(0.2)
-    await call('second', 0)
-    await first
+    await asyncio.gather(first(), second())
 asyncio.run(both())
 print(json.dumps(order))`)
     expect(order).toEqual(['first in', 'first out', 'second in', 'second out'])
@@ -68,8 +83,11 @@ print(json.dumps(order))`)
     const answer = engine(`
 async def blocked():
     async with e.AccountLock('acct'):
+        clock = [1000.0]
+        async def tick(seconds):
+            clock[0] += seconds
         try:
-            async with e.AccountLock('acct', wait_seconds=0.6):
+            async with e.AccountLock('acct', wait_seconds=600, clock=lambda: clock[0], sleep=tick):
                 return 'ran'
         except e.AccountBusy:
             return 'accountBusy'

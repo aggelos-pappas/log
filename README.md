@@ -156,6 +156,10 @@ Then ask in plain words: *"read my X DMs and tell me who's waiting on me"*. log'
 - **One session per account.** Each account keeps one connection open, the way the platform's own app does, never a new one per command.
 - **Live inbox.** New messages are pushed into your agent's context as they arrive, and two agents never answer the same chat.
 - **Kept human.** Every account has its own daily limits, pacing and local waking hours. A refusal from the platform stops the run, and nothing is retried.
+- **A judge on every message in.** The voice gate checks what goes out; the judge checks what comes in. Token stealers, encoded scripts and prompt injection are held before your agent reads them, and a small local model marks what the rules miss ([#189](https://github.com/matthewdonsemail-lab/log/pull/189), [#190](https://github.com/matthewdonsemail-lab/log/pull/190)).
+- **Turn aware.** On Discord and Slack a multi-line reply waits while they are typing, and holds the rest if they write back or keep typing ([#199](https://github.com/matthewdonsemail-lab/log/pull/199), [#202](https://github.com/matthewdonsemail-lab/log/pull/202)).
+- **Search knows where it was said.** Every hit names a DM, a group or a server channel, and you can search only one of them ([#198](https://github.com/matthewdonsemail-lab/log/pull/198)).
+- **It watches its own tools.** Tool health shows which tools are used, which fail and which guides went stale, and suggests the fix ([#203](https://github.com/matthewdonsemail-lab/log/pull/203)).
 - **Your machine, your data.** Accounts and sessions stay in `~/.logCli`. Many accounts? Keep them in [Twenty](docs/twenty.md), an open-source CRM, so every machine, agent and teammate sees the same ones.
 
 ## Works in every harness
@@ -166,7 +170,7 @@ A harness is the agent app you talk to log through. log is the same MCP server i
 |---|---|---|---|---|
 | [Claude Code](docs/harnesses/claudeApp.md#claude-code) | local or hosted | its prompt hook runs the router on every prompt | hooks on every prompt and after every tool call | text; sign-in in the window on your screen |
 | [Codex](docs/harnesses/codex.md) | local or hosted | its prompt hook | hooks on every prompt and around tool calls | text |
-| [Hermes](docs/harnesses/hermes.md) | local or hosted | the `logHooks` plugin's `pre_llm_call`, before every model call | the same hook, before every model call | text, plus a **log tab** in the Hermes dashboard |
+| [Hermes](docs/harnesses/hermes.md) | local or hosted | the `log` plugin's `pre_llm_call`, before every model call | the same hook, before every model call | text, plus a **log tab** in the Hermes dashboard |
 | [OpenCode](docs/harnesses/README.md) | local | its prompt hook | its plugin's hooks | text |
 | [Antigravity](docs/harnesses/README.md) | local | its prompt hook | its hooks | text |
 | [Cursor](docs/harnesses/cursor.md) | local or hosted | `getGuide({ ask })` (Cursor's prompt hook can't add context) | `sessionStart` and `postToolUse` hooks | MCP Apps: `report` and `browserView` inline |
@@ -297,7 +301,7 @@ flowchart TD
   VG --> LIVE["Sent as you, only with --live<br/>and your approval"]
 ```
 
-1. **The hook runs it for you.** In a harness with a prompt hook, the router runs before the model sees your message, and its answer is added to the turn. In Hermes this is the `logHooks` plugin's `pre_llm_call`.
+1. **The hook runs it for you.** In a harness with a prompt hook, the router runs before the model sees your message, and its answer is added to the turn. In Hermes this is the `log` plugin's `pre_llm_call`.
 2. **Or the model asks.** Everywhere else, the server's instructions and every tool's description tell the model to call `getGuide({ ask: "<your words>" })` first. It's the same router, so the same prompt gets the same play. A golden set of prompts checks that (`src/useCases/router/fixtures/golden.json`).
 3. **Words, then meaning.** Each play lists how people ask for it. The hook's warm context service adds a meaning score from MiniLM, a small model on your machine, in about 12 ms. If the service is down, the hook falls back to the word score, so a play is still named.
 4. **A clear match loads the play. A near tie doesn't.** A clear match names the play and its steps load with `getGuide({ useCase })`. A near tie shows a short menu and loads nothing. Building or fixing log itself is never a play.
@@ -349,6 +353,8 @@ Its steps load with getGuide({ useCase: "twitter/dmInbox" }).
 - **Every session has its own cursor.** Nothing is shown twice, and nothing is missed between turns.
 - **Gaps are caught up, never guessed.** When a connection drops, the watcher pulls what it missed through the account's own session, paced like a person. Until it has, a send that needs that context waits. If the platform refuses, the run stops and you're told.
 - **Two agents never answer the same chat.** An agent claims a chat before it drafts, and every claim, send and release is written down in `log.db`.
+- **Judged before it's shown.** Everything other people wrote passes the judge first. A strong hit holds the whole chat behind one alert (who, where, why); a weak hit or a model flag is shown marked as data, never as an instruction.
+- **It waits its turn.** While they are typing, a reply waits; their message stops the rest of a multi-line reply, so it never talks over them.
 
 ### Pictures, voice notes and videos
 
@@ -447,6 +453,24 @@ Every call is timed: `log timing` shows p50, p95 and p99 for every tool and each
 - **Gentle on your accounts.** The platform isn't asked again every time your agent looks something up. One account was disabled after an agent read a server too much, too fast (rule 94), and reading from `log.db` keeps that from happening.
 - **Yours.** Your messages, sessions and media text stay on your machine in one file you can back up.
 - **Shareable when you need it.** Accounts can live in [Twenty](docs/twenty.md) so several machines share them. A hosted version, with a login per user, is planned.
+
+## Roadmap
+
+What's built, what's next and what's planned is kept in one pinned issue: **[Roadmap #200](https://github.com/matthewdonsemail-lab/log/issues/200)**. In short:
+
+| Area | Built | Next |
+|---|---|---|
+| Security | the judge's rules and local model | judging images, a guard before tool calls, taint, a canary token, an attack-set benchmark, an encrypted account store |
+| The record ([soron](docs/proposals/soron.md), [#197](https://github.com/matthewdonsemail-lab/log/issues/197)) | search by DM, group or channel | keeping edits and deletions, capturing the conversation around a personal mention (kept after a ban), judging each message the moment it arrives |
+| Turn awareness ([spec](https://github.com/matthewdonsemail-lab/log/blob/turnAware/docs/proposals/turnAware.md)) | typing on Discord and Slack | X Chat |
+| Tools | tool health | recording which tools the router offered, so unused tools can be told apart from unseen ones |
+| Your day | | a morning debrief: who is waiting, what you owe, what was held overnight |
+| Voice | cloned voice notes | voice-note replies in your voice, then calls, with your yes per call |
+| Browser | human mouse: Fitts's-law timing, corrective moves, tremor ([#201](https://github.com/matthewdonsemail-lab/log/pull/201)) | sign-ins moving from AdsPower to Camoufox, browser-fingerprinted HTTP for X and Discord |
+| Every harness ([spec](https://github.com/matthewdonsemail-lab/log/blob/genuiEverywhere/docs/proposals/genuiEverywhere.md), [#196](https://github.com/matthewdonsemail-lab/log/pull/196)) | views in Cursor, Claude and ChatGPT where the host draws MCP Apps | a ChatGPT connector, a smaller inbox tool profile, a Claude Desktop extension, a render test on every PR |
+| Speed | | the prompt hook under 150 ms |
+
+Built here means written, tested and in an open PR; each lands in a release once merged.
 
 ## CLI
 

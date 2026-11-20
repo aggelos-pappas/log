@@ -14,9 +14,10 @@ import type { LabelledMeme, Situation } from './situation'
 import { trainerPage } from './trainerPage'
 import { callMatched, gateFrom, makeCall, writeTrainingData } from './call'
 import type { ModelCall } from '../types'
+import { logHome } from '../../../config/logHome/index'
 
 export function ratingsPath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_MEME_RATINGS || join(homedir(), '.logCli', 'memes', 'ratings.jsonl')
+  return env.LOG_MEME_RATINGS || join(logHome(), 'memes', 'ratings.jsonl')
 }
 
 export function readRatings(path = ratingsPath()): TasteRating[] {
@@ -58,7 +59,7 @@ export const MIN_MEMES = 9
 
 export function startTrainer(opts: { port: number; client: MemelordClient; llm: Llm; taste: () => TasteIndex | null; people?: readonly NicheMapEntry[]; ratings?: string; brandDir?: string; log?: (line: string) => void }) {
   const ratings = opts.ratings ?? ratingsPath()
-  const brandDir = opts.brandDir ?? join(homedir(), '.buzz', 'brand-kit')
+  const brandDir = opts.brandDir ?? process.env.LOG_BRAND_KIT ?? join(logHome(), 'brandKit')
   const log = opts.log ?? (() => {})
   const recentNames: string[] = []
   const recentSearches: string[] = []

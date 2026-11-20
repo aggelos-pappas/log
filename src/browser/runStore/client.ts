@@ -1,6 +1,5 @@
 import { appendRecord } from '../../storage/records/index'
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statfsSync, statSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { knownRequests } from '../../subq/stepReading/client.ts'
@@ -9,9 +8,10 @@ import { DOCUMENT_FIELDS, EXCHANGES_FILE } from '../../subq/stepReading/types.ts
 import { openInspects } from '../inspect/index.ts'
 import { domainsInHar } from './helpers/domainsInHar.ts'
 import type { Backfill, PrunedRun, RunEntry, StepHar } from './types.ts'
+import { logHome } from '../../config/logHome/index.ts'
 
 export function logCliRoot(): string {
-  return process.env.LOG_CAPTURES_ROOT || join(homedir(), '.logCli')
+  return process.env.LOG_CAPTURES_ROOT || logHome()
 }
 
 const RUN_FOLDER = /^(\d{4})(\d{2})(\d{2})T\d{6}_(.+)$/

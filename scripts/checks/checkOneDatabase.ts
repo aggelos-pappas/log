@@ -16,6 +16,7 @@ const WHY: Record<Kind, string> = {
 const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'src/auth/credentials/client.ts': { writes: 1, kind: 'session' },
   'src/directApi/governor/client.ts': { writes: 1, kind: 'session' },
+  'src/inbox/judgeModel/client.ts': { writes: 1, kind: 'session' },
   'scripts/checks/checkAgentHooks.ts': { writes: 1, kind: 'repo' },
   'scripts/checks/checkAgnostic.ts': { writes: 1, kind: 'repo' },
   'scripts/checks/checkBrowserParity.ts': { writes: 1, kind: 'repo' },
@@ -33,6 +34,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'scripts/fbk/tryAccount.ts': { writes: 1, kind: 'capture' },
   'scripts/media/personaPictures.ts': { writes: 1, kind: 'dataset' },
   'scripts/useCases/benchRouter.ts': { writes: 1, kind: 'dataset' },
+  'scripts/useCases/evalSkillRouter.ts': { writes: 1, kind: 'dataset' },
   'src/agentHooks/opencode/client.ts': { writes: 1, kind: 'repo' },
   'src/agentHooks/hermes/client.ts': { writes: 1, kind: 'repo' },
   'src/agentHooks/harness/client.ts': { writes: 1, kind: 'session' },

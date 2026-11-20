@@ -133,6 +133,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bun \"$(git rev-parse --show-toplevel)/scripts/hooks/relate.ts\" --host codex",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "bun \"$(git rev-parse --show-toplevel)/scripts/hooks/queue.ts\" --host codex",
             "timeout": 10
           }
@@ -207,6 +216,16 @@
           {
             "type": "command",
             "command": "bun \"$(git rev-parse --show-toplevel)/scripts/hooks/liveLogs.ts\" --host codex",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell|Monitor|Write|shell|apply_patch|run_command|write_to_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"$(git rev-parse --show-toplevel)/scripts/hooks/handRolled.ts\" --host codex",
             "timeout": 10
           }
         ]

@@ -75,7 +75,7 @@ const anchors: RequirementAnchors = {
   'REQ-GROUP-13': [
     { kind: 'symbol', file: MEMBERS, name: 'saveMembers' },
     { kind: 'symbol', file: MEMBERS, name: 'membersDirOf' },
-    { kind: 'string', file: MEMBERS, includes: '.logCli' },
+    { kind: 'uses', file: MEMBERS, name: 'logHome' },
     { kind: 'string', file: MEMBERS, includes: 'members' },
   ],
   'REQ-GROUP-14': [

@@ -21,6 +21,8 @@ from platformKit import engine as kit
 from platformKit import media
 from platformKit import reactions
 from discordApi import browserGateway, browserIdentity, browserRest
+from logHome import log_home
+from identity import browserIdentity as _identity
 
 PLATFORM = "discord"
 LIBRARY = "vendor/endcord"
@@ -175,7 +177,7 @@ TEXT_CHANNELS = (0, 5, 15, 16)
 
 
 def servers_path(spec: dict[str, Any]) -> Path:
-    return Path.home() / ".logCli" / "discord" / re.sub(r"[^0-9A-Za-z_-]", "_", str(spec.get("account") or "account")) / "servers.json"
+    return log_home() / "discord" / re.sub(r"[^0-9A-Za-z_-]", "_", str(spec.get("account") or "account")) / "servers.json"
 
 
 def server_channels_of(client: Any, spec: dict[str, Any]) -> tuple[list[dict[str, Any]], str | None]:
@@ -228,7 +230,7 @@ def chats_of(token: str, spec: dict[str, Any] | None = None) -> dict[str, Any]:
 
 
 MEDIA_LINK = re.compile(r"^https?://\S+?\.(mp4|mov|gif|jpe?g|png|webp)(\?\S*)?$", re.I)
-OUTGOING_MEDIA = Path.home() / ".logCli" / "discord" / "media" / "outgoing"
+OUTGOING_MEDIA = log_home() / "discord" / "media" / "outgoing"
 
 
 def media_file_of(link: str) -> Path:
@@ -238,7 +240,7 @@ def media_file_of(link: str) -> Path:
     OUTGOING_MEDIA.mkdir(parents=True, exist_ok=True)
     path = OUTGOING_MEDIA / f"{hashlib.sha1(link.encode()).hexdigest()[:16]}{Path(link.split('?')[0]).suffix.lower()}"
     if not path.exists():
-        with urllib.request.urlopen(urllib.request.Request(link, headers={"User-Agent": "Mozilla/5.0"}), timeout=60) as answer:
+        with urllib.request.urlopen(urllib.request.Request(link, headers={"User-Agent": _identity.user_agent("discord")}), timeout=60) as answer:
             path.write_bytes(answer.read())
     return path
 
@@ -257,7 +259,7 @@ def attached_media(client: Any, channel: str, text: str) -> tuple[list[dict[str,
     return [{"upload_url": slot["upload_url"], "upload_filename": slot["upload_filename"], "name": f"meme{path.suffix}"}], None
 
 
-FILE_ROOTS = [Path(os.environ.get("LOG_OUTBOX") or Path.home() / ".buzz" / "OUTBOX"), Path.home() / ".logCli"]
+FILE_ROOTS = [Path(os.environ.get("LOG_OUTBOX") or log_home() / "outbox"), log_home()]
 FILE_MAX_BYTES = 10 * 1024 * 1024
 
 
@@ -296,7 +298,22 @@ def typing_seconds(text: str) -> float:
     return random.uniform(min(12.0, 1.5 + len(text) / 9), min(20.0, 3.0 + len(text) / 6))
 
 
-def typed(client: Any, channel: str, text: str, sleep: Any = time.sleep) -> dict[str, Any] | None:
+def heard_in(log: str, offset: int, chat: str) -> Any:
+    marker = f" chat {chat} · "
+
+    def heard() -> str:
+        try:
+            with open(log, "rb") as f:
+                f.seek(max(0, offset))
+                lines = f.read().decode("utf-8", errors="replace").splitlines()
+        except OSError:
+            return ""
+        return next((line for line in lines if marker in line), "")
+
+    return heard
+
+
+def typed(client: Any, channel: str, text: str, sleep: Any = time.sleep, heard: Any = None) -> dict[str, Any] | None:
     left = typing_seconds(text)
     while left > 0:
         answer = client.send_typing(channel)
@@ -307,10 +324,13 @@ def typed(client: Any, channel: str, text: str, sleep: Any = time.sleep) -> dict
         step = min(left, TYPING_REFRESH_SECONDS)
         sleep(step)
         left -= step
+        said = heard() if heard else ""
+        if said:
+            return {"ok": False, "code": "chatMovedOn", "detail": f"they wrote while this was being typed, so it wasn't sent: {said.strip()}", "loginState": "loggedIn", "event": "held", "channelId": channel}
     return None
 
 
-def send_of(token: str, channel: str, text: str, paths: list[str] | None = None, sleep: Any = time.sleep) -> dict[str, Any]:
+def send_of(token: str, channel: str, text: str, paths: list[str] | None = None, sleep: Any = time.sleep, heard: Any = None) -> dict[str, Any]:
     client, failed = open_client(token)
     if failed:
         return failed
@@ -331,7 +351,7 @@ def send_of(token: str, channel: str, text: str, paths: list[str] | None = None,
         return failed
     content = "" if files and not documents else text
     if content.strip():
-        refused = typed(client, target, content, sleep)
+        refused = typed(client, target, content, sleep, heard)
         if refused:
             return refused
     sent = client.send_message(target, content, attachments=(files + documents) or None)
@@ -492,6 +512,11 @@ def watch_of(token: str, seconds: float, spec: dict[str, Any]) -> dict[str, Any]
             if socket.dead():
                 return {"ok": False, "code": "sessionDead", "detail": "Discord's gateway closed with 4004 (authentication failed)", "loginState": "loggedOut", "messages": count}
             break
+        if event.get("op") == "TYPING_START":
+            t = event.get("d") or {}
+            if str(t.get("user_id")) != me and not t.get("guild_id") and t.get("channel_id"):
+                live({"kind": "typing", "channelId": t.get("channel_id"), "fromId": str(t.get("user_id")), "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(float(t.get("timestamp") or time.time())))})
+            continue
         if event.get("op") != "MESSAGE_CREATE":
             continue
         d = event.get("d") or {}
@@ -532,7 +557,9 @@ async def send(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:
     if not channel or not text.strip():
         return {"ok": False, "code": "sendInvalid", "detail": "send needs a channel and text"}
     paths = [str(p) for p in spec.get("files") or []]
-    return await asyncio.to_thread(send_of, token, channel, text, paths)
+    hold = spec.get("holdIf") if isinstance(spec.get("holdIf"), dict) else None
+    heard = heard_in(str(hold.get("log") or ""), int(hold.get("offset") or 0), str(hold.get("chat") or channel)) if hold and hold.get("log") else None
+    return await asyncio.to_thread(send_of, token, channel, text, paths, time.sleep, heard)
 
 
 def delete_of(token: str, channel: str, message: str) -> dict[str, Any]:

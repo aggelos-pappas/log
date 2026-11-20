@@ -106,6 +106,7 @@ describe('the owner\'s voice, per person and per chat', () => {
     expect(offProfile('haha the 60 year olds are cooked', profile)).toEqual([])
     expect(offProfile('Haha the 60 year olds are cooked!', profile)).toEqual([])
     expect(offProfile('haha 😭', { ...profile, replies: 4 })).toEqual([])
+    expect(offProfile('this is what i use https://treg.to/?ref=Someone,x!', { ...profile, questions: 0, commas: 0, exclamations: 0 })).toEqual([])
   })
 })
 

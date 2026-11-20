@@ -235,9 +235,7 @@ class MQTTClient:
         headers = {
             "Cookie": "; ".join(f"{k}={v}" for k, v in sorted(self.cookies.items())),
             "Origin": "https://www.facebook.com",
-            "User-Agent": sanitize_user_agent(self.user_agent or (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36")),
+            "User-Agent": sanitize_user_agent(self.user_agent or C.USER_AGENT_DEFAULT),
         }
         self._ws = coherent_ws_connect(self.url, cookies=dict(self.cookies),
                                       headers=headers,

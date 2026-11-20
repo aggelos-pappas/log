@@ -1,0 +1,69 @@
+/* Restyled for log: these are log's Lynx kit tokens (src/mcp/apps/report/view/kit.css, after
+   https://github.com/yakkomajuri/lynx, MIT), not upstream hermes-genui's look. A quiet canvas, plain blocks on a
+   white surface with one hairline, a near-black accent, big light numbers and Geist. Every class still starts with
+   hb- so nothing leaks into the app; Hermes puts .dark on the page for dark mode. */
+.hb-blocks {
+  --hb-ink: #0f1115;
+  --hb-ink-2: #3a3f47;
+  --hb-muted: #6b7280;
+  --hb-line: rgba(15, 23, 42, 0.075);
+  --hb-line-strong: rgba(15, 23, 42, 0.14);
+  --hb-card: #ffffff;
+  --hb-well: #f7f8fa;
+  --hb-accent: #16181d;
+  --hb-accent-soft: rgba(15, 23, 42, 0.07);
+  --hb-accent-ink: #16181d;
+  --hb-good: #0f9d6c;
+  --hb-warn: #b26a00;
+  --hb-surface: #ffffff;
+  --hb-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.1);
+  --hb-radius: 16px;
+  --hb-font: 'Geist', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  /* Lynx keeps charts nearly monochrome: the accent first, then log's kit palette. */
+  --hb-chart-1: #16181d;
+  --hb-chart-2: #2563eb;
+  --hb-chart-3: #0f9d6c;
+  --hb-chart-4: #7c4dff;
+  --hb-chart-5: #9aa0a9;
+  --hb-chart-6: #d93025;
+  --hb-chart-7: #b26a00;
+  --hb-chart-8: #6b7280;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 8px 0;
+  max-width: 1100px;
+  color: var(--hb-ink);
+  font-family: var(--hb-font);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+.dark .hb-blocks {
+  --hb-ink: #f1f2f4;
+  --hb-ink-2: #c9ccd2;
+  --hb-muted: #9095a0;
+  --hb-line: rgba(255, 255, 255, 0.075);
+  --hb-line-strong: rgba(255, 255, 255, 0.15);
+  --hb-card: #1e2023;
+  --hb-well: #24262a;
+  --hb-accent: #eceef1;
+  --hb-accent-soft: rgba(255, 255, 255, 0.09);
+  --hb-accent-ink: #eceef1;
+  --hb-good: #3ccf91;
+  --hb-warn: #e6b450;
+  --hb-surface: #1e2023;
+  --hb-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 12px 32px rgba(0, 0, 0, 0.5);
+  --hb-chart-1: #eceef1;
+  --hb-chart-2: #6ea2ff;
+  --hb-chart-3: #3ccf91;
+  --hb-chart-4: #a78bfa;
+  --hb-chart-5: #6d717a;
+  --hb-chart-6: #f26b60;
+  --hb-chart-7: #e6b450;
+  --hb-chart-8: #9095a0;
+}
+.hb-blocks * { box-sizing: border-box; }
+.hb-blocks { overflow-wrap: break-word; }
+.hb-blocks img, .hb-blocks figure, .hb-blocks table { margin: 0; }

@@ -19,6 +19,8 @@ describe("Camoufox always launches visible", () => {
   test("the gate builds headless=False, humanize and showcursor into every launch", () => {
     const device = read("deviceProfile.py");
     expect(device).toContain('config["humanize"] = True');
+    expect(device).toContain('config["humanize"] = False');
+    expect(read("visibleBrowser.py")).toContain("return HUMANIZE_OFF_SECONDS if myuriInput.available() else HUMANIZE_HOP_SECONDS");
     expect(device).toContain('config["humanize:maxTime"] = visible["humanize"]');
     expect(device).toContain('config["showcursor"] = bool(visible["showcursor"])');
     expect(read("proxyGate.py")).toContain('and "headless" in kwargs and kwargs["headless"] is False');

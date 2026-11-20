@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { logHome } from "../logHome/index";
 
 export function userEnvPath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_USER_ENV || join(homedir(), ".logCli", ".env");
+  return env.LOG_USER_ENV || join(logHome(), ".env");
 }
 
 export function parseEnvFile(text: string): Record<string, string> {

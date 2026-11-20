@@ -476,7 +476,7 @@ export function AskButton({ prompt, children = "Ask the agent", variant = "defau
   const [sent, setSent] = useState(false);
   if (!activeHost.ask) return null;
   return (
-    <Button variant={variant} size={size} disabled={sent} onClick={() => void askAgent(prompt).then(() => setSent(true))}>
+    <Button variant={variant} size={size} disabled={sent} data-ask={prompt} onClick={() => void askAgent(prompt).then(() => setSent(true))}>
       {sent ? "Sent to the chat" : children}
     </Button>
   );

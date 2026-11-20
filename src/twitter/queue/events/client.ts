@@ -1,13 +1,13 @@
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { SHARED_SESSION } from '../../../agentHooks/sessionOffsets/index'
 import { readCursor, writeCursor } from '../../../inbox/store/index'
 import { importQueueFiles, latestQueueLogSeq, queueLabel, queueLogAfter } from '../store/index'
 import { QUEUE_EVENT_PATTERNS } from './types'
 import type { QueueEvent } from './types'
+import { logHome } from '../../../config/logHome/index'
 
 export function queuesRoot(): string {
-  return process.env.LOG_QUEUES_DIR || join(homedir(), '.logCli', 'queues')
+  return process.env.LOG_QUEUES_DIR || join(logHome(), 'queues')
 }
 
 export function eventOf(queue: string, line: string): QueueEvent | null {

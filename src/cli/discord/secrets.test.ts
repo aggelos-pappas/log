@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { discordSecretsCommand, discordSecretsDeps, totpSecretOf } from "./index.ts";
 
-const account = { id: "acct1", accountName: "deepman2", platform: "DISCORD", status: "ACTIVE" };
+const account = { id: "acct1", accountName: "discordAccount", platform: "DISCORD", status: "ACTIVE" };
 
 function contextWith(saved: Record<string, unknown>[]) {
   return {
@@ -29,7 +29,7 @@ describe("log discord secrets", () => {
     const tty = discordSecretsDeps.tty;
     discordSecretsDeps.tty = () => ({ stdinTTY: false, stdoutTTY: false });
     try {
-      const out = await discordSecretsCommand.run(contextWith(saved), ["--account", "deepman2"]);
+      const out = await discordSecretsCommand.run(contextWith(saved), ["--account", "discordAccount"]);
       expect(out.code).toBe(1);
       expect(saved).toEqual([]);
     } finally {

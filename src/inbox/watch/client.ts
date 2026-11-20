@@ -1,7 +1,7 @@
 import { clearDeadQueueLockRows } from '../../twitter/queue/store/index'
 import { spawn, spawnSync } from 'node:child_process'
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { homedir, hostname } from 'node:os'
+import { hostname } from 'node:os'
 import { dirname, join } from 'node:path'
 import { twitterStateRoot } from '../../directApi/engine/index'
 import { personKeyOf } from '../../twitter/dm/person/index'
@@ -12,9 +12,10 @@ import type { StoredEvent } from '../store/index'
 import { lastWordOf, waitingOf } from '../lastWord/index'
 import { POLL_LOCK_SECONDS, POLL_MAX_SECONDS, POLL_MIN_SECONDS } from './types'
 import type { InboxMessage, InboxReader, InboxThread, PollPlan, SeenThreads } from './types'
+import { logHome } from '../../config/logHome/index'
 
 export function inboxRoot(): string {
-  return process.env.LOG_INBOX_STATE || join(homedir(), '.logCli', 'inbox')
+  return process.env.LOG_INBOX_STATE || join(logHome(), 'inbox')
 }
 
 const pendingPath = () => join(inboxRoot(), 'pending.jsonl')
@@ -156,6 +157,11 @@ const WATCHER_FATAL = /: (accountNotFound|sessionDead): |didn't send READY/
 export function sessionCheckedSince(platform: string, account: string, since: number): boolean {
   const session = readJson<{ sessionState?: string; checkedAt?: string }>(join(dirname(inboxRoot()), platform, account, 'session.json'), {})
   return session.sessionState === 'loggedIn' && Date.parse(session.checkedAt ?? '') > since
+}
+
+export function watchLogMark(platform: string, account: string): { log: string; offset: number } {
+  const log = join(inboxRoot(), platform, account, 'watch.log')
+  return { log, offset: existsSync(log) ? statSync(log).size : 0 }
 }
 
 export function watcherGone(platform: string, account: string): boolean {
@@ -340,7 +346,7 @@ export function stopStaleWatchers(platform: string, accounts: readonly string[],
   return stopped
 }
 
-export function clearDeadQueueLocks(_root: string = join(homedir(), '.logCli', 'queues'), alive: (pid: number) => boolean = processAlive): string[] {
+export function clearDeadQueueLocks(_root: string = join(logHome(), 'queues'), alive: (pid: number) => boolean = processAlive): string[] {
   return clearDeadQueueLockRows(alive)
 }
 
@@ -373,17 +379,59 @@ export function localTime(iso: string): string {
   return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())} the owner's time (${zone})`
 }
 
-const SEND_RULE = 'Send it straight away when it answers what they said and fits that conversation: the owner has given full authority to reply and follow up (rule 108). Then tell the owner what they said and what went out. Hold it and ask him only when it would book a meeting, make a promise, name a price or money, or you cannot tell what the conversation is about.'
+export type ReplyMode = 'ask' | 'auto'
+
+const AUTO_RULE = 'Send it straight away when it answers what they said and fits that conversation: the owner has given full authority to reply and follow up (rule 108). Then tell the owner what they said and what went out. Hold it and ask him only when it would book a meeting, make a promise, name a price or money, or you cannot tell what the conversation is about.'
+
+const askRule = (platform: string) => `Do NOT send it. Replies on ${platform} are set to ask: show the owner what they said and your gated draft, then wait. Send only after the owner says, in this chat, to send that reply; nothing he said earlier counts. (The owner changes this with replies in log's harness settings, e.g. Hermes plugins.entries.log.replies, or ~/.logCli/settings.json.)`
+
+function modeOf(value: unknown): ReplyMode | null {
+  return value === 'ask' || value === 'auto' ? value : null
+}
+
+function modeFor(setting: unknown, platform: string): ReplyMode | null {
+  if (typeof setting === 'string') {
+    const parts = setting.split(',').map((p) => p.trim()).filter(Boolean)
+    if (parts.length === 1 && !parts[0].includes('=')) return modeOf(parts[0])
+    const named = Object.fromEntries(parts.map((p) => p.split('=').map((x) => x.trim())))
+    return modeOf(named[platform]) ?? modeOf(named.default)
+  }
+  if (setting && typeof setting === 'object') {
+    const named = setting as Record<string, unknown>
+    return modeOf(named[platform]) ?? modeOf(named.default)
+  }
+  return null
+}
+
+export function settingsPath(): string {
+  return process.env.LOG_SETTINGS || join(dirname(inboxRoot()), 'settings.json')
+}
+
+export function replyMode(platform: string, env: NodeJS.ProcessEnv = process.env, file: string = settingsPath()): ReplyMode {
+  const fromHarness = modeFor(env.LOG_REPLIES, platform)
+  if (fromHarness) return fromHarness
+  if (existsSync(file)) {
+    try {
+      const fromFile = modeFor((JSON.parse(readFileSync(file, 'utf8')) as { replies?: unknown }).replies, platform)
+      if (fromFile) return fromFile
+    } catch {}
+  }
+  return 'ask'
+}
+
+export function sendRule(platform: string): string {
+  return replyMode(platform) === 'auto' ? AUTO_RULE : askRule(platform)
+}
 
 function discordContext(messages: readonly InboxMessage[]): string {
-  const lines = messages.map((m) => `  ${m.with} on discord ${m.account} (${m.box === 'dm' ? 'DM or group' : m.box === 'mention' ? 'mentioned you in a server channel' : 'replied to you in a server channel'}) at ${localTime(m.at)}: "${m.text.replace(/\s+/g, ' ').slice(0, 240)}" (channel ${m.conversationId})`)
+  const lines = messages.map((m) => `  ${m.with} on discord ${m.account} (${m.box === 'dm' ? 'DM or group' : m.box === 'mention' ? 'mentioned you in a server channel' : m.box === 'talk' ? 'in a server channel conversation with you' : 'replied to you in a server channel'}) at ${localTime(m.at)}: "${m.text.replace(/\s+/g, ' ').slice(0, 240)}" (channel ${m.conversationId})`)
   const { account } = messages[0]
   return [
     `>>> NEW DISCORD MESSAGE${messages.length === 1 ? '' : 'S'} (${messages.length}): pushed by Discord's gateway the moment it landed. Tell the owner now, with what they said and what the conversation is about. Then, for each one:`,
     `  1. Read the chat around it: \`discordRead\` { account: "${account}", channel: "<channel>", limit: 20 }.`,
     '  2. Before writing a word, pull how the owner really writes in that chat: `voice` { to: "<who>", with: "<channel>", context: "<what they said>" } (no text): his latest messages there and his real replies to things like it. Draft from those, in his words and his length, using only facts the owner has said, answering what they actually asked. Never from the twitter guide alone.',
     '  3. Gate it against the same chat: `voice` { to, with, context, text: "<draft>" }. Rewrite until it passes.',
-    `  4. ${SEND_RULE} (\`discordSendLive\` { account: "${account}", channel: "<channel>", text: "<draft>", approvedBy: "the owner", confirmLive: true }).`,
+    `  4. ${sendRule('discord')} (\`discordSendLive\` { account: "${account}", channel: "<channel>", text: "<draft>", approvedBy: "the owner", confirmLive: true }).`,
     ...lines,
   ].join('\n')
 }
@@ -396,7 +444,7 @@ function slackContext(messages: readonly InboxMessage[]): string {
     `  1. Read the chat around it: \`slackRead\` { account: "${account}", workspace: "<workspace>", chat: "<chat>", limit: 20 }.`,
     '  2. Before writing a word, pull how the owner really writes to them: `voice` { to: "<who>", with: "<chat>", context: "<what they said>" } (no text): his messages to them first, then his whole history. Draft from those, in his words and his length, using only facts the owner has said, answering what they actually asked.',
     '  3. Gate it against the same chat: `voice` { to, with, context, text: "<draft>" }. Rewrite until it passes.',
-    `  4. ${SEND_RULE} (\`slackSendLive\` { account: "${account}", workspace: "<workspace>", chat: "<chat>", text: "<draft>", approvedBy: "the owner", confirmLive: true }).`,
+    `  4. ${sendRule('slack')} (\`slackSendLive\` { account: "${account}", workspace: "<workspace>", chat: "<chat>", text: "<draft>", approvedBy: "the owner", confirmLive: true }).`,
     ...lines,
   ].join('\n')
 }
@@ -409,7 +457,7 @@ function instagramContext(messages: readonly InboxMessage[]): string {
     `  1. Read the thread around it: \`instagramDms\` { account: "${account}", with: "<handle or thread>", limit: 20 }.`,
     '  2. Before writing a word, pull how the owner really writes to them: `voice` { to: "<handle>", with: "<who>", context: "<what they said>" } (no text). Draft from those, in his words and his length, using only facts the owner has said, answering what they actually asked.',
     '  3. Gate it: `voice` { to, with, context, text: "<draft>" }. Rewrite until it passes.',
-    `  4. ${SEND_RULE} (\`instagramSendLive\` { account: "${account}", with: "<handle or thread>", text: "<draft>", approvedBy: "the owner", confirmLive: true }; a meme or picture goes as photo: "<file>").`,
+    `  4. ${sendRule('instagram')} (\`instagramSendLive\` { account: "${account}", with: "<handle or thread>", text: "<draft>", approvedBy: "the owner", confirmLive: true }; a meme or picture goes as photo: "<file>").`,
     ...lines,
   ].join('\n')
 }
@@ -432,7 +480,7 @@ function twitterContext(messages: readonly InboxMessage[]): string {
     `  1. Read their full context right now, the old DM thread and X Chat merged (one conversation, whichever id a message names) and what they did on the account's posts (likes, retweets, replies, quotes), all in one call (rule 109): \`twitterDms\` { account: "${account}", with: "<handle>" }.`,
     '  2. Before writing a word, pull how the owner really writes to them: `voice` { to: "<handle>", with: "<handle>", context: "<what they said>" } (no text): his messages to them first, then his whole history (every platform). Draft from those, in his words and his length, using only facts the owner has said, answering what they actually asked. Never from the twitter guide alone.',
     `  3. Gate it against the same person: \`voice\` { to, with, context, text: "<draft>" }. Rewrite until it passes.`,
-    `  4. ${SEND_RULE} One reply goes straight out with \`twitterDmLive\` { account: "${account}", userId: "<id>", text: "<draft>", approvedBy: "the owner", confirmLive: true }; more than one goes into the account's one running queue (\`twitterQueueAdd\`, rule 107). Every step is the log MCP tool, never a hand-run command (rule 106).`,
+    `  4. ${sendRule('twitter')} One reply goes out with \`twitterDmLive\` { account: "${account}", userId: "<id>", text: "<draft>", approvedBy: "the owner", confirmLive: true }; more than one goes into the account's one running queue (\`twitterQueueAdd\`, rule 107). Every step is the log MCP tool, never a hand-run command (rule 106).`,
     ...lines,
   ].join('\n')
 }

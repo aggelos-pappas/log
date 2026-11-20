@@ -14,9 +14,9 @@ The X engine makes its twikit client without a proxy, and the spec log hands the
 
 Checked by: code and SubQ
 
-### REQ-XSESSION-02: twikit goes out as curl_cffi impersonating Safari
+### REQ-XSESSION-02: twikit goes out as curl_cffi impersonating log's one browser
 
-twikit's HTTP transport is one curl_cffi `AsyncSession` pinned to one impersonation target (`IMPERSONATE`, `safari17_0`), with redirects not followed and the proxy kept in the session. httpx is never used. Rule 81.
+twikit's HTTP transport is one curl_cffi `AsyncSession` pinned to one impersonation target (`IMPERSONATE`, from log's one browser identity, `python/identity/browserIdentity.py`), with redirects not followed and the proxy kept in the session. httpx is never used. Rule 81.
 
 Checked by: code and SubQ
 

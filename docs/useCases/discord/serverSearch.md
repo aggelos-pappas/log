@@ -33,6 +33,7 @@ flowchart TD
 ## What to know
 
 - **Search first, always.** Discord's search covers the whole server, including forum posts and threads; Log's own `search` only holds the mentions and replies the watcher kept from servers. Reading a channel back to look for something is the slow way.
+- **Log's `search` names where each hit was said.** A hit reads `discord dm @<who>`, `discord group <name> (<people>)` or `discord channel <server> #<channel>`, never a server's member list. Narrow it with `kind` (`dm`, `group`, `channel`, `thread`, `forumPost`, `replies`, `post`), `server` (a name or id) and `channel`: `search` { query: "<words>", kind: "dm" } for what was said to the owner alone, `search` { query: "<words>", server: "<server>" } for what was said in front of a server. The same kinds hold on X, Slack, Instagram and Reddit. A channel log.db holds without its name shows as `server <id> (name not kept)`.
 - **Search matches words.** Use the words they would have typed: "widgets", not "generative UI components". Try a second set before saying it isn't there.
 - **`from` narrows to one person by name.** It is matched on the hits' authors, so a short name works ("paul").
 - **The answer names where each hit is.** Read it there with `discordRead`, which names the channel or post it read.

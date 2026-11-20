@@ -1997,7 +1997,7 @@ export const ERROR_CATALOG = {
     meaning: 'ASSEMBLYAI_API_KEY is not set, so no voice note can be transcribed. Nothing was read from a platform and nothing was sent to AssemblyAI.',
     retryable: false,
     raisedIn: ['cli/transcribe', 'media/voiceNotes'],
-    action: 'Tell the owner: the AssemblyAI key goes in ~/.buzz/.env.local (or the repo .env.local) as ASSEMBLYAI_API_KEY; ~/filmcraft/.env.local ASSEMBLY_AI_KEY is read too. Never print it.'
+    action: 'Tell the owner: the AssemblyAI key goes in ~/.logCli/.env (or the repo .env.local, or a file named in LOG_ENV_FILES) as ASSEMBLYAI_API_KEY. Never print it.'
   },
   transcriptionFailed: {
     layer: 'runtime',
@@ -2046,7 +2046,7 @@ export const ERROR_CATALOG = {
     meaning: "The voice provider's key (INWORLD_API_KEY or FISH_API_KEY) is not set, so it was not called. Nothing was cloned or generated.",
     retryable: false,
     raisedIn: ['cli/clone', 'cli/voiceNote', 'extensions/voiceClone', 'extensions/inworld', 'extensions/voiceClone'],
-    action: 'Put the provider key in .env.local (or ~/.buzz/.env.local); its name is in .env.example. Never print it.'
+    action: 'Put the provider key in .env.local (or ~/.logCli/.env); its name is in .env.example. Never print it.'
   },
   voiceProviderRefused: {
     layer: 'runtime',

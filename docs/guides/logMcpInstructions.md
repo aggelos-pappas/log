@@ -10,7 +10,7 @@ The guides describe the current command implementation. Legacy storage names and
 
 ## Use cases: the work the owner asks for, tool by tool
 
-This is how the owner works. Each use case is something the owner asks for again and again, written as its steps in order, each step naming its tool and what counts as done. When the owner asks for work a use case covers, read that use case and follow it step by step instead of improvising. Work no use case covers yet, done for the owner more than once, gets a page of its own in docs/useCases/<platform>/.
+This is how the owner works. Each use case is something the owner asks for again and again, written as its steps in order, each step naming its tool and what counts as done. When the owner asks for work a use case covers, follow it step by step instead of improvising. Repeated work no use case covers gets its own page in docs/useCases/<platform>/.
 
 With no prompt hook, getGuide({ ask }) routes the owner's words to the one that fits; each page's own asks line holds the words it is matched on.
 
@@ -26,17 +26,23 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "facebook/marketplaceListings" })` | From accounts to live Marketplace listings |
 | `getGuide({ useCase: "inbox/bossMaxxing" })` | Bossmaxxing: giving out tasks to the team |
 | `getGuide({ useCase: "inbox/governorReset" })` | Resetting an account's governor count |
+| `getGuide({ useCase: "inbox/ignoreServer" })` | Ignoring a server or a chat |
+| `getGuide({ useCase: "inbox/quietPush" })` | Quieting the live push |
 | `getGuide({ useCase: "inbox/reaLooksmaxxing" })` | /rea-looksmaxxing: moneymaxx like a creator |
 | `getGuide({ useCase: "inbox/reactions" })` | Reacting to a message |
+| `getGuide({ useCase: "inbox/saidBy" })` | Someone's messages on every platform, found by name, newest first |
 | `getGuide({ useCase: "inbox/scopeAJob" })` | Scoping a job out of someone in a DM |
 | `getGuide({ useCase: "inbox/showMe" })` | Showing it as a view: generative UI in the chat |
 | `getGuide({ useCase: "inbox/signIn" })` | Signing an account in: checking it, then the live browser |
 | `getGuide({ useCase: "inbox/triage" })` | Triage: scoping someone's job and handing it to whoever does it |
 | `getGuide({ useCase: "inbox/voiceNote" })` | Sending a voice note |
+| `getGuide({ useCase: "inbox/warmPeople" })` | Working the warm people in your dms |
 | `getGuide({ useCase: "instagram/dmReply" })` | Reading and answering an Instagram DM |
 | `getGuide({ useCase: "instagram/newPlatform" })` | Bringing a new platform up, then vendoring its client |
 | `getGuide({ useCase: "linkedin/network" })` | Growing a LinkedIn network, and reading and answering its inbox |
 | `getGuide({ useCase: "linkedin/posts" })` | Posting on LinkedIn, liking or reposting, and taking a post down |
+| `getGuide({ useCase: "log/toolFromOneOff" })` | Turning a hand-rolled one-off into a log tool |
+| `getGuide({ useCase: "log/toolHealth" })` | Tool health |
 | `getGuide({ useCase: "reddit/contributorMaxxing" })` | Contributor maxxing: finding talented builders through what they share |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM |
 | `getGuide({ useCase: "tiktok/post" })` | Posting a video on TikTok, and deleting it |
@@ -102,7 +108,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `linkedin` | A LinkedIn account: saving its cookies, checking its session, posting or deleting its own posts, inviting people LinkedIn suggests, liking and reposting posts, seeing how its own posts are doing, and reading and writing in its conversations |
 | `accountsAndProxies` | Every account in the workspace with its session state, and each account's proxy: checking it, giving it one from a provider in its home city, and providers' traffic; and the interactive launcher that sets log up and adds accounts |
 | `runsAndEvidence` | What runs leave behind: run folders and pruning, captures and request docs, error codes, jobs, every call's timings, log.db's typed tables checked and rebuilt from its events, and the MCP server itself |
-| `knowledgeAndSearch` | Finding context: the knowledge base, the conversation search (keyword and meaning at once) and every voice note transcribed into it |
+| `knowledgeAndSearch` | Finding context: the knowledge base, the conversation search (keyword and meaning at once), the Relate graph of who connects to whom, one person across platforms (people), and every voice note transcribed into it |
 | `extensions` | Extensions that make an account more human on social media: Memelord's memes found for the moment in a chat and sent in context, the owner's cloned voice (Inworld or Fish Audio) for the voice notes they ask for, every paid provider's balance, and treg's catalog of endpoints for every lookup |
 | `console` | The local console: this machine's log.db, MCP, accounts, usage, events, AI client config, settings and provider keys, read in the terminal, as JSON per screen, or in the web console on loopback with no sign-in |
 | `governor` | Every platform account's governor: its daily count of requests and writes, reading it, and putting it back to 0 when the owner says so, recorded in log.db |

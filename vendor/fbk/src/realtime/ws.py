@@ -45,6 +45,8 @@ import queue
 import threading
 from typing import TYPE_CHECKING, Any, Protocol
 
+import constants as C
+
 if TYPE_CHECKING:
     # curl_cffi is only needed once a socket is actually opened; the
     # runtime imports live in ws_connect (startup audit 2026-09). The
@@ -194,7 +196,7 @@ class CurlCffiWSAdapter:
 
 
 def ws_connect(url: str, *, cookies: dict[str, str],
-               impersonate: str = "chrome136",
+               impersonate: str = C.IMPERSONATE_DEFAULT,
                headers: dict[str, str] | None = None,
                timeout: float = 15.0) -> WSConnection:
     """Open a fingerprint-coherent WebSocket.

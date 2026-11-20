@@ -118,7 +118,8 @@ export const tregCommand: Command = {
     };
     if (live && approvedBy) {
       context.err(`treg: calling ${id} (approved by ${approvedBy}; its price is read at the same time)`);
-      const [got, run] = await Promise.all([client.get(id), client.call(input)]);
+      const kept = client.keptGet?.(id) ?? null;
+      const [got, run] = await Promise.all([kept ?? client.get(id), client.call(input)]);
       const endpoint = got.ok ? endpointOf(id, got.stdout) : null;
       const price = endpoint ? (endpoint.free ? "free" : endpoint.price ?? "unknown") : "unknown (the price read failed)";
       context.err(`treg: ${id} costs ${price}`);

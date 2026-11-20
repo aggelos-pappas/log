@@ -1,10 +1,11 @@
+import type { Database } from "bun:sqlite";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { rulesLine } from "../../server/helpers/agentRules.ts";
 import { guideLine } from "../../server/helpers/guides.ts";
 import { MCP_APP_MIME_TYPE } from "../browserView/types.ts";
-import { checkReport, readReportSource, REPORT_DEPS, ReportSourceRefusal, reportDataSource, reportText, sourceBlocks, sourceStarter } from "./helpers/index.ts";
+import { checkReport, hermesViewNote, readReportSource, REPORT_DEPS, ReportSourceRefusal, reportDataSource, reportText, saveHermesView, sourceBlocks, sourceStarter } from "./helpers/index.ts";
 import type { ReportDataSource, ReportDeps } from "./helpers/index.ts";
 import { REPORT_GUIDE, REPORT_LIMITS as L, REPORT_REFUSALS, REPORT_TOOL, REPORT_URI } from "./types.ts";
 
@@ -24,6 +25,7 @@ interface ViewServer {
   compileView: (code: string) => { ok: true; compiled: string } | { ok: false; error: string };
   starterCode: (name: string) => string;
   viewText: (compiled: string, data: Record<string, unknown>, title?: string, subtitle?: string) => string;
+  viewMarkup: (compiled: string, data: Record<string, unknown>, title?: string, subtitle?: string) => string;
   viewHtml: () => Promise<string>;
   previewHtml: (baked: unknown) => Promise<string>;
 }
@@ -42,7 +44,7 @@ export const reportInput = z.strictObject({
   blocks: z.array(z.record(z.string(), z.unknown())).min(1).max(L.blocks).optional().describe("The older block list (heading, text, stat, barChart, lineChart, table, personList, callout)"),
 });
 
-const reportOutput = z.object({ title: z.string(), subtitle: z.string().optional(), compiled: z.string(), data: z.record(z.string(), z.unknown()) });
+const reportOutput = z.object({ title: z.string(), subtitle: z.string().optional(), compiled: z.string(), data: z.record(z.string(), z.unknown()), hermesView: z.string().optional() });
 
 const schemas: Partial<Record<"input" | "output", ObjectSchema>> = {};
 const jsonSchema = (schema: z.ZodType, io: "input" | "output"): ObjectSchema => {
@@ -59,14 +61,14 @@ export function reportOutputSchema(): ObjectSchema {
 }
 
 export const REPORT_DESCRIPTION = [
-  "Generative UI: show the person a view you build for their question, drawn in the chat. Plain and readable by default, in the spirit of Lynx workspaces.",
-  'One call: { title, data: { dms: { source: "twitterDmsBySender", since?: "30d", account?, limit? } } } reads log.db and draws a starter view (headline stats, messages per day, who messages most, a table of people with activity and their latest message).',
-  "Sources, picked by source, all read from log.db with no platform call: twitterDmsBySender (X one-to-one DMs by sender); dmsBySender { platform, account?, since?, limit? } (the same for any platform with chats in log.db, refused with reportSourceNoData when it has none); identityProfile { platform, userId or handle } (one person's name, bio, follower count, verified flag and avatar, kept from session checks and follower reads, refused with identityProfileMissing when none is stored).",
+  "Generative UI: show the person a view you build for their question, drawn in the chat. Plain by default, in the spirit of Lynx workspaces.",
+  'One call: { title, data: { dms: { source: "twitterDmsBySender", since?: "30d", account?, limit? } } } reads log.db and draws a starter view (stats, messages per day, top senders, a people table).',
+  "Sources, picked by source, all from log.db, no platform call: twitterDmsBySender (X one-to-one DMs by sender); dmsBySender { platform, account?, since?, limit? } (the same for any platform, reportSourceNoData when it has none); waitingOnYou { platform?, account?, since? } (who waits on the owner, with platform and account); identityProfile { platform, userId or handle } (one person's name, bio, follower count, verified flag and avatar, kept from session checks and follower reads, refused with identityProfileMissing when none is stored).",
   'Your own view: add code, a React component in JSX. import { Page, Card, Grid, Row, Stack, Stat, Badge, Table, Bars, BarChart, LineChart, Sparkline, Avatar, Quote, Icon, Tabs, Details, Empty, Query, Time, fmt, rel, useTool, useData } from "log". End with export default function App({ data, title, subtitle }) { return <Page title={title}>…</Page> }.',
   "Components: Page { title, subtitle, actions }, Card { title, actions, pad }, Grid { min }, Row/Stack { gap }, Stat { label, value, hint, tone }, Badge { tone: neutral|good|bad|warn|accent }, Table { rows, columns: [{ key, title, render, align, width }], limit }, Bars { data: [{ label, value }], unit } for ranked lists, BarChart { data: [{ label, value }] } for columns, LineChart { series: [{ name, values }], labels }, Sparkline { values, width }, Avatar { name, size, src }, Quote, Icon { name } (Font Awesome 6 names in camelCase: xTwitter, discord, message, users, clock, fire…), Time { value } (relative), fmt(n). Plain CSS works with the --sb-* variables (--sb-text, --sb-muted, --sb-accent, --sb-surface).",
   "Interaction (from Lynx): Routes { routes: { \"/\": Overview, \"/person/:handle\": Person } } with Link { to } and BackLink for list-to-detail pages; AskButton { prompt } and FollowUps { prompts } put a question into the chat; askAgent(text); Pointable { about } and tellAgent(text) tell the agent what the person is looking at; ErrorNote offers Ask the agent to fix it; Button, Input, Select, Textarea, Field, Modal, useAction(fn) for forms; Markdown; FullscreenButton; downloadCsv(name, rows); openExternal(url). End overviews with 2 or 3 FollowUps. A send never happens from the view: AskButton prompts go through the chat and its gates.",
   "Data: data.<name> from the data field is there at once. useTool(name, args) calls a log read tool live from the view and returns { data, loading, error, reload }; wrap it in Query. Only call read tools.",
-  "Shown inline in MCP Apps hosts (Claude, ChatGPT, Cursor); other hosts (Claude Code, Codex) get the same view as text. A view that doesn't compile is refused with reportFieldInvalid and the line to fix.",
+  "Shown inline in MCP Apps hosts (Claude, ChatGPT, Cursor) and Hermes Desktop; elsewhere (Claude Code, Codex) as text. A view that doesn't compile is refused with reportFieldInvalid and the line to fix.",
   guideLine(REPORT_GUIDE),
   rulesLine(REPORT_TOOL),
 ].join("\n");
@@ -96,7 +98,22 @@ function refusalCodeOf(error: unknown): string {
 
 const where = (path: readonly PropertyKey[]): string => path.reduce<string>((out, part) => (typeof part === "number" ? `${out}[${part}]` : out ? `${out}.${String(part)}` : String(part)), "") || "report";
 
-export async function runReport(input: unknown, ui: boolean, given: Partial<ReportDeps> = {}): Promise<CallToolResult> {
+export interface ReportHost {
+  hermes?: boolean;
+  db?: Database;
+}
+
+function hermesDrawn(view: ViewServer, compiled: string, data: Record<string, unknown>, head: { title: string; subtitle?: string }, text: string, host: ReportHost): string | null {
+  if (!host.hermes) return null;
+  try {
+    const html = view.viewMarkup(compiled, data, head.title, head.subtitle);
+    return saveHermesView({ ...head, html, text }, host.db);
+  } catch {
+    return null;
+  }
+}
+
+export async function runReport(input: unknown, ui: boolean, given: Partial<ReportDeps> = {}, host: ReportHost = {}): Promise<CallToolResult> {
   const deps: ReportDeps = { ...REPORT_DEPS, ...given };
   const parsed = reportInput.safeParse(input ?? {});
   if (!parsed.success) return refused("reportFieldInvalid", parsed.error.issues.slice(0, 8).map((issue) => `${where(issue.path)}: ${issue.message}`));
@@ -137,7 +154,8 @@ export async function runReport(input: unknown, ui: boolean, given: Partial<Repo
       return refused("reportFieldInvalid", [`code: it compiled but broke while drawing: ${error instanceof Error ? error.message : String(error)}`]);
     }
   }
-  return { content: [{ type: "text", text }], structuredContent: payload };
+  const drawn = hermesDrawn(view, compiled.compiled, data, head, text, host);
+  return { content: [{ type: "text", text: drawn ? `${text}\n\n${hermesViewNote(drawn)}` : text }], structuredContent: drawn ? { ...payload, hermesView: drawn } : payload };
 }
 
 export function reportResource() {

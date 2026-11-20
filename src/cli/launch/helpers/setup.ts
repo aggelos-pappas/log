@@ -58,7 +58,7 @@ export const ADSPOWER_SETUP = {
 
 const SETUP_ADDS: Readonly<Partial<Record<HarnessId, string>>> = {
   opencode: "log's tools as native tools (never Code Mode) and the hooks running, in ~/.config/opencode",
-  hermes: "the native logHooks plugin in Hermes's plugins folder (HERMES_HOME, else ~/.hermes, else %LOCALAPPDATA%\\hermes on Windows): its pre_llm_call hook puts the play, pending messages and browser states before each model call (then: hermes plugins enable logHooks)",
+  hermes: "the one native log plugin in Hermes's plugins folder (HERMES_HOME, else ~/.hermes, else %LOCALAPPDATA%\\hermes on Windows): log's plays as skills, GenUI, the dashboard and Desktop halves, and the pre_llm_call hook that puts the play, pending messages and browser states before each model call; it retires the old logHooks half (then: hermes plugins enable log, and hermes mcp add log --command logMcp if config.yaml has no mcp_servers.log)",
 };
 
 export interface SetupHarness {

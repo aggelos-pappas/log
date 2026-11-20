@@ -137,3 +137,25 @@ export function addImport(source: string, from: string, name: string): string {
   if (!last) return `${line}\n${source}`;
   return `${source.slice(0, last.end)}\n${line}${source.slice(last.end)}`;
 }
+
+function propertyArray(file: ts.SourceFile, name: string, key: string, property: string): ts.ArrayLiteralExpression {
+  const object = variableInitializer(file, name);
+  if (!ts.isObjectLiteralExpression(object)) throw new AstEditError(`${name} isn't an object literal`);
+  const entry = object.properties.find((p) => p.name !== undefined && p.name.getText(file).replace(/^["']|["']$/g, "") === key);
+  if (!entry || !ts.isPropertyAssignment(entry) || !ts.isObjectLiteralExpression(unwrap(entry.initializer))) throw new AstEditError(`${name} has no ${key} object`);
+  const inner = (unwrap(entry.initializer) as ts.ObjectLiteralExpression).properties.find((p) => p.name?.getText(file) === property);
+  if (!inner || !ts.isPropertyAssignment(inner) || !ts.isArrayLiteralExpression(unwrap(inner.initializer))) throw new AstEditError(`${name}.${key} has no ${property} array`);
+  return unwrap(inner.initializer) as ts.ArrayLiteralExpression;
+}
+
+export function propertyArrayHasText(source: string, name: string, key: string, property: string, text: string): boolean {
+  const file = parse(source);
+  return propertyArray(file, name, key, property).elements.some((e) => e.getText(file) === text);
+}
+
+export function addToPropertyArray(source: string, name: string, key: string, property: string, text: string): string {
+  const file = parse(source);
+  const array = propertyArray(file, name, key, property);
+  if (array.elements.some((e) => e.getText(file) === text)) throw new AstEditError(`${name}.${key}.${property} already has ${text}`);
+  return insertBeforeClose(source, array.elements, array.end, text, "");
+}

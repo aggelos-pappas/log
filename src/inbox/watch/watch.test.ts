@@ -158,7 +158,7 @@ describe("an inbox watcher for an account gone from Twenty", () => {
     const root = process.env.LOG_INBOX_STATE as string;
     const dead = `dead${process.pid}${Date.now()}`;
     mkdirSync(join(root, "discord", dead), { recursive: true });
-    writeFileSync(join(root, "discord", dead, "watch.log"), "log discord watch: deepman2: platformError: Discord's gateway didn't send READY within 45 s\n");
+    writeFileSync(join(root, "discord", dead, "watch.log"), "log discord watch: discordAccount: platformError: Discord's gateway didn't send READY within 45 s\n");
     const started: string[] = [];
     ensureLiveWatchers("discord", [dead], (account) => (started.push(account), 4242), () => false);
     expect(started).toEqual([]);

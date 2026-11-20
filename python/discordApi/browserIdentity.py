@@ -9,7 +9,10 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-IMPERSONATE = "chrome150"
+from identity import browserIdentity as _identity
+from logHome import log_home
+
+IMPERSONATE = _identity.curl_target("discord")
 ORIGIN = "https://discord.com"
 GATEWAY_URL = "wss://gateway.discord.gg/?encoding=json&v=9&compress=zlib-stream"
 REST_HEADERS = ("accept-language", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform", "user-agent", "x-debug-options", "x-discord-locale", "x-discord-timezone", "x-installation-id", "x-super-properties")
@@ -19,7 +22,7 @@ FILE = "browserIdentity.json"
 
 
 def runs_root() -> Path:
-    return Path(os.environ.get("LOG_RUNS_ROOT") or Path.home() / ".logCli" / "runs")
+    return Path(os.environ.get("LOG_RUNS_ROOT") or log_home() / "runs")
 
 
 def recordings(account: str, root: Path | None = None) -> list[Path]:

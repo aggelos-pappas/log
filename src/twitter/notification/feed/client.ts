@@ -1,10 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { ENGAGER_KINDS, NOTIFICATION_TYPES } from './types'
 import type { EngagerCounts, EngagerKind, EngagerSummary, NotificationEngager, NotificationKind, NotificationQuery, NotificationStore, NotificationType, PostEngagerSummary, TwitterNotification, UnrollCandidate } from './types'
+import { logHome } from '../../../config/logHome/index'
 
-export function notificationStorePath(account: string, root = process.env.LOG_TWITTER_STATE || join(homedir(), '.logCli', 'twitter')): string {
+export function notificationStorePath(account: string, root = process.env.LOG_TWITTER_STATE || join(logHome(), 'twitter')): string {
   return join(root, account, 'notifications.json')
 }
 

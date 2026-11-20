@@ -67,6 +67,12 @@ describe('platform extenders', () => {
     expect(handle.prepare('SELECT senderUserId FROM messages').get()).toEqual({ senderUserId: '1' })
   })
 
+  test('a dm is named after the other side, never after a message the owner sent into it', () => {
+    typeEvent(handle, event({ eventId: 'o1', platform: 'twitter', conversationId: '9:1974', type: 'ownMessage', with: 'someone_else', box: 'xchat', payload: { id: 'm1' } }))
+    typeEvent(handle, event({ eventId: 't1', platform: 'twitter', conversationId: '9:1974', with: 'their_handle', box: 'xchat', payload: { id: 'm2' } }))
+    expect(handle.prepare('SELECT name FROM chats').get()).toEqual({ name: 'their_handle' })
+  })
+
   test('an X notification is one interaction and teaches who the actor is', () => {
     typeEvent(handle, event({ platform: 'twitter', type: 'notification', conversationId: '', with: 'dex_1', payload: { key: 'like:1:2', kind: 'like', userId: '2039', handle: 'dex_1', name: 'Mandy', postId: '77', postText: 'my post', at: '2026-11-07T19:23:14Z' } }))
     expect(handle.prepare('SELECT kind, actorUserId, targetRef FROM interactions').get()).toEqual({ kind: 'like', actorUserId: '2039', targetRef: '77' })

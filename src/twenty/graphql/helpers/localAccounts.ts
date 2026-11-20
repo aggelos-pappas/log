@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { matchesFilter } from './memoryTwenty'
 import type { LoginSecrets, TwentyClient, TwentyObject, TwentyObjects } from '../types'
+import { logHome } from '../../../config/logHome/index'
 
 type Row = Record<string, unknown> & { id: string }
 
@@ -10,7 +10,7 @@ const ACCOUNTS = 'socialAccounts'
 export const LOCAL_ID_PREFIX = 'local:'
 
 export function localAccountsPath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_LOCAL_ACCOUNTS || join(homedir(), '.logCli', 'localAccounts.json')
+  return env.LOG_LOCAL_ACCOUNTS || join(logHome(), 'localAccounts.json')
 }
 
 export function localOnly(env: Record<string, string | undefined> = process.env): boolean {

@@ -7,7 +7,7 @@ import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { DISCORD_PLATFORM } from "../../discord/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
-import { attachmentLines, discordDeps, discordInboxMessageOf, filesOfStored, storedAttachmentsOf, toInboxOf, UNTRUSTED_FILE_LINE } from "./index.ts";
+import { attachmentLines, discordDeps, forgetServerLists, discordInboxMessageOf, filesOfStored, storedAttachmentsOf, toInboxOf, ServerTalks, SERVER_TALK_MS, UNTRUSTED_FILE_LINE } from "./index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
 import { chatEvents } from "../../inbox/store/index.ts";
 import { takePending } from "../../inbox/watch/index.ts";
@@ -79,6 +79,37 @@ describe("log discord session check", () => {
     expect(r.out).toContain("1000000000000000001  group  log  (QuietSparrow, Jon)");
   });
 
+  test("chats --kind keeps only dms and groups, and --name finds a typo'd name in one call", async () => {
+    const chats = [
+      { id: "1000000000000000001", kind: "group", name: "build crew", members: ["grace_ships", "linus_k"] },
+      { id: "1000000000000000002", kind: "dm", name: "linus_k", members: ["linus_k"] },
+      { id: "1000000000000000003", kind: "channel", name: "demo server #general", members: [] },
+    ];
+    const kinds = await run(["discord", "chats", "--account", "discordOne", "--kind", "dm,group", "--json"], { answer: { ok: true, loginState: "loggedIn", chats }, refreshed: null });
+    expect(JSON.parse(kinds.out)).toMatchObject({ of: 3, chats: [{ kind: "group" }, { kind: "dm" }] });
+    const named = await run(["discord", "chats", "--account", "discordOne", "--kind", "dm", "--name", "lnius_k"], { answer: { ok: true, loginState: "loggedIn", chats }, refreshed: null });
+    expect(named.out).toContain("has 1 of 3 chat(s) matching");
+    expect(named.out).toContain("1000000000000000002  dm     linus_k");
+    const wrong = await run(["discord", "chats", "--account", "discordOne", "--kind", "server"], { answer: { ok: true, loginState: "loggedIn", chats }, refreshed: null });
+    expect(wrong.code).toBe(1);
+  });
+
+  test("search reads the server list once and reuses it for the next searches", async () => {
+    forgetServerLists();
+    const calls: string[] = [];
+    const engine = (_account: unknown, spec: { action: string }) => {
+      calls.push(spec.action);
+      if (spec.action === "servers") return { answer: { ok: true, servers: [{ id: "1000000000000000009", name: "demo server", owner: false }] }, refreshed: null };
+      return { answer: { ok: true, serverId: "1000000000000000009", total: 0, messages: [], places: {} }, refreshed: null };
+    };
+    for (const query of ["ship it", "release"]) {
+      const code = await runCli(["discord", "search", "--account", "discordOne", "--server", "demo server", "--query", query], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: engine as never });
+      expect(code).toBe(0);
+    }
+    expect(calls).toEqual(["servers", "search", "search"]);
+    forgetServerLists();
+  });
+
   test("send without --live is a dry run and calls nothing", async () => {
     const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "yo"]);
     expect(r.code).toBe(0);
@@ -117,6 +148,80 @@ describe("log discord session check", () => {
       expect(r.out).toContain("not sent: three");
       expect(r.out).toContain("not sent: four");
     } finally {
+      Object.assign(discordDeps, saved);
+    }
+  });
+
+  test("a message they write while a line is still being typed stops that line before it posts", async () => {
+    const saved = { ...discordDeps };
+    discordDeps.wait = async () => {};
+    discordDeps.incoming = () => [];
+    discordDeps.mark = () => ({ log: "watch.log", offset: 10 });
+    try {
+      const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one\ntwo", "--approvedBy", "the owner", "--live"], { answer: { ok: false, code: "chatMovedOn", detail: "they wrote while this was being typed, so it wasn't sent: chat 1481513072660185149 · x · 3: oops wrong one", loginState: "loggedIn", event: "held" }, refreshed: null });
+      expect(r.code).toBe(1);
+      expect(r.calls).toEqual(["discordOne:send"]);
+      expect(r.out).toContain(">>> INTERRUPTED");
+      expect(r.out).toContain("0 of 2 sent");
+      expect(r.out).toContain("oops wrong one");
+      expect(r.out).toContain("not sent: one");
+    } finally {
+      Object.assign(discordDeps, saved);
+    }
+  });
+
+  test("a line waits while they are typing, then goes out once they stop", async () => {
+    const saved = { ...discordDeps };
+    let waits = 0;
+    discordDeps.wait = async () => void waits++;
+    discordDeps.now = () => "2026-11-03T19:23:36.000Z";
+    discordDeps.incoming = () => [];
+    discordDeps.typing = () => (waits >= 1 && waits < 4 ? ["7"] : []);
+    try {
+      const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one\ntwo", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1481513072660185149", at: "2026-11-03T19:24:13.300Z" }, refreshed: null });
+      expect(r.code).toBe(0);
+      expect(r.calls).toEqual(["discordOne:send", "discordOne:send"]);
+      expect(waits).toBeGreaterThan(1);
+    } finally {
+      Object.assign(discordDeps, saved);
+    }
+  });
+
+  test("still typing at the limit holds the rest and says so", async () => {
+    const saved = { ...discordDeps };
+    let waits = 0;
+    discordDeps.wait = async () => void waits++;
+    discordDeps.now = () => "2026-11-03T19:23:36.000Z";
+    discordDeps.incoming = () => [];
+    discordDeps.typing = () => (waits ? ["7"] : []);
+    try {
+      const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one\ntwo\nthree", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1481513072660185149", at: "2026-11-03T19:24:13.300Z" }, refreshed: null });
+      expect(r.code).toBe(1);
+      expect(r.calls).toEqual(["discordOne:send"]);
+      expect(r.out).toContain(">>> STILL TYPING");
+      expect(r.out).toContain("  two");
+    } finally {
+      Object.assign(discordDeps, saved);
+    }
+  });
+
+  test("--followUp tells the gate the owner asked for this message on top of his own last one", async () => {
+    const saved = { ...discordDeps };
+    discordDeps.wait = async () => {};
+    discordDeps.incoming = () => [];
+    const gate = gateDeps.gate;
+    const gated: Record<string, unknown>[] = [];
+    gateDeps.gate = async (_context, send) => {
+      gated.push(send as Record<string, unknown>);
+      return { ok: true, line: "voice gate: passed (test)" };
+    };
+    try {
+      await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one", "--followUp", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1481513072660185149", timestamp: "t" }, refreshed: null });
+      await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "two", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "2", channelId: "1481513072660185149", timestamp: "t" }, refreshed: null });
+      expect(gated[0]).toMatchObject({ followUp: true });
+      expect(gated[1].followUp).toBeUndefined();
+    } finally {
+      gateDeps.gate = gate;
       Object.assign(discordDeps, saved);
     }
   });
@@ -275,6 +380,28 @@ describe("log discord session check", () => {
     expect(toInboxOf({ kind: "message", channelId: "1", guildId: "9", repliesToMe: true, bot: true, text: "Thinking..." })).toBe(false);
     expect(toInboxOf({ kind: "message", channelId: "1", guildId: "9", repliesToMe: true, bot: true, text: "look beyond x" })).toBe(true);
     expect(toInboxOf({ kind: "message", channelId: "1", fromMe: true, text: "mine" })).toBe(false);
+  });
+});
+
+describe("a server channel conversation reaches the inbox past its mentions", () => {
+  test("someone who replied to the account, then wrote on without a mention, still goes to the inbox for 30 minutes", () => {
+    const talks = new ServerTalks();
+    const reply = { kind: "message", channelId: "1", guildId: "9", id: "10", fromId: "77", repliesToMe: true, text: "industrial field" };
+    talks.see(reply, 0);
+    const on = { kind: "message", channelId: "1", guildId: "9", id: "11", fromId: "77", text: "many people havent adapted yet" };
+    expect(toInboxOf(on, { with: (e: Record<string, unknown>) => talks.with(e, 60_000) } as ServerTalks)).toBe(true);
+    expect(talks.with(on, SERVER_TALK_MS + 1)).toBe(false);
+    expect(talks.with({ ...on, fromId: "88" }, 60_000)).toBe(false);
+    expect(talks.with({ ...on, channelId: "2" }, 60_000)).toBe(false);
+  });
+  test("someone the owner replied to or tagged counts too, a bot never", () => {
+    const talks = new ServerTalks();
+    talks.see({ kind: "message", channelId: "1", guildId: "9", id: "20", fromId: "55", text: "pumps" }, 0);
+    talks.see({ kind: "message", channelId: "1", guildId: "9", id: "21", fromId: "me", fromMe: true, replyTo: "20", text: "nice" }, 0);
+    talks.see({ kind: "message", channelId: "1", guildId: "9", id: "22", fromId: "me", fromMe: true, text: "<@123456789012345678> yo" }, 0);
+    expect(talks.with({ kind: "message", channelId: "1", guildId: "9", fromId: "55", text: "x" }, 1000)).toBe(true);
+    expect(talks.with({ kind: "message", channelId: "1", guildId: "9", fromId: "123456789012345678", text: "x" }, 1000)).toBe(true);
+    expect(talks.with({ kind: "message", channelId: "1", guildId: "9", fromId: "55", bot: true, text: "x" }, 1000)).toBe(false);
   });
 });
 

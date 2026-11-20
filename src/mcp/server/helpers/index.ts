@@ -1,4 +1,5 @@
 export { guardCall } from "./guardCall.ts";
+export { capLine, capResult, jsonHead, narrowingFlags, RESULT_CAP_BYTES } from "./resultCap.ts";
 export { parseEnvText } from "./parseEnvText.ts";
 export { actsAsOwner, argsLiveFlags, commandTools, OWNER_EFFECTS, PLAY_HANDLE, hasShell, identityOf, isLocalLiveTwin, legacyArgsTool, LOCAL_LIVE_FLAGS, longRunLine, SHELL_CLIENTS, toolsFromCommands } from "./toolsFromCommands.ts";
 export type { ToolOptions } from "./toolsFromCommands.ts";

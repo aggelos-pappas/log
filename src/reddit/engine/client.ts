@@ -1,9 +1,15 @@
 import { RedditClient, RedditLoginError } from "../../../vendor/reverseChud/src/index.ts";
 import type { RedditComment, RedditFeedPost, RedditPost } from "../../../vendor/reverseChud/src/index.ts";
 import { TwoCaptchaRecaptchaSolver, twoCaptchaKey } from "../../captcha/twoCaptchaToken/index.ts";
+import { wreqBrowser } from "../../browser/identity/index.ts";
 import type { RedditBridgeAnswer, RedditBridgeComment, RedditBridgePost, RedditBridgeRequest, RedditBridgeSubreddit, RedditVoteDirection } from "./types.ts";
 
 const ORIGIN = "https://www.reddit.com";
+
+export function redditBrowser(): { browser: string; os: string } {
+  const { browser, os } = wreqBrowser("reddit");
+  return { browser, os };
+}
 const DEFAULT_SPACING_MS: [number, number] = [800, 2500];
 const MAX_PAGES = 20;
 const LINK = /https?:\/\/[^\s)\]>"'|]+/gi;
@@ -18,7 +24,7 @@ export interface RedditBridgeDeps {
 export const redditBridgeDeps: RedditBridgeDeps = {
   resume: (request) =>
     RedditClient.resume({
-      state: { version: 1, username: request.account, origin: ORIGIN, browser: "chrome_140", os: "windows", cookies: Object.entries(request.cookies).map(([name, value]) => ({ name, value, domain: ".reddit.com", path: "/" })) },
+      state: { version: 1, username: request.account, origin: ORIGIN, ...redditBrowser(), cookies: Object.entries(request.cookies).map(([name, value]) => ({ name, value, domain: ".reddit.com", path: "/" })) },
       ...(request.proxy ? { proxy: request.proxy } : {}),
       ...(request.action === "create" || request.action === "reply" ? { captchaSolver: new TwoCaptchaRecaptchaSolver(request.captchaKey ?? twoCaptchaKey(), request.account) } : {}),
     }),

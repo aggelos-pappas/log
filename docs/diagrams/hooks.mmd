@@ -21,12 +21,14 @@ sequenceDiagram
   Note over Hook: the same engine line with the owner's prompt, only when an account's session state, its governor use or the MCP server's freshness changed
   Note over Hook: the same inbox check with each of the owner's prompts: a poll starts when one is due, and new messages from the last poll are put in front of the agent
   Note over Hook: the play the owner's prompt asks for, matched against every use case's own #quot;How the owner asks for it#quot; phrases and title, named with getGuide to load it before anything is done (rule 158)
+  Note over Hook: the people the owner's prompt names (@handle or a known handle), looked up in the Relate graph projected from log.db: which accounts talk with them, what they engaged, the groups they share, who could introduce them and who is in the same orbit#59; silent when nobody is named, and the graph rebuilt in the background when log.db has moved on
   Note over Hook: the same queue events with each of the owner's prompts
   Note over Hook: the same X live state with each of the owner's prompts, only what is new for this session
   loop each tool call
     Agent->>Hook: PreToolUse
     Note over Hook: a Discord, Slack or Instagram call that names its chat by a bare id is refused and told to pass the name (a person, a group, or #quot;#lt;server#gt; ##lt;channel#gt;#quot;), so the owner sees where every call goes (rule 154)
     Note over Hook: a log-cli run that would hide its lines (piped through tail or head) is refused before it starts#59; a long one off a Monitor is told to start one (rule 26)#59; any log action run by hand from a shell is refused and pointed at its MCP tool (rule 163)
+    Note over Hook: a hand-rolled data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off python or bun -e), unwrapped from heredocs, written files and execute_code, is labelled readsData or actsOnData with its target, counted in log.db, and advised, never blocked, to become a log tool through getGuide({ useCase: #quot;log/toolFromOneOff#quot; }) (rule 163)
     alt a log run piped through tail/head
       Hook-->>Agent: refused (exit 2), run it live
     else

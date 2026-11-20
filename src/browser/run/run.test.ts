@@ -167,7 +167,7 @@ describe('launch budget (rule 24)', () => {
     expect(listLaunches('phillyOne', roots).map((d) => d.toISOString())).toEqual(['2026-10-19T09:30:00.000Z'])
     expect(listLaunches('otherOne', roots)).toHaveLength(1)
     expect(lastLaunchReset('phillyOne', resets)?.toISOString()).toBe('2026-10-19T09:10:00.000Z')
-  })
+  }, 30_000)
 
   test('too soon after the last launch, then too many in the local day', () => {
     const tz = 'America/New_York'

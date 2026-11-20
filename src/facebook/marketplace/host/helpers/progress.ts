@@ -1,11 +1,11 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { LifecycleContext } from '../../../../platformKit/lifecycle/types'
 import type { HostControl, HostProgress, MilestoneField } from '../types'
+import { logHome } from '../../../../config/logHome/index'
 
 export function hostDir(account: string, env: Record<string, string | undefined> = process.env): string {
-  return join(env.LOG_HOST_DIR || join(homedir(), '.logCli', 'runs', 'host'), account)
+  return join(env.LOG_HOST_DIR || join(logHome(), 'runs', 'host'), account)
 }
 
 export const progressPath = (account: string) => join(hostDir(account), 'progress.json')

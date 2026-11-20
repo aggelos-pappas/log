@@ -1,10 +1,10 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { aiIndexOf, saveAiIndex, saveVectors, vectorsFor } from '../../inbox/store/index'
-import { homedir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BASELINE_SAMPLE, OWNER_SAYS_IT_TIMES, MUTE_IF_OWNER_USES, X_COMPLAINT, X_COMPLAINT_KEEP } from './types'
 import type { AiBaseline, AiCloseMatch, AiEmbedder, AiIndex, AiIndexMeta, AiPhrase, AiReading, AiTellHit, AiTellRule } from './types'
+import { logHome } from '../../config/logHome/index'
 
 const REGEX_CHARS = /[\\()[\]{}^$*+?|.]/
 
@@ -13,7 +13,7 @@ export function aiTellsDir(): string {
 }
 
 export function aiIndexDir(): string {
-  return process.env.LOG_AI_TELLS_INDEX || join(homedir(), '.logCli', 'aiTells')
+  return process.env.LOG_AI_TELLS_INDEX || join(logHome(), 'aiTells')
 }
 
 export function valeRules(dir = join(aiTellsDir(), 'valeAiTells', 'styles')): AiTellRule[] {

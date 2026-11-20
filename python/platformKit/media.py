@@ -4,6 +4,7 @@ import os
 import re
 from pathlib import Path
 from typing import Any
+from logHome import log_home
 
 AUDIO_SUFFIXES = (".ogg", ".oga", ".opus", ".m4a", ".mp3", ".wav", ".aac", ".flac", ".webm")
 AUDIO_TYPES = ("audio/", "video/ogg")
@@ -59,7 +60,7 @@ def is_visual(attachment: dict[str, Any]) -> bool:
 
 
 def voice_notes_root() -> Path:
-    return Path(os.environ.get("LOG_VOICE_NOTES_DIR") or Path.home() / ".logCli" / "voiceNotes").resolve()
+    return Path(os.environ.get("LOG_VOICE_NOTES_DIR") or log_home() / "voiceNotes").resolve()
 
 
 def voice_note_path(given: Any, suffix: str) -> Path | None:

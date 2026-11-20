@@ -1,13 +1,13 @@
 import { createHash, createPublicKey, randomBytes, randomUUID, verify } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import type { Database } from "bun:sqlite";
 import type { Authority, Binding, Envelope, OperationState, PendingPairing, Refusal, ResultPayload, RunTool } from "./types.ts";
 import { PROTOCOL_VERSION, RECONNECT_MS } from "./types.ts";
+import { logHome } from "../../config/logHome/index.ts";
 
 export function runtimeDir(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_RUNTIME_DIR || join(homedir(), ".logCli", "runtime");
+  return env.LOG_RUNTIME_DIR || join(logHome(), "runtime");
 }
 
 const bindingPath = (dir: string) => join(dir, "binding.json");

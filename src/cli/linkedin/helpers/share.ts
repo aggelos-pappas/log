@@ -8,6 +8,7 @@ import { actOnEngine } from "../../../platformKit/action/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseError, refuseInput } from "../../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandInput, CommandResult, FlagSpec } from "../../runner/types.ts";
 import type { PlatformAccount, PlatformEngineRun } from "../../../platformKit/session/index.ts";
+import { logHome } from "../../../config/logHome/index.ts";
 
 export const LINKEDIN_TEXT_MAX = 3000;
 export const LINKEDIN_IMAGE_MAX_BYTES = 20 * 1024 * 1024;
@@ -28,7 +29,7 @@ export function text(flags: Record<string, unknown>, name: string): string {
 }
 
 export function imageRoots(env: Record<string, string | undefined> = process.env): string[] {
-  return [resolvePath(env.LOG_OUTBOX || join(homedir(), ".buzz", "OUTBOX")), resolvePath(join(homedir(), ".logCli"))];
+  return [resolvePath(env.LOG_OUTBOX || join(logHome(), "outbox")), resolvePath(logHome())];
 }
 
 type MediaRule = { extensions: string[]; kinds: string; maxBytes: number; maxLabel: string };

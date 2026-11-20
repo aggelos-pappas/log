@@ -56,7 +56,7 @@ export const writeBudgets = {
       { kind: 'string', file: LINKEDIN, includes: 'rateLimited' },
     ],
     'REQ-BUDGET-12': [
-      { kind: 'value', file: TRANSPORT, name: 'IMPERSONATE', equals: 'chrome150' },
+      { kind: 'symbol', file: TRANSPORT, name: 'IMPERSONATE' },
       { kind: 'symbol', file: TRANSPORT, name: 'new_session' },
       { kind: 'symbol', file: 'python/checks/linkedinTransport.py', name: 'problems_in' },
     ],

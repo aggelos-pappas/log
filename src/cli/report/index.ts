@@ -1,3 +1,5 @@
+import { readWaiting } from "../../inbox/waiting/index.ts";
+import type { WaitingReport } from "../../inbox/waiting/index.ts";
 import { readIdentityProfile } from "../../inbox/profiles/index.ts";
 import type { IdentityProfileView } from "../../inbox/profiles/index.ts";
 import { readPlatformSenders, readTwitterSenders, SENDERS_DEFAULT_LIMIT, SENDERS_MAX_LIMIT } from "../../inbox/senders/index.ts";
@@ -51,10 +53,16 @@ export function profileText(profile: IdentityProfileView): string {
   return [`log report data: identityProfile, ${profile.name} on ${profile.platform}${facts ? ` (${facts})` : ""}, read from log.db, kept ${profile.fetchedAt.slice(0, 16).replace("T", " ")} UTC`, ...(profile.bio ? [`  ${profile.bio}`] : [])].join("\n");
 }
 
-export const reportDeps: { read: ReportDeps["readSenders"]; readPlatformSenders: ReportDeps["readPlatformSenders"]; readProfile: ReportDeps["readProfile"] } = {
+function waitingText(report: WaitingReport): string {
+  const line = (r: WaitingReport["waiting"][number]) => `  ${r.who} on ${r.platform}${r.kind === "group" ? " group" : ""} (${r.account}), ${r.at.slice(0, 16).replace("T", " ")} UTC: ${r.said}`;
+  return [`log report data: waitingOnYou, read from log.db${report.since ? ` since ${report.since.slice(0, 10)}` : ""}: ${report.waiting.length} waiting on you, ${report.followUps.length} opened your message without answering`, ...(report.waiting.length ? ["waiting on you:", ...report.waiting.map(line)] : []), ...(report.followUps.length ? ["opened, no reply:", ...report.followUps.map(line)] : [])].join("\n");
+}
+
+export const reportDeps: { read: ReportDeps["readSenders"]; readPlatformSenders: ReportDeps["readPlatformSenders"]; readProfile: ReportDeps["readProfile"]; readWaiting: ReportDeps["readWaiting"] } = {
   read: readTwitterSenders,
   readPlatformSenders,
   readProfile: readIdentityProfile,
+  readWaiting,
 };
 
 export const reportCommand: Command = {
@@ -74,9 +82,9 @@ export const reportCommand: Command = {
     const input = reportDataSource.safeParse(given);
     if (!input.success) return refuse("report data", "reportFieldInvalid", input.error.issues.slice(0, 4).map((issue) => `${issue.path.join(".") || "input"}: ${issue.message}`).join("; "));
     try {
-      const read = readReportSource(input.data, { readSenders: reportDeps.read, readPlatformSenders: reportDeps.readPlatformSenders, readProfile: reportDeps.readProfile });
+      const read = readReportSource(input.data, { readSenders: reportDeps.read, readPlatformSenders: reportDeps.readPlatformSenders, readProfile: reportDeps.readProfile, readWaiting: reportDeps.readWaiting });
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify(read, null, 2) };
-      return { code: 0, stdout: input.data.source === "identityProfile" ? profileText(read as IdentityProfileView) : sendersText(read as SendersReport) };
+      return { code: 0, stdout: input.data.source === "identityProfile" ? profileText(read as IdentityProfileView) : input.data.source === "waitingOnYou" ? waitingText(read as WaitingReport) : sendersText(read as SendersReport) };
     } catch (error) {
       const code = (error as { code?: unknown } | null)?.code;
       const message = error instanceof Error ? error.message : String(error);

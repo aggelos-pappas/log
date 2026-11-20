@@ -128,6 +128,14 @@ describe("writers keep the profile fields the engines already return", () => {
     expect(profileOf(db(), "twitter", "5001")).toBeNull();
   });
 
+  test("X: an answer naming someone else is never taken as the account's own id, the twid cookie is", async () => {
+    const account = { id: "acc1", accountName: "xAccount", cookies: { twid: "u%3D5001" } } as unknown as TwitterAccount;
+    await recordTwitterSession(twenty, account, { answer: { ok: true, loginState: "loggedIn", userId: "5001", screenName: "xAccount", name: "X Account" }, refreshed: null }, NOW);
+    await recordTwitterSession(twenty, account, { answer: { ok: true, loginState: "loggedIn", userId: "7777", screenName: "someoneElse", name: "Someone Else" }, refreshed: null }, NOW);
+    expect(db().prepare("SELECT userId FROM accounts WHERE platform = 'twitter' AND account = 'xAccount'").get()).toEqual({ userId: "5001" });
+    expect(identityOf(db(), "twitter", "7777")).toBeNull();
+  });
+
   test("Discord: the session check keeps the global name and the verified flag", async () => {
     const answer: PlatformAnswer = { ok: true, loginState: "loggedIn", httpStatus: 200, screenName: "fakeguilder", userId: "6001", globalName: "Fake Guilder", verified: true, mfaEnabled: false, avatar: "0123456789abcdef0123456789abcdef" };
     await recordDiscordSession(twenty, { id: "acc2", accountName: "fakeGuild", cookies: {} } as unknown as PlatformAccount, { answer, refreshed: null }, NOW);
