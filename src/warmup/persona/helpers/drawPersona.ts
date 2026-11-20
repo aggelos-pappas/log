@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { seeded } from '../../../facebook/warmup/activities/helpers/reelSession'
 import type { BehaviourProfile, DatasetRow } from '../types'
+import { logHome } from '../../../config/logHome/index'
 
 export function datasetsDir(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_DATASETS_DIR || join(homedir(), '.logCli', 'datasets')
+  return env.LOG_DATASETS_DIR || join(logHome(), 'datasets')
 }
 
 export function parseTable(text: string, separator: ',' | '\t'): Record<string, string>[] {

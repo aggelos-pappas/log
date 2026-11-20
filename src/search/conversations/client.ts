@@ -1,6 +1,5 @@
 import { timedSync } from '../../observability/timing/index'
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { BM25, tokenize } from 'bm25s'
 import { VectorDB } from 'verso-db'
@@ -14,6 +13,7 @@ import { applyTranscripts } from '../../media/voiceNotes/helpers/store'
 import type { Database } from 'bun:sqlite'
 import { defaultDbPath, useDatabase } from '../../storage/schema'
 import { loadConversationRows, saveConversationRows } from '../../storage/platform'
+import { logHome } from '../../config/logHome/index'
 
 type ChunkMeta = { platform: string; account: string; conversationId: string; at: string }
 
@@ -28,11 +28,11 @@ export interface ConversationIndex {
 }
 
 export function searchRoot(): string {
-  return process.env.LOG_SEARCH_DIR || join(homedir(), '.logCli', 'search')
+  return process.env.LOG_SEARCH_DIR || join(logHome(), 'search')
 }
 
 export function conversationsRoot(): string {
-  return process.env.LOG_CONVERSATIONS_DIR || join(homedir(), '.logCli', 'conversations')
+  return process.env.LOG_CONVERSATIONS_DIR || join(logHome(), 'conversations')
 }
 
 export function conversationsDbPath(): string {
@@ -45,7 +45,7 @@ function withConversationsDb<T>(path: string, work: (handle: Database) => T): T 
   return useDatabase(path, (handle) => {
     if (!importedFrom.has(path)) {
       importedFrom.add(path)
-      if (path === join(homedir(), '.logCli', 'log.db')) importOldConversations(handle)
+      if (path === join(logHome(), 'log.db')) importOldConversations(handle)
     }
     return work(handle)
   })
@@ -69,7 +69,7 @@ export function readConversationFiles(root = conversationsRoot()): Conversation[
   return out
 }
 
-export function importOldConversations(handle: Database, root = join(homedir(), '.logCli', 'conversations'), now: Date = new Date()): { files: number; messages: number } | null {
+export function importOldConversations(handle: Database, root = join(logHome(), 'conversations'), now: Date = new Date()): { files: number; messages: number } | null {
   const done = handle.prepare("SELECT state FROM imports WHERE store = 'conversations'").get() as { state: string } | null
   if (done?.state === 'done') return null
   const files = readConversationFiles(root)

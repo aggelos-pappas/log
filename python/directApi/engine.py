@@ -4,6 +4,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
+from logHome import log_home
 
 ROOT = Path(__file__).resolve().parents[1]
 FBK = ROOT.parent / "vendor" / "fbk"
@@ -12,7 +13,7 @@ for p in (str(ROOT), str(FBK / "src")):
         sys.path.insert(0, p)
 
 DATA = FBK / "data"
-STATE = Path.home() / ".logCli" / "fbk"
+STATE = log_home() / "fbk"
 
 
 def registry() -> dict[str, str]:

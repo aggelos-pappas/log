@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { getProfiles } from 'wreq-js'
+import { logHome } from '../../config/logHome/index'
 
 export const DEFAULT_BROWSER = 'chrome152'
 export const DEFAULT_OS = 'windows'
@@ -30,7 +30,7 @@ const UA_PLATFORM = {
 } as const
 
 export function settingsPath(env: NodeJS.ProcessEnv = process.env): string {
-  return env.LOG_SETTINGS?.trim() || join(homedir(), '.logCli', 'settings.json')
+  return env.LOG_SETTINGS?.trim() || join(logHome(), 'settings.json')
 }
 
 function stored(file: string): Record<string, unknown> {

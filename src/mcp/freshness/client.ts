@@ -1,8 +1,8 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, statSync, watch } from "node:fs";
 import { getState, putState } from "../../storage/state/index.ts";
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { logHome } from "../../config/logHome/index.ts";
 
 const WATCHED = ["src", "python", join("vendor", "fbk", "src")];
 const CODE = /\.(ts|py)$/;
@@ -13,12 +13,12 @@ export interface ProxyState {
   lastError: string | null;
 }
 
-export function readProxyState(file = process.env.LOG_MCP_RELOAD_FILE || join(homedir(), ".logCli", "mcp", "reload.json")): ProxyState | null {
+export function readProxyState(file = process.env.LOG_MCP_RELOAD_FILE || join(logHome(), "mcp", "reload.json")): ProxyState | null {
   return getState<ProxyState>("mcpReload", file, { legacyFile: file })?.body ?? null;
 }
 
 export function serverStampFile(): string {
-  return process.env.LOG_MCP_STAMP_FILE || join(homedir(), ".logCli", "mcp", "server.json");
+  return process.env.LOG_MCP_STAMP_FILE || join(logHome(), "mcp", "server.json");
 }
 
 export function codeStamp(root: string): number {

@@ -19,7 +19,7 @@ export const localAccounts = {
     'REQ-LOCAL-01': [
       { kind: 'symbol', file: LOCAL, name: 'localAccountsPath' },
       { kind: 'symbol', file: LOCAL, name: 'writeLocalAccounts' },
-      { kind: 'string', file: LOCAL, includes: '.logCli' },
+      { kind: 'uses', file: LOCAL, name: 'logHome' },
       { kind: 'string', file: LOCAL, includes: 'localAccounts.json' },
     ],
     'REQ-LOCAL-02': [{ kind: 'symbol', file: LOCAL, name: 'pullLocalAccounts' }],

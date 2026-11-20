@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { EMPTY_ALLOWLIST } from './index.ts'
 import type { PrivacyAllowlist } from './types.ts'
+import { logHome } from '../../config/logHome/index.ts'
 
 export function denylistPath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_PRIVACY_DENYLIST || join(homedir(), '.logCli', 'privacy', 'denylist.txt')
+  return env.LOG_PRIVACY_DENYLIST || join(logHome(), 'privacy', 'denylist.txt')
 }
 
 export function parseDenylist(text: string): string[] {

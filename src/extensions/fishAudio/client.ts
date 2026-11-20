@@ -21,7 +21,7 @@ async function refusalOf(answer: VoiceResponse): Promise<{ code: string; error: 
 }
 
 export function createFishClient(key: string | null = fishKey(), fetcher: VoiceFetch = fetch as unknown as VoiceFetch) {
-  const missing = <T>(): VoiceAnswer<T> => ({ ok: false, status: 0, code: 'voiceKeyMissing', error: `${FISH_KEY_NAME} is not set (the environment, .env.local in the repo, or ~/.buzz/.env.local)`, data: null })
+  const missing = <T>(): VoiceAnswer<T> => ({ ok: false, status: 0, code: 'voiceKeyMissing', error: `${FISH_KEY_NAME} is not set (the environment, .env.local in the repo, or ~/.logCli/.env)`, data: null })
   const auth = () => ({ Authorization: `Bearer ${key}` })
   return {
     async createModel(title: string, voices: readonly ReferenceAudio[]): Promise<VoiceAnswer<FishModelInfo>> {

@@ -38,7 +38,7 @@ const anchors: RequirementAnchors = {
   'REQ-SEARCH-05': [
     { kind: 'symbol', file: client, name: 'saveConversations' },
     { kind: 'symbol', file: client, name: 'conversationsRoot' },
-    { kind: 'string', file: client, includes: '.logCli' },
+    { kind: 'uses', file: client, name: 'logHome' },
     { kind: 'string', file: client, includes: 'conversations' },
   ],
   'REQ-SEARCH-06': [

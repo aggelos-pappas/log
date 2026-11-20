@@ -16,6 +16,7 @@ for p in (str(ROOT), str(VENDOR / "openLinkedinApi")):
 
 from platformKit import engine as kit
 from platformKit import media
+from logHome import log_home
 
 PLATFORM = "linkedin"
 LIBRARY = "vendor/openLinkedinApi"
@@ -193,7 +194,7 @@ def share_run(cookies: dict[str, str], browser: dict[str, str], act: Any, kind: 
     session.headers.clear()
     lines: list[str] = []
     composer = (kind or Composer)(session, cookies, browser, log=lambda line: (lines.append(line), print(line, file=sys.stderr, flush=True)))
-    home = Path(os.environ.get("LOG_CLI_HOME") or Path.home() / ".logCli")
+    home = Path(os.environ.get("LOG_CLI_HOME") or log_home())
     composer.record = home / "linkedin" / folder / time.strftime("%Y%m%dT%H%M%S")
     try:
         out = act(composer)

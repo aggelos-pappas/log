@@ -21,6 +21,8 @@ from platformKit import engine as kit
 from platformKit import media
 from platformKit import reactions
 from discordApi import browserGateway, browserIdentity, browserRest
+from logHome import log_home
+from identity import browserIdentity as _identity
 
 PLATFORM = "discord"
 LIBRARY = "vendor/endcord"
@@ -175,7 +177,7 @@ TEXT_CHANNELS = (0, 5, 15, 16)
 
 
 def servers_path(spec: dict[str, Any]) -> Path:
-    return Path.home() / ".logCli" / "discord" / re.sub(r"[^0-9A-Za-z_-]", "_", str(spec.get("account") or "account")) / "servers.json"
+    return log_home() / "discord" / re.sub(r"[^0-9A-Za-z_-]", "_", str(spec.get("account") or "account")) / "servers.json"
 
 
 def server_channels_of(client: Any, spec: dict[str, Any]) -> tuple[list[dict[str, Any]], str | None]:
@@ -228,7 +230,7 @@ def chats_of(token: str, spec: dict[str, Any] | None = None) -> dict[str, Any]:
 
 
 MEDIA_LINK = re.compile(r"^https?://\S+?\.(mp4|mov|gif|jpe?g|png|webp)(\?\S*)?$", re.I)
-OUTGOING_MEDIA = Path.home() / ".logCli" / "discord" / "media" / "outgoing"
+OUTGOING_MEDIA = log_home() / "discord" / "media" / "outgoing"
 
 
 def media_file_of(link: str) -> Path:
@@ -238,7 +240,7 @@ def media_file_of(link: str) -> Path:
     OUTGOING_MEDIA.mkdir(parents=True, exist_ok=True)
     path = OUTGOING_MEDIA / f"{hashlib.sha1(link.encode()).hexdigest()[:16]}{Path(link.split('?')[0]).suffix.lower()}"
     if not path.exists():
-        with urllib.request.urlopen(urllib.request.Request(link, headers={"User-Agent": "Mozilla/5.0"}), timeout=60) as answer:
+        with urllib.request.urlopen(urllib.request.Request(link, headers={"User-Agent": _identity.user_agent("discord")}), timeout=60) as answer:
             path.write_bytes(answer.read())
     return path
 
@@ -257,7 +259,7 @@ def attached_media(client: Any, channel: str, text: str) -> tuple[list[dict[str,
     return [{"upload_url": slot["upload_url"], "upload_filename": slot["upload_filename"], "name": f"meme{path.suffix}"}], None
 
 
-FILE_ROOTS = [Path(os.environ.get("LOG_OUTBOX") or Path.home() / ".buzz" / "OUTBOX"), Path.home() / ".logCli"]
+FILE_ROOTS = [Path(os.environ.get("LOG_OUTBOX") or log_home() / "outbox"), log_home()]
 FILE_MAX_BYTES = 10 * 1024 * 1024
 
 

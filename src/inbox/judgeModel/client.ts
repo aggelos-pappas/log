@@ -1,16 +1,16 @@
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { ModelAsk, ModelScorer } from './types'
 import { ASK_TIMEOUT_MS, MODEL_CHANNEL, MODEL_MIN_CHARS, START_GRACE_MS } from './types'
+import { logHome } from '../../config/logHome/index'
 
 export const ASK_PATH = fileURLToPath(new URL('../../../python/judge/ask.py', import.meta.url))
 export const SERVER_PATH = fileURLToPath(new URL('../../../python/judge/server.py', import.meta.url))
 
 function judgeHome(): string {
-  return join(process.env.LOG_HOME || join(homedir(), '.logCli'), 'judge')
+  return join(process.env.LOG_HOME || logHome(), 'judge')
 }
 
 function python(): string {

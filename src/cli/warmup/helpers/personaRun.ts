@@ -1,5 +1,4 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { createActor, fromPromise, toPromise } from "xstate";
 import { readCurrentInspect } from "../../../browser/inspect/index.ts";
@@ -16,9 +15,10 @@ import { buildPersonaPack, datasetsDir, drawPersona, readDatasets, readPackDatas
 import type { BehaviourProfile, PackDatasets, PersonaPack } from "../../../warmup/persona/index.ts";
 import type { ReelViewer } from "../../../warmup/viewer/index.ts";
 import type { CommandContext, CommandResult } from "../../runner/types.ts";
+import { logHome } from "../../../config/logHome/index.ts";
 
 export function personaPath(account: string, env: Record<string, string | undefined> = process.env): string {
-  return join(env.LOG_PERSONAS_DIR || join(homedir(), ".logCli", "personas"), `${account}.json`);
+  return join(env.LOG_PERSONAS_DIR || join(logHome(), "personas"), `${account}.json`);
 }
 
 export function seedOf(account: string): number {

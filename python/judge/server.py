@@ -3,6 +3,7 @@ import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from logHome import log_home
 
 MODEL_REPO = "patronus-studio/wolf-defender-prompt-injection-small"
 MODEL_FILE = "onnx/int8_int4_embeddings_x86/model.onnx"
@@ -13,7 +14,7 @@ HOST = "127.0.0.1"
 
 
 def home():
-    return Path(os.environ.get("LOG_HOME") or Path.home() / ".logCli")
+    return Path(os.environ.get("LOG_HOME") or log_home())
 
 
 def model_dir():

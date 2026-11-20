@@ -1,5 +1,4 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { createActor, fromPromise, toPromise } from "xstate";
 import { appendAttempt, countArkoseToday, readAttempts, solverAvailability } from "../../captcha/router/index.ts";
@@ -27,6 +26,7 @@ import type {
   StepOutput,
   UploadOutput,
 } from "../../facebook/marketplace/publish/index.ts";
+import { logHome } from "../../config/logHome/index.ts";
 import { countPostedToday, recordAccountIssue } from "../../facebook/marketplace/replacement/index.ts";
 import { homeOf } from "../../platformKit/home/index.ts";
 import { fetchProxyUrl, findAccount, markPosted, recordProxyCheck } from "../../platformKit/socialAccount/index.ts";
@@ -50,7 +50,7 @@ export const PUBLISH_USAGE = [
 ].join("\n");
 
 function publishRunDir(runId: string, env: Record<string, string | undefined> = process.env): string {
-  return join(env.LOG_PUBLISH_DIR || join(homedir(), ".logCli", "publish"), runId);
+  return join(env.LOG_PUBLISH_DIR || join(logHome(), "publish"), runId);
 }
 
 async function refuseListing(context: CommandContext, listing: AgencyListing, code: ErrorCode, detail: string): Promise<CommandResult> {

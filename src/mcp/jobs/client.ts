@@ -1,14 +1,14 @@
 import type { Database } from "bun:sqlite";
 import { randomBytes } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { db } from "../../inbox/store/index.ts";
 import type { CancelVerdict, JobProgressLine, JobRecord, JobStatus, JobView } from "./types.ts";
 import { MAX_WAIT_MS, PUBLISH_PASSED } from "./types.ts";
+import { logHome } from "../../config/logHome/index.ts";
 
 export function jobsDir(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_MCP_JOBS_DIR || join(homedir(), ".logCli", "mcp", "jobs");
+  return env.LOG_MCP_JOBS_DIR || join(logHome(), "mcp", "jobs");
 }
 
 type JobRow = { id: string; tool: string; argv: string; account: string | null; live: number; pid: number; startedAt: string; endedAt: string | null; status: string; cancelRequested: number; result: string | null; text: string | null };

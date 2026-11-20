@@ -5,6 +5,7 @@ import os
 import re
 from pathlib import Path
 from typing import Any, Mapping
+from logHome import log_home
 
 DEFAULT_BROWSER = "chrome152"
 DEFAULT_OS = "windows"
@@ -34,7 +35,7 @@ class IdentityError(ValueError):
 
 def settings_path() -> Path:
     named = os.environ.get("LOG_SETTINGS", "").strip()
-    return Path(named) if named else Path.home() / ".logCli" / "settings.json"
+    return Path(named) if named else log_home() / "settings.json"
 
 
 def _settings(path: Path | None = None) -> dict[str, Any]:

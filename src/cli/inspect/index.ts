@@ -1,7 +1,6 @@
 import { platformOfAccount, siteOfAccount } from "../runner/helpers/platforms.ts";
 import { spawn } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, statSync } from "node:fs";
-import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ARITY, addGoalEvent, clearCurrentInspect, currentInspectPath, evidenceOf, GOAL_FINDINGS_FILE, goalEvents, goalLine, goalProgress, goalProgressOf, INSPECT_ACTIONS, lastStepOf, stepBefore, LIVE_ACTIONS, openInspects, parseInspectAction, peeMarkdown, readCurrentInspect, renderInspectStep, runReadings, writeCurrentInspect } from "../../browser/inspect/index.ts";
@@ -17,6 +16,7 @@ import { loudText, readStep, timelineText } from "../../subq/stepReading/index.t
 import type { StepReading } from "../../subq/stepReading/index.ts";
 import type { CommandContext } from "../runner/types.ts";
 import { watchCheckpoint } from "./helpers/index.ts";
+import { logHome } from "../../config/logHome/index.ts";
 
 export const INSPECT_USAGE = [
   "Usage: log inspect start --account <accountName> [--goal <text>] [--url <the platform's own page>] [--bypass] [--now] [--noIdleMouse] [--detach]   (one session per account: two accounts can be open at once; --detach runs it as its own process and returns once it is open)",
@@ -58,7 +58,7 @@ export const inspectDetachDeps: {
 };
 
 async function startDetached(accountName: string, argv: string[]): Promise<{ code: number; stdout?: string; stderr?: string }> {
-  const logPath = join(homedir(), ".logCli", "runs", "inspect", `${accountName}.start.log`);
+  const logPath = join(logHome(), "runs", "inspect", `${accountName}.start.log`);
   const from = existsSync(logPath) ? statSync(logPath).size : 0;
   const child = inspectDetachDeps.start(["inspect", ...argv.filter((a) => a !== "--detach")], logPath);
   const tail = () => (existsSync(logPath) ? readFileSync(logPath).subarray(from).toString("utf8").split(/\r?\n/).filter(Boolean).slice(-12).join("\n") : "");

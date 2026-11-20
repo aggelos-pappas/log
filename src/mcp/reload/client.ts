@@ -1,6 +1,5 @@
 import { spawn } from "node:child_process";
 import { getState, putState } from "../../storage/state/index.ts";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { appendLiveLine, liveLogDir } from "../../observability/liveLog/index.ts";
@@ -9,6 +8,7 @@ import { listJobs, statusOf } from "../jobs/index.ts";
 import { callName, cancelledId, idKey, initialized, isRequest, isResponse, parseMessage, replayedInitialize, restartedMidCall, toolsChanged } from "./helpers/index.ts";
 import { CHECK_EVERY_MS, CRASH_WINDOW_MS, INIT_TIMEOUT_MS, MAX_CRASHES } from "./types.ts";
 import type { ChildEvents, ReloadChild, ReloadDeps, ReloadState, RpcId, RpcMessage } from "./types.ts";
+import { logHome } from "../../config/logHome/index.ts";
 
 interface Slot {
   child: ReloadChild;
@@ -243,7 +243,7 @@ export class ReloadProxy {
 }
 
 export function reloadStateFile(): string {
-  return process.env.LOG_MCP_RELOAD_FILE || join(homedir(), ".logCli", "mcp", "reload.json");
+  return process.env.LOG_MCP_RELOAD_FILE || join(logHome(), "mcp", "reload.json");
 }
 
 export function readReloadState(file = reloadStateFile()): ReloadState | null {

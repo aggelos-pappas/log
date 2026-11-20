@@ -33,6 +33,7 @@ import type { DiscordChat } from "../../discord/chat/match/index.ts";
 import type { PlatformAnswer } from "../../platformKit/session/index.ts";
 import { JSON_FLAG, listOf, numberOf, parseArgs, parserSpecOf, refuse, refuseGated, refuseError, truthOf, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput, CommandResult, FlagSpec } from "../runner/types.ts";
+import { logHome } from "../../config/logHome/index.ts";
 
 type HeldGuard = Extract<SendGuard, { ok: true }>;
 
@@ -574,7 +575,7 @@ export const discordDeleteCommand: Command = {
 export const FILE_MAX_BYTES = 10 * 1024 * 1024;
 
 export function fileRoots(env: Record<string, string | undefined> = process.env): string[] {
-  return [resolvePath(env.LOG_OUTBOX || join(homedir(), ".buzz", "OUTBOX")), resolvePath(join(homedir(), ".logCli"))];
+  return [resolvePath(env.LOG_OUTBOX || join(logHome(), "outbox")), resolvePath(logHome())];
 }
 
 export function filesOf(given: readonly string[] | undefined, roots = fileRoots()): { ok: true; paths: string[] } | { ok: false; refused: string } {

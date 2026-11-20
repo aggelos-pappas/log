@@ -1,7 +1,7 @@
 import { clearDeadQueueLockRows } from '../../twitter/queue/store/index'
 import { spawn, spawnSync } from 'node:child_process'
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { homedir, hostname } from 'node:os'
+import { hostname } from 'node:os'
 import { dirname, join } from 'node:path'
 import { twitterStateRoot } from '../../directApi/engine/index'
 import { personKeyOf } from '../../twitter/dm/person/index'
@@ -12,9 +12,10 @@ import type { StoredEvent } from '../store/index'
 import { lastWordOf, waitingOf } from '../lastWord/index'
 import { POLL_LOCK_SECONDS, POLL_MAX_SECONDS, POLL_MIN_SECONDS } from './types'
 import type { InboxMessage, InboxReader, InboxThread, PollPlan, SeenThreads } from './types'
+import { logHome } from '../../config/logHome/index'
 
 export function inboxRoot(): string {
-  return process.env.LOG_INBOX_STATE || join(homedir(), '.logCli', 'inbox')
+  return process.env.LOG_INBOX_STATE || join(logHome(), 'inbox')
 }
 
 const pendingPath = () => join(inboxRoot(), 'pending.jsonl')
@@ -345,7 +346,7 @@ export function stopStaleWatchers(platform: string, accounts: readonly string[],
   return stopped
 }
 
-export function clearDeadQueueLocks(_root: string = join(homedir(), '.logCli', 'queues'), alive: (pid: number) => boolean = processAlive): string[] {
+export function clearDeadQueueLocks(_root: string = join(logHome(), 'queues'), alive: (pid: number) => boolean = processAlive): string[] {
   return clearDeadQueueLockRows(alive)
 }
 

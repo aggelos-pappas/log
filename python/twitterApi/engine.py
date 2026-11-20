@@ -20,6 +20,8 @@ for p in (str(ROOT), str(VENDOR / "twikit"), str(VENDOR / "fbk" / "src")):
 from platformKit import media as media_kit
 from platformKit import reactions
 from platformKit import timing
+from logHome import log_home
+from identity import browserIdentity as _identity
 
 SECRET_KEYS = ("auth_token", "ct0", "twid", "kdt", "att", "password", "cookie")
 READS = ("ping", "follows", "inbox", "followers", "userPosts", "notifications", "postEngagers", "webClient", "xchatContacts", "xchatUnlock", "xchatWatch", "lists")
@@ -28,7 +30,7 @@ ACTIONS = READS + WRITES
 
 
 def state_root() -> Path:
-    return Path(os.environ.get("LOG_TWITTER_STATE") or Path.home() / ".logCli" / "twitter")
+    return Path(os.environ.get("LOG_TWITTER_STATE") or log_home() / "twitter")
 
 
 def state_dir(account: str) -> Path:
@@ -522,7 +524,7 @@ def media_links_out(spec: dict[str, Any]) -> tuple[str, list[str]]:
         suffix = Path(link.split("?")[0]).suffix.lower()
         path = folder / f"{hashlib.sha1(link.encode()).hexdigest()[:16]}{suffix}"
         if not path.exists():
-            with urllib.request.urlopen(urllib.request.Request(link, headers={"User-Agent": "Mozilla/5.0"}), timeout=60) as answer:
+            with urllib.request.urlopen(urllib.request.Request(link, headers={"User-Agent": _identity.user_agent("twitter")}), timeout=60) as answer:
                 path.write_bytes(answer.read())
         print(f"media link {link} sent as media, not as text ({path.stat().st_size} bytes)", file=sys.stderr, flush=True)
         media.append(str(path))

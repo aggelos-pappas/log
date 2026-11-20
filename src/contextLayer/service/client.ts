@@ -3,14 +3,14 @@ import { claimState, deleteState, getState, putState } from '../../storage/state
 import { spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { openDatabase } from '../../storage/schema/client'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { CONTEXT_PORT, CURL_CONNECT_SECONDS, CURL_MAX_SECONDS, HOST, SERVICE_START_GRACE_MS, SERVICE_TIMEOUT_MS } from './types'
 import type { ServiceInfo, TimingLine } from './types'
 import type { MeaningAnswer, PlayMatch } from '../../useCases/router/index'
+import { logHome } from '../../config/logHome/index'
 
 export function contextLayerRoot(): string {
-  return process.env.LOG_CONTEXT_LAYER || join(homedir(), '.logCli', 'contextLayer')
+  return process.env.LOG_CONTEXT_LAYER || join(logHome(), 'contextLayer')
 }
 
 export const servicePath = (root = contextLayerRoot()) => join(root, 'service.json')

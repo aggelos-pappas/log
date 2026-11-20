@@ -10,6 +10,7 @@ from typing import Any
 
 from device import deviceProfile
 from errors.errorCodes import checked, redact, register_secret
+from identity import browserIdentity as _identity
 
 _armed: dict[str, Any] = {
     "path": None,
@@ -237,7 +238,7 @@ def facebook_ms(proxy: dict[str, Any]) -> int | None:
         for probe in FACEBOOK_PROBES:
             started = time.monotonic()
             try:
-                opener.open(urllib.request.Request(probe, headers={"User-Agent": "Mozilla/5.0"}), timeout=15).read(256)
+                opener.open(urllib.request.Request(probe, headers={"User-Agent": _identity.user_agent()}), timeout=15).read(256)
             except urllib.error.HTTPError:
                 pass
             except Exception:

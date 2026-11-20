@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from identity import browserIdentity as _identity
+from logHome import log_home
 
 IMPERSONATE = _identity.curl_target("discord")
 ORIGIN = "https://discord.com"
@@ -21,7 +22,7 @@ FILE = "browserIdentity.json"
 
 
 def runs_root() -> Path:
-    return Path(os.environ.get("LOG_RUNS_ROOT") or Path.home() / ".logCli" / "runs")
+    return Path(os.environ.get("LOG_RUNS_ROOT") or log_home() / "runs")
 
 
 def recordings(account: str, root: Path | None = None) -> list[Path]:

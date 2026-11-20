@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import quote, urlsplit
+from logHome import log_home
 
 GITHUB_RELEASES = re.compile(r"^https://api\.github\.com/repos/([^/]+/[^/]+)/releases/?(\?.*)?$")
 PRERELEASE_TAG = re.compile(r"(alpha|rc|pre)", re.I)
@@ -16,7 +17,7 @@ _PATCHED: dict[str, Any] = {}
 
 def settings_path() -> Path:
     named = os.environ.get("LOG_SETTINGS", "").strip()
-    return Path(named) if named else Path.home() / ".logCli" / "settings.json"
+    return Path(named) if named else log_home() / "settings.json"
 
 
 def source(env: dict[str, str] | None = None) -> str | None:

@@ -2,9 +2,10 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { NichePerson, TasteRating } from '../types'
+import { logHome } from '../../../config/logHome/index.ts'
 
 export function nicheMapPath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_NICHE_MAP || join(homedir(), '.buzz', 'REPOS', 'whop', 'research', 'nicheMap', 'data', 'nicheMap.json')
+  return env.LOG_NICHE_MAP || join(logHome(), 'nicheMap', 'nicheMap.json')
 }
 
 export interface NicheMapEntry extends NichePerson {
