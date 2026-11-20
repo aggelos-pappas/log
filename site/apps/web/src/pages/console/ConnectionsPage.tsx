@@ -16,7 +16,7 @@ import { ConnectionPlatformFilter } from './ConnectionPlatformFilter'
 import { PlatformSignInDialog } from './PlatformSignInDialog'
 import { PlatformConnectionTongue } from './PlatformConnectionTongue'
 import { BrowserCheckDialog } from './BrowserCheckDialog'
-import { checkConnection, loadConnections, openSignInLink, saveConnectionKeys, type LocalConnections } from './connectionsData'
+import { checkConnection, loadConnections, openSignInLink, saveConnectionKeys, setConnectionBrowser, type LocalConnections } from './connectionsData'
 import { targetKey } from './consoleClient'
 import { useConsoleTarget } from './useConsoleTarget'
 
@@ -59,6 +59,7 @@ export function ConnectionsPage() {
   const queryKey = ['consoleConnections', targetKey(target)]
   const [statusTime, setStatusTime] = useState(Date.now)
   const [checkingId, setCheckingId] = useState<string | null>(null)
+  const [pickingId, setPickingId] = useState<string | null>(null)
   const [browserCheck, setBrowserCheck] = useState<{ accountId: string; autoSignIn: boolean } | null>(null)
   const browserCheckAccountId = browserCheck?.accountId ?? null
   const openBrowserCheck = (accountId: string, autoSignIn = false) => setBrowserCheck({ accountId, autoSignIn })
@@ -105,6 +106,18 @@ export function ConnectionsPage() {
     finally { setCheckingId(null); void connections.refetch() }
   }
 
+  async function pickBrowser(accountId: string, browser: string) {
+    if (!target || pickingId) return
+    setPickingId(accountId)
+    try {
+      const next = await setConnectionBrowser(target, accountId, browser)
+      keep(next)
+      toast.success('Browser saved', `It opens in ${next.browsers.find((item) => item.name === browser)?.label ?? browser} next time.`)
+    } catch (error) { toast.error('Browser not saved', errorText(error)) }
+    finally { setPickingId(null) }
+  }
+
+  const browserOptions = connections.data?.browsers ?? []
   const accountItems: ConnectionItem[] = connected.filter((account) => !selectedPlatforms.length || selectedPlatforms.includes(account.platform === 'twitter' ? 'x' : account.platform)).map((account) => {
     const platform = PLATFORMS.find((item) => item.service === (account.platform === 'twitter' ? 'x' : account.platform))
     const nativeLabels: Partial<Record<typeof account.status, string>> = { deactivated: 'Deactivated', banned: 'Banned', dead: 'Unavailable', restricted: 'Restricted', checkpoint: 'Checkpoint', paused: 'Paused', limited: 'Limited', warming: 'Warming up', needsLogin: 'Sign-in required' }
@@ -125,6 +138,7 @@ export function ConnectionsPage() {
     return {
       id: account.id, name: account.name, subtitle: platform?.label ?? account.platform, status, tone,
       icon: <FontAwesomeIcon icon={platform?.icon ?? faPlug} className="size-7" />,
+      browser: hasBrowser ? { value: account.browser, options: browserOptions, disabled: !running || pickingId !== null, onChange: (browser: string) => void pickBrowser(account.id, browser) } : undefined,
       homeCountry: account.homeCountry, proxyProvider: account.proxyProvider, checkedAt: browserVerified ? account.lastCheck!.checkedAt : account.checkedAt, checkNote,
       search: `${account.name} ${platform?.label ?? account.platform} ${status}`,
       action: {
@@ -185,6 +199,10 @@ export function ConnectionsPage() {
         </div>
       </article>)}</div> : <p className="p-10 text-center text-sm text-slate-600">No platform matches “{platformQuery.trim()}”.</p>}
     </section>
+    {browserOptions.length ? <section aria-label="Browsers" className="mt-10">
+      <div className="mb-4 flex items-center gap-3"><h2 className="shrink-0 text-base font-bold tracking-tight">Browsers</h2><span aria-hidden="true" className="h-px flex-1 bg-slate-300" /><em className="shrink-0 text-xs font-semibold not-italic text-slate-500">{browserOptions.length}</em></div>
+      <div className="grid gap-3 sm:grid-cols-3">{browserOptions.map((browser) => <div key={browser.name} data-browser-entry={browser.name} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3"><span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white p-1.5">{browser.logo ? <img src={browser.logo} alt="" className="size-full object-contain" /> : null}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-slate-900">{browser.label}</span><span className="block text-sm text-slate-500">{browser.isDefault ? 'Default · ' : ''}{connected.filter((account) => account.browser === browser.name).length} account(s)</span></span></div>)}</div>
+    </section> : null}
     <section className="mt-10">
       {connections.data ? <p className="mb-4 text-sm font-semibold text-slate-600">{connections.data.extensions.filter((extension) => extension.state === 'configured').length} extensions configured {where}</p> : null}
       <div className="mb-4 flex items-center gap-3"><h2 className="shrink-0 text-base font-bold tracking-tight">Extensions</h2><span aria-hidden="true" className="h-px flex-1 bg-slate-300" /><em className="shrink-0 text-xs font-semibold not-italic text-slate-500">{EXTENSION_PROVIDERS.length}</em></div>

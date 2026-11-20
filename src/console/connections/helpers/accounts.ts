@@ -9,9 +9,16 @@ import { fromTwentyEnum } from "../../../platformKit/socialAccount/helpers/twent
 import { vendorOfProxy } from "../../../proxyVendor/vendor/helpers/vendorOfProxy.ts";
 import { localAccountsPath, readLocalAccounts } from "../../../twenty/graphql/index.ts";
 import { ACCOUNT_STATUSES, SESSION_STATES } from "../types.ts";
-import type { AccountStatus, ConnectionAccount, ProxyProvider, SessionState } from "../types.ts";
+import type { AccountStatus, BrowserChoice, ConnectionAccount, ProxyProvider, SessionState } from "../types.ts";
+import { BROWSER_BRANDS, BROWSER_DRIVERS, DEFAULT_BROWSER_DRIVER, driverOrNull } from "../../../browser/driver/index.ts";
+import type { BrowserDriverName } from "../../../browser/driver/index.ts";
 
 type Env = Record<string, string | undefined>;
+
+export function browserChoices(env: Env = process.env): BrowserChoice[] {
+  const fallback = driverOrNull({ browserDriver: null, adsPowerProfileId: null }, env) ?? DEFAULT_BROWSER_DRIVER;
+  return BROWSER_DRIVERS.map((name) => ({ name, label: BROWSER_BRANDS[name].label, logo: BROWSER_BRANDS[name].logo, isDefault: name === fallback }));
+}
 
 export function connectionIdOf(platform: string, name: string): string {
   return createHash("sha256").update(`${platform}:${name.replace(/^@/, "").toLowerCase()}`).digest("hex").slice(0, 24);
@@ -40,7 +47,8 @@ export function sessionRoots(env: Env = process.env, home = homedir()): Record<P
 
 export function readConnectionAccounts(env: Env = process.env, home = homedir()): Omit<ConnectionAccount, "lastCheck">[] {
   const accounts = new Map<string, Omit<ConnectionAccount, "lastCheck">>();
-  function add(platform: Platform, name: string, facts: { state?: unknown; checkedAt?: unknown; status?: unknown; homeCountry?: unknown; proxy?: unknown; statusReason?: unknown }) {
+  const fallback = driverOrNull({ browserDriver: null, adsPowerProfileId: null }, env);
+  function add(platform: Platform, name: string, facts: { state?: unknown; checkedAt?: unknown; status?: unknown; homeCountry?: unknown; proxy?: unknown; statusReason?: unknown; browser?: BrowserDriverName | null }) {
     const key = `${platform}:${name.replace(/^@/, "").toLowerCase()}`;
     const held = accounts.get(key);
     const checkedAt = typeof facts.checkedAt === "string" && Number.isFinite(Date.parse(facts.checkedAt)) ? facts.checkedAt : null;
@@ -49,13 +57,13 @@ export function readConnectionAccounts(env: Env = process.env, home = homedir())
     const status = (ACCOUNT_STATUSES as readonly unknown[]).includes(facts.status) ? (facts.status as AccountStatus) : (held?.status ?? "unknown");
     const statusReason = typeof facts.statusReason === "string" && /^[a-zA-Z]{1,100}$/.test(facts.statusReason) ? facts.statusReason : (held?.statusReason ?? null);
     const state = (SESSION_STATES as readonly unknown[]).includes(facts.state) ? (facts.state as SessionState) : (held?.state ?? "unknown");
-    accounts.set(key, { id: connectionIdOf(platform, name), name: held?.name ?? name, platform, proxyProvider, homeCountry, status, statusReason, state, checkedAt: checkedAt ?? held?.checkedAt ?? null, signIn: signInRouteOf(platform).kind });
+    accounts.set(key, { id: connectionIdOf(platform, name), name: held?.name ?? name, platform, proxyProvider, homeCountry, status, statusReason, state, checkedAt: checkedAt ?? held?.checkedAt ?? null, signIn: signInRouteOf(platform).kind, browser: facts.browser !== undefined ? facts.browser : (held?.browser ?? fallback) });
   }
   for (const row of readLocalAccounts(localAccountsPath(env))) {
     const platform = platformOf(row.platform);
     const name = typeof row.accountName === "string" && row.accountName ? row.accountName : typeof row.name === "string" ? row.name : "";
     const status = typeof row.accountStatus === "string" && row.accountStatus ? fromTwentyEnum(row.accountStatus) : row.status;
-    if (name && platform) add(platform, name, { state: row.sessionState, checkedAt: row.sessionCheckedAt, status, homeCountry: row.homeCountry, proxy: row.proxy, statusReason: row.statusReason });
+    if (name && platform) add(platform, name, { state: row.sessionState, checkedAt: row.sessionCheckedAt, status, homeCountry: row.homeCountry, proxy: row.proxy, statusReason: row.statusReason, browser: driverOrNull({ browserDriver: typeof row.browserDriver === "string" ? row.browserDriver : null, adsPowerProfileId: typeof row.adsPowerProfileId === "string" ? row.adsPowerProfileId : null }, env) });
   }
   for (const [platform, root] of Object.entries(sessionRoots(env, home)) as [Platform, string][]) {
     if (!existsSync(root)) continue;

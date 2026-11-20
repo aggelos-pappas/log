@@ -12,9 +12,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "python"))
 
+from contextlib import asynccontextmanager
+
 from browser.browserViewer import BrowserViewer
-from camoufox.async_api import AsyncCamoufox
 from playwright.async_api import async_playwright
+
+BROWSERS = ("camoufox", "camoufoxHeaded", "brave", "braveCdp")
+WATCH_JS = """async ([x, y]) => {
+  const canvas = document.querySelector('canvas');
+  if (!canvas) return null;
+  const read = () => { const d = canvas.getContext('2d', { willReadFrequently: true }).getImageData(Math.round(x * canvas.width), Math.round(y * canvas.height), 1, 1).data; return d[1] > d[2] ? 'green' : 'blue'; };
+  const start = read();
+  return await new Promise((resolve) => {
+    const until = Date.now() + 3000;
+    const tick = () => { if (read() !== start) return resolve(Date.now()); if (Date.now() > until) return resolve(null); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+}"""
 
 ACCOUNT = "benchAccount"
 PAGES = {"mcp": "host", "logapp": "logapp"}
@@ -96,7 +110,7 @@ async def frames_of(page, surface):
     return value[0], value[1]
 
 
-async def scenario(edge, host, cpage, surface, theme, mode, shots, measure_seconds):
+async def scenario(edge, host, cpage, surface, theme, mode, shots, measure_seconds, prefix=""):
     page = await edge.new_page(viewport={"width": 960, "height": 900}, color_scheme=theme)
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
@@ -115,12 +129,17 @@ async def scenario(edge, host, cpage, surface, theme, mode, shots, measure_secon
     fps = (end - start) / (time.monotonic() - began)
     target = page.frame_locator("#view" if surface == "mcp" else ".logapp iframe").locator("canvas")
     box = await target.bounding_box()
-    latencies = []
+    latencies, framed = [], []
+    view = next((f for f in page.frames if f != page.main_frame), None)
     if box:
-        x = box["x"] + (PROBE[0] + PROBE[2] / 2) * box["width"] / WIDTH
-        y = box["y"] + (PROBE[1] + PROBE[3] / 2) * box["height"] / HEIGHT
+        cx, cy = (PROBE[0] + PROBE[2] / 2) / WIDTH, (PROBE[1] + PROBE[3] / 2) / HEIGHT
+        x = box["x"] + cx * box["width"]
+        y = box["y"] + cy * box["height"]
         for _ in range(CLICKS):
             before = await cpage.evaluate("Number(document.body.dataset.clicks || 0)")
+            watch = asyncio.ensure_future(view.evaluate(WATCH_JS, [cx, cy])) if view else None
+            await asyncio.sleep(0.08)
+            wall = time.time() * 1000
             sent = time.monotonic()
             await page.mouse.click(x, y)
             for _ in range(200):
@@ -128,17 +147,21 @@ async def scenario(edge, host, cpage, surface, theme, mode, shots, measure_secon
                     latencies.append(round((time.monotonic() - sent) * 1000))
                     break
                 await asyncio.sleep(0.01)
+            drawn = await watch if watch else None
+            if drawn:
+                framed.append(round(drawn - wall))
             await asyncio.sleep(0.4)
     clicked = len(latencies) == CLICKS and CLICKS > 0
+    frame_ms = sorted(framed)[len(framed) // 2] if framed else None
     latency = sorted(latencies)[len(latencies) // 2] if latencies else None
     await asyncio.sleep(0.6)
     shot = None
     if shots:
-        shot = str(shots / f"{SHOT_PREFIX[surface]}{theme}.png")
+        shot = str(shots / f"{prefix}{SHOT_PREFIX[surface]}{theme}.png")
         await page.screenshot(path=shot, full_page=True)
     address = await app_address(page, surface)
     await page.close()
-    return {"surface": surface, "theme": theme, "mode": mode, "fps": round(fps, 1), "frames": end, "source": source, "clickReached": clicked, "clickMs": latency, "clicksMs": latencies, "address": address, "screenshot": shot, "errors": errors[:3]}
+    return {"surface": surface, "theme": theme, "mode": mode, "fps": round(fps, 1), "frames": end, "source": source, "clickReached": clicked, "clickMs": latency, "clicksMs": latencies, "clickToFrameMs": frame_ms, "clicksToFrameMs": framed, "address": address, "screenshot": shot, "errors": errors[:3]}
 
 
 async def app_address(page, surface):
@@ -148,7 +171,7 @@ async def app_address(page, surface):
     return await frame.evaluate("(() => { const a = document.querySelector('[data-ref=address]'); return a ? a.textContent : null })()")
 
 
-async def report_scenario(edge, host, theme, shots):
+async def report_scenario(edge, host, theme, shots, prefix=""):
     page = await edge.new_page(viewport={"width": 960, "height": 900}, color_scheme=theme)
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
@@ -175,15 +198,56 @@ async def report_scenario(edge, host, theme, shots):
     await asyncio.sleep(0.8)
     shot = None
     if shots:
-        shot = str(shots / f"logapp-report-{theme}.png")
+        shot = str(shots / f"{prefix}logapp-report-{theme}.png")
         await page.screenshot(path=shot, full_page=True)
     await page.close()
     return {"surface": "logapp", "view": "report", "theme": theme, "drawn": drawn, "drawnMs": drawn_ms, "themeInView": inner, "themeAfterFlip": flipped, "screenshot": shot, "errors": errors[:3]}
 
 
+@asynccontextmanager
+async def bench_page(browser, folder):
+    if browser in ("camoufox", "camoufoxHeaded"):
+        from camoufox.async_api import AsyncCamoufox
+
+        async with AsyncCamoufox(headless=browser == "camoufox") as camoufox:
+            yield await camoufox.new_page()
+    elif browser == "brave":
+        from browser import browserDriver, proxyGate
+        from playwright._impl._browser import Browser
+        from playwright._impl._browser_type import BrowserType
+
+        unguarded = (BrowserType.launch, Browser.new_context)
+        os.environ["LOG_HOME"] = str(Path(folder) / "home")
+        (Path(folder) / "proxy.json").write_text(json.dumps({"direct": True, "platform": "bench"}), encoding="utf8")
+        (Path(folder) / "device.json").write_text(json.dumps({"accountName": ACCOUNT, "locale": "en-US", "languages": ["en-US", "en"], "homeCountry": "US", "homeTimezone": "America/New_York"}), encoding="utf8")
+        proxyGate.arm(str(Path(folder) / "proxy.json"), str(Path(folder) / "device.json"), str(Path(folder) / "capture"))
+        config = {"accountId": "benchAccountId", "storageStatePath": str(Path(folder) / "state.json"), "browser": {"driver": "brave"}}
+        async with browserDriver.open_browser(config) as opened:
+            print(f"bench: {opened.driver} opened through the driver, gate and self-check passed", file=sys.stderr, flush=True)
+            BrowserType.launch, Browser.new_context = unguarded
+            yield await opened.context.new_page()
+    else:
+        from browser import browserDriver
+
+        port = free_port()
+        proc = subprocess.Popen([browserDriver.brave_path(), f"--remote-debugging-port={port}", f"--user-data-dir={Path(folder) / 'cdpProfile'}", "--no-first-run", "--no-default-browser-check", "about:blank"])
+        try:
+            await wait_http(f"http://127.0.0.1:{port}/json/version")
+            async with async_playwright() as pw:
+                attached = await pw.chromium.connect_over_cdp(f"http://127.0.0.1:{port}")
+                context = attached.contexts[0] if attached.contexts else await attached.new_context()
+                yield await context.new_page()
+        finally:
+            stop_tree(proc)
+
+
 async def main():
     shots = Path(sys.argv[1]) if len(sys.argv) > 1 else None
     seconds = float(os.environ.get("BENCH_SECONDS", "5"))
+    browser = os.environ.get("BENCH_BROWSER", "camoufox")
+    if browser not in BROWSERS:
+        raise SystemExit(f"BENCH_BROWSER is one of {', '.join(BROWSERS)}")
+    prefix = f"{browser}-" if browser != "camoufox" or os.environ.get("BENCH_PREFIX") else ""
     if shots:
         shots.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
@@ -191,8 +255,7 @@ async def main():
         (inspect / "sessions").mkdir(parents=True)
         run_dir = Path(folder) / "run"
         run_dir.mkdir()
-        async with AsyncCamoufox(headless=True) as camoufox:
-            cpage = await camoufox.new_page()
+        async with bench_page(browser, folder) as cpage:
             await cpage.set_viewport_size({"width": WIDTH, "height": HEIGHT})
             await cpage.set_content(PAGE)
             owner = BenchOwner(run_dir, cpage)
@@ -212,17 +275,17 @@ async def main():
                     edge = await pw.chromium.launch(channel="msedge", headless=True)
                     for surface in SURFACES:
                         for theme in ("light", "dark"):
-                            results.append(await scenario(edge, host, cpage, surface, theme, "cast", shots, seconds))
+                            results.append(await scenario(edge, host, cpage, surface, theme, "cast", shots, seconds, prefix))
                         if surface != "logapp":
-                            results.append(await scenario(edge, host, cpage, surface, "light", "pull", None, seconds))
+                            results.append(await scenario(edge, host, cpage, surface, "light", "pull", None, seconds, prefix))
                     for theme in ("light", "dark"):
-                        results.append(await report_scenario(edge, host, theme, shots))
+                        results.append(await report_scenario(edge, host, theme, shots, prefix))
                     await edge.close()
             finally:
                 stop_tree(host_proc)
                 stop_tree(api)
                 await viewer.close()
-    print(json.dumps(results, indent=2))
+    print(json.dumps({"browser": browser, "results": results}, indent=2))
 
 
 asyncio.run(main())

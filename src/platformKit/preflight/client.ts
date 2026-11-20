@@ -2,10 +2,20 @@ import { homeOf, localClock, outsideActiveHours } from '../home/index'
 import { homePlace } from '../../facebook/marketplace/location/index'
 import { OPENS_PER_DAY } from '../lifecycle/index'
 import { LAUNCH_LIMITS, overLaunchBudget } from '../../browser/run/helpers/launchBudget'
+import { BROWSER_LABELS, BrowserDriverError, driverNameOf } from '../../browser/driver/index'
+import type { BrowserDriverName } from '../../browser/driver/index'
 import type { PreflightAccount, PreflightCheck, PreflightFacts, PreflightRow } from './types'
 
 const pass = (name: PreflightCheck['name'], detail: string): PreflightCheck => ({ name, ok: true, detail })
 const fail = (name: PreflightCheck['name'], code: string, detail: string): PreflightCheck => ({ name, ok: false, code, detail })
+
+function browserOf(account: PreflightAccount): { driver: BrowserDriverName | null; refused: string | null } {
+  try {
+    return { driver: driverNameOf({ browserDriver: account.browserDriver ?? null, adsPowerProfileId: account.adsPowerProfileId }), refused: null }
+  } catch (error) {
+    return { driver: null, refused: error instanceof BrowserDriverError ? error.detail : String(error) }
+  }
+}
 
 export function preflightOf(account: PreflightAccount, facts: PreflightFacts, now: Date, proxyLimitMs: number): PreflightRow {
   const checks: PreflightCheck[] = []
@@ -31,8 +41,11 @@ export function preflightOf(account: PreflightAccount, facts: PreflightFacts, no
   else if (facts.proxy.exitCountry && account.homeCountry && facts.proxy.exitCountry !== account.homeCountry.toUpperCase()) checks.push(fail('proxy', 'proxyWrongCountry', `exits in ${facts.proxy.exitCountry}, the account's home is ${account.homeCountry}`))
   else if (typeof facts.proxy.facebookMs === 'number' && facts.proxy.facebookMs > proxyLimitMs) checks.push(fail('proxy', 'proxyTooSlow', `${facts.proxy.facebookMs} ms for one Facebook file (limit ${proxyLimitMs} ms; --proxyMs sets it per run, rule 33)`))
   else checks.push(pass('proxy', `${facts.proxy.exitCountry ?? '?'}, ${facts.proxy.facebookMs ?? '?'} ms`))
-  checks.push(account.adsPowerProfileId ? pass('adsPower', `profile ${account.adsPowerProfileId}`) : fail('adsPower', 'noAdsPowerProfile', 'no AdsPower profile linked (log adsPower sync --apply)'))
-  if (!facts.kernel) checks.push(pass('kernel', 'no profile to start'))
+  const browser = browserOf(account)
+  if (browser.refused) checks.push(fail('adsPower', 'browserDriverUnknown', browser.refused))
+  else if (browser.driver && browser.driver !== 'adsPower') checks.push(pass('adsPower', `not used: it opens on ${BROWSER_LABELS[browser.driver]}`))
+  else checks.push(account.adsPowerProfileId ? pass('adsPower', `profile ${account.adsPowerProfileId}`) : fail('adsPower', 'noAdsPowerProfile', 'no AdsPower profile linked (log adsPower sync --apply)'))
+  if (!facts.kernel || browser.driver !== 'adsPower') checks.push(pass('kernel', 'no profile to start'))
   else if (!facts.kernel.reachable) checks.push(fail('kernel', 'adsPowerUnavailable', facts.kernel.detail ?? 'the AdsPower Local API does not answer'))
   else if (!facts.kernel.version) checks.push(fail('kernel', 'adsPowerKernelMissing', "the profile's user agent names no Chrome version, so the kernel it starts is unknown"))
   else if (!facts.kernel.downloaded) checks.push(fail('kernel', 'adsPowerKernelMissing', `SunBrowser ${facts.kernel.version}, the kernel this profile's user agent needs, is not downloaded${facts.kernel.detail ? ` (${facts.kernel.detail})` : ''}: --apply downloads it`))

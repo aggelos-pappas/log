@@ -65,6 +65,11 @@ class AccountCheck(Strict):
     accountId: str = Field(min_length=24, max_length=24, pattern=r"^[a-f0-9]{24}$")
 
 
+class AccountBrowser(Strict):
+    accountId: str = Field(min_length=24, max_length=24, pattern=r"^[a-f0-9]{24}$")
+    browser: str = Field(min_length=1, max_length=20, pattern=r"^[a-zA-Z]+$")
+
+
 class AccountSignIn(Strict):
     platform: str = Field(min_length=1, max_length=20, pattern=r"^[a-z]+$")
     method: str = Field(pattern=r"^(cookies|password|browser)$")
@@ -136,6 +141,10 @@ def console_router(settings: Settings, engine: Engine, dispatcher: Dispatcher) -
     @router.post("/teams/{teamId}/console/accountCheck")
     async def account_check(teamId: str, body: AccountCheck, request: Request, response: Response):
         return await relay(request, response, teamId, "accountCheck", {"accountId": body.accountId}, True)
+
+    @router.post("/teams/{teamId}/console/accountBrowser")
+    async def account_browser(teamId: str, body: AccountBrowser, request: Request, response: Response):
+        return await relay(request, response, teamId, "accountBrowser", {"accountId": body.accountId, "browser": body.browser}, True)
 
     @router.post("/teams/{teamId}/console/signIn")
     async def sign_in(teamId: str, body: AccountSignIn, request: Request, response: Response):

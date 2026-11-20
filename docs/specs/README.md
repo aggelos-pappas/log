@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 55 domains, 610 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 55 domains, 611 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -267,6 +267,7 @@ Before an account's browser loads anything, it goes through one gate: a headed l
 - **REQ-GATE-16** The language list must start with the pinned languages
 - **REQ-GATE-17** The browser's exit IP is the one the gate checked, or in its country and timezone
 - **REQ-GATE-18** A failed self-check stops the browser before Facebook loads
+- **REQ-GATE-19** Brave opens through the same gate, in the account's own profile
 
 ## [Launch budget](./launchBudget.md)
 

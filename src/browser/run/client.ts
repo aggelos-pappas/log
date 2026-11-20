@@ -12,6 +12,7 @@ import type { FacebookAccount, PlaywrightCookie, RunPurpose } from '../../platfo
 import { LAUNCH_LIMITS, listLaunches, overLaunchBudget } from './helpers/index'
 import type { PrepareRunOptions, PrepareRunResult } from './types'
 import { driverNameOf } from '../driver/client'
+import { BrowserDriverError } from '../driver/types'
 import type { BrowserDriverName } from '../driver/types'
 import { logHome } from '../../config/logHome/index'
 
@@ -96,6 +97,13 @@ export function prepareRun(account: FacebookAccount, purpose: RunPurpose, option
     }
   }
 
+  let browser: BrowserDriverName
+  try {
+    browser = runBrowserOf(account, options.action ?? purpose)
+  } catch (error) {
+    if (error instanceof BrowserDriverError) return { ok: false, code: error.code, detail: error.detail }
+    throw error
+  }
   const dir = mkdtempSync(join(options.root ?? tmpdir(), 'logCliRun'))
   let kept = false
   const proxyPath = join(dir, 'proxy.json')
@@ -103,7 +111,7 @@ export function prepareRun(account: FacebookAccount, purpose: RunPurpose, option
   const devicePath = join(dir, 'device.json')
   const loginPath = options.login ? join(dir, 'login.json') : null
   const action = options.action ?? purpose
-  const captureDir = purpose === 'check' ? null : captureDirFor(account.accountName, action, options.now ?? new Date(), options.captureRoot, runBrowserOf(account, action))
+  const captureDir = purpose === 'check' ? null : captureDirFor(account.accountName, action, options.now ?? new Date(), options.captureRoot, browser)
   writeFileSync(proxyPath, JSON.stringify(check.proxy), { mode: 0o600 })
   if (cookies.length) writeFileSync(statePath, JSON.stringify({ cookies, origins: toOrigins(account.storageOrigins) }), { mode: 0o600 })
   if (device) writeFileSync(devicePath, JSON.stringify(device), { mode: 0o600 })

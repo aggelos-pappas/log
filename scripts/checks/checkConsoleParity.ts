@@ -77,6 +77,33 @@ export function consoleParityProblems(files: ParityFiles, screens: readonly Cons
   return problems;
 }
 
+export function consoleBrowserProblems(files: ParityFiles, drivers: readonly string[], choices: readonly string[]): string[] {
+  const problems: string[] = [];
+  if (choices.join(",") !== drivers.join(",")) problems.push(`the console's browser choices (${choices.join(", ")}) differ from BROWSER_DRIVERS (${drivers.join(", ")}): browserChoices in src/console/connections must list every driver`);
+  const page = files.read(`${WEB}/pages/console/ConnectionsPage.tsx`) ?? "";
+  const data = files.read(`${WEB}/pages/console/connectionsData.ts`) ?? "";
+  const list = files.read(`${WEB}/pages/console/ConnectionList.tsx`) ?? "";
+  const dialog = files.read(`${WEB}/pages/console/BrowserCheckDialog.tsx`) ?? "";
+  if (!/browsers\s*\?\?\s*\[\]/.test(page) || !page.includes("setConnectionBrowser")) problems.push("ConnectionsPage.tsx doesn't take its browser choices from the view (connections.data?.browsers) and save the pick with setConnectionBrowser");
+  if (!data.includes("/api/console/connections/browser") || !data.includes("/console/accountBrowser")) problems.push("connectionsData.ts doesn't post the browser pick to /api/console/connections/browser (local) and /console/accountBrowser (hosted)");
+  if (!/data-browser-picker/.test(list)) problems.push("ConnectionList.tsx has no browser picker (data-browser-picker) in the table and cards");
+  if (!/data-browser-entry/.test(page) || !/browser\.logo/.test(page)) problems.push("ConnectionsPage.tsx doesn't list every browser with its logo from the view (data-browser-entry)");
+  if (!/data-browser-logo/.test(list)) problems.push("ConnectionList.tsx's browser picker doesn't show the picked browser's logo (data-browser-logo)");
+  if (!/data-browser-badge/.test(dialog)) problems.push("BrowserCheckDialog.tsx doesn't show which browser the account opens in (data-browser-badge)");
+  for (const rel of [`${WEB}/pages/console/ConnectionsPage.tsx`, `${WEB}/pages/console/connectionsData.ts`, `${WEB}/pages/console/ConnectionList.tsx`, `${WEB}/pages/console/BrowserCheckDialog.tsx`, `${WEB}/pages/console/browserCheckData.ts`]) {
+    const text = files.read(rel) ?? "";
+    for (const literal of text.matchAll(/\[([^\[\]]*)\]/g)) {
+      const named = drivers.filter((driver) => new RegExp(`['"\`]${driver}['"\`]`).test(literal[1]));
+      if (named.length > 1) problems.push(`${rel} hard-codes a list of browsers (${named.join(", ")}): read them from the console view, which comes from BROWSER_DRIVERS`);
+    }
+  }
+  const tools = files.read("python/controlService/tools.py") ?? "";
+  const routes = files.read("python/controlService/consoleRoutes.py") ?? "";
+  if (!tools.includes('"accountBrowser"')) problems.push("python/controlService/tools.py CONSOLE_TOOLS has no accountBrowser: the hosted console can't pick a browser");
+  if (!routes.includes("/console/accountBrowser")) problems.push("python/controlService/consoleRoutes.py has no /console/accountBrowser route: the hosted console can't pick a browser");
+  return problems;
+}
+
 export function commandToolNames(commands: readonly Command[]): Map<string, { terminalOnly: boolean }> {
   const names = new Map<string, { terminalOnly: boolean }>(commandTools(commands).map((entry) => [entry.tool, { terminalOnly: false }]));
   for (const command of commands) for (const form of command.input?.forms ?? []) if (form.terminalOnly && !names.has(formToolName(command, form))) names.set(formToolName(command, form), { terminalOnly: true });
@@ -101,13 +128,13 @@ export function consoleTwinProblems(operations: readonly string[], twins: Readon
 if (import.meta.main) {
   const root = join(import.meta.dir, "..", "..");
   const files: ParityFiles = { read: (rel) => (existsSync(join(root, rel)) ? readFileSync(join(root, rel), "utf8").replace(/\r\n/g, "\n") : null) };
-  const [{ COMMANDS }, { appTools }] = await Promise.all([import("../../src/cli/runner/index.ts"), import("../../src/mcp/apps/browserView/index.ts")]);
+  const [{ COMMANDS }, { appTools }, { BROWSER_DRIVERS }, { browserChoices }] = await Promise.all([import("../../src/cli/runner/index.ts"), import("../../src/mcp/apps/browserView/index.ts"), import("../../src/browser/driver/types.ts"), import("../../src/console/connections/index.ts")]);
   const tools = commandToolNames(COMMANDS);
   const apps = new Set(appTools().map((tool) => tool.name));
-  const problems = [...consoleParityProblems(files), ...consoleTwinProblems(CONSOLE_OPERATIONS, CONSOLE_TWINS, tools, apps), ...consoleTwinProblems(Object.keys(RUNTIME_TWINS), RUNTIME_TWINS, tools, apps, "RUNTIME_TWINS")];
+  const problems = [...consoleParityProblems(files), ...consoleTwinProblems(CONSOLE_OPERATIONS, CONSOLE_TWINS, tools, apps), ...consoleTwinProblems(Object.keys(RUNTIME_TWINS), RUNTIME_TWINS, tools, apps, "RUNTIME_TWINS"), ...consoleBrowserProblems(files, BROWSER_DRIVERS, browserChoices({}).map((choice) => choice.name))];
   if (problems.length) {
     console.error(`Console parity:\n${problems.map((problem) => `  - ${problem}`).join("\n")}`);
     process.exit(1);
   }
-  console.log(`consoleParity: ${CONSOLE_SCREENS.length} web console pages each have a clack screen, and both read the same src/console loader; ${CONSOLE_OPERATIONS.length} console operations and ${Object.keys(RUNTIME_TWINS).length} runtime tool each have a command twin (or an MCP App twin).`);
+  console.log(`consoleParity: ${CONSOLE_SCREENS.length} web console pages each have a clack screen, and both read the same src/console loader; ${CONSOLE_OPERATIONS.length} console operations and ${Object.keys(RUNTIME_TWINS).length} runtime tool each have a command twin (or an MCP App twin); the console lists, shows and picks every browser in BROWSER_DRIVERS.`);
 }

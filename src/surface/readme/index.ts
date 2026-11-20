@@ -6,6 +6,8 @@ import { countOf } from "../diagrams/index.ts";
 import type { Diagram } from "../diagrams/index.ts";
 import { DIRECT_ROUTES, engineHead, platformEngineText } from "../../directApi/engine/index.ts";
 import { PLATFORM_LABELS, PLATFORM_SITES, PLATFORMS } from "../../cli/runner/helpers/platforms.ts";
+import { BROWSER_DRIVERS } from "../../browser/driver/types.ts";
+import { BROWSER_LABELS } from "../../browser/driver/brands.ts";
 
 export const SURFACE_START = "<!-- surface:start · written by `bun run docs:build` from the code. Not edited by hand. -->";
 export const SURFACE_END = "<!-- surface:end -->";
@@ -53,7 +55,7 @@ export function renderSurface(entries: readonly CommandEntry[], flows: readonly 
     const without = PLATFORMS.filter((p) => !PLATFORM_SITES[p].browser).map((p) => PLATFORM_LABELS[p]);
     out.push(
       ...diagramBlock(browsers),
-      `- **The account's browser, through the driver:** ${on("accountBrowser")}. They run on whichever browser the account uses: AdsPower when it has a linked profile (\`socialAccounts.adsPowerProfileId\`), Camoufox otherwise, or what \`socialAccounts.browserDriver\` says.`,
+      `- **The account's browser, through the driver:** ${on("accountBrowser")}. They run on whichever browser the account uses: whatever \`socialAccounts.browserDriver\` names (${BROWSER_DRIVERS.map((d) => BROWSER_LABELS[d]).join(", ")}), else AdsPower when it has a linked profile (\`socialAccounts.adsPowerProfileId\`), else \`LOG_BROWSER_DRIVER\`, else Camoufox.`,
       `- **Camoufox only, not on the driver yet:** ${on("camoufoxOnly")}. They launch Camoufox themselves (facebook-camofox-client's worker, or the publish, connect and profile sessions), so on an AdsPower account they don't open its AdsPower profile. Moving one onto the driver is moving it into \`OPENER_ACTIONS\` (\`src/browser/run\`).`,
       `- **No browser:** ${on("none")}.`,
       ...(without.length ? [`- **No browser path at all:** ${without.join(", ")}. Its accounts run on the direct API only (rule 80).`] : []),

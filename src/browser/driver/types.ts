@@ -1,6 +1,22 @@
-export const BROWSER_DRIVERS = ['camoufox', 'adsPower'] as const
+export const BROWSER_DRIVERS = ['camoufox', 'adsPower', 'brave'] as const
 export type BrowserDriverName = (typeof BROWSER_DRIVERS)[number]
 export const DEFAULT_BROWSER_DRIVER: BrowserDriverName = 'camoufox'
+export const BROWSER_DRIVER_ENV = 'LOG_BROWSER_DRIVER'
+
+export interface BrowserBrand {
+  label: string
+  logo: string
+}
+
+export class BrowserDriverError extends Error {
+  constructor(
+    readonly code: 'browserDriverUnknown',
+    readonly detail: string
+  ) {
+    super(`${code}: ${detail}`)
+    this.name = 'BrowserDriverError'
+  }
+}
 
 export const BROWSER_CAPABILITIES = {
   headedWindow: 'A visible window you can watch, never headless (rule 11)',
@@ -16,7 +32,8 @@ export const BROWSER_CAPABILITIES = {
   sessionSaved: 'The session is saved back to Twenty (saveState)',
   inspectSession: 'log inspect, the flows, the warm-up and log facebook host run in it (python/session/inspectSession.py)',
   syncSessions: 'publishSession, connectSession and profileSession (the sync sessions) run in it',
-  oneMachineAtATime: 'It refuses to open where another machine already has the account open'
+  oneMachineAtATime: 'It refuses to open where another machine already has the account open',
+  liveView: 'The browser streams live into the console and chat views and takes clicks and typing (browserView)'
 } as const
 
 export type BrowserCapability = keyof typeof BROWSER_CAPABILITIES

@@ -1,5 +1,7 @@
 import { ViewerError, viewerFrame, viewerInput, viewerState, viewerStream } from "../../browser/viewer/index.ts";
 import type { ViewerView } from "../../browser/viewer/index.ts";
+import { BROWSER_BRANDS, driverOrNull } from "../../browser/driver/index.ts";
+import type { BrowserDriverName } from "../../browser/driver/index.ts";
 import { browserViewLocation } from "../../cli/browser/index.ts";
 import { localAccountsPath, readLocalAccounts } from "../../twenty/graphql/index.ts";
 import { credentialValue } from "../connections/index.ts";
@@ -43,6 +45,10 @@ function rowOf(account: ConnectionAccount, env: Env): Record<string, unknown> | 
   return readLocalAccounts(localAccountsPath(env)).find((row) => String(row.platform ?? "").toLowerCase().replace(/^x$/, "twitter") === account.platform && String(row.accountName ?? row.name ?? "").toLowerCase() === account.name.toLowerCase()) ?? null;
 }
 
+export function rowDriverOf(row: Record<string, unknown> | null, env: Env): BrowserDriverName | null {
+  return driverOrNull({ browserDriver: typeof row?.browserDriver === "string" ? row.browserDriver : null, adsPowerProfileId: typeof row?.adsPowerProfileId === "string" ? row.adsPowerProfileId : null }, env);
+}
+
 function hasLogin(row: Record<string, unknown> | null): boolean {
   return Boolean(row && typeof row.email === "string" && row.email && typeof row.password === "string" && row.password);
 }
@@ -50,17 +56,20 @@ function hasLogin(row: Record<string, unknown> | null): boolean {
 function missingPhase(account: ConnectionAccount, env: Env): { phase: BrowserCheckPhase; reason: { code: string; message: string } | null } {
   if (!PLATFORM_SITES[account.platform].browser) return { phase: "browserMissing", reason: null };
   const row = rowOf(account, env);
-  const driver = String(row?.browserDriver ?? "").trim();
-  const adsPower = driver === "adsPower" || (!driver && Boolean(row?.adsPowerProfileId)) || (!driver && (env.LOG_BROWSER_DRIVER ?? "") === "adsPower");
+  const driver = rowDriverOf(row, env);
+  if (!driver) return { phase: "browserMissing", reason: { code: "browserDriverUnknown", message: "This account names a browser log does not drive. Pick Camoufox, AdsPower or Brave for it." } };
+  const adsPower = driver === "adsPower";
   if (adsPower && !credentialValue("ADSPOWER_HOST", env) && !credentialValue("ADSPOWER_API_KEY", env)) return { phase: "providerSetupRequired", reason: { code: "providerNotConfigured", message: "Configure AdsPower in Extensions before opening this account's browser." } };
   if (adsPower && !row?.adsPowerProfileId) return { phase: "profileRequired", reason: { code: "accountProfileMissing", message: "This account has no AdsPower profile yet. Preparing its profile is the next step." } };
   return { phase: "browserMissing", reason: null };
 }
 
-function base(account: ConnectionAccount, viewer: ViewerView | null): BrowserCheckView {
+function base(account: ConnectionAccount, viewer: ViewerView | null, env: Env): BrowserCheckView {
+  const driver = rowDriverOf(rowOf(account, env), env);
   return {
     accountId: account.id,
     account: account.name,
+    browser: driver ? { name: driver, ...BROWSER_BRANDS[driver] } : null,
     phase: "browserMissing",
     location: browserViewLocation(),
     viewerId: viewer?.generation ?? null,
@@ -82,7 +91,7 @@ function base(account: ConnectionAccount, viewer: ViewerView | null): BrowserChe
 
 export async function browserCheckView(account: ConnectionAccount, env: Env = process.env): Promise<BrowserCheckView> {
   const viewer = await browserCheckDeps.state(account.name);
-  const view = base(account, viewer);
+  const view = base(account, viewer, env);
   if (viewer.phase === "browserMissing") return { ...view, ...missingPhase(account, env) };
   if (viewer.phase === "viewerUnavailable") return { ...view, phase: "viewerUnavailable", reason: { code: "viewerUnavailable", message: "This running browser has no live view. It has been left open." } };
   if (viewer.phase === "busy") return { ...view, phase: "busy" };

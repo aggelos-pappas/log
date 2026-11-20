@@ -2,7 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { COMMANDS } from "../../src/cli/runner/index.ts";
 import { CONSOLE_OPERATIONS, CONSOLE_TWINS, RUNTIME_TWINS } from "../../src/console/operations/index.ts";
 import { appTools } from "../../src/mcp/apps/browserView/index.ts";
-import { commandToolNames, consoleTwinProblems } from "./checkConsoleParity.ts";
+import { commandToolNames, consoleBrowserProblems, consoleTwinProblems } from "./checkConsoleParity.ts";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { BROWSER_DRIVERS } from "../../src/browser/driver/index.ts";
+import { browserChoices } from "../../src/console/connections/index.ts";
 
 const tools = commandToolNames(COMMANDS);
 const apps = new Set(appTools().map((tool) => tool.name));
@@ -32,5 +36,26 @@ describe("every console operation has a command twin", () => {
       "CONSOLE_TWINS has gone, which is not an operation",
     ]);
     expect(consoleTwinProblems(["accountsList"], {}, tools, apps, "RUNTIME_TWINS")[0]).toContain("accountsList has no twin in RUNTIME_TWINS");
+  });
+});
+
+describe("every browser reaches the console", () => {
+  const root = join(import.meta.dir, "..", "..");
+  const real = (rel: string) => (existsSync(join(root, rel)) ? readFileSync(join(root, rel), "utf8").replace(/\r\n/g, "\n") : null);
+  const choices = browserChoices({}).map((choice) => choice.name);
+
+  test("the real console lists, shows and picks every driver, Camoufox marked the default", () => {
+    expect(consoleBrowserProblems({ read: real }, BROWSER_DRIVERS, choices)).toEqual([]);
+    expect(browserChoices({}).find((choice) => choice.isDefault)?.name).toBe("camoufox");
+    expect(browserChoices({ LOG_BROWSER_DRIVER: "brave" }).find((choice) => choice.isDefault)?.name).toBe("brave");
+  });
+
+  test("a driver the console doesn't list, a hard-coded list in the site and a missing picker each fail", () => {
+    const page = "pages/console/ConnectionsPage.tsx";
+    const read = (rel: string) => (rel.endsWith(page) ? (real(rel) ?? "").replace("const browserOptions", "const fixed = ['camoufox', 'brave']\n  const browserOptions") : rel.endsWith("ConnectionList.tsx") ? "" : real(rel));
+    const problems = consoleBrowserProblems({ read }, [...BROWSER_DRIVERS, "chromium"], choices);
+    expect(problems.some((problem) => problem.includes("differ from BROWSER_DRIVERS"))).toBe(true);
+    expect(problems.some((problem) => problem.includes("hard-codes a list of browsers (camoufox, brave)"))).toBe(true);
+    expect(problems.some((problem) => problem.includes("no browser picker"))).toBe(true);
   });
 });

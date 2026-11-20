@@ -10,7 +10,7 @@ import { inspectRuns, mapAllInspectRuns, mapInspectRun } from "../../rea/inspect
 import { openAccount, withRun } from "../live/index.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, PROXY_MS_FLAG, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
-import { browserFor } from "../../browser/driver/index.ts";
+import { browserFor, driverOrNull } from "../../browser/driver/index.ts";
 import type { FacebookAccount } from "../../platformKit/socialAccount/index.ts";
 import { loudText, readStep, timelineText } from "../../subq/stepReading/index.ts";
 import type { StepReading } from "../../subq/stepReading/index.ts";
@@ -156,7 +156,11 @@ export const INSPECT_INPUT: CommandInput = {
 
 export function stepAccountOf(account: FacebookAccount | null, name: string): { name: string; platform: string; homeCity: string | null; homeCountry: string | null; browser: string | null } {
   if (!account) return { name, platform: "facebook", homeCity: null, homeCountry: null, browser: null };
-  return { name: account.accountName, platform: (account.platform ?? "facebook").toLowerCase(), homeCity: account.homeCity, homeCountry: account.homeCountry, browser: browserFor(account).driver };
+  return { name: account.accountName, platform: (account.platform ?? "facebook").toLowerCase(), homeCity: account.homeCity, homeCountry: account.homeCountry, browser: safeDriverOf(account) };
+}
+
+function safeDriverOf(account: FacebookAccount): string | null {
+  return driverOrNull(account) ?? account.browserDriver ?? null;
 }
 
 export function goalText(accountName: string, runDir: string, goal: string | null, since: string | null = null): string | null {

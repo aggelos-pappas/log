@@ -1,4 +1,5 @@
 import type { CheckState } from "../../platformKit/sessionCheck/index.ts";
+import type { BrowserDriverName } from "../../browser/driver/index.ts";
 import type { Platform } from "../../cli/runner/helpers/platforms.ts";
 import type { CredentialInputType, CredentialProvider } from "../../auth/credentials/index.ts";
 
@@ -10,6 +11,7 @@ export interface ConsoleAccount {
   accountName: string;
   sessionState: string | null;
   browserProfile: boolean;
+  browser: BrowserDriverName | null;
   signIn: SignInKind;
 }
 
@@ -53,7 +55,15 @@ export interface ConnectionAccount {
   state: SessionState;
   checkedAt: string | null;
   signIn: SignInKind;
+  browser: BrowserDriverName | null;
   lastCheck: LastCheck | null;
+}
+
+export interface BrowserChoice {
+  name: BrowserDriverName;
+  label: string;
+  logo: string;
+  isDefault: boolean;
 }
 
 export interface SavedKeyField {
@@ -81,6 +91,7 @@ export interface ConnectionsView {
   generatedAt: string;
   accounts: ConnectionAccount[];
   extensions: ExtensionConnection[];
+  browsers: BrowserChoice[];
 }
 
 export interface ConsoleConnections {
@@ -92,4 +103,5 @@ export interface ConsoleConnections {
   platforms: ConsolePlatformGroup[];
   accounts: ConnectionAccount[];
   extensions: ExtensionConnection[];
+  browsers: BrowserChoice[];
 }

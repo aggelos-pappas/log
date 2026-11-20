@@ -95,6 +95,12 @@ export const browserGate = {
       { kind: 'symbol', file: gate, name: '_checked' },
       { kind: 'symbol', file: gate, name: 'check_attached' },
     ],
+    'REQ-GATE-19': [
+      { kind: 'symbol', file: gate, name: 'chromium_launch' },
+      { kind: 'symbol', file: 'python/browser/browserDriver.py', name: 'open_brave' },
+      { kind: 'symbol', file: 'python/browser/browserDriver.py', name: 'brave_profile_dir' },
+      { kind: 'string', file: 'python/browser/browserDriver.py', includes: 'braveNotFound' },
+    ],
   },
   rubrics: {
     'REQ-GATE-01': noul('Does proxyGate.apply refuse a launch whose headless option is anything other than None or False, and is the visible launch always headed with humanize and the cursor on, with no option that turns it off?'),
@@ -115,6 +121,7 @@ export const browserGate = {
     'REQ-GATE-16': noul('Does compare accept a navigator.languages list whose first entries equal the pinned languages in order, with extra languages after them, and refuse a list that does not start with them?'),
     'REQ-GATE-17': noul('Does the self-check refuse when no IP echo answers, and when the browser exit IP differs from the checked one, accepting a different IP on an attached browser only when it is in the same country and the same timezone?'),
     'REQ-GATE-18': noul('When the self-check refuses, is the Camoufox context and browser closed before the error is raised, and does the attached-browser check raise the error so the opener stops the profile?'),
+    'REQ-GATE-19': noul("Does a Brave session open only after gate_attached passes, through chromium_launch's options (headed, the account's proxy, the pinned locale) and the guarded persistent context that runs the self-check, in the account's own profile folder under log's home, and is a missing Brave refused with braveNotFound?"),
     unspecifiedBehavior: noul('Does the gate let a browser open by a route the specification does not describe, such as skipping the self-check, opening without a proxy for a Facebook account, or launching headless?'),
   },
   assertions: {
@@ -136,6 +143,7 @@ export const browserGate = {
     'REQ-GATE-16': MET,
     'REQ-GATE-17': MET,
     'REQ-GATE-18': MET,
+    'REQ-GATE-19': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

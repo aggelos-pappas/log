@@ -1,4 +1,6 @@
-import type { BrowserCapabilities } from '../driver/types'
+import type { BrowserBrand, BrowserCapabilities } from '../driver/types'
+
+export const camoufoxBrand = { label: 'Camoufox', logo: '/logos/camoufox.png' } as const satisfies BrowserBrand
 
 export const camoufoxCapabilities = {
   headedWindow: { status: 'built', how: 'visibleBrowser.launch_kwargs: headless False, humanize, showcursor (rule 11)' },
@@ -14,5 +16,6 @@ export const camoufoxCapabilities = {
   sessionSaved: { status: 'built', how: 'saveState writes the context storage state, saved to Twenty' },
   inspectSession: { status: 'built', how: 'python/browser/browserDriver.py open_camoufox' },
   syncSessions: { status: 'built', how: 'publishSession, connectSession and profileSession launch it (sync API)' },
-  oneMachineAtATime: { status: 'notApplicable', how: 'Camoufox runs only where log-cli runs; there is no shared profile to open twice' }
+  oneMachineAtATime: { status: 'notApplicable', how: 'Camoufox runs only where log-cli runs; there is no shared profile to open twice' },
+  liveView: { status: 'built', how: "browserViewer.PageCast: Playwright's page screencast over Juggler, ~22 fps measured" }
 } as const satisfies BrowserCapabilities

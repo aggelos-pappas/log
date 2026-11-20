@@ -1,4 +1,5 @@
 import type { ViewerStream } from "../../browser/viewer/index.ts";
+import type { BrowserDriverName } from "../../browser/driver/index.ts";
 
 export const BROWSER_CHECK_PHASES = ["profileRequired", "providerSetupRequired", "operationUncertain", "browserMissing", "viewerUnavailable", "ready", "signInRequired", "needsResolution", "needsAttention", "verified", "busy"] as const;
 export type BrowserCheckPhase = (typeof BROWSER_CHECK_PHASES)[number];
@@ -16,6 +17,7 @@ export interface BrowserCheckReason {
 export interface BrowserCheckView {
   accountId: string;
   account: string;
+  browser: { name: BrowserDriverName; label: string; logo: string } | null;
   phase: BrowserCheckPhase;
   location: BrowserLocation;
   viewerId: string | null;

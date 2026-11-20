@@ -22,7 +22,7 @@ Checked by: code and SubQ
 
 ### REQ-ADSPOWER-03: The account's browser is AdsPower when it has a profile
 
-`socialAccounts.browserDriver` picks the driver. When it is empty, an account with a linked profile opens on AdsPower and one without opens on Camoufox. Rules 42 and 59.
+`socialAccounts.browserDriver` picks the driver, and a name log does not drive is refused with `browserDriverUnknown`. When it is empty, an account with a linked profile opens on AdsPower; one without opens on the browser `LOG_BROWSER_DRIVER` names, else Camoufox. Rules 42 and 59.
 
 Checked by: code and SubQ
 

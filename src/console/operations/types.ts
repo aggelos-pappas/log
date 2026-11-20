@@ -5,7 +5,7 @@ import type { SignInStore } from "../../platformKit/signIn/index.ts";
 import type { ConsoleSignInDeps } from "../signIn/index.ts";
 
 export const BROWSER_OPERATIONS = ["browserState", "browserOpen", "browserFrame", "browserInput", "browserAction", "browserSaveState", "browserClose"] as const;
-export const CONSOLE_OPERATIONS = ["connectionsList", "credentialsSave", "credentialsRead", "accountCheck", "accountSignIn", "signInLinkOpen", "usage", "events", ...BROWSER_OPERATIONS] as const;
+export const CONSOLE_OPERATIONS = ["connectionsList", "credentialsSave", "credentialsRead", "accountCheck", "accountSignIn", "signInLinkOpen", "accountBrowser", "usage", "events", ...BROWSER_OPERATIONS] as const;
 export type ConsoleOperation = (typeof CONSOLE_OPERATIONS)[number];
 
 export interface ConsoleTwin {
@@ -20,6 +20,7 @@ export const CONSOLE_TWINS: Readonly<Record<ConsoleOperation, ConsoleTwin>> = {
   accountCheck: { commands: ["sessionsCheck"] },
   accountSignIn: { commands: ["sessionsSignIn", "localAccountLogin"] },
   signInLinkOpen: { commands: ["sessionsSignIn"] },
+  accountBrowser: { commands: ["localAccountAdd"] },
   usage: { commands: ["consoleUsage"] },
   events: { commands: ["consoleEvents"] },
   browserState: { commands: ["browserView"] },
@@ -134,6 +135,7 @@ export const CONSOLE_MUTATIONS: Readonly<Record<string, ConsoleOperation>> = {
   "/api/console/credentials": "credentialsSave",
   "/api/console/credentials/read": "credentialsRead",
   "/api/console/connections/check": "accountCheck",
+  "/api/console/connections/browser": "accountBrowser",
   "/api/console/signIn": "accountSignIn",
   "/api/console/signInLink": "signInLinkOpen",
   "/api/console/browserCheck/state": "browserState",

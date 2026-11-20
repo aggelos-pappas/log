@@ -1,6 +1,6 @@
 import { AGENT_HOOKS } from "../../agentHooks/registry/index.ts";
 import type { AgentHook } from "../../agentHooks/registry/index.ts";
-import { BROWSER_DRIVERS } from "../../browser/driver/types.ts";
+import { BROWSER_DRIVER_ENV, BROWSER_DRIVERS, DEFAULT_BROWSER_DRIVER } from "../../browser/driver/types.ts";
 import { PAGE_STATES } from "../../browser/flow/helpers/pageState.ts";
 import { PLATFORM_LABELS, PLATFORM_SITES, PLATFORMS } from "../../cli/runner/helpers/platforms.ts";
 import type { Platform } from "../../cli/runner/helpers/platforms.ts";
@@ -207,7 +207,7 @@ export function browsersDiagram(entries: readonly CommandEntry[]): Diagram {
     `  gates["${label(`Every driver: the proxy gate (${proxied.join(", ")}: a proxy in the home country, rule 12. ${open.join(", ")}: no proxy, rule 84), self-check, HAR, human mouse (rules 17, 22, 32)`)}"]`,
     `  session["One Playwright context: python/browser/browserDriver.py"]`,
     "  twenty --> pick",
-    ...BROWSER_DRIVERS.map((d) => `  pick -->|"${label(d === "adsPower" ? "a linked profile, or browserDriver adsPower" : "browserDriver camoufox, or no profile")}"| d_${d}["${label(d)}"]`),
+    ...BROWSER_DRIVERS.map((d) => `  pick -->|"${label(d === "adsPower" ? "a linked profile, or browserDriver adsPower" : d === DEFAULT_BROWSER_DRIVER ? `browserDriver ${d}, or nothing set` : `browserDriver ${d}, or ${BROWSER_DRIVER_ENV}=${d}`)}"| d_${d}["${label(d)}"]`),
     ...BROWSER_DRIVERS.map((d) => `  d_${d} --> gates`),
     `  more["Next browser provider: one more driver (src/browser/name), rule 44"] -.-> gates`,
     "  gates --> session",
