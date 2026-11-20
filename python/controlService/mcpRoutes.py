@@ -23,6 +23,7 @@ SESSION_HEADER = "mcp-session-id"
 MAX_TEXT = 200_000
 UI_ARGUMENT_TOOLS = {"report", "sessionsSignIn"}
 VIEW_TOOLS = {"browserView", "sessionsSignIn"}
+BROWSER_VIEW_URI = "ui://log/browserView"
 SIGN_IN_TOOL = "sessionsSignIn"
 SIGN_IN_INPUT_KEY = "signIn"
 PENDING_FIELD = "inputRequired"
@@ -96,31 +97,29 @@ def mcp_router(settings: Settings, engine: Engine, dispatcher: Dispatcher) -> AP
     async def list_tools(actor: Actor, ui: bool) -> list[dict]:
         names = sorted(READ_TOOLS - HIDDEN)
         try:
-            view = await dispatcher.run(actor, uuid.uuid4(), "toolManifest", {"names": names, **({"ui": True} if ui else {})}, record=False)
+            view = await dispatcher.run(actor, uuid.uuid4(), "toolManifest", {"names": names, "views": True, **({"ui": True} if ui else {})}, record=False)
             listed = (view.result or {}).get("tools") if view.state == "succeeded" else None
         except ApiError:
             listed = None
         tools = listed if isinstance(listed, list) and listed else [fallback_tool(name) for name in names]
-        allowed = (READ_TOOLS - HIDDEN) | (APP_TOOLS if ui else frozenset())
+        allowed = (READ_TOOLS - HIDDEN) | APP_TOOLS
         kept = [tool for tool in tools if isinstance(tool, dict) and tool.get("name") in allowed]
         if not ui:
-            kept = [{key: value for key, value in tool.items() if key != "_meta"} for tool in kept]
+            kept = [tool if tool.get("name") in VIEW_TOOLS | APP_TOOLS else {key: value for key, value in tool.items() if key != "_meta"} for tool in kept]
         accounts = next((tool for tool in kept if tool.get("name") == "accountsList"), None) or fallback_tool("accountsList")
         return [accounts, *[tool for tool in kept if tool.get("name") != "accountsList"]]
 
     async def list_resources(actor: Actor, ui: bool) -> list[dict]:
-        if not ui:
-            return []
         try:
             view = await dispatcher.run(actor, uuid.uuid4(), "uiResourcesList", {}, record=False)
         except ApiError:
             return []
         resources = (view.result or {}).get("resources") if view.state == "succeeded" else None
-        return [item for item in resources if isinstance(item, dict) and str(item.get("uri", "")).startswith("ui://")] if isinstance(resources, list) else []
+        return [item for item in resources if isinstance(item, dict) and str(item.get("uri", "")).startswith("ui://") and (ui or item.get("uri") == BROWSER_VIEW_URI)] if isinstance(resources, list) else []
 
     async def read_resource(actor: Actor, ui: bool, params: dict) -> dict | None:
         uri = params.get("uri")
-        if not ui or not isinstance(uri, str) or not uri.startswith("ui://"):
+        if not isinstance(uri, str) or not uri.startswith("ui://") or (not ui and uri != BROWSER_VIEW_URI):
             return None
         try:
             view = await dispatcher.run(actor, uuid.uuid4(), "uiResourceRead", {"uri": uri}, record=False)
@@ -143,7 +142,7 @@ def mcp_router(settings: Settings, engine: Engine, dispatcher: Dispatcher) -> AP
     async def call_tool(actor: Actor, params: dict, ui: bool, extra: dict | None = None) -> dict:
         name = params.get("name")
         arguments = params.get("arguments") or {}
-        if not isinstance(name, str) or name in HIDDEN or not isinstance(arguments, dict) or (name in APP_TOOLS and not ui):
+        if not isinstance(name, str) or name in HIDDEN or not isinstance(arguments, dict):
             return {"isError": True, "content": [{"type": "text", "text": "unknown tool"}]}
         if name in APP_TOOLS:
             return await call_app_tool(actor, name, arguments)
@@ -173,7 +172,7 @@ def mcp_router(settings: Settings, engine: Engine, dispatcher: Dispatcher) -> AP
             pending = result.get(PENDING_FIELD)
             result = {key: value for key, value in result.items() if key != PENDING_FIELD}
         answer = {"content": [{"type": "text", "text": tool_text(result)}]}
-        if ui and name in VIEW_TOOLS and isinstance(result, dict):
+        if name in VIEW_TOOLS and isinstance(result, dict):
             answer["structuredContent"] = result
         if isinstance(pending, dict) and isinstance(pending.get("url"), str) and isinstance(pending.get("message"), str):
             answer[PENDING_FIELD] = {"url": pending["url"], "message": pending["message"]}

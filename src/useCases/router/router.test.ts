@@ -5,7 +5,7 @@ import { hookAnswer } from '../../contextLayer/hook/index'
 import { askAnswer } from '../../mcp/server/helpers/guideAnswer.ts'
 import { clearActivePlay, playScope } from '../../mcp/server/helpers/activePlay.ts'
 import { listUseCases } from '../../mcp/server/helpers/guides.ts'
-import { askOf, buildMeaningIndex, contentWords, folderOf, fuseSkills, fuseTools, isPlatformFolder, loadToolFacts, meaningWithin, openMeaningIndex, outcomeOf, phrasesOf, platformsOf, playMatchText, rankTools, route, routerCatalog, routerIndexState, routerSection, shippedSkills, toolMatchText } from './client'
+import { askOf, buildMeaningIndex, playToolsOf, contentWords, folderOf, fuseSkills, fuseTools, isPlatformFolder, loadToolFacts, meaningWithin, openMeaningIndex, outcomeOf, phrasesOf, platformsOf, playMatchText, rankTools, route, routerCatalog, routerIndexState, routerSection, shippedSkills, toolMatchText } from './client'
 import { asksToWrite, callOf, catalogHash, fillOf, meaningRanks, reciprocalRankFusion, skillOf, stepRowsOf, writesToAccount } from './helpers'
 import { GOLDEN_FILE, ROUTER_INDEX_NAME, ROUTER_MEANING_FILE, TOOL_GOLDEN_FILE, TOOL_TEXT_BUDGET } from './types'
 import type { CatalogKind, GoldenPrompt, RouterGolden, RouterMeaning, RouterMeaningFixture, ToolFusion, ToolGolden } from './types'
@@ -140,7 +140,7 @@ describe('the router text', () => {
 const toolGolden = JSON.parse(readFileSync(join(import.meta.dir, 'fixtures', TOOL_GOLDEN_FILE), 'utf8')) as ToolGolden[]
 
 describe('the tool ranking', () => {
-  test('words alone rank the expected tool first in 25 of the 44 tool asks and in the top 3 in 27, and inject nothing for status questions or asks that are not about log', () => {
+  test('words alone rank the expected tool first in 29 of the 49 tool asks and in the top 3 in 32, and inject nothing for status questions or asks that are not about log', () => {
     const facts = loadToolFacts()
     const names = new Set(facts.map((f) => f.name))
     for (const g of toolGolden) for (const name of g.expect) expect(names.has(name)).toBe(true)
@@ -148,9 +148,9 @@ describe('the tool ranking', () => {
     const shown = (prompt: string) => toolMatchText(prompt, useCases).tools
     const first = asks.filter((g) => g.expect.includes(shown(g.prompt)[0] ?? '')).length
     const three = asks.filter((g) => shown(g.prompt).slice(0, 3).some((name) => g.expect.includes(name))).length
-    expect(asks.length).toBe(44)
-    expect(first).toBe(25)
-    expect(three).toBe(27)
+    expect(asks.length).toBe(49)
+    expect(first).toBe(29)
+    expect(three).toBe(32)
     for (const g of (toolGolden as RouterGolden[]).filter((g) => !g.expect.length && !g.skills?.length)) expect(shown(g.prompt)).toEqual([])
   })
 
@@ -284,7 +284,7 @@ describe('the meaning router', () => {
     expect(fused[0].score).toBeCloseTo(1 / 62 + 1 / 61, 10)
   })
 
-  test('on the 44 tool asks, words alone rank the tool first in 25 and in the top 3 in 27; fused with the recorded local meaning, 26 and 31; skills 3 and 4 of 13; no status or chat question gets a line', () => {
+  test('on the 49 tool asks, words alone rank the tool first in 29 and in the top 3 in 32; fused with the recorded local meaning, 29 and 34; skills 8 and 9 of 18; no status or chat question gets a line', () => {
     const facts = loadToolFacts()
     const skills = shippedSkills()
     const names = new Set(facts.map((f) => f.name))
@@ -299,13 +299,13 @@ describe('the meaning router', () => {
       const shown = (g: RouterGolden) => fuseTools(g.prompt, useCases, fusion === 'lexical' ? null : recorded(g.prompt), fusion, facts).matches.map((m) => m.name)
       return { first: asks.filter((g) => g.expect.includes(shown(g)[0] ?? '')).length, three: asks.filter((g) => shown(g).slice(0, 3).some((n) => g.expect.includes(n))).length }
     }
-    expect(asks.length).toBe(44)
-    expect(count('lexical')).toEqual({ first: 25, three: 27 })
-    expect(count('rrf')).toEqual({ first: 26, three: 31 })
+    expect(asks.length).toBe(49)
+    expect(count('lexical')).toEqual({ first: 29, three: 32 })
+    expect(count('rrf')).toEqual({ first: 29, three: 34 })
     const skillAsks = routerGolden.filter((g) => g.skills?.length)
     const chosen = (g: RouterGolden) => fuseSkills(g.prompt, recorded(g.prompt), skills, 'rrf')
-    expect(skillAsks.filter((g) => g.skills!.includes(chosen(g)[0] ?? '')).length).toBe(3)
-    expect(skillAsks.filter((g) => chosen(g).some((s) => g.skills!.includes(s))).length).toBe(4)
+    expect(skillAsks.filter((g) => g.skills!.includes(chosen(g)[0] ?? '')).length).toBe(8)
+    expect(skillAsks.filter((g) => chosen(g).some((s) => g.skills!.includes(s))).length).toBe(9)
     for (const g of routerGolden.filter((g) => !g.expect.length && !g.skills?.length)) expect(routerSection(g.prompt, useCases, recorded(g.prompt), { facts, skills }).text).toBe('')
   })
 
@@ -322,6 +322,28 @@ describe('the meaning router', () => {
     await hookAnswer({ hook_event_name: 'UserPromptSubmit', prompt }, async (p) => ({ ...decide(p), meaning: { meaning: null, fallback: 'overBudget', ms: 151 } }), undefined, noNames)
     const late = openDatabase().prepare("SELECT attrs FROM spans WHERE tool = 'hook:UserPromptSubmit:router' ORDER BY rowid DESC LIMIT 1").get() as { attrs: string }
     expect(JSON.parse(late.attrs)).toMatchObject({ meaning: 'overBudget', outcome: 'lexical:overBudget' })
+  })
+
+  test("the owner's sign-in asks from a chat reach inbox/signIn through the prompt hook, with sessionsSignIn and browserView among its first tools", async () => {
+    const asks = ['sign into discord', 'log me into discord here', 'show me the browser so i can sign in', 'open the browser in the chat so i can log in', 'sign me in in hermes']
+    const wrong: string[] = []
+    for (const prompt of asks) {
+      const served = async (p: string) => ({ ...decide(p), meaning: { meaning: recorded(p), ms: 4 } })
+      const hooked = await hookAnswer({ hook_event_name: 'UserPromptSubmit', prompt }, served, undefined, noNames)
+      if (hooked.outcome !== 'inbox/signIn') wrong.push(`${prompt}: ${hooked.outcome}`)
+      if (!hooked.text.includes('getGuide({ useCase: "inbox/signIn" })')) wrong.push(`${prompt}: no getGuide`)
+      for (const tool of ['sessionsSignIn', 'browserView']) if (!(hooked.tools ?? []).slice(0, 3).includes(tool)) wrong.push(`${prompt}: ${tool} not in ${hooked.tools}`)
+    }
+    expect(wrong).toEqual([])
+  })
+
+  test('a clear play puts the tools its steps name first, and adds nothing without one', () => {
+    const prompt = 'log me into discord here'
+    expect(playToolsOf(useCases, 'inbox/signIn')).toEqual(['sessionsCheck', 'sessionsSignIn', 'browserView'])
+    expect(playToolsOf(useCases, null)).toEqual([])
+    const led = routerSection(prompt, useCases, recorded(prompt), { play: 'inbox/signIn' }).tools
+    expect(led.slice(0, 3).sort()).toEqual(['browserView', 'sessionsCheck', 'sessionsSignIn'])
+    expect(routerSection(prompt, useCases, recorded(prompt)).tools).not.toContain('sessionsSignIn')
   })
 
   test('a play the words missed is named once, with its skill copy left out', () => {

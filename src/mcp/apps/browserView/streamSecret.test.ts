@@ -61,7 +61,7 @@ function expectNoSecret(seen: string) {
 }
 
 describe("the voxl URL and its password never reach the model", () => {
-  test("local runtime (stdio): browserView carries no stream, and the stream tool is refused", async () => {
+  test("local runtime (stdio): browserView carries no stream, and the stream tool never hands out voxl", async () => {
     process.env.LOG_BROWSER_VIEW_LOCATION = "local";
     const client = await connected(UI);
     for (const args of [{ account: ACCOUNT }, { account: ACCOUNT, json: true }]) expectNoSecret(modelSees(await client.callTool({ name: "browserView", arguments: args })));
@@ -70,7 +70,7 @@ describe("the voxl URL and its password never reach the model", () => {
     expect((called.structuredContent as { json: { account: string } }).json.account).toBe(ACCOUNT);
     expectNoSecret(modelSees(called));
     const stream = await client.callTool({ name: "browserViewStream", arguments: { account: ACCOUNT, generation: GENERATION } });
-    expect((stream.structuredContent as { error: string }).error).toBe("browserViewLocal");
+    expectNoSecret(modelSees(stream));
   });
 
   test("remote runtime over MCP: browserView says voxl without the descriptor, which only the app-only tool gives the view", async () => {
@@ -94,14 +94,16 @@ describe("the voxl URL and its password never reach the model", () => {
     expect((stale.structuredContent as { error: string }).error).toBe("browserGenerationChanged");
   });
 
-  test("remote runtime over MCP, a client without MCP Apps: nothing carries it, and the stream tool is not listed or callable", async () => {
+  test("remote runtime over MCP, a client that declares no MCP Apps: the view still gets the descriptor through the app-only tool, never in text, and logCall can't reach it", async () => {
     process.env.LOG_BROWSER_VIEW_LOCATION = "remote";
     const client = await connected({});
     expectNoSecret(modelSees(await client.callTool({ name: "browserView", arguments: { account: ACCOUNT } })));
-    expect((await client.listTools()).tools.some((tool) => tool.name === "browserViewStream")).toBe(false);
-    const refused = await client.callTool({ name: "browserViewStream", arguments: { account: ACCOUNT, generation: GENERATION } });
-    expectNoSecret(modelSees(refused));
-    expect((refused.structuredContent as { error: string }).error).toBe("browserViewAppOnly");
+    expect((await client.listTools()).tools.find((tool) => tool.name === "browserViewStream")?._meta?.ui).toMatchObject({ visibility: ["app"] });
+    const stream = await client.callTool({ name: "browserViewStream", arguments: { account: ACCOUNT, generation: GENERATION } });
+    expect((stream.structuredContent as { stream: { url: string } }).stream.url).toBe(VOXL);
+    expect(JSON.stringify(stream.content)).not.toContain(PASSWORD);
+    const called = await client.callTool({ name: "logCall", arguments: { id: "browserViewStream", inputs: { account: ACCOUNT, generation: GENERATION } } });
+    expectNoSecret(modelSees(called));
   });
 
   test("remote runtime through the hosted bridge (runToolCall): browserView carries no descriptor", async () => {

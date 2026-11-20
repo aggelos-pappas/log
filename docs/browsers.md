@@ -113,9 +113,30 @@ answers the classified page state (`classify` from `login/autoLogin.py`), a
 revision hashed from the URL, the page text, the step index, the input count
 and the HAR count, whether the page is blocked (a checkpoint, a disabled
 account, a captcha, a video selfie, automated behaviour) and whether input is
-allowed (only the sign-in states). `GET /frame` answers one
-`page.screenshot(type="jpeg", quality=65, scale="css")` with the generation and
-revision in its headers. `src/browser/viewer` is the one TypeScript client both
+allowed (only the sign-in states). `GET /frame?after=<seq>` answers the newest
+screencast frame with the generation, revision, `X-Log-Frame-Seq` and
+`X-Log-Frame-Source` (`cast`) in its headers: it keeps the screencast running
+while frames are pulled (`BrowserViewer.pull`, stopped five seconds after the
+last pull), and when the newest frame is not newer than `after` it waits up to
+250 ms for one, so a view that asks again as soon as it has an answer gets each
+frame once. Without a screencast it answers one
+`page.screenshot(type="jpeg", quality=65, scale="css")` (`X-Log-Frame-Source:
+screenshot`, seq 0). `POST /ticket` mints a one-time ticket (60 s by default,
+900 s at most) and `GET /stream?ticket=<ticket>` opens the stream once with no
+token, answering any origin (`Access-Control-Allow-Origin: *`, and a preflight
+that allows a private network read), which is how a view inside a chat reads
+it. `GET /stream` answers
+`multipart/x-mixed-replace; boundary=logFrame`: one JPEG part per frame of
+Playwright's page screencast (`PageCast` in the same file), started at the
+viewport's own size so a point on the picture is a point on the page. The first
+part is a screenshot so a still page has a picture at once, and the last frame
+is sent again every 2 seconds while nothing changes. Every part carries the
+generation and the frame's width and height. One screencast serves every reader
+of a viewer; it starts with the first and stops when the last disconnects, and a
+slow reader gets only the newest frame (older ones are dropped, never queued).
+When the session's page changes the stream ends with the closing boundary, and a
+screencast that fails to start answers `browserStreamUnavailable`, so the reader
+falls back to `/frame`. `src/browser/viewer` is the one TypeScript client both
 surfaces use: `viewerState`, `viewerFrame` and `viewerInput` find the account's
 inspect session, read its descriptor, check the generation, and turn the
 answers into a view with a phase (`browserMissing`, `viewerUnavailable`,
@@ -131,8 +152,15 @@ every viewer action is a recorded step with its HAR and reading. The answer is
 the page read again once the step has let go of the browser. A checkpoint or
 other blocked page is shown but takes no input: it stays a stop (rule 94).
 
-**Picture, voxl first.** voxl is the stream, chosen because screenshots are
-slow. When `LOG_VOXL_URL` names a running
+**Picture, page screencast first.** On the machine the browser runs on, the
+page screencast is the stream: measured on Camoufox headless, about 22 frames a
+second (a frame every ~45 ms), click to screen about 33 ms at the median and
+46 ms at p95 on loopback, ~13 KB a frame. Neither JPEG quality nor frame size
+moves that rate, and patching Firefox's capture limits in the binary did not
+raise it either, so ~22 fps is Camoufox's ceiling for now. Through the console
+at a full 1100x700 viewport it measured 21 parts a second.
+
+**voxl, optional.** When `LOG_VOXL_URL` names a running
 [voxl](https://github.com/tembo/voxl) server (`--read-only`) on the account's
 display, `python/browser/streamSurface.py` reports a stream in `/state`:
 `{kind: "voxl", url, page, window}`. It first puts the browser window into
@@ -150,27 +178,46 @@ are never used; Playwright still supplies the input. voxl captures X11 or Xvfb
 on Linux, DXGI on Windows (the logged-in session, not a service) and
 ScreenCaptureKit on macOS (Screen Recording permission).
 
-**Fallback, screenshots.** Only when voxl cannot run (a Camoufox account, no
-`LOG_VOXL_URL`, a URL that is neither https nor loopback, or a stream that
-fails), the console's `/api/console/browser/frame` and the MCP App's
-`browserViewFrame` read `GET /frame`, about 2 frames a second: the screenshot,
-not the network, is the limit.
+**Fallback, frames pulled.** When the stream can't be read (a hosted chat, a
+host whose frame can't reach loopback, a screencast that ends three times
+without a frame), the console's `/api/console/browser/frame` and the MCP App's
+`browserViewFrame` read `GET /frame` back to back, each call carrying the seq of
+the frame the view has. Measured in the replica host bench on Camoufox headless
+through the real viewer: about 20 frames a second over the tool-call path, the
+same as the direct stream, because each answer is the screencast's newest frame
+rather than a fresh screenshot. Only when there is no screencast at all does it
+drop to screenshots (about 2 a second).
 
-**On the person's own machine** the MCP App streams nothing: the browser
-window is already on their screen, and `browserView` tells them to finish
-there (see [the live browser in the chat](mcp.md#the-live-browser-in-the-chat)).
+**The replica host bench.** `scripts/browserView/hostBench.py <screenshot dir>`
+(run with `LOG_PYTHON`; it needs `uv` for the plugin routes and Microsoft Edge)
+opens a Camoufox page behind the real viewer, then loads the built MCP App
+inside a replica MCP Apps host (a sandboxed iframe with the host's CSP and
+bridge) and the `::logapp` card (log's vendored Hermes host card, through the
+real plugin routes) inside a replica Hermes transcript, each in light and dark.
+It reports frames a second, which source drew them, the median of five clicks
+on the picture reaching the page, the address bar text, and the report view
+through `::logapp` following a theme flip, and saves `light.png`, `dark.png`,
+`logapp-browserView-light.png`, `logapp-browserView-dark.png`,
+`logapp-report-light.png` and `logapp-report-dark.png`.
 
 **In the local console.** `log console --web` serves `/api/console/browser`
 (the view), `/api/console/browser/frame` and `POST /api/console/browser/input`
 from `consoleBrowserAnswer` (`src/console/web/helpers/browser.ts`), behind the
 same loopback, origin and fetch-site guard as every console route. On
 Connections each local account has a live browser button that opens
-`BrowserCheckDialog.tsx`; `browserCheckMachine.ts` polls the frame every 500 ms
-into a `<canvas>`, takes the revision from each frame, and sends input only
-while the view can take it. With a voxl stream the console embeds voxl's own
+`BrowserCheckDialog.tsx`. While the browser runs on this machine and has no voxl
+stream, the dialog reads `GET /api/console/browserCheck/stream?accountId=&generation=`
+(`consoleBrowserAnswer`, which needs the console's own `x-log-console` header
+and pipes the viewer's `/stream` through unchanged, never journaled) with
+`fetch()`, splits the parts (`partReader` in `browserCheckData.ts`) and draws
+the newest JPEG into the `<canvas>`; a frame that arrives while one is drawing
+replaces the waiting one. If the stream can't start or ends, `castBrowser` tries
+again up to three times and meanwhile `browserCheckMachine.ts` polls the frame
+every 500 ms as before. Clicks map onto the page by the view's width and
+height, and input is sent only while the view can take it. With a voxl stream the console embeds voxl's own
 client in an iframe under a transparent overlay that maps clicks by fraction.
 Errors are toasts. The console attaches to a browser that is already open (by
 `log inspect start` or a flow); opening, closing, provisioning a profile and
 verifying a session from the console are not ported yet.
 
-**In an MCP Apps host.** See [the live browser in the chat](mcp.md#the-live-browser-in-the-chat).
+**In an MCP Apps host and in Hermes.** See [the live browser in the chat](mcp.md#the-live-browser-in-the-chat).

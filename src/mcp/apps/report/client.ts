@@ -107,7 +107,7 @@ function hermesDrawn(view: ViewServer, compiled: string, data: Record<string, un
   if (!host.hermes) return null;
   try {
     const html = view.viewMarkup(compiled, data, head.title, head.subtitle);
-    return saveHermesView({ ...head, html, text }, host.db);
+    return saveHermesView({ ...head, html, text, compiled, data }, host.db) ?? saveHermesView({ ...head, html, text }, host.db);
   } catch {
     return null;
   }

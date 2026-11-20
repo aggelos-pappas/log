@@ -48,6 +48,14 @@ export interface ViewerFrame {
   revision: string
   mimeType: 'image/jpeg'
   data: string
+  seq: number
+  source: 'cast' | 'screenshot'
+}
+
+export interface ViewerTicket {
+  url: string
+  ticket: string
+  expiresIn: number
 }
 
 export type ViewerEvent =

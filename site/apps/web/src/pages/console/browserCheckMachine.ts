@@ -3,7 +3,7 @@ import { browserFrame, requestBrowser } from './browserCheckData'
 import type { ConsoleTarget } from './consoleClient'
 import type { BrowserCheckView, BrowserInput, BrowserOperation, BrowserPhase } from './browserCheckTypes'
 
-type Context = { target: ConsoleTarget; accountId: string; autoSignIn: boolean; signInTried: boolean; closeRequested: boolean; navigation: 'back' | 'reload' | null; provisioned: boolean; opened: boolean; attempts: number; view: BrowserCheckView | null; error: string | null; hasFrame: boolean; pending: boolean; input: BrowserInput | null; drawFrame: (blob: Blob) => Promise<void> }
+type Context = { target: ConsoleTarget; accountId: string; autoSignIn: boolean; signInTried: boolean; closeRequested: boolean; navigation: 'back' | 'reload' | null; provisioned: boolean; opened: boolean; attempts: number; view: BrowserCheckView | null; error: string | null; hasFrame: boolean; pending: boolean; input: BrowserInput | null; drawFrame: (blob: Blob) => Promise<void>; casting?: () => boolean }
 type Event = { type: 'CLOSE' | 'OPEN' | 'LINK_PROFILE' | 'RECONNECT' | 'VERIFY' | 'RESOLVE' | 'COMPLETE' } | { type: 'NAVIGATE'; action: 'back' | 'reload' } | { type: 'INPUT'; input: BrowserInput } | { type: 'OBSERVED'; view: BrowserCheckView } | { type: 'FRAME_READY' } | { type: 'STREAM_LOST' }
 type RequestInput = { context: Context; operation: BrowserOperation }
 const phaseStates = {
@@ -14,7 +14,7 @@ export const sessionPhases: BrowserPhase[] = ['ready', 'signInRequired', 'needsR
 const delay = (ms: number, signal: AbortSignal) => new Promise<void>((resolve) => { const done = () => { clearTimeout(timer); signal.removeEventListener('abort', done); resolve() }; const timer = setTimeout(done, ms); signal.addEventListener('abort', done, { once: true }); if (signal.aborted) done() })
 
 export const browserCheckMachine = setup({
-  types: { context: {} as Context, input: {} as Pick<Context, 'target' | 'accountId' | 'drawFrame' | 'autoSignIn'>, events: {} as Event },
+  types: { context: {} as Context, input: {} as Pick<Context, 'target' | 'accountId' | 'drawFrame' | 'autoSignIn' | 'casting'>, events: {} as Event },
   actors: {
     request: fromPromise(({ input, signal }: { input: RequestInput; signal: AbortSignal }) => requestBrowser(input.context.target, input.context.accountId, input.operation, input.context.view, input.context.input, signal)),
     stream: fromCallback<Event, Context>(({ input, sendBack }) => {
@@ -23,7 +23,7 @@ export const browserCheckMachine = setup({
         let nextStatus = 0
         while (!controller.signal.aborted) {
           try {
-            if (!input.view?.stream) {
+            if (!input.view?.stream && input.casting?.() !== true) {
               const blob = await browserFrame(input.target, input.accountId, input.view!.generation!, controller.signal)
               if (controller.signal.aborted) break
               await input.drawFrame(blob)

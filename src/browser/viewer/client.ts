@@ -3,10 +3,13 @@ import { join } from 'node:path'
 import { processAlive, readCurrentInspect } from '../inspect/client'
 import type { CurrentInspect } from '../inspect/types'
 import { VIEWER_ERRORS, VIEWER_KEYS, ViewerError } from './types'
-import type { ViewerDescriptor, ViewerErrorCode, ViewerEvent, ViewerFrame, ViewerLiveState, ViewerStream, ViewerView } from './types'
+import type { ViewerDescriptor, ViewerErrorCode, ViewerEvent, ViewerFrame, ViewerLiveState, ViewerStream, ViewerTicket, ViewerView } from './types'
 
 export const VIEWER_FILE = 'browserViewer.json'
 export const MAX_FRAME_BYTES = 10_000_000
+export const STREAM_TYPE = 'multipart/x-mixed-replace'
+export const TICKET_SECONDS = 60
+export const TICKET_MAX_SECONDS = 900
 const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '[::1]']
 
 export const viewerDeps: { owner: (account: string) => CurrentInspect | null; alive: (pid: number) => boolean; fetch: (url: string, init: RequestInit) => Promise<Response> } = {
@@ -151,16 +154,48 @@ function sameGeneration(descriptor: ViewerDescriptor, generation: unknown): void
   if (typeof generation !== 'string' || generation !== descriptor.generation) throw new ViewerError('browserGenerationChanged')
 }
 
-export async function viewerFrame(account: string, generation: unknown): Promise<ViewerFrame> {
+export function frameAfter(value: unknown): number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : 0
+}
+
+export async function viewerFrame(account: string, generation: unknown, after: unknown = 0): Promise<ViewerFrame> {
   const descriptor = attach(account)
   sameGeneration(descriptor, generation)
-  const response = await ownerRequest(descriptor, '/frame')
+  const response = await ownerRequest(descriptor, `/frame?after=${frameAfter(after)}`)
   if (!response.ok || response.headers.get('X-Log-Browser-Generation') !== descriptor.generation) throw new ViewerError('browserViewerUnavailable')
   const revision = response.headers.get('X-Log-Browser-Revision') ?? ''
   if (!/^[a-f0-9]{64}$/.test(revision)) throw new ViewerError('browserViewerUnavailable')
   const data = await response.arrayBuffer()
   if (data.byteLength > MAX_FRAME_BYTES) throw new ViewerError('browserViewerUnavailable')
-  return { generation: descriptor.generation, revision, mimeType: 'image/jpeg', data: Buffer.from(data).toString('base64') }
+  const seq = Number(response.headers.get('X-Log-Frame-Seq') ?? '0')
+  const source = response.headers.get('X-Log-Frame-Source') === 'cast' ? 'cast' : 'screenshot'
+  return { generation: descriptor.generation, revision, mimeType: 'image/jpeg', data: Buffer.from(data).toString('base64'), seq: Number.isSafeInteger(seq) && seq >= 0 ? seq : 0, source }
+}
+
+export async function viewerTicket(account: string, generation: unknown, seconds: number = TICKET_SECONDS): Promise<ViewerTicket> {
+  const descriptor = attach(account)
+  sameGeneration(descriptor, generation)
+  const ttl = Number.isSafeInteger(seconds) && seconds > 0 ? Math.min(seconds, TICKET_MAX_SECONDS) : TICKET_SECONDS
+  const response = await ownerRequest(descriptor, '/ticket', { seconds: ttl })
+  const body = (await response.json().catch(() => null)) as { ticket?: unknown; expiresIn?: unknown; generation?: unknown } | null
+  if (!response.ok || !body || typeof body.ticket !== 'string' || !/^[A-Za-z0-9_-]{16,64}$/.test(body.ticket) || body.generation !== descriptor.generation) throw new ViewerError('browserViewerUnavailable')
+  return { url: `http://127.0.0.1:${descriptor.port}/stream?ticket=${body.ticket}`, ticket: body.ticket, expiresIn: typeof body.expiresIn === 'number' ? body.expiresIn : ttl }
+}
+
+export async function viewerStream(account: string, generation: unknown, signal: AbortSignal): Promise<Response> {
+  const descriptor = attach(account)
+  sameGeneration(descriptor, generation)
+  let response: Response
+  try {
+    response = await viewerDeps.fetch(`http://127.0.0.1:${descriptor.port}/stream`, { method: 'GET', headers: { authorization: `Bearer ${descriptor.token}` }, redirect: 'error', signal })
+  } catch {
+    throw new ViewerError('browserViewerUnavailable')
+  }
+  if (!response.ok || !response.body || !(response.headers.get('content-type') ?? '').startsWith(STREAM_TYPE) || response.headers.get('X-Log-Browser-Generation') !== descriptor.generation) {
+    await response.body?.cancel().catch(() => {})
+    throw new ViewerError('browserViewerUnavailable')
+  }
+  return response
 }
 
 export function eventOf(value: unknown): ViewerEvent {

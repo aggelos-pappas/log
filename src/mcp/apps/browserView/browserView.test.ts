@@ -11,7 +11,8 @@ import { EXTENSION_ID, RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps
 import { marketplaceFixture } from "../../../twenty/graphql/index.ts";
 import { createLogMcpServer } from "../../server/index.ts";
 import { browserViewJson } from "../../../cli/browser/index.ts";
-import { appTools, BROWSER_VIEW_URI, browserViewCsp, httpLocation, MCP_APP_MIME_TYPE, settleLocation, readBrowserViewResource, runAppTool, uiCapable, UI_EXTENSION_ID } from "./index.ts";
+import { stopRelay } from "../../../browser/viewer/index.ts";
+import { appTools, BROWSER_VIEW_URI, browserViewCsp, httpLocation, MCP_APP_MIME_TYPE, settleLocation, readBrowserViewResource, runAppTool, uiCapable, UI_EXTENSION_ID, withBrowserView } from "./index.ts";
 
 const UI = { extensions: { [UI_EXTENSION_ID]: { mimeTypes: [MCP_APP_MIME_TYPE] } } };
 const FIXTURE = fileURLToPath(new URL("../../../../python/fixtures/browserViewerFixture.py", import.meta.url));
@@ -34,7 +35,11 @@ describe("the browser view as an MCP App", () => {
   });
 
   test("app-only tools are hidden from the model and point at the view", () => {
-    for (const tool of appTools()) expect(tool._meta.ui).toEqual({ resourceUri: BROWSER_VIEW_URI, visibility: ["app"] });
+    for (const tool of appTools()) {
+      expect(tool._meta.ui).toEqual({ resourceUri: BROWSER_VIEW_URI, visibility: ["app"] });
+      expect(tool._meta["openai/widgetAccessible"]).toBe(true);
+      expect(tool._meta["openai/outputTemplate"]).toBeUndefined();
+    }
     expect(appTools().map((tool) => tool.name)).toEqual(["browserViewStream", "browserViewFrame", "browserViewInput", "browserViewDone"]);
   });
 
@@ -43,19 +48,23 @@ describe("the browser view as an MCP App", () => {
     const { tools } = await client.listTools();
     const view = tools.find((tool) => tool.name === "browserView");
     expect(view?._meta?.ui).toEqual({ resourceUri: BROWSER_VIEW_URI });
+    expect(view?._meta?.["openai/outputTemplate"]).toBe(BROWSER_VIEW_URI);
+    expect(view?._meta?.["openai/widgetAccessible"]).toBe(true);
     expect(tools.filter((tool) => (tool._meta?.ui as { visibility?: string[] } | undefined)?.visibility?.includes("app") && !(tool._meta?.ui as { visibility: string[] }).visibility.includes("model")).map((tool) => tool.name)).toEqual(["browserViewStream", "browserViewFrame", "browserViewInput", "browserViewDone"]);
     const { resources } = await client.listResources();
     expect(resources.some((resource) => resource.uri === BROWSER_VIEW_URI && resource.mimeType === MCP_APP_MIME_TYPE)).toBe(true);
   });
 
-  test("a host without MCP Apps gets browserView as text and no app-only tools, and cannot call them", async () => {
+  test("a host that declares no MCP Apps support still gets the view, its app tools and the resource, with the text answer kept", async () => {
     const client = await connected({});
     const { tools } = await client.listTools();
-    expect(tools.find((tool) => tool.name === "browserView")?._meta?.ui).toBeUndefined();
-    expect(tools.some((tool) => tool.name.startsWith("browserViewFrame"))).toBe(false);
-    const refused = await client.callTool({ name: "browserViewInput", arguments: { account: "a", generation: "g", revision: "r", event: { type: "click", x: 1, y: 1 } } });
-    expect(refused.isError).toBe(true);
-    expect((refused.structuredContent as { error: string }).error).toBe("browserViewAppOnly");
+    expect(tools.find((tool) => tool.name === "browserView")?._meta?.ui).toEqual({ resourceUri: BROWSER_VIEW_URI });
+    expect(tools.some((tool) => tool.name === "browserViewFrame")).toBe(true);
+    const { resources } = await client.listResources();
+    expect(resources.map((resource) => resource.uri)).toContain(BROWSER_VIEW_URI);
+    const called = await client.callTool({ name: "browserViewInput", arguments: { account: "a", generation: "g", revision: "r", event: { type: "click", x: 1, y: 1 } } });
+    expect(called.isError).toBe(true);
+    expect((called.structuredContent as { error: string }).error).toBe("browserMissing");
     const text = await client.callTool({ name: "browserView", arguments: { account: "nobodyHere" } });
     expect((text.content as { text: string }[])[0].text).toContain("nobodyHere: browserMissing");
     expect((text.structuredContent as { json: { phase: string } }).json.phase).toBe("browserMissing");
@@ -66,17 +75,21 @@ describe("the browser view as an MCP App", () => {
     const content = read.contents[0];
     expect(content.mimeType).toBe("text/html;profile=mcp-app");
     expect(content.uri).toBe(BROWSER_VIEW_URI);
-    expect(content._meta.ui).toEqual({ csp: { connectDomains: [], resourceDomains: [] }, prefersBorder: true });
+    expect(content._meta.ui).toEqual({ csp: { connectDomains: ["http://127.0.0.1:47613"], resourceDomains: [] }, prefersBorder: true });
+    expect(content._meta["openai/widgetCSP"]).toEqual({ connect_domains: ["http://127.0.0.1:47613"], resource_domains: [] });
+    expect(content._meta["openai/widgetPrefersBorder"]).toBe(true);
+    expect(typeof content._meta["openai/widgetDescription"]).toBe("string");
     expect(content.text.startsWith("<!doctype html>")).toBe(true);
     expect(content.text).toContain("ui/initialize");
     expect(content.text).not.toMatch(/<script[^>]+src=/);
     expect(content.text).not.toContain("<iframe");
   }, 30_000);
 
-  test("the CSP names voxl only when it is https, or http on loopback", () => {
-    expect(browserViewCsp({ LOG_VOXL_URL: "https://voxl.example.com/?token=t" }).connectDomains).toEqual(["https://voxl.example.com", "wss://voxl.example.com"]);
-    expect(browserViewCsp({ LOG_VOXL_URL: "http://voxl.example.com/" }).connectDomains).toEqual([]);
-    expect(browserViewCsp({ LOG_VOXL_URL: "http://127.0.0.1:6901/" }).connectDomains).toEqual(["http://127.0.0.1:6901", "ws://127.0.0.1:6901"]);
+  test("the CSP names voxl only when it is https, or http on loopback, and the loopback stream only on this machine", () => {
+    expect(browserViewCsp({ LOG_VOXL_URL: "https://voxl.example.com/?token=t" }, "remote").connectDomains).toEqual(["https://voxl.example.com", "wss://voxl.example.com"]);
+    expect(browserViewCsp({ LOG_VOXL_URL: "http://voxl.example.com/" }, "remote").connectDomains).toEqual([]);
+    expect(browserViewCsp({ LOG_VOXL_URL: "http://127.0.0.1:6901/" }, "remote").connectDomains).toEqual(["http://127.0.0.1:6901", "ws://127.0.0.1:6901"]);
+    expect(browserViewCsp({ LOG_BROWSER_STREAM_PORT: "50111" }, "local").connectDomains).toEqual(["http://127.0.0.1:50111"]);
   });
 
   test("same machine or remote: stdio and an open loopback HTTP server are local, anything served with a token or OAuth or off loopback is remote", () => {
@@ -95,7 +108,16 @@ describe("the browser view as an MCP App", () => {
     expect(browserViewJson(view, "remote")).toEqual(expect.objectContaining({ location: "remote", streamKind: "voxl" }));
     expect("stream" in browserViewJson(view, "remote")).toBe(false);
     expect(browserViewJson({ ...view, stream: null }, "remote")).toMatchObject({ streamKind: "frames" });
-    expect(browserViewJson(view, "local")).toMatchObject({ location: "local", streamKind: "none" });
+    expect(browserViewJson(view, "local")).toMatchObject({ location: "local", streamKind: "cast" });
+    expect(browserViewJson({ ...view, generation: null }, "local")).toMatchObject({ streamKind: "none" });
+  });
+
+  test("in Hermes the answer names the line that draws the live browser inline, and other hosts don't get it", () => {
+    const view = { account: "fakeSeller", phase: "signInRequired" as const, needsHuman: true, generation: "g", revision: "r", pageState: "loginForm", address: null, width: 800, height: 600, canInteract: true, stream: null };
+    const text = (result: { content?: unknown }) => (result.content as { text: string }[]).map((part) => part.text).join("\n");
+    expect(text(withBrowserView({ content: [{ type: "text", text: "x" }] }, view, "local", true))).toContain('::logbrowser{account="fakeSeller"}');
+    expect(text(withBrowserView({ content: [{ type: "text", text: "x" }] }, view, "local", false))).not.toContain("::logbrowser");
+    expect(text(withBrowserView({ content: [{ type: "text", text: "x" }] }, { ...view, generation: null }, "local", true))).not.toContain("::logbrowser");
   });
 
   test("app tools refuse a missing account before anything else", async () => {
@@ -138,20 +160,40 @@ describe.skipIf(!withBrowser)("end to end with the real viewer on a loopback sig
     rmSync(dir, { recursive: true, force: true });
   });
 
-  test("on the person's own machine browserView sends them to the window there, and the view neither streams nor sends input", async () => {
+  test("on the person's own machine the view streams too: a one-time loopback stream, and frames from the screencast", async () => {
     process.env.LOG_BROWSER_VIEW_LOCATION = "local";
+    const previousPort = process.env.LOG_BROWSER_STREAM_PORT;
+    process.env.LOG_BROWSER_STREAM_PORT = String(40000 + Math.floor(Math.random() * 20000));
     try {
       const client = await connected(UI);
       const viewed = await client.callTool({ name: "browserView", arguments: { account } });
-      expect((viewed.content as { text: string }[])[0].text).toContain("sign-in is open in the browser window on this machine. Finish there, then continue");
+      expect((viewed.content as { text: string }[])[0].text).toContain("live view shown in the chat");
       const view = (viewed.structuredContent as { json: { location: string; streamKind: string; generation: string } }).json;
-      expect(view).toMatchObject({ location: "local", streamKind: "none" });
-      const frame = await client.callTool({ name: "browserViewFrame", arguments: { account, generation: view.generation } });
-      expect((frame.structuredContent as { error: string }).error).toBe("browserViewLocal");
+      expect(view).toMatchObject({ location: "local", streamKind: "cast" });
+      const frame = await client.callTool({ name: "browserViewFrame", arguments: { account, generation: view.generation, after: 0 } });
+      const framed = frame.structuredContent as { data: string; seq: number; source: string };
+      expect(Buffer.from(framed.data, "base64").subarray(0, 2)).toEqual(Buffer.from([0xff, 0xd8]));
+      expect(["cast", "screenshot"]).toContain(framed.source);
+      const streamed = await client.callTool({ name: "browserViewStream", arguments: { account, generation: view.generation } });
+      const stream = (streamed.structuredContent as { stream: { kind: string; url: string } }).stream;
+      expect(stream.kind).toBe("cast");
+      expect(stream.url.startsWith(`http://127.0.0.1:${process.env.LOG_BROWSER_STREAM_PORT}/browserStream?`)).toBe(true);
+      const control = new AbortController();
+      const response = await fetch(stream.url, { signal: control.signal });
+      expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+      expect(response.headers.get("content-type")).toStartWith("multipart/x-mixed-replace");
+      const first = await response.body!.getReader().read();
+      expect(new TextDecoder().decode(first.value!.subarray(0, 12))).toBe("--logFrame\r\n");
+      control.abort();
+      const again = await fetch(stream.url);
+      expect(again.status).toBe(403);
       const done = await client.callTool({ name: "browserViewDone", arguments: { account } });
       expect((done.structuredContent as { done: boolean }).done).toBe(false);
     } finally {
+      stopRelay();
       delete process.env.LOG_BROWSER_VIEW_LOCATION;
+      if (previousPort === undefined) delete process.env.LOG_BROWSER_STREAM_PORT;
+      else process.env.LOG_BROWSER_STREAM_PORT = previousPort;
     }
   }, 30_000);
 

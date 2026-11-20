@@ -6,6 +6,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { COMMANDS } from "../../cli/runner/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { isAppTool } from "../apps/index.ts";
 import { AGENTS_MD, AGENTS_URI, citedRules, COMMAND_RULES, createLogMcpServer, DEVELOPER_RULES, GUIDES_DIR, MAX_RESULT_CHARS, RULES_REVIEWED_THROUGH, SERVER_INSTRUCTIONS } from "./index.ts";
 
 const agents = readFileSync(AGENTS_MD, "utf8");
@@ -49,8 +50,8 @@ describe("AGENTS.md in the MCP server", () => {
   test("every tool's description ends with its rules and points back to AGENTS.md", async () => {
     const client = await connected();
     const { tools } = await client.listTools();
-    for (const tool of tools.filter((t) => t.name !== "getGuide")) expect((tool.description ?? "").split("\n").at(-1)).toMatch(/^AGENTS\.md \(log:\/\/agents\): rules [\d, ]+\.$/);
-    for (const tool of tools.filter((t) => t.name !== "getGuide")) {
+    for (const tool of tools.filter((t) => t.name !== "getGuide" && !isAppTool(t.name))) expect((tool.description ?? "").split("\n").at(-1)).toMatch(/^AGENTS\.md \(log:\/\/agents\): rules [\d, ]+\.$/);
+    for (const tool of tools.filter((t) => t.name !== "getGuide" && !isAppTool(t.name))) {
       const cited = ((tool.description ?? "").split("\n").at(-1) ?? "").replace(/^.*rules /, "").replace(/\.$/, "").split(", ");
       expect(new Set(cited).size).toBe(cited.length);
       if (!["newPlatform", "newPlatformLive"].includes(tool.name)) expect(cited.filter((n) => DEVELOPER_RULES.has(Number(n)))).toEqual([]);
@@ -62,7 +63,7 @@ describe("AGENTS.md in the MCP server", () => {
   test("AGENTS.md itself is the resource log://agents, read from the file", async () => {
     const client = await connected();
     const { resources } = await client.listResources();
-    expect(resources.map((r) => r.uri)).toEqual([AGENTS_URI]);
+    expect(resources.map((r) => r.uri)).toEqual([AGENTS_URI, "ui://log/browserView"]);
     const read = await client.readResource({ uri: AGENTS_URI });
     expect((read.contents[0] as { text: string }).text).toBe(agents);
     await client.close();
@@ -103,7 +104,7 @@ describe("watching a long call live over MCP (rule 26)", () => {
     const client = await connected();
     const { tools } = await client.listTools();
     expect(tools[0].name).toBe("getGuide");
-    for (const tool of tools.filter((t) => t.name !== "getGuide")) {
+    for (const tool of tools.filter((t) => t.name !== "getGuide" && !isAppTool(t.name))) {
       const topic = /getGuide\(\{ topic: "(\w+)" \}\)/.exec((tool.description ?? "").split("\n").at(-2) ?? "")?.[1];
       expect(topic).toBeDefined();
       expect(existsSync(join(GUIDES_DIR, `${topic}.md`))).toBe(true);

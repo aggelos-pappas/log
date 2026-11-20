@@ -31,6 +31,7 @@ Secure MCP Tunnel changes the plan for ChatGPT. It supports private connections 
 | `aliaksei-loi/chatgpt-app-emulator` | 0 | local emulator of the ChatGPT host, no tunnel | the replica-host test bench idea, small enough to read |
 | MCPJam inspector playground | n/a | renders MCP Apps widgets outside a real host | a second replica host for the bench |
 | the partner's server | private | card tools with the view in `_meta`, one registration helper, replica-host bench | the patterns in the spec's prior-art table |
+| `NousResearch/hermes-agent#75828` (oriliz, MIT, head `2f62fb5a`, parked) | n/a | MCP Apps host for Hermes Desktop, 31 files: a sandboxed iframe card with the `ui/*` bridge and a CSP from `_meta.ui.csp` (`mcp-app-card.tsx`, `store/mcp-app.ts`), plus core changes to keep tool `_meta.ui`, read `ui://` resources and route iframe calls through approvals (`tools/mcp_tool.py`, `tools/approval.py`, `tui_gateway/server.py`) and to attach cards to transcript messages (`lib/chat-messages.ts`) | log vendors only the card and bridge (a plugin can ship them) into `src/mcp/apps/report/view/appBridge.ts` + `hermesApp.tsx`; the core half stays upstream, since a plugin can't patch Hermes and log's own routes and transcript directive already do that job for log's views (spec section K) |
 
 Guides read: OpenAI "Add UI to your MCP server" (keep every tool useful without UI; UI only for inspect, compare, edit, confirm, navigate), "Secure MCP Tunnel" and "Connecting custom MCP servers in ChatGPT" (Plugins, Add custom MCP server, choose Tunnel), the goose team's "5 tips for building MCP Apps", and Anthropic's `build-mcp-app` skill.
 
@@ -67,7 +68,9 @@ Checked live and in code on 20 November 2026. The hosted side exists and is depl
 | UI tools listed whatever the client declares (both servers) | not started |
 | Hosted relay kept running (`log runtime connect` supervised like the watchers) | not started |
 | Hosted tool list generated from the local catalog instead of a hand list | not started |
+| Live browser (J): voxl by default, local streaming, Camoufox kiosk, take control, server/VM setup | specced; today no voxl runs (`LOG_VOXL_URL` unset), local streaming is refused, input is sign-in only |
 | Card registration helper, view in `_meta`, ChatGPT keys (B, D) | not started |
 | Blocks card `ui://log/blocks` (I) | not started |
 | ChatGPT through Secure MCP Tunnel (A2) | not started |
 | Card rules (E), profiles (C), `.mcpb` (H), replica-host bench | not started |
+| `::logapp`: the vendored MCP Apps host card in Hermes Desktop (K, #210) | built; bench numbers in the PR |

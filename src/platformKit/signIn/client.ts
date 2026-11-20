@@ -28,7 +28,7 @@ export function signInNextStep(account: SignInAccount, state: SignInState, outpu
   if (state === "waitingForOwner") {
     const home = PLATFORM_SITES[account.platform].home;
     return {
-      says: `${account.name}'s own browser is open on ${home}. The owner signs in themself on the login screen; browserView shows it live where the host draws it. When they are done, sign-in is finished with done: closing the browser saves the cookies and session from it, and only when its sign-in cookies are there. Closing the window by hand does the same.`,
+      says: `${account.name}'s own browser is open on ${home}. The owner signs in themself on the login screen; browserView { account } streams it into the chat (in Hermes Desktop, put the ::logbrowser line its answer names on its own line). When they are done, sign-in is finished with done: closing the browser saves the cookies and session from it, and only when its sign-in cookies are there. Closing the window by hand does the same.`,
       tool: { name: "sessionsSignIn", input: { account: account.name, platform: account.platform, done: true } },
       cli: `log sessions signIn --account ${account.name} --platform ${account.platform} --done`,
       alternative: null,

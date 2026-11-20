@@ -1,5 +1,7 @@
 import { App, applyDocumentTheme, applyHostStyleVariables } from "@modelcontextprotocol/ext-apps";
 import type { McpUiHostContext } from "@modelcontextprotocol/ext-apps";
+import { addressText } from "./address.ts";
+import { drawBlob, jpegBlob, readCast } from "./cast.ts";
 import { connectVoxl, voxlSupported } from "./voxl.ts";
 import type { VoxlConnection, VoxlStream } from "./voxl.ts";
 
@@ -16,7 +18,7 @@ interface View {
   height: number | null;
   canInteract: boolean;
   location: "local" | "remote";
-  streamKind: "voxl" | "frames" | "none";
+  streamKind: "voxl" | "cast" | "frames" | "none";
 }
 type Input = { type: "click"; x: number; y: number } | { type: "text"; text: string } | { type: "key"; key: string } | { type: "scroll"; deltaY: number };
 interface ToolAnswer {
@@ -50,7 +52,7 @@ const ICON = {
   expand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
   shrink: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>',
   pip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1"/></svg>',
-  pointer: '<svg viewBox="0 0 24 24" width="14" height="14" fill="#2A8CFF"><path d="M5 3l14 7-6 2-2 6z"/></svg>',
+  pointer: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M5 3l14 7-6 2-2 6z"/></svg>',
 };
 
 const root = document.getElementById("app") as HTMLElement;
@@ -79,9 +81,12 @@ const canvas = ref<HTMLCanvasElement>("canvas");
 const keys = ref<HTMLTextAreaElement>("keys");
 const context2d = canvas.getContext("2d");
 
-const state: { account: string | null; view: View | null; revision: string | null; live: boolean; hasControl: boolean; pending: boolean; queue: Input[]; stream: VoxlStream | null; voxl: VoxlConnection | null; timer: number | null; tick: number; finished: boolean; autoMode: boolean; mode: string; streamAsked: boolean } = {
-  account: null, view: null, revision: null, live: false, hasControl: false, pending: false, queue: [], stream: null, voxl: null, timer: null, tick: 0, finished: false, autoMode: false, mode: "inline", streamAsked: false,
+type Source = "cast" | "pull" | "voxl" | null;
+const state: { account: string | null; view: View | null; revision: string | null; live: boolean; hasControl: boolean; pending: boolean; queue: Input[]; stream: VoxlStream | null; voxl: VoxlConnection | null; finished: boolean; autoMode: boolean; mode: string; streamAsked: boolean; seq: number; cast: AbortController | null; castTried: boolean; looping: boolean; torn: boolean; frames: number; source: Source; stateAt: number } = {
+  account: null, view: null, revision: null, live: false, hasControl: false, pending: false, queue: [], stream: null, voxl: null, finished: false, autoMode: false, mode: "inline", streamAsked: false, seq: 0, cast: null, castTried: false, looping: false, torn: false, frames: 0, source: null, stateAt: 0,
 };
+const STATE_EVERY_MS = 1000;
+const IDLE_MS = 1500;
 
 const app = new App({ name: "logBrowserView", version: "1.0.0" }, { availableDisplayModes: ["inline", "fullscreen", "pip"] }, { autoResize: true });
 
@@ -104,14 +109,12 @@ function render(): void {
   const connecting = !view || (Boolean(view.generation) && !state.live && phase !== "browserMissing" && phase !== "viewerUnavailable");
   ref("account").textContent = view ? `${view.account}${view.pageState ? ` · ${view.pageState}` : ""}` : "Waiting for the agent…";
   ref("title").textContent = phase ? TITLES[phase] : "Live browser";
-  if (view?.location === "local") {
-    renderLocal(view);
-    return;
-  }
-  ref("address").textContent = view?.address ?? "Waiting for page…";
+  ref("address").textContent = addressText(view, state.live);
   const pill = ref("pill");
   pill.dataset.tone = phase === "needsAttention" ? "stop" : state.live ? "live" : "";
-  ref("pillText").textContent = phase === "needsAttention" ? "Stopped" : state.live ? (state.voxl ? "Live stream" : "Screenshots (fallback)") : "Not connected";
+  ref("pillText").textContent = phase === "needsAttention" ? "Stopped" : state.live ? (state.source === "pull" ? "Live (frames)" : "Live") : "Not connected";
+  root.dataset.source = state.source ?? "";
+  root.dataset.frames = String(state.frames);
   canvas.dataset.live = String(state.live);
   canvas.dataset.input = String(Boolean(view?.canInteract) && state.live);
   ref("cover").hidden = state.live && !connecting;
@@ -133,28 +136,6 @@ function render(): void {
   root.dataset.mode = state.mode;
 }
 
-function renderLocal(view: View): void {
-  const asks = view.phase === "signInRequired" || view.phase === "needsAttention";
-  ref("pill").dataset.tone = view.phase === "needsAttention" ? "stop" : "";
-  ref("pillText").textContent = "On this machine";
-  ref("title").textContent = asks ? "Sign-in on this machine" : TITLES[view.phase];
-  ref("address").textContent = view.address ?? "The browser window on this machine";
-  canvas.dataset.live = "false";
-  ref("cover").hidden = false;
-  ref("spin").hidden = true;
-  ref("coverTitle").textContent = asks ? "Finish in the browser window" : TITLES[view.phase];
-  ref("coverNote").textContent = view.phase === "signInRequired" ? "The sign-in is open in the browser window on this machine. Finish there, then press Done so the agent carries on." : view.phase === "needsAttention" ? "The page in the browser window on this machine needs you, and the run is stopped until you clear it there." : NOTES[view.phase];
-  ref("take").hidden = true;
-  ref("note").hidden = true;
-  ref("full").hidden = true;
-  ref("pip").hidden = true;
-  const done = ref<HTMLButtonElement>("done");
-  done.disabled = state.pending || state.finished;
-  done.textContent = state.finished ? "Agent told" : "Done, carry on";
-  ref("hint").textContent = state.finished ? "The agent was told to carry on." : "The agent waits while you finish in the window.";
-  root.dataset.mode = state.mode;
-}
-
 async function call(name: string, args: Record<string, unknown>): Promise<ToolAnswer> {
   return (await app.callServerTool({ name, arguments: args })) as ToolAnswer;
 }
@@ -164,18 +145,12 @@ function errorOf(answer: ToolAnswer): string {
   return typeof error === "string" ? error : "browserViewerUnavailable";
 }
 
-async function drawJpeg(data: string): Promise<void> {
-  const bytes = Uint8Array.from(atob(data), (char) => char.charCodeAt(0));
-  const bitmap = await createImageBitmap(new Blob([bytes], { type: "image/jpeg" }));
-  try {
-    if (canvas.width !== bitmap.width || canvas.height !== bitmap.height) {
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
-    }
-    context2d?.drawImage(bitmap, 0, 0);
-  } finally {
-    bitmap.close();
-  }
+async function drawFrame(blob: Blob, source: Source): Promise<void> {
+  await drawBlob(canvas, blob);
+  state.frames++;
+  state.source = source;
+  root.dataset.frames = String(state.frames);
+  root.dataset.source = source ?? "";
 }
 
 function adopt(view: View | null): void {
@@ -188,10 +163,13 @@ function adopt(view: View | null): void {
     state.revision = view.revision;
     state.stream = null;
     state.streamAsked = false;
+    state.seq = 0;
+    state.castTried = false;
     stopVoxl();
+    stopCast();
   }
   if (view.revision && !state.pending) state.revision = view.revision;
-  if (view.location === "remote" && view.phase === "signInRequired" && !state.autoMode && modes().includes("fullscreen")) {
+  if (view.phase === "signInRequired" && !state.autoMode && modes().includes("fullscreen")) {
     state.autoMode = true;
     void setMode("fullscreen");
   }
@@ -216,50 +194,123 @@ function startVoxl(): void {
   });
 }
 
-async function poll(): Promise<void> {
-  state.timer = null;
-  const view = state.view;
-  if (!state.account) return;
-  try {
-    if (!view?.generation || view.location === "local") {
-      const answer = await call("browserViewDone", { account: state.account });
-      adopt((answer.structuredContent?.view as View | undefined) ?? null);
-    } else if (view.streamKind === "voxl" && !state.stream && !state.streamAsked && voxlSupported()) {
-      state.streamAsked = true;
-      const answer = await call("browserViewStream", { account: state.account, generation: view.generation });
-      const stream = answer.structuredContent?.stream as VoxlStream | undefined;
-      if (!answer.isError && stream?.kind === "voxl") state.stream = stream;
-    } else if (state.stream && voxlSupported()) {
-      startVoxl();
-      const answer = await call("browserViewDone", { account: state.account });
-      adopt((answer.structuredContent?.view as View | undefined) ?? null);
-    } else {
-      const answer = await call("browserViewFrame", { account: state.account, generation: view.generation, withState: state.tick++ % 4 === 0 });
-      if (answer.isError) {
-        const code = errorOf(answer);
-        state.live = false;
-        if (code === "browserGenerationChanged" || code === "browserMissing") {
-          const fresh = await call("browserViewDone", { account: state.account });
-          adopt((fresh.structuredContent?.view as View | undefined) ?? null);
-        }
-      } else {
-        const frame = answer.structuredContent as { data: string; revision: string; view: View | null };
-        await drawJpeg(frame.data);
-        if (!state.pending) state.revision = frame.revision;
-        state.live = true;
-        adopt(frame.view);
-      }
-    }
-  } catch {
-    state.live = false;
-  }
-  if (state.view?.location === "remote" && state.stream) startVoxl();
-  render();
-  state.timer = window.setTimeout(() => void poll(), state.view?.generation && state.view.location === "remote" ? 500 : 2500);
+function stopCast(): void {
+  state.cast?.abort();
+  state.cast = null;
 }
 
-function schedule(): void {
-  if (state.timer === null) state.timer = window.setTimeout(() => void poll(), 0);
+function startCast(url: string): void {
+  stopCast();
+  const control = new AbortController();
+  state.cast = control;
+  let drawn = 0;
+  void readCast(url, control.signal, async (blob) => {
+    await drawFrame(blob, "cast");
+    drawn++;
+    if (!state.live) {
+      state.live = true;
+      render();
+    }
+  })
+    .catch(() => undefined)
+    .finally(() => {
+      if (state.cast !== control) return;
+      state.cast = null;
+      if (drawn > 0 && !control.signal.aborted) window.setTimeout(() => (state.castTried = false), 1000);
+      render();
+      void loop();
+    });
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function running(): boolean {
+  return Boolean(state.account) && !state.torn && !state.finished && !document.hidden;
+}
+
+async function refreshState(): Promise<void> {
+  const answer = await call("browserViewDone", { account: state.account });
+  state.stateAt = Date.now();
+  adopt((answer.structuredContent?.view as View | undefined) ?? null);
+}
+
+async function pull(view: View): Promise<void> {
+  const withState = Date.now() - state.stateAt >= STATE_EVERY_MS;
+  const answer = await call("browserViewFrame", { account: state.account, generation: view.generation, after: state.seq, withState });
+  if (answer.isError) {
+    const code = errorOf(answer);
+    state.live = false;
+    if (code === "browserGenerationChanged" || code === "browserMissing") await refreshState();
+    else await sleep(IDLE_MS);
+    return;
+  }
+  const frame = answer.structuredContent as { data: string; revision: string; seq?: number; source?: string; view: View | null };
+  const seq = typeof frame.seq === "number" ? frame.seq : 0;
+  if (seq === 0 || seq !== state.seq || !state.live) await drawFrame(jpegBlob(frame.data), "pull");
+  state.seq = seq;
+  if (!state.pending) state.revision = frame.revision;
+  state.live = true;
+  if (withState) state.stateAt = Date.now();
+  adopt(frame.view);
+  if (seq === 0) await sleep(250);
+}
+
+async function step(): Promise<void> {
+  const view = state.view;
+  if (!view?.generation) {
+    await refreshState();
+    if (!state.view?.generation) await sleep(IDLE_MS);
+    return;
+  }
+  if (view.streamKind === "voxl" && !state.stream && !state.streamAsked && voxlSupported()) {
+    state.streamAsked = true;
+    const answer = await call("browserViewStream", { account: state.account, generation: view.generation });
+    const stream = answer.structuredContent?.stream as VoxlStream | undefined;
+    if (!answer.isError && stream?.kind === "voxl") state.stream = stream;
+    return;
+  }
+  if (state.stream && voxlSupported()) {
+    startVoxl();
+    state.source = "voxl";
+    await refreshState();
+    await sleep(STATE_EVERY_MS);
+    return;
+  }
+  if (view.streamKind === "cast" && !state.castTried && typeof fetch === "function") {
+    state.castTried = true;
+    const answer = await call("browserViewStream", { account: state.account, generation: view.generation });
+    const stream = answer.structuredContent?.stream as { kind?: string; url?: string } | undefined;
+    if (!answer.isError && stream?.kind === "cast" && typeof stream.url === "string") startCast(stream.url);
+    return;
+  }
+  if (state.cast) {
+    await refreshState();
+    await sleep(STATE_EVERY_MS);
+    return;
+  }
+  await pull(view);
+}
+
+async function loop(): Promise<void> {
+  if (state.looping) return;
+  state.looping = true;
+  try {
+    while (running()) {
+      try {
+        await step();
+      } catch {
+        state.live = false;
+        await sleep(IDLE_MS);
+      }
+      render();
+    }
+  } finally {
+    state.looping = false;
+  }
+  if (!running()) stopCast();
+  render();
 }
 
 async function pump(): Promise<void> {
@@ -285,6 +336,7 @@ async function pump(): Promise<void> {
     render();
   }
   if (state.queue.length) window.setTimeout(() => void pump(), state.queue[0]?.type === "text" ? 120 : 0);
+  void loop();
 }
 
 function enqueue(input: Input): void {
@@ -359,7 +411,7 @@ ref("done").addEventListener("click", async () => {
       : `I'm done in ${state.account}'s browser, but the page still shows ${view?.pageState ?? view?.phase ?? "an unknown state"}. Check it with browserView before carrying on.`;
     await app.updateModelContext({ content: [{ type: "text", text }] }).catch(() => undefined);
     const sent = await app.sendMessage({ role: "user", content: [{ type: "text", text }] });
-    state.finished = !sent.isError;
+    state.finished = !sent.isError && finished;
     if (sent.isError) toast("The host did not take the message. Tell the agent you are done.");
     if (state.mode !== "inline") await setMode("inline");
   } catch {
@@ -370,12 +422,38 @@ ref("done").addEventListener("click", async () => {
   }
 });
 
+type OpenAiGlobals = { theme?: unknown; displayMode?: unknown };
+function openAi(): OpenAiGlobals | undefined {
+  return (window as unknown as { openai?: OpenAiGlobals }).openai;
+}
+
+function themeOf(value: unknown): "light" | "dark" | null {
+  return value === "light" || value === "dark" ? value : null;
+}
+
 function hostChanged(context: McpUiHostContext): void {
-  if (context.theme) applyDocumentTheme(context.theme);
+  const theme = themeOf(context.theme) ?? themeOf(openAi()?.theme);
+  if (theme) applyDocumentTheme(theme);
   if (context.styles?.variables) applyHostStyleVariables(context.styles.variables);
   if (context.displayMode) state.mode = context.displayMode;
   render();
 }
+
+window.addEventListener("openai:set_globals", () => {
+  const theme = themeOf(openAi()?.theme);
+  if (theme) applyDocumentTheme(theme);
+});
+const openAiTheme = themeOf(openAi()?.theme);
+if (openAiTheme) applyDocumentTheme(openAiTheme);
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    stopCast();
+    state.castTried = false;
+    return;
+  }
+  void loop();
+});
 
 app.ontoolinput = (params) => {
   const account = (params.arguments as { account?: unknown } | undefined)?.account;
@@ -391,12 +469,13 @@ app.ontoolresult = (result) => {
     adopt(view);
   }
   render();
-  schedule();
+  void loop();
 };
 app.onhostcontextchanged = (context) => hostChanged(context as McpUiHostContext);
 app.onteardown = async () => {
+  state.torn = true;
   stopVoxl();
-  if (state.timer !== null) clearTimeout(state.timer);
+  stopCast();
   state.account = null;
   return {};
 };
