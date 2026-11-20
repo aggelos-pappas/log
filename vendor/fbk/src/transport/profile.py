@@ -40,6 +40,8 @@ import re
 
 from pydantic import BaseModel, Field
 
+import constants as C
+
 
 class ClientProfile(BaseModel):
     """The identity the transport presents to the edge (docs/08 §5).
@@ -55,7 +57,7 @@ class ClientProfile(BaseModel):
     # TLS/h2 target; must stay within the same browser family+major as
     # the UA (docs/09 §2.3 ratchet, docs/16 §6 pinning policy).
     impersonate: str = Field(
-        default="chrome136",
+        default=C.IMPERSONATE_DEFAULT,
         description=(
             "curl_cffi impersonation target. Pinned to a major version "
             "deliberately; the unversioned 'chrome' target would drift on "
@@ -64,24 +66,21 @@ class ClientProfile(BaseModel):
     )
     # Chrome 136 on Windows: the shape confirmed live 2026-09 (docs/15 §1).
     user_agent: str = Field(
-        default=(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
-        ),
+        default=C.USER_AGENT_DEFAULT,
         description=(
             "Full UA string; must match the impersonation target's family "
             "and major version (docs/08 §5 coherence matrix)."
         ),
     )
     sec_ch_ua: str = Field(
-        default='"Chromium";v="136", "Not_A Brand";v="99", "Google Chrome";v="136"',
+        default=C.SEC_CH_UA_DEFAULT,
         description=(
             "The sec-ch-ua client hint; the Chrome major inside it must "
             "agree with user_agent (the validator enforces it)."
         ),
     )
     sec_ch_ua_platform: str = Field(
-        default='"Windows"',
+        default=C.SEC_CH_UA_PLATFORM_DEFAULT,
         description='sec-ch-ua-platform; OS class must match the UA exactly.',
     )
     sec_ch_ua_mobile: str = Field(

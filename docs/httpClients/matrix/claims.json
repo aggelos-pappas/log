@@ -1,0 +1,50 @@
+[
+ {
+  "id": "sameVersionSame",
+  "statement": "For the same Chrome version, curl_cffi and httpcloak sent identical JA4 and peetprint fingerprints in the live test."
+ },
+ {
+  "id": "httpcloakLatestMatches",
+  "statement": "httpcloak's chrome-latest-windows preset matched the real Chrome 157 on this machine on both JA4 and peetprint."
+ },
+ {
+  "id": "curl16Behind",
+  "statement": "curl_cffi 0.16.3, the version log runs, stops at chrome150 and its Chrome targets carry a macOS user agent."
+ },
+ {
+  "id": "curl17Windows",
+  "statement": "curl_cffi 0.17.0 adds Windows Chrome targets (chrome151, chrome152) and Windows Firefox 153-155."
+ },
+ {
+  "id": "httpcloakNoWs",
+  "statement": "httpcloak's documentation shows no WebSocket client API."
+ },
+ {
+  "id": "httpcloakNoAsyncPy",
+  "statement": "httpcloak's documentation shows no asyncio API for Python."
+ },
+ {
+  "id": "curlWs",
+  "statement": "curl_cffi WebSocket handshakes use the same impersonated TLS fingerprint, proxies and cookies as its HTTP requests."
+ },
+ {
+  "id": "jwriterHttpcloak",
+  "statement": "JWriter20, the Camoufox maintainer, recommended httpcloak in Scraping Enthusiasts."
+ },
+ {
+  "id": "randomJa3Blocked",
+  "statement": "Scraping Enthusiasts members reported that random JA3 fingerprints still get blocked and recommended copying a real browser."
+ },
+ {
+  "id": "cookiesBoundToJa3",
+  "statement": "A member reported that a platform ties cookies to the JA3/JA4 fingerprint they were issued to."
+ },
+ {
+  "id": "logFiveIdentities",
+  "statement": "log's HTTP clients today present more than three different browser identities."
+ },
+ {
+  "id": "akamaiSame",
+  "statement": "Both libraries produced the same Akamai HTTP/2 fingerprint as real Chrome in the live test."
+ }
+]

@@ -8,7 +8,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "EzEasy" }]
 requires-python = ">=3.11"
 dependencies = [
-  "curl_cffi>=0.16",
+  "curl_cffi>=0.17",
 ]
 keywords = ["slack", "realtime", "websocket", "sdk", "ai", "llm", "agent"]
 classifiers = [

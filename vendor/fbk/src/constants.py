@@ -97,7 +97,16 @@ LOGOUT_ENDPOINT = "https://www.facebook.com/logout.php"
 # "chrome" preset would silently rotate the fingerprint on a curl_cffi bump
 # (docs/16 §6). chrome136 was confirmed live 2026-09 to pass the edge with
 # zero interstitials across ~40 requests (docs/15 §1).
-IMPERSONATE_DEFAULT = "chrome136"
+try:
+    from identity import browserIdentity as _identity
+except ImportError:  # used outside log: keep the old pin
+    _identity = None
+# log's one browser identity (python/identity/browserIdentity.py) decides the
+# pinned target and UA for every client; chrome136 is the pin when fbk runs alone.
+IMPERSONATE_DEFAULT = _identity.curl_target("facebook") if _identity else "chrome136"
+SEC_CH_UA_DEFAULT = _identity.sec_ch_ua(_identity.resolve("facebook")["version"]) if _identity else '"Chromium";v="136", "Not_A Brand";v="99", "Google Chrome";v="136"'
+SEC_CH_UA_PLATFORM_DEFAULT = _identity.headers("facebook").get("sec-ch-ua-platform", '"Windows"') if _identity else '"Windows"'
+USER_AGENT_DEFAULT = _identity.user_agent("facebook") if _identity else "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
 # Descent order probed by transport.resolve_impersonate(); the first target
 # the installed curl_cffi build can express wins (docs/12 §1.1 probe trick).
 IMPERSONATE_FALLBACKS = ("chrome136", "chrome131", "chrome124", "chrome120")

@@ -67,10 +67,15 @@ def transport_problems():
     problems = []
     if not TRANSPORT.exists():
         return [f"{rel(TRANSPORT)} is missing: gabriel's one curl_cffi transport"]
-    tree = ast.parse(TRANSPORT.read_text(encoding="utf-8"))
-    values = {t.id: n.value.value for n in tree.body if isinstance(n, ast.Assign) for t in n.targets if isinstance(t, ast.Name) and isinstance(n.value, ast.Constant)}
-    target = values.get("IMPERSONATE")
-    agent = values.get("USER_AGENT", "")
+    for p in (str(ROOT / "python"), str(VENDOR)):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    from gabriel.core import transport
+    from identity import browserIdentity
+    target = transport.IMPERSONATE
+    agent = transport.USER_AGENT
+    if target != browserIdentity.curl_target("slack") or agent != browserIdentity.user_agent("slack"):
+        problems.append(f"{rel(TRANSPORT)}: IMPERSONATE and USER_AGENT must come from log's one identity (python/identity/browserIdentity.py), found {target!r}")
     version = re.fullmatch(r"chrome(\d+)", str(target or ""))
     if not version:
         problems.append(f"{rel(TRANSPORT)}: IMPERSONATE must be one desktop Chrome target (chromeNNN), found {target!r}")

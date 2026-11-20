@@ -1,0 +1,2030 @@
+{
+  "model": "subq-snap-preview",
+  "endpoint": "https://api.subq.ai/v1/systemone",
+  "stateChars": 33007,
+  "passA": [
+    {
+      "matchesRealChrome": {
+        "type": "choice",
+        "choice": "httpcloakAll",
+        "probabilities": {
+          "stayAsIs": 0.0009926280472427607,
+          "curlUnified": 0.0097604189068079,
+          "httpcloakAll": 0.9312809109687805,
+          "hybridOneIdentity": 0.05749639868736267,
+          "wreqAll": 0.00046963428030721843
+        },
+        "confidence": 0.9141011387109756
+      },
+      "oneIdentity": {
+        "type": "choice",
+        "choice": "hybridOneIdentity",
+        "probabilities": {
+          "stayAsIs": 0.07814793288707733,
+          "curlUnified": 0.2903096675872803,
+          "httpcloakAll": 0.2492976039648056,
+          "hybridOneIdentity": 0.34656232595443726,
+          "wreqAll": 0.03568243607878685
+        },
+        "confidence": 0.18320290744304654
+      },
+      "osCoherence": {
+        "type": "choice",
+        "choice": "httpcloakAll",
+        "probabilities": {
+          "stayAsIs": 0.0030535573605448008,
+          "curlUnified": 0.052837781608104706,
+          "httpcloakAll": 0.8792568445205688,
+          "hybridOneIdentity": 0.06336640566587448,
+          "wreqAll": 0.0014854611363261938
+        },
+        "confidence": 0.8490710556507111
+      },
+      "websocket": {
+        "type": "choice",
+        "choice": "curlUnified",
+        "probabilities": {
+          "stayAsIs": 0.0026463947724550962,
+          "curlUnified": 0.8902343511581421,
+          "httpcloakAll": 0.005229999776929617,
+          "hybridOneIdentity": 0.10082276165485382,
+          "wreqAll": 0.0010664422297850251
+        },
+        "confidence": 0.8627929389476776
+      },
+      "asyncio": {
+        "type": "choice",
+        "choice": "curlUnified",
+        "probabilities": {
+          "stayAsIs": 0.06920839846134186,
+          "curlUnified": 0.7892770767211914,
+          "httpcloakAll": 0.005189842544496059,
+          "hybridOneIdentity": 0.13382764160633087,
+          "wreqAll": 0.002497004112228751
+        },
+        "confidence": 0.7365963459014893
+      },
+      "migrationEffort": {
+        "type": "choice",
+        "choice": "stayAsIs",
+        "probabilities": {
+          "stayAsIs": 0.9306139349937439,
+          "curlUnified": 0.041496194899082184,
+          "httpcloakAll": 0.0028390916995704174,
+          "hybridOneIdentity": 0.02418324165046215,
+          "wreqAll": 0.000867564813233912
+        },
+        "confidence": 0.9132674187421799
+      },
+      "vendorDiff": {
+        "type": "choice",
+        "choice": "stayAsIs",
+        "probabilities": {
+          "stayAsIs": 0.9349538683891296,
+          "curlUnified": 0.03991904854774475,
+          "httpcloakAll": 0.0033844963181763887,
+          "hybridOneIdentity": 0.020679643377661705,
+          "wreqAll": 0.0010629774769768119
+        },
+        "confidence": 0.918692335486412
+      },
+      "freshness": {
+        "type": "choice",
+        "choice": "httpcloakAll",
+        "probabilities": {
+          "stayAsIs": 0.005268611013889313,
+          "curlUnified": 0.17869716882705688,
+          "httpcloakAll": 0.605715274810791,
+          "hybridOneIdentity": 0.20750556886196136,
+          "wreqAll": 0.002813455881550908
+        },
+        "confidence": 0.5071440935134888
+      },
+      "proxyH2": {
+        "type": "choice",
+        "choice": "httpcloakAll",
+        "probabilities": {
+          "stayAsIs": 0.049324002116918564,
+          "curlUnified": 0.2623465657234192,
+          "httpcloakAll": 0.39424821734428406,
+          "hybridOneIdentity": 0.28771287202835083,
+          "wreqAll": 0.006368337199091911
+        },
+        "confidence": 0.24281027168035504
+      },
+      "communityBacking": {
+        "type": "choice",
+        "choice": "curlUnified",
+        "probabilities": {
+          "stayAsIs": 0.027448592707514763,
+          "curlUnified": 0.6557266116142273,
+          "httpcloakAll": 0.2295098453760147,
+          "hybridOneIdentity": 0.08208120614290237,
+          "wreqAll": 0.005233737174421549
+        },
+        "confidence": 0.5696582645177841
+      },
+      "maturity": {
+        "type": "choice",
+        "choice": "curlUnified",
+        "probabilities": {
+          "stayAsIs": 0.16742295026779175,
+          "curlUnified": 0.7333916425704956,
+          "httpcloakAll": 0.012822789140045643,
+          "hybridOneIdentity": 0.08294650912284851,
+          "wreqAll": 0.0034160385839641094
+        },
+        "confidence": 0.6667395532131195
+      },
+      "cookieMatch": {
+        "type": "choice",
+        "choice": "httpcloakAll",
+        "probabilities": {
+          "stayAsIs": 0.015821032226085663,
+          "curlUnified": 0.23646244406700134,
+          "httpcloakAll": 0.40616104006767273,
+          "hybridOneIdentity": 0.3377043604850769,
+          "wreqAll": 0.0038512060418725014
+        },
+        "confidence": 0.25770130008459086
+      },
+      "newPlatforms": {
+        "type": "choice",
+        "choice": "curlUnified",
+        "probabilities": {
+          "stayAsIs": 0.023931901901960373,
+          "curlUnified": 0.6042461395263672,
+          "httpcloakAll": 0.06687929481267929,
+          "hybridOneIdentity": 0.29979208111763,
+          "wreqAll": 0.0051505123265087605
+        },
+        "confidence": 0.505307674407959
+      },
+      "silentFlagDetection": {
+        "type": "choice",
+        "choice": "hybridOneIdentity",
+        "probabilities": {
+          "stayAsIs": 0.1523035764694214,
+          "curlUnified": 0.2468726634979248,
+          "httpcloakAll": 0.0799148827791214,
+          "hybridOneIdentity": 0.5123679041862488,
+          "wreqAll": 0.00854096282273531
+        },
+        "confidence": 0.3904598802328109
+      },
+      "reversible": {
+        "type": "choice",
+        "choice": "hybridOneIdentity",
+        "probabilities": {
+          "stayAsIs": 0.11862847954034805,
+          "curlUnified": 0.03249327838420868,
+          "httpcloakAll": 0.007987169548869133,
+          "hybridOneIdentity": 0.8390902876853943,
+          "wreqAll": 0.0018008213955909014
+        },
+        "confidence": 0.7988628596067429
+      },
+      "risk": {
+        "type": "choice",
+        "choice": "stayAsIs",
+        "probabilities": {
+          "stayAsIs": 0.7719847559928894,
+          "curlUnified": 0.03150929510593414,
+          "httpcloakAll": 0.004920876584947109,
+          "hybridOneIdentity": 0.1897735297679901,
+          "wreqAll": 0.0018115285784006119
+        },
+        "confidence": 0.7149809449911118
+      }
+    },
+    {
+      "matchesRealChrome": {
+        "type": "choice",
+        "choice": "httpcloakAll",
+        "probabilities": {
+          "stayAsIs": 0.0009926280472427607,
+          "curlUnified": 0.0097604189068079,
+          "httpcloakAll": 0.9312809109687805,
+          "hybridOneIdentity": 0.05749639868736267,
+          "wreqAll": 0.00046963428030721843
+        },
+        "confidence": 0.9141011387109756
+      },
+      "oneIdentity": {
+        "type": "choice",
+        "choice": "hybridOneIdentity",
+        "probabilities": {
+          "stayAsIs": 0.07814793288707733,
+          "curlUnified": 0.2903096675872803,
+          "httpcloakAll": 0.2492976039648056,
+          "hybridOneIdentity": 0.34656232595443726,
+          "wreqAll": 0.03568243607878685
+        },
+        "confidence": 0.18320290744304654
+      },
+      "osCoherence": {
+        "type": "choice",
+        "choice": "httpcloakAll",
+        "probabilities": {
+          "stayAsIs": 0.0030535573605448008,
+          "curlUnified": 0.052837781608104706,
+          "httpcloakAll": 0.8792568445205688,
+          "hybridOneIdentity": 0.06336640566587448,
+          "wreqAll": 0.0014854611363261938
+        },
+        "confidence": 0.8490710556507111
+      },
+      "websocket": {
+        "type": "choice",
+        "choice": "curlUnified",
+        "probabilities": {
+          "stayAsIs": 0.0026463947724550962,
+          "curlUnified": 0.8902343511581421,
+          "httpcloakAll": 0.005229999776929617,
+          "hybridOneIdentity": 0.10082276165485382,
+          "wreqAll": 0.0010664422297850251
+        },
+        "confidence": 0.8627929389476776
+      },
+      "asyncio": {
+        "type": "choice",
+        "choice": "curlUnified",
+        "probabilities": {
+          "stayAsIs": 0.06920839846134186,
+          "curlUnified": 0.7892770767211914,
+          "httpcloakAll": 0.005189842544496059,
+          "hybridOneIdentity": 0.13382764160633087,
+          "wreqAll": 0.002497004112228751
+        },
+        "confidence": 0.7365963459014893
+      },
+      "migrationEffort": {
+        "type": "choice",
+        "choice": "stayAsIs",
+        "probabilities": {
+          "stayAsIs": 0.9306139349937439,
+          "curlUnified": 0.041496194899082184,
+          "httpcloakAll": 0.0028390916995704174,
+          "hybridOneIdentity": 0.02418324165046215,
+          "wreqAll": 0.000867564813233912
+        },
+        "confidence": 0.9132674187421799
+      },
+      "vendorDiff": {
+        "type": "choice",
+        "choice": "stayAsIs",
+        "probabilities": {
+          "stayAsIs": 0.9349538683891296,
+          "curlUnified": 0.03991904854774475,
+          "httpcloakAll": 0.0033844963181763887,
+          "hybridOneIdentity": 0.020679643377661705,
+          "wreqAll": 0.0010629774769768119
+        },
+        "confidence": 0.918692335486412
+      },
+      "freshness": {
+        "type": "choice",
+        "choice": "httpcloakAll",
+        "probabilities": {
+          "stayAsIs": 0.005268611013889313,
+          "curlUnified": 0.17869716882705688,
+          "httpcloakAll": 0.605715274810791,
+          "hybridOneIdentity": 0.20750556886196136,
+          "wreqAll": 0.002813455881550908
+        },
+        "confidence": 0.5071440935134888
+      },
+      "proxyH2": {
+        "type": "choice",
+        "choice": "httpcloakAll",
+        "probabilities": {
+          "stayAsIs": 0.049324002116918564,
+          "curlUnified": 0.2623465657234192,
+          "httpcloakAll": 0.39424821734428406,
+          "hybridOneIdentity": 0.28771287202835083,
+          "wreqAll": 0.006368337199091911
+        },
+        "confidence": 0.24281027168035504
+      },
+      "communityBacking": {
+        "type": "choice",
+        "choice": "curlUnified",
+        "probabilities": {
+          "stayAsIs": 0.027448592707514763,
+          "curlUnified": 0.6557266116142273,
+          "httpcloakAll": 0.2295098453760147,
+          "hybridOneIdentity": 0.08208120614290237,
+          "wreqAll": 0.005233737174421549
+        },
+        "confidence": 0.5696582645177841
+      },
+      "maturity": {
+        "type": "choice",
+        "choice": "curlUnified",
+        "probabilities": {
+          "stayAsIs": 0.16742295026779175,
+          "curlUnified": 0.7333916425704956,
+          "httpcloakAll": 0.012822789140045643,
+          "hybridOneIdentity": 0.08294650912284851,
+          "wreqAll": 0.0034160385839641094
+        },
+        "confidence": 0.6667395532131195
+      },
+      "cookieMatch": {
+        "type": "choice",
+        "choice": "httpcloakAll",
+        "probabilities": {
+          "stayAsIs": 0.015821032226085663,
+          "curlUnified": 0.23646244406700134,
+          "httpcloakAll": 0.40616104006767273,
+          "hybridOneIdentity": 0.3377043604850769,
+          "wreqAll": 0.0038512060418725014
+        },
+        "confidence": 0.25770130008459086
+      },
+      "newPlatforms": {
+        "type": "choice",
+        "choice": "curlUnified",
+        "probabilities": {
+          "stayAsIs": 0.023931901901960373,
+          "curlUnified": 0.6042461395263672,
+          "httpcloakAll": 0.06687929481267929,
+          "hybridOneIdentity": 0.29979208111763,
+          "wreqAll": 0.0051505123265087605
+        },
+        "confidence": 0.505307674407959
+      },
+      "silentFlagDetection": {
+        "type": "choice",
+        "choice": "hybridOneIdentity",
+        "probabilities": {
+          "stayAsIs": 0.1523035764694214,
+          "curlUnified": 0.2468726634979248,
+          "httpcloakAll": 0.0799148827791214,
+          "hybridOneIdentity": 0.5123679041862488,
+          "wreqAll": 0.00854096282273531
+        },
+        "confidence": 0.3904598802328109
+      },
+      "reversible": {
+        "type": "choice",
+        "choice": "hybridOneIdentity",
+        "probabilities": {
+          "stayAsIs": 0.11862847954034805,
+          "curlUnified": 0.03249327838420868,
+          "httpcloakAll": 0.007987169548869133,
+          "hybridOneIdentity": 0.8390902876853943,
+          "wreqAll": 0.0018008213955909014
+        },
+        "confidence": 0.7988628596067429
+      },
+      "risk": {
+        "type": "choice",
+        "choice": "stayAsIs",
+        "probabilities": {
+          "stayAsIs": 0.7719847559928894,
+          "curlUnified": 0.03150929510593414,
+          "httpcloakAll": 0.004920876584947109,
+          "hybridOneIdentity": 0.1897735297679901,
+          "wreqAll": 0.0018115285784006119
+        },
+        "confidence": 0.7149809449911118
+      }
+    }
+  ],
+  "passB": {
+    "stayAsIs": {
+      "matchesRealChrome": {
+        "type": "score",
+        "score": 1.2010385356843472,
+        "legend": {
+          "0": "Different browser",
+          "1": "Old version, JA4 differs",
+          "2": "JA4 matches, peetprint differs",
+          "3": "JA4 and peetprint match an older Chrome",
+          "4": "JA4 and peetprint match current Chrome"
+        },
+        "probabilities": {
+          "0": 0.030179088935256004,
+          "1": 0.842584490776062,
+          "2": 0.027461908757686615,
+          "3": 0.09556829184293747,
+          "4": 0.004206337966024876
+        },
+        "confidence": 0.7821695039359231
+      },
+      "oneIdentity": {
+        "type": "score",
+        "score": 0.19799948786385357,
+        "legend": {
+          "0": "Five different identities",
+          "1": "Several identities",
+          "2": "One TLS target but mixed UA/OS",
+          "3": "One identity, easy to drift",
+          "4": "One identity, enforced by a check"
+        },
+        "probabilities": {
+          "0": 0.818014919757843,
+          "1": 0.17396606504917145,
+          "2": 0.0024003239814192057,
+          "3": 0.0032417525071650743,
+          "4": 0.002376879332587123
+        },
+        "confidence": 0.835000426780122
+      },
+      "osCoherence": {
+        "type": "score",
+        "score": 0.6899407168384641,
+        "legend": {
+          "0": "Contradict",
+          "1": "Mostly macOS by default",
+          "2": "Fixable per client by hand",
+          "3": "Set from one place",
+          "4": "Set from one place, OS-specific presets"
+        },
+        "probabilities": {
+          "0": 0.3261279761791229,
+          "1": 0.6637597680091858,
+          "2": 0.005725645460188389,
+          "3": 0.0028169325087219477,
+          "4": 0.0015697150956839323
+        },
+        "confidence": 0.7148361400468275
+      },
+      "websocket": {
+        "type": "score",
+        "score": 3.9434215978253633,
+        "legend": {
+          "0": "No WebSocket support",
+          "1": "Needs a separate library with another fingerprint",
+          "2": "Possible with custom work",
+          "3": "Supported",
+          "4": "Supported and already used by log"
+        },
+        "probabilities": {
+          "0": 0.0016493683215230703,
+          "1": 0.002372388495132327,
+          "2": 0.0031050604302436113,
+          "3": 0.036653783172369,
+          "4": 0.9562194347381592
+        },
+        "confidence": 0.9528512143297121
+      },
+      "asyncio": {
+        "type": "score",
+        "score": 3.9625119637930766,
+        "legend": {
+          "0": "No",
+          "1": "Threads only",
+          "2": "Partly",
+          "3": "Yes",
+          "4": "Yes, already used"
+        },
+        "probabilities": {
+          "0": 0.0007473572040908039,
+          "1": 0.001148234005086124,
+          "2": 0.0017724292119964957,
+          "3": 0.02750885672867298,
+          "4": 0.9688230752944946
+        },
+        "confidence": 0.968760128346427
+      },
+      "migrationEffort": {
+        "type": "score",
+        "score": 3.8675495949573815,
+        "legend": {
+          "0": "Rewrite most clients",
+          "1": "Rewrite several clients",
+          "2": "Moderate shims plus new code",
+          "3": "A few lines per client",
+          "4": "Config only"
+        },
+        "probabilities": {
+          "0": 0.007668882608413696,
+          "1": 0.005051326472312212,
+          "2": 0.012932337820529938,
+          "3": 0.060756176710128784,
+          "4": 0.9135912656784058
+        },
+        "confidence": 0.8896246981651833
+      },
+      "vendorDiff": {
+        "type": "score",
+        "score": 3.9794852193444967,
+        "legend": {
+          "0": "Large forks",
+          "1": "Many edits",
+          "2": "Moderate",
+          "3": "One shim per client",
+          "4": "None"
+        },
+        "probabilities": {
+          "0": 0.0012032187078148127,
+          "1": 0.0010826964862644672,
+          "2": 0.0022803840693086386,
+          "3": 0.007893035188317299,
+          "4": 0.9875406622886658
+        },
+        "confidence": 0.9829043603191773
+      },
+      "freshness": {
+        "type": "score",
+        "score": 1.2385609671473503,
+        "legend": {
+          "0": "Stuck",
+          "1": "Manual, slow",
+          "2": "New releases every few months",
+          "3": "Releases plus a fingerprint update command",
+          "4": "Tracks latest Chrome within days"
+        },
+        "probabilities": {
+          "0": 0.4080321490764618,
+          "1": 0.1880982369184494,
+          "2": 0.1808757483959198,
+          "3": 0.20326440036296844,
+          "4": 0.019729508087038994
+        },
+        "confidence": 0
+      },
+      "proxyH2": {
+        "type": "score",
+        "score": 2.1907716197893023,
+        "legend": {
+          "0": "Unknown",
+          "1": "Downgrades",
+          "2": "Depends on proxy, untested",
+          "3": "Yes over CONNECT",
+          "4": "Yes, with a self-check"
+        },
+        "probabilities": {
+          "0": 0.1287105828523636,
+          "1": 0.013796868734061718,
+          "2": 0.4200398027896881,
+          "3": 0.41291606426239014,
+          "4": 0.0245367381721735
+        },
+        "confidence": 0.38899368746206164
+      },
+      "communityBacking": {
+        "type": "score",
+        "score": 3.1119880881160498,
+        "legend": {
+          "0": "Warned against",
+          "1": "Not mentioned",
+          "2": "Mentioned",
+          "3": "Recommended by some",
+          "4": "Recommended by the Camoufox maintainer and widely used"
+        },
+        "probabilities": {
+          "0": 0.01329487469047308,
+          "1": 0.023385068401694298,
+          "2": 0.07684066891670227,
+          "3": 0.6109958291053772,
+          "4": 0.27548354864120483
+        },
+        "confidence": 0.6341841846394042
+      },
+      "maturity": {
+        "type": "score",
+        "score": 3.372571984305978,
+        "legend": {
+          "0": "New, few users",
+          "1": "Young",
+          "2": "Established in a niche",
+          "3": "Widely used",
+          "4": "Default choice in Python scraping"
+        },
+        "probabilities": {
+          "0": 0.004965825937688351,
+          "1": 0.010689212009310722,
+          "2": 0.02551768533885479,
+          "3": 0.5244615077972412,
+          "4": 0.43436571955680847
+        },
+        "confidence": 0.5865339110605419
+      },
+      "cookieMatch": {
+        "type": "score",
+        "score": 0.941788025200367,
+        "legend": {
+          "0": "No",
+          "1": "Only Chrome",
+          "2": "Close to both",
+          "3": "Chrome exactly, Firefox close",
+          "4": "Both exactly"
+        },
+        "probabilities": {
+          "0": 0.4080391824245453,
+          "1": 0.38440313935279846,
+          "2": 0.08447586745023727,
+          "3": 0.10389430820941925,
+          "4": 0.019187556579709053
+        },
+        "confidence": 0.21517664566636086
+      },
+      "newPlatforms": {
+        "type": "score",
+        "score": 0.5853510983288288,
+        "legend": {
+          "0": "Copy code by hand",
+          "1": "Copy constants",
+          "2": "Import a helper",
+          "3": "One call, documented",
+          "4": "One call, enforced by a check"
+        },
+        "probabilities": {
+          "0": 0.6245651841163635,
+          "1": 0.26615601778030396,
+          "2": 0.0392889529466629,
+          "3": 0.03934174403548241,
+          "4": 0.030647985637187958
+        },
+        "confidence": 0.5122074180593092
+      },
+      "silentFlagDetection": {
+        "type": "score",
+        "score": 0.42732567712664604,
+        "legend": {
+          "0": "No",
+          "1": "Manual only",
+          "2": "Status codes only",
+          "3": "Self-check against tls.peet",
+          "4": "Self-check through the account's proxy, saved per run"
+        },
+        "probabilities": {
+          "0": 0.7159120440483093,
+          "1": 0.19210639595985413,
+          "2": 0.05126844719052315,
+          "3": 0.030169520527124405,
+          "4": 0.010543456301093102
+        },
+        "confidence": 0.6438952690611283
+      },
+      "reversible": {
+        "type": "score",
+        "score": 1.8514161556959152,
+        "legend": {
+          "0": "Not reversible",
+          "1": "Hard",
+          "2": "One release",
+          "3": "Per platform by config",
+          "4": "Per platform by env, instantly"
+        },
+        "probabilities": {
+          "0": 0.27812865376472473,
+          "1": 0.17752781510353088,
+          "2": 0.16482758522033691,
+          "3": 0.17383049428462982,
+          "4": 0.20568542182445526
+        },
+        "confidence": 0
+      },
+      "risk": {
+        "type": "score",
+        "score": 3.814778493717313,
+        "legend": {
+          "0": "Breaks most",
+          "1": "Breaks some",
+          "2": "Needs re-sign-in everywhere",
+          "3": "Re-sign-in per account, staged",
+          "4": "No change to sessions until staged per account"
+        },
+        "probabilities": {
+          "0": 0.00840833131223917,
+          "1": 0.020049629732966423,
+          "2": 0.01652798242866993,
+          "3": 0.05838312208652496,
+          "4": 0.8966308832168579
+        },
+        "confidence": 0.8456489155068994
+      }
+    },
+    "curlUnified": {
+      "matchesRealChrome": {
+        "type": "score",
+        "score": 2.071408972144127,
+        "legend": {
+          "0": "Different browser",
+          "1": "Old version, JA4 differs",
+          "2": "JA4 matches, peetprint differs",
+          "3": "JA4 and peetprint match an older Chrome",
+          "4": "JA4 and peetprint match current Chrome"
+        },
+        "probabilities": {
+          "0": 0.0005149898934178054,
+          "1": 0.002640513703227043,
+          "2": 0.9447818994522095,
+          "3": 0.029046041890978813,
+          "4": 0.023016633465886116
+        },
+        "confidence": 0.9343751647393219
+      },
+      "oneIdentity": {
+        "type": "score",
+        "score": 3.3053283034823835,
+        "legend": {
+          "0": "Five different identities",
+          "1": "Several identities",
+          "2": "One TLS target but mixed UA/OS",
+          "3": "One identity, easy to drift",
+          "4": "One identity, enforced by a check"
+        },
+        "probabilities": {
+          "0": 0.0011965137673541903,
+          "1": 0.0026495172642171383,
+          "2": 0.05683944746851921,
+          "3": 0.5682581663131714,
+          "4": 0.37105634808540344
+        },
+        "confidence": 0.6360130238463171
+      },
+      "osCoherence": {
+        "type": "score",
+        "score": 3.1151627625804394,
+        "legend": {
+          "0": "Contradict",
+          "1": "Mostly macOS by default",
+          "2": "Fixable per client by hand",
+          "3": "Set from one place",
+          "4": "Set from one place, OS-specific presets"
+        },
+        "probabilities": {
+          "0": 0.0010754376417025924,
+          "1": 0.002097657648846507,
+          "2": 0.025785556063055992,
+          "3": 0.8226713538169861,
+          "4": 0.14836998283863068
+        },
+        "confidence": 0.848685694062927
+      },
+      "websocket": {
+        "type": "score",
+        "score": 3.926159100839868,
+        "legend": {
+          "0": "No WebSocket support",
+          "1": "Needs a separate library with another fingerprint",
+          "2": "Possible with custom work",
+          "3": "Supported",
+          "4": "Supported and already used by log"
+        },
+        "probabilities": {
+          "0": 0.0006028864881955087,
+          "1": 0.0007834725547581911,
+          "2": 0.00715967221185565,
+          "3": 0.054759662598371506,
+          "4": 0.936694324016571
+        },
+        "confidence": 0.9384658578007171
+      },
+      "asyncio": {
+        "type": "score",
+        "score": 3.887554447283037,
+        "legend": {
+          "0": "No",
+          "1": "Threads only",
+          "2": "Partly",
+          "3": "Yes",
+          "4": "Yes, already used"
+        },
+        "probabilities": {
+          "0": 0.0006305493880063295,
+          "1": 0.0010620300890877843,
+          "2": 0.004141062963753939,
+          "3": 0.0984550267457962,
+          "4": 0.8957113027572632
+        },
+        "confidence": 0.9062954662561727
+      },
+      "migrationEffort": {
+        "type": "score",
+        "score": 2.9397125493269414,
+        "legend": {
+          "0": "Rewrite most clients",
+          "1": "Rewrite several clients",
+          "2": "Moderate shims plus new code",
+          "3": "A few lines per client",
+          "4": "Config only"
+        },
+        "probabilities": {
+          "0": 0.0016302693402394652,
+          "1": 0.0038393388967961073,
+          "2": 0.18086174130439758,
+          "3": 0.6805248260498047,
+          "4": 0.133143812417984
+        },
+        "confidence": 0.7278541337194231
+      },
+      "vendorDiff": {
+        "type": "score",
+        "score": 3.0368729634210467,
+        "legend": {
+          "0": "Large forks",
+          "1": "Many edits",
+          "2": "Moderate",
+          "3": "One shim per client",
+          "4": "None"
+        },
+        "probabilities": {
+          "0": 0.0017617023549973965,
+          "1": 0.005204911343753338,
+          "2": 0.12466295808553696,
+          "3": 0.6911398768424988,
+          "4": 0.1772306263446808
+        },
+        "confidence": 0.7353429048477361
+      },
+      "freshness": {
+        "type": "score",
+        "score": 2.979215322062373,
+        "legend": {
+          "0": "Stuck",
+          "1": "Manual, slow",
+          "2": "New releases every few months",
+          "3": "Releases plus a fingerprint update command",
+          "4": "Tracks latest Chrome within days"
+        },
+        "probabilities": {
+          "0": 0.000949414330534637,
+          "1": 0.002923412248492241,
+          "2": 0.03383484110236168,
+          "3": 0.9405466914176941,
+          "4": 0.02174553833901882
+        },
+        "confidence": 0.9464371275583593
+      },
+      "proxyH2": {
+        "type": "score",
+        "score": 2.689156652893871,
+        "legend": {
+          "0": "Unknown",
+          "1": "Downgrades",
+          "2": "Depends on proxy, untested",
+          "3": "Yes over CONNECT",
+          "4": "Yes, with a self-check"
+        },
+        "probabilities": {
+          "0": 0.034546274691820145,
+          "1": 0.005043984856456518,
+          "2": 0.30064988136291504,
+          "3": 0.5562267303466797,
+          "4": 0.10353317856788635
+        },
+        "confidence": 0.568408455234021
+      },
+      "communityBacking": {
+        "type": "score",
+        "score": 3.191998713184148,
+        "legend": {
+          "0": "Warned against",
+          "1": "Not mentioned",
+          "2": "Mentioned",
+          "3": "Recommended by some",
+          "4": "Recommended by the Camoufox maintainer and widely used"
+        },
+        "probabilities": {
+          "0": 0.0018009381601586938,
+          "1": 0.0047427271492779255,
+          "2": 0.05439934507012367,
+          "3": 0.6777707934379578,
+          "4": 0.2612862288951874
+        },
+        "confidence": 0.7245217977130475
+      },
+      "maturity": {
+        "type": "score",
+        "score": 3.4108411276247352,
+        "legend": {
+          "0": "New, few users",
+          "1": "Young",
+          "2": "Established in a niche",
+          "3": "Widely used",
+          "4": "Default choice in Python scraping"
+        },
+        "probabilities": {
+          "0": 0.0012440349673852324,
+          "1": 0.003435989608988166,
+          "2": 0.019612371921539307,
+          "3": 0.5346500873565674,
+          "4": 0.4410575330257416
+        },
+        "confidence": 0.6072716757771559
+      },
+      "cookieMatch": {
+        "type": "score",
+        "score": 2.3422271013259888,
+        "legend": {
+          "0": "No",
+          "1": "Only Chrome",
+          "2": "Close to both",
+          "3": "Chrome exactly, Firefox close",
+          "4": "Both exactly"
+        },
+        "probabilities": {
+          "0": 0.005676645785570145,
+          "1": 0.14935202896595,
+          "2": 0.39655745029449463,
+          "3": 0.39389568567276,
+          "4": 0.05451827868819237
+        },
+        "confidence": 0.4469686970114708
+      },
+      "newPlatforms": {
+        "type": "score",
+        "score": 2.6544415741227567,
+        "legend": {
+          "0": "Copy code by hand",
+          "1": "Copy constants",
+          "2": "Import a helper",
+          "3": "One call, documented",
+          "4": "One call, enforced by a check"
+        },
+        "probabilities": {
+          "0": 0.001888855709694326,
+          "1": 0.004743972327560186,
+          "2": 0.47554099559783936,
+          "3": 0.37268906831741333,
+          "4": 0.14513710141181946
+        },
+        "confidence": 0.4404292042599991
+      },
+      "silentFlagDetection": {
+        "type": "score",
+        "score": 1.966351330280304,
+        "legend": {
+          "0": "No",
+          "1": "Manual only",
+          "2": "Status codes only",
+          "3": "Self-check against tls.peet",
+          "4": "Self-check through the account's proxy, saved per run"
+        },
+        "probabilities": {
+          "0": 0.24227386713027954,
+          "1": 0.17652882635593414,
+          "2": 0.09450673311948776,
+          "3": 0.34595346450805664,
+          "4": 0.1407371610403061
+        },
+        "confidence": 0
+      },
+      "reversible": {
+        "type": "score",
+        "score": 3.241102713625878,
+        "legend": {
+          "0": "Not reversible",
+          "1": "Hard",
+          "2": "One release",
+          "3": "Per platform by config",
+          "4": "Per platform by env, instantly"
+        },
+        "probabilities": {
+          "0": 0.002436441369354725,
+          "1": 0.007076758425682783,
+          "2": 0.05787414312362671,
+          "3": 0.6121729612350464,
+          "4": 0.3204396963119507
+        },
+        "confidence": 0.666852766337494
+      },
+      "risk": {
+        "type": "score",
+        "score": 3.059889517724514,
+        "legend": {
+          "0": "Breaks most",
+          "1": "Breaks some",
+          "2": "Needs re-sign-in everywhere",
+          "3": "Re-sign-in per account, staged",
+          "4": "No change to sessions until staged per account"
+        },
+        "probabilities": {
+          "0": 0.003803678322583437,
+          "1": 0.06257160753011703,
+          "2": 0.08349606394767761,
+          "3": 0.5701887011528015,
+          "4": 0.2799399197101593
+        },
+        "confidence": 0.5833414719284822
+      }
+    },
+    "httpcloakAll": {
+      "matchesRealChrome": {
+        "type": "score",
+        "score": 3.9695023125968874,
+        "legend": {
+          "0": "Different browser",
+          "1": "Old version, JA4 differs",
+          "2": "JA4 matches, peetprint differs",
+          "3": "JA4 and peetprint match an older Chrome",
+          "4": "JA4 and peetprint match current Chrome"
+        },
+        "probabilities": {
+          "0": 0.0006699755904264748,
+          "1": 0.001826657447963953,
+          "2": 0.007935152389109135,
+          "3": 0.006467579863965511,
+          "4": 0.9831006526947021
+        },
+        "confidence": 0.9745852005435154
+      },
+      "oneIdentity": {
+        "type": "score",
+        "score": 3.131693210452795,
+        "legend": {
+          "0": "Five different identities",
+          "1": "Several identities",
+          "2": "One TLS target but mixed UA/OS",
+          "3": "One identity, easy to drift",
+          "4": "One identity, enforced by a check"
+        },
+        "probabilities": {
+          "0": 0.008817602880299091,
+          "1": 0.02985849604010582,
+          "2": 0.11175259947776794,
+          "3": 0.5199558734893799,
+          "4": 0.3296154737472534
+        },
+        "confidence": 0.5603851050448914
+      },
+      "osCoherence": {
+        "type": "score",
+        "score": 3.937963022501208,
+        "legend": {
+          "0": "Contradict",
+          "1": "Mostly macOS by default",
+          "2": "Fixable per client by hand",
+          "3": "Set from one place",
+          "4": "Set from one place, OS-specific presets"
+        },
+        "probabilities": {
+          "0": 0.0013566979905590415,
+          "1": 0.0014914559433236718,
+          "2": 0.007842738181352615,
+          "3": 0.03645028918981552,
+          "4": 0.9528588056564331
+        },
+        "confidence": 0.9483025622127267
+      },
+      "websocket": {
+        "type": "score",
+        "score": 0.1821790006943047,
+        "legend": {
+          "0": "No WebSocket support",
+          "1": "Needs a separate library with another fingerprint",
+          "2": "Possible with custom work",
+          "3": "Supported",
+          "4": "Supported and already used by log"
+        },
+        "probabilities": {
+          "0": 0.8703352808952332,
+          "1": 0.09123954176902771,
+          "2": 0.02904466912150383,
+          "3": 0.0046718246303498745,
+          "4": 0.004708661697804928
+        },
+        "confidence": 0.8481841660880793
+      },
+      "asyncio": {
+        "type": "score",
+        "score": 0.8100626200903207,
+        "legend": {
+          "0": "No",
+          "1": "Threads only",
+          "2": "Partly",
+          "3": "Yes",
+          "4": "Yes, already used"
+        },
+        "probabilities": {
+          "0": 0.22220642864704132,
+          "1": 0.7519835233688354,
+          "2": 0.020710522308945656,
+          "3": 0.003740136744454503,
+          "4": 0.001359410467557609
+        },
+        "confidence": 0.787937120127026
+      },
+      "migrationEffort": {
+        "type": "score",
+        "score": 0.6903960295021534,
+        "legend": {
+          "0": "Rewrite most clients",
+          "1": "Rewrite several clients",
+          "2": "Moderate shims plus new code",
+          "3": "A few lines per client",
+          "4": "Config only"
+        },
+        "probabilities": {
+          "0": 0.48944106698036194,
+          "1": 0.3566220700740814,
+          "2": 0.132775217294693,
+          "3": 0.016422944143414497,
+          "4": 0.004738673102110624
+        },
+        "confidence": 0.42466997541487217
+      },
+      "vendorDiff": {
+        "type": "score",
+        "score": 1.2170594707131386,
+        "legend": {
+          "0": "Large forks",
+          "1": "Many edits",
+          "2": "Moderate",
+          "3": "One shim per client",
+          "4": "None"
+        },
+        "probabilities": {
+          "0": 0.24353523552417755,
+          "1": 0.37373295426368713,
+          "2": 0.3144057095050812,
+          "3": 0.05878971889615059,
+          "4": 0.009536485187709332
+        },
+        "confidence": 0.4132251346794267
+      },
+      "freshness": {
+        "type": "score",
+        "score": 3.4322339929640293,
+        "legend": {
+          "0": "Stuck",
+          "1": "Manual, slow",
+          "2": "New releases every few months",
+          "3": "Releases plus a fingerprint update command",
+          "4": "Tracks latest Chrome within days"
+        },
+        "probabilities": {
+          "0": 0.015536140650510788,
+          "1": 0.05496669188141823,
+          "2": 0.13050051033496857,
+          "3": 0.07972058653831482,
+          "4": 0.7192761301994324
+        },
+        "confidence": 0.5268614621212084
+      },
+      "proxyH2": {
+        "type": "score",
+        "score": 2.7576740798540413,
+        "legend": {
+          "0": "Unknown",
+          "1": "Downgrades",
+          "2": "Depends on proxy, untested",
+          "3": "Yes over CONNECT",
+          "4": "Yes, with a self-check"
+        },
+        "probabilities": {
+          "0": 0.06000582128763199,
+          "1": 0.0056368825025856495,
+          "2": 0.1079942062497139,
+          "3": 0.7694036364555359,
+          "4": 0.05695946887135506
+        },
+        "confidence": 0.7031292466757197
+      },
+      "communityBacking": {
+        "type": "score",
+        "score": 3.2727451268583536,
+        "legend": {
+          "0": "Warned against",
+          "1": "Not mentioned",
+          "2": "Mentioned",
+          "3": "Recommended by some",
+          "4": "Recommended by the Camoufox maintainer and widely used"
+        },
+        "probabilities": {
+          "0": 0.005409565754234791,
+          "1": 0.025093713775277138,
+          "2": 0.06560087949037552,
+          "3": 0.49913352727890015,
+          "4": 0.40476226806640625
+        },
+        "confidence": 0.552683939691633
+      },
+      "maturity": {
+        "type": "score",
+        "score": 0.5917496019974351,
+        "legend": {
+          "0": "New, few users",
+          "1": "Young",
+          "2": "Established in a niche",
+          "3": "Widely used",
+          "4": "Default choice in Python scraping"
+        },
+        "probabilities": {
+          "0": 0.45265573263168335,
+          "1": 0.5158095359802246,
+          "2": 0.02273523062467575,
+          "3": 0.004728441126644611,
+          "4": 0.004071070346981287
+        },
+        "confidence": 0.5857824528745065
+      },
+      "cookieMatch": {
+        "type": "score",
+        "score": 2.3691355884075165,
+        "legend": {
+          "0": "No",
+          "1": "Only Chrome",
+          "2": "Close to both",
+          "3": "Chrome exactly, Firefox close",
+          "4": "Both exactly"
+        },
+        "probabilities": {
+          "0": 0.02434462495148182,
+          "1": 0.2006298005580902,
+          "2": 0.29294371604919434,
+          "3": 0.3457087278366089,
+          "4": 0.13637304306030273
+        },
+        "confidence": 0.24699147076656414
+      },
+      "newPlatforms": {
+        "type": "score",
+        "score": 2.5232793912291527,
+        "legend": {
+          "0": "Copy code by hand",
+          "1": "Copy constants",
+          "2": "Import a helper",
+          "3": "One call, documented",
+          "4": "One call, enforced by a check"
+        },
+        "probabilities": {
+          "0": 0.03382662311196327,
+          "1": 0.0707041546702385,
+          "2": 0.3809818625450134,
+          "3": 0.3673376142978668,
+          "4": 0.14714966714382172
+        },
+        "confidence": 0.3333380421002705
+      },
+      "silentFlagDetection": {
+        "type": "score",
+        "score": 1.1964383870363235,
+        "legend": {
+          "0": "No",
+          "1": "Manual only",
+          "2": "Status codes only",
+          "3": "Self-check against tls.peet",
+          "4": "Self-check through the account's proxy, saved per run"
+        },
+        "probabilities": {
+          "0": 0.43388932943344116,
+          "1": 0.22882990539073944,
+          "2": 0.08782178908586502,
+          "3": 0.20587101578712463,
+          "4": 0.04358796402812004
+        },
+        "confidence": 0.0029680108030636365
+      },
+      "reversible": {
+        "type": "score",
+        "score": 1.2043281570076942,
+        "legend": {
+          "0": "Not reversible",
+          "1": "Hard",
+          "2": "One release",
+          "3": "Per platform by config",
+          "4": "Per platform by env, instantly"
+        },
+        "probabilities": {
+          "0": 0.2357175201177597,
+          "1": 0.46971645951271057,
+          "2": 0.1755295991897583,
+          "3": 0.09259331226348877,
+          "4": 0.02644314058125019
+        },
+        "confidence": 0.4368640286847949
+      },
+      "risk": {
+        "type": "score",
+        "score": 1.5946852378547192,
+        "legend": {
+          "0": "Breaks most",
+          "1": "Breaks some",
+          "2": "Needs re-sign-in everywhere",
+          "3": "Re-sign-in per account, staged",
+          "4": "No change to sessions until staged per account"
+        },
+        "probabilities": {
+          "0": 0.15652738511562347,
+          "1": 0.2709525525569916,
+          "2": 0.40543702244758606,
+          "3": 0.15547333657741547,
+          "4": 0.011609657667577267
+        },
+        "confidence": 0.36441668774932623
+      }
+    },
+    "hybridOneIdentity": {
+      "matchesRealChrome": {
+        "type": "score",
+        "score": 3.116616287268698,
+        "legend": {
+          "0": "Different browser",
+          "1": "Old version, JA4 differs",
+          "2": "JA4 matches, peetprint differs",
+          "3": "JA4 and peetprint match an older Chrome",
+          "4": "JA4 and peetprint match current Chrome"
+        },
+        "probabilities": {
+          "0": 0.0014775249874219298,
+          "1": 0.00418455246835947,
+          "2": 0.3808009922504425,
+          "3": 0.10331770777702332,
+          "4": 0.510219156742096
+        },
+        "confidence": 0.26384712530610455
+      },
+      "oneIdentity": {
+        "type": "score",
+        "score": 3.501534055219963,
+        "legend": {
+          "0": "Five different identities",
+          "1": "Several identities",
+          "2": "One TLS target but mixed UA/OS",
+          "3": "One identity, easy to drift",
+          "4": "One identity, enforced by a check"
+        },
+        "probabilities": {
+          "0": 0.0012566611403599381,
+          "1": 0.003018166171386838,
+          "2": 0.03678867965936661,
+          "3": 0.41080740094184875,
+          "4": 0.5481290817260742
+        },
+        "confidence": 0.5846117472198481
+      },
+      "osCoherence": {
+        "type": "score",
+        "score": 3.6301150107756257,
+        "legend": {
+          "0": "Contradict",
+          "1": "Mostly macOS by default",
+          "2": "Fixable per client by hand",
+          "3": "Set from one place",
+          "4": "Set from one place, OS-specific presets"
+        },
+        "probabilities": {
+          "0": 0.0008868572185747325,
+          "1": 0.0013182805851101875,
+          "2": 0.008970024064183235,
+          "3": 0.34444233775138855,
+          "4": 0.6443824172019958
+        },
+        "confidence": 0.6917627862421796
+      },
+      "websocket": {
+        "type": "score",
+        "score": 3.609473809134215,
+        "legend": {
+          "0": "No WebSocket support",
+          "1": "Needs a separate library with another fingerprint",
+          "2": "Possible with custom work",
+          "3": "Supported",
+          "4": "Supported and already used by log"
+        },
+        "probabilities": {
+          "0": 0.0012920987792313099,
+          "1": 0.002762689720839262,
+          "2": 0.03305092453956604,
+          "3": 0.31096789240837097,
+          "4": 0.6519263982772827
+        },
+        "confidence": 0.6745614951942116
+      },
+      "asyncio": {
+        "type": "score",
+        "score": 3.2719382904469967,
+        "legend": {
+          "0": "No",
+          "1": "Threads only",
+          "2": "Partly",
+          "3": "Yes",
+          "4": "Yes, already used"
+        },
+        "probabilities": {
+          "0": 0.0016065508825704455,
+          "1": 0.003909643739461899,
+          "2": 0.07636715471744537,
+          "3": 0.5571722984313965,
+          "4": 0.36094436049461365
+        },
+        "confidence": 0.6250412872177549
+      },
+      "migrationEffort": {
+        "type": "score",
+        "score": 2.6337513010948896,
+        "legend": {
+          "0": "Rewrite most clients",
+          "1": "Rewrite several clients",
+          "2": "Moderate shims plus new code",
+          "3": "A few lines per client",
+          "4": "Config only"
+        },
+        "probabilities": {
+          "0": 0.0023999845143407583,
+          "1": 0.00937253050506115,
+          "2": 0.40859290957450867,
+          "3": 0.5113450288772583,
+          "4": 0.06828946620225906
+        },
+        "confidence": 0.580977174725073
+      },
+      "vendorDiff": {
+        "type": "score",
+        "score": 2.9129475778900087,
+        "legend": {
+          "0": "Large forks",
+          "1": "Many edits",
+          "2": "Moderate",
+          "3": "One shim per client",
+          "4": "None"
+        },
+        "probabilities": {
+          "0": 0.0019168257713317871,
+          "1": 0.006680650170892477,
+          "2": 0.1661318987607956,
+          "3": 0.7270793318748474,
+          "4": 0.0981912836432457
+        },
+        "confidence": 0.7638041999501486
+      },
+      "freshness": {
+        "type": "score",
+        "score": 3.2893575211055577,
+        "legend": {
+          "0": "Stuck",
+          "1": "Manual, slow",
+          "2": "New releases every few months",
+          "3": "Releases plus a fingerprint update command",
+          "4": "Tracks latest Chrome within days"
+        },
+        "probabilities": {
+          "0": 0.0017236463027074933,
+          "1": 0.004857339430600405,
+          "2": 0.066507488489151,
+          "3": 0.5561611652374268,
+          "4": 0.37075042724609375
+        },
+        "confidence": 0.6232137220795266
+      },
+      "proxyH2": {
+        "type": "score",
+        "score": 3.0101119824685156,
+        "legend": {
+          "0": "Unknown",
+          "1": "Downgrades",
+          "2": "Depends on proxy, untested",
+          "3": "Yes over CONNECT",
+          "4": "Yes, with a self-check"
+        },
+        "probabilities": {
+          "0": 0.011851564981043339,
+          "1": 0.0027019926346838474,
+          "2": 0.1733100712299347,
+          "3": 0.5877554416656494,
+          "4": 0.22438088059425354
+        },
+        "confidence": 0.6344586399694283
+      },
+      "communityBacking": {
+        "type": "score",
+        "score": 2.985348232090473,
+        "legend": {
+          "0": "Warned against",
+          "1": "Not mentioned",
+          "2": "Mentioned",
+          "3": "Recommended by some",
+          "4": "Recommended by the Camoufox maintainer and widely used"
+        },
+        "probabilities": {
+          "0": 0.004244375042617321,
+          "1": 0.06598994880914688,
+          "2": 0.16671623289585114,
+          "3": 0.46627187728881836,
+          "4": 0.29677754640579224
+        },
+        "confidence": 0.493160998293509
+      },
+      "maturity": {
+        "type": "score",
+        "score": 2.3869422525167465,
+        "legend": {
+          "0": "New, few users",
+          "1": "Young",
+          "2": "Established in a niche",
+          "3": "Widely used",
+          "4": "Default choice in Python scraping"
+        },
+        "probabilities": {
+          "0": 0.019760847091674805,
+          "1": 0.16195456683635712,
+          "2": 0.3385368585586548,
+          "3": 0.3710770905017853,
+          "4": 0.108670674264431
+        },
+        "confidence": 0.3080006601909796
+      },
+      "cookieMatch": {
+        "type": "score",
+        "score": 2.4925533160567284,
+        "legend": {
+          "0": "No",
+          "1": "Only Chrome",
+          "2": "Close to both",
+          "3": "Chrome exactly, Firefox close",
+          "4": "Both exactly"
+        },
+        "probabilities": {
+          "0": 0.005593407433480024,
+          "1": 0.12210195511579514,
+          "2": 0.341613233089447,
+          "3": 0.4355408847332001,
+          "4": 0.09515056014060974
+        },
+        "confidence": 0.41854339519826067
+      },
+      "newPlatforms": {
+        "type": "score",
+        "score": 3.000355269294232,
+        "legend": {
+          "0": "Copy code by hand",
+          "1": "Copy constants",
+          "2": "Import a helper",
+          "3": "One call, documented",
+          "4": "One call, enforced by a check"
+        },
+        "probabilities": {
+          "0": 0.0017013070173561573,
+          "1": 0.005455012898892164,
+          "2": 0.31160128116607666,
+          "3": 0.35327205061912537,
+          "4": 0.32797038555145264
+        },
+        "confidence": 0.4536786553605149
+      },
+      "silentFlagDetection": {
+        "type": "score",
+        "score": 3.3335676193237305,
+        "legend": {
+          "0": "No",
+          "1": "Manual only",
+          "2": "Status codes only",
+          "3": "Self-check against tls.peet",
+          "4": "Self-check through the account's proxy, saved per run"
+        },
+        "probabilities": {
+          "0": 0.04751196876168251,
+          "1": 0.04720008373260498,
+          "2": 0.058817602694034576,
+          "3": 0.21714915335178375,
+          "4": 0.6293212175369263
+        },
+        "confidence": 0.44463959584633506
+      },
+      "reversible": {
+        "type": "score",
+        "score": 3.7191858686273918,
+        "legend": {
+          "0": "Not reversible",
+          "1": "Hard",
+          "2": "One release",
+          "3": "Per platform by config",
+          "4": "Per platform by env, instantly"
+        },
+        "probabilities": {
+          "0": 0.0009760945686139166,
+          "1": 0.0017335325246676803,
+          "2": 0.008052611723542213,
+          "3": 0.2556040287017822,
+          "4": 0.7336337566375732
+        },
+        "confidence": 0.7659881433355622
+      },
+      "risk": {
+        "type": "score",
+        "score": 3.450237849727273,
+        "legend": {
+          "0": "Breaks most",
+          "1": "Breaks some",
+          "2": "Needs re-sign-in everywhere",
+          "3": "Re-sign-in per account, staged",
+          "4": "No change to sessions until staged per account"
+        },
+        "probabilities": {
+          "0": 0.002146652201190591,
+          "1": 0.014774056151509285,
+          "2": 0.03350231423974037,
+          "3": 0.42984873056411743,
+          "4": 0.5197282433509827
+        },
+        "confidence": 0.5418648864142597
+      }
+    },
+    "wreqAll": {
+      "matchesRealChrome": {
+        "type": "score",
+        "score": 0.9593203961849213,
+        "legend": {
+          "0": "Different browser",
+          "1": "Old version, JA4 differs",
+          "2": "JA4 matches, peetprint differs",
+          "3": "JA4 and peetprint match an older Chrome",
+          "4": "JA4 and peetprint match current Chrome"
+        },
+        "probabilities": {
+          "0": 0.49311164021492004,
+          "1": 0.20528152585029602,
+          "2": 0.17749615013599396,
+          "3": 0.09739607572555542,
+          "4": 0.026714585721492767
+        },
+        "confidence": 0.2005663365125656
+      },
+      "oneIdentity": {
+        "type": "score",
+        "score": 2.226571075618267,
+        "legend": {
+          "0": "Five different identities",
+          "1": "Several identities",
+          "2": "One TLS target but mixed UA/OS",
+          "3": "One identity, easy to drift",
+          "4": "One identity, enforced by a check"
+        },
+        "probabilities": {
+          "0": 0.10162194818258286,
+          "1": 0.12337909638881683,
+          "2": 0.2530442476272583,
+          "3": 0.49071550369262695,
+          "4": 0.03123924322426319
+        },
+        "confidence": 0.30341039318591356
+      },
+      "osCoherence": {
+        "type": "score",
+        "score": 1.8370390385389328,
+        "legend": {
+          "0": "Contradict",
+          "1": "Mostly macOS by default",
+          "2": "Fixable per client by hand",
+          "3": "Set from one place",
+          "4": "Set from one place, OS-specific presets"
+        },
+        "probabilities": {
+          "0": 0.19805055856704712,
+          "1": 0.07057582587003708,
+          "2": 0.4459402561187744,
+          "3": 0.2671507000923157,
+          "4": 0.018282650038599968
+        },
+        "confidence": 0.3580058806886275
+      },
+      "websocket": {
+        "type": "score",
+        "score": 0.7499153986573219,
+        "legend": {
+          "0": "No WebSocket support",
+          "1": "Needs a separate library with another fingerprint",
+          "2": "Possible with custom work",
+          "3": "Supported",
+          "4": "Supported and already used by log"
+        },
+        "probabilities": {
+          "0": 0.5450789928436279,
+          "1": 0.21163959801197052,
+          "2": 0.1990860551595688,
+          "3": 0.03667764365673065,
+          "4": 0.00751768983900547
+        },
+        "confidence": 0.3750705011188984
+      },
+      "asyncio": {
+        "type": "score",
+        "score": 1.044482970610261,
+        "legend": {
+          "0": "No",
+          "1": "Threads only",
+          "2": "Partly",
+          "3": "Yes",
+          "4": "Yes, already used"
+        },
+        "probabilities": {
+          "0": 0.42196008563041687,
+          "1": 0.19624651968479156,
+          "2": 0.3045729100704193,
+          "3": 0.06979133933782578,
+          "4": 0.0074291531927883625
+        },
+        "confidence": 0.12959752449144912
+      },
+      "migrationEffort": {
+        "type": "score",
+        "score": 0.4401432890444994,
+        "legend": {
+          "0": "Rewrite most clients",
+          "1": "Rewrite several clients",
+          "2": "Moderate shims plus new code",
+          "3": "A few lines per client",
+          "4": "Config only"
+        },
+        "probabilities": {
+          "0": 0.6670552492141724,
+          "1": 0.24645553529262543,
+          "2": 0.0687132328748703,
+          "3": 0.014842744916677475,
+          "4": 0.002933263313025236
+        },
+        "confidence": 0.6332139257962505
+      },
+      "vendorDiff": {
+        "type": "score",
+        "score": 0.917315237224102,
+        "legend": {
+          "0": "Large forks",
+          "1": "Many edits",
+          "2": "Moderate",
+          "3": "One shim per client",
+          "4": "None"
+        },
+        "probabilities": {
+          "0": 0.3842010498046875,
+          "1": 0.37072494626045227,
+          "2": 0.19645220041275024,
+          "3": 0.040801409631967545,
+          "4": 0.007820415310561657
+        },
+        "confidence": 0.23557063564658165
+      },
+      "freshness": {
+        "type": "score",
+        "score": 1.2622729502618313,
+        "legend": {
+          "0": "Stuck",
+          "1": "Manual, slow",
+          "2": "New releases every few months",
+          "3": "Releases plus a fingerprint update command",
+          "4": "Tracks latest Chrome within days"
+        },
+        "probabilities": {
+          "0": 0.26180699467658997,
+          "1": 0.3205631375312805,
+          "2": 0.324863463640213,
+          "3": 0.07908261567354202,
+          "4": 0.013683759607374668
+        },
+        "confidence": 0.2078106151893735
+      },
+      "proxyH2": {
+        "type": "score",
+        "score": 0.8269783416762948,
+        "legend": {
+          "0": "Unknown",
+          "1": "Downgrades",
+          "2": "Depends on proxy, untested",
+          "3": "Yes over CONNECT",
+          "4": "Yes, with a self-check"
+        },
+        "probabilities": {
+          "0": 0.6152558922767639,
+          "1": 0.014931838028132915,
+          "2": 0.3032657206058502,
+          "3": 0.060671016573905945,
+          "4": 0.0058755031786859035
+        },
+        "confidence": 0.3108513819364209
+      },
+      "communityBacking": {
+        "type": "score",
+        "score": 2.45215358491987,
+        "legend": {
+          "0": "Warned against",
+          "1": "Not mentioned",
+          "2": "Mentioned",
+          "3": "Recommended by some",
+          "4": "Recommended by the Camoufox maintainer and widely used"
+        },
+        "probabilities": {
+          "0": 0.027995536103844643,
+          "1": 0.07944457978010178,
+          "2": 0.30862492322921753,
+          "3": 0.5802804827690125,
+          "4": 0.003654427593573928
+        },
+        "confidence": 0.5373707344212258
+      },
+      "maturity": {
+        "type": "score",
+        "score": 1.2327213995158672,
+        "legend": {
+          "0": "New, few users",
+          "1": "Young",
+          "2": "Established in a niche",
+          "3": "Widely used",
+          "4": "Default choice in Python scraping"
+        },
+        "probabilities": {
+          "0": 0.17284426093101501,
+          "1": 0.46549007296562195,
+          "2": 0.3214104473590851,
+          "3": 0.03661046549677849,
+          "4": 0.0036447588354349136
+        },
+        "confidence": 0.5179917368416984
+      },
+      "cookieMatch": {
+        "type": "score",
+        "score": 1.073002990335226,
+        "legend": {
+          "0": "No",
+          "1": "Only Chrome",
+          "2": "Close to both",
+          "3": "Chrome exactly, Firefox close",
+          "4": "Both exactly"
+        },
+        "probabilities": {
+          "0": 0.3123853802680969,
+          "1": 0.4365445673465729,
+          "2": 0.13222233951091766,
+          "3": 0.10337715595960617,
+          "4": 0.015470569021999836
+        },
+        "confidence": 0.41852188436314464
+      },
+      "newPlatforms": {
+        "type": "score",
+        "score": 1.3601640984416008,
+        "legend": {
+          "0": "Copy code by hand",
+          "1": "Copy constants",
+          "2": "Import a helper",
+          "3": "One call, documented",
+          "4": "One call, enforced by a check"
+        },
+        "probabilities": {
+          "0": 0.2901729643344879,
+          "1": 0.23986151814460754,
+          "2": 0.3058244585990906,
+          "3": 0.14791066944599152,
+          "4": 0.01623041369020939
+        },
+        "confidence": 0.16618421363333857
+      },
+      "silentFlagDetection": {
+        "type": "score",
+        "score": 0.5580204762518406,
+        "legend": {
+          "0": "No",
+          "1": "Manual only",
+          "2": "Status codes only",
+          "3": "Self-check against tls.peet",
+          "4": "Self-check through the account's proxy, saved per run"
+        },
+        "probabilities": {
+          "0": 0.6041065454483032,
+          "1": 0.2850518226623535,
+          "2": 0.06557880342006683,
+          "3": 0.0392400324344635,
+          "4": 0.0060227373614907265
+        },
+        "confidence": 0.5349829364567995
+      },
+      "reversible": {
+        "type": "score",
+        "score": 1.1837979182600975,
+        "legend": {
+          "0": "Not reversible",
+          "1": "Hard",
+          "2": "One release",
+          "3": "Per platform by config",
+          "4": "Per platform by env, instantly"
+        },
+        "probabilities": {
+          "0": 0.19432733952999115,
+          "1": 0.5616220235824585,
+          "2": 0.12686564028263092,
+          "3": 0.10029545426368713,
+          "4": 0.01688956283032894
+        },
+        "confidence": 0.5229561859741807
+      },
+      "risk": {
+        "type": "score",
+        "score": 1.3880037311464548,
+        "legend": {
+          "0": "Breaks most",
+          "1": "Breaks some",
+          "2": "Needs re-sign-in everywhere",
+          "3": "Re-sign-in per account, staged",
+          "4": "No change to sessions until staged per account"
+        },
+        "probabilities": {
+          "0": 0.247909277677536,
+          "1": 0.24799557030200958,
+          "2": 0.37958866357803345,
+          "3": 0.11719504743814468,
+          "4": 0.007311422843486071
+        },
+        "confidence": 0.27030665101483464
+      }
+    }
+  },
+  "passC": [
+    {
+      "sameVersionSame": {
+        "type": "noul",
+        "noul": 0.9990866184234619
+      },
+      "httpcloakLatestMatches": {
+        "type": "noul",
+        "noul": 0.9988238215446472
+      },
+      "curl16Behind": {
+        "type": "noul",
+        "noul": 0.9994528889656067
+      },
+      "curl17Windows": {
+        "type": "noul",
+        "noul": 0.9964762330055237
+      },
+      "httpcloakNoWs": {
+        "type": "noul",
+        "noul": 0.9995868802070618
+      },
+      "httpcloakNoAsyncPy": {
+        "type": "noul",
+        "noul": 0.9992572665214539
+      },
+      "curlWs": {
+        "type": "noul",
+        "noul": 0.9996036887168884
+      },
+      "jwriterHttpcloak": {
+        "type": "noul",
+        "noul": 0.9932132959365845
+      },
+      "randomJa3Blocked": {
+        "type": "noul",
+        "noul": 0.9984310269355774
+      },
+      "cookiesBoundToJa3": {
+        "type": "noul",
+        "noul": 0.9983214735984802
+      },
+      "logFiveIdentities": {
+        "type": "noul",
+        "noul": 0.9993095397949219
+      },
+      "akamaiSame": {
+        "type": "noul",
+        "noul": 0.9976235032081604
+      }
+    },
+    {
+      "sameVersionSame": {
+        "type": "noul",
+        "noul": 0.9990866184234619
+      },
+      "httpcloakLatestMatches": {
+        "type": "noul",
+        "noul": 0.9988238215446472
+      },
+      "curl16Behind": {
+        "type": "noul",
+        "noul": 0.9994528889656067
+      },
+      "curl17Windows": {
+        "type": "noul",
+        "noul": 0.9964762330055237
+      },
+      "httpcloakNoWs": {
+        "type": "noul",
+        "noul": 0.9995868802070618
+      },
+      "httpcloakNoAsyncPy": {
+        "type": "noul",
+        "noul": 0.9992572665214539
+      },
+      "curlWs": {
+        "type": "noul",
+        "noul": 0.9996036887168884
+      },
+      "jwriterHttpcloak": {
+        "type": "noul",
+        "noul": 0.9932132959365845
+      },
+      "randomJa3Blocked": {
+        "type": "noul",
+        "noul": 0.9984310269355774
+      },
+      "cookiesBoundToJa3": {
+        "type": "noul",
+        "noul": 0.9983214735984802
+      },
+      "logFiveIdentities": {
+        "type": "noul",
+        "noul": 0.9993095397949219
+      },
+      "akamaiSame": {
+        "type": "noul",
+        "noul": 0.9976235032081604
+      }
+    }
+  ],
+  "inputTokens": 98732
+}

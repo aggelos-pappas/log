@@ -389,7 +389,7 @@ The warm-up makes an account look used before it sells: five Facebook activities
 How log-cli talks to X: directly, with no proxy, through one curl_cffi client per account that lives in one engine host, one call at a time, spaced the way X's own web app spaces them, and signed with X's live operation ids. Rules 80, 81, 104, 105, 110 and 113.
 
 - **REQ-XSESSION-01** An X account calls X directly, with no proxy
-- **REQ-XSESSION-02** twikit goes out as curl_cffi impersonating Safari
+- **REQ-XSESSION-02** twikit goes out as curl_cffi impersonating log's one browser
 - **REQ-XSESSION-03** One call per account at a time
 - **REQ-XSESSION-04** Sends are spaced 4 to 11 seconds, reads 0.8 to 2.5 seconds
 - **REQ-XSESSION-05** The transaction key is kept for 3 hours

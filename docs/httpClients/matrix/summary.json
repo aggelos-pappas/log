@@ -1,0 +1,242 @@
+{
+ "rows": [
+  [
+   "matchesRealChrome",
+   [
+    "httpcloakAll",
+    "httpcloakAll"
+   ],
+   {
+    "stayAsIs": 1.2010385356843472,
+    "curlUnified": 2.071408972144127,
+    "httpcloakAll": 3.9695023125968874,
+    "hybridOneIdentity": 3.116616287268698,
+    "wreqAll": 0.9593203961849213
+   }
+  ],
+  [
+   "oneIdentity",
+   [
+    "hybridOneIdentity",
+    "hybridOneIdentity"
+   ],
+   {
+    "stayAsIs": 0.19799948786385357,
+    "curlUnified": 3.3053283034823835,
+    "httpcloakAll": 3.131693210452795,
+    "hybridOneIdentity": 3.501534055219963,
+    "wreqAll": 2.226571075618267
+   }
+  ],
+  [
+   "osCoherence",
+   [
+    "httpcloakAll",
+    "httpcloakAll"
+   ],
+   {
+    "stayAsIs": 0.6899407168384641,
+    "curlUnified": 3.1151627625804394,
+    "httpcloakAll": 3.937963022501208,
+    "hybridOneIdentity": 3.6301150107756257,
+    "wreqAll": 1.8370390385389328
+   }
+  ],
+  [
+   "websocket",
+   [
+    "curlUnified",
+    "curlUnified"
+   ],
+   {
+    "stayAsIs": 3.9434215978253633,
+    "curlUnified": 3.926159100839868,
+    "httpcloakAll": 0.1821790006943047,
+    "hybridOneIdentity": 3.609473809134215,
+    "wreqAll": 0.7499153986573219
+   }
+  ],
+  [
+   "asyncio",
+   [
+    "curlUnified",
+    "curlUnified"
+   ],
+   {
+    "stayAsIs": 3.9625119637930766,
+    "curlUnified": 3.887554447283037,
+    "httpcloakAll": 0.8100626200903207,
+    "hybridOneIdentity": 3.2719382904469967,
+    "wreqAll": 1.044482970610261
+   }
+  ],
+  [
+   "migrationEffort",
+   [
+    "stayAsIs",
+    "stayAsIs"
+   ],
+   {
+    "stayAsIs": 3.8675495949573815,
+    "curlUnified": 2.9397125493269414,
+    "httpcloakAll": 0.6903960295021534,
+    "hybridOneIdentity": 2.6337513010948896,
+    "wreqAll": 0.4401432890444994
+   }
+  ],
+  [
+   "vendorDiff",
+   [
+    "stayAsIs",
+    "stayAsIs"
+   ],
+   {
+    "stayAsIs": 3.9794852193444967,
+    "curlUnified": 3.0368729634210467,
+    "httpcloakAll": 1.2170594707131386,
+    "hybridOneIdentity": 2.9129475778900087,
+    "wreqAll": 0.917315237224102
+   }
+  ],
+  [
+   "freshness",
+   [
+    "httpcloakAll",
+    "httpcloakAll"
+   ],
+   {
+    "stayAsIs": 1.2385609671473503,
+    "curlUnified": 2.979215322062373,
+    "httpcloakAll": 3.4322339929640293,
+    "hybridOneIdentity": 3.2893575211055577,
+    "wreqAll": 1.2622729502618313
+   }
+  ],
+  [
+   "proxyH2",
+   [
+    "httpcloakAll",
+    "httpcloakAll"
+   ],
+   {
+    "stayAsIs": 2.1907716197893023,
+    "curlUnified": 2.689156652893871,
+    "httpcloakAll": 2.7576740798540413,
+    "hybridOneIdentity": 3.0101119824685156,
+    "wreqAll": 0.8269783416762948
+   }
+  ],
+  [
+   "communityBacking",
+   [
+    "curlUnified",
+    "curlUnified"
+   ],
+   {
+    "stayAsIs": 3.1119880881160498,
+    "curlUnified": 3.191998713184148,
+    "httpcloakAll": 3.2727451268583536,
+    "hybridOneIdentity": 2.985348232090473,
+    "wreqAll": 2.45215358491987
+   }
+  ],
+  [
+   "maturity",
+   [
+    "curlUnified",
+    "curlUnified"
+   ],
+   {
+    "stayAsIs": 3.372571984305978,
+    "curlUnified": 3.4108411276247352,
+    "httpcloakAll": 0.5917496019974351,
+    "hybridOneIdentity": 2.3869422525167465,
+    "wreqAll": 1.2327213995158672
+   }
+  ],
+  [
+   "cookieMatch",
+   [
+    "httpcloakAll",
+    "httpcloakAll"
+   ],
+   {
+    "stayAsIs": 0.941788025200367,
+    "curlUnified": 2.3422271013259888,
+    "httpcloakAll": 2.3691355884075165,
+    "hybridOneIdentity": 2.4925533160567284,
+    "wreqAll": 1.073002990335226
+   }
+  ],
+  [
+   "newPlatforms",
+   [
+    "curlUnified",
+    "curlUnified"
+   ],
+   {
+    "stayAsIs": 0.5853510983288288,
+    "curlUnified": 2.6544415741227567,
+    "httpcloakAll": 2.5232793912291527,
+    "hybridOneIdentity": 3.000355269294232,
+    "wreqAll": 1.3601640984416008
+   }
+  ],
+  [
+   "silentFlagDetection",
+   [
+    "hybridOneIdentity",
+    "hybridOneIdentity"
+   ],
+   {
+    "stayAsIs": 0.42732567712664604,
+    "curlUnified": 1.966351330280304,
+    "httpcloakAll": 1.1964383870363235,
+    "hybridOneIdentity": 3.3335676193237305,
+    "wreqAll": 0.5580204762518406
+   }
+  ],
+  [
+   "reversible",
+   [
+    "hybridOneIdentity",
+    "hybridOneIdentity"
+   ],
+   {
+    "stayAsIs": 1.8514161556959152,
+    "curlUnified": 3.241102713625878,
+    "httpcloakAll": 1.2043281570076942,
+    "hybridOneIdentity": 3.7191858686273918,
+    "wreqAll": 1.1837979182600975
+   }
+  ],
+  [
+   "risk",
+   [
+    "stayAsIs",
+    "stayAsIs"
+   ],
+   {
+    "stayAsIs": 3.814778493717313,
+    "curlUnified": 3.059889517724514,
+    "httpcloakAll": 1.5946852378547192,
+    "hybridOneIdentity": 3.450237849727273,
+    "wreqAll": 1.3880037311464548
+   }
+  ]
+ ],
+ "mean": {
+  "stayAsIs": 2.211031201608421,
+  "curlUnified": 2.9885889469951508,
+  "httpcloakAll": 2.0550703268600046,
+  "hybridOneIdentity": 3.1465022651900654,
+  "wreqAll": 1.2194939310429618
+ },
+ "wins": {
+  "stayAsIs": 3.0,
+  "curlUnified": 5.0,
+  "httpcloakAll": 5.0,
+  "hybridOneIdentity": 3.0,
+  "wreqAll": 0
+ }
+}

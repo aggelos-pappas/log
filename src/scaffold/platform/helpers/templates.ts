@@ -217,7 +217,7 @@ Made by \`log new platform ${n.name}\`. ${n.label} is a platform of its own: eve
 
 ## Next
 
-1. Vendor ${n.label}'s client under \`vendor/<library>\` and set \`LIBRARY\` in \`python/${n.name}Api/engine.py\`.
+1. Vendor ${n.label}'s client under \`vendor/<library>\` and set \`LIBRARY\` in \`python/${n.name}Api/engine.py\`. Its one curl_cffi session takes \`impersonate=browserIdentity.curl_target(\"${n.name}\")\` and \`headers=browserIdentity.headers(\"${n.name}\")\` from \`python/identity/browserIdentity.py\`, never a target or user agent of its own (\`bun run check:oneIdentity\`).
 2. Fill in \`ping\` there: call ${n.label} with the account's cookies and answer \`loginState\` from ${n.label}'s own answer.
 3. Add each family as an action in the engine, a command in \`src/cli/${n.name}\` and its rules in \`COMMAND_RULES\`, with a \`…Live\` flag for anything that acts on ${n.label}.
 `;

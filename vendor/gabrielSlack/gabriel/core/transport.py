@@ -7,8 +7,12 @@ from curl_cffi.requests import AsyncSession
 from curl_cffi.requests.exceptions import Timeout
 from curl_cffi.requests.websockets import WebSocketClosed, WebSocketError
 
-IMPERSONATE = "chrome150"
-USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
+try:
+    from identity import browserIdentity as _identity
+except ImportError:  # used outside log: keep the old pin
+    _identity = None
+IMPERSONATE = _identity.curl_target("slack") if _identity else "chrome150"
+USER_AGENT = _identity.user_agent("slack") if _identity else "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
 TIMEOUT_ERRORS: tuple[type[BaseException], ...] = (Timeout, TimeoutError)
 MAX_FRAME_SIZE = 16 * 1024 * 1024
 
@@ -16,7 +20,8 @@ __all__ = ["IMPERSONATE", "TIMEOUT_ERRORS", "USER_AGENT", "ConnectionClosed", "S
 
 
 def new_session() -> AsyncSession:
-    return AsyncSession(impersonate=IMPERSONATE, allow_redirects=False)
+    session = AsyncSession(impersonate=IMPERSONATE, allow_redirects=False)
+    return _identity.attach(session, "slack", "https://app.slack.com") if _identity else session
 
 
 def _headers(headers: Mapping[str, str] | None) -> dict[str, str]:

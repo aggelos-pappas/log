@@ -36,6 +36,11 @@ PUBLIC_WEB_APP_ID = "936619743392459"
 PUBLIC_WEB_ASBD_ID = "129477"
 
 
+try:
+    from identity import browserIdentity as _identity
+except ImportError:  # used outside log: keep the old pin
+    _identity = None
+
 class PublicRequestMixin:
     public_requests_count = 0
     PUBLIC_API_URL = "https://www.instagram.com/"
@@ -52,7 +57,7 @@ class PublicRequestMixin:
     session_retry_statuses = [429, 500, 502, 503, 504]
     last_response_ts = 0
     public_transport = "requests"
-    public_transport_impersonate = "chrome136"
+    public_transport_impersonate = _identity.curl_target("instagram") if _identity else "chrome136"
     public_user_agent = (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 "
         "(KHTML, like Gecko) Version/11.1.2 Safari/605.1.15"
@@ -60,10 +65,9 @@ class PublicRequestMixin:
     public_graphql_user_agent: Optional[str] = (
         "Instagram 273.0.0.16.70 (iPhone15,2; iOS 17_5_1; en_US; en-US; scale=3.00; 1290x2796; 470085518)"
     )
-    public_curl_user_agents = {
-        "chrome136": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
-    }
+    public_curl_user_agents = (
+        {_identity.curl_target("instagram"): _identity.user_agent("instagram")} if _identity else {"chrome136": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"}
+    )
     public_accept_language = "en-US"
 
     def __init__(self, *args, **kwargs):
@@ -152,7 +156,7 @@ class PublicRequestMixin:
     @classmethod
     def _default_public_user_agent(cls, public_transport: PublicTransport, impersonate: str) -> str:
         if public_transport == "curl":
-            return cls.public_curl_user_agents.get(impersonate, cls.public_curl_user_agents["chrome136"])
+            return cls.public_curl_user_agents.get(impersonate) or next(iter(cls.public_curl_user_agents.values()))
         return cls.public_user_agent
 
     def _build_public_session_retry_strategy(self):

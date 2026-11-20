@@ -118,7 +118,8 @@ class FakePage:
         self.mouse = FakeMouse()
 
 
-def test_sync_glide_emits_uneven_samples_and_stops_on_target():
+def test_sync_glide_emits_uneven_samples_and_stops_on_target(monkeypatch):
+    monkeypatch.setattr(humanMouse.myuriInput, "available", lambda: False)
     page = FakePage()
     mouse = SyncHumanMouse(page, lambda _line: None)
     mouse.rng = random.Random(11)

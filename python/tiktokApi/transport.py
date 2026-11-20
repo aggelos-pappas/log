@@ -4,12 +4,14 @@ from typing import Any
 
 from curl_cffi.requests import AsyncSession
 
-IMPERSONATE = "chrome150"
-CHROME_MAJOR = "150"
+from identity import browserIdentity as _identity
+
+IMPERSONATE = _identity.curl_target("tiktok")
+CHROME_MAJOR = str(_identity.resolve("tiktok")["version"])
 CHROME_VERSION = f"{CHROME_MAJOR}.0.0.0"
-USER_AGENT = f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{CHROME_VERSION} Safari/537.36"
+USER_AGENT = _identity.user_agent("tiktok")
 COOKIE_DOMAIN = ".tiktok.com"
-SEC_CH_UA = f'"Chromium";v="{CHROME_MAJOR}", "Google Chrome";v="{CHROME_MAJOR}", "Not.A/Brand";v="99"'
+SEC_CH_UA = _identity.sec_ch_ua(int(CHROME_MAJOR))
 
 __all__ = ["IMPERSONATE", "USER_AGENT", "headers", "new_session", "refreshed", "studio_query"]
 
