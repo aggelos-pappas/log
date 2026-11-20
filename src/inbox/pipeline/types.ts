@@ -9,7 +9,7 @@ export const WHO_LABELS: Readonly<Record<string, string>> = {
   client: 'pays the owner or has agreed to work with him',
   partner: 'works on the same side as the owner: a cofounder, teammate or collaborator',
   friend: 'personal: a friend or family, talk is about life, not business',
-  community: 'someone from a shared group, server or scene who talks about the space, no deal',
+  community: 'someone from a shared group, server or scene who talks about the space; where the owner finds most of his clients',
   bot: 'an automated account: a bot, an app or a system notice, no human writes it',
 }
 
@@ -41,9 +41,9 @@ export const SEED_PHRASES: Readonly<Record<string, readonly string[]>> = {
   goneQuiet: ['hey, just checking in again', 'any thoughts on this', 'bumping this'],
 }
 
-export const SALES_WHO: readonly string[] = ['lead', 'client']
+export const SALES_WHO: readonly string[] = ['community', 'lead', 'client']
 
-export const NEVER_STAGED: readonly string[] = ['bot', 'friend', 'partner', 'community']
+export const NEVER_STAGED: readonly string[] = ['bot', 'friend', 'partner']
 
 export const WINDOW_MESSAGES = 20
 

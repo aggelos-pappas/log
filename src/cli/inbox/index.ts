@@ -231,7 +231,7 @@ async function labelTool(form: string, str: (name: string) => string, limit: num
   const query = { platform: PLATFORMS.includes(platform) ? platform : undefined, account: str("account") || undefined };
   const entries = labelList();
   const owned = new Set(entries.filter((e) => e.by !== TEACHER_BY).map(keyOf));
-  const taught = new Set(entries.filter((e) => e.by === TEACHER_BY && (e.confidence ?? 0) >= TEACHER_MIN_CONFIDENCE).map(keyOf));
+  const taught = new Set(entries.filter((e) => e.by === TEACHER_BY && (e.confidence ?? 0) >= TEACHER_MIN_CONFIDENCE && !(e.who && SALES_WHO.includes(e.who) && !e.where)).map(keyOf));
   if (form === "queue") {
     await refreshed(query);
     const names = new Map(labelsOf(query).map((r) => [keyOf(r), r.with]));
