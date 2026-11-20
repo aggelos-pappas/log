@@ -124,13 +124,13 @@ describe("log launch --setup installs user-level hooks", () => {
       expect(yaml).toContain(`log_root: '${root}'`);
       expect(readFileSync(join(first.pluginDir, "__init__.py"), "utf8")).toBe(readFileSync(join(root, HERMES_PLUGIN_DIR, "__init__.py"), "utf8"));
       const desktop = join(home, HERMES_DESKTOP_DIR, "log", "plugin.js");
-      expect(first.desktopPlugin).toEqual({ path: desktop, changed: true });
+      expect(first.desktopPlugin).toEqual({ path: desktop, changed: true, created: true });
       expect(readFileSync(desktop, "utf8")).toBe(readFileSync(join(root, HERMES_PLUGIN_DIR, "desktop", "plugin.js"), "utf8"));
       const again = installHermes(home, root);
       expect(again.changed).toBe(false);
-      expect(again.desktopPlugin).toEqual({ path: desktop, changed: false });
+      expect(again.desktopPlugin).toEqual({ path: desktop, changed: false, created: false });
       writeFileSync(desktop, "stale");
-      expect(installHermes(home, root).desktopPlugin).toEqual({ path: desktop, changed: true });
+      expect(installHermes(home, root).desktopPlugin).toEqual({ path: desktop, changed: true, created: false });
       expect(readFileSync(desktop, "utf8")).not.toBe("stale");
       expect(installedPluginYaml(yaml, "/other").match(/log_root/g)?.length).toBe(1);
     } finally {
