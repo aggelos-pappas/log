@@ -20,15 +20,15 @@ Wrong labels on the live list:
 |---|---|---|
 | VIBE BOT (Discord, 41 back and forths) | readyToAsk | a bot |
 | MEE6, the Discord system account | warming | bots |
-| mand6ep (Instagram) | readyToAsk | his close friend Mandeep, labelled `friend` on Discord, but the identities aren't linked |
-| archie (Slack) | readyToAsk | a business partner |
+| gr4ce_ig (Instagram) | readyToAsk | a close friend, labelled `friend` on Discord, but the identities aren't linked |
+| linus_k (Slack) | readyToAsk | a business partner |
 | Tin (Discord) | client | right, but only because the owner set it |
 
 The seven labels also mix two things: **who someone is** (friend, client, bot, partner) and **where the conversation is** (warming, ready to ask, asked and waiting, cold).
 
 ## Linking people today (`docs/specs/people.md`, REQ-PEOPLE-04)
 
-`log people suggest` uses Fellegi-Sunter record linkage over three comparisons: whether one identity shares the other's posts, the handle (same, same without digits, `_` and `.`, different) and the display name. On 2026-11-20 it suggested 9 pairs (4 strong). It did not suggest Mandeep's Instagram `mand6ep` against his Discord `deepman` and X `deepman_1`, because the handles differ and nothing else is compared: not how they write, not what they talk about with the owner, not the times they are active, not the owner telling someone his other handle.
+`log people suggest` uses Fellegi-Sunter record linkage over three comparisons: whether one identity shares the other's posts, the handle (same, same without digits, `_` and `.`, different) and the display name. On 2026-11-20 it suggested 9 pairs (4 strong). It did not suggest one known person's Instagram `gr4ce_ig` against their Discord `graceships` and X `grace_ships`, because the handles differ and nothing else is compared: not how they write, not what they talk about with the owner, not the times they are active, not the owner telling someone his other handle.
 
 ## What log already has
 
@@ -46,4 +46,4 @@ Windows 11, Ryzen 9 8945HS, no NVIDIA GPU. The labeller has to run on the CPU, p
 - Who someone is and where the conversation is are two separate fields, with the stages the owner defines.
 - On a held-out set the owner labels, the labeller agrees with him at least 90% on "who" and 80% on "where", and never puts a bot, friend or partner in a sales stage.
 - Every new message updates that chat's stage in under 50 ms on the CPU.
-- Linking finds Mandeep's three accounts as one person (with the owner's yes) and doesn't merge two different people.
+- Linking finds that friend's three accounts as one person (with the owner's yes) and doesn't merge two different people.

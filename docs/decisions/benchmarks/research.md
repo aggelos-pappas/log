@@ -16,7 +16,7 @@ Read on 2026-11-21 from arXiv. Each area gives the test, why that test (with sou
 
 ## 3. Name pointers in the hook
 
-- **Test:** the owner's last 200 prompts; for each, every "NAMED IN THE PROMPT" match hand-marked right or wrong (e.g. "abel" from "able", "triyn" to Tin, "coemd" to Mo.techno). Precision and recall.
+- **Test:** the owner's last 200 prompts; for each, every "NAMED IN THE PROMPT" match hand-marked right or wrong (e.g. "abe" from "able", "triyn" to Tin, "coemd" to Mo.techno). Precision and recall.
 - **Why:** 2210.07472: on tweets, informal spelling and short context break both dictionary lookup and dense retrieval; recall 0.93 needed a hybrid with context. 2505.14549: names that are also common words are mishandled 20-40% more. The owner types fast with heavy typos, so a typo of a common word that lands near a contact name is the main failure. The fix the papers point to: only treat a token as a name when it is not a (corrected) common word, and require context (a capital, "with", "to", "from", "@", or the person in the current chat).
 - **Number:** wrong pointers per 50 prompts; target at most 1.
 
