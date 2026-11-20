@@ -237,15 +237,47 @@ answers into a view with a phase (`browserMissing`, `viewerUnavailable`,
 `signInRequired`, `needsAttention`, `busy`, `ready`).
 
 **Input, both paths.** Clicks, text, keys and scrolls never travel on the frame
-channel. They go to `POST /input`, which refuses them unless the generation and
-the revision still match (`browserStateChanged`), the page still reports a
-sign-in state unless the session is owner-driven (`browserInputStopped`) and no other step holds the browser
-(`browserBusy`), then replays them with Playwright's `page.mouse`,
-`page.keyboard` and `mouse.wheel` inside `owner.step("viewerInput", ...)`, so
-every viewer action is a recorded step with its HAR and reading. The answer is
-the page read again once the step has let go of the browser. A checkpoint or
-other blocked page is shown but takes no input unless the owner drives the
-browser: it stays a stop for the agent (rule 94).
+channel. They go to `POST /input`, which refuses them unless the generation
+still matches, no agent step holds the browser (`browserBusy`) and, on a browser
+the agent opened, the revision still matches (`browserStateChanged`) and the
+page still reports a sign-in state (`browserInputStopped`). An owner-driven
+browser skips the revision check: the owner is looking at the page, and a chat
+page's text changes every second. The input then goes straight to the page
+with Playwright's `page.mouse.click`, `page.keyboard` and `mouse.wheel`
+(`BrowserViewer.dispatch`, no human-mouse glide: the owner's own pointer is the
+human one) and the answer comes back at once, so the view never shows the busy
+spinner for the owner's input and the next input is not queued behind a step.
+Each input is one line in the run's `inputs.jsonl` (time, kind, point, key or
+scroll amount; typed text only by its length). The heavy record (screenshot,
+aria snapshot, HAR slice, rea reading) is taken in the background as one
+`viewerInput` step once input goes quiet: 1 s after the last input when the
+address changed, 5 s otherwise (`captureLater`), with rea read later. That
+capture holds the step lock but does not count as busy (`agentBusy`), and an
+agent command waits for it as for any step. Measured with
+`scripts/browserView/inputBench.py` (real `Inspector.step`, headless Camoufox,
+loopback): before, `/input` answered after 3.6 s at p50 (4.2 s p95) and the
+view showed busy on 10 of 10 clicks; after, 58 ms p50 (98 ms p95), the click
+reached the page in 18 ms p50 (40 ms p95), the next frame came 43 ms p50
+(87 ms p95) after the click, and busy showed on 0 of 30. Through the Hermes
+replica (`hostBench.py`, `::logapp` card) click to the card's own canvas
+changing is 73 ms p50 (89 ms p95). A checkpoint or other blocked page is shown
+but takes no input unless the owner drives the browser: it stays a stop for the
+agent (rule 94).
+
+**One live view per account.** A view costs a stream and a state poll, so old
+ones must not keep running. In Hermes the host card keeps one registry per
+window (`windowLiveCards` in `src/mcp/apps/report/view/liveCards.ts`): the
+latest `::logbrowser` card for an account in the transcript is live, and every
+earlier one unmounts its view and collapses to "Live view moved to the latest
+message" with a "Show it here" button that takes it back until a newer card
+mounts. In other hosts the widget claims its account on a `BroadcastChannel`
+(`liveClaim` in `src/mcp/apps/browserView/widget/liveClaim.ts`; it reaches the
+views a host serves from one origin), and the older view stops the same way.
+Every view also stops streaming while it is scrolled out of sight
+(`IntersectionObserver`) and starts again when it comes back. The viewer itself
+keeps at most two streams (`STREAM_LIMIT`); a third replaces the oldest, which
+gets a last `application/json` part with `X-Log-Stream-Ended: replaced` so its
+view stops instead of reconnecting.
 
 **Picture, page screencast first, on every browser.** On the machine the
 browser runs on, the page screencast is the stream: the same `PageCast` code

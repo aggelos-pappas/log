@@ -197,7 +197,8 @@ through `browserViewFrame`, about 2 a second, and its badge says
 `browserViewInput` posts to the same viewer `/input` as the console (see
 [the live browser viewer](browsers.md#the-live-browser-viewer)), so input
 reaches the page only while it still asks for sign-in and the revision still
-matches, and each one is a recorded step. When the person presses Done, the
+matches, unless the owner drives the browser; it lands at once and is recorded
+in the background. When the person presses Done, the
 view reads the page again, puts a line in the model's context
 (`ui/update-model-context`) and sends it as the person's message
 (`ui/message`), so the agent calls `browserView` and carries on.

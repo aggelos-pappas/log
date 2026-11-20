@@ -1,3 +1,5 @@
+import { streamEnded } from "./liveClaim.ts";
+
 export const MAX_PART_BYTES = 8_000_000;
 
 export interface CastPart {
@@ -91,7 +93,10 @@ export async function readCast(url: string, signal: AbortSignal, onFrame: (blob:
     while (!signal.aborted && !failure) {
       const { done, value } = await reader.read();
       if (done) break;
-      for (const part of parts.push(value)) if (part.headers["content-type"] === "image/jpeg") latest = new Blob([part.data as BlobPart], { type: "image/jpeg" });
+      for (const part of parts.push(value)) {
+        if (part.headers["content-type"] === "image/jpeg") latest = new Blob([part.data as BlobPart], { type: "image/jpeg" });
+        else if (streamEnded(part.headers) === "replaced") failure = new Error("browserStreamReplaced");
+      }
       if (latest && !drawing) drawing = draw();
       if (parts.ended) break;
     }

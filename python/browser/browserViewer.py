@@ -17,6 +17,9 @@ CAST_QUALITY = 70
 TICKET_SECONDS = 60
 TICKET_MAX_SECONDS = 900
 TICKET_LIMIT = 64
+STREAM_LIMIT = 2
+INPUT_LOG = "inputs.jsonl"
+INPUT_KEYS = {"Enter", "Tab", "Backspace", "Delete", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Escape", "Space", "Home", "End"}
 CORS_HEADERS = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Private-Network": "true", "Access-Control-Expose-Headers": "X-Log-Browser-Generation", "Access-Control-Max-Age": "600"}
 
 
@@ -47,6 +50,7 @@ class CastClient:
     def __init__(self) -> None:
         self.latest: dict[str, Any] | None = None
         self.ready = asyncio.Event()
+        self.replaced = False
 
     def offer(self, frame: dict[str, Any]) -> None:
         self.latest = frame
@@ -56,6 +60,10 @@ class CastClient:
         frame, self.latest = self.latest, None
         self.ready.clear()
         return frame
+
+    def replace(self) -> None:
+        self.replaced = True
+        self.ready.set()
 
 
 class PageCast:
@@ -129,6 +137,20 @@ class BrowserViewer:
         self.keeper: asyncio.Task[None] | None = None
         self.keepEvery = 1.0
         self.relistened = 0
+        self.inputLock = asyncio.Lock()
+        self.capturing = False
+        self.capturer: asyncio.Task[None] | None = None
+        self.captureKind = ""
+        self.capturedUrl = ""
+        self.inputAt = 0.0
+        self.captureTick = 0.25
+        self.captureMoved = 1.0
+        self.captureIdle = 5.0
+        self.known: dict[str, Any] | None = None
+        self.knownAt = 0.0
+        self.knownFor = 0.75
+        self.streams: list[CastClient] = []
+        self.streamLimit = STREAM_LIMIT
 
     async def start(self) -> None:
         await self.listen(0)
@@ -164,6 +186,9 @@ class BrowserViewer:
         if self.reaper is not None:
             self.reaper.cancel()
             self.reaper = None
+        if self.capturer is not None:
+            self.capturer.cancel()
+            self.capturer = None
         await self.cast.halt()
         if self.server:
             self.server.close()
@@ -180,58 +205,145 @@ class BrowserViewer:
         seen = viewer_state(signals)
         state = seen["state"]
         revision = hashlib.sha256(json.dumps([signals["url"], signals["text"], self.owner.index, self.inputRevision, self.owner.recorder.seen()], ensure_ascii=True).encode()).hexdigest()
-        return {"generation": self.generation, "revision": revision, "state": state, "url": signals["url"], "historyLength": signals["historyLength"], "blocked": seen["blocked"], "inputAllowed": seen["inputAllowed"], "ownerDriven": self.owner.config.get("ownerDriven") is True, "width": signals["width"], "height": signals["height"], "busy": self.owner.controlLock.locked(), "stream": await streamSurface.surface(self.owner)}
+        known = {"generation": self.generation, "revision": revision, "state": state, "url": signals["url"], "historyLength": signals["historyLength"], "blocked": seen["blocked"], "inputAllowed": seen["inputAllowed"], "ownerDriven": self.owner.config.get("ownerDriven") is True, "width": signals["width"], "height": signals["height"], "busy": self.agentBusy(), "stream": await streamSurface.surface(self.owner)}
+        self.known, self.knownAt = known, time.monotonic()
+        return known
+
+    async def recent(self) -> dict[str, Any]:
+        if self.known is not None and time.monotonic() - self.knownAt < self.knownFor:
+            return self.known
+        return await asyncio.wait_for(self.state(), 5)
+
+    def agentBusy(self) -> bool:
+        return self.owner.controlLock.locked() and not self.capturing
+
+    def size(self) -> tuple[float, float]:
+        viewport = getattr(self.owner.page, "viewport_size", None)
+        if isinstance(viewport, dict) and viewport.get("width") and viewport.get("height"):
+            return float(viewport["width"]), float(viewport["height"])
+        known = self.known or {}
+        return float(known.get("width") or 0), float(known.get("height") or 0)
+
+    async def dispatch(self, kind: Any, data: dict[str, Any], width: float, height: float) -> dict[str, Any]:
+        page = self.owner.page
+        mouse = self.owner.mouse
+        if kind == "click":
+            x, y = float(data.get("x", -1)), float(data.get("y", -1))
+            if width <= 0 or height <= 0:
+                width, height = float((await page.evaluate("() => innerWidth")) or 0), float((await page.evaluate("() => innerHeight")) or 0)
+            if not 0 <= x <= width or not 0 <= y <= height:
+                raise ValueError("browserInputInvalid")
+            setattr(mouse, "preempt", True)
+            try:
+                await page.mouse.click(x, y)
+            finally:
+                setattr(mouse, "preempt", False)
+            if hasattr(mouse, "x"):
+                mouse.x, mouse.y = x, y
+            return {"x": round(x), "y": round(y)}
+        if kind == "text":
+            text = data.get("text")
+            if not isinstance(text, str) or not text or len(text) > 2048:
+                raise ValueError("browserInputInvalid")
+            await page.keyboard.insert_text(text)
+            return {"chars": len(text)}
+        if kind == "key":
+            key = data.get("key")
+            if key not in INPUT_KEYS:
+                raise ValueError("browserInputInvalid")
+            await page.keyboard.press(key)
+            return {"key": key}
+        if kind == "scroll":
+            amount = max(-600, min(600, float(data.get("deltaY", 0))))
+            await page.mouse.wheel(0, amount)
+            return {"deltaY": amount}
+        raise ValueError("browserInputInvalid")
+
+    def note(self, kind: str, detail: dict[str, Any], ms: float) -> None:
+        line = {"at": time.time(), "n": self.inputRevision, "type": kind, **detail, "ms": round(ms, 1), "url": str(getattr(self.owner.page, "url", "") or "").split("?", 1)[0]}
+        try:
+            with (self.owner.run_dir / INPUT_LOG).open("a", encoding="utf8") as target:
+                target.write(json.dumps(line) + "\n")
+        except OSError:
+            pass
 
     async def input(self, data: dict[str, Any]) -> dict[str, Any]:
-        if self.owner.controlLock.locked():
+        if data.get("generation") != self.generation:
+            raise ValueError("browserStateChanged")
+        if self.agentBusy():
             raise ValueError("browserBusy")
-        async with self.owner.controlLock:
-            state = await self.state()
-            if data.get("generation") != self.generation or data.get("revision") != state["revision"]:
-                raise ValueError("browserStateChanged")
-            if not state["ownerDriven"] and (state["blocked"] or not state["inputAllowed"]):
-                raise ValueError("browserInputStopped")
-            kind = data.get("type")
-            async def perform() -> None:
-                page = self.owner.page
-                if kind == "click":
-                    x, y = float(data.get("x", -1)), float(data.get("y", -1))
-                    if not 0 <= x <= state["width"] or not 0 <= y <= state["height"]:
-                        raise ValueError("browserInputInvalid")
-                    await self.owner.mouse.glide(x, y, "viewerClick")
-                    await page.mouse.click(x, y)
-                elif kind == "text":
-                    text = data.get("text")
-                    if not isinstance(text, str) or len(text) > 2048:
-                        raise ValueError("browserInputInvalid")
-                    await page.keyboard.insert_text(text)
-                elif kind == "key":
-                    key = data.get("key")
-                    if key not in {"Enter", "Tab", "Backspace", "Delete", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Escape", "Space", "Home", "End"}:
-                        raise ValueError("browserInputInvalid")
-                    await page.keyboard.press(key)
-                elif kind == "scroll":
-                    amount = max(-600, min(600, float(data.get("deltaY", 0))))
-                    await page.mouse.wheel(0, amount)
-                else:
-                    raise ValueError("browserInputInvalid")
-            self.inputRevision += 1
-            previous = self.owner.opts
-            self.owner.opts = {"quietMs": 0, "settleMaxMs": 1}
+        ownerDriven = self.owner.config.get("ownerDriven") is True
+        async with self.inputLock:
+            started = time.monotonic()
+            if ownerDriven:
+                width, height = self.size()
+            else:
+                state = await self.state()
+                if data.get("revision") != state["revision"]:
+                    raise ValueError("browserStateChanged")
+                if state["blocked"] or not state["inputAllowed"]:
+                    raise ValueError("browserInputStopped")
+                width, height = float(state["width"]), float(state["height"])
+            kind = str(data.get("type"))
             try:
-                result = await self.owner.step("viewerInput", str(kind), perform)
-                with Path(self.owner.config["repliesPath"]).open("a", encoding="utf8") as target:
-                    target.write(json.dumps({"id": f"viewer{self.inputRevision}", "result": result}) + "\n")
-            finally:
-                self.owner.opts = previous
-            if not result.get("ok"):
-                raise ValueError("browserInputFailed")
+                detail = await self.dispatch(kind, data, width, height)
+            except ValueError:
+                raise
+            except Exception as error:
+                raise ValueError("browserInputFailed") from error
+            self.inputRevision += 1
+            setattr(self.owner, "ownerInputAt", time.monotonic())
+            self.note(kind, detail, (time.monotonic() - started) * 1000)
+            self.captureSoon(kind)
+        if ownerDriven and self.known is not None:
+            return {**self.known, "busy": self.agentBusy()}
         for _attempt in range(10):
             try:
                 return await self.state()
             except Exception:
                 await asyncio.sleep(0.3)
         return await self.state()
+
+    def captureSoon(self, kind: str) -> None:
+        self.captureKind = kind
+        self.inputAt = asyncio.get_running_loop().time()
+        if self.capturer is None:
+            self.capturer = asyncio.create_task(self.captureLater())
+
+    async def captureLater(self) -> None:
+        loop = asyncio.get_running_loop()
+        try:
+            while True:
+                while True:
+                    await asyncio.sleep(self.captureTick)
+                    moved = str(getattr(self.owner.page, "url", "") or "") != self.capturedUrl
+                    if loop.time() - self.inputAt >= (self.captureMoved if moved else self.captureIdle):
+                        break
+                began = loop.time()
+                if not self.owner.controlLock.locked():
+                    await self.capture()
+                if self.inputAt <= began:
+                    return
+        finally:
+            self.capturer = None
+
+    async def capture(self) -> None:
+        async with self.owner.controlLock:
+            self.capturing = True
+            previous = self.owner.opts
+            self.owner.opts = {"quietMs": 0, "settleMaxMs": 1, "reaLater": True}
+            try:
+                async def nothing() -> None:
+                    return None
+                result = await self.owner.step("viewerInput", self.captureKind, nothing)
+                self.capturedUrl = str(getattr(self.owner.page, "url", "") or "")
+                with Path(self.owner.config["repliesPath"]).open("a", encoding="utf8") as target:
+                    target.write(json.dumps({"id": f"viewer{self.inputRevision}", "result": result}) + "\n")
+            except Exception:
+                pass
+            finally:
+                self.owner.opts = previous
+                self.capturing = False
 
     def ticket(self, seconds: Any) -> dict[str, Any]:
         now = time.monotonic()
@@ -285,7 +397,7 @@ class BrowserViewer:
     async def frame(self, query: dict[str, list[str]]) -> tuple[bytes, dict[str, str]]:
         raw = (query.get("after") or ["0"])[0]
         after = int(raw) if raw.isdigit() and len(raw) < 16 else 0
-        state = await asyncio.wait_for(self.state(), 5)
+        state = await self.recent()
         pulled = await self.pull(after, int(state["width"]), int(state["height"]))
         if pulled is None:
             body = await self.owner.page.screenshot(type="jpeg", quality=65, scale="css", timeout=5000)
@@ -300,9 +412,12 @@ class BrowserViewer:
         return (f"--{BOUNDARY}\r\n" + "".join(f"{key}: {value}\r\n" for key, value in head.items()) + "\r\n").encode() + data + b"\r\n"
 
     async def stream(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, opened: list[bool], cors: bool = False) -> None:
-        state = await asyncio.wait_for(self.state(), 5)
+        state = await self.recent()
         client = CastClient()
         page = await self.cast.join(client, int(state["width"]), int(state["height"]))
+        self.streams.append(client)
+        while len(self.streams) > self.streamLimit:
+            self.streams.pop(0).replace()
         try:
             first = await page.screenshot(type="jpeg", quality=65, scale="css", timeout=5000)
             head = {"Content-Type": f"multipart/x-mixed-replace; boundary={BOUNDARY}", "Cache-Control": "no-store", "Connection": "close", "X-Log-Browser-Generation": self.generation, **(CORS_HEADERS if cors else {})}
@@ -312,22 +427,32 @@ class BrowserViewer:
             writer.write(self.part(last))
             await writer.drain()
             sent = asyncio.get_running_loop().time()
-            while not reader.at_eof() and not writer.is_closing() and self.owner.page is page and self.cast.page is page and not getattr(page, "is_closed", lambda: False)():
+            while not client.replaced and not reader.at_eof() and not writer.is_closing() and self.owner.page is page and self.cast.page is page and not getattr(page, "is_closed", lambda: False)():
                 try:
                     await asyncio.wait_for(client.ready.wait(), self.castPoll)
                 except asyncio.TimeoutError:
                     if asyncio.get_running_loop().time() - sent < self.castRepeat:
                         continue
+                if client.replaced:
+                    break
                 frame = client.take() or last
                 last = frame
                 writer.write(self.part(frame))
                 await writer.drain()
                 sent = asyncio.get_running_loop().time()
             if not writer.is_closing():
+                if client.replaced:
+                    writer.write(self.ended("replaced"))
                 writer.write(f"--{BOUNDARY}--\r\n".encode())
                 await writer.drain()
         finally:
+            if client in self.streams:
+                self.streams.remove(client)
             await self.cast.leave(client)
+
+    def ended(self, reason: str) -> bytes:
+        data = json.dumps({"ended": reason}).encode()
+        return (f"--{BOUNDARY}\r\nContent-Type: application/json\r\nContent-Length: {len(data)}\r\nX-Log-Stream-Ended: {reason}\r\n\r\n").encode() + data + b"\r\n"
 
     async def request(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         status, contentType, body, extra = 503, "application/json", b'{"error":"browserUnavailable"}', {}

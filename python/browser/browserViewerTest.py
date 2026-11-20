@@ -183,19 +183,81 @@ class BrowserViewerTests(unittest.TestCase):
             self.assertTrue(body.startswith(b"\xff\xd8"))
         self.run_with(LOGIN_PAGE, scenario)
 
-    def test_a_click_with_the_current_revision_is_replayed_as_a_recorded_step(self):
+    def test_a_click_reaches_the_page_at_once_and_is_captured_as_a_step_once_input_goes_quiet(self):
         async def scenario(owner, viewer, descriptor):
+            viewer.captureMoved = viewer.captureIdle = 0.1
+            viewer.captureTick = 0.02
             _status, _headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/state")
             revision = json.loads(body)["revision"]
             status, _headers, body = await call(descriptor["port"], descriptor["token"], "POST", "/input", {"type": "click", "x": 40, "y": 50, "generation": viewer.generation, "revision": revision})
             self.assertEqual(status, 200, body)
             self.assertEqual(owner.page.actions, [("click", 40.0, 50.0)])
+            self.assertEqual(owner.mouse.glides, [])
+            self.assertEqual(owner.steps, [])
+            inputs = [json.loads(line) for line in (Path(owner.run_dir) / "inputs.jsonl").read_text(encoding="utf8").splitlines()]
+            self.assertEqual([(row["type"], row["x"], row["y"]) for row in inputs], [("click", 40, 50)])
+            self.assertNotEqual(json.loads(body)["revision"], revision)
+            for _attempt in range(100):
+                if owner.steps:
+                    break
+                await asyncio.sleep(0.05)
             self.assertEqual(owner.steps, [("viewerInput", "click")])
-            self.assertEqual(owner.mouse.glides, [(40.0, 50.0, "viewerClick")])
             replies = [json.loads(line) for line in Path(owner.config["repliesPath"]).read_text(encoding="utf8").splitlines()]
             self.assertEqual(replies[0]["id"], "viewer1")
-            self.assertNotEqual(json.loads(body)["revision"], revision)
         self.run_with(LOGIN_PAGE, scenario)
+
+    def test_typed_text_is_logged_by_length_never_by_its_characters(self):
+        async def scenario(owner, viewer, descriptor):
+            _status, _headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/state")
+            status, _headers, body = await call(descriptor["port"], descriptor["token"], "POST", "/input", {"type": "text", "text": "hunter2", "generation": viewer.generation, "revision": json.loads(body)["revision"]})
+            self.assertEqual(status, 200, body)
+            logged = (Path(owner.run_dir) / "inputs.jsonl").read_text(encoding="utf8")
+            self.assertNotIn("hunter2", logged)
+            self.assertEqual(json.loads(logged)["chars"], 7)
+        self.run_with(LOGIN_PAGE, scenario)
+
+    def test_owner_input_never_reports_busy_and_is_not_held_up_by_a_running_capture(self):
+        async def scenario(owner, viewer, descriptor):
+            viewer.captureMoved = viewer.captureIdle = 0.05
+            viewer.captureTick = 0.01
+            release = asyncio.Event()
+            async def slow_step(action, label, act):
+                owner.steps.append((action, label))
+                await act()
+                await release.wait()
+                return {"ok": True, "step": "01_viewerInput"}
+            owner.step = slow_step
+            _status, _headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/state")
+            revision = json.loads(body)["revision"]
+            status, _headers, body = await call(descriptor["port"], descriptor["token"], "POST", "/input", {"type": "click", "x": 10, "y": 20, "generation": viewer.generation, "revision": revision})
+            self.assertEqual(status, 200, body)
+            for _attempt in range(100):
+                if viewer.capturing:
+                    break
+                await asyncio.sleep(0.05)
+            self.assertTrue(viewer.capturing)
+            _status, _headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/state")
+            self.assertFalse(json.loads(body)["busy"])
+            started = asyncio.get_running_loop().time()
+            status, _headers, body = await call(descriptor["port"], descriptor["token"], "POST", "/input", {"type": "scroll", "deltaY": 120, "generation": viewer.generation, "revision": "0" * 64})
+            took = asyncio.get_running_loop().time() - started
+            self.assertEqual(status, 200, body)
+            self.assertFalse(json.loads(body)["busy"])
+            self.assertLess(took, 0.5)
+            self.assertEqual(owner.page.actions, [("click", 10.0, 20.0), ("wheel", 0, 120.0)])
+            release.set()
+        self.run_with(HOME_PAGE, scenario, owner_driven=True)
+
+    def test_an_agent_step_in_flight_shows_busy_and_refuses_owner_input(self):
+        async def scenario(owner, viewer, descriptor):
+            async with owner.controlLock:
+                _status, _headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/state")
+                self.assertTrue(json.loads(body)["busy"])
+                status, _headers, body = await call(descriptor["port"], descriptor["token"], "POST", "/input", {"type": "click", "x": 10, "y": 20, "generation": viewer.generation, "revision": "0" * 64})
+                self.assertEqual(status, 409)
+                self.assertEqual(json.loads(body)["error"], "browserBusy")
+            self.assertEqual(owner.page.actions, [])
+        self.run_with(HOME_PAGE, scenario, owner_driven=True)
 
     def test_a_stale_revision_is_refused_and_nothing_reaches_the_page(self):
         async def scenario(owner, viewer, descriptor):
@@ -224,7 +286,10 @@ class BrowserViewerTests(unittest.TestCase):
             status, _headers, body = await call(descriptor["port"], descriptor["token"], "POST", "/input", {"type": "click", "x": 10, "y": 20, "generation": viewer.generation, "revision": state["revision"]})
             self.assertEqual(status, 200, body)
             self.assertEqual(owner.page.actions, [("click", 10.0, 20.0)])
-            self.assertEqual(owner.steps, [("viewerInput", "click")])
+            self.assertEqual(owner.steps, [])
+            status, _headers, body = await call(descriptor["port"], descriptor["token"], "POST", "/input", {"type": "click", "x": 30, "y": 40, "generation": viewer.generation, "revision": "0" * 64})
+            self.assertEqual(status, 200, body)
+            self.assertEqual(owner.page.actions[-1], ("click", 30.0, 40.0))
         self.run_with(HOME_PAGE, scenario, owner_driven=True)
 
     def test_a_browser_the_agent_opened_reports_it_is_not_owner_driven(self):
@@ -391,6 +456,31 @@ class BrowserStreamTests(CastCase):
                 await self.until(lambda: cast.stopped == [old])
             finally:
                 writer.close()
+        self.run_cast(scenario)
+
+    def test_a_stream_past_the_limit_replaces_the_oldest_which_is_told_why(self):
+        async def scenario(_owner, viewer, cast, descriptor):
+            viewer.streamLimit = 2
+            first = await open_stream(descriptor["port"], descriptor["token"])
+            await read_part(first[0])
+            second = await open_stream(descriptor["port"], descriptor["token"])
+            await read_part(second[0])
+            third = await open_stream(descriptor["port"], descriptor["token"])
+            await read_part(third[0])
+            try:
+                part, data = await read_part(first[0])
+                self.assertEqual(part["Content-Type"], "application/json")
+                self.assertEqual(part["X-Log-Stream-Ended"], "replaced")
+                self.assertEqual(json.loads(data), {"ended": "replaced"})
+                part, _data = await read_part(first[0])
+                self.assertIsNone(part)
+                await self.until(lambda: len(viewer.streams) == 2)
+                cast.emit(b"newest")
+                _part, data = await read_part(third[0])
+                self.assertEqual(data, b"newest")
+            finally:
+                for stream in (first, second, third):
+                    stream[1].close()
         self.run_cast(scenario)
 
     def test_a_screencast_that_fails_to_start_answers_an_error_for_the_frame_fallback(self):

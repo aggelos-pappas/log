@@ -301,6 +301,7 @@ class Inspector:
         self.page: Any = None
         self.context: Any = None
         self.controlLock = asyncio.Lock()
+        self.ownerInputAt = 0.0
 
     async def step(self, action: str, label: str, act: Any, expect: str | None = None, expect_ms: int = 30_000) -> dict[str, Any]:
         self.index += 1
@@ -910,7 +911,7 @@ class Inspector:
                     with replies.open("a", encoding="utf8") as out:
                         out.write(json.dumps({"id": "start", "result": reply}) + "\n")
                 last = time.monotonic()
-                while time.monotonic() - last < IDLE_SECONDS:
+                while time.monotonic() - max(last, self.ownerInputAt) < IDLE_SECONDS:
                     await asyncio.sleep(0.3)
                     if self.closed:
                         log("The browser window was closed: stopping.")

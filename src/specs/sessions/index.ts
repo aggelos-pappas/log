@@ -135,6 +135,16 @@ export const sessions = {
       { kind: 'symbol', file: 'src/mcp/apps/browserView/widget/viewModel.ts', name: 'viewStatus' },
       { kind: 'uses', file: 'src/mcp/apps/browserView/widget/main.ts', name: 'viewStatus' },
     ],
+    'REQ-SESSIONS-17': [
+      { kind: 'symbol', file: 'python/browser/browserViewer.py', name: 'dispatch' },
+      { kind: 'symbol', file: 'python/browser/browserViewer.py', name: 'captureLater' },
+      { kind: 'symbol', file: 'python/browser/browserViewer.py', name: 'agentBusy' },
+      { kind: 'symbol', file: 'src/mcp/apps/report/view/liveCards.ts', name: 'liveCards' },
+      { kind: 'uses', file: 'src/mcp/apps/report/view/hermesApp.tsx', name: 'windowLiveCards' },
+      { kind: 'symbol', file: 'src/mcp/apps/browserView/widget/liveClaim.ts', name: 'liveClaim' },
+      { kind: 'uses', file: 'src/mcp/apps/browserView/widget/main.ts', name: 'liveClaim' },
+      { kind: 'symbol', file: 'src/mcp/apps/browserView/widget/liveClaim.ts', name: 'streamEnded' },
+    ],
   },
   rubrics: {
     'REQ-SESSIONS-01': noul('Is CHECK_STATES exactly signedIn, signInNeeded, stopped, unknown, checking and skipped, do the console and the session check use that one type, and are the old stored names read as signedIn, checking and unknown?'),
@@ -151,8 +161,9 @@ export const sessions = {
     'REQ-SESSIONS-12': noul('Do the browser-view app tools and the console frame and state polls run through the bridge without an operations row, while every other tool is journaled?'),
     'REQ-SESSIONS-13': noul('Do the console browser dialog and the browser view widget both mount mountBrowserFrame and build their state with frameModel from the one shared view module, and does the parity check fail when either draws its own header, address bar or footer?'),
     'REQ-SESSIONS-14': noul('Does sessionsSignIn with open start the account browser through inspectStart only when no browser is open, does keepSession save nothing when the run never wrote a browser state, does the detached inspect child ignore only the job held by its own parent process, and is a tool a job calls in its own process not refused by that job while any other job still refuses it?'),
-    'REQ-SESSIONS-15': noul('Does a browser opened for the owner to drive (sessionsSignIn open, the console Browser check, inspect start ownerDriven) take viewer input on every page in the Python viewer and in viewOf alike, each a recorded step, while a browser the agent opened takes input only on a sign-in page, and does LOG_BROWSER_INPUT signInOnly turn it off?'),
+    'REQ-SESSIONS-15': noul('Does a browser opened for the owner to drive (sessionsSignIn open, the console Browser check, inspect start ownerDriven) take viewer input on every page in the Python viewer and in viewOf alike, each recorded, while a browser the agent opened takes input only on a sign-in page, and does LOG_BROWSER_INPUT signInOnly turn it off?'),
     'REQ-SESSIONS-16': noul('When the viewer loses its listening socket while the session runs, does it listen again with the same token and generation and rewrite browserViewer.json, and does the browser view widget show a failed pull, a stream with no frame or an error in its loop as the card status instead of spinning on Connecting to browser forever?'),
+    'REQ-SESSIONS-17': noul('Does BrowserViewer.input send an owner click, key, text or scroll straight to the page and answer without waiting for a recorded step, log it as one inputs.jsonl line with typed text only by length, capture the viewerInput step in the background only once input goes quiet without reporting busy, keep the revision and sign-in gate for a browser the agent opened, and does only the latest view per account stream (the Hermes registry collapsing older cards, the BroadcastChannel claim, pausing out of sight, and the viewer replacing the oldest stream past its limit with a replaced part)?'),
     unspecifiedBehavior: noul('Does a check or a sign-in retry a refused account, save a session with no sign-in cookies, or keep check state in module memory, by a route the specification does not describe?'),
   },
   assertions: {
@@ -172,6 +183,7 @@ export const sessions = {
     'REQ-SESSIONS-14': MET,
     'REQ-SESSIONS-15': MET,
     'REQ-SESSIONS-16': MET,
+    'REQ-SESSIONS-17': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

@@ -1,7 +1,9 @@
 import { App, applyDocumentTheme, applyHostStyleVariables } from "@modelcontextprotocol/ext-apps";
 import type { McpUiHostContext } from "@modelcontextprotocol/ext-apps";
 import { drawBlob, jpegBlob, readCast } from "./cast.ts";
-import { ERROR_TITLES, frameModel, ICONS, mountBrowserFrame, pullFailure, viewStatus } from "./view.ts";
+import { broadcastLink, liveClaim } from "./liveClaim.ts";
+import type { LiveClaim } from "./liveClaim.ts";
+import { ERROR_TITLES, frameModel, ICONS, MOVED_NOTE, MOVED_TITLE, mountBrowserFrame, pullFailure, SHOW_HERE, viewStatus } from "./view.ts";
 import type { FramePhase } from "./view.ts";
 import { connectVoxl, voxlSupported } from "./voxl.ts";
 import type { VoxlConnection, VoxlStream } from "./voxl.ts";
@@ -44,6 +46,7 @@ const frame = mountBrowserFrame(root, {
     if (id === "done") void done();
     if (id === "full") void setMode(state.mode === "fullscreen" ? "inline" : "fullscreen");
     if (id === "pip") void setMode("pip");
+    if (id === "here") showHere();
   },
   onPoint: (fx, fy) => {
     if (!state.view?.canInteract) return;
@@ -64,9 +67,10 @@ const tool = (name: string) => frame.tools.querySelector(`[data-ref="${name}"]`)
 const canvas = frame.canvas;
 
 type Source = "cast" | "pull" | "voxl" | null;
-const state: { account: string | null; view: View | null; revision: string | null; live: boolean; hasControl: boolean; pending: boolean; queue: Input[]; stream: VoxlStream | null; voxl: VoxlConnection | null; finished: boolean; autoMode: boolean; mode: string; streamAsked: boolean; seq: number; cast: AbortController | null; castTried: boolean; looping: boolean; torn: boolean; frames: number; source: Source; stateAt: number; error: string | null; castAt: number } = {
-  account: null, view: null, revision: null, live: false, hasControl: false, pending: false, queue: [], stream: null, voxl: null, finished: false, autoMode: false, mode: "inline", streamAsked: false, seq: 0, cast: null, castTried: false, looping: false, torn: false, frames: 0, source: null, stateAt: 0, error: null, castAt: 0,
+const state: { account: string | null; view: View | null; revision: string | null; live: boolean; hasControl: boolean; pending: boolean; queue: Input[]; stream: VoxlStream | null; voxl: VoxlConnection | null; finished: boolean; autoMode: boolean; mode: string; streamAsked: boolean; seq: number; cast: AbortController | null; castTried: boolean; looping: boolean; torn: boolean; frames: number; source: Source; stateAt: number; error: string | null; castAt: number; moved: boolean; visible: boolean; claim: LiveClaim | null } = {
+  account: null, view: null, revision: null, live: false, hasControl: false, pending: false, queue: [], stream: null, voxl: null, finished: false, autoMode: false, mode: "inline", streamAsked: false, seq: 0, cast: null, castTried: false, looping: false, torn: false, frames: 0, source: null, stateAt: 0, error: null, castAt: 0, moved: false, visible: true, claim: null,
 };
+const MOUNTED = `${Date.now()}${Math.random().toString(36).slice(2, 10)}`;
 const STATE_EVERY_MS = 1000;
 const IDLE_MS = 1500;
 const CAST_FIRST_MS = 5000;
@@ -83,7 +87,8 @@ function modes(): string[] {
 
 function render(): void {
   const view = state.view;
-  const phase = view?.phase ?? null;
+  const moved = state.moved;
+  const phase = moved ? null : (view?.phase ?? null);
   const status = viewStatus(view, state.live, state.error);
   const browser = view?.browser ? { ...view.browser, logo: LOGOS[view.browser.name] ?? null } : null;
   frame.paint(frameModel({
@@ -92,10 +97,12 @@ function render(): void {
     pageState: view?.pageState ?? null,
     browser,
     phase: phase as FramePhase | null,
-    live: state.live,
-    connecting: status.connecting,
-    failed: status.failed,
-    label: status.label,
+    live: moved ? false : state.live,
+    connecting: moved ? false : status.connecting,
+    failed: moved ? false : status.failed,
+    label: moved ? MOVED_TITLE : status.label,
+    note: moved ? MOVED_NOTE : null,
+    coverActions: moved ? [{ id: "here", label: SHOW_HERE, icon: "screen", primary: true }] : [],
     address: view?.address ?? null,
     generation: view?.generation ?? null,
     canNavigate: false,
@@ -192,7 +199,9 @@ function startCast(url: string): void {
       render();
     }
   })
-    .catch(() => undefined)
+    .catch((error: unknown) => {
+      if (error instanceof Error && error.message === "browserStreamReplaced" && state.cast === control) moveAway();
+    })
     .finally(() => {
       if (state.cast !== control) return;
       state.cast = null;
@@ -207,7 +216,41 @@ function sleep(ms: number): Promise<void> {
 }
 
 function running(): boolean {
-  return Boolean(state.account) && !state.torn && !state.finished && !document.hidden;
+  return Boolean(state.account) && !state.torn && !state.finished && !state.moved && state.visible && !document.hidden;
+}
+
+function pause(): void {
+  stopVoxl();
+  stopCast();
+  state.castTried = false;
+  state.streamAsked = false;
+  state.stream = null;
+  state.queue = [];
+}
+
+function moveAway(): void {
+  if (state.moved) return;
+  state.moved = true;
+  state.live = false;
+  pause();
+  render();
+}
+
+function showHere(): void {
+  state.claim?.reclaim(Date.now());
+  state.moved = false;
+  state.error = null;
+  render();
+  void loop();
+}
+
+function claimFor(account: string): void {
+  if (state.claim) return;
+  const link = broadcastLink();
+  if (!link) return;
+  state.claim = liveClaim({ account, id: MOUNTED, born: Number(MOUNTED.slice(0, 13)) }, link, (moved) => {
+    if (moved) moveAway();
+  });
 }
 
 async function refreshState(): Promise<void> {
@@ -406,6 +449,19 @@ window.addEventListener("openai:set_globals", () => {
 const openAiTheme = themeOf(openAi()?.theme);
 if (openAiTheme) applyDocumentTheme(openAiTheme);
 
+if (typeof IntersectionObserver === "function") {
+  new IntersectionObserver((entries) => {
+    const visible = entries.some((entry) => entry.isIntersecting);
+    if (visible === state.visible) return;
+    state.visible = visible;
+    if (!visible) {
+      pause();
+      return;
+    }
+    void loop();
+  }).observe(root);
+}
+
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     stopCast();
@@ -417,7 +473,10 @@ document.addEventListener("visibilitychange", () => {
 
 app.ontoolinput = (params) => {
   const account = (params.arguments as { account?: unknown } | undefined)?.account;
-  if (typeof account === "string") state.account = account;
+  if (typeof account === "string") {
+    state.account = account;
+    claimFor(account);
+  }
   render();
 };
 app.ontoolresult = (result) => {
@@ -426,6 +485,7 @@ app.ontoolresult = (result) => {
   const view = given && typeof given.phase === "string" ? given : null;
   if (view) {
     state.account = view.account;
+    claimFor(view.account);
     adopt(view);
   }
   render();
@@ -434,6 +494,8 @@ app.ontoolresult = (result) => {
 app.onhostcontextchanged = (context) => hostChanged(context as McpUiHostContext);
 app.onteardown = async () => {
   state.torn = true;
+  state.claim?.close();
+  state.claim = null;
   stopVoxl();
   stopCast();
   state.account = null;

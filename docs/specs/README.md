@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 55 domains, 616 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 55 domains, 617 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -113,6 +113,7 @@ Whether an account is signed in, and signing it back in, is one capability with 
 - **REQ-SESSIONS-14** Showing a signed-in account's browser, and saving only what a browser wrote
 - **REQ-SESSIONS-15** The owner drives the browser he opened
 - **REQ-SESSIONS-16** The live view never spins forever on a viewer that stopped answering
+- **REQ-SESSIONS-17** The owner's input is instant and only one view per account runs
 
 ## [Account watchers](./watchers.md)
 
