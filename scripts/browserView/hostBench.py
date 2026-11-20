@@ -57,6 +57,17 @@ class BenchOwner:
         return {"ok": True, "step": f"{self.index:02d}_{action}"}
 
 
+def stop_tree(proc):
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    else:
+        proc.terminate()
+    try:
+        proc.wait(10)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+
+
 def free_port():
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -208,8 +219,8 @@ async def main():
                         results.append(await report_scenario(edge, host, theme, shots))
                     await edge.close()
             finally:
-                host_proc.terminate()
-                api.terminate()
+                stop_tree(host_proc)
+                stop_tree(api)
                 await viewer.close()
     print(json.dumps(results, indent=2))
 
