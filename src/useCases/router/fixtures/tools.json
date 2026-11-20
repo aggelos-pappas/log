@@ -111,6 +111,7 @@
 {"name":"inboxLabelQueue","platform":null,"summary":"Chats to label first: the least sure, across platforms","flags":["platform","account","limit"],"required":[],"notes":"","effect":"read"},
 {"name":"inboxLabelTeach","platform":null,"summary":"SubQ labels unlabelled chats once; a dry run with its cost unless --apply","flags":["platform","account","limit","apply"],"required":[],"notes":"","effect":"write"},
 {"name":"inboxLabelTrain","platform":null,"summary":"Train the who and where head on the labels","flags":[],"required":[],"notes":"","effect":"write"},
+{"name":"inboxOutcomes","platform":null,"summary":"Reply rates of log's sends vs the owner's, matched by person and stage","flags":["platform","account","feelings"],"required":[],"notes":"","effect":"read"},
 {"name":"inboxClaims","platform":null,"summary":"Every live claim: which session holds which chat, and until when","flags":[],"required":[],"notes":"","effect":"write"},
 {"name":"inboxActions","platform":null,"summary":"The log of every claim, refusal, send and release, oldest first, to see what was already done in a chat","flags":["platform","account","chat","limit"],"required":[],"notes":"","effect":"write"},
 {"name":"mediaDescriber","platform":null,"summary":"Run the one media describer on this machine: the vision model loaded once, describing the queue one item at a time","flags":[],"required":[],"notes":"","effect":"read"},

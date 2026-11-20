@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 56 domains, 647 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 56 domains, 648 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -888,6 +888,7 @@ Every chat in the owner's inbox carries two fields: `who` the person is to the o
 - **REQ-PIPELINE-05** Stored per chat on every new message, cached by the last message
 - **REQ-PIPELINE-06** The owner labels what log is least sure of
 - **REQ-PIPELINE-07** SubQ labels every chat once, as a dry run until applied
+- **REQ-PIPELINE-08** Whether people answer what log sent, against the owner's own sends, matched by person and stage
 
 ## [Slack](./slack.md)
 
