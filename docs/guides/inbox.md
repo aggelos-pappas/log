@@ -17,6 +17,7 @@ When the owner asks for one of these, follow its page step by step.
 | `getGuide({ useCase: "inbox/bossMaxxing" })` | Bossmaxxing: giving out tasks to the team | "bossmaxxing", "give out the tasks", "send <person> the task in <group> and tag them", "tell <person> about everything I researched and give them an outline", "triage the jobs across the team", "walk <person> through setting up <tool>", "help <person> get set up like we did with <other person>" |
 | `getGuide({ useCase: "inbox/ignoreServer" })` | Ignoring a server or a chat | "ignore that server", "mute that channel", "stop the alerts from there", "unignore it" |
 | `getGuide({ useCase: "inbox/labelQueue" })` | Teaching log who your people are | "what should i label", "teach the labeller", "train the labeller", "which chats are you unsure about" |
+| `getGuide({ useCase: "inbox/outcomes" })` | Do people answer what log sends? | "do people reply to what log sends", "are log's messages working", "which plays get answers" |
 | `getGuide({ useCase: "inbox/quietPush" })` | Quieting the live push | "go silent for 30 minutes", "turn the notifications back on" |
 | `getGuide({ useCase: "inbox/reaLooksmaxxing" })` | /rea-looksmaxxing: moneymaxx like a creator | "/rea-looksmaxxing how clavicular gets paid", "moneymaxx like <creator>", "how does <creator> get paid" |
 | `getGuide({ useCase: "inbox/reactions" })` | Reacting to a message | "react to that", "heart his message", "put a 😂 on what she said", "send a reaction to <person>" |
@@ -45,6 +46,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `inboxLabelQueue` | Chats to label first | `log inbox label queue [--platform <p>] [--limit <n>]` |
 | `inboxLabelTeach` | SubQ labels unlabelled chats once | `log inbox label teach [--platform <p>] [--limit <n>] [--apply]` |
 | `inboxLabelTrain` | Train the who and where head on the labels | `log inbox label train` |
+| `inboxOutcomes` | Reply rates of log's sends vs the owner's, matched by person and stage | `log inbox outcomes [--platform <p>] [--account <a>] [--feelings] [--json]` |
 | `inboxClaims` | Every live claim | `log inbox claims [--json]` |
 | `inboxActions` | The log of every claim, refusal, send and release, oldest first, to… | `log inbox actions [--platform <p>] [--account <a>] [--chat <conversationId\|handle>] [--limit <n>] [--json]` |
 | `chatsList` | List an account's chats on its own platform, the platform taken from… | `log chats list --account <account> [--space <space>] [--limit <limit>] [--platform <p>] [--json]` |
