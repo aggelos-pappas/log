@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import type { HarnessInstall } from "../opencode/types.ts";
 import { PACKAGE_ROOT } from "../opencode/client.ts";
 import { HERMES_PLUGIN_DIR, HERMES_PLUGIN_NAME } from "../registry/index.ts";
-import { HERMES_PLUGIN_FILES, RETIRED_HERMES_MANIFESTS, RETIRED_HERMES_PLUGIN } from "./types.ts";
+import { HERMES_DESKTOP_DIR, HERMES_DESKTOP_SOURCE, HERMES_PLUGIN_FILES, RETIRED_HERMES_MANIFESTS, RETIRED_HERMES_PLUGIN } from "./types.ts";
 
 export function hermesHome(env: NodeJS.ProcessEnv = process.env, home: string = homedir(), exists: (path: string) => boolean = existsSync): string {
   const named = env.LOG_HERMES_DIR || env.HERMES_HOME;
@@ -56,5 +56,15 @@ export function installHermes(home: string = hermesHome(), root: string = PACKAG
     }
     pluginFiles.push(target);
   }
-  return { configPath: join(pluginDir, "plugin.yaml"), changed, pluginDir, pluginFiles };
+  const desktopPlugin = installHermesDesktop(home, from);
+  return { configPath: join(pluginDir, "plugin.yaml"), changed: changed || desktopPlugin.changed, pluginDir, pluginFiles, desktopPlugin };
+}
+
+export function installHermesDesktop(home: string, from: string): { path: string; changed: boolean } {
+  const path = join(home, HERMES_DESKTOP_DIR, HERMES_PLUGIN_NAME, "plugin.js");
+  const wanted = readFileSync(join(from, HERMES_DESKTOP_SOURCE), "utf8");
+  if (existsSync(path) && readFileSync(path, "utf8") === wanted) return { path, changed: false };
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, wanted);
+  return { path, changed: true };
 }

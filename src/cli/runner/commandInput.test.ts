@@ -22,6 +22,7 @@ const SHAPED: Readonly<Record<string, string>> = {
   watch: "4-25",
   posts: "8-15",
   reader: "fakeHarness",
+  to: "0.2.2",
 };
 
 function sample(spec: FlagSpec | PositionalSpec): unknown {

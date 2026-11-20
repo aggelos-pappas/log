@@ -213,6 +213,14 @@
       "summary": "Posting on LinkedIn, liking or reposting, and taking a post down"
     },
     {
+      "name": "log-log-local-models",
+      "description": "Local models. A log play (docs/useCases/log/localModels.md): See which local models this release pins and whether each is on this machine at that revision, and, with the owner's yes, fetch the missing ones: the judge's injection classifier, the meaning model behind search and the router, the image describer and the mouse planner.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Local models"
+    },
+    {
       "name": "log-log-tool-from-one-off",
       "description": "Turning a hand-rolled one-off into a log tool. A log play (docs/useCases/log/toolFromOneOff.md): When the agent reaches for a one-off to get or change data (a scratch script over log.db, a raw `sqlite3` query, a `curl` to a platform or a link, a `python -c` or `bun -e`), log has no tool for that job yet. The hook labels the call `readsData` or `actsOnData` with what it touched, counts it in log.db, and says so before or right after it runs. It never blocks: the agent may finish the one-off, then makes it a real command and MCP tool so it routes from then on. The owner isn't asked; the guide below is the whole procedure.",
       "files": [
@@ -227,6 +235,14 @@
         "SKILL.md"
       ],
       "summary": "Tool health"
+    },
+    {
+      "name": "log-log-update-log",
+      "description": "Update log. A log play (docs/useCases/log/updateLog.md): Check which log runs here and, with the owner's yes, update it to the newest release and pick up where it left off: the hook service, the account watchers and the open browsers come back after the install. Nothing installs without the owner's yes.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Update log"
     },
     {
       "name": "log-reddit-contributor-maxxing",

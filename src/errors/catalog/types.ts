@@ -264,6 +264,27 @@ export const ERROR_CATALOG = {
     raisedIn: ['cli/twitter/dms', 'cli/twitter/followers', 'cli/twitter/notifications'],
     action: 'Give --limit as a whole number inside the range the refusal names, or leave it out for the default.'
   },
+  updateBusy: {
+    layer: 'tool',
+    meaning: 'log update was asked to apply while a send or a job was still running, and it did not settle in time.',
+    retryable: true,
+    raisedIn: ['cli/update'],
+    action: 'Let the named send or job finish (jobStatus, or the queue run), then run log update --apply again.'
+  },
+  modelFetchFailed: {
+    layer: 'tool',
+    meaning: 'log models --fetch could not download a local model at its pinned revision, or the download did not match the pinned hash; nothing half-written was kept.',
+    retryable: true,
+    raisedIn: ['cli/models'],
+    action: 'Check the network and free disk space (log runs space), then run log models --fetch again; HF_ENDPOINT points it at a mirror.'
+  },
+  updateFailed: {
+    layer: 'tool',
+    meaning: 'log update could not install or verify the new version; it rolled back to the version that ran and restarted what was running, or says the rollback failed too.',
+    retryable: false,
+    raisedIn: ['cli/update'],
+    action: 'Read the step that failed in the refusal and ~/.logCli/resume.json; fix it (network, disk, a dirty clone) and run log update --apply again.'
+  },
   visibilityInvalid: {
     layer: 'tool',
     meaning: "log tiktok post was given a --visibility it doesn't know: it is everyone, friends or onlyMe.",

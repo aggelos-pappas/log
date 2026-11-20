@@ -518,6 +518,17 @@ What's built, what's next and what's planned is kept in one pinned issue: **[Roa
 
 Built here means written, tested and in an open PR; each lands in a release once merged.
 
+## Releases
+
+Newest first. Each release pins the local models it runs with (`log models`), and `log update` moves code, harness plugins and models to the release together ([docs/updates.md](docs/updates.md)).
+
+<!-- releases:start: written by `bun run docs:releases` from CHANGELOG.md and src/models/manifest, not edited by hand -->
+| Version | Date | What's in it | Models |
+| --- | --- | --- | --- |
+| [0.2.1](https://github.com/matthewdonsemail-lab/log/pull/179) | 2026-11-20 | The relate graph, the live inbox push (messages during tool calls, burst batching, late copies dropped), inbox labels and ignoring a server or chat (+2 more) | not pinned (newest by name) |
+| [0.2.0](https://github.com/matthewdonsemail-lab/log/pull/166) | 2026-11-15 | The one-command Hermes pack, the catalog review, the README rewrite and the catch-up machine (+1 more) | not pinned (newest by name) |
+<!-- releases:end -->
+
 ## CLI
 
 ```bash

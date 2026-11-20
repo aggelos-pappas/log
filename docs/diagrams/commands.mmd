@@ -21,6 +21,9 @@ flowchart TB
     c_router["router"]
     c_runs["runs"]
     c_storage["storage"]
+    c_version["version"]
+    c_update["update"]
+    c_models["models"]
     c_relate["relate"]
     c_people["people"]
     c_timing["timing"]
@@ -256,6 +259,12 @@ flowchart TB
   mcp --> c_runs
   cli --> c_storage
   mcp --> c_storage
+  cli --> c_version
+  mcp --> c_version
+  cli --> c_update
+  mcp --> c_update
+  cli --> c_models
+  mcp --> c_models
   cli --> c_relate
   mcp --> c_relate
   cli --> c_people

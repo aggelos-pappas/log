@@ -76,7 +76,7 @@ flowchart LR
   anyB --> b_slack
   anyB --> b_instagram
   anyB --> b_tiktok
-  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, router, runs, storage, relate, people, timing, tool, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy"]
+  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, router, runs, storage, version, update, models, relate, people, timing, tool, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy"]
   anyN -.-> twenty
   newP["log new platform name: one more platform, wired whole (rule 83)"] -.-> twenty
   drivers --> api
@@ -112,7 +112,7 @@ Source: [`docs/diagrams/browsers.mmd`](diagrams/browsers.mmd).
 
 - **The account's browser, through the driver:** `facebook host`, `inspect`, `flow`, `<platform> warmup`, `facebook join`, `facebook read`, `facebook poll`, `facebook check`, `reddit read`, `discord read`, `slack read`. They run on whichever browser the account uses: AdsPower when it has a linked profile (`socialAccounts.adsPowerProfileId`), Camoufox otherwise, or what `socialAccounts.browserDriver` says.
 - **Camoufox only, not on the driver yet:** `facebook doctor`, `facebook connect`, `facebook profile`, `facebook scan`, `facebook status`, `facebook watch`, `facebook publish`, `facebook campaign`, `discord watch`, `linkedin connect`, `slack watch`, `instagram watch`. They launch Camoufox themselves (facebook-camofox-client's worker, or the publish, connect and profile sessions), so on an AdsPower account they don't open its AdsPower profile. Moving one onto the driver is moving it into `OPENER_ACTIONS` (`src/browser/run`).
-- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `relate`, `people`, `timing`, `tool`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`.
+- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `version`, `update`, `models`, `relate`, `people`, `timing`, `tool`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`.
 - **No browser path at all:** X. Its accounts run on the direct API only (rule 80).
 
 Each browser's capabilities, built or not: [`docs/browsers.md`](browsers.md) (generated, `bun run check:browsers`). AdsPower's setup: [`docs/adsPower.md`](adsPower.md).
@@ -224,9 +224,9 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 295 command tools + saved flows"]
+  mcp["MCP server log: 300 command tools + saved flows"]
   bin["bin/log.ts"]
-  runCli["runCli: 138 commands (COMMANDS)"]
+  runCli["runCli: 141 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
   engine{"commandEngine: DIRECT_ROUTES"}
   direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi, tiktokApi (curl_cffi, TikTok Studio calls) (vendor/), the account's saved session, a governor per account"]
@@ -321,6 +321,9 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log router`](#log-router) | The prompt router's meaning index | any (none) | `[--apply]` `[--json]` | none | none | `routerIndex` | PreToolUse, PostToolUse · PostToolUse | no | 26, 73, 30, 38, 39, 40, 41 |
 | [`log runs`](#log-runs) | Recorded runs, and pruning the ones rea settled and the request docs hold | any (none) | `[--json]` `[--before <date>]` `[--apply]` | none | none | `runsList`, `runsExchanges`, `runsPrune`, `runsPruneLive`, `runsSpace` | PreToolUse, PostToolUse · PostToolUse | no | 19, 25, 66, 73, 30, 38, 39, 40, 41 |
 | [`log storage`](#log-storage) | Check that log.db's typed tables are exactly what its events derive, and rebuild them from the events | any (none) | `[--json]` `[--apply]` | none | none | `storageVerify`, `storageRebuild`, `storageRebuildLive` | PreToolUse, PostToolUse · PostToolUse | no | 73, 134, 30, 38, 39, 40, 41 |
+| [`log version`](#log-version) | Which log runs here and the newest release | any (none) | `[--check]` `[--json]` | none | none | `version` | PreToolUse, PostToolUse · PostToolUse | no | 73, 167, 30, 38, 39, 40, 41 |
+| [`log update`](#log-update) | Update log to the newest release and resume what ran | any (none) | `[--to <version>]` `[--approvedBy <who>]` `[--apply]` `[--json]` | none | none | `updateLog`, `updateLogLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 167, 30, 38, 39, 40, 41 |
+| [`log models`](#log-models) | Is each pinned local model here | any (none) | `[--approvedBy <who>]` `[--fetch]` `[--json]` | none | none | `models`, `modelsLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 167, 30, 38, 39, 40, 41 |
 | [`log relate`](#log-relate) | A Relate (Neo4j) graph of who talks, engages and shares rooms with the owner's accounts, projected from log.db and injected as connected context | any (none) | `[--json]` | none | none | `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk`, `relateQuery` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
 | [`log people`](#log-people) | One person across platforms: the owner links identities (Discord, X, Instagram…) into a person, suggestions come from Fellegi-Sunter record linkage, and the person card shows the whole relationship | any (none) | `[--json]` `[--limit <integer 1..200>]` `[--approvedBy <text>]` `[--name <text>]` `[--evidence <text>]` | none | none | `people`, `peopleShow`, `peopleSuggest`, `peopleLink`, `peopleUnlink`, `peopleDifferent` | PreToolUse, PostToolUse · PostToolUse | no | 30, 89, 134, 154, 163, 30, 38, 39, 40, 41 |
 | [`log timing`](#log-timing) | Where the time goes in every call: p50, p95 and p99 per tool and per stage, from the timings every call stores in log.db, or one call as a waterfall | any (none) | `[--tool <name>]` `[--hours <number>]` `[--stages <number>]` `[--top <number>]` `[--all]` `[--call <callId>]` `[--turns]` `[--json]` | none | none | `timing` | PreToolUse, PostToolUse · PostToolUse | no | 26, 73, 165, 30, 38, 39, 40, 41 |
@@ -474,6 +477,9 @@ flowchart TB
     c_router["router"]
     c_runs["runs"]
     c_storage["storage"]
+    c_version["version"]
+    c_update["update"]
+    c_models["models"]
     c_relate["relate"]
     c_people["people"]
     c_timing["timing"]
@@ -709,6 +715,12 @@ flowchart TB
   mcp --> c_runs
   cli --> c_storage
   mcp --> c_storage
+  cli --> c_version
+  mcp --> c_version
+  cli --> c_update
+  mcp --> c_update
+  cli --> c_models
+  mcp --> c_models
   cli --> c_relate
   mcp --> c_relate
   cli --> c_people
@@ -994,7 +1006,7 @@ One list (`src/agentHooks/registry`) writes Claude Code's `.claude/settings.json
 | SessionStart | `startup\|resume\|clear\|compact` | [`scripts/hooks/pageState.ts`](../scripts/hooks/pageState.ts) | where every open browser is, the moment a session starts or comes back from compaction |
 | UserPromptSubmit | every turn | [`scripts/hooks/pageState.ts`](../scripts/hooks/pageState.ts) | where every open browser is, with each of the owner's prompts |
 | SessionStart | `startup\|resume\|clear\|compact` | [`scripts/hooks/storage.ts`](../scripts/hooks/storage.ts) | ~/.logCli/runs over 2 GB or the disk nearly full: said with `log runs prune` before AdsPower refuses to start |
-| UserPromptSubmit | every turn | [`scripts/hooks/storage.ts`](../scripts/hooks/storage.ts) | the same storage check with each of the owner's prompts (measured at most every 15 minutes) |
+| UserPromptSubmit | every turn | [`scripts/hooks/storage.ts`](../scripts/hooks/storage.ts) | the same storage check with each of the owner's prompts (measured at most every 15 minutes), and once per session a newer log release to ask the owner about (docs/updates.md) |
 | SessionStart | `startup\|resume\|clear\|compact` | [`scripts/hooks/engines.ts`](../scripts/hooks/engines.ts) | which commands run on the direct-API engine (from DIRECT_ROUTES) and each account's session state and governor use, so a session coming back from compaction knows the engines; and, loudly, when the log MCP server runs older code than the checkout, and which code files have uncommitted local changes (rule 163) |
 | UserPromptSubmit | every turn | [`scripts/hooks/engines.ts`](../scripts/hooks/engines.ts) | the same engine line with the owner's prompt, only when an account's session state, its governor use or the MCP server's freshness changed |
 | SessionStart | `startup\|resume\|clear\|compact` | [`scripts/hooks/knowledge.ts`](../scripts/hooks/knowledge.ts) | the knowledge base is there and how to search it and save to it, with how many chunks Redis holds, so a session looks things up before it guesses |
@@ -1040,7 +1052,7 @@ sequenceDiagram
   owner->>Agent: a prompt
   Agent->>Hook: UserPromptSubmit
   Note over Hook: where every open browser is, with each of the owner's prompts
-  Note over Hook: the same storage check with each of the owner's prompts (measured at most every 15 minutes)
+  Note over Hook: the same storage check with each of the owner's prompts (measured at most every 15 minutes), and once per session a newer log release to ask the owner about (docs/updates.md)
   Note over Hook: the same engine line with the owner's prompt, only when an account's session state, its governor use or the MCP server's freshness changed
   Note over Hook: the same inbox check with each of the owner's prompts: a poll starts when one is due, and new messages from the last poll are put in front of the agent
   Note over Hook: the play the owner's prompt asks for, matched against every use case's own #quot;How the owner asks for it#quot; phrases and title, named with getGuide to load it before anything is done (rule 158)
@@ -1554,6 +1566,33 @@ Check that log.db's typed tables are exactly what its events derive, and rebuild
 log storage verify [--json]   (replays every event in ~/.logCli/log.db into a scratch copy and compares each typed table, row by row, with the live one; nothing is changed)
 log storage rebuild [--apply] [--json]   (clears the typed tables and replays every event into them in order, in one transaction; a verify unless --apply)
 The events are the record: every typed row is derived from them, so a rebuild loses nothing (docs/storageAgainstTheBook.md, item 2).
+```
+
+#### log version
+
+Which log runs here and the newest release MCP tools: `version`, one per form, with named fields.
+
+```text
+log version [--check] [--json]
+--check asks for the newest release now instead of the daily cache.
+```
+
+#### log update
+
+Update log to the newest release and resume what ran MCP tools: `updateLog`, `updateLogLive`, one per form, with named fields.
+
+```text
+log update log [--to <version>] [--apply --approvedBy <who>] [--json]   (the word log may be left out)
+Plans only; --apply (after the owner's yes) stops what runs, installs, verifies, rolls back on failure and restarts it.
+```
+
+#### log models
+
+Is each pinned local model here MCP tools: `models`, `modelsLive`, one per form, with named fields.
+
+```text
+log models [--fetch --approvedBy <who>] [--json]
+--fetch gets what is missing.
 ```
 
 #### log relate
