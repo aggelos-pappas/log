@@ -1,11 +1,12 @@
 #!/usr/bin/env bun
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { contextOutput, hookHostOf, hostBody } from '../../src/agentHooks/harness/index'
 import { hookAnswer } from '../../src/contextLayer/hook/index'
 import type { HookInput } from '../../src/contextLayer/hook/index'
-import { CODE_CHECK_MS, CONTEXT_PORT, forgetService, HOST, labelledPath, logTiming, readService, serviceStarted, SOURCE_CHECK_MS, startService, writeService } from '../../src/contextLayer/service/index'
-import { codeStamp } from '../../src/mcp/freshness/index.ts'
+import { CODE_CHECK_MS, CONTEXT_PORT, forgetService, HOST, labelledPath, logTiming, newestChange, readService, serviceStarted, sharedEmbed, SOURCE_CHECK_MS, startService, UNCASED_MODELS, writeService } from '../../src/contextLayer/service/index'
+import { codeStampAsync } from '../../src/mcp/freshness/index.ts'
+import { handRolledText, recordHandRolled } from '../../src/agentHooks/handRolled/index'
 import { listUseCases } from '../../src/mcp/server/helpers/index.ts'
 import { localEmbedder } from '../../src/search/conversations/helpers/embed.ts'
 import { EMBED_DIMENSIONS, EMBED_MODEL } from '../../src/search/conversations/types.ts'
@@ -26,16 +27,7 @@ if (running && running.pid !== process.pid) {
   process.exit(0)
 }
 
-function newest(dir: string): number {
-  if (!existsSync(dir)) return 0
-  let out = statSync(dir).mtimeMs
-  if (!statSync(dir).isDirectory()) return out
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const path = join(dir, entry.name)
-    out = Math.max(out, entry.isDirectory() ? newest(path) : statSync(path).mtimeMs)
-  }
-  return out
-}
+const sourcesStamp = async () => Math.max(...(await Promise.all(sources.map(newestChange))))
 
 const readJson = <T>(path: string, fallback: T): T => {
   try {
@@ -46,17 +38,7 @@ const readJson = <T>(path: string, fallback: T): T => {
 }
 
 const embedder = localEmbedder()
-const remembered = new Map<string, Float32Array>()
-const embed = async (texts: string[]) => {
-  const missing = [...new Set(texts.filter((t) => !remembered.has(t)))]
-  if (missing.length) {
-    const made = await embedder.embed(missing)
-    missing.forEach((t, i) => remembered.set(t, made[i]))
-    while (remembered.size > EMBED_MEMO) remembered.delete(remembered.keys().next().value!)
-  }
-  return texts.map((t) => remembered.get(t)!)
-}
-const EMBED_MEMO = 512
+const embed = sharedEmbed((texts) => embedder.embed(texts), { uncased: UNCASED_MODELS.has(EMBED_MODEL) })
 let meaningIndex: MeaningIndex | null = null
 let meaningBuilding = false
 let index: RouteIndex
@@ -70,7 +52,7 @@ async function load(): Promise<void> {
   const useCases = listUseCases()
   index = await buildRouteIndex(useCases, embed, EMBED_MODEL, extra, useCases.map((u) => u.text).join(' '))
   thresholds = readJson<Thresholds>(join(fixtures, 'thresholds.json'), {})
-  stamp = Math.max(...sources.map(newest))
+  stamp = await sourcesStamp()
   console.log(`${new Date().toISOString()} loaded ${index.utterances.length} utterances for ${index.titles.size} plays in ${Math.round(performance.now() - started)} ms`)
   void loadMeaning()
 }
@@ -92,8 +74,15 @@ async function loadMeaning(): Promise<void> {
 }
 
 await load()
-setInterval(() => {
-  if (Math.max(...sources.map(newest)) > stamp) void load()
+let checkingSources = false
+setInterval(async () => {
+  if (checkingSources) return
+  checkingSources = true
+  try {
+    if ((await sourcesStamp()) > stamp) await load()
+  } finally {
+    checkingSources = false
+  }
 }, SOURCE_CHECK_MS)
 
 const route = async (prompt: string) => {
@@ -104,12 +93,12 @@ const hookRoute = async (prompt: string) => {
   const [decision, meaning] = await Promise.all([withinBudget(routePrompt(prompt, index, embed, thresholds), PLAY_ROUTE_BUDGET_MS), meaningWithin(prompt, meaningIndex, embed)])
   return decision ? { ...decision, meaning } : { ...wordRoute(askOf(prompt), { useCases: listUseCases() }), meaning, overBudget: true }
 }
-useFreshnessSource(cachedFreshness(repo))
+useFreshnessSource(cachedFreshness(repo, { background: true }))
 
 let server: ReturnType<typeof Bun.serve>
 let inFlight = 0
-const codeNow = () => Math.max(codeStamp(repo), newest(join(repo, 'scripts')))
-const codeAtStart = codeNow()
+const codeNow = async () => Math.max(await codeStampAsync(repo), await newestChange(join(repo, 'scripts')))
+const codeAtStart = await codeNow()
 async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url)
     if (url.pathname === '/health') return Response.json({ ok: true, utterances: index.utterances.length, router: meaningIndex ? { model: meaningIndex.model, items: meaningIndex.items.length, hash: meaningIndex.hash } : null })
@@ -122,6 +111,13 @@ async function handle(request: Request): Promise<Response> {
       const result = await hookAnswer(input, hookRoute)
       const body = contextOutput(result.event, result.text, hookHostOf(['--host', url.searchParams.get('host') ?? '']))
       logTiming({ event: result.event, provider: 'contextLayer', ms: performance.now() - started, chars: result.text.length, outcome: result.outcome })
+      return new Response(body, { headers: { 'content-type': 'application/json' } })
+    }
+    if (url.pathname === '/hooks/PreToolUse/handRolled' && request.method === 'POST') {
+      const started = performance.now()
+      const text = handRolledText(await request.text(), (verdict) => recordHandRolled(verdict))
+      const body = contextOutput('PreToolUse', text, hookHostOf(['--host', url.searchParams.get('host') ?? '']))
+      logTiming({ event: 'PreToolUse', provider: 'handRolled', ms: performance.now() - started, chars: text.length, outcome: text ? 'handRolled' : 'none' })
       return new Response(body, { headers: { 'content-type': 'application/json' } })
     }
     const eventPath = /^\/hooks\/(SessionStart|UserPromptSubmit|PostToolUse|Stop)$/.exec(url.pathname)
@@ -168,8 +164,12 @@ writeService({ pid: process.pid, port: server.port ?? 0, startedAt: new Date().t
 serviceStarted()
 console.log(`${new Date().toISOString()} context layer listening on ${HOST}:${server.port} (pid ${process.pid})`)
 
-setInterval(() => {
-  if (inFlight > 0 || codeNow() <= codeAtStart) return
+let checkingCode = false
+setInterval(async () => {
+  if (checkingCode || inFlight > 0) return
+  checkingCode = true
+  const changed = (await codeNow().finally(() => (checkingCode = false))) > codeAtStart
+  if (!changed || inFlight > 0) return
   console.log(`${new Date().toISOString()} log's code changed since this service started, so it hands over to a fresh one running the new code`)
   void server.stop(true)
   embedder.stop?.()

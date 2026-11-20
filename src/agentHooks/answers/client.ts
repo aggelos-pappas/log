@@ -5,10 +5,10 @@ import type { AgentHook, HookEvent } from '../registry/types'
 import { sessionIdOf } from '../sessionOffsets/index'
 import { hookReply, parseMemory } from '../pageState/index'
 import { readOpenBrowsers } from '../../browser/inspect/index'
-import { diskFree, runsBytes, storageVerdict } from '../../browser/runStore/index'
+import { diskFree, servedRunsBytes, storageVerdict } from '../../browser/runStore/index'
 import { agentNotice, refreshInBackground } from '../../release/check/index'
 import { engineContext, fbkStateRoot } from '../../directApi/engine/index'
-import { codeStampWatcher, localChangesLine, staleServerLine, uncommittedFiles } from '../../mcp/freshness/index'
+import { codeStampWatcher, localChangesLine, staleServerLine, uncommittedFiles, uncommittedFilesAsync } from '../../mcp/freshness/index'
 import type { StampWatcher } from '../../mcp/freshness/index'
 import { kbConfig } from '../../knowledge/base/index'
 import { newQueueEvents, queueContext } from '../../twitter/queue/events/index'
@@ -38,7 +38,7 @@ export function updateNoticeOf(raw: string): string | null {
 }
 
 export function storageAnswer(raw = ''): HookAnswer {
-  const text = [storageVerdict(runsBytes(), diskFree()), updateNoticeOf(raw)].filter(Boolean).join('\n')
+  const text = [storageVerdict(servedRunsBytes(), diskFree()), updateNoticeOf(raw)].filter(Boolean).join('\n')
   return text ? { context: text } : {}
 }
 
@@ -56,28 +56,54 @@ export function useFreshnessSource(source: FreshnessSource | null): void {
 export interface FreshnessDeps {
   stamps?: StampWatcher
   files?: () => string[]
+  filesAsync?: () => Promise<string[]>
   refreshMs?: number
   now?: () => number
+  background?: boolean
 }
 
-export function cachedFreshness(repo: string, deps: FreshnessDeps = {}): FreshnessSource & { close(): void } {
+export function cachedFreshness(repo: string, deps: FreshnessDeps = {}): FreshnessSource & { close(): void; settled(): Promise<void> } {
   const stamps = deps.stamps ?? codeStampWatcher(repo)
   const list = deps.files ?? (() => uncommittedFiles(repo))
+  const listAsync = deps.filesAsync ?? (deps.files ? async () => list() : () => uncommittedFilesAsync(repo))
   const refreshMs = deps.refreshMs ?? 60_000
   const now = deps.now ?? Date.now
   let files = list()
   let filesStamp = stamps.current()
   let filesAt = now()
+  let refreshing: Promise<void> | null = null
+  const due = () => stamps.current() !== filesStamp || now() - filesAt >= refreshMs
+  const refreshInBackground = () => {
+    refreshing ??= (async () => {
+      await stamps.refreshAsync()
+      if (!due()) return
+      const stamp = stamps.current()
+      filesAt = now()
+      files = await listAsync()
+      filesStamp = stamp
+    })()
+      .catch(() => {})
+      .finally(() => {
+        refreshing = null
+      })
+  }
   return {
     stamp: () => stamps.current(),
     changes() {
+      if (deps.background) {
+        refreshInBackground()
+        return files
+      }
       stamps.refresh()
-      if (stamps.current() !== filesStamp || now() - filesAt >= refreshMs) {
+      if (due()) {
         files = list()
         filesStamp = stamps.current()
         filesAt = now()
       }
       return files
+    },
+    settled: async () => {
+      await refreshing
     },
     close: () => stamps.close(),
   }

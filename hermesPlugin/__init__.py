@@ -120,7 +120,7 @@ def context_of(raw):
     return context if isinstance(context, str) else ""
 
 
-def ask_service(event, body):
+def ask_service_path(path, body):
     if os.environ.get("LOG_CONTEXT_SERVICE", "").strip() == "off":
         return None
     try:
@@ -131,7 +131,7 @@ def ask_service(event, body):
     conn.sock = sock
     sock.settimeout(SERVICE_ANSWER_SECONDS)
     try:
-        conn.request("POST", f"/hooks/{event}?host=hermes", body=body.encode("utf-8"), headers={"content-type": "application/json"})
+        conn.request("POST", path, body=body.encode("utf-8"), headers={"content-type": "application/json"})
         response = conn.getresponse()
         raw = response.read().decode("utf-8", errors="replace")
         return context_of(raw) if response.status == 200 else None
@@ -139,6 +139,10 @@ def ask_service(event, body):
         return ""
     finally:
         conn.close()
+
+
+def ask_service(event, body):
+    return ask_service_path(f"/hooks/{event}?host=hermes", body)
 
 
 def ask_log(event, payload):
@@ -186,6 +190,7 @@ class Push:
         self.key = ""
         self.reader = ""
         self.proc = None
+        self.runner = None
         self.lock = threading.Lock()
         self.busy_since = 0.0
         self.held = []
@@ -241,12 +246,16 @@ class Push:
         if not self.ctx or not key or not reader or not hasattr(self.ctx, "inject_message"):
             return
         with self.lock:
-            if key == self.key and reader == self.reader and self.proc and self.proc.poll() is None:
+            if key == self.key and reader == self.reader and self.runner and self.runner.is_alive():
                 return
             self.key, self.reader = key, reader
             self.remember(key, reader)
             self.stop()
-            threading.Thread(target=self.run, args=(key, reader), daemon=True).start()
+            self.runner = threading.Thread(target=self.run, args=(key, reader), daemon=True)
+            self.runner.start()
+
+    def current(self, key, reader):
+        return self.key == key and self.reader == reader and self.runner is threading.current_thread()
 
     def stop(self):
         proc, self.proc = self.proc, None
@@ -258,7 +267,7 @@ class Push:
 
     def run(self, key, reader):
         script = log_root().joinpath(*PUSH_SCRIPT)
-        while self.key == key and self.reader == reader and script.exists():
+        while self.current(key, reader) and script.exists():
             try:
                 proc = subprocess.Popen(
                     [bun_command(), str(script), "--host", "hermes", "--reader", reader],
@@ -274,12 +283,12 @@ class Push:
                 time.sleep(PUSH_RETRY_SECONDS)
                 continue
             with self.lock:
-                if self.key != key or self.reader != reader:
+                if not self.current(key, reader):
                     proc.kill()
                     return
                 self.proc = proc
             for line in proc.stdout:
-                if self.key != key:
+                if not self.current(key, reader):
                     break
                 try:
                     batch = json.loads(line)
@@ -288,7 +297,7 @@ class Push:
                 context = batch.get("context") if isinstance(batch, dict) else None
                 if isinstance(context, str) and context.strip():
                     self.arrived(context)
-            if self.key == key:
+            if self.current(key, reader):
                 time.sleep(PUSH_RETRY_SECONDS)
 
 
@@ -394,7 +403,11 @@ def hand_rolled_advice(tool_name, args, session_id=""):
         return ""
     if not HAND_ROLLED_HINT.search(text):
         return ""
-    return ask_script(HAND_ROLLED_SCRIPT, [], "PreToolUse", {"session_id": session_id or "", "tool_name": tool_name, "tool_input": args, "cwd": os.getcwd()})
+    payload = {"session_id": session_id or "", "tool_name": tool_name, "tool_input": args, "cwd": os.getcwd()}
+    answered = ask_service_path("/hooks/PreToolUse/handRolled?host=hermes", json.dumps({"hook_event_name": "PreToolUse", **payload}))
+    if answered is not None:
+        return answered
+    return ask_script(HAND_ROLLED_SCRIPT, [], "PreToolUse", payload)
 
 
 def transform_tool_result(tool_name="", args=None, result=None, session_id="", **kwargs):

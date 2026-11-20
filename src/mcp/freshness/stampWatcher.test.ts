@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { codeStampWatcher } from "./index.ts";
+import { codeStamp, codeStampAsync, codeStampWatcher } from "./index.ts";
 
 function tree(): string {
   const root = mkdtempSync(join(tmpdir(), "stampWatcher"));
@@ -57,5 +57,30 @@ describe("codeStampWatcher", () => {
     }
     watcher.close();
     expect(seen).toBe(true);
+  });
+});
+
+describe("codeStampWatcher off the event loop", () => {
+  test("refreshAsync walks with the async walker only after a change or the backstop, one walk at a time", async () => {
+    const root = tree();
+    let walks = 0;
+    let fire: (file: string | null) => void = () => {};
+    let clock = 0;
+    const watcher = codeStampWatcher(root, { walk: () => 1, walkAsync: async () => ((walks += 1), 10 + walks), watch: (_dir, onChange) => ((fire = onChange), { close() {} }), now: () => clock, backstopMs: 60_000 });
+    expect(await watcher.refreshAsync()).toBe(false);
+    expect(walks).toBe(0);
+    fire("src/a.ts");
+    const [first, second] = await Promise.all([watcher.refreshAsync(), watcher.refreshAsync()]);
+    expect([first, second]).toEqual([true, true]);
+    expect(walks).toBe(1);
+    expect(watcher.current()).toBe(11);
+    clock = 60_000;
+    expect(await watcher.refreshAsync()).toBe(true);
+    expect(walks).toBe(2);
+  });
+
+  test("codeStampAsync finds the same newest code file as codeStamp", async () => {
+    const root = tree();
+    expect(await codeStampAsync(root)).toBe(codeStamp(root));
   });
 });
