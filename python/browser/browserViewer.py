@@ -125,16 +125,42 @@ class BrowserViewer:
         self.firstWait = 1.5
         self.reaper: asyncio.Task[None] | None = None
         self.tickets: dict[str, float] = {}
+        self.port = 0
+        self.keeper: asyncio.Task[None] | None = None
+        self.keepEvery = 1.0
+        self.relistened = 0
 
     async def start(self) -> None:
-        self.server = await asyncio.start_server(self.request, "127.0.0.1", 0, limit=65536)
-        port = self.server.sockets[0].getsockname()[1]
-        descriptor = {"port": port, "token": self.token, "generation": self.generation, "pid": os.getpid()}
+        await self.listen(0)
+        self.keeper = asyncio.create_task(self.keep())
+
+    async def listen(self, port: int) -> None:
+        self.server = await asyncio.start_server(self.request, "127.0.0.1", port, limit=65536)
+        self.port = self.server.sockets[0].getsockname()[1]
+        descriptor = {"port": self.port, "token": self.token, "generation": self.generation, "pid": os.getpid()}
         with self.path.open("w", encoding="utf8") as target:
             os.chmod(self.path, 0o600)
             target.write(json.dumps(descriptor))
 
+    def listening(self) -> bool:
+        return self.server is not None and all(sock.fileno() != -1 for sock in self.server.sockets)
+
+    async def keep(self) -> None:
+        while True:
+            await asyncio.sleep(self.keepEvery)
+            if self.listening():
+                continue
+            self.server.close()
+            try:
+                await self.listen(self.port)
+            except OSError:
+                await self.listen(0)
+            self.relistened += 1
+
     async def close(self) -> None:
+        if self.keeper is not None:
+            self.keeper.cancel()
+            self.keeper = None
         if self.reaper is not None:
             self.reaper.cancel()
             self.reaper = None

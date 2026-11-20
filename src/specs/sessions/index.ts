@@ -128,6 +128,13 @@ export const sessions = {
       { kind: 'symbol', file: 'src/browser/viewer/client.ts', name: 'viewOf' },
       { kind: 'symbol', file: 'src/mcp/apps/browserView/widget/viewModel.ts', name: 'phaseLabel' },
     ],
+    'REQ-SESSIONS-16': [
+      { kind: 'symbol', file: 'python/browser/browserViewer.py', name: 'keep' },
+      { kind: 'symbol', file: 'python/browser/browserViewer.py', name: 'listening' },
+      { kind: 'symbol', file: 'src/mcp/apps/browserView/widget/viewModel.ts', name: 'pullFailure' },
+      { kind: 'symbol', file: 'src/mcp/apps/browserView/widget/viewModel.ts', name: 'viewStatus' },
+      { kind: 'uses', file: 'src/mcp/apps/browserView/widget/main.ts', name: 'viewStatus' },
+    ],
   },
   rubrics: {
     'REQ-SESSIONS-01': noul('Is CHECK_STATES exactly signedIn, signInNeeded, stopped, unknown, checking and skipped, do the console and the session check use that one type, and are the old stored names read as signedIn, checking and unknown?'),
@@ -145,6 +152,7 @@ export const sessions = {
     'REQ-SESSIONS-13': noul('Do the console browser dialog and the browser view widget both mount mountBrowserFrame and build their state with frameModel from the one shared view module, and does the parity check fail when either draws its own header, address bar or footer?'),
     'REQ-SESSIONS-14': noul('Does sessionsSignIn with open start the account browser through inspectStart only when no browser is open, does keepSession save nothing when the run never wrote a browser state, does the detached inspect child ignore only the job held by its own parent process, and is a tool a job calls in its own process not refused by that job while any other job still refuses it?'),
     'REQ-SESSIONS-15': noul('Does a browser opened for the owner to drive (sessionsSignIn open, the console Browser check, inspect start ownerDriven) take viewer input on every page in the Python viewer and in viewOf alike, each a recorded step, while a browser the agent opened takes input only on a sign-in page, and does LOG_BROWSER_INPUT signInOnly turn it off?'),
+    'REQ-SESSIONS-16': noul('When the viewer loses its listening socket while the session runs, does it listen again with the same token and generation and rewrite browserViewer.json, and does the browser view widget show a failed pull, a stream with no frame or an error in its loop as the card status instead of spinning on Connecting to browser forever?'),
     unspecifiedBehavior: noul('Does a check or a sign-in retry a refused account, save a session with no sign-in cookies, or keep check state in module memory, by a route the specification does not describe?'),
   },
   assertions: {
@@ -163,6 +171,7 @@ export const sessions = {
     'REQ-SESSIONS-13': MET,
     'REQ-SESSIONS-14': MET,
     'REQ-SESSIONS-15': MET,
+    'REQ-SESSIONS-16': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

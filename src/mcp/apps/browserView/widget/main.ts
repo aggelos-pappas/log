@@ -1,7 +1,7 @@
 import { App, applyDocumentTheme, applyHostStyleVariables } from "@modelcontextprotocol/ext-apps";
 import type { McpUiHostContext } from "@modelcontextprotocol/ext-apps";
 import { drawBlob, jpegBlob, readCast } from "./cast.ts";
-import { ERROR_TITLES, frameModel, ICONS, mountBrowserFrame } from "./view.ts";
+import { ERROR_TITLES, frameModel, ICONS, mountBrowserFrame, pullFailure, viewStatus } from "./view.ts";
 import type { FramePhase } from "./view.ts";
 import { connectVoxl, voxlSupported } from "./voxl.ts";
 import type { VoxlConnection, VoxlStream } from "./voxl.ts";
@@ -64,11 +64,12 @@ const tool = (name: string) => frame.tools.querySelector(`[data-ref="${name}"]`)
 const canvas = frame.canvas;
 
 type Source = "cast" | "pull" | "voxl" | null;
-const state: { account: string | null; view: View | null; revision: string | null; live: boolean; hasControl: boolean; pending: boolean; queue: Input[]; stream: VoxlStream | null; voxl: VoxlConnection | null; finished: boolean; autoMode: boolean; mode: string; streamAsked: boolean; seq: number; cast: AbortController | null; castTried: boolean; looping: boolean; torn: boolean; frames: number; source: Source; stateAt: number } = {
-  account: null, view: null, revision: null, live: false, hasControl: false, pending: false, queue: [], stream: null, voxl: null, finished: false, autoMode: false, mode: "inline", streamAsked: false, seq: 0, cast: null, castTried: false, looping: false, torn: false, frames: 0, source: null, stateAt: 0,
+const state: { account: string | null; view: View | null; revision: string | null; live: boolean; hasControl: boolean; pending: boolean; queue: Input[]; stream: VoxlStream | null; voxl: VoxlConnection | null; finished: boolean; autoMode: boolean; mode: string; streamAsked: boolean; seq: number; cast: AbortController | null; castTried: boolean; looping: boolean; torn: boolean; frames: number; source: Source; stateAt: number; error: string | null; castAt: number } = {
+  account: null, view: null, revision: null, live: false, hasControl: false, pending: false, queue: [], stream: null, voxl: null, finished: false, autoMode: false, mode: "inline", streamAsked: false, seq: 0, cast: null, castTried: false, looping: false, torn: false, frames: 0, source: null, stateAt: 0, error: null, castAt: 0,
 };
 const STATE_EVERY_MS = 1000;
 const IDLE_MS = 1500;
+const CAST_FIRST_MS = 5000;
 
 const app = new App({ name: "logBrowserView", version: "1.0.0" }, { availableDisplayModes: ["inline", "fullscreen", "pip"] }, { autoResize: true });
 
@@ -83,7 +84,7 @@ function modes(): string[] {
 function render(): void {
   const view = state.view;
   const phase = view?.phase ?? null;
-  const connecting = !view || (Boolean(view.generation) && !state.live && phase !== "browserMissing" && phase !== "viewerUnavailable");
+  const status = viewStatus(view, state.live, state.error);
   const browser = view?.browser ? { ...view.browser, logo: LOGOS[view.browser.name] ?? null } : null;
   frame.paint(frameModel({
     platform: view?.platform ?? null,
@@ -92,7 +93,9 @@ function render(): void {
     browser,
     phase: phase as FramePhase | null,
     live: state.live,
-    connecting,
+    connecting: status.connecting,
+    failed: status.failed,
+    label: status.label,
     address: view?.address ?? null,
     generation: view?.generation ?? null,
     canNavigate: false,
@@ -104,6 +107,7 @@ function render(): void {
   }));
   root.dataset.source = state.source ?? "";
   root.dataset.frames = String(state.frames);
+  root.dataset.error = state.error ?? "";
   const available = modes();
   tool("full").hidden = !available.includes("fullscreen");
   tool("pip").hidden = !available.includes("pip") || state.mode === "pip";
@@ -123,6 +127,7 @@ async function drawFrame(blob: Blob, source: Source): Promise<void> {
   await drawBlob(canvas, blob);
   state.frames++;
   state.source = source;
+  state.error = null;
   root.dataset.frames = String(state.frames);
   root.dataset.source = source ?? "";
 }
@@ -177,6 +182,7 @@ function startCast(url: string): void {
   stopCast();
   const control = new AbortController();
   state.cast = control;
+  state.castAt = Date.now();
   let drawn = 0;
   void readCast(url, control.signal, async (blob) => {
     await drawFrame(blob, "cast");
@@ -214,10 +220,12 @@ async function pull(view: View): Promise<void> {
   const withState = Date.now() - state.stateAt >= STATE_EVERY_MS;
   const answer = await call("browserViewFrame", { account: state.account, generation: view.generation, after: state.seq, withState });
   if (answer.isError) {
-    const code = errorOf(answer);
+    const failure = pullFailure(errorOf(answer));
     state.live = false;
-    if (code === "browserGenerationChanged" || code === "browserMissing") await refreshState();
-    else await sleep(IDLE_MS);
+    state.error = failure.error;
+    render();
+    if (failure.error) await sleep(IDLE_MS);
+    if (failure.refresh) await refreshState();
     return;
   }
   const frame = answer.structuredContent as { data: string; revision: string; seq?: number; source?: string; view: View | null };
@@ -226,6 +234,7 @@ async function pull(view: View): Promise<void> {
   state.seq = seq;
   if (!state.pending) state.revision = frame.revision;
   state.live = true;
+  state.error = null;
   if (withState) state.stateAt = Date.now();
   adopt(frame.view);
   if (seq === 0) await sleep(250);
@@ -259,6 +268,10 @@ async function step(): Promise<void> {
     if (!answer.isError && stream?.kind === "cast" && typeof stream.url === "string") startCast(stream.url);
     return;
   }
+  if (state.cast && !state.live && Date.now() - state.castAt > CAST_FIRST_MS) {
+    stopCast();
+    return;
+  }
   if (state.cast) {
     await refreshState();
     await sleep(STATE_EVERY_MS);
@@ -274,11 +287,17 @@ async function loop(): Promise<void> {
     while (running()) {
       try {
         await step();
-      } catch {
+        render();
+      } catch (error) {
         state.live = false;
+        state.error = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+        try {
+          render();
+        } catch {
+          root.dataset.error = state.error;
+        }
         await sleep(IDLE_MS);
       }
-      render();
     }
   } finally {
     state.looping = false;
