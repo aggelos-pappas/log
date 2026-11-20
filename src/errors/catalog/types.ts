@@ -334,6 +334,27 @@ export const ERROR_CATALOG = {
     raisedIn: ['cli/twitter/notifications'],
     action: 'Give the flag in one of those forms, or leave it out.'
   },
+  spendOverCap: {
+    layer: 'twitter',
+    meaning: 'log voice train --fresh would cost more than its spend cap: the estimate is printed before any model is asked.',
+    retryable: false,
+    raisedIn: ['cli/voice'],
+    action: 'Ask for fewer moments with --fresh, or raise --spend.'
+  },
+  sklearnMissing: {
+    layer: 'twitter',
+    meaning: 'scikit-learn is not installed in LOG_PYTHON and uv could not run the trainer, so log voice train cannot fit the classifier head.',
+    retryable: false,
+    raisedIn: ['cli/voice'],
+    action: 'Install it into LOG_PYTHON (uv pip install --python <LOG_PYTHON> "scikit-learn>=1.5,<2") and run log voice train again.'
+  },
+  llmNotConfigured: {
+    layer: 'twitter',
+    meaning: 'Fresh drafts need an OpenAI-compatible endpoint: OPENAI_API_KEY, OPENAI_BASE_URL and OPENAI_ANALYSIS_MODEL in .env.local.',
+    retryable: false,
+    raisedIn: ['cli/voice'],
+    action: 'Set the three keys, or train without --fresh.'
+  },
   voiceGuideMissing: {
     layer: 'twitter',
     meaning: "The owner's writing guide (GUIDES/OWNER_WRITING_STYLE.md) isn't where log voice looks, so a draft can't be gated against it.",

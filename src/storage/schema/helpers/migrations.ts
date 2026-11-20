@@ -118,6 +118,11 @@ export const PIPELINE_TABLES: readonly string[] = [
   'CREATE TABLE IF NOT EXISTS pipelineHeads (id INTEGER PRIMARY KEY AUTOINCREMENT, model TEXT NOT NULL, head TEXT NOT NULL, trainedAt TEXT NOT NULL)',
 ]
 
+export const CONVENTION_CORPUS_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS conventionCorpus (id TEXT PRIMARY KEY, side TEXT NOT NULL, family TEXT NOT NULL, model TEXT, source TEXT NOT NULL, chatKey TEXT NOT NULL, momentKey TEXT, text TEXT NOT NULL, at TEXT, addedAt TEXT NOT NULL) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS conventionCorpusBySide ON conventionCorpus (side, source)',
+]
+
 export const MIN_READER_VERSION = 1
 
 export const MIGRATIONS: readonly Migration[] = [
@@ -339,6 +344,14 @@ export const MIGRATIONS: readonly Migration[] = [
     creates: ['chatPipeline', 'pipelineHeads'],
     apply(handle) {
       for (const statement of PIPELINE_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 25,
+    name: 'conventionCorpus',
+    creates: ['conventionCorpus', 'conventionCorpusBySide'],
+    apply(handle) {
+      for (const statement of CONVENTION_CORPUS_TABLES) handle.exec(statement)
     },
   },
 ]

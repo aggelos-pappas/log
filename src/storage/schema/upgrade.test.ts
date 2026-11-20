@@ -43,7 +43,7 @@ describe('a database made before a table was added catches up', () => {
     old.exec('DROP TABLE IF EXISTS typing')
     expect(() => old.prepare('SELECT userId FROM typing').all()).toThrow('no such table: typing')
     const now = new Date('2026-11-20T00:00:00Z')
-    expect(migrate(old, now)).toEqual([{ version: 22, name: 'typing', appliedAt: now.toISOString() }, { version: 23, name: 'engineStores', appliedAt: now.toISOString() }, { version: 24, name: 'pipeline', appliedAt: now.toISOString() }])
+    expect(migrate(old, now)).toEqual([{ version: 22, name: 'typing', appliedAt: now.toISOString() }, { version: 23, name: 'engineStores', appliedAt: now.toISOString() }, { version: 24, name: 'pipeline', appliedAt: now.toISOString() }, { version: 25, name: 'conventionCorpus', appliedAt: now.toISOString() }])
     expect(schemaVersionOf(old)).toBe(SCHEMA_VERSION)
     expect(missingObjectsOf(old, ['typing'])).toEqual([])
     old.close()

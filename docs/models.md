@@ -6,11 +6,11 @@ log uses six models. Two run on your own machine, with no key and no internet on
 
 | Model | Runs | What it does in log | Size | Key |
 |---|---|---|---|---|
-| [all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) (8-bit) | your machine | turns text into meaning vectors: `log search`, your voice index, the knowledge base, matching what you typed to a play | 23 MB | none |
+| [all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) (8-bit) | your machine | turns text into meaning vectors: `log search`, your voice index, the knowledge base, matching what you typed to a play, and (with char n-grams) the voice gate's AI-conventions detector trained on you | 23 MB | none |
 | [roberta-base-go_emotions](https://huggingface.co/SamLowe/roberta-base-go_emotions-onnx) (8-bit) | your machine | the top three emotions of each new message someone sends you, a feature of who they are and where they are ([pipeline labels](./pipelineLabels.md)) | 125 MB | none |
 | [LFM2.5-VL-450M](https://huggingface.co/onnx-community/LFM2.5-VL-450M-ONNX) (4-bit) | your machine | describes every picture, gif and video frame someone sends you, as text | 352 MB | none |
 | SubQ `subq-snap-1.1` | hosted | the voice gate (does a draft sound like you), reading an unknown page state, briefs, meme taste | n/a | `SUBQ_API_KEY` |
-| Jina `jina-embeddings-v5-omni-small` and `jina-reranker-v3.5` | hosted | the AI tells index, and ranking a chat's history for the voice gate | n/a | `JINA_API_KEY` |
+| Jina `jina-embeddings-v5-omni-small` and `jina-reranker-v3.5` | hosted | ranking a chat's history for the voice gate, and the old AI tells index (read only with `LOG_AI_TELLS=jina`) | n/a | `JINA_API_KEY` |
 | AssemblyAI | hosted | what was said in a voice note or a video | n/a | `ASSEMBLYAI_API_KEY` |
 | Inworld `inworld-tts-2` (or Fish Audio `s2.1-pro`) | hosted | speaks a voice note in your cloned voice, only when you ask | n/a | `INWORLD_API_KEY` or `FISH_API_KEY` |
 
@@ -50,7 +50,7 @@ So, at least:
 - **About 2 GB of free memory** for the picture model while it works. It stops itself, loudly, past 4 GB (`MEMORY_CEILING_MB`), and only one describer runs per machine.
 - **About 400 MB of disk** for the two models. They download once, the first time they are needed, into `node_modules/@huggingface/transformers/.cache`.
 - **ffmpeg and ffprobe** on your PATH, for videos and voice notes (`LOG_FFMPEG` and `LOG_FFPROBE` point elsewhere).
-- **Bun and Python 3.12.** The installer sets both up ([install](install.md)).
+- **Bun and Python 3.12.** The installer sets both up ([install](install.md)). `log voice train` also needs scikit-learn in that Python (`uv pip install --python <LOG_PYTHON> "scikit-learn>=1.5,<2"`); without it the trainer runs through `uv run --with scikit-learn`.
 
 A picture takes seconds to describe, so pictures queue (at most 20) and are described one at a time. Until one is described it shows as `[picture … not described yet]`, so nobody answers it blind.
 
@@ -60,7 +60,7 @@ Every index is built from what is already in `log.db` or what log has saved, and
 
 1. **`log search index`** reads every conversation once through each platform's own session and builds two indexes in `~/.logCli/search`: one by keyword (BM25) and one by meaning (MiniLM vectors, searched with HNSW). After that, each new read adds only what changed. `log search "<query>"` uses both and merges the results.
 2. **`log voice index`** builds your voice from the conversations step 1 saved: each of your replies paired with what was said just before it, embedded with MiniLM, plus a profile per chat, person and platform. It reads nothing new.
-3. **`log voice aiIndex`** embeds every phrase in the AI tells lists with Jina, and measures your own replies against them for your p50 and p99 closeness. The voice gate builds it itself when it is missing or older than step 2.
+3. **`log voice train`** builds the voice gate's AI-conventions detector: your own messages in `log.db` against the drafts agents wrote for your chats (read from the agent's sessions and from every draft the gate grades, kept in `log.db`), plus, with `--fresh <n>`, drafts from several frontier models for your real past moments, each beside what you really said (it prints the cost first and stops at `--spend`, $3 by default). It keeps the words and habits models use and you don't, each beside your nearest real phrasing, and a small classifier head (char n-grams plus MiniLM, fitted with scikit-learn in `LOG_PYTHON`, applied in TypeScript), with one line per message length so 95% of your own held-out messages pass. The voice gate starts it in the background when it is missing or older than step 2. `log voice aiIndex` builds the old Jina phrase index, read only with `LOG_AI_TELLS=jina`.
 4. **`log kb sync`** (optional) puts the rules, skills, docs and agent memory into the knowledge base on Redis, searched the same two ways.
 
 Pictures and videos are not indexed by a command. The describer (`log media describer`, started by the inbox hook) describes each one as it arrives, and its text is searchable like any message. `log media status` shows the queue.

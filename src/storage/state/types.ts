@@ -13,6 +13,8 @@ export type StateScope =
   | 'voicePasses'
   | 'voiceVerdicts'
   | 'voiceCalibration'
+  | 'voiceConventions'
+  | 'voiceConventionsBuilding'
   | 'consoleAccountCheck'
   | 'browserCheckProof'
   | 'signIn'

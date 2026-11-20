@@ -40,8 +40,9 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | Tool | What it does | Usage |
 |---|---|---|
 | `voice` | Gate a draft against the owner's own writing guide with SubQ before… | `log voice --to <handle> [--text "<draft>"] [--options "<option>" ...] [--context "<what they said>"] [--with <person or chat>] [--spoken] [--json]` |
-| `voiceAiIndex` | Build the AI tells index with Jina and measure the owner's own… | `log voice aiIndex [--json]   (builds the AI tells index from vendor/aiTells with Jina, and his own replies' p50 and p99 closeness to it; rule 137)` |
+| `voiceAiIndex` | Build the old Jina AI tells index | `log voice aiIndex [--json]   (old Jina index, LOG_AI_TELLS=jina)` |
 | `voiceIndex` | Build the owner's voice per chat and person from the conversations… | `log voice index [--json]   (builds his voice from the saved conversations: each reply paired with what came before, and a profile per chat, person and platform)` |
+| `voiceTrain` | Retrain the AI-conventions check on the owner's messages | `log voice train [--fresh <n>] [--spend <usd>] [--drafts <file>] [--json]` |
 | `voiceCalibrate` | Set the voice score's pass threshold from the owner's own held-out… | `log voice calibrate [--count <n>] [--json]   (sets the score's pass threshold so 95% of his held-out replies pass, stored dated)` |
 
 ## The rules these tools fall under

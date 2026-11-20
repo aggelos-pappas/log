@@ -226,7 +226,7 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 306 command tools + saved flows"]
+  mcp["MCP server log: 307 command tools + saved flows"]
   bin["bin/log.ts"]
   runCli["runCli: 141 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
@@ -345,7 +345,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log twitter dms`](#log-twitter-dms) | Read an X account's direct messages and who is waiting on a reply, on the direct-API engine, sending nothing | `twitter` first | `--account <accountName>` `[--limit <integer 1..200>]` `[--waiting]` `[--with <handle>]` `[--conversation <id>]` `[--full]` `[--force]` `[--json]` | direct API only | none | `twitterDms` | PreToolUse, PostToolUse · PostToolUse | no | 73, 89, 94, 109, 105, 138, 30, 38, 39, 40, 41 |
 | [`log twitter chat`](#log-twitter-chat) | X Chat's PIN for the account's encrypted DMs: asked in a Clack prompt, kept in Twenty, never printed | `twitter` first | `--account <accountName>` `[--show]` `[--seconds <number 5..>]` `[--inbox]` `[--json]` | direct API only | none | terminal only: asks the owner for the X Chat PIN in a Clack prompt (masked). The owner runs `log twitter chat pin --account <a>` in a terminal. | PreToolUse, PostToolUse · n/a | no | 35, 26, 73, 89, 94, 105, 30, 38, 39, 40, 41 |
 | [`log twitter cookies`](#log-twitter-cookies) | Add or refresh an X account in Twenty: its session cookies from a masked prompt, checked against X, and its copy style | `twitter` first | `--account <handle>` `[--style <copyStyle>]` `[--name <label>]` | direct API only | none | terminal only: asks for an X account's session cookies (auth_token, ct0 and twid) in a Clack prompt (masked) and checks them with X before saving. Run `log twitter cookies save --account <handle>` in a terminal. | PreToolUse, PostToolUse · n/a | no | 35, 73, 105, 30, 38, 39, 40, 41 |
-| [`log voice`](#log-voice) | Gate a draft against the owner's own writing guide with SubQ before anything is sent as the owner, sending nothing | any (none) | `--to <handle>` `[--text <text>]` `[--options <value,…>]` `[--context <text>]` `[--with <person or chat>]` `[--spoken]` `[--json]` `[--count <integer 5..200>]` | none | none | `voice`, `voiceAiIndex`, `voiceIndex`, `voiceCalibrate` | PreToolUse, PostToolUse · PostToolUse | no | 30, 39, 41, 109, 137, 142, 30, 38, 39, 40, 41 |
+| [`log voice`](#log-voice) | Gate a draft against the owner's own writing guide with SubQ before anything is sent as the owner, sending nothing | any (none) | `--to <handle>` `[--text <text>]` `[--options <value,…>]` `[--context <text>]` `[--with <person or chat>]` `[--spoken]` `[--json]` `[--fresh <integer 1..1000>]` `[--spend <number>]` `[--drafts <file>]` `[--count <integer 5..200>]` | none | none | `voice`, `voiceAiIndex`, `voiceIndex`, `voiceTrain`, `voiceCalibrate` | PreToolUse, PostToolUse · PostToolUse | no | 30, 39, 41, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log search`](#log-search) | Hybrid search across every conversation (BM25 keyword + vector meaning, fused with RRF), and building its indexes | any (none) | `[--limit <integer 1..100>]` `[--fusion <rrf|bayes>]` `[--platform <p>]` `[--account <a>]` `[--with <handle>]` `[--after <date>]` `[--kind <k>]` `[--server <s>]` `[--channel <c>]` `[--full]` `[--json]` `[--saved]` `[--rebuild]` `[--rounds <integer 1..1000>]` | none | none | `search`, `searchIndex`, `searchBench` | PreToolUse, PostToolUse · PostToolUse | no | 26, 89, 105, 30, 38, 39, 40, 41 |
 | [`log kb`](#log-kb) | The knowledge base: search it, sync every source into Twenty and Redis, remember a note, show an article | any (none) | `[--kind <rule|section|skill|doc|infra|memory|pageState|account|note>]` `[--limit <integer 1..50>]` `[--json]` `[--noAccounts]` `[--title <t>]` `[--tags <a,b,…>]` | none | none | `kbSearch`, `kbSync`, `kbRemember`, `kbShow` | PreToolUse, PostToolUse · PostToolUse | no | 26, 30, 30, 38, 39, 40, 41 |
 | [`log runtime`](#log-runtime) | Pair this workspace with hosted log and keep its outbound bridge open, so the team's console and AI clients run their requests here | any (none) | `[--origin <https://app.log.listeningkit.com>]` `[--json]` `[--token <pairing token>]` | none | none | terminal only: pairs this workspace with hosted log and keeps its outbound bridge open as a long-lived service. Run `log runtime init --origin <url>`, `log runtime pair --token <t>` and `log runtime connect` in the workspace's terminal or its service manager. | PreToolUse, PostToolUse · n/a | no | 26, 73, 171, 172, 30, 38, 39, 40, 41 |
@@ -1806,15 +1806,16 @@ Saves an X account's session to Twenty from a masked Clack prompt: its auth_toke
 
 #### log voice
 
-Gate a draft against the owner's own writing guide with SubQ before anything is sent as the owner, sending nothing MCP tools: `voice`, `voiceAiIndex`, `voiceIndex`, `voiceCalibrate`, one per form, with named fields.
+Gate a draft against the owner's own writing guide with SubQ before anything is sent as the owner, sending nothing MCP tools: `voice`, `voiceAiIndex`, `voiceIndex`, `voiceTrain`, `voiceCalibrate`, one per form, with named fields.
 
 ```text
 log voice --to <handle> [--text "<draft>"] [--options "<option>" ...] [--context "<what they said>"] [--with <person or chat>] [--spoken] [--json]
 log voice calibrate [--count <n>] [--json]   (sets the score's pass threshold so 95% of his held-out replies pass, stored dated)
-log voice aiIndex [--json]   (builds the AI tells index from vendor/aiTells with Jina, and his own replies' p50 and p99 closeness to it; rule 137)
+log voice train [--fresh <n>] [--spend <usd>] [--drafts <file>] [--json]
+log voice aiIndex [--json]   (old Jina index, LOG_AI_TELLS=jina)
 log voice index [--json]   (builds his voice from the saved conversations: each reply paired with what came before, and a profile per chat, person and platform)
-Gates a draft before anything is sent as the owner, sending nothing: one score over his phrasing, his nearest real reply, distance from AI phrases, SubQ's voice reading and whether it answers them, against a calibrated threshold; a never-said phrase, watermark characters or an ask in a first message fail it outright.
---with names the chat or person as the owner says it. Without --text it returns the grounding pack: his real replies to messages like this (this chat first), how he talks to this person, how they talk, his facts there, and the ask to write 3-5 options. --options grades them in one call, ranked, with the fix for the best when none passes.
+Gates a draft before anything is sent as the owner, sending nothing: one score over his phrasing, his nearest real reply, AI conventions, SubQ's voice and whether it answers them, against a calibrated threshold; a never-said phrase, watermark characters or an ask in a first message fail it outright.
+--with names the chat or person. Without --text it returns the grounding pack (his real replies, this chat first; how he and they talk; his facts; the ask for 3-5 options). --options grades them in one call, ranked, with the fix for the best when none passes.
 --spoken gates a voice note: its length never counts, and it must build on the chat, not repeat it (rule 137).
 Exit 0 when it passes, 1 when it doesn't.
 ```
