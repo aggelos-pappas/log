@@ -95,7 +95,8 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'python/checks/slackTransport.py': { writes: 1, kind: 'repo' },
   'python/checks/twikitTransport.py': { writes: 2, kind: 'repo' },
   'python/device/deviceProfile.py': { writes: 1, kind: 'capture' },
-  'python/discordApi/browserIdentity.py': { writes: 1, kind: 'session' },
+  'python/discordApi/browserIdentity.py': { writes: 2, kind: 'session' },
+  'python/discordApi/browserRest.py': { writes: 1, kind: 'media' },
   'python/discordApi/engine.py': { writes: 1, kind: 'media' },
   'python/human/recordMouse.py': { writes: 2, kind: 'dataset' },
   'python/instagramApi/engine.py': { writes: 1, kind: 'media' },
@@ -115,6 +116,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'python/twitterApi/notifications.py': { writes: 1, kind: 'fallback' },
   'hermesPlugin/__init__.py': { writes: 1, kind: 'fallback' },
   'scripts/browserView/hostBench.py': { writes: 3, kind: 'capture' },
+  'scripts/browserView/openBench.py': { writes: 1, kind: 'capture' },
 }
 
 export const TS_WRITE = /appendFileSync\(|writeFileSync\(|Bun\.write\(|\bwriteFile\(|createWriteStream\(|copyFileSync\(|cpSync\(/g
