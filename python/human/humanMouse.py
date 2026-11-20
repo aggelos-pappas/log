@@ -66,37 +66,181 @@ class Gesture:
         self.note = note or {}
 
 
-def duration_for(rng: random.Random, chord: float) -> float:
-    if chord >= 300:
-        return rng.uniform(0.40, 0.52)
-    if chord >= 120:
-        return rng.uniform(0.42, 0.70)
-    return rng.uniform(0.45, 0.90)
+FITTS_A = 0.23
+FITTS_B = 0.113
+DEFAULT_WIDTH = 40.0
+MIN_INTERVAL = 0.004
+MAX_INTERVAL = 0.05
+INTERVAL_SHAPE = 4.0
+TREMOR_PX = (0.25, 0.9)
+TREMOR_HZ = (8.0, 12.0)
+TREMOR_FADE_PX_S = 300.0
+DRIFT_THETA = 6.0
+DRIFT_STEP = 0.01
+MAX_CORRECTIONS = 2
 
 
-def reach(rng: random.Random, sx: float, sy: float, tx: float, ty: float, overshoot: float | None = None) -> list[Gesture]:
+def fitts_width(box: dict[str, float] | None, sx: float, sy: float, tx: float, ty: float) -> float | None:
+    if not box:
+        return None
+    chord = math.hypot(tx - sx, ty - sy)
+    w, h = float(box.get("width") or 0), float(box.get("height") or 0)
+    if w <= 0 or h <= 0:
+        return None
+    if chord < 1e-6:
+        return min(w, h)
+    ux, uy = abs(tx - sx) / chord, abs(ty - sy) / chord
+    return min(w / ux if ux > 1e-6 else math.inf, h / uy if uy > 1e-6 else math.inf)
+
+
+def duration_for(rng: random.Random, chord: float, width: float | None = None) -> float:
+    w = max(4.0, width if width and width > 0 else DEFAULT_WIDTH)
+    return (FITTS_A + FITTS_B * math.log2(max(chord, 0.0) / w + 1)) * rng.uniform(0.9, 1.1)
+
+
+def sample_interval(rng: random.Random, mean: float | None = None) -> float:
+    m = mean if mean is not None else 1 / EMIT_HZ
+    return max(MIN_INTERVAL, min(MAX_INTERVAL, rng.gammavariate(INTERVAL_SHAPE, m / INTERVAL_SHAPE)))
+
+
+def lognormal_progress(rng: random.Random) -> Callable[[float], float]:
+    sigma = rng.uniform(0.25, 0.4)
+    mode = rng.uniform(0.32, 0.48)
+    mu = math.log(mode) + sigma * sigma
+
+    def cdf(x: float) -> float:
+        return 0.5 * (1 + math.erf((math.log(x) - mu) / (sigma * math.sqrt(2)))) if x > 0 else 0.0
+
+    end = cdf(1.0)
+    return lambda u: 1.0 if u >= 1 else min(1.0, cdf(u) / end)
+
+
+def tremor(rng: random.Random) -> Callable[[float, float], tuple[float, float]]:
+    amp = rng.uniform(*TREMOR_PX)
+    hz = rng.uniform(*TREMOR_HZ)
+    hz2 = hz * rng.uniform(0.95, 1.05)
+    tilt = rng.uniform(0, 2 * math.pi)
+    ph1, ph2 = rng.uniform(0, 2 * math.pi), rng.uniform(0, 2 * math.pi)
+    ax, ay = amp * abs(math.cos(tilt)), amp * abs(math.sin(tilt))
+
+    def at(t: float, speed: float) -> tuple[float, float]:
+        quiet = 1 / (1 + (speed / TREMOR_FADE_PX_S) ** 2)
+        return ax * quiet * math.sin(2 * math.pi * hz * t + ph1), ay * quiet * math.sin(2 * math.pi * hz2 * t + ph2)
+
+    return at
+
+
+def drift(rng: random.Random, seconds: float, spread: float) -> Callable[[float], float]:
+    steps = int(seconds / DRIFT_STEP) + 2
+    noise = spread * math.sqrt(2 * DRIFT_THETA)
+    values, x = [0.0], 0.0
+    for _ in range(steps):
+        x += -DRIFT_THETA * x * DRIFT_STEP + noise * math.sqrt(DRIFT_STEP) * rng.gauss(0, 1)
+        values.append(x)
+
+    def at(t: float) -> float:
+        k = max(0.0, t) / DRIFT_STEP
+        i = min(int(k), len(values) - 2)
+        f = min(1.0, k - i)
+        return values[i] + (values[i + 1] - values[i]) * f
+
+    return at
+
+
+def speed_of(path: Callable[[float], tuple[float, float]], t: float, seconds: float) -> float:
+    dt = 0.004
+    a, b = max(0.0, t - dt), min(seconds, t + dt)
+    if b <= a:
+        return 0.0
+    (x0, y0), (x1, y1) = path(a), path(b)
+    return math.hypot(x1 - x0, y1 - y0) / (b - a)
+
+
+def shaken(path: Callable[[float], tuple[float, float]], seconds: float, end: tuple[float, float], shake: Callable[[float, float], tuple[float, float]], offset: float) -> Callable[[float], tuple[float, float]]:
+    def at(t: float) -> tuple[float, float]:
+        if t >= seconds:
+            return end
+        x, y = path(t)
+        dx, dy = shake(offset + t, speed_of(path, t, seconds))
+        return x + dx, y + dy
+
+    return at
+
+
+def corrections_for(rng: random.Random, chord: float, width: float | None) -> int:
+    if chord < 30:
+        return 0
+    hard = math.log2(chord / max(4.0, width or DEFAULT_WIDTH) + 1)
+    none = 0.6 if hard < 2 else 0.4 if hard < 3.5 else 0.25
+    two = 0.05 if hard < 2 else 0.15 if hard < 3.5 else 0.25
+    r = rng.random()
+    return 0 if r < none else 2 if r > 1 - two else 1
+
+
+def reach(rng: random.Random, sx: float, sy: float, tx: float, ty: float, overshoot: float | None = None, width: float | None = None) -> list[Gesture]:
     chord = math.hypot(tx - sx, ty - sy)
     if chord < 1.5:
         return []
-    duration = duration_for(rng, chord)
-    over = overshoot if overshoot is not None else (rng.uniform(10, 60) if chord > 150 and rng.random() < 0.5 else 0.0)
+    total = duration_for(rng, chord, width)
+    over = overshoot if overshoot is not None else (rng.uniform(10, 60) if chord > 150 and rng.random() < 0.35 else 0.0)
+    count = corrections_for(rng, chord, width)
+    if over:
+        count = max(1, count)
+    count = min(MAX_CORRECTIONS, count)
     ux, uy = (tx - sx) / chord, (ty - sy) / chord
     nx, ny = -uy, ux
     lateral = rng.uniform(0.08, 0.25) * chord * rng.choice((1, -1))
-    ex, ey = tx + ux * over, ty + uy * over
+    if over:
+        along = chord + over
+    elif count:
+        along = chord * rng.uniform(0.90, 0.95)
+    else:
+        along = chord
+    miss = max(-0.03 * chord, min(0.03 * chord, rng.gauss(0, 0.012 * chord))) if count else 0.0
+    ex, ey = (sx + ux * along + nx * miss, sy + uy * along + ny * miss) if count else (tx, ty)
+    main = total * rng.uniform(0.72, 0.85) if count else total
     p0, p3 = (sx, sy), (ex, ey)
     p1 = (sx + ux * chord * 0.30 + nx * lateral, sy + uy * chord * 0.30 + ny * lateral)
     p2 = (ex - ux * chord * 0.25 + nx * lateral * 0.4, ey - uy * chord * 0.25 + ny * lateral * 0.4)
-    warp = rng.uniform(0.50, 0.70)
-    gestures = [Gesture("reach", duration, lambda t: bezier(p0, p1, p2, p3, min_jerk(min(1.0, t / duration) ** warp)),
-                        {"from": [round(sx), round(sy)], "to": [round(tx), round(ty)], "overshootPx": round(over), "curvePx": round(abs(lateral))})]
-    if over:
-        ret = rng.uniform(0.15, 0.35)
-        wob = rng.uniform(-5, 5)
-        q0, q3 = (ex, ey), (tx, ty)
-        q1 = (ex + (tx - ex) * 0.3 + nx * wob, ey + (ty - ey) * 0.3 + ny * wob)
-        q2 = (tx - (tx - ex) * 0.2, ty - (ty - ey) * 0.2)
-        gestures.append(Gesture("return", ret, lambda t: bezier(q0, q1, q2, q3, 1 - (1 - min(1.0, t / ret)) ** 3)))
+    progress = lognormal_progress(rng)
+    wander = drift(rng, main, min(4.0, 0.012 * chord))
+    shake = tremor(rng)
+
+    def stroke(t: float) -> tuple[float, float]:
+        u = min(1.0, max(0.0, t / main))
+        p = progress(u)
+        x, y = bezier(p0, p1, p2, p3, p)
+        side = wander(t) * math.sin(math.pi * p)
+        return x + nx * side, y + ny * side
+
+    gestures = [Gesture("reach", main, shaken(stroke, main, p3, shake, 0.0),
+                        {"from": [round(sx), round(sy)], "to": [round(tx), round(ty)], "overshootPx": round(over), "curvePx": round(abs(lateral)),
+                         "corrections": count, "fittsMs": round(total * 1000)})]
+    budget, clock, here = max(0.0, total - main), main, (ex, ey)
+    for i in range(count):
+        last = i == count - 1
+        gx, gy = tx - here[0], ty - here[1]
+        gap = math.hypot(gx, gy)
+        if last:
+            goal = (tx, ty)
+        else:
+            cover = rng.uniform(0.6, 0.85)
+            jitter = rng.uniform(-0.1, 0.1) * gap
+            goal = (here[0] + gx * cover + nx * jitter, here[1] + gy * cover + ny * jitter)
+        share = budget * (rng.uniform(0.5, 0.65) if not last else 1.0)
+        seconds = max(0.09, share) * rng.uniform(1.0, 1.15)
+        budget = max(0.0, budget - share)
+        wob = rng.uniform(-0.15, 0.15) * gap
+        q0, q3 = here, goal
+        q1 = (q0[0] + (q3[0] - q0[0]) * 0.3 + nx * wob, q0[1] + (q3[1] - q0[1]) * 0.3 + ny * wob)
+        q2 = (q3[0] - (q3[0] - q0[0]) * 0.2, q3[1] - (q3[1] - q0[1]) * 0.2)
+
+        def fix(t: float, q0=q0, q1=q1, q2=q2, q3=q3, seconds=seconds) -> tuple[float, float]:
+            return bezier(q0, q1, q2, q3, min_jerk(min(1.0, max(0.0, t / seconds))))
+
+        gestures.append(Gesture("correction", seconds, shaken(fix, seconds, q3, shake, clock), {"gapPx": round(gap, 1), "step": i + 1}))
+        clock += seconds
+        here = goal
     return gestures
 
 
@@ -206,7 +350,7 @@ class MouseBase:
         self.samples.append([round(time.monotonic() - self.t0, 4), round(x, 1), round(y, 1), self.button, 0])
 
     def _record(self, gesture: Gesture, kind: str, started: float, target: str = "") -> None:
-        if gesture.kind == "return":
+        if gesture.kind in ("return", "correction"):
             return
         self.legs.append({"kind": kind, **({"target": target} if target else {}), **gesture.note, "ms": round((time.monotonic() - started) * 1000)})
 
@@ -261,17 +405,17 @@ class HumanMouse(MouseBase):
                 return False
             if t >= gesture.seconds:
                 break
-            await asyncio.sleep(1 / EMIT_HZ)
+            await asyncio.sleep(sample_interval(self.rng))
         self._record(gesture, kind, started, target)
         return not self._stop
 
-    async def glide(self, tx: float, ty: float, kind: str, target: str = "", overshoot: float | None = None) -> bool:
+    async def glide(self, tx: float, ty: float, kind: str, target: str = "", overshoot: float | None = None, box: dict[str, float] | None = None) -> bool:
         tx, ty = self.clamp(tx, ty)
         if self.x is None:
             return await self._emit(tx, ty)
         if myuriInput.available():
             return await self._play(tx, ty, kind, target)
-        for g in reach(self.rng, self.x, self.y, tx, ty, overshoot):
+        for g in reach(self.rng, self.x, self.y, tx, ty, overshoot, fitts_width(box, self.x, self.y, tx, ty)):
             if not await self._run(g, kind, target):
                 return False
         return True
@@ -343,7 +487,7 @@ class HumanMouse(MouseBase):
                         self.fresh_page = False
                         self.last_target = f"{target['kind']}:{target['label']}:{round(target['x'])}"
                         tx, ty = self.inside(target, 0.25, 0.75, 0.3, 0.7)
-                        if await self.glide(tx, ty, "flick", f"{target['kind']} \"{target['label']}\""):
+                        if await self.glide(tx, ty, "flick", f"{target['kind']} \"{target['label']}\"", box=target):
                             self.idle_moves += 1
                     await self.wander(look_for(self.rng))
                 rest_until = time.monotonic() + rest_for(self.rng)
@@ -377,7 +521,7 @@ class HumanMouse(MouseBase):
         if circle is True or (circle is None and self.rng.random() < 0.2):
             await self.circle(box)
         tx, ty = self.inside(box, 0.3, 0.7, 0.35, 0.65)
-        await self.glide(tx, ty, "approach")
+        await self.glide(tx, ty, "approach", box=box)
         await asyncio.sleep(self.rng.uniform(0.05, 0.15))
         return tx, ty
 
@@ -395,7 +539,7 @@ class HumanMouse(MouseBase):
             box = await locator.bounding_box() or box
             shown = await locator.evaluate(VISIBLE_POINT_JS)
             tx, ty = (shown["x"], shown["y"]) if shown else self.inside(box, 0.3, 0.7, 0.35, 0.65)
-            await self.glide(tx, ty, "correct")
+            await self.glide(tx, ty, "correct", box=box)
             await asyncio.sleep(self.rng.uniform(0.08, 0.2))
         hit = await self.page.evaluate(HIT_JS, [self.x or 0, self.y or 0])
         raise RuntimeError(f"the element kept moving under the cursor: the point is on {hit.get('hit') or 'nothing'}, not the target; nothing pressed")
@@ -444,17 +588,17 @@ class SyncHumanMouse(MouseBase):
                 return False
             if t >= gesture.seconds:
                 break
-            time.sleep(1 / EMIT_HZ)
+            time.sleep(sample_interval(self.rng))
         self._record(gesture, kind, started, target)
         return not self._stop
 
-    def glide(self, tx: float, ty: float, kind: str, target: str = "", overshoot: float | None = None) -> bool:
+    def glide(self, tx: float, ty: float, kind: str, target: str = "", overshoot: float | None = None, box: dict[str, float] | None = None) -> bool:
         tx, ty = self.clamp(tx, ty)
         if self.x is None:
             return self._emit(tx, ty)
         if myuriInput.available():
             return self._play(tx, ty, kind, target)
-        for g in reach(self.rng, self.x, self.y, tx, ty, overshoot):
+        for g in reach(self.rng, self.x, self.y, tx, ty, overshoot, fitts_width(box, self.x, self.y, tx, ty)):
             if not self._run(g, kind, target):
                 return False
         return True
@@ -502,7 +646,7 @@ class SyncHumanMouse(MouseBase):
                 self.fresh_page = False
                 self.last_target = f"{target['kind']}:{target['label']}:{round(target['x'])}"
                 tx, ty = self.inside(target, 0.25, 0.75, 0.3, 0.7)
-                if self.glide(tx, ty, "flick", f"{target['kind']} \"{target['label']}\""):
+                if self.glide(tx, ty, "flick", f"{target['kind']} \"{target['label']}\"", box=target):
                     self.idle_moves += 1
             self.wander(self.rng.uniform(low, high))
             time.sleep(min(rest_for(self.rng), 1.0))
@@ -531,7 +675,7 @@ class SyncHumanMouse(MouseBase):
         if circle is True or (circle is None and self.rng.random() < 0.2):
             self.circle(box)
         tx, ty = self.inside(box, 0.3, 0.7, 0.35, 0.65)
-        self.glide(tx, ty, "approach")
+        self.glide(tx, ty, "approach", box=box)
         time.sleep(self.rng.uniform(0.05, 0.15))
         return tx, ty
 
@@ -549,7 +693,7 @@ class SyncHumanMouse(MouseBase):
             box = locator.bounding_box() or box
             shown = locator.evaluate(VISIBLE_POINT_JS)
             tx, ty = (shown["x"], shown["y"]) if shown else self.inside(box, 0.3, 0.7, 0.35, 0.65)
-            self.glide(tx, ty, "correct")
+            self.glide(tx, ty, "correct", box=box)
             time.sleep(self.rng.uniform(0.08, 0.2))
         hit = self.page.evaluate(HIT_JS, [self.x or 0, self.y or 0])
         raise RuntimeError(f"the element kept moving under the cursor: the point is on {hit.get('hit') or 'nothing'}, not the target; nothing pressed")
