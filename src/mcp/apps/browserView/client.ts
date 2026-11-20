@@ -16,7 +16,7 @@ const LOOPBACK_BINDS = new Set(["127.0.0.1", "localhost", "::1"]);
 
 async function closeOwnerBrowser(account: string): Promise<boolean> {
   const root = join(import.meta.dir, "..", "..", "..", "..");
-  const run = Bun.spawn([process.execPath, join(root, "bin", "log.ts"), "inspect", "do", "stop", "--account", account], { cwd: root, stdout: "ignore", stderr: "ignore" });
+  const run = Bun.spawn([process.execPath, join(root, "bin", "log.ts"), "inspect", "do", "stop", "--account", account], { cwd: root, stdout: "ignore", stderr: "ignore", windowsHide: true });
   return (await run.exited) === 0;
 }
 
