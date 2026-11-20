@@ -20,7 +20,7 @@ export const PHASE_LABELS: Record<FramePhase, string> = {
 export const PHASE_NOTES: Record<FramePhase, string> = {
   browserMissing: "No browser is open for this account. Open it, and it shows here.",
   viewerUnavailable: "The browser is open, but its view could not be reached. Nothing was sent to the page.",
-  signInRequired: "Click a field in the page and type. Your clicks and keys go to this account's browser, each one a recorded step.",
+  signInRequired: "Click a field in the page and type. Your clicks and keys go straight to this account's browser and are recorded.",
   needsAttention: "This page needs a person. Input stays off and the run is stopped.",
   busy: "The browser is running a step. It shows here in a moment.",
   ready: "The page no longer asks for sign-in.",
@@ -51,6 +51,9 @@ export const ADDRESS_WAITING = "Waiting for page…";
 export const ADDRESS_NONE = "This page has no web address";
 export const TAKE_CONTROL = "Click to take control";
 export const DRIVE_LABEL = "Click and type here; it goes to the account's browser";
+export const MOVED_TITLE = "Live view moved to the latest message";
+export const MOVED_NOTE = "A newer view of this account's browser is open, so this one stopped to keep the newer one fast.";
+export const SHOW_HERE = "Show it here";
 
 export const STOPPED_PREFIX = "The live view stopped: ";
 
