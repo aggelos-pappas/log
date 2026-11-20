@@ -135,3 +135,11 @@ export function withHarnessTable(text: string): string {
   if (start < 0 || end < start) return text;
   return `${text.slice(0, start)}${block}${text.slice(end + HARNESS_TABLE_END.length)}`;
 }
+
+export const ANTIGRAVITY_SESSION_KEYS = ["conversationId", "trajectoryId", "cascadeId", "session_id", "sessionId"] as const;
+
+export function antigravityPromptPayload(input: Record<string, unknown>): string {
+  const prompt = typeof input.lastUserInput === "string" ? input.lastUserInput : "";
+  const session = ANTIGRAVITY_SESSION_KEYS.map((key) => input[key]).find((value) => typeof value === "string" && value.trim());
+  return JSON.stringify({ hook_event_name: "UserPromptSubmit", prompt, ...(typeof session === "string" ? { session_id: session } : {}) });
+}

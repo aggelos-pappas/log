@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { planText, readResume, runUpdate, writeResumeFile } from './index'
+import type { HarnessRefresh } from '../harnesses/index'
 import type { InstalledAt, ResumeRecord, RunningState, StepResult, UpdateDeps } from './index'
 
 const dir = mkdtempSync(join(tmpdir(), 'logUpdateApply'))
@@ -10,6 +11,11 @@ afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
 const installed: InstalledAt = { version: '0.2.1', kind: 'bunGlobal', root: '/fake/log', commit: null }
 const target = { version: '0.2.2', notesUrl: 'https://example.com/notes' }
+const HARNESSES: HarnessRefresh[] = [
+  { id: 'hermes', label: 'Hermes', present: true, ok: true, refreshed: 'plugin rewritten', reloaded: 'plugin reloaded' },
+  { id: 'claudeCode', label: 'Claude Code', present: true, ok: true, refreshed: '.claude/settings.json came with the new version', reloaded: 'proxy' },
+  { id: 'opencode', label: 'OpenCode', present: false, ok: true, refreshed: 'not on this machine', reloaded: '' },
+]
 const RUNNING: RunningState = { service: true, watchers: [{ platform: 'twitter', account: 'xAccount' }, { platform: 'discord', account: 'discordAccount' }, { platform: 'slack', account: 'slackAccount' }], browsers: ['galwayOne'] }
 
 interface Fake {
@@ -51,7 +57,7 @@ function fakeDeps(options: { busy?: string[][]; verify?: StepResult; install?: S
       calls.push('start')
       return [...(state.service ? ['service'] : []), `${state.watchers.length} watchers`, `${state.browsers.length} browser`]
     },
-    reloadPlugin: () => (calls.push('reloadPlugin'), { ok: true }),
+    refreshHarnesses: () => (calls.push('refreshHarnesses'), HARNESSES),
     recordUpdated: (from, to, resumed) => updated.push(`${from} -> ${to}: ${resumed}`),
     sleep: async () => {
       calls.push('sleep')
@@ -66,8 +72,8 @@ describe('log update', () => {
   test('happy path: records what runs, stops it, installs, verifies, restarts it and reloads the plugin', async () => {
     const fake = fakeDeps()
     const outcome = await runUpdate(installed, target, fake.deps)
-    expect(outcome).toEqual({ ok: true, from: '0.2.1', to: '0.2.2', resumed: 'service, 3 watchers, 1 browser', text: 'updated 0.2.1 -> 0.2.2, resumed: service, 3 watchers, 1 browser' })
-    expect(fake.calls).toEqual(['stop', 'install 0.2.2', 'afterInstall', 'verify 0.2.2', 'start', 'reloadPlugin'])
+    expect(outcome).toEqual({ ok: true, from: '0.2.1', to: '0.2.2', resumed: 'service, 3 watchers, 1 browser', harnesses: HARNESSES, text: 'updated 0.2.1 -> 0.2.2, resumed: service, 3 watchers, 1 browser; harnesses: Hermes plugin rewritten, Claude Code .claude/settings.json came with the new version' })
+    expect(fake.calls).toEqual(['stop', 'install 0.2.2', 'afterInstall', 'verify 0.2.2', 'start', 'refreshHarnesses'])
     expect(fake.updated).toEqual(['0.2.1 -> 0.2.2: service, 3 watchers, 1 browser'])
     expect(fake.resumes.map((r) => r.status)).toEqual(['stopping', 'installing', 'verifying', 'resumed'])
   })
@@ -75,10 +81,11 @@ describe('log update', () => {
   test('the resume record lists what ran before anything is stopped', async () => {
     const fake = fakeDeps()
     await runUpdate(installed, target, fake.deps)
-    expect(fake.resumes[0]).toEqual({ from: '0.2.1', to: '0.2.2', kind: 'bunGlobal', root: '/fake/log', commit: null, at: '2026-11-20T00:00:00.000Z', running: RUNNING, status: 'stopping', resumed: null, error: null })
+    expect(fake.resumes[0]).toEqual({ from: '0.2.1', to: '0.2.2', kind: 'bunGlobal', root: '/fake/log', commit: null, at: '2026-11-20T00:00:00.000Z', running: RUNNING, status: 'stopping', resumed: null, harnesses: null, error: null })
     const kept = readResume(join(dir, 'resume.json'))
     expect(kept?.status).toBe('resumed')
     expect(kept?.running.watchers.length).toBe(3)
+    expect(kept?.harnesses?.map((h) => `${h.id} ${h.present}`)).toEqual(['hermes true', 'claudeCode true', 'opencode false'])
   })
 
   test('waits for a send to settle, then goes on', async () => {
@@ -100,7 +107,7 @@ describe('log update', () => {
     const fake = fakeDeps({ verify: { ok: false, detail: 'log version says 0.2.1, not 0.2.2' } })
     const outcome = await runUpdate(installed, target, fake.deps)
     expect(outcome).toEqual({ ok: false, code: 'updateFailed', detail: 'verify: log version says 0.2.1, not 0.2.2; rolled back to 0.2.1, resumed: service, 3 watchers, 1 browser', rolledBack: true })
-    expect(fake.calls).toEqual(['stop', 'install 0.2.2', 'afterInstall', 'verify 0.2.2', 'rollback 0.2.1', 'afterInstall', 'start', 'reloadPlugin'])
+    expect(fake.calls).toEqual(['stop', 'install 0.2.2', 'afterInstall', 'verify 0.2.2', 'rollback 0.2.1', 'afterInstall', 'start', 'refreshHarnesses'])
     expect(fake.resumes.at(-1)?.status).toBe('rolledBack')
     expect(fake.updated).toEqual([])
   })

@@ -144,13 +144,13 @@ export function claimBackgroundCheck(path: string, settings: UpdateSettings, now
 }
 
 export interface BackgroundDeps {
-  spawn: (command: string, args: string[]) => void
+  launch: (command: string, args: string[]) => void
   now: () => number
   env: Record<string, string | undefined>
 }
 
 export const defaultBackgroundDeps: BackgroundDeps = {
-  spawn: (command, args) => {
+  launch: (command, args) => {
     const child = spawn(command, args, { detached: true, stdio: 'ignore', windowsHide: true, env: process.env })
     child.on('error', () => {})
     child.unref()
@@ -165,7 +165,7 @@ export function refreshInBackground(root: string = LOG_ROOT, deps: BackgroundDep
     const settings = updateSettings(deps.env)
     const path = updateStatePath(deps.env)
     if (!claimBackgroundCheck(path, settings, deps.now())) return false
-    deps.spawn(process.execPath, [join(root, 'scripts', 'update', 'check.ts')])
+    deps.launch(process.execPath, [join(root, 'scripts', 'update', 'check.ts')])
     return true
   } catch {
     return false

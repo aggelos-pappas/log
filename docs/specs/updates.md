@@ -29,3 +29,9 @@ Checked by: code and SubQ
 `log update` (MCP `updateLog`) only plans (`planText`). `--apply` needs `--approvedBy` (`notApproved` otherwise; the `update.auto` approver only when `update.auto` is `auto`). `runUpdate` waits for `busy` to settle and refuses with `updateBusy` before stopping anything; writes the resume record (`writeResumeFile`, `resume.json`) with what runs; stops it; installs, runs the after-install steps and verifies; on a failure rolls back to the version that ran and restarts what ran (`updateFailed`); else restarts what ran, reloads the Hermes plugin and records the updated line (`recordUpdated`). Every process, network and file effect comes through `UpdateDeps` (`liveUpdateDeps` in real runs).
 
 Checked by: code and SubQ
+
+### REQ-UPDATE-05: Every harness is refreshed, and every harness's agent is told
+
+After the install (and after a rollback), `refreshHarnesses` runs with the new code (`scripts/update/harnesses.ts`) over every hook host: Hermes through `installHermes`, which also copies the Desktop plugin to `<HERMES_HOME>/desktop-plugins/log/plugin.js` when it changed (`installHermesDesktop`), then reloads the plugin; OpenCode through `installOpenCode`; the others by their hook file in the package. A harness that is not on the machine is left alone. The results go into the resume record and the answer (`harnessesText`). The notice reaches each harness through the storage hook, keyed by its session (`sessionIdOf` reads `session_id`, `sessionId`, `sessionID`, `conversation_id`, `conversationId`; Antigravity's prompt carries its conversation through `antigravityPromptPayload`).
+
+Checked by: code and SubQ

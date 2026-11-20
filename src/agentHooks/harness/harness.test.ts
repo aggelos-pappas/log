@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { installHermes, installedPluginYaml } from "../hermes/index.ts";
+import { HERMES_DESKTOP_DIR, installHermes, installedPluginYaml } from "../hermes/index.ts";
 import { antigravityHooks, cursorHooks, HERMES_PLUGIN_DIR, hermesPluginYaml, hookFiles } from "../registry/index.ts";
 import { SETUP_HARNESSES } from "../../cli/launch/helpers/setup.ts";
 import { clipContext, contextOutput, harnessOf, harnessTable, hookHostOf, hostBody, positionalOf, scratchHookEnv, watcherLogsIn } from "./client.ts";
@@ -123,7 +123,15 @@ describe("log launch --setup installs user-level hooks", () => {
       expect(yaml).toContain("name: log\n");
       expect(yaml).toContain(`log_root: '${root}'`);
       expect(readFileSync(join(first.pluginDir, "__init__.py"), "utf8")).toBe(readFileSync(join(root, HERMES_PLUGIN_DIR, "__init__.py"), "utf8"));
-      expect(installHermes(home, root).changed).toBe(false);
+      const desktop = join(home, HERMES_DESKTOP_DIR, "log", "plugin.js");
+      expect(first.desktopPlugin).toEqual({ path: desktop, changed: true });
+      expect(readFileSync(desktop, "utf8")).toBe(readFileSync(join(root, HERMES_PLUGIN_DIR, "desktop", "plugin.js"), "utf8"));
+      const again = installHermes(home, root);
+      expect(again.changed).toBe(false);
+      expect(again.desktopPlugin).toEqual({ path: desktop, changed: false });
+      writeFileSync(desktop, "stale");
+      expect(installHermes(home, root).desktopPlugin).toEqual({ path: desktop, changed: true });
+      expect(readFileSync(desktop, "utf8")).not.toBe("stale");
       expect(installedPluginYaml(yaml, "/other").match(/log_root/g)?.length).toBe(1);
     } finally {
       rmSync(home, { recursive: true, force: true });

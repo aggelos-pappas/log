@@ -21,7 +21,7 @@ function fake(calls: string[]): void {
       verify: () => ({ ok: true }),
       rollback: () => ({ ok: true }),
       start: () => [],
-      reloadPlugin: () => ({ ok: true }),
+      refreshHarnesses: () => [{ id: 'hermes', label: 'Hermes', present: true, ok: true, refreshed: 'plugin rewritten', reloaded: 'plugin reloaded' }],
       recordUpdated: () => {},
       sleep: async () => {},
       now: () => 0,
@@ -68,7 +68,7 @@ describe('log update', () => {
     fake(calls)
     const result = await run(['update', '--apply', '--approvedBy', 'the owner'])
     expect(result.code).toBe(0)
-    expect(result.out).toBe('updated 0.2.1 -> 0.2.2, resumed: nothing was running')
+    expect(result.out).toBe('updated 0.2.1 -> 0.2.2, resumed: nothing was running; harnesses: Hermes plugin rewritten')
     expect(calls).toEqual(['writeResume', 'writeResume', 'install', 'writeResume', 'writeResume'])
   })
 })

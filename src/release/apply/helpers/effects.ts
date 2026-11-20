@@ -9,6 +9,7 @@ import { watcherRows } from '../../../platformKit/watcher/index'
 import { heldQueueLocks, queueLabel } from '../../../twitter/queue/store/index'
 import { readUpdateState, updateStatePath, writeUpdateState } from '../../check/index'
 import { packageFacts } from '../../version/index'
+import type { HarnessRefresh } from '../../harnesses/index'
 import type { InstallKind } from '../../version/index'
 import { writeResumeFile } from '../client'
 import type { InstalledAt, RunningState, StepResult, UpdateDeps } from '../types'
@@ -126,11 +127,13 @@ function verifyVersion(version: string, root: string): StepResult {
   return smoke.ok ? { ok: true } : { ok: false, detail: `smoke: ${smoke.detail}` }
 }
 
-function reloadHermesPlugin(): StepResult {
-  const off = run('hermes', ['plugins', 'disable', 'log'], undefined, 60_000)
-  if (!off.ok && /ENOENT/.test(off.detail ?? '')) return { ok: true, detail: 'no Hermes on this machine' }
-  if (!off.ok) return off
-  return run('hermes', ['plugins', 'enable', 'log'], undefined, 60_000)
+function refreshWithNewCode(root: string): HarnessRefresh[] {
+  const done = run(bun(), [join(root, 'scripts', 'update', 'harnesses.ts')], root, 300_000)
+  try {
+    return done.ok ? (JSON.parse(done.detail ?? '[]') as HarnessRefresh[]) : []
+  } catch {
+    return []
+  }
 }
 
 function recordUpdated(from: string, to: string, resumed: string): void {
@@ -149,7 +152,7 @@ export function liveUpdateDeps(log: (line: string) => void): UpdateDeps {
     verify: verifyVersion,
     rollback: rollbackTo,
     start: startAll,
-    reloadPlugin: reloadHermesPlugin,
+    refreshHarnesses: refreshWithNewCode,
     recordUpdated,
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     now: Date.now,

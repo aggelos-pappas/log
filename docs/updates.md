@@ -57,8 +57,24 @@ In `~/.logCli/settings.json` (or `LOG_SETTINGS`), under `update`; the environmen
 4. **Installs:** `bun add -g @listeningkit/log@X.Y.Z` for a bun global install; for a clone, `git fetch --tags` and a fast-forward to the tag `vX.Y.Z`, then `bun install --frozen-lockfile`. Then the Python vendors (`uv pip install` into `LOG_PYTHON`), log.db's migrations (opening it runs them) and the skills build.
 5. **Verifies** that `log version --json` says X.Y.Z and that a smoke command (`log runs space`) passes.
 6. **Rolls back** on any failure in steps 4-5: the previous version is installed again (`bun add -g …@<previous>`, or `git reset --keep <commit>` in a clone) and the refusal is `updateFailed`, naming the step.
-7. **Resumes** what `resume.json` lists (the service, `watchers start` for each watcher, `inspect start --detach` for each browser) and reloads the Hermes plugin (`hermes plugins disable log`, then `enable log`; a gateway restart doesn't re-register plugin hooks).
-8. **Answers** `updated 0.2.1 -> 0.2.2, resumed: service, 3 watchers, 1 browser`. The next prompt's context gets that line once, so the agent carries on with the task it had.
+7. **Resumes** what `resume.json` lists (the service, `watchers start` for each watcher, `inspect start --detach` for each browser).
+8. **Refreshes every agent harness** that is on this machine, with the new version's own code (`scripts/update/harnesses.ts`, `refreshHarnesses`): see the table below. Each harness's result goes into `resume.json` (`harnesses`) and the answer.
+9. **Answers** `updated 0.2.1 -> 0.2.2, resumed: service, 3 watchers, 1 browser; harnesses: Hermes plugin rewritten, Desktop plugin copied, Claude Code .claude/settings.json came with the new version`. The next prompt's context gets the updated line once, so the agent carries on with the task it had.
+
+## Every harness
+
+The update covers every harness log hooks into (`HOOK_HOSTS` in `src/agentHooks/harness`). A harness counts as present the same way `log launch --setup` decides it: Hermes when its home exists (`HERMES_HOME`, `~/.hermes`, `%LOCALAPPDATA%\hermes`), OpenCode when its config folder exists (`LOG_OPENCODE_DIR`, `~/.config/opencode`), and the others when their hook file is in the installed package. Every harness reaches log's tools through `logMcp`, whose reload proxy swaps in the new code without dropping the client (docs/specs/mcpReload.md), so no MCP client is restarted.
+
+| Harness | What update refreshes | How it reloads | How its agent is told |
+| --- | --- | --- | --- |
+| Hermes | `installHermes`: the plugin in `<HERMES_HOME>/plugins/log` and the Desktop plugin at `<HERMES_HOME>/desktop-plugins/log/plugin.js` (each only when it changed) | `hermes plugins disable log`, then `enable log` (a gateway restart doesn't re-register plugin hooks); MCP by the reload proxy | `pre_llm_call` posts SessionStart (first turn) and UserPromptSubmit to the warm hook service; the storage hook adds the line once per session |
+| OpenCode | `installOpenCode`: the logHooks plugin and the config in `~/.config/opencode` | OpenCode loads plugins at start, so a changed plugin needs OpenCode restarted (the answer says so); MCP by the reload proxy | its plugin posts UserPromptSubmit with the session to the same hook |
+| Claude Code | `.claude/settings.json` ships in the new version | its hooks call log on each event, so the next prompt runs the new code; MCP by the reload proxy | the UserPromptSubmit http hook to the warm service |
+| Codex | `.codex/hooks.json` ships in the new version | same as Claude Code | its UserPromptSubmit hook |
+| Cursor | `.cursor/hooks.json` ships in the new version | same as Claude Code | Cursor has no prompt hook: its sessionStart hook (`event.ts SessionStart --host cursor`), keyed by the conversation |
+| Antigravity | `.agents/hooks.json` ships in the new version | same as Claude Code | PreInvocation becomes UserPromptSubmit with the conversation as its session |
+
+`log launch --setup` uses the same installers, so it also copies the Hermes Desktop plugin and says where.
 
 An install that is neither a bun global install nor a clone can't be replaced in place: `log update` says so and you reinstall with the install script.
 

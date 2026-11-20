@@ -1,3 +1,4 @@
+import type { HarnessRefresh } from '../harnesses/index'
 import type { InstallKind } from '../version/index'
 
 export interface RunningWatcher {
@@ -25,6 +26,7 @@ export interface ResumeRecord {
   running: RunningState
   status: ResumeStatus
   resumed: string | null
+  harnesses: HarnessRefresh[] | null
   error: string | null
 }
 
@@ -55,7 +57,7 @@ export interface UpdateDeps {
   verify(version: string, root: string): StepResult
   rollback(previous: InstalledAt): StepResult
   start(state: RunningState, root: string): string[]
-  reloadPlugin(): StepResult
+  refreshHarnesses(root: string): HarnessRefresh[]
   recordUpdated(from: string, to: string, resumed: string): void
   sleep(ms: number): Promise<void>
   now(): number
@@ -72,5 +74,5 @@ export const SETTLE_TRIES = 6
 export const SETTLE_MS = 5000
 
 export type UpdateOutcome =
-  | { ok: true; from: string; to: string; resumed: string; text: string }
+  | { ok: true; from: string; to: string; resumed: string; harnesses: HarnessRefresh[]; text: string }
   | { ok: false; code: 'updateBusy' | 'updateFailed'; detail: string; rolledBack: boolean }

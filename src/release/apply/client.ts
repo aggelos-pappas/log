@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { logHome } from '../../config/logHome/index'
+import { harnessesText } from '../harnesses/index'
 import { isNewer } from '../version/index'
 import { SETTLE_MS, SETTLE_TRIES } from './types'
 import type { InstalledAt, ResumeRecord, ResumeStatus, RunningState, UpdateDeps, UpdateOptions, UpdateOutcome, UpdateTarget } from './types'
@@ -46,7 +47,7 @@ export function planText(installed: InstalledAt, target: UpdateTarget | null, ru
 export async function runUpdate(installed: InstalledAt, target: UpdateTarget, deps: UpdateDeps, options: UpdateOptions = {}): Promise<UpdateOutcome> {
   const from = installed.version
   const to = target.version
-  if (!isNewer(to, from)) return { ok: true, from, to: from, resumed: 'nothing was stopped', text: `log ${from} is the newest known release; nothing to update.` }
+  if (!isNewer(to, from)) return { ok: true, from, to: from, resumed: 'nothing was stopped', harnesses: [], text: `log ${from} is the newest known release; nothing to update.` }
   const tries = options.settleTries ?? SETTLE_TRIES
   const wait = options.settleMs ?? SETTLE_MS
   let busy = deps.busy()
@@ -57,7 +58,7 @@ export async function runUpdate(installed: InstalledAt, target: UpdateTarget, de
   }
   if (busy.length) return { ok: false, code: 'updateBusy', detail: busy.join('; '), rolledBack: false }
   const running = deps.running()
-  const record: ResumeRecord = { from, to, kind: installed.kind, root: installed.root, commit: installed.commit, at: new Date(deps.now()).toISOString(), running, status: 'stopping', resumed: null, error: null }
+  const record: ResumeRecord = { from, to, kind: installed.kind, root: installed.root, commit: installed.commit, at: new Date(deps.now()).toISOString(), running, status: 'stopping', resumed: null, harnesses: null, error: null }
   const mark = (status: ResumeStatus, extra: Partial<ResumeRecord> = {}) => {
     Object.assign(record, { status, ...extra })
     deps.writeResume({ ...record })
@@ -89,13 +90,13 @@ export async function runUpdate(installed: InstalledAt, target: UpdateTarget, de
     const back = deps.rollback(installed)
     if (back.ok) deps.afterInstall(installed.root)
     const resumed = resumedText(deps.start(running, installed.root))
-    deps.reloadPlugin()
-    mark(back.ok ? 'rolledBack' : 'failed', { resumed, error: failure })
+    const harnesses = deps.refreshHarnesses(installed.root)
+    mark(back.ok ? 'rolledBack' : 'failed', { resumed, harnesses, error: failure })
     return { ok: false, code: 'updateFailed', detail: back.ok ? `${failure}; rolled back to ${from}, resumed: ${resumed}` : `${failure}; the rollback to ${from} failed too (${back.detail ?? 'failed'}), resumed: ${resumed}`, rolledBack: back.ok }
   }
   const resumed = resumedText(deps.start(running, installed.root))
-  const plugin = deps.reloadPlugin()
-  mark('resumed', { resumed })
+  const harnesses = deps.refreshHarnesses(installed.root)
+  mark('resumed', { resumed, harnesses })
   deps.recordUpdated(from, to, resumed)
-  return { ok: true, from, to, resumed, text: `updated ${from} -> ${to}, resumed: ${resumed}${plugin.ok ? '' : ` (the Hermes plugin was not reloaded: ${plugin.detail ?? 'failed'})`}` }
+  return { ok: true, from, to, resumed, harnesses, text: `updated ${from} -> ${to}, resumed: ${resumed}; harnesses: ${harnessesText(harnesses)}` }
 }

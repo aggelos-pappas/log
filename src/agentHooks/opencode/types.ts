@@ -8,4 +8,5 @@ export interface HarnessInstall {
   changed: boolean;
   pluginDir: string;
   pluginFiles: string[];
+  desktopPlugin?: { path: string; changed: boolean };
 }
