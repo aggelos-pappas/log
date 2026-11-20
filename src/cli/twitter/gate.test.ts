@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { appendEvent } from "../../inbox/store/index.ts";
 import { chatIdFor, momentAnswered, failedParts, rankedContext, voiceDeps } from "./helpers/voice.ts";
 import type { GateReading } from "./helpers/voice.ts";
+import { RANKED_POOL } from "../../twitter/copy/voice/index.ts";
 
 const passing: GateReading = { to: "@x", voice: 0.95, inContext: 0.9, answerRequired: true, friendLike: 0.9, openerOnly: 1, toThem: null, buildsOn: null, neverSays: [], watermark: { level: "clean", findings: [] } as unknown as GateReading["watermark"], pass: true, model: "m", notHere: [], scrambler: { ran: true, suspicious: 0, hits: [] } as unknown as GateReading["scrambler"], ranked: [] };
 
@@ -33,6 +34,20 @@ describe("the voice gate inside every send (rule 137)", () => {
       for (const [i, text] of ["the weather is grim", "camera arrived today, sent you the video", "tax return done"].entries()) appendEvent({ platform: "discord", account: "acct", conversationId: "D1", type: "message", with: "abby", text, sourceAt: `2026-11-04T0${i}:00:00Z`, receivedAt: `2026-11-04T0${i}:00:01Z` });
       const ranked = await rankedContext("discord", "acct", { conversationId: "D1" }, "camera ok?", 1);
       expect(ranked).toEqual([{ from: "abby", text: "camera arrived today, sent you the video", at: "2026-11-04T01:00:00Z" }]);
+    } finally {
+      voiceDeps.aiEmbedder = before;
+    }
+  });
+
+  test("a long chat embeds only its newest lines, so a send never embeds a whole history", async () => {
+    process.env.LOG_INBOX_STATE = mkdtempSync(join(tmpdir(), "gate"));
+    const before = voiceDeps.aiEmbedder;
+    const sizes: number[] = [];
+    voiceDeps.aiEmbedder = () => ({ model: "fake", dimensions: 1, embed: async (texts: string[]) => (sizes.push(texts.length), texts.map(() => [1])), rerank: async (_query: string, docs: string[]) => docs.map(() => 1) });
+    try {
+      for (let i = 0; i < RANKED_POOL + 40; i++) appendEvent({ platform: "discord", account: "acct", conversationId: "D3", type: "message", with: "grace_ships", text: `line ${i}`, sourceAt: new Date(Date.UTC(2026, 10, 4, 0, i)).toISOString(), receivedAt: new Date(Date.UTC(2026, 10, 4, 0, i, 1)).toISOString() });
+      await rankedContext("discord", "acct", { conversationId: "D3" }, "camera ok?", 1);
+      expect(sizes[0]).toBe(RANKED_POOL + 1);
     } finally {
       voiceDeps.aiEmbedder = before;
     }

@@ -13,6 +13,7 @@ import { timedEngine, timedEngineSync, timedSync } from '../../observability/tim
 import { askReadHost, hostable, readHostOf, startReadHost } from '../readHost/index'
 import { driverOrNull } from '../../browser/driver/index'
 import type { EngineTrace } from '../../observability/timing/index'
+import { ENGINE_CALL_MS, ENGINE_CATCH_UP_MS } from './types'
 import type { PlatformAnswer, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from './types'
 
 export type PlatformAccount = FacebookAccount
@@ -100,6 +101,11 @@ export function mergeCookieShape(raw: unknown, refreshed: Record<string, string>
   return { ...base, ...refreshed }
 }
 
+export function engineCallMs(request: PlatformEngineSpec): number | null {
+  if (request.live === true || request.streamProgress) return null
+  return request.catchUp === true ? ENGINE_CATCH_UP_MS : ENGINE_CALL_MS
+}
+
 export function runPlatformEngine(shape: PlatformShape, account: PlatformAccount, request: PlatformEngineSpec): PlatformEngineRun {
   return timedEngineSync(`engine ${shape.platform} ${String(request.action ?? '')}`.trim(), { account: account.accountName }, (trace) => spawnPlatformEngine(shape, account, request, trace), (run) => run.answer)
 }
@@ -119,9 +125,11 @@ function spawnPlatformEngine(shape: PlatformShape, account: PlatformAccount, req
     const hosted = hostedRun(shape, account, request, body, refreshedPath)
     if (hosted) return hosted
     writeFileSync(spec, JSON.stringify(body), { mode: 0o600 })
-    const run = spawnSync(process.env.LOG_PYTHON || 'python', [shape.engine, spec], { encoding: 'utf8', windowsHide: true, maxBuffer: 512 * 1024 * 1024, stdio: ['ignore', 'pipe', request.streamProgress ? 'inherit' : 'pipe'] })
+    const limit = engineCallMs(request)
+    const run = spawnSync(process.env.LOG_PYTHON || 'python', [shape.engine, spec], { encoding: 'utf8', windowsHide: true, maxBuffer: 512 * 1024 * 1024, stdio: ['ignore', 'pipe', request.streamProgress ? 'inherit' : 'pipe'], ...(limit ? { timeout: limit, killSignal: 'SIGKILL' as const } : {}) })
     const line = (run.stdout || '').trim().split('\n').filter(Boolean).pop() || ''
     let answer: PlatformAnswer
+    if (limit && (run.error as NodeJS.ErrnoException | undefined)?.code === 'ETIMEDOUT') return { answer: { ok: false, code: 'engineTimedOut', detail: `${shape.platform}'s ${String(request.action ?? '')} didn't answer within ${Math.round(limit / 1000)} s, so its engine was stopped; nothing was retried, and the next check asks again`, loginState: 'unknown' }, refreshed: null }
     try {
       answer = JSON.parse(line) as PlatformAnswer
     } catch {

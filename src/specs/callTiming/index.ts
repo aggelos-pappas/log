@@ -27,7 +27,7 @@ const HEALTH_COMMAND = 'src/cli/tool/index.ts'
 export const callTiming = {
   description: 'Every call timed: a call id, every stage a span across Bun and Python, stored in log.db and reported as p50, p95 and p99',
   specPath: 'docs/specs/callTiming.md',
-  codePaths: [TIMING, REPORT, SHAPE, SERVER, BIN, COMMAND, PY, PLATFORM, TWITTER, FBK, X_ENGINE, X_HOST, KIT, IG_HOST, VOICE, CATCH_UP, DB_READ, CLAIMS, STORE, SCHEMA_FILE, HEALTH, HEALTH_COMMAND],
+  codePaths: [TIMING, REPORT, SHAPE, SERVER, BIN, COMMAND, PY, PLATFORM, TWITTER, FBK, X_ENGINE, X_HOST, KIT, IG_HOST, VOICE, CATCH_UP, DB_READ, CLAIMS, STORE, SCHEMA_FILE, HEALTH, HEALTH_COMMAND, 'src/observability/landed/client.ts', 'python/platformKit/host.py', 'python/discordApi/engine.py'],
   anchors: {
     'REQ-TIMING-01': [
       { kind: 'symbol', file: TIMING, name: 'timeCall' },
@@ -63,6 +63,22 @@ export const callTiming = {
       { kind: 'uses', file: COMMAND, name: 'turnStats' },
       { kind: 'string', file: 'hermesPlugin/__init__.py', includes: 'post_llm_call' },
     ],
+    'REQ-TIMING-06': [
+      { kind: 'symbol', file: 'src/observability/landed/client.ts', name: 'landedStats' },
+      { kind: 'symbol', file: 'src/observability/landed/client.ts', name: 'readLanded' },
+      { kind: 'uses', file: COMMAND, name: 'landedLines' },
+      { kind: 'symbol', file: COMMAND, name: 'isWatchSession' },
+    ],
+    'REQ-TIMING-07': [
+      { kind: 'symbol', file: PLATFORM, name: 'engineCallMs' },
+      { kind: 'uses', file: PLATFORM, name: 'ENGINE_CATCH_UP_MS' },
+      { kind: 'uses', file: IG_HOST, name: 'CALL_SECONDS' },
+      { kind: 'uses', file: IG_HOST, name: 'poisoned' },
+      { kind: 'uses', file: 'python/platformKit/host.py', name: 'poisoned' },
+      { kind: 'symbol', file: CATCH_UP, name: 'changedChats' },
+      { kind: 'uses', file: 'python/discordApi/engine.py', name: 'CLIENTS' },
+      { kind: 'uses', file: VOICE, name: 'RANKED_POOL' },
+    ],
     'REQ-TIMING-04': [
       { kind: 'string', file: SCHEMA_FILE, includes: 'CREATE TABLE IF NOT EXISTS spans' },
       { kind: 'symbol', file: REPORT, name: 'toolStats' },
@@ -79,6 +95,8 @@ export const callTiming = {
     'REQ-TIMING-03': noul('Are waitCaughtUp, readSourceFor and claimChat each wrapped in a span named inbox.waitCaughtUp, inbox.readSource and inbox.claim that records what it decided, and is gateSend a voice.gate span whose steps voice.sameness, voice.chatContext, voice.room, voice.rankedContext, voice.evidence and voice.reading (and voice.briefReading in gateBrief) are spans of their own?'),
     'REQ-TIMING-05': noul('Does the UserPromptSubmit hook start a turn per session and the Stop hook (Hermes post_llm_call) end it as one spans row with source turn, counting log tool calls inside it and their ms against agent time; and does log timing --turns print p50, p95 and p99 with each turn split?'),
     'REQ-TIMING-04': noul('Does timeCall store every span of the call in the spans table of log.db in one transaction, delete spans older than 90 days once per process, swallow any storing or export error, and post OTLP JSON to LOG_OTLP_URL/v1/traces when it is set; does toolStats give p50, p95 and p99 per tool and per stage with a share and an unaccounted stage; does timingCommand show the report, a waterfall for --call, and refuse an unknown call with callTimingMissing; does runTimed keep a failed call\'s refusal code as code on its root span; and does toolCommand, through healthReport, only read log.db and git to list per-tool calls, failures, the commonest code, p50, p95 and last use, with unused, failing and stale flags each carrying a fix?'),
+    'REQ-TIMING-06': noul('Does log timing --landed read every non-backfill message event of the window and give, per platform and per source (live or catchUp), p50, p95 and p99 from the platform timestamp to the appended stage, from appended to the first shown stage, and from the platform timestamp to shown, naming every platform whose live p95 is over LANDED_TARGET_P95_MS; and does the plain timing report list watchers (isWatchSession, a tool ending in watch) under Watch sessions apart from the calls, never as the slowest p99, and leave turn: rows to --turns?'),
+    'REQ-TIMING-07': noul('Does engineCallMs give a catch-up read ENGINE_CATCH_UP_MS, any other non-live read ENGINE_CALL_MS and a live write no deadline, and does spawnPlatformEngine answer engineTimedOut when the deadline passes; does the Instagram host bound every call but watch to CALL_SECONDS; do the Instagram host and the platform read host close once their calls finish after an answer that poisoned (ImportError, ModuleNotFoundError, DLL load failed); does discordCatchUp list the chats once with dmsOnly and read only the chats changedChats picks (newest message past the saved position, newest first), stopping on an account refusal of the list and reading every chat on any other failure; does the Discord engine reuse one client per token and identity; and does rankedContext embed only the newest RANKED_POOL lines?'),
     unspecifiedBehavior: noul('Does the timing layer change what any command sends, block or slow a call by more than writing its spans, put a cookie, token or message text into a span name or attribute, or fail a call because timing failed, by a route the specification does not describe?'),
   },
   assertions: {
@@ -87,6 +105,8 @@ export const callTiming = {
     'REQ-TIMING-03': MET,
     'REQ-TIMING-04': MET,
     'REQ-TIMING-05': MET,
+    'REQ-TIMING-06': MET,
+    'REQ-TIMING-07': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

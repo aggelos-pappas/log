@@ -37,3 +37,15 @@ Checked by: code and SubQ
 The prompt hook (`UserPromptSubmit`) starts a turn per session (`turnStarted`, state `turnStart`) and the `Stop` hook ends it (`turnEnded`; Hermes sends `Stop` from `post_llm_call` with the turn's tool-call count). The turn is one `spans` row with source `turn` and tool `turn:<host>`, carrying how many of log's top-level tool calls fell inside it, their summed ms and the rest as agent time. `log timing --turns` prints p50, p95 and p99 per turn and each turn's split.
 
 Checked by: code and SubQ
+
+### REQ-TIMING-06: Landed to pushed is measured per platform, and watch sessions are listed apart
+
+`log timing --landed` (`readLanded`, `landedStats`, `landedLines`) reads every message event of the last `--hours` that isn't a backfill and times three gaps from its `timings` stages: landed (the platform's own `sourceAtMs`) to stored (`appended`), stored to pushed (`shown`, the first push loop or prompt hook that took it) and landed to pushed, as p50, p95 and p99 per platform and per source (`live` from the watcher, `catchUp` read after a gap, whose wait is the gap itself), naming each platform whose live p95 is over `LANDED_TARGET_P95_MS` and counting messages no session took yet. In the plain report a watcher (`isWatchSession`: a tool ending in `watch`) is one long-lived connection, so its length is listed under "Watch sessions" apart from the calls that wait and never heads the slowest p99; whole agent turns (`turn:`) are left to `--turns`.
+
+Checked by: code, tests and SubQ
+
+### REQ-TIMING-07: A watcher's reads have deadlines and spend requests only where something changed
+
+Every engine call that only reads has a deadline (`engineCallMs`): `ENGINE_CATCH_UP_MS` for a watcher's catch-up read (its spec carries `catchUp`), `ENGINE_CALL_MS` for other reads and none for a live write; past it the engine is stopped and the call answers `engineTimedOut`, and the watcher's next check asks again. The Instagram host bounds every call but `watch` to `CALL_SECONDS` (`instagramSessionHostTimedOut`). A host whose call failed with an import error (`poisoned`: `ImportError`, `ModuleNotFoundError`, a failed DLL load) closes once its calls finish so the next call starts a fresh interpreter, in both the Instagram host and the platform read host. Discord's catch-up lists the account's DMs and groups once (`chats` with `dmsOnly`, each with its `lastMessageId`) and reads only the chats whose newest message is past their saved position, newest first (`changedChats`); an account refusal of the list stops it, any other failure reads every saved chat as before. The Discord engine keeps one client per token and recorded browser (`CLIENTS`), so a read doesn't ask `/users/@me` again. The voice gate ranks only the newest `RANKED_POOL` lines of a chat, so a send never embeds a whole history.
+
+Checked by: code, tests and SubQ
