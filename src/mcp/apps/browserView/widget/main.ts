@@ -1,5 +1,6 @@
 import { App, applyDocumentTheme, applyHostStyleVariables } from "@modelcontextprotocol/ext-apps";
 import type { McpUiHostContext } from "@modelcontextprotocol/ext-apps";
+import { addressText } from "./address.ts";
 import { drawBlob, jpegBlob, readCast } from "./cast.ts";
 import { connectVoxl, voxlSupported } from "./voxl.ts";
 import type { VoxlConnection, VoxlStream } from "./voxl.ts";
@@ -108,7 +109,7 @@ function render(): void {
   const connecting = !view || (Boolean(view.generation) && !state.live && phase !== "browserMissing" && phase !== "viewerUnavailable");
   ref("account").textContent = view ? `${view.account}${view.pageState ? ` · ${view.pageState}` : ""}` : "Waiting for the agent…";
   ref("title").textContent = phase ? TITLES[phase] : "Live browser";
-  ref("address").textContent = view?.address ?? "Waiting for page…";
+  ref("address").textContent = addressText(view, state.live);
   const pill = ref("pill");
   pill.dataset.tone = phase === "needsAttention" ? "stop" : state.live ? "live" : "";
   ref("pillText").textContent = phase === "needsAttention" ? "Stopped" : state.live ? (state.source === "pull" ? "Live (frames)" : "Live") : "Not connected";

@@ -192,10 +192,13 @@ drop to screenshots (about 2 a second).
 (run with `LOG_PYTHON`; it needs `uv` for the plugin routes and Microsoft Edge)
 opens a Camoufox page behind the real viewer, then loads the built MCP App
 inside a replica MCP Apps host (a sandboxed iframe with the host's CSP and
-bridge) and the `::logbrowser` card inside a replica Hermes transcript, each in
-light and dark, streamed and pulled. It reports frames a second, which source
-drew them, and whether a click on the picture reached the page, and saves
-`light.png`, `dark.png`, `hermes-light.png` and `hermes-dark.png`.
+bridge) and the `::logapp` card (log's vendored Hermes host card, through the
+real plugin routes) inside a replica Hermes transcript, each in light and dark.
+It reports frames a second, which source drew them, the median of five clicks
+on the picture reaching the page, the address bar text, and the report view
+through `::logapp` following a theme flip, and saves `light.png`, `dark.png`,
+`logapp-browserView-light.png`, `logapp-browserView-dark.png`,
+`logapp-report-light.png` and `logapp-report-dark.png`.
 
 **In the local console.** `log console --web` serves `/api/console/browser`
 (the view), `/api/console/browser/frame` and `POST /api/console/browser/input`

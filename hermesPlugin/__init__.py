@@ -30,6 +30,9 @@ VIEW_TEXT_LIMIT = 3500
 VIEW_ELSEWHERE = "(a view that draws only in Hermes Desktop and the Hermes Webapp)"
 BROWSER_TAG = re.compile(r'::logbrowser\{account="([A-Za-z0-9_.@+-]{1,128})"\}')
 BROWSER_ELSEWHERE = "({account}'s live browser, which shows only in Hermes Desktop)"
+APP_TAG = re.compile(r"""::logapp\{((?:"[^"\n]*"|'[^'\n]*'|[^}'"\n]){1,4400})\}""")
+APP_ATTR = re.compile(r"""([A-Za-z]+)=(?:"([^"]*)"|'([^']*)')""")
+APP_ELSEWHERE = "(log's {tool} view, which shows only in Hermes Desktop)"
 GENUI = ("vendor", "hermesGenui")
 GENUI_PACKAGE = "log_hermes_genui"
 SKILLS = ("hermesPlugin", "skills")
@@ -506,14 +509,32 @@ def view_text(view_id, db=None):
     return text if len(text) <= VIEW_TEXT_LIMIT else text[:VIEW_TEXT_LIMIT].rstrip() + " ..."
 
 
+def app_text(attrs_text):
+    attrs = {m.group(1): m.group(2) if m.group(2) is not None else m.group(3) for m in APP_ATTR.finditer(attrs_text)}
+    tool = attrs.get("tool") or "browserView"
+    if tool == "report" and re.fullmatch(r"[0-9a-f]{8}", attrs.get("view") or ""):
+        return view_text(attrs["view"])
+    account = attrs.get("account")
+    if not account and attrs.get("args"):
+        try:
+            given = json.loads(attrs["args"])
+            account = given.get("account") if isinstance(given, dict) else None
+        except ValueError:
+            account = None
+    if tool == "browserView" and isinstance(account, str) and re.fullmatch(r"[A-Za-z0-9_.@+-]{1,128}", account):
+        return BROWSER_ELSEWHERE.format(account=account)
+    return APP_ELSEWHERE.format(tool=tool if re.fullmatch(r"[A-Za-z][A-Za-z0-9]{0,63}", tool) else "app")
+
+
 def transform_llm_output(response_text="", platform="", **kwargs):
     if not isinstance(response_text, str) or str(platform or "").strip().lower() in DRAWING_PLATFORMS:
         return None
-    if not VIEW_TAG.search(response_text) and not BROWSER_TAG.search(response_text):
+    if not VIEW_TAG.search(response_text) and not BROWSER_TAG.search(response_text) and not APP_TAG.search(response_text):
         return None
     try:
         replaced = VIEW_TAG.sub(lambda match: view_text(match.group(1)), response_text)
         replaced = BROWSER_TAG.sub(lambda match: BROWSER_ELSEWHERE.format(account=match.group(1)), replaced)
+        replaced = APP_TAG.sub(lambda match: app_text(match.group(1)), replaced)
     except Exception:
         return None
     return replaced if replaced != response_text else None
