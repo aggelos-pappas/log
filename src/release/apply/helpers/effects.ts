@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { openInspects } from '../../../browser/inspect/index'
@@ -12,18 +11,10 @@ import { packageFacts } from '../../version/index'
 import type { HarnessRefresh } from '../../harnesses/index'
 import type { InstallKind } from '../../version/index'
 import { writeResumeFile } from '../client'
-import type { InstalledAt, RunningState, StepResult, UpdateDeps } from '../types'
+import { livePostInstallDeps, parsePostInstall, runPostInstall, runStep } from '../../postInstall/index'
+import type { AfterInstall, InstalledAt, RunningState, StepResult, UpdateDeps } from '../types'
 
-export const PYTHON_VENDORS = ['-r', 'vendor/twikit/requirements.txt', './vendor/fbk', './vendor/endcord', './vendor/openLinkedinApi', './vendor/instagrapi', 'brotli', 'pycurl', 'myuri>=4,<6']
-
-const STEP_MS = 10 * 60 * 1000
-
-function run(command: string, args: string[], cwd?: string, timeout = STEP_MS): StepResult {
-  const done = spawnSync(command, args, { cwd, encoding: 'utf8', windowsHide: true, timeout, env: process.env })
-  if (done.error) return { ok: false, detail: `${command} ${args[0] ?? ''}: ${done.error.message}` }
-  if (done.status !== 0) return { ok: false, detail: `${command} ${args.join(' ')} exited ${done.status}: ${(done.stderr || done.stdout || '').trim().split('\n').slice(-3).join(' | ')}` }
-  return { ok: true, detail: done.stdout }
-}
+const run = runStep
 
 const bun = () => process.execPath
 
@@ -100,19 +91,18 @@ function rollbackTo(previous: InstalledAt): StepResult {
   return installVersion(previous.kind, previous.version, previous.root)
 }
 
-function afterInstall(root: string): StepResult {
-  const python = process.env.LOG_PYTHON
-  const results: StepResult[] = []
-  if (python && existsSync(join(root, 'vendor'))) {
-    const uv = run('uv', ['pip', 'install', '--python', python, ...PYTHON_VENDORS], root)
-    if (!uv.ok && !/ENOENT/.test(uv.detail ?? '')) results.push(uv)
+export const NEW_CODE_STEPS = ['vendors', 'migrations', 'skills', 'models'] as const
+
+async function afterInstall(root: string): Promise<AfterInstall> {
+  const script = join(root, 'scripts', 'update', 'postInstall.ts')
+  if (!existsSync(script)) {
+    const report = await runPostInstall(root, ['vendors', 'migrations', 'skills'], livePostInstallDeps())
+    return { ok: report.ok, detail: report.steps.filter((s) => !s.ok).map((s) => `${s.step}: ${s.detail}`).join('; '), models: [] }
   }
-  results.push(run(bun(), ['-e', "const { openDatabase } = await import('./src/storage/schema/index.ts'); openDatabase().close()"], root, 120_000))
-  if (existsSync(join(root, 'scripts', 'docs', 'syncSiteSkills.mjs'))) {
-    const skills = run('node', [join(root, 'scripts', 'docs', 'syncSiteSkills.mjs')], root, 120_000)
-    if (!skills.ok && !/ENOENT/.test(skills.detail ?? '')) results.push(skills)
-  }
-  return all(results)
+  const done = run(bun(), [script, '--skip', 'harnesses', '--json'], root, 45 * 60 * 1000)
+  const report = parsePostInstall(done.detail ?? '')
+  if (!report) return { ok: false, detail: done.ok ? 'the after-install step said nothing readable' : done.detail }
+  return { ok: report.ok, detail: report.steps.filter((s) => !s.ok).map((s) => `${s.step}: ${s.detail}`).join('; '), models: report.models }
 }
 
 function verifyVersion(version: string, root: string): StepResult {

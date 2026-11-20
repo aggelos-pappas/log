@@ -290,6 +290,15 @@
     ],
     "action": "Let the named send or job finish (jobStatus, or the queue run), then run log update --apply again."
   },
+  "modelFetchFailed": {
+    "layer": "tool",
+    "meaning": "log models --fetch could not download a local model at its pinned revision, or the download did not match the pinned hash; nothing half-written was kept.",
+    "retryable": true,
+    "raisedIn": [
+      "cli/models"
+    ],
+    "action": "Check the network and free disk space (log runs space), then run log models --fetch again; HF_ENDPOINT points it at a mirror."
+  },
   "updateFailed": {
     "layer": "tool",
     "meaning": "log update could not install or verify the new version; it rolled back to the version that ran and restarted what was running, or says the rollback failed too.",

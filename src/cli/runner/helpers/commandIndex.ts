@@ -48,6 +48,7 @@ export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "storage", platform: "any", module: "src/cli/storage/index.ts", exportName: "storageCommand" },
   { name: "version", platform: "any", module: "src/cli/version/index.ts", exportName: "versionCommand" },
   { name: "update", platform: "any", module: "src/cli/update/index.ts", exportName: "updateCommand" },
+  { name: "models", platform: "any", module: "src/cli/models/index.ts", exportName: "modelsCommand" },
   { name: "relate", platform: "any", module: "src/cli/relate/index.ts", exportName: "relateCommand" },
   { name: "people", platform: "any", module: "src/cli/people/index.ts", exportName: "peopleCommand" },
   { name: "timing", platform: "any", module: "src/cli/timing/index.ts", exportName: "timingCommand" },

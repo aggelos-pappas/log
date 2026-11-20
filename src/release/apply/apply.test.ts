@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { planText, readResume, runUpdate, writeResumeFile } from './index'
 import type { HarnessRefresh } from '../harnesses/index'
+import type { ModelFetch } from '../../models/store/index'
 import type { InstalledAt, ResumeRecord, RunningState, StepResult, UpdateDeps } from './index'
 
 const dir = mkdtempSync(join(tmpdir(), 'logUpdateApply'))
@@ -15,6 +16,10 @@ const HARNESSES: HarnessRefresh[] = [
   { id: 'hermes', label: 'Hermes', present: true, ok: true, refreshed: 'plugin rewritten', reloaded: 'plugin reloaded' },
   { id: 'claudeCode', label: 'Claude Code', present: true, ok: true, refreshed: '.claude/settings.json came with the new version', reloaded: 'proxy' },
   { id: 'opencode', label: 'OpenCode', present: false, ok: true, refreshed: 'not on this machine', reloaded: '' },
+]
+const MODELS: ModelFetch[] = [
+  { key: 'embed', id: 'Xenova/all-MiniLM-L6-v2', revision: 'a'.repeat(40), source: 'huggingFace', process: 'the embed worker', bytes: 23685047, place: '/fake/models', status: 'ready', ready: true, installed: 'a'.repeat(40), problems: [], action: 'already', detail: 'every file verified' },
+  { key: 'mouse', id: 'myuri', revision: '5.0.0', source: 'pip', process: 'browsers', bytes: 0, place: null, status: 'ready', ready: true, installed: '5.0.0', problems: [], action: 'installed', detail: 'installed myuri==5.0.0' },
 ]
 const RUNNING: RunningState = { service: true, watchers: [{ platform: 'twitter', account: 'xAccount' }, { platform: 'discord', account: 'discordAccount' }, { platform: 'slack', account: 'slackAccount' }], browsers: ['galwayOne'] }
 
@@ -45,7 +50,7 @@ function fakeDeps(options: { busy?: string[][]; verify?: StepResult; install?: S
       installedVersion = version
       return { ok: true }
     },
-    afterInstall: () => (calls.push('afterInstall'), { ok: true }),
+    afterInstall: async () => (calls.push('afterInstall'), { ok: true, models: MODELS }),
     verify: (version) => (calls.push(`verify ${version}`), options.verify ?? (installedVersion === version ? { ok: true } : { ok: false, detail: 'wrong version' })),
     rollback: (previous) => {
       calls.push(`rollback ${previous.version}`)
@@ -72,7 +77,7 @@ describe('log update', () => {
   test('happy path: records what runs, stops it, installs, verifies, restarts it and reloads the plugin', async () => {
     const fake = fakeDeps()
     const outcome = await runUpdate(installed, target, fake.deps)
-    expect(outcome).toEqual({ ok: true, from: '0.2.1', to: '0.2.2', resumed: 'service, 3 watchers, 1 browser', harnesses: HARNESSES, text: 'updated 0.2.1 -> 0.2.2, resumed: service, 3 watchers, 1 browser; harnesses: Hermes plugin rewritten, Claude Code .claude/settings.json came with the new version' })
+    expect(outcome).toEqual({ ok: true, from: '0.2.1', to: '0.2.2', resumed: 'service, 3 watchers, 1 browser', harnesses: HARNESSES, models: MODELS, text: 'updated 0.2.1 -> 0.2.2, resumed: service, 3 watchers, 1 browser; harnesses: Hermes plugin rewritten, Claude Code .claude/settings.json came with the new version; models: all 2 on the pinned revision' })
     expect(fake.calls).toEqual(['stop', 'install 0.2.2', 'afterInstall', 'verify 0.2.2', 'start', 'refreshHarnesses'])
     expect(fake.updated).toEqual(['0.2.1 -> 0.2.2: service, 3 watchers, 1 browser'])
     expect(fake.resumes.map((r) => r.status)).toEqual(['stopping', 'installing', 'verifying', 'resumed'])
@@ -81,11 +86,12 @@ describe('log update', () => {
   test('the resume record lists what ran before anything is stopped', async () => {
     const fake = fakeDeps()
     await runUpdate(installed, target, fake.deps)
-    expect(fake.resumes[0]).toEqual({ from: '0.2.1', to: '0.2.2', kind: 'bunGlobal', root: '/fake/log', commit: null, at: '2026-11-20T00:00:00.000Z', running: RUNNING, status: 'stopping', resumed: null, harnesses: null, error: null })
+    expect(fake.resumes[0]).toEqual({ from: '0.2.1', to: '0.2.2', kind: 'bunGlobal', root: '/fake/log', commit: null, at: '2026-11-20T00:00:00.000Z', running: RUNNING, status: 'stopping', resumed: null, harnesses: null, models: null, error: null })
     const kept = readResume(join(dir, 'resume.json'))
     expect(kept?.status).toBe('resumed')
     expect(kept?.running.watchers.length).toBe(3)
     expect(kept?.harnesses?.map((h) => `${h.id} ${h.present}`)).toEqual(['hermes true', 'claudeCode true', 'opencode false'])
+    expect(kept?.models?.map((m) => `${m.key} ${m.revision.slice(0, 5)} ${m.action}`)).toEqual(['embed aaaaa already', 'mouse 5.0.0 installed'])
   })
 
   test('waits for a send to settle, then goes on', async () => {

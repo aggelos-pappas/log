@@ -12,6 +12,7 @@ When the owner asks for one of these, follow its page step by step.
 |---|---|---|
 | `getGuide({ useCase: "inbox/voiceNote" })` | Sending a voice note | "send <person> a voice note saying …", "voice note him that …", "send a vn to the group saying …" |
 | `getGuide({ useCase: "instagram/newPlatform" })` | Bringing a new platform up, then vendoring its client | "make a new platform via the MCP for <platform>", "open <platform> in AdsPower", "find me via the gh api the most likely to go into the vendor", "make it work" |
+| `getGuide({ useCase: "log/localModels" })` | Local models | "which models does log use", "fetch the models" |
 | `getGuide({ useCase: "log/toolHealth" })` | Tool health | "tool health", "which guides went stale" |
 | `getGuide({ useCase: "log/updateLog" })` | Update log | "update log", "which version is this" |
 | `getGuide({ useCase: "twitter/dmInbox" })` | Reading the DM inbox: who is waiting on you | "who is waiting on me", "check my x dms", "go through my twitter inbox and tell me who needs a reply", "who am I waiting on in my dms". |
@@ -39,6 +40,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `version` | Installed version, commit, install kind and newest release | `log version [--check] [--json]` |
 | `updateLog` | Plan or apply a log update | `log update log [--to <version>] [--apply --approvedBy <who>] [--json]   (the word log may be left out)` |
 | `updateLogLive` | Plan or apply a log update, live on the platform | `log update log [--to <version>] [--apply --approvedBy <who>] [--json]   (the word log may be left out)` |
+| `models` | Local models and their pins | `log models [--fetch --approvedBy <who>] [--json]` |
+| `modelsLive` | Local models and their pins, live on the platform | `log models [--fetch --approvedBy <who>] [--json]` |
 | `timing` | How slow log is | `log timing [--tool <name>] [--hours <n>] [--stages <n>] [--top <n>] [--all] [--json]   (p50, p95 and p99 per tool call and per stage inside it; the slowest --top tools by p99, default 12, or --all; newest --hours, default 24)` |
 | `jobStatus` | A long run's status, the lines after afterLine, and its result once… | `log job status <jobId> [--afterLine <n>] [--waitMs <ms>] [--json]   (a long MCP run: its status, the lines after afterLine, and its result once it ends; waits up to waitMs, default 10000, for something new)` |
 | `jobCancel` | Stop a long run at its next browser step | `log job cancel <jobId>   (stops it at its next browser step; never once Publish is clicked, rule 8)` |

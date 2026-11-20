@@ -26,4 +26,12 @@ export interface VersionInfo {
   notesUrl: string | null
   checkedAt: string | null
   newer: boolean
+  models: VersionModel[]
+}
+
+export interface VersionModel {
+  key: string
+  id: string
+  revision: string
+  source: string
 }

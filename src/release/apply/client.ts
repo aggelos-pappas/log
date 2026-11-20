@@ -1,6 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { logHome } from '../../config/logHome/index'
+import { modelsSummary } from '../../models/store/index'
+import type { ModelFetch } from '../../models/store/index'
 import { harnessesText } from '../harnesses/index'
 import { isNewer } from '../version/index'
 import { SETTLE_MS, SETTLE_TRIES } from './types'
@@ -47,7 +49,7 @@ export function planText(installed: InstalledAt, target: UpdateTarget | null, ru
 export async function runUpdate(installed: InstalledAt, target: UpdateTarget, deps: UpdateDeps, options: UpdateOptions = {}): Promise<UpdateOutcome> {
   const from = installed.version
   const to = target.version
-  if (!isNewer(to, from)) return { ok: true, from, to: from, resumed: 'nothing was stopped', harnesses: [], text: `log ${from} is the newest known release; nothing to update.` }
+  if (!isNewer(to, from)) return { ok: true, from, to: from, resumed: 'nothing was stopped', harnesses: [], models: [], text: `log ${from} is the newest known release; nothing to update.` }
   const tries = options.settleTries ?? SETTLE_TRIES
   const wait = options.settleMs ?? SETTLE_MS
   let busy = deps.busy()
@@ -58,7 +60,7 @@ export async function runUpdate(installed: InstalledAt, target: UpdateTarget, de
   }
   if (busy.length) return { ok: false, code: 'updateBusy', detail: busy.join('; '), rolledBack: false }
   const running = deps.running()
-  const record: ResumeRecord = { from, to, kind: installed.kind, root: installed.root, commit: installed.commit, at: new Date(deps.now()).toISOString(), running, status: 'stopping', resumed: null, harnesses: null, error: null }
+  const record: ResumeRecord = { from, to, kind: installed.kind, root: installed.root, commit: installed.commit, at: new Date(deps.now()).toISOString(), running, status: 'stopping', resumed: null, harnesses: null, models: null, error: null }
   const mark = (status: ResumeStatus, extra: Partial<ResumeRecord> = {}) => {
     Object.assign(record, { status, ...extra })
     deps.writeResume({ ...record })
@@ -73,13 +75,18 @@ export async function runUpdate(installed: InstalledAt, target: UpdateTarget, de
   }
   mark('installing')
   let failure: string | null = null
+  let models: ModelFetch[] = []
   for (const [name, step] of [
     ['install', () => deps.install(installed.kind, to, installed.root)],
-    ['after install', () => deps.afterInstall(installed.root)],
+    ['after install', async () => {
+      const after = await deps.afterInstall(installed.root)
+      models = after.models ?? []
+      return after
+    }],
     ['verify', () => (mark('verifying'), deps.verify(to, installed.root))],
   ] as const) {
     deps.log(name)
-    const result = step()
+    const result = await step()
     if (!result.ok) {
       failure = `${name}: ${result.detail ?? 'failed'}`
       break
@@ -88,7 +95,7 @@ export async function runUpdate(installed: InstalledAt, target: UpdateTarget, de
   if (failure) {
     deps.log(`rolling back to ${from}: ${failure}`)
     const back = deps.rollback(installed)
-    if (back.ok) deps.afterInstall(installed.root)
+    if (back.ok) await deps.afterInstall(installed.root)
     const resumed = resumedText(deps.start(running, installed.root))
     const harnesses = deps.refreshHarnesses(installed.root)
     mark(back.ok ? 'rolledBack' : 'failed', { resumed, harnesses, error: failure })
@@ -96,7 +103,7 @@ export async function runUpdate(installed: InstalledAt, target: UpdateTarget, de
   }
   const resumed = resumedText(deps.start(running, installed.root))
   const harnesses = deps.refreshHarnesses(installed.root)
-  mark('resumed', { resumed, harnesses })
+  mark('resumed', { resumed, harnesses, models })
   deps.recordUpdated(from, to, resumed)
-  return { ok: true, from, to, resumed, harnesses, text: `updated ${from} -> ${to}, resumed: ${resumed}; harnesses: ${harnessesText(harnesses)}` }
+  return { ok: true, from, to, resumed, harnesses, models, text: `updated ${from} -> ${to}, resumed: ${resumed}; harnesses: ${harnessesText(harnesses)}; models: ${models.length ? modelsSummary(models) : 'none pinned in this release'}` }
 }

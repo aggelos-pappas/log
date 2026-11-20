@@ -28,6 +28,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'scripts/directApi/buildFlowMap.ts': { writes: 3, kind: 'repo' },
   'scripts/directApi/liveRead.ts': { writes: 2, kind: 'capture' },
   'scripts/docs/buildDocs.ts': { writes: 1, kind: 'repo' },
+  'scripts/docs/releasesTable.ts': { writes: 2, kind: 'repo' },
   'scripts/docs/syncSiteDocs.mjs': { writes: 4, kind: 'repo' },
   'scripts/docs/syncSiteSkills.mjs': { writes: 3, kind: 'repo' },
   'scripts/privacy/redactDocs.mjs': { writes: 1, kind: 'repo' },

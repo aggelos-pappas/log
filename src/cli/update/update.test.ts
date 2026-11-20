@@ -68,7 +68,7 @@ describe('log update', () => {
     fake(calls)
     const result = await run(['update', '--apply', '--approvedBy', 'the owner'])
     expect(result.code).toBe(0)
-    expect(result.out).toBe('updated 0.2.1 -> 0.2.2, resumed: nothing was running; harnesses: Hermes plugin rewritten')
+    expect(result.out).toBe('updated 0.2.1 -> 0.2.2, resumed: nothing was running; harnesses: Hermes plugin rewritten; models: none pinned in this release')
     expect(calls).toEqual(['writeResume', 'writeResume', 'install', 'writeResume', 'writeResume'])
   })
 })

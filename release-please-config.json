@@ -2,6 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "release-type": "node",
   "include-component-in-tag": false,
+  "last-release-sha": "369db2b136f89c2eea4266a0a5db5f41cc653762",
   "packages": {
     ".": {
       "package-name": "@listeningkit/log",

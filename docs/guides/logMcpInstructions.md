@@ -41,6 +41,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "instagram/newPlatform" })` | Bringing a new platform up, then vendoring its client |
 | `getGuide({ useCase: "linkedin/network" })` | Growing a LinkedIn network, and reading and answering its inbox |
 | `getGuide({ useCase: "linkedin/posts" })` | Posting on LinkedIn, liking or reposting, and taking a post down |
+| `getGuide({ useCase: "log/localModels" })` | Local models |
 | `getGuide({ useCase: "log/toolFromOneOff" })` | Turning a hand-rolled one-off into a log tool |
 | `getGuide({ useCase: "log/toolHealth" })` | Tool health |
 | `getGuide({ useCase: "log/updateLog" })` | Update log |

@@ -2,6 +2,7 @@ import { checkForUpdate, readUpdateState } from "../../release/check/index.ts";
 import type { UpdateState } from "../../release/check/index.ts";
 import { gitCommit, installKindOf, isNewer, LOG_ROOT, packageFacts } from "../../release/version/index.ts";
 import type { VersionInfo } from "../../release/version/index.ts";
+import { LOCAL_MODELS, shortRevision } from "../../models/manifest/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
 
@@ -41,12 +42,13 @@ export function versionInfo(root: string, state: UpdateState): VersionInfo {
     notesUrl: state.notesUrl,
     checkedAt: state.checkedAt,
     newer: isNewer(state.latest, facts.version),
+    models: LOCAL_MODELS.map((m) => ({ key: m.key, id: m.id, revision: m.revision, source: m.source })),
   };
 }
 
 export function versionText(info: VersionInfo): string {
   const known = info.latest ? `newest known release ${info.latest}${info.checkedAt ? ` (checked ${info.checkedAt})` : ""}${info.newer ? ": log update" : ""}` : "no release checked yet (log version --check)";
-  return [`log ${info.version} (${info.kind}${info.commit ? `, commit ${info.commit.slice(0, 12)}` : ""})`, known].join("\n");
+  return [`log ${info.version} (${info.kind}${info.commit ? `, commit ${info.commit.slice(0, 12)}` : ""})`, known, `models pinned: ${info.models.map((m) => `${m.id}@${shortRevision(m.revision)}`).join(", ")} (log models)`].join("\n");
 }
 
 export const versionCommand: Command = {

@@ -1,3 +1,4 @@
+import type { ModelFetch } from '../../models/store/index'
 import type { HarnessRefresh } from '../harnesses/index'
 import type { InstallKind } from '../version/index'
 
@@ -27,12 +28,17 @@ export interface ResumeRecord {
   status: ResumeStatus
   resumed: string | null
   harnesses: HarnessRefresh[] | null
+  models: ModelFetch[] | null
   error: string | null
 }
 
 export interface StepResult {
   ok: boolean
   detail?: string
+}
+
+export interface AfterInstall extends StepResult {
+  models?: ModelFetch[]
 }
 
 export interface InstalledAt {
@@ -53,7 +59,7 @@ export interface UpdateDeps {
   writeResume(record: ResumeRecord): void
   stop(state: RunningState, root: string): StepResult
   install(kind: InstallKind, version: string, root: string): StepResult
-  afterInstall(root: string): StepResult
+  afterInstall(root: string): AfterInstall | Promise<AfterInstall>
   verify(version: string, root: string): StepResult
   rollback(previous: InstalledAt): StepResult
   start(state: RunningState, root: string): string[]
@@ -74,5 +80,5 @@ export const SETTLE_TRIES = 6
 export const SETTLE_MS = 5000
 
 export type UpdateOutcome =
-  | { ok: true; from: string; to: string; resumed: string; harnesses: HarnessRefresh[]; text: string }
+  | { ok: true; from: string; to: string; resumed: string; harnesses: HarnessRefresh[]; models: ModelFetch[]; text: string }
   | { ok: false; code: 'updateBusy' | 'updateFailed'; detail: string; rolledBack: boolean }

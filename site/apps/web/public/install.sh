@@ -68,7 +68,15 @@ fi
 
 LOG_HOME="${LOG_HOME:-$HOME/.logCli}"
 PACKAGE="${LOG_PACKAGE:-@listeningkit/log}"
+LOG_REPO="${LOG_REPO:-matthewdonsemail-lab/log}"
 mkdir -p "$LOG_HOME"
+
+release_version() {
+  if [ -n "${LOG_VERSION:-}" ]; then printf '%s' "${LOG_VERSION#v}"; return 0; fi
+  tag=$(curl -fsSL "https://api.github.com/repos/$LOG_REPO/releases/latest" 2>/dev/null | grep -o '"tag_name": *"[^"]*"' | head -n 1 | cut -d '"' -f 4 | sed 's/^v//')
+  if [ -n "$tag" ]; then printf '%s' "$tag"; return 0; fi
+  curl -fsSL "https://registry.npmjs.org/$PACKAGE/latest" 2>/dev/null | grep -o '"version": *"[^"]*"' | head -n 1 | cut -d '"' -f 4
+}
 
 if ! command -v bun >/dev/null 2>&1; then
   say "installing Bun"
@@ -78,12 +86,21 @@ if ! command -v bun >/dev/null 2>&1; then
 fi
 command -v bun >/dev/null 2>&1 || fail "Bun didn't install. Install it from https://bun.sh and run this again."
 
-say "installing $PACKAGE"
-bun add -g "${LOG_PACKAGE_SOURCE:-$PACKAGE}"
+VERSION=$(release_version || true)
+if [ -n "$VERSION" ]; then
+  SPEC="$PACKAGE@$VERSION"
+  if [ -n "${LOG_VERSION:-}" ]; then say "installing $PACKAGE $VERSION (pinned by LOG_VERSION)"; else say "installing $PACKAGE $VERSION, the newest release"; fi
+else
+  SPEC="$PACKAGE"
+  say "no release answered on GitHub or npm; installing $PACKAGE as npm has it"
+fi
+bun add -g "${LOG_PACKAGE_SOURCE:-$SPEC}"
 GLOBAL_DIR=$(bun pm ls -g 2>/dev/null | head -n 1 | sed 's/ node_modules .*$//')
 ROOT="$GLOBAL_DIR/node_modules/$PACKAGE"
 [ -f "$ROOT/package.json" ] || ROOT="${BUN_INSTALL:-$HOME/.bun}/install/global/node_modules/$PACKAGE"
 [ -f "$ROOT/package.json" ] || fail "couldn't find $PACKAGE in Bun's global folder ($GLOBAL_DIR)"
+INSTALLED=$(grep -o '"version": *"[^"]*"' "$ROOT/package.json" | head -n 1 | cut -d '"' -f 4)
+if [ -n "${LOG_VERSION:-}" ] && [ -z "${LOG_PACKAGE_SOURCE:-}" ] && [ "$INSTALLED" != "${LOG_VERSION#v}" ]; then fail "asked for $PACKAGE ${LOG_VERSION#v} but Bun installed $INSTALLED"; fi
 
 if ! command -v uv >/dev/null 2>&1; then
   say "installing uv (it installs and manages Python)"
@@ -97,23 +114,18 @@ uv python install 3.12
 [ -d "$LOG_HOME/python" ] || uv venv --python 3.12 "$LOG_HOME/python"
 PYTHON="$LOG_HOME/python/bin/python"
 [ -x "$PYTHON" ] || PYTHON="$LOG_HOME/python/Scripts/python.exe"
-uv pip install --python "$PYTHON" -r "$ROOT/vendor/twikit/requirements.txt" "$ROOT/vendor/fbk" "$ROOT/vendor/endcord" "myuri>=4,<6"
 
 ENV_FILE="$LOG_HOME/.env"
 touch "$ENV_FILE"
 grep -q '^LOG_PYTHON=' "$ENV_FILE" || printf 'LOG_PYTHON=%s\n' "$PYTHON" >> "$ENV_FILE"
 grep -q '^LOG_ACCOUNTS=' "$ENV_FILE" || printf 'LOG_ACCOUNTS=local\n' >> "$ENV_FILE"
 
+say "running the after-install steps log update runs too: the Python engines, database migrations, skills, harness plugins and the pinned local models"
+LOG_PYTHON="$PYTHON" bun "$ROOT/scripts/update/postInstall.ts" || say "some after-install steps need a look (above); run bun $ROOT/scripts/update/postInstall.ts again any time"
+
 say "done. Your settings are in $ENV_FILE and your accounts will live in $LOG_HOME."
 log --help >/dev/null 2>&1 && say "log is on your PATH" || say "open a new terminal so 'log' is on your PATH"
 install_skills
-
-OPENCODE_DIR="$HOME/.config/opencode"
-OPENCODE_INSTALL="$ROOT/scripts/opencode/install.ts"
-if [ -d "$OPENCODE_DIR" ] && [ -f "$OPENCODE_INSTALL" ]; then
-  say "wiring OpenCode: log's tools native (not Code Mode) and its hooks running"
-  bun "$OPENCODE_INSTALL"
-fi
 
 LOG_BIN=$(command -v log 2>/dev/null || printf '%s' "${BUN_INSTALL:-$HOME/.bun}/bin/log")
 if [ "${LOG_SETUP:-1}" != 0 ] && [ -x "$LOG_BIN" ] && [ -r /dev/tty ] && [ -w /dev/tty ]; then
@@ -122,3 +134,4 @@ if [ "${LOG_SETUP:-1}" != 0 ] && [ -x "$LOG_BIN" ] && [ -r /dev/tty ] && [ -w /d
 else
   say "next: run log launch --setup to pick your platforms, sign them in and add extensions"
 fi
+say "installed log $INSTALLED"
