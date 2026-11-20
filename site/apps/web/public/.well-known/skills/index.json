@@ -150,7 +150,7 @@
     },
     {
       "name": "log-inbox-sign-in",
-      "description": "Signing an account in: checking it, then the live browser. A log play (docs/useCases/inbox/signIn.md): An account's session has run out, or it was never signed in. The agent checks it through the platform's own answer, and when it needs a person, it opens the account's own browser for the owner to sign in. On the owner's machine that browser is the window on their screen. From a remote runtime it is streamed into the chat as a live view, the same one the console's Connections page opens. The agent never types a password; the owner does.",
+      "description": "Signing an account in: checking it, then the live browser. A log play (docs/useCases/inbox/signIn.md): An account's session has run out, or it was never signed in. The agent checks it through the platform's own answer, and when it needs a person, it opens the account's own browser for the owner to sign in. It is streamed into the chat as a live view, on the owner's own machine and from a remote runtime alike, the same one the console's Connections page opens; on the owner's machine its window is on their screen too. The agent never types a password; the owner does.",
       "files": [
         "SKILL.md"
       ],

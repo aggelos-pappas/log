@@ -206,8 +206,8 @@ fonts inline. Its `_meta.ui.csp` declares no `resourceDomains` and no
 twin when it is https (or loopback `http:` and `ws:` for a host on the same
 machine), and empty otherwise.
 
-**Hosts without MCP Apps** (Claude Code, Codex) get the same text: on the
-person's machine, finish in the window there; from a remote runtime, open the
+**Hosts that draw neither** (Claude Code, Codex, Telegram) get the same text:
+on the person's machine, finish in the window there; from a remote runtime, open the
 view in an MCP Apps host, or the local console on the runtime's machine.
 
 ## Reports in the chat

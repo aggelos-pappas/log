@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { aiIndexOf, saveAiIndex, storedEmbedder, vectorsFor } from '../../inbox/store/index'
-import { askTermsOf, buildToolIndex, catalogHash, catalogOf, clearsToolBar, correctTypos, denseScores, fuseToolsOver, meaningRanks, rankToolsOver, reciprocalRankFusion, shortSummary, skillsIn, toolDocsOf, toolsText, windowsOf } from './helpers'
+import { askTermsOf, buildToolIndex, catalogHash, catalogOf, clearsToolBar, correctTypos, denseScores, fuseToolsOver, meaningRanks, playToolsFirst, rankToolsOver, reciprocalRankFusion, shortSummary, skillsIn, stepRowsOf, toolDocsOf, toolsText, windowsOf } from './helpers'
 import type { ChatNameOf, ToolIndex } from './helpers'
-import { ASK_HEAD_WORDS, ASK_TAIL_WORDS, EMBED_BATCH, PLAY_MEANING_FLOOR, ROUTER_BUDGET_MS, ROUTER_INDEX_NAME, ROUTER_VECTOR_KIND, SKILL_MEANING_FLOOR, SKILL_SUMMARY_CHARS, SKILL_WORD_FLOOR, SKILLS_SHOWN, TOOL_MEANING_SPREAD, TOOL_TEXT_BUDGET, AMBIGUITY_BAND, DEFAULT_MENU_FLOOR, DEFAULT_THRESHOLD, DENSE_WEIGHT, MATCHES_SHOWN, MIN_PHRASE_WORDS, NOT_A_PROMPT, PLATFORM_BONUS, PLATFORM_FOLDERS, PLATFORM_WORDS, SHORT_PROMPT_WORDS, STOP_WORDS, TOOL_INDEX_FILE, TOOL_SYNONYMS, WORD_AMBIGUITY_BAND, WORD_MENU_FLOOR, WORD_THRESHOLD } from './types'
+import { ASK_HEAD_WORDS, ASK_TAIL_WORDS, EMBED_BATCH, FUSED_TOOLS_SHOWN, TOOLS_SHOWN, PLAY_MEANING_FLOOR, ROUTER_BUDGET_MS, ROUTER_INDEX_NAME, ROUTER_VECTOR_KIND, SKILL_MEANING_FLOOR, SKILL_SUMMARY_CHARS, SKILL_WORD_FLOOR, SKILLS_SHOWN, TOOL_MEANING_SPREAD, TOOL_TEXT_BUDGET, AMBIGUITY_BAND, DEFAULT_MENU_FLOOR, DEFAULT_THRESHOLD, DENSE_WEIGHT, MATCHES_SHOWN, MIN_PHRASE_WORDS, NOT_A_PROMPT, PLATFORM_BONUS, PLATFORM_FOLDERS, PLATFORM_WORDS, SHORT_PROMPT_WORDS, STOP_WORDS, TOOL_INDEX_FILE, TOOL_SYNONYMS, WORD_AMBIGUITY_BAND, WORD_MENU_FLOOR, WORD_THRESHOLD } from './types'
 import type { ToolFusion, CatalogItem, CatalogKind, EmbedTexts, FusedTools, MeaningAnswer, MeaningIndex, RouterMeaning, RouterSection, SkillFacts, PlayMatch, RoutableUseCase, RouteContext, RouteDecision, RouteIndex, Thresholds, ToolFacts, ToolMatch, Utterance } from './types'
 
 const PLACEHOLDER = /<[^<>]*>/g
@@ -360,11 +360,20 @@ export async function meaningWithin(prompt: string, index: MeaningIndex | null, 
   }
 }
 
-export function fuseTools(prompt: string, useCases: readonly RoutableUseCase[], meaning: RouterMeaning | null, fusion: ToolFusion = 'rrf', facts: readonly ToolFacts[] = loadToolFacts(), chatNameOf?: ChatNameOf): FusedTools {
+export function fuseTools(prompt: string, useCases: readonly RoutableUseCase[], meaning: RouterMeaning | null, fusion: ToolFusion = 'rrf', facts: readonly ToolFacts[] = loadToolFacts(), chatNameOf?: ChatNameOf, lead: readonly string[] = []): FusedTools {
   if (!isPrompt(prompt) || !facts.length) return { matches: [], lexical: [], meaning: [] }
   const { index, known } = toolIndexOf(useCases, facts)
   const fixed = correctTypos(prompt.replace(/https?:\/\/\S+/g, ' '), known)
-  return fuseToolsOver(fixed.text, index, toolTerms, known, meaning?.tool ?? null, fusion, prompt, chatNameOf)
+  const fused = fuseToolsOver(fixed.text, index, toolTerms, known, meaning?.tool ?? null, fusion, prompt, chatNameOf)
+  return playToolsFirst(fused, lead, fixed.text, index, toolTerms, known, meaning?.tool ?? null, prompt, chatNameOf, fusion === 'lexical' ? TOOLS_SHOWN : FUSED_TOOLS_SHOWN)
+}
+
+export function playToolsOf(useCases: readonly RoutableUseCase[], id: string | null | undefined, facts: readonly ToolFacts[] = loadToolFacts()): string[] {
+  const useCase = id ? useCases.find((u) => u.id === id) : undefined
+  if (!useCase) return []
+  const names = new Set(facts.map((f) => f.name))
+  const base = (tool: string) => (tool.endsWith('Live') && names.has(tool.slice(0, -4)) ? tool.slice(0, -4) : tool)
+  return [...new Set(stepRowsOf(textOf(useCase)).flatMap((r) => r.tools.map(base)))].filter((name) => names.has(name))
 }
 
 export function skillWordScore(prompt: string, skill: SkillFacts): number {
@@ -439,6 +448,7 @@ export interface RouterOptions {
   skills?: readonly SkillFacts[]
   chatNameOf?: ChatNameOf
   fusion?: ToolFusion
+  play?: string | null
 }
 
 let skillCache: SkillFacts[] | null = null
@@ -452,7 +462,7 @@ export function routerSection(prompt: string, useCases: readonly RoutableUseCase
   const facts = options.facts ?? loadToolFacts()
   const skills = options.skills ?? shippedSkills()
   const fusion = options.fusion ?? 'rrf'
-  const tools = fuseTools(prompt, useCases, meaning, fusion, facts, options.chatNameOf).matches
+  const tools = fuseTools(prompt, useCases, meaning, fusion, facts, options.chatNameOf, playToolsOf(useCases, options.play, facts)).matches
   const titles = new Map(useCases.map((u) => [u.id, u.title]))
   const play = options.playShown || !meaning ? null : fusePlay(prompt, options.decision ?? route(prompt, { useCases }), meaning, titles)
   const playSkill = new Set(skills.filter((s) => s.play && s.play === play?.id).map((s) => s.name))

@@ -30,8 +30,9 @@ The table is `HARNESSES` in `src/agentHooks/harness/types.ts`; every hook file a
 
 - **Hosts that draw MCP Apps:**
   - **Views:** `report` shows the view inline, with pages per person and buttons that ask the next question.
-  - **Sign-in:** `browserView` shows the account's live browser inline when log runs remotely (hosted or a paired workspace). Locally, it's the window on the owner's screen.
-- **Hosts that don't:**
+  - **Sign-in:** `browserView` shows the account's live browser inline, whether log runs on the owner's machine (a loopback relay, or frame pulls) or remotely (hosted or a paired workspace). Locally, its window is on the owner's screen too.
+- **Hermes Desktop:** doesn't draw MCP Apps, but log's Desktop plugin draws the same two inline: the agent writes the `::logview` line `report` names and the `::logbrowser{account="..."}` line `browserView` names, each on its own line.
+- **Hosts that draw neither:**
   - **Views:** they get the view as text.
   - **Sign-in:** happens in the window or the log console.
 - **Where there is no prompt hook,** the model routes each request with `getGuide({ ask })`. Both servers' instructions say to, and so does `getGuide`'s own description, so it works whether or not a host passes the instructions on.

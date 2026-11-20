@@ -216,6 +216,21 @@ export function fuseToolsOver(prompt: string, index: ToolIndex, terms: ToolTerms
   return { matches: fused.slice(0, limit).map((f) => matchOf(index.docs[at.get(f.id)!], f.score, found.fill)), lexical, meaning: near }
 }
 
+export function playToolsFirst(fused: FusedTools, lead: readonly string[], prompt: string, index: ToolIndex, terms: ToolTerms, known: ReadonlySet<string>, meaning: readonly MeaningHit[] | null, raw: string = prompt, chatNameOf?: ChatNameOf, limit: number = FUSED_TOOLS_SHOWN): FusedTools {
+  if (!lead.length) return fused
+  const found = toolCandidates(prompt, index, terms, known, raw, chatNameOf)
+  if (!found) return fused
+  const at = new Map(index.docs.map((d, i) => [d.name, i]))
+  const play = [...new Set(lead)].filter((name) => at.has(name) && found.eligible(at.get(name)!))
+  if (!play.length) return fused
+  const shown = fused.matches.map((m) => m.name)
+  const order = (meaning ?? []).map((h) => h.id)
+  const rankOf = (name: string) => (shown.includes(name) ? shown.indexOf(name) - shown.length : order.includes(name) ? order.indexOf(name) : order.length + play.indexOf(name))
+  const names = [...[...play].sort((a, b) => rankOf(a) - rankOf(b)), ...shown.filter((name) => !play.includes(name))].slice(0, limit)
+  const byName = new Map(fused.matches.map((m) => [m.name, m]))
+  return { ...fused, matches: names.map((name) => byName.get(name) ?? matchOf(index.docs[at.get(name)!], 0, found.fill)) }
+}
+
 export function weightedFusion(lexical: readonly MeaningHit[], meaning: readonly MeaningHit[], weight: number = TOOL_LEXICAL_WEIGHT): MeaningHit[] {
   const top = lexical[0]?.score ?? 0
   const best = meaning[0]?.score ?? 0
