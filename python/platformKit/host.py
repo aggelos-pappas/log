@@ -125,6 +125,7 @@ class Host:
         self.last = time.time()
         self.stamp = code_stamp(platform)
         self.port = 0
+        self.poisoned = False
 
     def record(self) -> None:
         host_path(self.state_root, self.account).write_text(json.dumps({"pid": os.getpid(), "port": self.port, "token": self.token, "platform": self.platform, "root": str(ROOT), "startedAt": self.started, "calls": self.calls, "lastCallAt": self.last}), encoding="utf-8")
@@ -152,6 +153,7 @@ class Host:
         self.calls += 1
         self.last = time.time()
         self.record()
+        self.poisoned = self.poisoned or kit.poisoned(out)
         out["kitHost"] = {"pid": os.getpid(), "calls": self.calls}
         return out
 
@@ -195,6 +197,9 @@ class Host:
                     break
                 if self.active == 0 and code_stamp(self.platform) != self.stamp:
                     print(f"log's {self.platform} engine code changed: closing so the next call starts the new code", flush=True)
+                    break
+                if self.active == 0 and self.poisoned:
+                    print(f"an import failed inside this {self.platform} read host: closing so the next call starts a fresh interpreter", flush=True)
                     break
         finally:
             path = host_path(self.state_root, self.account)

@@ -449,6 +449,7 @@ export interface RouterOptions {
   chatNameOf?: ChatNameOf
   fusion?: ToolFusion
   play?: string | null
+  noPlay?: boolean
 }
 
 let skillCache: SkillFacts[] | null = null
@@ -464,7 +465,7 @@ export function routerSection(prompt: string, useCases: readonly RoutableUseCase
   const fusion = options.fusion ?? 'rrf'
   const tools = fuseTools(prompt, useCases, meaning, fusion, facts, options.chatNameOf, playToolsOf(useCases, options.play, facts)).matches
   const titles = new Map(useCases.map((u) => [u.id, u.title]))
-  const play = options.playShown || !meaning ? null : fusePlay(prompt, options.decision ?? route(prompt, { useCases }), meaning, titles)
+  const play = options.playShown || options.noPlay || !meaning ? null : fusePlay(prompt, options.decision ?? route(prompt, { useCases }), meaning, titles)
   const playSkill = new Set(skills.filter((s) => s.play && s.play === play?.id).map((s) => s.name))
   const chosen = meaning ? fuseSkills(prompt, meaning, skills, fusion).filter((name) => !playSkill.has(name)) : []
   const text = routerText(play, tools, chosen, skills)

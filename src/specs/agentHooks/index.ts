@@ -60,6 +60,10 @@ export const agentHooks = {
     'src/cli/slack/index.ts',
     'src/cli/instagram/index.ts',
     'src/cli/twitter/helpers/chat.ts',
+    'src/inbox/nameHints/client.ts',
+    'src/inbox/nameHints/helpers/words.ts',
+    'src/useCases/router/helpers/gate.ts',
+    'src/agentHooks/sessionBlocks/client.ts',
   ],
   anchors: {
     'REQ-HOOKS-24': [
@@ -121,6 +125,27 @@ export const agentHooks = {
       { kind: 'string', file: 'scripts/contextLayer/service.ts', includes: '/hooks/PreToolUse/handRolled' },
       { kind: 'uses', file: 'src/mcp/reload/client.ts', name: 'refreshAsync' },
       { kind: 'string', file: 'hermesPlugin/__init__.py', includes: '/hooks/PreToolUse/handRolled' },
+    ],
+    'REQ-HOOKS-32': [
+      { kind: 'symbol', file: 'src/inbox/nameHints/helpers/words.ts', name: 'promptTokens' },
+      { kind: 'symbol', file: 'src/inbox/nameHints/helpers/words.ts', name: 'commonWordNear' },
+      { kind: 'symbol', file: 'src/inbox/nameHints/helpers/words.ts', name: 'labelMatch' },
+      { kind: 'symbol', file: 'src/inbox/nameHints/client.ts', name: 'editLimit' },
+      { kind: 'uses', file: 'src/inbox/nameHints/client.ts', name: 'STALE_PENALTY' },
+      { kind: 'uses', file: 'scripts/bench/nameHints.ts', name: 'labelMatch' },
+    ],
+    'REQ-HOOKS-33': [
+      { kind: 'symbol', file: 'src/useCases/router/helpers/gate.ts', name: 'playSkipOf' },
+      { kind: 'uses', file: 'src/contextLayer/hook/client.ts', name: 'playSkipOf' },
+      { kind: 'uses', file: 'src/mcp/server/helpers/guideAnswer.ts', name: 'playSkipOf' },
+    ],
+    'REQ-HOOKS-34': [
+      { kind: 'symbol', file: 'src/agentHooks/sessionBlocks/client.ts', name: 'freshBlock' },
+      { kind: 'symbol', file: 'src/agentHooks/sessionBlocks/client.ts', name: 'accountsFingerprint' },
+      { kind: 'uses', file: 'src/agentHooks/answers/client.ts', name: 'accountsFingerprint' },
+      { kind: 'uses', file: 'src/agentHooks/answers/client.ts', name: 'numbersOut' },
+      { kind: 'uses', file: 'src/agentHooks/handRolled/client.ts', name: 'freshBlock' },
+      { kind: 'uses', file: 'scripts/hooks/engines.ts', name: 'enginesAnswer' },
     ],
     'REQ-HOOKS-30': [
       { kind: 'symbol', file: 'src/useCases/router/client.ts', name: 'routerCatalog' },
@@ -276,6 +301,9 @@ export const agentHooks = {
     'REQ-HOOKS-26': noul('When the route function given to hookAnswer returns null, does hookAnswer run the word-only route over the use cases (listUseCases by default), answer with playMatchText for its play or menu, and give an outcome that starts with wordsOnly, injecting no play text when there is no play and no menu?'),
     'REQ-HOOKS-29': noul('Does hookAnswer add routerSection after the play text on every prompt, whose word ranking is the one toolMatchText gives; does toolMatchText rank the tools of fixtures/tools.json (written by docs:build through toolFactsOf, without Live twins of plain tools) with BM25 over contentWords stems, the asks and step text of every play whose steps table names the tool joined in by toolDocsOf, drop tools filed under a platform other than the ones the prompt names and never add a platform the prompt does not name; does a prompt for which asksToWrite is false get only tools whose effect is in TOOL_READ_EFFECTS; does it drop TOOL_GENERIC_WORDS from the prompt, show only tools for which specificEnough holds (TOOL_WEAK_WORDS not counted), fill a chat name only from a word chatNameOf links to a stored chat, and the top score clears TOOL_MIN_SCORE, writing at most TOOLS_SHOWN filled-in calls from callOf ending with the line telling the agent not to parse log output with scripts, within TOOL_TEXT_BUDGET characters?'),
     'REQ-HOOKS-31': noul('Does storageAnswer read the runs size with servedRunsBytes, which answers a cached size at once, starts remeasureRunsBytes (an async walk, one at a time per folder) when the size is older than 15 minutes, and measures in place only when no size is saved; does the context service create cachedFreshness with background true so changes() returns the last listing and refreshes the stamp (refreshAsync) and the uncommitted files (uncommittedFilesAsync) behind; does the service check its sources and code with async walks (newestChange, codeStampAsync) and the reload proxy refresh with refreshAsync on its timer; does sharedEmbed keep embeds in flight and done by text, case folded when uncased, drop a failed embed, and embed each missing text once; does the service answer /hooks/PreToolUse/handRolled with handRolledText and time it as hook:PreToolUse:handRolled; does the Hermes plugin ask that path before starting scripts/hooks/handRolled.ts; and does Push.follow start a runner thread only when no live runner holds the same key and reader, each run loop stopping once Push.current is false?'),
+    'REQ-HOOKS-32': noul('Does nameHints read each prompt word with promptTokens context (an @, a capital not starting a sentence, a short all-caps word, a handle shape, or a NAME_CUES word before it); does editLimit let a common word (isCommonWord) count only with strong context, a word near a common word (commonWordNear) only with context, a short word with no context only exactly or by one swapped pair, and never fuzzy-match a name token shorter than FUZZY_MIN_TOKEN; is a later common word of a chat name not a token of it; does a fuzzy match to a chat older than RECENT_DAYS before the newest chat lose STALE_PENALTY; and does scripts/bench/nameHints.ts label pointers with labelMatch and report precision and wrong pointers per 50 prompts?'),
+    'REQ-HOOKS-33': noul('Does playSkipOf return typos when at least TYPO_HEAVY_SHARE of a prompt with TYPO_MIN_WORDS or more words are neither common words nor router vocabulary, and buildingLog for a prompt about building log; does hookAnswer then write no PLAY MATCH or MAYBE A PLAY line, pass noPlay to routerSection and record playSkipped with the reason in the router span attrs; and does askAnswer load no play for such an ask?'),
+    'REQ-HOOKS-34': noul('Do storageAnswer, enginesAnswer and handRolledText pass their text through freshBlock, which keeps one fingerprint per session and block in the hookBlocks state scope and returns the text only when that session has not seen the fingerprint; does the storage fingerprint drop numbers, the accounts fingerprint drop pids, call counts and clocks and bucket requests by REQUESTS_BUCKET, the hand-rolled one key on label and target while every call is still recorded; and does a SessionStart that is not a startup always say them again?'),
     'REQ-HOOKS-30': noul('Does routerCatalog list every play (title, asks, steps), every tool in tools.json (name, summary, its first clause, steps of plays naming it) and every skill in SKILL_DIRS; does buildMeaningIndex embed them with the local embedder through storedEmbedder into log.db embeddings and record the catalog hash in aiIndexes, and openMeaningIndex refuse a stale hash; does the context service open or build it and send meaningWithin per prompt with its /route answer, racing ROUTER_BUDGET_MS and falling back to null meaning; does fuseToolsOver fuse the word list and the filtered meaning list by reciprocal rank fusion with k 60 and give nothing when askTermsOf is empty; does playToolsFirst put the step tools of the routed play (playToolsOf) first when hookAnswer passes a PLAY MATCH; do fuseSkills and fusePlay follow their floors, the play only when no play text was shown and without its own skill copy; does routerText keep one line each within TOOL_TEXT_BUDGET; does hookAnswer record hook:UserPromptSubmit:router with the meaning outcome in its attrs; and does log router index show the state and build it only with apply?'),
     'REQ-HOOKS-27': noul('Does checkAgentHooks run every hook and every adapter probe with scratchHookEnv, whose LOG_DB, LOG_INBOX_STATE, LOG_CONTEXT_LAYER, LOG_QUEUES_DIR, LOG_TWITTER_STATE, LOG_PLATFORM_STATE, LOG_FBK_STATE and LOG_HOOK_MEMORY are inside the scratch folder, with LOG_CONTEXT_SERVICE and LOG_INBOX_POLL off; do readService and startService do nothing when serviceDisabled; and does the check fail when watcherLogsIn finds a watch.log or a service.log exists in the scratch folder?'),
     'REQ-HOOKS-28': noul('Is SETUP_HARNESSES the HARNESSES rows with installedBy launchSetup; does launchDeps offer each one whose home exists and call installHermes for hermes and installOpenCode for opencode; does installHermes copy plugin.yaml (with log_root set) and __init__.py into <home>/plugins/logHooks and report changed false when nothing differs; does the __init__.py register pre_llm_call, which POSTs each event to the warm context service at /hooks/<event>?host=hermes (ask_service, SERVICE_CONNECT_SECONDS to connect) and runs event.ts with --host hermes only when the service is off or its port refuses, for UserPromptSubmit (SessionStart beside it when is_first_turn), stamping log_sent_at, and returns its context; and does syncSiteSkills write the play skills into hermesPlugin/skills and fail the check on any other entry there?'),
@@ -335,6 +363,9 @@ export const agentHooks = {
     'REQ-HOOKS-28': MET,
     'REQ-HOOKS-29': MET,
     'REQ-HOOKS-30': MET,
+    'REQ-HOOKS-32': MET,
+    'REQ-HOOKS-33': MET,
+    'REQ-HOOKS-34': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

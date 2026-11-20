@@ -1,27 +1,20 @@
 #!/usr/bin/env bun
-import { classifyCall, handRolledAdvice } from '../../src/agentHooks/handRolled/client'
+import { classifyCall, handRolledText } from '../../src/agentHooks/handRolled/client'
 import { contextOutput, hookHostOf } from '../../src/agentHooks/harness/index'
-
-interface HookInput {
-  tool_name?: string
-  tool_input?: Record<string, unknown>
-  cwd?: string
-}
+import type { HandRolledVerdict } from '../../src/agentHooks/handRolled/types'
 
 const raw = await Bun.stdin.text().catch(() => '')
-let input: HookInput = {}
+let input: { tool_name?: string; tool_input?: Record<string, unknown>; cwd?: string } = {}
 try {
-  input = JSON.parse(raw || '{}') as HookInput
-} catch {
-  input = {}
-}
+  input = JSON.parse(raw || '{}') as typeof input
+} catch {}
 
-const verdict = classifyCall(input.tool_name ?? '', input.tool_input ?? {}, { cwd: input.cwd })
-if (verdict.handRolled) {
-  let seen = 0
+if (classifyCall(input.tool_name ?? '', input.tool_input ?? {}, { cwd: input.cwd }).handRolled) {
+  let record = (_verdict: HandRolledVerdict) => 0
   try {
     const { recordHandRolled } = await import('../../src/agentHooks/handRolled/helpers/store')
-    seen = recordHandRolled(verdict)
+    record = recordHandRolled
   } catch {}
-  process.stdout.write(contextOutput('PreToolUse', handRolledAdvice(verdict, seen), hookHostOf(process.argv)))
+  const text = handRolledText(raw, record)
+  if (text) process.stdout.write(contextOutput('PreToolUse', text, hookHostOf(process.argv)))
 }

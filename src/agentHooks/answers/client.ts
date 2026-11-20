@@ -3,11 +3,13 @@ import { getState, putState } from '../../storage/state/index'
 import { AGENT_HOOKS } from '../registry/index'
 import type { AgentHook, HookEvent } from '../registry/types'
 import { sessionIdOf } from '../sessionOffsets/index'
+import { accountsFingerprint, freshBlock, numbersOut } from '../sessionBlocks/index'
+import type { BlockStore } from '../sessionBlocks/index'
 import { hookReply, parseMemory } from '../pageState/index'
 import { readOpenBrowsers } from '../../browser/inspect/index'
 import { diskFree, servedRunsBytes, storageVerdict } from '../../browser/runStore/index'
 import { agentNotice, refreshInBackground } from '../../release/check/index'
-import { engineContext, fbkStateRoot } from '../../directApi/engine/index'
+import { engineContext } from '../../directApi/engine/index'
 import { codeStampWatcher, localChangesLine, staleServerLine, uncommittedFiles, uncommittedFilesAsync } from '../../mcp/freshness/index'
 import type { StampWatcher } from '../../mcp/freshness/index'
 import { kbConfig } from '../../knowledge/base/index'
@@ -37,8 +39,18 @@ export function updateNoticeOf(raw: string): string | null {
   }
 }
 
-export function storageAnswer(raw = ''): HookAnswer {
-  const text = [storageVerdict(servedRunsBytes(), diskFree()), updateNoticeOf(raw)].filter(Boolean).join('\n')
+export interface BlockOptions {
+  event?: HookEvent
+  store?: BlockStore
+}
+
+export function resumedSession(event: HookEvent | undefined, raw: string): boolean {
+  return event === 'SessionStart' && sourceOf(raw) !== 'startup'
+}
+
+export function storageAnswer(raw = '', verdict: () => string | null = () => storageVerdict(servedRunsBytes(), diskFree()), options: BlockOptions = {}): HookAnswer {
+  const said = verdict() ?? ''
+  const text = [freshBlock('storage', sessionIdOf(raw), said, numbersOut(said), options.store, resumedSession(options.event, raw)), updateNoticeOf(raw)].filter(Boolean).join('\n')
   return text ? { context: text } : {}
 }
 
@@ -109,14 +121,12 @@ export function cachedFreshness(repo: string, deps: FreshnessDeps = {}): Freshne
   }
 }
 
-export function enginesAnswer(event: HookEvent, repo: string): HookAnswer {
-  const text = [staleServerLine(repo, undefined, freshness?.stamp()), localChangesLine(repo, freshness ? freshness.changes() : undefined), engineContext()].filter(Boolean).join('\n')
-  const root = fbkStateRoot()
-  const last = join(root, '.lastHook')
-  const changed = getState<string>('lastHook', last, { legacyFile: last, parse: (raw) => raw })?.body !== text
-  if (event !== 'SessionStart' && !changed) return {}
-  putState('lastHook', last, text)
-  return { context: text }
+export function enginesAnswer(event: HookEvent, repo: string, raw = '', accounts: () => string = () => engineContext(), options: BlockOptions = {}): HookAnswer {
+  const lines = [staleServerLine(repo, undefined, freshness?.stamp()), localChangesLine(repo, freshness ? freshness.changes() : undefined)].filter(Boolean)
+  const said = accounts()
+  const text = [...lines, said].filter(Boolean).join('\n')
+  const fresh = freshBlock('engines', sessionIdOf(raw), text, [...lines, accountsFingerprint(said)].join('\n'), options.store, resumedSession(event, raw))
+  return fresh ? { context: fresh } : {}
 }
 
 async function chunkCount(url: string): Promise<number | null> {
@@ -228,7 +238,7 @@ export function hooksForEvent(event: HookEvent, raw: string, hooks: readonly Age
 
 export function answerOne(hook: AgentHook, event: HookEvent, raw: string, repo: string, route: RouteAsk): HookAnswer | Promise<HookAnswer> {
   const name = hook.script.replace(/^.*\//, '').replace(/\.ts$/, '')
-  if (name === 'storage') return storageAnswer(raw)
+  if (name === 'storage') return storageAnswer(raw, undefined, { event })
   if (name === 'engines') return enginesAnswer(event, repo)
   if (name === 'knowledge') return knowledgeAnswer()
   if (name === 'queue') return queueAnswer(raw)

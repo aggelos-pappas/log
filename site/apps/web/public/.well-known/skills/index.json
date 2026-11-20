@@ -109,6 +109,14 @@
       "summary": "Teaching log who your people are"
     },
     {
+      "name": "log-inbox-outcomes",
+      "description": "Do people answer what log sends?. A log play (docs/useCases/inbox/outcomes.md): log reads every send in log.db and splits them into the ones log sent (a send record, a sent queue item, or a log send call at that moment) and the ones the owner typed himself. It then compares how often and how fast people answered each, and whether they moved on to a later stage, first raw and then matched to the same person at the same stage, so a warmer audience for either side doesn't decide it. Nothing is sent and nothing is written.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Do people answer what log sends?"
+    },
+    {
       "name": "log-inbox-quiet-push",
       "description": "Quieting the live push. A log play (docs/useCases/inbox/quietPush.md): The live push brings every new message into the owner's session the moment it lands. When the owner wants a break from it, the push goes quiet for as many minutes as he says: the watchers keep hearing and storing everything, nothing is pushed into any session until then, and what came in arrives as one batch when it ends.",
       "files": [

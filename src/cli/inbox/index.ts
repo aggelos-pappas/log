@@ -19,6 +19,10 @@ import { localEmbedder } from "../../search/conversations/index.ts";
 import { createDecisionsClient } from "../../subq/decisions/index.ts";
 import type { DecisionsClient } from "../../subq/decisions/index.ts";
 import { db } from "../../inbox/store/index.ts";
+import { agentSends, outcomeBlocks, outcomesOf, outcomeText } from "../../inbox/outcomes/index.ts";
+import type { AgentSend, FeelingReader } from "../../inbox/outcomes/index.ts";
+import { localEmotions } from "../../inbox/pipeline/index.ts";
+import { hermesStateDb } from "../../voice/conventions/helpers/corpus.ts";
 
 export const INBOX_USAGE = [
   "Usage: log inbox claim --platform <twitter|discord|slack|instagram> --account <a> --chat <conversationId|handle> [--event <eventId>] [--json]",
@@ -36,8 +40,9 @@ export const INBOX_USAGE = [
   "       log inbox label queue [--platform <p>] [--limit <n>]",
   "       log inbox label teach [--platform <p>] [--limit <n>] [--apply]",
   "       log inbox label train",
-  "pending is what the account watchers heard since this reader last asked, with what to do next for each message: the one delivery every harness reads, the prompt hook's included. A reader is one name per session or harness; a new one starts from now.",
-  "Only the session that claims a chat acts on it (rule 133). Every message the push channels bring in has an event id (shown in >>> NEW MESSAGE). claim takes the chat for this session for 10 minutes before you draft or send; a second session is refused (chatClaimedElsewhere). Every send claims the chat itself and releases it once it is sent, interrupted or failed, so two sessions never answer the same chat. A claim held by a session that ended frees itself. resume is the owner's go-ahead after a refused catch-up (rule 94): the account's gap opens again and its owner catches up through its own session within 30 s; only when the owner says so. claims lists who holds what; actions logs every claim, refusal, send and release, to see what was already done in a chat. quiet holds the live push for n minutes. waiting is who wrote last on every platform, read from log.db and nothing else: each chat's messages in time order (never the order they were stored in, since a backfill stores older messages later), one person's chats judged together (an X user's old DM and X Chat), a message mirrored into the other side counted once as whoever sent it first, reactions, read markers and call notices never counted as the last word. It lists the people waiting on a reply, then apart the ones who reacted to your last message (a follow-up), newest first unless --oldest.",
+  "       log inbox outcomes [--platform <p>] [--account <a>] [--feelings] [--json]",
+  "pending is what the account watchers heard since this reader last asked, with what to do next for each message: the one delivery every harness reads. A reader is one name per session or harness; a new one starts from now.",
+  "Only the session that claims a chat acts on it (rule 133). Every message the push channels bring in has an event id (shown in >>> NEW MESSAGE). claim takes the chat for this session for 10 minutes before you draft or send; a second session is refused (chatClaimedElsewhere). Every send claims the chat itself and releases it once it is sent, interrupted or failed, so two sessions never answer the same chat. A claim held by a session that ended frees itself. resume is the owner's go-ahead after a refused catch-up (rule 94): the account's gap opens again and its owner catches up through its own session within 30 s; only when the owner says so. claims lists who holds what; actions logs every claim, refusal, send and release, to see what was already done in a chat. quiet holds the live push for n minutes. waiting is who wrote last on every platform, read from log.db and nothing else: each chat's messages in time order (not the order stored), one person's chats judged together (an X user's old DM and X Chat), a message mirrored into the other side counted once as whoever sent it first, reactions, read markers and call notices never counted as the last word. It lists the people waiting on a reply, then apart the ones who reacted to your last message (a follow-up), newest first unless --oldest.",
 ].join("\n");
 
 const PLATFORM: FlagSpec = { name: "platform", kind: "enum", values: ["twitter", "discord", "slack", "instagram"], required: true, description: "The platform: twitter, discord, slack or instagram" };
@@ -138,6 +143,16 @@ export const INBOX_INPUT: CommandInput = {
       ],
     },
     { words: ["label", "train"], effect: "write", summary: "Train the who and where head on the labels", positionals: [], flags: [JSON_FLAG] },
+    {
+      words: ["outcomes"], effect: "read", summary: "Reply rates of log's sends vs the owner's, matched by person and stage",
+      positionals: [],
+      flags: [
+        { name: "platform", kind: "enum", values: ["twitter", "discord", "slack", "instagram"], description: "Only this platform" },
+        { name: "account", kind: "string", description: "Only this account" },
+        { name: "feelings", kind: "boolean", description: "Score warmth too" },
+        JSON_FLAG,
+      ],
+    },
     { words: ["claims"], summary: "Every live claim: which session holds which chat, and until when", positionals: [], flags: [JSON_FLAG] },
     {
       words: ["actions"], summary: "The log of every claim, refusal, send and release, oldest first, to see what was already done in a chat",
@@ -154,6 +169,18 @@ export const INBOX_INPUT: CommandInput = {
 };
 
 const PLATFORMS = ["twitter", "discord", "slack", "instagram"];
+
+export const outcomeDeps: { agentSends: () => AgentSend[]; feelings: () => FeelingReader & { stop?: () => void } } = {
+  agentSends: () => agentSends(hermesStateDb()),
+  feelings: () => localEmotions(),
+};
+
+async function outcomesTool(str: (name: string) => string, feelings: boolean, json: boolean) {
+  const reader = feelings ? outcomeDeps.feelings() : null;
+  const report = await outcomesOf({ platform: str("platform") || undefined, account: str("account") || undefined }, db(), { agentSends: outcomeDeps.agentSends(), feelings: reader }).finally(() => reader?.stop?.());
+  if (json) return { code: 0, stdout: JSON.stringify({ report, view: outcomeBlocks(report) }, null, 2) };
+  return { code: 0, stdout: outcomeText(report) };
+}
 
 export const labelDeps: { pipeline: () => PipelineDeps & { stop?: () => void }; decisions: () => DecisionsClient; trainer: HeadTrainer } = {
   pipeline: () => {
@@ -289,7 +316,7 @@ export const inboxCommand: Command = {
   effect: "write",
   input: INBOX_INPUT,
   summary: "Chat claims and their action log, who is waiting on a reply, what the watchers heard, quiet the push",
-  args: "claim|release|claims|actions|resume|waiting|pending|quiet|ignore|ignored|labels|label [queue|teach|train] [--label <l>] [--as <l>] [--who <w>] [--where <s>] [--apply] [--server <id>] [--undo] [--reader <name>] [--minutes <n>] [--by <who>] [--platform <p>] [--account <a>] [--chat <id|handle>] [--event <id>] [--limit <n>] [--oldest]",
+  args: "claim|release|claims|actions|resume|waiting|pending|quiet|ignore|ignored|labels|label [queue|teach|train]|outcomes [--label <l>] [--as <l>] [--who <w>] [--where <s>] [--apply] [--server <id>] [--undo] [--reader <name>] [--minutes <n>] [--by <who>] [--platform <p>] [--account <a>] [--chat <id|handle>] [--event <id>] [--limit <n>] [--oldest]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(INBOX_INPUT));
     if (!parsed.ok) return refuseInput("inbox", parsed.error, INBOX_USAGE);
@@ -298,6 +325,7 @@ export const inboxCommand: Command = {
     const json = parsed.flags["json"] === true;
     const str = (name: string) => (typeof parsed.flags[name] === "string" ? String(parsed.flags[name]).trim() : "");
     if (sub === "label" && rest.length === 1) return labelTool(rest[0], str, numberOf(parsed, "limit"), parsed.flags["apply"] === true, json);
+    if (sub === "outcomes") return outcomesTool(str, parsed.flags["feelings"] === true, json);
     if (sub === "pending") {
       const reader = str("reader");
       if (!READER_PATTERN.test(reader)) return { code: 1, error: "inputInvalid", stderr: `log inbox pending: --reader is letters, digits, _ and -, up to 80\n${INBOX_USAGE}` };

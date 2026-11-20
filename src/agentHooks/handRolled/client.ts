@@ -1,6 +1,9 @@
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { isAbsolute, resolve } from 'node:path'
+import { freshBlock } from '../sessionBlocks/index'
+import type { BlockStore } from '../sessionBlocks/index'
+import { SHARED_SESSION, sessionIdOf } from '../sessionOffsets/index'
 import { textHits } from './helpers/detect'
 import { normaliseCall } from './helpers/normalise'
 import { HAND_ROLLED_GUIDE, HAND_ROLLED_RULE } from './types'
@@ -107,7 +110,7 @@ export function handRolledAdvice(verdict: HandRolledVerdict, seen = 0): string {
   ].join('\n')
 }
 
-export function handRolledText(raw: string, record: (verdict: HandRolledVerdict) => number): string {
+export function handRolledText(raw: string, record: (verdict: HandRolledVerdict) => number, store?: BlockStore): string {
   let input: { tool_name?: string; tool_input?: Record<string, unknown>; cwd?: string } = {}
   try {
     input = JSON.parse(raw || '{}') as typeof input
@@ -118,5 +121,7 @@ export function handRolledText(raw: string, record: (verdict: HandRolledVerdict)
   try {
     seen = record(verdict)
   } catch {}
-  return handRolledAdvice(verdict, seen)
+  const session = sessionIdOf(raw)
+  const advice = handRolledAdvice(verdict, seen)
+  return session === SHARED_SESSION ? advice : freshBlock(`handRolled ${verdict.kinds.join('+')} ${verdict.targets.join(',')}`, session, advice, 'shown', store)
 }

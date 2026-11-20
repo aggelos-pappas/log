@@ -20,6 +20,11 @@ const pending = 'src/inbox/pending/client.ts'
 const trainer = 'scripts/pipeline/trainHead.py'
 const manifest = 'src/models/manifest/types.ts'
 const migrations = 'src/storage/schema/helpers/migrations.ts'
+const outcomes = 'src/inbox/outcomes/client.ts'
+const outcomeTypes = 'src/inbox/outcomes/types.ts'
+const outcomeSources = 'src/inbox/outcomes/helpers/sources.ts'
+const outcomeStats = 'src/inbox/outcomes/helpers/stats.ts'
+const outcomeRender = 'src/inbox/outcomes/helpers/render.ts'
 
 const anchors: RequirementAnchors = {
   'REQ-PIPELINE-01': [
@@ -79,6 +84,21 @@ const anchors: RequirementAnchors = {
     { kind: 'uses', file: label, name: 'TEACHER_BY' },
   ],
   'REQ-PIPELINE-08': [
+    { kind: 'symbol', file: outcomes, name: 'sendsOfPerson' },
+    { kind: 'symbol', file: outcomes, name: 'stageAt' },
+    { kind: 'symbol', file: outcomes, name: 'reportOf' },
+    { kind: 'symbol', file: outcomes, name: 'sinceOf' },
+    { kind: 'symbol', file: outcomeSources, name: 'sendRecordIds' },
+    { kind: 'symbol', file: outcomeSources, name: 'playOfQueue' },
+    { kind: 'symbol', file: outcomeSources, name: 'agentSends' },
+    { kind: 'symbol', file: outcomeStats, name: 'matchedWindow' },
+    { kind: 'symbol', file: outcomeStats, name: 'wilson' },
+    { kind: 'symbol', file: outcomeRender, name: 'outcomeBlocks' },
+    { kind: 'value', file: outcomeTypes, name: 'ONE_TO_ONE_SHARE', equals: 0.95 },
+    { kind: 'value', file: outcomeTypes, name: 'POSITIVE_AT', equals: 0.5 },
+    { kind: 'uses', file: cli, name: 'outcomesOf' },
+  ],
+  'REQ-PIPELINE-09': [
     { kind: 'symbol', file: fallback, name: 'fallbackReason' },
     { kind: 'symbol', file: fallback, name: 'queueForTeacher' },
     { kind: 'symbol', file: fallback, name: 'drainTeacher' },
@@ -91,7 +111,7 @@ const anchors: RequirementAnchors = {
     { kind: 'value', file: types, name: 'RETRAIN_AFTER', equals: 50 },
     { kind: 'symbol', file: bench, name: 'BARS' },
   ],
-  'REQ-PIPELINE-09': [
+  'REQ-PIPELINE-10': [
     { kind: 'symbol', file: model, name: 'botVerdict' },
     { kind: 'symbol', file: fallback, name: 'humanTalk' },
     { kind: 'symbol', file: fallback, name: 'withoutFalseBot' },
@@ -103,7 +123,7 @@ const anchors: RequirementAnchors = {
 export const pipeline = {
   description: 'Who each person is and where they are: two owner-editable fields per chat, labelled on the CPU by the shipped MiniLM with a trained head, emotion as a feature, an active-learning queue and a one-off SubQ pass',
   specPath: 'docs/specs/pipeline.md',
-  codePaths: [types, client, features, model, store, teach, fallback, bench, emotion, label, labelTypes, cli, push, pushScript, pending, trainer, manifest, migrations],
+  codePaths: [types, client, features, model, store, teach, emotion, label, labelTypes, cli, push, pushScript, pending, trainer, manifest, migrations, fallback, bench, outcomes, outcomeTypes, outcomeSources, outcomeStats, outcomeRender],
   anchors,
   rubrics: {
     'REQ-PIPELINE-01': noul('Are who and where two lists with a one-line meaning per label that the owner can replace under pipelineLabels in settings.json, and do guessOf, setLabel, labelOfChat and log inbox label keep a where only for a lead or a client?'),
@@ -113,8 +133,9 @@ export const pipeline = {
     'REQ-PIPELINE-05': noul('Is each chat stored in chatPipeline with who, where, confidence, margin, scores, features, vector, the message that last moved it and the top emotions of the latest inbound message, relabelled only when the last message or the labeller changed, does the push run pushLabeller before each batch waiting at most PUSH_LABEL_WAIT_MS, and does the conversation block show pipelineLine?'),
     'REQ-PIPELINE-06': noul('Does labelQueue return up to QUEUE_SIZE chats by uncertainty, round by round across platforms, skipping groups and owner-labelled chats, and does log inbox label take who and where from the owner?'),
     'REQ-PIPELINE-07': noul('Does log inbox label teach print the chats, input tokens and dollars without sending anything unless --apply, store each SubQ answer by subq with its confidence and candidates when unsure, and never replace an owner label?'),
-    'REQ-PIPELINE-08': noul('Does labelChats queue a chat for SubQ through fallbackReason (no teacher label, a stale label, a likely stage change, a bot signal the teacher has not confirmed, or confidence under FALLBACK_BELOW after UNSURE_MIN_NEW new messages), never for an owner-labelled chat, and does drainTeacher run off the push path in batches of TEACH_BATCH, keep to the subqDailyUsd cap, log each run in log.db, store answers by subq with throughSeq and retrain the head after RETRAIN_AFTER new teacher labels?'),
-    'REQ-PIPELINE-09': noul('Does a chat become a bot only when botVerdict holds (the bot signal at BOT_THRESHOLD and the teacher or owner saying bot) and never when humanTalk finds a two-way conversation or the chat is with an account the owner runs, in guessOf, labelOfChat and pipelineLine?'),
+    'REQ-PIPELINE-08': noul('Does log inbox outcomes read log.db only, split one-to-one dm sends into log sends (send record ids, sent queue items by text, send-tool spans) and hand sends, take each log send play from the last guide or play skill of its agent session or its queue name, count both sides only since log first sent on the account and each window only once passed, and report raw Wilson rates, median reply time and moved-on rates per platform, who, stage and play next to a person-and-stage Mantel-Haenszel match with a bootstrap interval over people, warmth odds ratios with --feelings, and a block view with --json?'),
+    'REQ-PIPELINE-09': noul('Does labelChats queue a chat for SubQ through fallbackReason (no teacher label, a stale label, a likely stage change, a bot signal the teacher has not confirmed, or confidence under FALLBACK_BELOW after UNSURE_MIN_NEW new messages), never for an owner-labelled chat, and does drainTeacher run off the push path in batches of TEACH_BATCH, keep to the subqDailyUsd cap, log each run in log.db, store answers by subq with throughSeq and retrain the head after RETRAIN_AFTER new teacher labels?'),
+    'REQ-PIPELINE-10': noul('Does a chat become a bot only when botVerdict holds (the bot signal at BOT_THRESHOLD and the teacher or owner saying bot) and never when humanTalk finds a two-way conversation or the chat is with an account the owner runs, in guessOf, labelOfChat and pipelineLine?'),
     unspecifiedBehavior: noul('Does any pipeline code send a platform message, call SubQ other than through teach --apply or the capped background drain, or overwrite a label the owner set, by a route the specification does not describe?'),
   },
   assertions: {
@@ -127,6 +148,7 @@ export const pipeline = {
     'REQ-PIPELINE-07': MET,
     'REQ-PIPELINE-08': MET,
     'REQ-PIPELINE-09': MET,
+    'REQ-PIPELINE-10': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

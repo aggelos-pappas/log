@@ -36,6 +36,7 @@ export type StateScope =
   | 'inboxPoll'
   | 'watcherCodeStamp'
   | 'hermesPush'
+  | 'hookBlocks'
 
 export interface StateRow<T> {
   body: T

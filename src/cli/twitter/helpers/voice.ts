@@ -31,7 +31,7 @@ import type { Conversation, Embedder } from "../../../search/conversations/index
 import { createDecisionsClient } from "../../../subq/decisions/index.ts";
 import { attachedOf, briefFailedParts, briefLine, readBrief } from "../../../voice/brief/index.ts";
 import type { DecisionsClient } from "../../../subq/decisions/index.ts";
-import { CONTEXT_PASS, guidePath, nobodyToAnswer, RANKED_CONTEXT, RANKED_SHORTLIST, readGuide, readVoices, VOICE_PASS } from "../../../twitter/copy/voice/index.ts";
+import { CONTEXT_PASS, guidePath, nobodyToAnswer, RANKED_CONTEXT, RANKED_POOL, RANKED_SHORTLIST, readGuide, readVoices, VOICE_PASS } from "../../../twitter/copy/voice/index.ts";
 import type { VoiceEvidence, VoiceReading } from "../../../twitter/copy/voice/index.ts";
 import { buildVoiceIndex, closestWording, NEAR_PAIRS, nearestPairs, offProfile, openSharedVoiceIndex, profileFor, recentInChat, voiceDir } from "../../../voice/pairs/index.ts";
 import type { VoicePair } from "../../../voice/pairs/index.ts";
@@ -369,7 +369,7 @@ export interface RankedMoment {
 
 export async function rankedContext(platform: string, account: string, who: { conversationId?: string | null; handle?: string | null; userId?: string | null }, moment: string, top = RANKED_CONTEXT): Promise<RankedMoment[]> {
   const held = chatContextOf(platform, account, who);
-  const lines = held.messages.filter((m) => m.text.trim() || m.mediaLines.length).map((m) => ({ from: m.fromMe ? "the owner" : m.senderId, text: [m.text, ...m.mediaLines].filter(Boolean).join(" "), at: m.time }));
+  const lines = held.messages.filter((m) => m.text.trim() || m.mediaLines.length).map((m) => ({ from: m.fromMe ? "the owner" : m.senderId, text: [m.text, ...m.mediaLines].filter(Boolean).join(" "), at: m.time })).slice(-RANKED_POOL);
   if (!lines.length || !moment.trim()) return lines.slice(-top);
   const embedded = await embedBounded([moment, ...lines.map((l) => l.text)], () => voiceDeps.aiEmbedder(), () => voiceDeps.embedder(), voiceDeps.jinaMs);
   const [query, ...vectors] = embedded.vectors;

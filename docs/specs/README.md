@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 56 domains, 648 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 56 domains, 654 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -162,6 +162,9 @@ The agent hooks put log-cli's state in front of the agent (Claude Code or Codex)
 - **REQ-HOOKS-30** The prompt router ranks plays, tools and skills by meaning as well as words
 - **REQ-HOOKS-28** Setup installs the hooks for each harness it finds
 - **REQ-HOOKS-31** The warm service never makes a hook wait on a walk, a git run or a second embed
+- **REQ-HOOKS-32** A typo of a common word is never pointed at a chat
+- **REQ-HOOKS-33** A typo-heavy prompt or one about building log names no play
+- **REQ-HOOKS-34** An unchanged block is said once per session
 
 ## [Inspect rule one](./inspectRuleOne.md)
 
@@ -782,6 +785,8 @@ Every call is timed, never guessed: one timing layer across Bun and Python gives
 - **REQ-TIMING-03** The guards and the voice gate are timed stage by stage
 - **REQ-TIMING-04** Timings are stored and reported, never lost to a failure
 - **REQ-TIMING-05** Whole agent turns are timed and split into tool and agent time
+- **REQ-TIMING-06** Landed to pushed is measured per platform, and watch sessions are listed apart
+- **REQ-TIMING-07** A watcher's reads have deadlines and spend requests only where something changed
 
 ## [treg](./treg.md)
 
@@ -887,8 +892,9 @@ Every chat in the owner's inbox carries two fields: `who` the person is to the o
 - **REQ-PIPELINE-05** Stored per chat on every new message, cached by the last message
 - **REQ-PIPELINE-06** The owner labels what log is least sure of
 - **REQ-PIPELINE-07** SubQ labels every chat once, as a dry run until applied
-- **REQ-PIPELINE-08** Unsure chats go to SubQ off the push path, within a daily cap, and the head retrains itself
-- **REQ-PIPELINE-09** A bot needs the bot signal and the teacher, and never a two-way human conversation
+- **REQ-PIPELINE-08** Whether people answer what log sent, against the owner's own sends, matched by person and stage
+- **REQ-PIPELINE-09** Unsure chats go to SubQ off the push path, within a daily cap, and the head retrains itself
+- **REQ-PIPELINE-10** A bot needs the bot signal and the teacher, and never a two-way human conversation
 
 ## [Slack](./slack.md)
 

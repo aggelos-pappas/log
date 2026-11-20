@@ -42,7 +42,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `updateLogLive` | Plan or apply a log update, live on the platform | `log update log [--to <v>] [--track <t>] [--apply --approvedBy <who>] [--json]   (log may be left out)` |
 | `models` | Local models and their pins | `log models [--fetch --approvedBy <who>] [--json]` |
 | `modelsLive` | Local models and their pins, live on the platform | `log models [--fetch --approvedBy <who>] [--json]` |
-| `timing` | How slow log is | `log timing [--tool <name>] [--hours <n>] [--stages <n>] [--top <n>] [--all] [--json]   (p50, p95 and p99 per tool call and per stage inside it; the slowest --top tools by p99, default 12, or --all; newest --hours, default 24)` |
+| `timing` | How slow log is | `log timing [--tool <name>] [--hours <n>] [--stages <n>] [--top <n>] [--all] [--json]   (p50, p95, p99 per tool and stage; the slowest --top by p99, default 12, or --all; --hours, default 24)` |
 | `jobStatus` | A long run's status, the lines after afterLine, and its result once… | `log job status <jobId> [--afterLine <n>] [--waitMs <ms>] [--json]   (a long MCP run: its status, the lines after afterLine, and its result once it ends; waits up to waitMs, default 10000, for something new)` |
 | `jobCancel` | Stop a long run at its next browser step | `log job cancel <jobId>   (stops it at its next browser step; never once Publish is clicked, rule 8)` |
 | `jobList` | The latest jobs | `log job list [--json]   (the latest jobs)` |
