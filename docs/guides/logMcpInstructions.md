@@ -43,6 +43,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "linkedin/posts" })` | Posting on LinkedIn, liking or reposting, and taking a post down |
 | `getGuide({ useCase: "log/toolFromOneOff" })` | Turning a hand-rolled one-off into a log tool |
 | `getGuide({ useCase: "log/toolHealth" })` | Tool health |
+| `getGuide({ useCase: "log/updateLog" })` | Update log |
 | `getGuide({ useCase: "reddit/contributorMaxxing" })` | Contributor maxxing: finding talented builders through what they share |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM |
 | `getGuide({ useCase: "tiktok/post" })` | Posting a video on TikTok, and deleting it |

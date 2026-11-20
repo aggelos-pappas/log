@@ -378,6 +378,8 @@ stateDiagram-v2
 | Code | Retry | Raised in | Ends in | Meaning | Do |
 | --- | --- | --- | --- | --- | --- |
 | `limitInvalid` | no | `cli/twitter/dms`, `cli/twitter/followers`, `cli/twitter/notifications` | command exits | The --limit given isn't a whole number inside the command's range (the refusal says the range). | Give --limit as a whole number inside the range the refusal names, or leave it out for the default. |
+| `updateBusy` | yes | `cli/update` | command exits | log update was asked to apply while a send or a job was still running, and it did not settle in time. | Let the named send or job finish (jobStatus, or the queue run), then run log update --apply again. |
+| `updateFailed` | no | `cli/update` | command exits | log update could not install or verify the new version; it rolled back to the version that ran and restarted what was running, or says the rollback failed too. | Read the step that failed in the refusal and ~/.logCli/resume.json; fix it (network, disk, a dirty clone) and run log update --apply again. |
 | `visibilityInvalid` | no | `cli/tiktok` | command exits | log tiktok post was given a --visibility it doesn't know: it is everyone, friends or onlyMe. | Give --visibility everyone, friends or onlyMe, or leave it out for everyone. |
 | `captionTooLong` | no | `cli/tiktok` | command exits | The caption given to log tiktok post is over the 2200 characters TikTok takes. | Shorten the caption to 2200 characters or fewer. |
 | `videoMissing` | no | `cli/tiktok`, `tiktokApi/engine` | command exits | The video named by --video is not a file on this machine. | Give the path of an existing MP4 or MOV. |

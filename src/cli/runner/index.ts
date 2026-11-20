@@ -41,6 +41,8 @@ import { proxyCommand } from "../proxy/index.ts";
 import { readCommand } from "../read/index.ts";
 import { routerCommand } from "../router/index.ts";
 import { runsCommand } from "../runs/index.ts";
+import { updateCommand } from "../update/index.ts";
+import { versionCommand } from "../version/index.ts";
 import { storageCommand } from "../storage/index.ts";
 import { relateCommand } from "../relate/index.ts";
 import { peopleCommand } from "../people/index.ts";
@@ -111,6 +113,8 @@ export const COMMANDS: Command[] = [
   routerCommand,
   runsCommand,
   storageCommand,
+  versionCommand,
+  updateCommand,
   relateCommand,
   peopleCommand,
   timingCommand,

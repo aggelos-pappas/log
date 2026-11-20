@@ -13,6 +13,7 @@ When the owner asks for one of these, follow its page step by step.
 | `getGuide({ useCase: "inbox/voiceNote" })` | Sending a voice note | "send <person> a voice note saying …", "voice note him that …", "send a vn to the group saying …" |
 | `getGuide({ useCase: "instagram/newPlatform" })` | Bringing a new platform up, then vendoring its client | "make a new platform via the MCP for <platform>", "open <platform> in AdsPower", "find me via the gh api the most likely to go into the vendor", "make it work" |
 | `getGuide({ useCase: "log/toolHealth" })` | Tool health | "tool health", "which guides went stale" |
+| `getGuide({ useCase: "log/updateLog" })` | Update log | "update log", "which version is this" |
 | `getGuide({ useCase: "twitter/dmInbox" })` | Reading the DM inbox: who is waiting on you | "who is waiting on me", "check my x dms", "go through my twitter inbox and tell me who needs a reply", "who am I waiting on in my dms". |
 | `getGuide({ useCase: "twitter/getTheAction" })` | Getting people to do the thing: retweet, like, try it | "get me all them people who liked it ... yo cool to see that you liked that, would you give that a wee retweet", "notifications: people who like, comment, reply", "go through all the people there who need a message", "get them to retweet the thing", "would you do me a favour and give it a wee retweet", "I need them to retweet it so I can get some inbound leads", "I don't know what they're even talking about, explain the context", "make them do the action I need", "get the full context of everything on the account at the time of sending the message". |
 
@@ -35,6 +36,9 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `storageVerify` | Replay every event into a scratch copy and compare each typed table… | `log storage verify [--json]   (replays every event in ~/.logCli/log.db into a scratch copy and compares each typed table, row by row, with the live one; nothing is changed)` |
 | `storageRebuild` | Clear the typed tables and replay every event into them, in one… | `log storage rebuild [--apply] [--json]   (clears the typed tables and replays every event into them in order, in one transaction; a verify unless --apply)` |
 | `storageRebuildLive` | Clear the typed tables and replay every event into…, live on the platform | `log storage rebuild [--apply] [--json]   (clears the typed tables and replays every event into them in order, in one transaction; a verify unless --apply)` |
+| `version` | Installed version, commit, install kind and newest release | `log version [--check] [--json]` |
+| `updateLog` | Plan or apply a log update | `log update log [--to <version>] [--apply --approvedBy <who>] [--json]   (the word log may be left out)` |
+| `updateLogLive` | Plan or apply a log update, live on the platform | `log update log [--to <version>] [--apply --approvedBy <who>] [--json]   (the word log may be left out)` |
 | `timing` | How slow log is | `log timing [--tool <name>] [--hours <n>] [--stages <n>] [--top <n>] [--all] [--json]   (p50, p95 and p99 per tool call and per stage inside it; the slowest --top tools by p99, default 12, or --all; newest --hours, default 24)` |
 | `jobStatus` | A long run's status, the lines after afterLine, and its result once… | `log job status <jobId> [--afterLine <n>] [--waitMs <ms>] [--json]   (a long MCP run: its status, the lines after afterLine, and its result once it ends; waits up to waitMs, default 10000, for something new)` |
 | `jobCancel` | Stop a long run at its next browser step | `log job cancel <jobId>   (stops it at its next browser step; never once Publish is clicked, rule 8)` |
@@ -326,3 +330,4 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 - **Rule 73.** For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence.
 - **Rule 134.** Existing workspace log.db is the native private record/coordination foundation.
 - **Rule 165.** Preserve per-stage call timings in the private observability store so latency can be traced to its cause.
+- **Rule 167.** Use supported MCP/runtime reload behavior for changes.

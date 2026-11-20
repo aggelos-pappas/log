@@ -1,3 +1,4 @@
+import { consoleNotice } from "../../release/check/index.ts";
 import { intro, isCancel, outro, select } from "@clack/prompts";
 import { AI_CLIENTS } from "../../console/aiClients/index.ts";
 import { EVENT_STATUSES } from "../../console/events/index.ts";
@@ -127,7 +128,8 @@ export function runScreenCommand(domain: ConsoleDomain, parsed: { flags: Record<
   const text = (name: string) => (typeof flags[name] === "string" ? String(flags[name]).trim() : undefined);
   if (domain === "start") {
     const data = loadConsoleStart();
-    return asJson ? json(data) : { code: 0, stdout: renderStart(data) };
+    const update = consoleNotice();
+    return asJson ? json(update ? { ...data, update } : data) : { code: 0, stdout: update ? `${renderStart(data)}\n${update}` : renderStart(data) };
   }
   if (domain === "connections") {
     const platform = text("platform");

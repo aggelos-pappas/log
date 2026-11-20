@@ -6,6 +6,7 @@ import { sessionIdOf } from '../sessionOffsets/index'
 import { hookReply, parseMemory } from '../pageState/index'
 import { readOpenBrowsers } from '../../browser/inspect/index'
 import { diskFree, runsBytes, storageVerdict } from '../../browser/runStore/index'
+import { agentNotice, refreshInBackground } from '../../release/check/index'
 import { engineContext, fbkStateRoot } from '../../directApi/engine/index'
 import { codeStampWatcher, localChangesLine, staleServerLine, uncommittedFiles } from '../../mcp/freshness/index'
 import type { StampWatcher } from '../../mcp/freshness/index'
@@ -27,9 +28,18 @@ import type { TimingStage } from '../../contextLayer/service/types'
 import { REFUSING_HOOKS, WAITING_HOOKS } from './types'
 import type { EventAnswer, HookAnswer, HookTiming, RouteAsk } from './types'
 
-export function storageAnswer(): HookAnswer {
-  const verdict = storageVerdict(runsBytes(), diskFree())
-  return verdict ? { context: verdict } : {}
+export function updateNoticeOf(raw: string): string | null {
+  try {
+    refreshInBackground()
+    return agentNotice(sessionIdOf(raw))
+  } catch {
+    return null
+  }
+}
+
+export function storageAnswer(raw = ''): HookAnswer {
+  const text = [storageVerdict(runsBytes(), diskFree()), updateNoticeOf(raw)].filter(Boolean).join('\n')
+  return text ? { context: text } : {}
 }
 
 export interface FreshnessSource {
@@ -192,7 +202,7 @@ export function hooksForEvent(event: HookEvent, raw: string, hooks: readonly Age
 
 export function answerOne(hook: AgentHook, event: HookEvent, raw: string, repo: string, route: RouteAsk): HookAnswer | Promise<HookAnswer> {
   const name = hook.script.replace(/^.*\//, '').replace(/\.ts$/, '')
-  if (name === 'storage') return storageAnswer()
+  if (name === 'storage') return storageAnswer(raw)
   if (name === 'engines') return enginesAnswer(event, repo)
   if (name === 'knowledge') return knowledgeAnswer()
   if (name === 'queue') return queueAnswer(raw)

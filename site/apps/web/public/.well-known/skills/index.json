@@ -229,6 +229,14 @@
       "summary": "Tool health"
     },
     {
+      "name": "log-log-update-log",
+      "description": "Update log. A log play (docs/useCases/log/updateLog.md): Check which log runs here and, with the owner's yes, update it to the newest release and pick up where it left off: the hook service, the account watchers and the open browsers come back after the install. Nothing installs without the owner's yes.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Update log"
+    },
+    {
       "name": "log-reddit-contributor-maxxing",
       "description": "Contributor maxxing: finding talented builders through what they share. A log play (docs/useCases/reddit/contributorMaxxing.md): Find talented people who are into the same things as the owner, through the GitHub repos they post on Reddit. Read a subreddit's last few days through the owner's Reddit account, keep the posts that link to GitHub, and rank them. It reads only. It posts, votes and messages nothing.",
       "files": [
