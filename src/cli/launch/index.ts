@@ -4,6 +4,7 @@ import { dirname } from "node:path";
 import { cancel, intro, isCancel, multiselect, outro, password, select, text } from "@clack/prompts";
 import { buildBrowserCommand } from "../../auth/session/helpers/urls.ts";
 import { DEFAULT_LOCAL_API_URL } from "../../browser/adsPower/types.ts";
+import { driverOrNull } from "../../browser/driver/index.ts";
 import { userEnvPath } from "../../config/userEnv/index.ts";
 import { LISTING_STATUSES, listListingsWhere } from "../../facebook/marketplace/agencyListing/index.ts";
 import { checkRunnable, listFacebookAccounts, toTwentyEnum } from "../../platformKit/socialAccount/index.ts";
@@ -141,7 +142,7 @@ async function pickAccount(context: CommandContext, message: string, keep: (acco
     .flatMap((row): PickedAccount[] => {
       const platform = platformOfTwenty(row.platform);
       const accountName = String(row.accountName || row.name || "");
-      return platform && accountName ? [{ platform, accountName, hasProfile: Boolean(row.adsPowerProfileId) }] : [];
+      return platform && accountName ? [{ platform, accountName, hasProfile: driverOrNull({ browserDriver: typeof row.browserDriver === "string" ? row.browserDriver : null, adsPowerProfileId: typeof row.adsPowerProfileId === "string" ? row.adsPowerProfileId : null }, process.env) !== "adsPower" || Boolean(row.adsPowerProfileId) }] : [];
     })
     .filter(keep);
   if (!accounts.length) return "no account yet: pick Add an account first.";
@@ -197,7 +198,7 @@ async function addAccount(context: CommandContext, preset?: Platform): Promise<{
   }
   const added = await delegate(await commandFor("localAccount", "any"), context, argv);
   if (added.code !== 0) return added;
-  return signInAccount(context, { platform, accountName, hasProfile: Boolean(profile) });
+  return signInAccount(context, { platform, accountName, hasProfile: driverOrNull({ browserDriver: null, adsPowerProfileId: profile || null }, process.env) !== "adsPower" || Boolean(profile) });
 }
 
 async function pickMany(options: Parameters<typeof multiselect>[0]): Promise<string[] | null> {

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { waitFor } from 'xstate'
 import { BROWSER_CAPABILITIES, BROWSER_DRIVERS, browserFor, createBrowserSession } from '../driver/index'
 import { adsPowerCapabilities } from '../adsPower/index'
+import { braveCapabilities } from '../brave/index'
 import { camoufoxCapabilities, camoufoxDriver } from './index'
 
 const input = { driver: 'camoufox' as const, accountId: 'a1', accountName: 'galwayOne' }
@@ -24,13 +25,13 @@ describe('the Camoufox driver (rule 44)', () => {
 
 describe('browser parity (rule 44)', () => {
   test('every browser fills every capability', () => {
-    for (const row of [camoufoxCapabilities, adsPowerCapabilities]) expect(Object.keys(row).sort()).toEqual(Object.keys(BROWSER_CAPABILITIES).sort())
+    for (const row of [camoufoxCapabilities, adsPowerCapabilities, braveCapabilities]) expect(Object.keys(row).sort()).toEqual(Object.keys(BROWSER_CAPABILITIES).sort())
   })
 
-  test("an account's browser comes from Twenty, Camoufox when empty or unknown", () => {
+  test("an account's browser comes from Twenty, Camoufox when empty, refused when unknown", () => {
+    expect(() => browserFor({ browserDriver: 'netscape' })).toThrow(/browserDriverUnknown/)
     expect(browserFor({ browserDriver: 'adsPower', adsPowerProfileId: 'k1' })).toEqual({ driver: 'adsPower', profileId: 'k1' })
     expect(browserFor({ browserDriver: null, adsPowerProfileId: null })).toEqual({ driver: 'camoufox', profileId: null })
-    expect(browserFor({ browserDriver: 'netscape' })).toEqual({ driver: 'camoufox', profileId: null })
     expect(browserFor({ browserDriver: null, adsPowerProfileId: 'k9' })).toEqual({ driver: 'adsPower', profileId: 'k9' })
     expect(browserFor({ browserDriver: 'camoufox', adsPowerProfileId: 'k9' })).toEqual({ driver: 'camoufox', profileId: 'k9' })
   })

@@ -1,11 +1,12 @@
 import { homedir } from "node:os";
 import { userEnvPath } from "../../config/userEnv/index.ts";
 import { platformOfTwenty, signInRouteOf } from "../../cli/launch/helpers/start.ts";
-import { PLATFORM_LABELS, PLATFORMS } from "../../cli/runner/helpers/platforms.ts";
+import { PLATFORM_LABELS, PLATFORM_SITES, PLATFORMS } from "../../cli/runner/helpers/platforms.ts";
 import type { Platform } from "../../cli/runner/helpers/platforms.ts";
-import { localAccountsPath, readLocalAccounts } from "../../twenty/graphql/index.ts";
+import { localAccountsPath, readLocalAccounts, updateLocalAccount } from "../../twenty/graphql/index.ts";
+import { driverOrNull, isBrowserDriver } from "../../browser/driver/index.ts";
 import { readCheckRows } from "../accountCheck/index.ts";
-import { readConnectionAccounts } from "./helpers/accounts.ts";
+import { browserChoices, readConnectionAccounts } from "./helpers/accounts.ts";
 import { readExtensionStates } from "./helpers/extensions.ts";
 import type { ConnectionAccount, ConnectionsView, ConsoleAccount, ConsoleConnections } from "./types.ts";
 
@@ -25,7 +26,7 @@ export function readConsoleAccounts(path: string = localAccountsPath()): Console
     const platform = platformOfTwenty(row.platform) ?? platformNamed(row.platform);
     const accountName = text(row.accountName) ?? text(row.name);
     if (!platform || !accountName) return [];
-    return [{ id: String(row.id), platform, accountName, sessionState: text(row.sessionState), browserProfile: Boolean(text(row.adsPowerProfileId)), signIn: signInRouteOf(platform).kind }];
+    return [{ id: String(row.id), platform, accountName, sessionState: text(row.sessionState), browserProfile: Boolean(text(row.adsPowerProfileId)), browser: driverOrNull({ browserDriver: text(row.browserDriver), adsPowerProfileId: text(row.adsPowerProfileId) }, process.env), signIn: signInRouteOf(platform).kind }];
   });
 }
 
@@ -35,7 +36,16 @@ export function readConnectionRows(env: Env = process.env, home = homedir()): Co
 }
 
 export function loadConnectionsView(env: Env = process.env, home = homedir()): ConnectionsView {
-  return { schemaVersion: 1, source: "workspace", generatedAt: new Date().toISOString(), accounts: readConnectionRows(env, home), extensions: readExtensionStates(env, home) };
+  return { schemaVersion: 1, source: "workspace", generatedAt: new Date().toISOString(), accounts: readConnectionRows(env, home), extensions: readExtensionStates(env, home), browsers: browserChoices(env) };
+}
+
+export function setAccountBrowser(args: { accountId?: unknown; browser?: unknown }, env: Env = process.env): ConnectionsView {
+  if (!isBrowserDriver(args.browser)) throw new Error("consoleInputInvalid");
+  const account = loadConnectionsView(env).accounts.find((item) => item.id === args.accountId);
+  if (!account) throw new Error("accountNotFound");
+  const saved = updateLocalAccount(PLATFORM_SITES[account.platform].twenty, account.name, { browserDriver: args.browser }, localAccountsPath(env)) ?? updateLocalAccount(account.platform, account.name, { browserDriver: args.browser }, localAccountsPath(env));
+  if (!saved) throw new Error("accountNotFound");
+  return loadConnectionsView(env);
 }
 
 export function loadConsoleConnections(options: { platform?: string; path?: string } = {}): ConsoleConnections {
@@ -48,5 +58,5 @@ export function loadConsoleConnections(options: { platform?: string; path?: stri
     return mine.length ? [{ platform, label: PLATFORM_LABELS[platform], accounts: mine }] : [];
   });
   const view = loadConnectionsView(options.path ? { ...process.env, LOG_LOCAL_ACCOUNTS: path, LOG_USER_ENV: userEnvPath() } : process.env);
-  return { schemaVersion: 1, source: "local", generatedAt: view.generatedAt, path, total: accounts.length, platforms, accounts: view.accounts.filter((account) => !wanted || account.platform === wanted), extensions: view.extensions };
+  return { schemaVersion: 1, source: "local", generatedAt: view.generatedAt, path, total: accounts.length, platforms, accounts: view.accounts.filter((account) => !wanted || account.platform === wanted), extensions: view.extensions, browsers: view.browsers };
 }

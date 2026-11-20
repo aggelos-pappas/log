@@ -379,7 +379,24 @@ def _force_context(kwargs: dict[str, Any]) -> None:
     kwargs["timezoneId"] = _armed["timezone"]
     kwargs["geolocation"] = dict(_armed["geolocation"])
     kwargs["permissions"] = sorted(set(kwargs.get("permissions") or []) | {"geolocation"})
+    if (_armed["launch"] or {}).get("chromium"):
+        kwargs["locale"] = _armed["locale"]
     _force_capture(kwargs)
+
+
+CHROMIUM_GEO_ACCURACY = 100
+
+
+def chromium_launch(executable_path: str) -> dict[str, Any]:
+    gate = gate_attached()
+    proxy = gate["proxy"]
+    chosen = None if proxy.get("direct") else playwright_proxy(proxy)
+    locale = _armed["locale"]
+    _armed["languages"] = [locale]
+    _armed["geolocation"] = {"latitude": gate.get("latitude"), "longitude": gate.get("longitude"), "accuracy": CHROMIUM_GEO_ACCURACY}
+    _armed["launch"] = {"env": None, "proxy": chosen, "executable_path": executable_path, "chromium": True}
+    install_guards()
+    return {"executable_path": executable_path, "headless": False, "args": [f"--lang={locale}", f"--accept-lang={locale}"], **({"proxy": chosen} if chosen else {})}
 
 
 def har_path(capture_dir: str) -> Path:

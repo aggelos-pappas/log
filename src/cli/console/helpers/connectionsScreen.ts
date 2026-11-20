@@ -1,6 +1,7 @@
 import { loadConsoleConnections } from "../../../console/connections/index.ts";
 import type { ConsoleAccount, ConsoleConnections } from "../../../console/connections/index.ts";
 import { checkAccountSession, signInAccount } from "../../launch/index.ts";
+import { BROWSER_LABELS } from "../../../browser/driver/index.ts";
 import type { ConsoleUi } from "./ui.ts";
 import { BACK } from "./ui.ts";
 
@@ -12,7 +13,7 @@ export function renderConnections(data: ConsoleConnections): string {
   for (const group of data.platforms) {
     lines.push(`${group.label} (${group.accounts.length})`);
     const width = Math.max(...group.accounts.map((account) => account.accountName.length));
-    for (const account of group.accounts) lines.push(`  ${account.accountName.padEnd(width)}  ${account.sessionState ?? "no session yet"}${account.browserProfile ? "  browser profile" : ""}`);
+    for (const account of group.accounts) lines.push(`  ${account.accountName.padEnd(width)}  ${account.sessionState ?? "no session yet"}  ${account.browser ? BROWSER_LABELS[account.browser] : "unknown browser"}${account.browserProfile ? "  browser profile" : ""}`);
   }
   return lines.join("\n");
 }

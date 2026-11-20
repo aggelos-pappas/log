@@ -32,6 +32,16 @@ export function writeLocalAccounts(rows: Row[], path = localAccountsPath()): voi
   writeFileSync(path, JSON.stringify({ socialAccounts: rows }, null, 2), { mode: 0o600 })
 }
 
+export function updateLocalAccount(platform: string, accountName: string, fields: Record<string, unknown>, path = localAccountsPath()): Row | null {
+  const rows = readLocalAccounts(path)
+  const same = (value: unknown, want: string) => String(value ?? '').toLowerCase() === want.toLowerCase()
+  const held = rows.find((r) => same(r.platform, platform) && (same(r.accountName, accountName) || same(r.name, accountName)))
+  if (!held) return null
+  const row: Row = { ...held, ...fields, id: held.id }
+  writeLocalAccounts(rows.map((r) => (r === held ? row : r)), path)
+  return row
+}
+
 export function upsertLocalAccount(fields: Record<string, unknown> & { accountName: string }, path = localAccountsPath()): Row {
   const rows = readLocalAccounts(path)
   const id = `${LOCAL_ID_PREFIX}${String(fields.platform ?? 'account').toLowerCase()}:${fields.accountName}`

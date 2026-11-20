@@ -123,3 +123,9 @@ Checked by: code and SubQ
 When the self-check refuses, the browser is closed (Camoufox) or the error is raised before anything else loads (an attached browser, which its driver then stops). Rule 17.
 
 Checked by: code and SubQ
+
+### REQ-GATE-19: Brave opens through the same gate, in the account's own profile
+
+A Brave session first passes `gate_attached` (the proxy, the exit's country and timezone, the Facebook speed limit). `chromium_launch` then builds the only launch options the guard accepts: headed, the account's proxy (none for a platform that runs direct), and `--lang` plus the context locale pinned to the home locale, with `navigator.languages` pinned to that one locale as Brave reduces it. The guarded persistent context gets the exit's timezone and geolocation and a session HAR, and runs the self-check before the caller gets it. The profile folder is the account's own under log's home (`browsers/brave/<account id>`). Brave is found at `LOG_BRAVE_PATH` or the standard install places; none there is refused with `braveNotFound`. Rules 11, 12, 17 and 44.
+
+Checked by: code and SubQ

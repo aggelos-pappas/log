@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ControlError } from '@/lib/controlApi'
-import { checkConnection, KEY_MASK, loadConnections, readConnectionKeys, saveConnectionKeys, signInAccount } from '../connectionsData'
+import { checkConnection, KEY_MASK, loadConnections, readConnectionKeys, saveConnectionKeys, setConnectionBrowser, signInAccount } from '../connectionsData'
 import { loadUsageSummary } from '../usageData'
 import { loadConsoleEvents } from '../eventsData'
 import type { ConsoleTarget } from '../consoleClient'
@@ -80,5 +80,29 @@ describe('console data client, hosted mode', () => {
     await expect(checkConnection(hosted, account.id)).rejects.toMatchObject({ code: 'accountCheckBusy', message: 'Another account check is running. Try again when it finishes.' })
     serve(() => ({ status: 503, body: { code: 'workspaceOffline', safeMessage: 'the workspace is not connected' } }))
     await expect(loadConnections(hosted)).rejects.toMatchObject({ code: 'workspaceOffline' })
+  })
+})
+
+describe('console data client, the account browser', () => {
+  const browsers = [{ name: 'camoufox', label: 'Camoufox', isDefault: true }, { name: 'adsPower', label: 'AdsPower', isDefault: false }, { name: 'brave', label: 'Brave', isDefault: false }]
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('reads the browser choices from the view, posts the pick locally and to the hosted route', async () => {
+    const picked = { ...connections, browsers, accounts: [{ ...account, browser: 'brave' }] }
+    const calls = serve(() => ({ body: picked }))
+    const local1 = await setConnectionBrowser(local, account.id, 'brave')
+    expect(local1.browsers.map((choice) => choice.name)).toEqual(['camoufox', 'adsPower', 'brave'])
+    expect(local1.accounts[0].browser).toBe('brave')
+    await setConnectionBrowser(hosted, account.id, 'brave')
+    expect(calls.map((call) => `${call.method} ${call.url}`)).toEqual(['POST /api/console/connections/browser', 'POST /api/v1/teams/team1/console/accountBrowser'])
+    expect(calls[0].body).toEqual({ accountId: account.id, browser: 'brave' })
+  })
+
+  it('an older runtime with no browsers still loads, and a malformed choice is refused', async () => {
+    serve(() => ({ body: connections }))
+    expect((await loadConnections(local)).browsers).toEqual([])
+    vi.unstubAllGlobals()
+    serve(() => ({ body: { ...connections, browsers: [{ name: '../x', label: 'X' }] } }))
+    await expect(loadConnections(local)).rejects.toThrow()
   })
 })

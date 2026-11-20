@@ -42,8 +42,9 @@ export const adsPower = {
     ],
     'REQ-ADSPOWER-03': [
       { kind: 'symbol', file: driverClient, name: 'driverNameOf' },
-      { kind: 'value', file: driverTypes, name: 'BROWSER_DRIVERS', equals: ['camoufox', 'adsPower'] },
+      { kind: 'value', file: driverTypes, name: 'BROWSER_DRIVERS', equals: ['camoufox', 'adsPower', 'brave'] },
       { kind: 'value', file: driverTypes, name: 'DEFAULT_BROWSER_DRIVER', equals: 'camoufox' },
+      { kind: 'value', file: driverTypes, name: 'BROWSER_DRIVER_ENV', equals: 'LOG_BROWSER_DRIVER' },
     ],
     'REQ-ADSPOWER-04': [
       { kind: 'string', file: opener, includes: 'adsPowerProfileMissing' },
@@ -91,7 +92,7 @@ export const adsPower = {
   rubrics: {
     'REQ-ADSPOWER-01': noul('Does planSync return linked for an account whose adsPowerProfileId is a live profile, relink when a profile remark names the account Twenty id, and create otherwise, with syncProfiles saving the profile id it made or relinked?'),
     'REQ-ADSPOWER-02': noul('Does profileRequest create the profile with no proxy, the remark from twentyRemark, the given group and the language of the home country, with no password, cookie or 2FA field in the body?'),
-    'REQ-ADSPOWER-03': noul('Does driverNameOf return the browserDriver when it names a known driver, and otherwise adsPower when adsPowerProfileId is set and the default driver when it is not?'),
+    'REQ-ADSPOWER-03': noul('Does driverNameOf return the browserDriver when it names a known driver and refuse an unknown name, and otherwise return adsPower when adsPowerProfileId is set, then the driver LOG_BROWSER_DRIVER names (refusing an unknown one), then the default driver?'),
     'REQ-ADSPOWER-04': noul('Do open_ads_power and adsPowerDriver.prepare refuse with the missing profile code, before anything else is done, when the account has no AdsPower profile id?'),
     'REQ-ADSPOWER-05': noul('Does open_ads_power call proxyGate.gate_attached before it calls adsPowerBrowser.set_proxy or adsPowerBrowser.start?'),
     'REQ-ADSPOWER-06': noul('Does open_ads_power set the profile proxy from the gate proxy right before adsPowerBrowser.start, and set no proxy instead when the gate proxy is direct?'),

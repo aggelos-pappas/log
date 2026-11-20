@@ -19,7 +19,7 @@ import { parseCookies } from "../signIn/index.ts";
 import { consoleMutationAnswer } from "../web/index.ts";
 import { consoleErrorCode, redactConsoleArgs, runConsoleOperation } from "./index.ts";
 
-const KEYS = ["LOG_INBOX_STATE", "LOG_DB", "LOG_LOCAL_ACCOUNTS", "LOG_USER_ENV", "LOG_PLATFORM_STATE", "LOG_TWITTER_STATE", "LOG_FBK_STATE", "JINA_API_KEY", "PARALLEL_API_KEY"] as const;
+const KEYS = ["LOG_INBOX_STATE", "LOG_DB", "LOG_LOCAL_ACCOUNTS", "LOG_USER_ENV", "LOG_PLATFORM_STATE", "LOG_TWITTER_STATE", "LOG_FBK_STATE", "JINA_API_KEY", "PARALLEL_API_KEY", "LOG_BROWSER_DRIVER"] as const;
 const before: Record<string, string | undefined> = {};
 const SECRET = "sk-fakeSecretValueForMaskingTest0001";
 const NEW_SECRET = "sk-fakeNewSecretValueForSaving00002";
@@ -35,6 +35,7 @@ beforeAll(() => {
   delete process.env.LOG_DB;
   delete process.env.JINA_API_KEY;
   delete process.env.PARALLEL_API_KEY;
+  delete process.env.LOG_BROWSER_DRIVER;
   process.env.LOG_LOCAL_ACCOUNTS = join(dir, "localAccounts.json");
   process.env.LOG_USER_ENV = join(dir, ".env");
   process.env.LOG_PLATFORM_STATE = join(dir, "platforms");
@@ -57,6 +58,21 @@ afterAll(() => {
 });
 
 describe("console operations on the runtime", () => {
+  test("accountBrowser saves the account's browser in its own row, lists every driver, and refuses one log does not drive", async () => {
+    const id = connectionIdOf("twitter", "fakeBird");
+    const before = (await runConsoleOperation("connectionsList", {})) as ConnectionsView;
+    expect(before.browsers.map((choice) => choice.name)).toEqual(["camoufox", "adsPower", "brave"]);
+    expect(before.accounts.find((account) => account.id === id)?.browser).toBe("camoufox");
+    const after = (await runConsoleOperation("accountBrowser", { accountId: id, browser: "brave" })) as ConnectionsView;
+    expect(after.accounts.find((account) => account.id === id)?.browser).toBe("brave");
+    const rows = JSON.parse(readFileSync(process.env.LOG_LOCAL_ACCOUNTS!, "utf8")).socialAccounts as { id: string; browserDriver?: string }[];
+    expect(rows.filter((row) => row.id === "local:twitter:fakeBird").map((row) => row.browserDriver)).toEqual(["brave"]);
+    expect(rows).toHaveLength(2);
+    await expect(runConsoleOperation("accountBrowser", { accountId: id, browser: "netscape" })).rejects.toThrow("consoleInputInvalid");
+    await expect(runConsoleOperation("accountBrowser", { accountId: "0".repeat(24), browser: "brave" })).rejects.toThrow("accountNotFound");
+    await runConsoleOperation("accountBrowser", { accountId: id, browser: "camoufox" });
+  });
+
   test("connectionsList shows accounts and key states, never a key", async () => {
     const view = (await runConsoleOperation("connectionsList", {})) as ConnectionsView;
     const text = JSON.stringify(view);

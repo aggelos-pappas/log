@@ -45,7 +45,14 @@ describe('preflight says before any browser opens what would stop an account', (
   test('the proxy limit is the run\'s, a wrong country and a missing profile are blocking too', () => {
     expect(preflightOf(EXETER, { ...GOOD, proxy: { ok: true, exitCountry: 'US', facebookMs: 3110 } }, NOON_EDT, 4000).ready).toBe(true)
     expect(failed(preflightOf(EXETER, { ...GOOD, proxy: { ok: true, exitCountry: 'CA', facebookMs: 900 } }, NOON_EDT, 2500))).toEqual(['proxyWrongCountry'])
-    expect(failed(preflightOf({ ...EXETER, adsPowerProfileId: null }, GOOD, NOON_EDT, 2500))).toEqual(['noAdsPowerProfile'])
+    expect(failed(preflightOf({ ...EXETER, adsPowerProfileId: null, browserDriver: 'adsPower' }, GOOD, NOON_EDT, 2500))).toEqual(['noAdsPowerProfile'])
+  })
+
+  test('an account on another browser needs no AdsPower profile, and an unknown browser is refused', () => {
+    const brave = preflightOf({ ...EXETER, adsPowerProfileId: null, browserDriver: 'brave' }, GOOD, NOON_EDT, 2500)
+    expect(brave.ready).toBe(true)
+    expect(brave.checks.find((check) => check.name === 'adsPower')?.detail).toBe('not used: it opens on Brave')
+    expect(failed(preflightOf({ ...EXETER, adsPowerProfileId: null, browserDriver: 'netscape' }, GOOD, NOON_EDT, 2500))).toEqual(['browserDriverUnknown'])
   })
 
   test("yesterday's host opens and an earlier launch gap don't count against today", () => {

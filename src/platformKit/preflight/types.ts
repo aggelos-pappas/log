@@ -40,6 +40,7 @@ export interface PreflightAccount {
   activeHoursEnd: number | null
   proxy: string | null
   adsPowerProfileId: string | null
+  browserDriver?: string | null
   profilePhoto: string | null
 }
 

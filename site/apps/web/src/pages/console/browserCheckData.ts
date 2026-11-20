@@ -28,6 +28,13 @@ function streamOf(value: unknown): BrowserStream | null {
   return row
 }
 
+function browserOf(value: unknown): BrowserCheckView['browser'] {
+  if (!value || typeof value !== 'object') return null
+  const row = value as Record<string, unknown>
+  const logo = typeof row.logo === 'string' && /^\/logos\/[\w.]+$/.test(row.logo) ? row.logo : null
+  return typeof row.name === 'string' && /^[a-zA-Z]{1,20}$/.test(row.name) && typeof row.label === 'string' && row.label.length <= 40 ? { name: row.name, label: row.label, logo } : null
+}
+
 export function parseView(value: unknown): BrowserCheckView {
   if (!value || typeof value !== 'object') throw new BrowserRequestError('browserResponseInvalid')
   const row = value as Record<string, unknown>
@@ -36,7 +43,7 @@ export function parseView(value: unknown): BrowserCheckView {
   const reason = row.reason && typeof row.reason === 'object' ? row.reason as Record<string, unknown> : null
   const phase = row.phase as BrowserCheckView['phase']
   return {
-    accountId: row.accountId, account: row.account, phase, location: row.location === 'remote' ? 'remote' : 'local',
+    accountId: row.accountId, account: row.account, browser: browserOf(row.browser), phase, location: row.location === 'remote' ? 'remote' : 'local',
     viewerId: row.viewerId as string | null, generation: row.generation as string | null, revision: row.revision as string | null, pageState: row.pageState as string | null, address: text(row.address, 2048),
     width: size('width'), height: size('height'),
     canInteract: row.canInteract === true && phase === 'signInRequired', canResolve: row.canResolve === true && ['signInRequired', 'needsResolution'].includes(phase), canComplete: row.canComplete === true && phase === 'verified', canNavigate: row.canNavigate === true, canGoBack: row.canGoBack === true,

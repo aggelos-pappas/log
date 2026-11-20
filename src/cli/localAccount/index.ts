@@ -4,13 +4,14 @@ import type { SignInPrompts } from "../../console/signIn/index.ts";
 import { isErrorCode } from "../../errors/catalog/index.ts";
 import { shouldPrompt } from "../launch/helpers/shouldPrompt.ts";
 import type { LaunchTTY } from "../launch/helpers/shouldPrompt.ts";
-import { createTwentyClient, localAccountsPath, pullLocalAccounts, readLocalAccounts, upsertLocalAccount } from "../../twenty/graphql/index.ts";
+import { createTwentyClient, localAccountsPath, pullLocalAccounts, readLocalAccounts, updateLocalAccount, upsertLocalAccount } from "../../twenty/graphql/index.ts";
+import { BROWSER_DRIVERS, driverOrNull, isBrowserDriver } from "../../browser/driver/index.ts";
 import { PLATFORMS, PLATFORM_SITES } from "../runner/helpers/platforms.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput, CommandResult } from "../runner/types.ts";
 
 export const LOCAL_ACCOUNT_USAGE = [
-  "Usage: log localAccount add --platform <facebook|twitter|reddit|discord|linkedin|slack> --account <accountName> [--adsPower <profileId>] [--proxy <scheme://user:pass@host:port>] [--home <CC>] [--city <city>]",
+  "Usage: log localAccount add --platform <facebook|twitter|reddit|discord|linkedin|slack> --account <accountName> [--browser <name>] [--adsPower <profileId>] [--proxy <url>] [--home <CC>] [--city <city>]",
   "       log localAccount list [--json]",
   "       log localAccount login --platform <p> --account <accountName>   (saves the account's email and password to the file from two masked prompts, the same save as the console's password sign-in, on a platform that signs in from them; run in a terminal)",
   "       log localAccount pull [--platform <p>] [--refresh] [--json]   (copies every account Twenty has, cookies and login included, into the file; an account already there is kept unless --refresh; each keeps its Twenty id, so listings and groups still find it)",
@@ -26,6 +27,7 @@ export const LOCAL_ACCOUNT_INPUT: CommandInput = {
       flags: [
         { name: "platform", kind: "enum", required: true, values: PLATFORMS, description: "The account's platform" },
         { name: "account", kind: "string", required: true, description: "The account's accountName (its handle or name on the platform)" },
+        { name: "browser", kind: "enum", values: BROWSER_DRIVERS, description: "Its browser (default camoufox)" },
         { name: "adsPower", kind: "string", description: "Its AdsPower profile id" },
         { name: "proxy", kind: "string", description: "Its proxy, scheme://user:pass@host:port" },
         { name: "home", kind: "string", pattern: "^[A-Za-z]{2}$", takes: "a two-letter country code", description: "Its home country" },
@@ -56,6 +58,10 @@ export const LOCAL_ACCOUNT_INPUT: CommandInput = {
     },
   ],
 };
+
+function browserOfRow(row: Record<string, unknown>): string | null {
+  return driverOrNull({ browserDriver: typeof row.browserDriver === "string" ? row.browserDriver : null, adsPowerProfileId: typeof row.adsPowerProfileId === "string" ? row.adsPowerProfileId : null });
+}
 
 export const localAccountDeps: { prompts: SignInPrompts; tty: () => LaunchTTY; env?: Record<string, string | undefined> } = {
   prompts: { intro, outro, cancel, password: password as SignInPrompts["password"] },
@@ -97,7 +103,7 @@ export const localAccountCommand: Command = {
   effect: "write",
   input: LOCAL_ACCOUNT_INPUT,
   summary: "Accounts kept in a local file instead of Twenty: add one, with the account's browser profile, pull every Twenty account in, or list them",
-  args: "<add|list|pull|login> [--platform <p>] [--account <a>] [--adsPower <id>] [--proxy <url>] [--home <CC>] [--refresh] [--json]",
+  args: "<add|list|pull|login> [--platform <p>] [--account <a>] [--browser <name>] [--adsPower <id>] [--proxy <url>] [--home <CC>] [--refresh] [--json]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(LOCAL_ACCOUNT_INPUT));
     if (!parsed.ok) return refuseInput("localAccount", parsed.error, LOCAL_ACCOUNT_USAGE);
@@ -106,10 +112,10 @@ export const localAccountCommand: Command = {
     const path = localAccountsPath();
     if (action === "login") return saveLogin(parsed.flags);
     if (action === "list") {
-      const rows = readLocalAccounts(path).map((r) => ({ id: r.id, platform: r.platform, accountName: r.accountName, adsPowerProfileId: r.adsPowerProfileId ?? null, sessionState: r.sessionState ?? null }));
+      const rows = readLocalAccounts(path).map((r) => ({ id: r.id, platform: r.platform, accountName: r.accountName, browser: browserOfRow(r), adsPowerProfileId: r.adsPowerProfileId ?? null, sessionState: r.sessionState ?? null }));
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ path, accounts: rows }, null, 2) };
       if (rows.length === 0) return { code: 0, stdout: `No local accounts in ${path}.` };
-      return { code: 0, stdout: [`${rows.length} local account(s) in ${path}:`, ...rows.map((r) => `  ${String(r.platform).padEnd(9)} ${String(r.accountName).padEnd(34)} ${r.adsPowerProfileId ? `adsPower ${r.adsPowerProfileId}` : "(no AdsPower profile)"}  ${r.sessionState ?? "no session yet"}`)].join("\n") };
+      return { code: 0, stdout: [`${rows.length} local account(s) in ${path}:`, ...rows.map((r) => `  ${String(r.platform).padEnd(9)} ${String(r.accountName).padEnd(34)} ${String(r.browser ?? "unknown browser").padEnd(9)} ${r.adsPowerProfileId ? `adsPower ${r.adsPowerProfileId}` : "(no AdsPower profile)"}  ${r.sessionState ?? "no session yet"}`)].join("\n") };
     }
     const platform = String(parsed.flags["platform"] ?? "").toLowerCase();
     if (action === "pull") {
@@ -124,17 +130,17 @@ export const localAccountCommand: Command = {
     if (!accountName) return { code: 1, error: "inputInvalid", stderr: `log localAccount add: --account is needed\n${LOCAL_ACCOUNT_USAGE}` };
     const text = (name: string) => (typeof parsed.flags[name] === "string" && parsed.flags[name] ? String(parsed.flags[name]).trim() : undefined);
     const home = text("home")?.toUpperCase();
-    const row = upsertLocalAccount(
-      {
-        accountName,
-        platform: PLATFORM_SITES[platform as (typeof PLATFORMS)[number]].twenty,
-        ...(text("adsPower") ? { adsPowerProfileId: text("adsPower"), browserDriver: "adsPower" } : {}),
-        ...(text("proxy") ? { proxy: text("proxy") } : {}),
-        ...(home ? { homeCountry: home } : {}),
-        ...(text("city") ? { homeCity: text("city") } : {}),
-      },
-      path,
-    );
-    return { code: 0, stdout: `log localAccount: ${row.platform} ${accountName} saved in ${path} (${row.id}). Twenty is not touched.` };
+    const browser = text("browser");
+    if (browser !== undefined && !isBrowserDriver(browser)) return refuse("localAccount add", "browserDriverUnknown", `--browser is one of ${BROWSER_DRIVERS.join(", ")}`);
+    const twenty = PLATFORM_SITES[platform as (typeof PLATFORMS)[number]].twenty;
+    const fields = {
+      ...(text("adsPower") ? { adsPowerProfileId: text("adsPower"), browserDriver: "adsPower" } : {}),
+      ...(browser ? { browserDriver: browser } : {}),
+      ...(text("proxy") ? { proxy: text("proxy") } : {}),
+      ...(home ? { homeCountry: home } : {}),
+      ...(text("city") ? { homeCity: text("city") } : {}),
+    };
+    const row = updateLocalAccount(twenty, accountName, fields, path) ?? upsertLocalAccount({ accountName, platform: twenty, ...fields }, path);
+    return { code: 0, stdout: `log localAccount: ${row.platform} ${accountName} saved in ${path} (${row.id}), browser ${browserOfRow(row) ?? "unknown"}. Twenty is not touched.` };
   },
 };

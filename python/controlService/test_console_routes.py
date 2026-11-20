@@ -172,3 +172,12 @@ def test_console_operations_are_not_generic_tools(world: World) -> None:
     response = world.app.post(f"/api/v1/teams/{world.teamId}/operations", json={"operationId": "00000000-0000-4000-8000-000000000001", "tool": "credentialsSave", "args": {}}, headers={CSRF_HEADER: csrf_token("sessionSecret", world.tokens["owner"])})
     assert response.status_code == 400
     assert response.json()["code"] == "invalidInput"
+
+
+def test_picking_an_account_browser_relays_the_name_and_the_runtime_checks_it(world: World) -> None:
+    link = attach(world, result("accountBrowser", {"schemaVersion": 1, "source": "workspace", "accounts": [], "extensions": [], "browsers": []}))
+    assert call(world, "owner", "POST", "accountBrowser", {"accountId": "a" * 24, "browser": "../x"}).status_code == 400
+    assert link.sent == []
+    response = call(world, "owner", "POST", "accountBrowser", {"accountId": "a" * 24, "browser": "brave"})
+    assert response.status_code == 200
+    assert link.sent[0]["payload"] == {"tool": "accountBrowser", "args": {"accountId": "a" * 24, "browser": "brave"}}

@@ -6,10 +6,12 @@ flowchart LR
   gates["Every driver: the proxy gate (Facebook: a proxy in the home country, rule 12. Reddit, Discord, LinkedIn, Slack, Instagram, TikTok: no proxy, rule 84), self-check, HAR, human mouse (rules 17, 22, 32)"]
   session["One Playwright context: python/browser/browserDriver.py"]
   twenty --> pick
-  pick -->|"browserDriver camoufox, or no profile"| d_camoufox["camoufox"]
+  pick -->|"browserDriver camoufox, or nothing set"| d_camoufox["camoufox"]
   pick -->|"a linked profile, or browserDriver adsPower"| d_adsPower["adsPower"]
+  pick -->|"browserDriver brave, or LOG_BROWSER_DRIVER=brave"| d_brave["brave"]
   d_camoufox --> gates
   d_adsPower --> gates
+  d_brave --> gates
   more["Next browser provider: one more driver (src/browser/name), rule 44"] -.-> gates
   gates --> session
   account["On the account's browser: facebook host, inspect, flow, #lt;platform#gt; warmup, facebook join, facebook read, facebook poll, facebook check, reddit read, discord read, slack read"]

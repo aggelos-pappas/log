@@ -1823,6 +1823,27 @@ export const ERROR_CATALOG = {
     raisedIn: ['browser/adsPower', 'python/browserDriver'],
     action: 'Run `log adsPower sync --apply` (it makes the profile and links it).'
   },
+  braveNotFound: {
+    layer: 'browser',
+    meaning: 'The account runs on Brave and no Brave was found at LOG_BRAVE_PATH or the standard install places.',
+    retryable: false,
+    raisedIn: ['python/browserDriver'],
+    action: 'Install Brave, or set LOG_BRAVE_PATH to its executable.'
+  },
+  braveProfileMissing: {
+    layer: 'browser',
+    meaning: "A Brave session was asked for without the account's id, so it has no profile folder of its own.",
+    retryable: false,
+    raisedIn: ['python/browserDriver'],
+    action: 'Tell the owner: the caller must pass accountId in the session config.'
+  },
+  browserDriverUnknown: {
+    layer: 'browser',
+    meaning: "The account's browserDriver, or LOG_BROWSER_DRIVER, names a browser log does not drive.",
+    retryable: false,
+    raisedIn: ['browser/driver', 'python/browserDriver'],
+    action: 'Set it to one of camoufox, adsPower or brave (`log localAccount add --browser <name>`), or leave it empty for Camoufox.'
+  },
   groupRefInvalid: {
     layer: 'group',
     meaning: '--group names no Facebook group (a facebook.com/groups/<id or name>/ URL, the id, or the name in the URL).',
