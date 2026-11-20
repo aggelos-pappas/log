@@ -186,12 +186,14 @@ def servers_path(spec: dict[str, Any]) -> Path:
 
 
 def server_channels_of(client: Any, spec: dict[str, Any]) -> tuple[list[dict[str, Any]], str | None]:
+    from logDb import engineStore
+
     path = servers_path(spec)
+    kept = engineStore.load("discordServers", path) or {}
     try:
-        kept = json.loads(path.read_text(encoding="utf-8"))
         if time.time() - float(kept.get("savedAt") or 0) < SERVERS_FRESH_SECONDS:
             return kept.get("channels") or [], None
-    except (OSError, ValueError):
+    except (TypeError, ValueError):
         kept = {}
     data, status = client.request("GET", "/api/v9/users/@me/guilds", None, client.header)
     if status != 200:
@@ -206,8 +208,7 @@ def server_channels_of(client: Any, spec: dict[str, Any]) -> tuple[list[dict[str
             skipped.append(str(guild.get("name")))
             continue
         channels += [{"id": c["id"], "kind": "channel", "name": f"{guild.get('name')} #{c['name']}", "members": [], "server": guild.get("name"), "serverId": guild["id"]} for c in found if c.get("type") in TEXT_CHANNELS]
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"savedAt": time.time() if not skipped else 0, "channels": channels}), encoding="utf-8")
+    engineStore.save("discordServers", path, {"savedAt": time.time() if not skipped else 0, "channels": channels})
     return channels, (f"Discord didn't answer the channels of {', '.join(skipped)}, so those servers are left out until the next read" if skipped else None)
 
 
@@ -215,9 +216,9 @@ def save_servers_from(socket: Any, spec: dict[str, Any]) -> int:
     channels = [{"id": str(c["id"]), "kind": "channel", "name": f"{g.get('name')} #{c['name']}", "members": [], "server": g.get("name"), "serverId": str(g.get("guild_id"))} for g in (getattr(socket, "guilds", None) or []) for c in (g.get("channels") or []) if c.get("type") in TEXT_CHANNELS]
     if not channels:
         return 0
-    path = servers_path(spec)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"savedAt": time.time(), "from": "gateway", "channels": channels}), encoding="utf-8")
+    from logDb import engineStore
+
+    engineStore.save("discordServers", servers_path(spec), {"savedAt": time.time(), "from": "gateway", "channels": channels})
     return len(channels)
 
 
@@ -738,19 +739,26 @@ def threads_path(spec: dict[str, Any]) -> Path:
     return servers_path(spec).with_name("threads.json")
 
 
+KEPT_THREADS = 5000
+
+
 def kept_threads(spec: dict[str, Any]) -> list[dict[str, Any]]:
-    try:
-        return json.loads(threads_path(spec).read_text(encoding="utf-8")).get("threads") or []
-    except (OSError, ValueError):
-        return []
+    from logDb import engineStore
+
+    return list((engineStore.load("discordThreads", threads_path(spec)) or {}).get("threads") or [])
+
+
+def merge_threads(into: dict[str, Any], held: dict[str, Any]) -> None:
+    fresh = {t["id"] for t in into.get("threads") or []}
+    into["threads"] = ([t for t in held.get("threads") or [] if t.get("id") not in fresh] + list(into.get("threads") or []))[-KEPT_THREADS:]
 
 
 def keep_threads(spec: dict[str, Any], found: list[dict[str, Any]]) -> None:
+    from logDb import engineStore
+
     fresh = {t["id"]: t for t in found}
     merged = [t for t in kept_threads(spec) if t["id"] not in fresh] + list(fresh.values())
-    path = threads_path(spec)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"savedAt": time.time(), "threads": merged[-5000:]}), encoding="utf-8")
+    engineStore.save("discordThreads", threads_path(spec), {"savedAt": time.time(), "threads": merged[-KEPT_THREADS:]}, merge_threads)
 
 
 def get_json(client: Any, url: str, where: str) -> tuple[Any, dict[str, Any] | None]:

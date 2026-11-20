@@ -890,6 +890,7 @@ How log keeps what it reads and does: one SQLite database, `~/.logCli/log.db`, w
 - **REQ-STORAGE-15** The small logs are records, and hook timings are spans
 - **REQ-STORAGE-16** Nothing new writes shared state outside log.db
 - **REQ-STORAGE-17** The small shared state is keyed rows in log.db
+- **REQ-STORAGE-20** The engines' own stores are rows in log.db
 
 ## [TikTok](./tiktok.md)
 

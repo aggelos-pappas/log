@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable
 
 VERSION = 1
+STORE = "xNotifications"
 PAGE_SIZE = 40
 NEWEST_PAGES = 5
 ENGAGER_PAGE_SIZE = 40
@@ -30,21 +31,38 @@ def empty_store(me: str) -> dict[str, Any]:
     return {"version": VERSION, "userId": me, "bottomCursor": None, "historyDone": False, "syncedAt": None, "rows": {}, "engagements": {}}
 
 
+def valid_store(store: Any) -> bool:
+    return isinstance(store, dict) and store.get("version") == VERSION and isinstance(store.get("rows"), dict)
+
+
 def read_store(path: Path) -> dict[str, Any] | None:
-    if not path.exists():
-        return None
-    try:
-        store = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
-    if not isinstance(store, dict) or store.get("version") != VERSION or not isinstance(store.get("rows"), dict):
+    from logDb import engineStore
+
+    used, store = engineStore.read(STORE, path.parent.name, path, None, valid_store)
+    if not used:
+        store = read_file(path)
+    if store is None:
         return None
     if not isinstance(store.get("engagements"), dict):
         store["engagements"] = {}
     return store
 
 
+def read_file(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    try:
+        store = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return store if valid_store(store) else None
+
+
 def write_store(path: Path, store: dict[str, Any]) -> None:
+    from logDb import engineStore
+
+    if engineStore.write(STORE, path.parent.name, store, path, None, valid_store):
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
     temp.write_text(json.dumps(store), encoding="utf-8")

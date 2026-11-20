@@ -27,6 +27,10 @@ export type StateScope =
   | 'handRolled'
   | 'turnStart'
   | 'browserMove'
+  | 'inboxSeen'
+  | 'inboxPoll'
+  | 'watcherCodeStamp'
+  | 'hermesPush'
 
 export interface StateRow<T> {
   body: T

@@ -361,16 +361,24 @@ def last_call_path(account: str) -> Path:
 
 def spacing_wait(account: str, now: float | None = None, draw: Any = None, action: str | None = None) -> float:
     import random
+    from logDb import engineStore
+
     try:
-        last = float(json.loads(last_call_path(account).read_text(encoding="utf-8")).get("at") or 0)
-    except (OSError, json.JSONDecodeError, ValueError):
+        last = float((engineStore.load("xLastCall", last_call_path(account)) or {}).get("at") or 0)
+    except (TypeError, ValueError):
         return 0.0
     gap = (draw or random.uniform)(*(READ_SPACING_SECONDS if action in READS else SPACING_SECONDS))
     return max(0.0, last + gap - (now or time.time()))
 
 
+def later_call(into: dict[str, Any], held: dict[str, Any]) -> None:
+    into["at"] = max(float(into.get("at") or 0), float(held.get("at") or 0))
+
+
 def mark_call(account: str, now: float | None = None) -> None:
-    last_call_path(account).write_text(json.dumps({"at": now or time.time()}), encoding="utf-8")
+    from logDb import engineStore
+
+    engineStore.save("xLastCall", last_call_path(account), {"at": now or time.time()}, later_call)
 
 
 async def session_answer(client: Any) -> int:

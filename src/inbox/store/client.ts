@@ -10,6 +10,7 @@ import { refreshWorkedCards } from '../card/client'
 import { INTERNAL_TYPES, KNOWN_TYPES } from './types'
 import type { GapRow, GapStatus, Stage, StoredEvent } from './types'
 import { logHome } from '../../config/logHome/index'
+import { readEngineStore } from '../../storage/engineStore/index'
 
 let opened: { path: string; db: Database } | null = null
 
@@ -384,16 +385,11 @@ export function handleOfUserId(platform: string, account: string, userId: string
 }
 
 export function xInboxHandleOf(account: string, userId: string, root: string = process.env.LOG_TWITTER_STATE || join(logHome(), 'twitter')): string | null {
-  const file = join(root, account, 'inboxSync.json')
-  if (!userId || !existsSync(file)) return null
-  try {
-    const state = JSON.parse(readFileSync(file, 'utf8')) as { xchat?: Record<string, { handles?: Record<string, string> }> }
-    for (const conversation of Object.values(state.xchat ?? {})) {
-      const handle = conversation.handles?.[userId]?.replace(/^@/, '')
-      if (handle && !isBareId(handle)) return handle
-    }
-  } catch {
-    return null
+  if (!userId) return null
+  const state = readEngineStore<{ xchat?: Record<string, { handles?: Record<string, string> }> }>('xInbox', account, join(root, account, 'inboxSync.json'), db())
+  for (const conversation of Object.values(state?.xchat ?? {})) {
+    const handle = conversation?.handles?.[userId]?.replace(/^@/, '')
+    if (handle && !isBareId(handle)) return handle
   }
   return null
 }

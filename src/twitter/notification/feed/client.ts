@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
+import { readEngineStore } from '../../../storage/engineStore/index'
 import { ENGAGER_KINDS, NOTIFICATION_TYPES } from './types'
 import type { EngagerCounts, EngagerKind, EngagerSummary, NotificationEngager, NotificationKind, NotificationQuery, NotificationStore, NotificationType, PostEngagerSummary, TwitterNotification, UnrollCandidate } from './types'
 import { logHome } from '../../../config/logHome/index'
@@ -9,13 +9,8 @@ export function notificationStorePath(account: string, root = process.env.LOG_TW
 }
 
 export function readNotificationStore(path: string): NotificationStore | null {
-  if (!existsSync(path)) return null
-  try {
-    const store = JSON.parse(readFileSync(path, 'utf8')) as NotificationStore
-    return store && typeof store === 'object' && store.rows && typeof store.rows === 'object' ? store : null
-  } catch {
-    return null
-  }
+  const store = readEngineStore<NotificationStore & Record<string, unknown>>('xNotifications', basename(dirname(path)), path)
+  return store && store.rows && typeof store.rows === 'object' ? store : null
 }
 
 export function isNotificationType(value: string): value is NotificationType {
