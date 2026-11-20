@@ -33,7 +33,8 @@ WATCH_JS = """async ([x, y]) => {
 ACCOUNT = "benchAccount"
 PAGES = {"mcp": "host", "logapp": "logapp"}
 SHOT_PREFIX = {"mcp": "", "logapp": "logapp-browserView-"}
-CLICKS = int(os.environ.get("BENCH_CLICKS", "5"))
+LIVE_ACCOUNT = os.environ.get("BENCH_LIVE_ACCOUNT", "").strip()
+CLICKS = 0 if LIVE_ACCOUNT else int(os.environ.get("BENCH_CLICKS", "5"))
 SURFACES = tuple(s for s in os.environ.get("BENCH_SURFACES", "mcp,logapp").split(",") if s in PAGES)
 WIDTH, HEIGHT = 1100, 700
 PROBE = (60, 420, 240, 90)
@@ -160,8 +161,9 @@ async def scenario(edge, host, cpage, surface, theme, mode, shots, measure_secon
         shot = str(shots / f"{prefix}{SHOT_PREFIX[surface]}{theme}.png")
         await page.screenshot(path=shot, full_page=True)
     address = await app_address(page, surface)
+    view_error = await app_error(page)
     await page.close()
-    return {"surface": surface, "theme": theme, "mode": mode, "fps": round(fps, 1), "frames": end, "source": source, "clickReached": clicked, "clickMs": latency, "clicksMs": latencies, "clickToFrameMs": frame_ms, "clicksToFrameMs": framed, "address": address, "screenshot": shot, "errors": errors[:3]}
+    return {"viewError": view_error, "surface": surface, "theme": theme, "mode": mode, "fps": round(fps, 1), "frames": end, "source": source, "clickReached": clicked, "clickMs": latency, "clicksMs": latencies, "clickToFrameMs": frame_ms, "clicksToFrameMs": framed, "address": address, "screenshot": shot, "errors": errors[:3]}
 
 
 async def app_address(page, surface):
@@ -169,6 +171,13 @@ async def app_address(page, surface):
     if frame is None:
         return None
     return await frame.evaluate("(() => { const a = document.querySelector('[data-ref=address]'); return a ? a.textContent : null })()")
+
+
+async def app_error(page):
+    frame = next((f for f in page.frames if f != page.main_frame), None)
+    if frame is None:
+        return None
+    return await frame.evaluate("(() => { const a = document.getElementById('app'); return a ? a.dataset.error || null : null })()")
 
 
 async def report_scenario(edge, host, theme, shots, prefix=""):
@@ -241,6 +250,36 @@ async def bench_page(browser, folder):
             stop_tree(proc)
 
 
+async def serve_and_measure(env, cpage, shots, seconds, prefix, reports):
+    api_port, host_port = free_port(), free_port()
+    api = subprocess.Popen(["uv", "run", "--no-project", "--python", "3.12", "--with", "fastapi", "--with", "uvicorn", "python", str(ROOT / "scripts" / "browserView" / "benchPluginApi.py"), str(api_port)], env=env, cwd=str(ROOT))
+    host_proc = subprocess.Popen([shutil.which("bun") or "bun", str(ROOT / "scripts" / "browserView" / "benchHost.ts")], env={**env, "BENCH_HOST_PORT": str(host_port), "BENCH_PLUGIN_API": f"http://127.0.0.1:{api_port}"}, cwd=str(ROOT))
+    results = []
+    try:
+        host = f"http://127.0.0.1:{host_port}"
+        await wait_http(f"{host}/missing")
+        await wait_http(f"http://127.0.0.1:{api_port}/api/plugins/log/apps/browserView/resource", 180)
+        async with async_playwright() as pw:
+            edge = await pw.chromium.launch(channel="msedge", headless=True)
+            for surface in SURFACES:
+                for theme in ("light", "dark"):
+                    results.append(await scenario(edge, host, cpage, surface, theme, "cast", shots, seconds, prefix))
+                if surface != "logapp":
+                    results.append(await scenario(edge, host, cpage, surface, "light", "pull", None, seconds, prefix))
+            if reports:
+                for theme in ("light", "dark"):
+                    results.append(await report_scenario(edge, host, theme, shots, prefix))
+            await edge.close()
+    finally:
+        stop_tree(host_proc)
+        stop_tree(api)
+    return results
+
+
+def frameless(results):
+    return [f"{r['surface']} {r['theme']} {r['mode']}" for r in results if "frames" in r and r["frames"] < 1]
+
+
 async def main():
     shots = Path(sys.argv[1]) if len(sys.argv) > 1 else None
     seconds = float(os.environ.get("BENCH_SECONDS", "5"))
@@ -250,42 +289,32 @@ async def main():
     prefix = f"{browser}-" if browser != "camoufox" or os.environ.get("BENCH_PREFIX") else ""
     if shots:
         shots.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
-        inspect = Path(folder) / "inspect"
-        (inspect / "sessions").mkdir(parents=True)
-        run_dir = Path(folder) / "run"
-        run_dir.mkdir()
-        async with bench_page(browser, folder) as cpage:
-            await cpage.set_viewport_size({"width": WIDTH, "height": HEIGHT})
-            await cpage.set_content(PAGE)
-            owner = BenchOwner(run_dir, cpage)
-            viewer = BrowserViewer(owner)
-            await viewer.start()
-            (inspect / "sessions" / f"{ACCOUNT}.json").write_text(json.dumps({"account": ACCOUNT, "runDir": str(run_dir), "pid": os.getpid()}), encoding="utf8")
-            env = {**os.environ, "LOG_ROOT": str(ROOT), "LOG_DB": str(Path(folder) / "log.db"), "LOG_CONTEXT_SERVICE": "off", "LOG_INSPECT_CURRENT": str(inspect / "current.json"), "LOG_BROWSER_STREAM_PORT": str(free_port()), "LOG_BROWSER_VIEW_LOCATION": "local", "BENCH_ACCOUNT": ACCOUNT}
-            api_port, host_port = free_port(), free_port()
-            api = subprocess.Popen(["uv", "run", "--no-project", "--python", "3.12", "--with", "fastapi", "--with", "uvicorn", "python", str(ROOT / "scripts" / "browserView" / "benchPluginApi.py"), str(api_port)], env=env, cwd=str(ROOT))
-            host_proc = subprocess.Popen([shutil.which("bun") or "bun", str(ROOT / "scripts" / "browserView" / "benchHost.ts")], env={**env, "BENCH_HOST_PORT": str(host_port), "BENCH_PLUGIN_API": f"http://127.0.0.1:{api_port}"}, cwd=str(ROOT))
-            results = []
-            try:
-                host = f"http://127.0.0.1:{host_port}"
-                await wait_http(f"{host}/missing")
-                await wait_http(f"http://127.0.0.1:{api_port}/api/plugins/log/apps/browserView/resource", 180)
-                async with async_playwright() as pw:
-                    edge = await pw.chromium.launch(channel="msedge", headless=True)
-                    for surface in SURFACES:
-                        for theme in ("light", "dark"):
-                            results.append(await scenario(edge, host, cpage, surface, theme, "cast", shots, seconds, prefix))
-                        if surface != "logapp":
-                            results.append(await scenario(edge, host, cpage, surface, "light", "pull", None, seconds, prefix))
-                    for theme in ("light", "dark"):
-                        results.append(await report_scenario(edge, host, theme, shots, prefix))
-                    await edge.close()
-            finally:
-                stop_tree(host_proc)
-                stop_tree(api)
-                await viewer.close()
+    if LIVE_ACCOUNT:
+        env = {**os.environ, "LOG_ROOT": str(ROOT), "LOG_CONTEXT_SERVICE": "off", "LOG_BROWSER_VIEW_LOCATION": "local", "BENCH_ACCOUNT": LIVE_ACCOUNT}
+        results = await serve_and_measure(env, None, shots, seconds, f"live-{prefix}", False)
+        browser = f"live:{LIVE_ACCOUNT}"
+    else:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as folder:
+            inspect = Path(folder) / "inspect"
+            (inspect / "sessions").mkdir(parents=True)
+            run_dir = Path(folder) / "run"
+            run_dir.mkdir()
+            async with bench_page(browser, folder) as cpage:
+                await cpage.set_viewport_size({"width": WIDTH, "height": HEIGHT})
+                await cpage.set_content(PAGE)
+                owner = BenchOwner(run_dir, cpage)
+                viewer = BrowserViewer(owner)
+                await viewer.start()
+                (inspect / "sessions" / f"{ACCOUNT}.json").write_text(json.dumps({"account": ACCOUNT, "runDir": str(run_dir), "pid": os.getpid()}), encoding="utf8")
+                env = {**os.environ, "LOG_ROOT": str(ROOT), "LOG_DB": str(Path(folder) / "log.db"), "LOG_CONTEXT_SERVICE": "off", "LOG_INSPECT_CURRENT": str(inspect / "current.json"), "LOG_BROWSER_STREAM_PORT": str(free_port()), "LOG_BROWSER_VIEW_LOCATION": "local", "BENCH_ACCOUNT": ACCOUNT}
+                try:
+                    results = await serve_and_measure(env, cpage, shots, seconds, prefix, True)
+                finally:
+                    await viewer.close()
     print(json.dumps({"browser": browser, "results": results}, indent=2))
+    missing = frameless(results)
+    if missing:
+        raise SystemExit(f"no frame reached the view: {', '.join(missing)}")
 
 
 asyncio.run(main())

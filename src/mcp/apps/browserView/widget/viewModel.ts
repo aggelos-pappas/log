@@ -52,6 +52,22 @@ export const ADDRESS_NONE = "This page has no web address";
 export const TAKE_CONTROL = "Click to take control";
 export const DRIVE_LABEL = "Click and type here; it goes to the account's browser";
 
+export const STOPPED_PREFIX = "The live view stopped: ";
+
+export function errorLabel(code: string): string {
+  return ERROR_TITLES[code] ?? `${STOPPED_PREFIX}${code}`;
+}
+
+export function pullFailure(code: string): { refresh: boolean; error: string | null } {
+  return { refresh: true, error: code === "browserGenerationChanged" || code === "browserMissing" ? null : code };
+}
+
+export function viewStatus(view: { phase: string | null; generation: string | null } | null, live: boolean, error: string | null): { connecting: boolean; failed: boolean; label: string | null } {
+  if (error && !live) return { connecting: false, failed: true, label: errorLabel(error) };
+  const connecting = !view || (Boolean(view.generation) && !live && view.phase !== "browserMissing" && view.phase !== "viewerUnavailable");
+  return { connecting, failed: false, label: null };
+}
+
 export function phaseLabel(phase: FramePhase, canInteract: boolean): string {
   return canInteract && phase !== "signInRequired" && phase !== "busy" ? DRIVE_LABEL : PHASE_LABELS[phase];
 }

@@ -140,6 +140,39 @@ class BrowserViewerTests(unittest.TestCase):
             self.assertIsNone(state["stream"])
         self.run_with(LOGIN_PAGE, scenario)
 
+    @unittest.skipUnless(os.name == "nt", "the proactor event loop is Windows only")
+    def test_the_viewer_listens_again_after_windows_drops_its_listening_socket(self):
+        async def scenario(_owner, viewer, descriptor):
+            loop = asyncio.get_running_loop()
+            seen = []
+            loop.set_exception_handler(lambda _loop, context: seen.append(context.get("message")))
+            proactor = loop._proactor
+            real = proactor.accept
+
+            def accept(sock):
+                proactor.accept = real
+                failed = loop.create_future()
+                failed.set_exception(OSError(22, "The specified network name is no longer available", None, 64))
+                return failed
+
+            proactor.accept = accept
+            viewer.keepEvery = 0.05
+            status, _headers, _body = await call(descriptor["port"], descriptor["token"], "GET", "/state")
+            self.assertEqual(status, 200)
+            await asyncio.sleep(0.05)
+            self.assertIn("Accept failed on a socket", seen)
+            for _ in range(60):
+                if viewer.relistened:
+                    break
+                await asyncio.sleep(0.05)
+            self.assertEqual(viewer.relistened, 1)
+            again = json.loads(viewer.path.read_text(encoding="utf8"))
+            self.assertEqual((again["generation"], again["token"]), (descriptor["generation"], descriptor["token"]))
+            status, _headers, body = await call(again["port"], again["token"], "GET", "/state")
+            self.assertEqual(status, 200, body)
+            self.assertEqual(json.loads(body)["generation"], viewer.generation)
+        self.run_with(LOGIN_PAGE, scenario)
+
     def test_the_frame_is_a_jpeg_with_generation_and_revision_headers(self):
         async def scenario(_owner, viewer, descriptor):
             status, headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/frame")
