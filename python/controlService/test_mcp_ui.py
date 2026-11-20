@@ -31,8 +31,9 @@ def answer(envelope: dict) -> dict:
     if tool == "getGuide":
         return {"kind": "result", "payload": {"state": "succeeded", "result": {"text": "PLAY MATCH " + str(args.get("ask"))}}}
     if tool == "report":
-        spec = {"title": args["title"], "blocks": []} if args.get("ui") else None
-        return {"kind": "result", "payload": {"state": "succeeded", "result": {"text": "# " + args["title"], "spec": spec}}}
+        spec = {"title": args["title"], "compiled": "require('log')", "data": {"people": [{"handle": "grace_ships"}]}} if args.get("ui") else None
+        summary = {"title": args["title"], "shown": True, "rows": {"people": 1}} if args.get("ui") else None
+        return {"kind": "result", "payload": {"state": "succeeded", "result": {"text": "# " + args["title"], "spec": spec, "summary": summary}}}
     if tool == "browserViewStream":
         return {"kind": "result", "payload": {"state": "succeeded", "result": {"generation": "a" * 32, "stream": {"kind": "voxl", "url": STREAM_URL, "page": {"width": 10, "height": 10}, "window": {"left": 0, "top": 0, "width": 10, "height": 10}}}}}
     return {"kind": "result", "payload": {"state": "succeeded", "result": {"stdout": "ok"}}}
@@ -133,7 +134,8 @@ def test_a_report_reaches_widget_clients_as_a_spec_and_others_as_markdown(world:
     token = bearer(world)
     session = initialize(world, token, UI_CAPS)
     drawn = rpc(world, token, "tools/call", {"name": "report", "arguments": {"title": "Fake report", "blocks": []}}, session=session).json()["result"]
-    assert drawn["structuredContent"]["title"] == "Fake report"
+    assert drawn["structuredContent"] == {"title": "Fake report", "shown": True, "rows": {"people": 1}}
+    assert drawn["_meta"]["log/view"]["data"]["people"][0]["handle"] == "grace_ships"
     assert drawn["content"][0]["text"] == "# Fake report"
     sent = next(envelope for envelope in link.sent if envelope["payload"]["tool"] == "report")
     assert sent["payload"]["args"]["ui"] is True

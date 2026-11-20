@@ -10,7 +10,8 @@ import { DIRECT_ROUTES } from "../../src/directApi/engine/index.ts";
 import { renderSurface, withSurface } from "../../src/surface/readme/index.ts";
 import { withStepsDiagrams } from "../../src/surface/stepsDiagram/index.ts";
 import { SPEC_ORDER, specDomains, specsIndex, specSummary } from "../../src/specs/index.ts";
-import { REPORT_TOOL, reportTool } from "../../src/mcp/apps/index.ts";
+import { REPORT_DESCRIPTION, REPORT_TOOL, reportTool } from "../../src/mcp/apps/index.ts";
+import { withCardAsks } from "../../src/mcp/apps/cards.ts";
 import { DESKTOP_BUNDLES, desktopBundle } from "../hermes/desktopBundles.ts";
 import { toolFactsOf } from "../../src/useCases/router/client.ts";
 
@@ -161,7 +162,10 @@ put("docs/specs/README.md", specsIndex(specDomains(root).filter((d) => existsSyn
   }
 }
 
-put("src/useCases/router/fixtures/tools.json", `[\n${toolFactsOf(commandTools(COMMANDS), isPlatform).map((f) => JSON.stringify(f)).join(",\n")}\n]\n`);
+const reportDef = reportTool();
+const reportFlags = Object.keys((reportDef.inputSchema as { properties?: Record<string, unknown> }).properties ?? {});
+const cardExtra = { [reportDef.name]: { title: `${reportDef.title}: ${REPORT_DESCRIPTION.split(". ")[0]}`, flags: reportFlags, required: (reportDef.inputSchema as { required?: string[] }).required ?? [] } };
+put("src/useCases/router/fixtures/tools.json", `[\n${withCardAsks(toolFactsOf(commandTools(COMMANDS), isPlatform), cardExtra).map((f) => JSON.stringify(f)).join(",\n")}\n]\n`);
 
 put(HOSTED_INSTRUCTIONS_FILE, `${serverInstructions("hosted")}\n`);
 

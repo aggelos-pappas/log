@@ -139,6 +139,7 @@ describe("waitingOnYou names who is waiting and the platform they are on", () =>
   test("the drawn starter compiles and carries the data", async () => {
     const answer = await runReport({ title: "Who needs me", data: { inbox: { source: "waitingOnYou", platform: "discord", since: "7d" } } }, true, { readWaiting: (o) => (expect(o.platform).toBe("discord"), REPORT) });
     expect(answer.isError).toBeFalsy();
-    expect(JSON.stringify(answer.structuredContent)).toContain("fakeFinch");
+    expect(JSON.stringify(answer._meta?.["log/view"])).toContain("fakeFinch");
+    expect(JSON.stringify(answer.structuredContent)).not.toContain("fakeFinch");
   });
 });

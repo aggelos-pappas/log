@@ -54,6 +54,9 @@ The hosted origin is `https://mcp.listeningkit.com` (`python/controlService`, li
 
 ### 2. The whole view goes to the model
 
+Closed: the view goes in `_meta["log/view"]`, the model gets a summary (`docs/mcp.md`, Cards).
+
+
 `report` returns the full view payload in `structuredContent`. ChatGPT gives `structuredContent` to the model as well as the view, so a large people table costs context and invites the model to repeat it. The view, not the model, needs the rows.
 
 ### 3. ChatGPT metadata is missing
@@ -71,6 +74,9 @@ ChatGPT and Claude load the full tool list into context. log has more than 200 t
 
 ### 5. Card rules aren't enforced
 
+Closed for the card meta, actions, radius and inner scrolling by `check:cards`; the report kit's Tabs and Routes inline are still allowed.
+
+
 ChatGPT's inline-card rules: at most two actions, no nested scrolling, no tabs or deep navigation inline, 3 to 8 items in a carousel. Larger views go full screen with `requestDisplayMode`. log's report kit allows `Tabs`, `Routes` and any number of buttons inline.
 
 ### 6. No packaged local install for Claude Desktop
@@ -78,6 +84,9 @@ ChatGPT's inline-card rules: at most two actions, no nested scrolling, no tabs o
 Claude Desktop installs local servers as Desktop extensions (`.mcpb`). log asks the person to edit a config file instead.
 
 ### 7. Nothing proves a view renders
+
+Closed: `scripts/cards/cardShots.py` draws every card in a replica host, light and dark.
+
 
 No test renders `ui://log/report` in a real MCP Apps host. The text fallback is tested, but the drawn view isn't.
 

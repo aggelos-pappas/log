@@ -1,3 +1,4 @@
+import "../../widgetKit/jitless.ts";
 import { App as HostApp, applyDocumentTheme } from "@modelcontextprotocol/ext-apps";
 import type { McpUiHostContext } from "@modelcontextprotocol/ext-apps";
 import { Component, StrictMode } from "react";
@@ -7,6 +8,7 @@ import { ErrorNote, KitProvider, Page, setHost } from "./kit.tsx";
 import type { KitHost } from "./kit.tsx";
 import { viewFromModule } from "./run.ts";
 import type { ViewComponent } from "./run.ts";
+
 
 interface ViewPayload {
   title?: string;
@@ -18,6 +20,7 @@ interface ViewPayload {
 interface ToolAnswer {
   isError?: boolean;
   structuredContent?: Record<string, unknown>;
+  _meta?: Record<string, unknown>;
   content?: { type: string; text?: string }[];
 }
 
@@ -144,7 +147,8 @@ app.ontoolresult = (result) => {
     );
     return;
   }
-  draw((answer.structuredContent ?? {}) as ViewPayload);
+  const view = answer._meta?.["log/view"];
+  draw((view && typeof view === "object" ? view : (answer.structuredContent ?? {})) as ViewPayload);
 };
 app.onhostcontextchanged = (context) => themed(context as McpUiHostContext);
 app.onteardown = async () => ({});

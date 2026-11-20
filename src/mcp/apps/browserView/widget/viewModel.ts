@@ -89,6 +89,21 @@ export interface FrameAction {
   busy?: boolean;
 }
 
+export interface CardActionState {
+  hasView: boolean;
+  running: boolean;
+  ownerDriven: boolean;
+  closed: boolean;
+  finished: boolean;
+  pending: boolean;
+}
+
+export function cardActions(state: CardActionState): FrameAction[] {
+  if (!state.running && !state.closed) return [];
+  if (state.ownerDriven || state.closed) return [{ id: "close", label: state.closed ? "Browser closed" : "Close browser", icon: "check", primary: true, disabled: state.pending || state.closed }];
+  return [{ id: "done", label: state.finished ? "Agent told" : "Done, carry on", icon: "check", primary: true, disabled: !state.hasView || state.pending || state.finished }];
+}
+
 const RAW_STATES = new Set(["unknown", "null", "undefined", "none"]);
 
 export interface FrameInput {

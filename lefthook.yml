@@ -49,6 +49,9 @@ pre-commit:
     consoleParity:
       run: bun run check:consoleParity
 
+    cards:
+      run: bun run check:cards
+
     agentHooks:
       run: bun run check:agentHooks
 
@@ -120,6 +123,9 @@ pre-push:
 
     consoleParity:
       run: bun run check:consoleParity
+
+    cards:
+      run: bun run check:cards
 
     agentHooks:
       run: bun run check:agentHooks

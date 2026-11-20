@@ -51,17 +51,18 @@ export async function toolManifest(args: Record<string, unknown>): Promise<Resul
   const tools = [...catalogTools(), ...toolsFromCommands(COMMANDS, { shell: false })]
     .filter((tool) => names.has(tool.name))
     .map((tool) => ({ name: tool.name, title: tool.title, description: tool.description, inputSchema: tool.inputSchema, annotations: tool.annotations }));
-  const { appTools, reportTool, withBrowserViewUi, withReportUi } = await import("../../mcp/apps/index.ts");
-  const report = [...(names.has(GUIDE_TOOL) ? [guideTool()] : []), ...(names.has("report") ? [args.ui === true ? withReportUi(reportTool()) : reportTool()] : [])];
+  const { appTools, reportTool } = await import("../../mcp/apps/index.ts");
+  const { withCard } = await import("../../mcp/apps/cards.ts");
+  const report = [...(names.has(GUIDE_TOOL) ? [guideTool()] : []), ...(names.has("report") ? [withCard(reportTool(), args.ui === true)] : [])];
   if (args.ui !== true && args.views !== true) return { state: "succeeded", result: { tools: [...tools, ...report] } };
-  return { state: "succeeded", result: { tools: [...tools.map((tool) => withBrowserViewUi(tool as typeof tool & { _meta?: Record<string, unknown> })), ...report, ...appTools()] } };
+  return { state: "succeeded", result: { tools: [...tools.map((tool) => withCard(tool as typeof tool & { _meta?: Record<string, unknown> }, args.ui === true)), ...report, ...appTools()] } };
 }
 
 export async function uiResources(tool: string, args: Record<string, unknown>): Promise<ResultPayload> {
-  const { BROWSER_VIEW_URI, REPORT_URI, browserViewResource, readBrowserViewResource, readReportResource, reportResource } = await import("../../mcp/apps/index.ts");
-  if (tool === "uiResourcesList") return { state: "succeeded", result: { resources: [browserViewResource(), reportResource()] } };
-  if (args.uri === BROWSER_VIEW_URI) return { state: "succeeded", result: await readBrowserViewResource() };
-  if (args.uri === REPORT_URI) return { state: "succeeded", result: await readReportResource() };
+  const { cardResources, readCard } = await import("../../mcp/apps/cards.ts");
+  if (tool === "uiResourcesList") return { state: "succeeded", result: { resources: cardResources(true) } };
+  const card = typeof args.uri === "string" ? await readCard(args.uri) : null;
+  if (card) return { state: "succeeded", result: card };
   return { state: "failed", error: { code: "resourceNotFound", message: "no such ui resource" } };
 }
 
@@ -78,11 +79,13 @@ export async function guideOperation(args: Record<string, unknown>, scope?: Play
 }
 
 export async function reportOperation(args: Record<string, unknown>): Promise<ResultPayload> {
-  const { runReport } = await import("../../mcp/apps/index.ts");
+  const { REPORT_VIEW_META_KEY, runReport } = await import("../../mcp/apps/index.ts");
   const { ui, ...spec } = args;
   const answer = await runReport(spec, ui === true);
   const text = answer.content.map((part) => (part.type === "text" ? part.text : "")).join("\n");
   if (answer.isError) return { state: "failed", error: { code: text.split(":")[0] || "reportFieldInvalid", message: text.slice(0, 2000) } };
+  const view = answer._meta?.[REPORT_VIEW_META_KEY];
+  if (view && typeof view === "object") return { state: "succeeded", result: { text, spec: view, summary: answer.structuredContent ?? null } };
   return { state: "succeeded", result: { text, spec: answer.structuredContent ?? null } };
 }
 

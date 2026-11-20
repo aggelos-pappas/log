@@ -1,4 +1,5 @@
 export const REPORT_URI = "ui://log/report";
+export const REPORT_VIEW_META_KEY = "log/view";
 export const REPORT_TOOL = "report";
 export const REPORT_GUIDE = "ui";
 export const REPORT_BLOCK_TYPES = ["heading", "text", "stat", "barChart", "lineChart", "table", "personList", "callout"] as const;

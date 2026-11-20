@@ -217,6 +217,31 @@ machine), and empty otherwise.
 on the person's machine, finish in the window there; from a remote runtime, open the
 view in an MCP Apps host, or the local console on the runtime's machine.
 
+## Cards: one registry, and the rules every card meets
+
+Every view log draws in a chat (the live browser, a report) is a card in one
+registry, `CARDS` in `src/mcp/apps/cards.ts`. A card names its `ui://log/`
+resource, the tools that draw it, the short lines shown while they run, its
+CSP, and the owner prompts that should reach it. The servers, the hosted
+runtime and the tool router all read the same list, so a new card is one
+entry, not edits in four places.
+
+- **The card gets the data, the model gets a summary.** A drawn report puts the
+  view (compiled code and its rows) in `_meta["log/view"]`, which only the card
+  reads. The model's `structuredContent` is the title and how many rows each
+  source has. A client without MCP Apps still gets the whole view as text.
+- **Card rules** (`bun run check:cards`, also in pre-push): every card has its
+  meta and CSP; every browser card state shows at most two actions with one
+  primary (none when the browser isn't running, "Close browser" when the owner
+  opened it himself); no fully rounded pills; nothing scrolls inside a card.
+- **Every card is drawn before merge.** `python scripts/cards/cardShots.py
+  <folder>` serves each card in a replica MCP Apps host with a strict CSP, light
+  and dark, screenshots it, and fails on a page error, a CSP refusal, a card
+  that draws nothing, an inner scroller, a raw value like `unknown`, or a card
+  drawn in the wrong theme.
+- **Every card is reachable.** Each card lists prompts in the owner's words;
+  a test checks each one ranks a card tool in the router's top three.
+
 ## Reports in the chat
 
 Ask the agent for a report ("generate a report with some bar charts of who
