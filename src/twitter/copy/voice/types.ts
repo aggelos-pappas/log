@@ -27,6 +27,12 @@ export interface VoiceDraft {
   publicReply?: boolean
 }
 
+export interface OptionDraft {
+  text: string
+  phrasesNewToOwner?: string[]
+  scrambler?: { suspicious: number; kinds: string[] }
+}
+
 export interface VoiceReading {
   to: string
   voice: number

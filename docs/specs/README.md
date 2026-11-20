@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 55 domains, 624 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 55 domains, 631 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -482,7 +482,7 @@ Every message log sends as the owner passes the voice gate first (`log voice`, M
 - **REQ-VOICE-03** Phrases the owner never says fail the draft
 - **REQ-VOICE-04** A first message is only the opener
 - **REQ-VOICE-05** A draft with AI artifacts fails
-- **REQ-VOICE-06** A draft passes only when every answer passes
+- **REQ-VOICE-06** A draft passes on one calibrated score and three hard blocks
 - **REQ-VOICE-07** A draft written in word pairs the owner has never written fails
 - **REQ-VOICE-20** A draft written on several lines is graded as the messages it sends
 - **REQ-VOICE-21** A subject he has never written about never counts against his voice
@@ -490,12 +490,12 @@ Every message log sends as the owner passes the voice gate first (`log voice`, M
 - **REQ-VOICE-08** The vendored watermark scrambler reads every draft
 - **REQ-VOICE-09** The gate runs inside every send and refuses a failing draft
 - **REQ-VOICE-10** The chat's context is ranked for the moment and given in full
-- **REQ-VOICE-11** Only embeddings are stored, each once, in the .db
+- **REQ-VOICE-11** Embeddings are stored once in the .db, and only a verdict and the calibration beside them
 - **REQ-VOICE-12** The gate inside a send reads the owner's real replies in that chat
 - **REQ-VOICE-13** A voice note is graded as spoken and must build on the conversation
 - **REQ-VOICE-14** the owner can send one dm over the gate's refusal
 - **REQ-VOICE-19** A task is gated as a brief, and its files go with it
-- **REQ-VOICE-18** A draft that just passed is not sent to SubQ again
+- **REQ-VOICE-18** A draft that was just gated is not sent to SubQ again
 - **REQ-VOICE-17** A refused draft says where to look before it is rewritten
 - **REQ-VOICE-16** No two messages read alike
 - **REQ-VOICE-15** Every send and voice note is gated against the room it goes to
@@ -503,6 +503,13 @@ Every message log sends as the owner passes the voice gate first (`log voice`, M
 - **REQ-VOICE-24** The writer and the gate read the card first
 - **REQ-VOICE-25** An answer is owed only when the card says it waits on the owner, and their line is under a day old
 - **REQ-VOICE-26** A chat with history is judged on that history
+- **REQ-VOICE-27** No Jina call inside the gate waits more than a few seconds
+- **REQ-VOICE-28** The grounding pack comes before any draft
+- **REQ-VOICE-29** One voice score with fixed written weights
+- **REQ-VOICE-30** The threshold is calibrated on his own held-out replies
+- **REQ-VOICE-31** The same text gets the same verdict at gate and at send
+- **REQ-VOICE-32** Options are graded together and ranked
+- **REQ-VOICE-33** A draft that mirrors them more than he does loses
 
 ## [AI tells and watermark](./aiTells.md)
 

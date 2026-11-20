@@ -2,7 +2,8 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { aiIndexOf, saveAiIndex, saveVectors, vectorsFor } from '../../inbox/store/index'
 import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { BASELINE_SAMPLE, OWNER_SAYS_IT_TIMES, MUTE_IF_OWNER_USES, X_COMPLAINT, X_COMPLAINT_KEEP } from './types'
+import { rerankBounded, withinMs } from './helpers/bounded'
+import { BASELINE_SAMPLE, JINA_GATE_MS, OWNER_SAYS_IT_TIMES, MUTE_IF_OWNER_USES, X_COMPLAINT, X_COMPLAINT_KEEP } from './types'
 import type { AiBaseline, AiCloseMatch, AiEmbedder, AiIndex, AiIndexMeta, AiPhrase, AiReading, AiTellHit, AiTellRule } from './types'
 import { logHome } from '../../config/logHome/index'
 
@@ -196,13 +197,20 @@ export function openAiIndex(dir = aiIndexDir(), model: string | null = null): Ai
   return { ...meta, vectors: found as Float32Array[] }
 }
 
-export async function readAiTells(text: string, index: AiIndex, embedder: AiEmbedder, rules = valeRules(), words = overusedWords(), top = 8): Promise<AiReading> {
+export async function readAiTells(text: string, index: AiIndex, embedder: AiEmbedder, rules = valeRules(), words = overusedWords(), top = 8, ms = JINA_GATE_MS): Promise<AiReading> {
   const hits = ruleHits(text, rules, new Set([...index.baseline.mutedRules, ...(index.baseline.ownersPhrases ?? [])]))
   const overused = [...new Set(text.toLowerCase().match(/[a-z]+/g) ?? [])].filter((w) => words.has(w)).map((w) => ({ word: w, ratio: words.get(w)! }))
   const chunks = chunksOf(text)
-  const best = chunks.length ? bestPerChunk(await embedder.embed(chunks), index) : []
+  let embedded: number[][] = []
+  try {
+    embedded = chunks.length ? await withinMs(ms, () => embedder.embed(chunks), 'jina embeddings') : []
+  } catch (error) {
+    const skipped = `the closeness to AI phrases was skipped: ${error instanceof Error ? error.message : String(error)}`
+    return { hits, overused, closest: [], score: 0, p50: index.baseline.p50, p99: index.baseline.p99, flagged: false, pass: !hits.length, skipped }
+  }
+  const best = embedded.length ? bestPerChunk(embedded, index) : []
   const ranked = best.sort((a, b) => b.cosine - a.cosine).slice(0, top)
-  const reranks = ranked.length ? await embedder.rerank(text, ranked.map((r) => index.phrases[r.phrase].text)) : []
+  const reranks = ranked.length ? (await rerankBounded(text, ranked.map((r) => index.phrases[r.phrase].text), () => embedder, ms)) ?? [] : []
   const closest: AiCloseMatch[] = ranked.map((r, i) => ({ chunk: chunks[r.chunk], phrase: index.phrases[r.phrase].text, source: index.phrases[r.phrase].source, cosine: Number(r.cosine.toFixed(4)), rerank: reranks[i] === undefined ? null : Number(reranks[i].toFixed(4)) }))
   const score = closest[0]?.cosine ?? 0
   const flagged = score > index.baseline.p99
@@ -212,7 +220,7 @@ export async function readAiTells(text: string, index: AiIndex, embedder: AiEmbe
 export function aiTellsLine(reading: AiReading): string {
   const head = reading.pass ? 'ai tells: none' : 'AI TELLS'
   const hits = reading.hits.map((h) => `"${h.match}" (${h.rule})`).join(', ')
-  const close = reading.closest[0] ? `closest AI phrase "${reading.closest[0].phrase}" to "${reading.closest[0].chunk}" at ${reading.score.toFixed(3)} (the owner's own p50 ${reading.p50.toFixed(3)}, p99 ${reading.p99.toFixed(3)}${reading.flagged ? ', past his p99' : ''})` : 'nothing to compare'
+  const close = reading.skipped ? reading.skipped : reading.closest[0] ? `closest AI phrase "${reading.closest[0].phrase}" to "${reading.closest[0].chunk}" at ${reading.score.toFixed(3)} (the owner's own p50 ${reading.p50.toFixed(3)}, p99 ${reading.p99.toFixed(3)}${reading.flagged ? ', past his p99' : ''})` : 'nothing to compare'
   const words = reading.overused.length ? `; words AI overuses: ${reading.overused.map((w) => `${w.word} ×${w.ratio.toFixed(1)}`).join(', ')}` : ''
   return `${head}${hits ? `: ${hits}` : ''}; ${close}${words}`
 }

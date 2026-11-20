@@ -69,3 +69,49 @@ Highest total: D (14.4).
 - C9: 1.00
 - C10: 1.00
 - C11: 1.00
+
+## Measured after the build (2026-11-20, on a copy of the live log.db, nothing sent)
+
+### `log voice calibrate`
+
+40 of his own dm replies, one per chat first, each graded with that reply left out of its chat's evidence, his word pairs and the nearest replies; 10 AI-written lines from `vendor/aiTells/aiExamples` graded against the same chats.
+
+| | today's every-check gate | the one score |
+|---|---|---|
+| his held-out replies that pass | 13 of 40 (33%) | 38 of 40 (95%) |
+| AI-written lines that fail | 10 of 10 | 10 of 10 |
+| threshold | each check at its own bar | 0.709, stored dated in `state` |
+
+The AI-written lines are long essay sentences, so failing them is an easy bar; they show the score does not pass everything, not how it handles a careful imitation.
+
+### Replay of 20 real messages waiting on him
+
+The 20 newest one-to-one DMs from `inboxWaiting` across X, Discord and Instagram (bots, system accounts, groups and media-only chats left out; one chat the owner had already answered in the copy was swapped for the next newest). For each: today's flow is one draft graded once by today's gate; the new flow is the pack, then 3-5 options written from it, graded in one `voice { options }` call.
+
+| | first-call passes |
+|---|---|
+| today's flow: one draft, today's every-check gate | 11 of 20 |
+| the same one draft, the one score | 16 of 20 |
+| the new flow: pack, 3-5 options, one call | 20 of 20 |
+
+Every option's verdict was kept by its text and the chat's last message id, so the send of the chosen option reuses it: 20 of 20 found with the same verdict.
+
+### Convergence (REQ-VOICE-33)
+
+The gap is how much more the draft mirrors their words or style than he does with this person (0 = no more than him).
+
+| | mean gap | median gap | drafts above 0.25 |
+|---|---|---|---|
+| today's one draft | 0.20 | 0.22 | 9 of 20 |
+| the top option from the pack | 0.14 | 0.15 | 3 of 20 |
+
+### Latency
+
+| | calls | p50 | p95 | p99 |
+|---|---|---|---|---|
+| `voice` before (live MCP, warm, last 72 h) | 153 | 3.70 s | 7.05 s | 14.2 s |
+| `voice` after (CLI, a cold process per call, pack + options + single) | 125 | 4.97 s | 9.05 s | 12.1 s |
+| pack only (wall time, cold) | 20 | 4.2 s | | |
+| longest Jina call inside the gate after | | | 3.4 s (bound 4 s) | |
+
+The after numbers come from a new process per call, which pays the voice index open (1.1 s) and the chat list (0.4 s) a warm MCP keeps; the warm p95 under 7 s is not measured yet. The AI tells stage runs once per option (p50 2.3 s) and is the next thing to make shared across options.

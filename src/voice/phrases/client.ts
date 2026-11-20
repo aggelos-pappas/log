@@ -61,16 +61,18 @@ export function usesOfWord(index: PhraseIndex, word: string): number {
   return uses.get(word) ?? 0
 }
 
-export function readPhrases(text: string, index: PhraseIndex, theirText = ''): PhraseReading {
+export function readPhrases(text: string, index: PhraseIndex, theirText = '', leaveOut = ''): PhraseReading {
   const theirs = new Set(wordsOf(theirText).filter((word) => usesOfWord(index, word) < OWN_WORD_USES))
   const pairs = wordPairsOf(wordsOf(text)).filter((pair) => !pair.split(' ').some((word) => theirs.has(word)))
   const floor = index.baseline[FAMILIARITY_FLOOR]
-  if (pairs.length < MIN_WORDS - 1) return { familiarity: null, floor, unfamiliar: [], newPhrasing: [], newWords: [], pass: true }
-  const familiarity = share(pairs, index.wordPairs, new Map())
-  const unfamiliar = [...new Set(pairs.filter((pair) => (index.wordPairs[pair] ?? 0) < FAMILIAR_MIN_USES))]
+  const median = index.baseline.p50
+  if (pairs.length < MIN_WORDS - 1) return { familiarity: null, floor, median, unfamiliar: [], newPhrasing: [], newWords: [], pass: true }
+  const own = leaveOut ? tally(wordPairsOf(wordsOf(leaveOut))) : new Map<string, number>()
+  const familiarity = share(pairs, index.wordPairs, own)
+  const unfamiliar = [...new Set(pairs.filter((pair) => (index.wordPairs[pair] ?? 0) - (own.get(pair) ?? 0) < FAMILIAR_MIN_USES))]
   const newWords = unfamiliar.filter((pair) => pair.split(' ').some((word) => usesOfWord(index, word) === 0))
   const newPhrasing = unfamiliar.filter((pair) => !newWords.includes(pair))
-  return { familiarity, floor, unfamiliar, newPhrasing, newWords, pass: familiarity >= floor }
+  return { familiarity, floor, median, unfamiliar, newPhrasing, newWords, pass: familiarity >= floor }
 }
 
 export function phrasesLine(reading: PhraseReading): string {

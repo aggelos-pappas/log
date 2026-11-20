@@ -27,7 +27,8 @@ Say: **"go on docs/useCases/log/toolHealth.md"**. The agent reads this page and 
 | --- | --- | --- | --- |
 | 1 | Read the report for the window the owner named (default 14 days) | `toolHealth` { days } | each flag is listed with its evidence and its fix |
 | 2 | Open the latest failing call of each failing tool | `timing` { call } | the stage and code that failed are named |
-| 3 | Tell the owner each flag with its fix (guide edit, merge, retire) and change nothing until he picks | the reply to the owner | the owner has the list and chose what to do |
+| 3 | When the voice gate failed most drafts lately, measure it on his own held-out replies and reset its pass threshold | `voiceCalibrate` | his held-out pass rate before and after and the new threshold are stated |
+| 4 | Tell the owner each flag with its fix (guide edit, merge, retire) and change nothing until he picks | the reply to the owner | the owner has the list and chose what to do |
 
 ## What to know
 

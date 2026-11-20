@@ -21,6 +21,7 @@ When the owner asks for one of these, follow its page step by step.
 | `getGuide({ useCase: "inbox/voiceNote" })` | Sending a voice note | "send <person> a voice note saying …", "voice note him that …", "send a vn to the group saying …" |
 | `getGuide({ useCase: "inbox/warmPeople" })` | Working the warm people in your dms | "who's warm", "who can i ask now", "label my people", "who have we been warming up", "mark him as a friend" |
 | `getGuide({ useCase: "instagram/dmReply" })` | Reading and answering an Instagram DM | "read my instagram dms", "what did <someone> say on instagram", "reply to <someone> on instagram", "send <someone> a meme on instagram" |
+| `getGuide({ useCase: "log/toolHealth" })` | Tool health | "tool health", "which guides went stale" |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM | "read the messages with <someone> on slack", "reply to <someone> on slack", "what did <someone> say in <workspace>" |
 | `getGuide({ useCase: "twitter/collabMaxxing" })` | Collab maxxing: turn open conversations into collabs | "position a collab first then be like just a few quid so i can make a video about it", "start network maxxing and collab maxxing and trying to see what hes doing get him to reveal it all", "follow up on <someone> and the other people, small commitment from deals, not just new people but already open convos", "respond with the collabmaxxing", "selling the outcome", "let him name it", "check in with <someone> whats good there he is keen but isnt liquid", "just be nice to them there the poor people", "ask <someone> if i could become a contributor", "look on my twitter for missed opportunities". |
 | `getGuide({ useCase: "twitter/dmInbox" })` | Reading the DM inbox: who is waiting on you | "who is waiting on me", "check my x dms", "go through my twitter inbox and tell me who needs a reply", "who am I waiting on in my dms". |
@@ -38,9 +39,10 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 
 | Tool | What it does | Usage |
 |---|---|---|
-| `voice` | Gate a draft against the owner's own writing guide with SubQ before… | `log voice --to <handle> [--text "<draft>"] [--context "<what they said>"] [--with <person or chat>] [--spoken] [--json]` |
-| `voiceAiIndex` | Build the AI tells index with Jina and measure the owner's own… | `log voice aiIndex [--json]   (builds the AI tells index: every literal phrase in vendor/aiTells, tbhb/vale-ai-tells first and then the other lists, embedded with Jina (JINA_API_KEY), with the owner's own replies from the voice index measured against it for their p50 and p99 closeness, and the vale rules they use themselves muted; the gate builds it itself when it is missing or older than the voice index; rule 137)` |
-| `voiceIndex` | Build the owner's voice per chat and person from the conversations… | `log voice index [--json]   (builds the owner's voice from every conversation log search already saved, reading nothing new: each of the owner's replies paired with what was said just before it, embedded with log search's own model, and a profile per chat, person and platform counted from the owner's own messages)` |
+| `voice` | Gate a draft against the owner's own writing guide with SubQ before… | `log voice --to <handle> [--text "<draft>"] [--options "<option>" ...] [--context "<what they said>"] [--with <person or chat>] [--spoken] [--json]` |
+| `voiceAiIndex` | Build the AI tells index with Jina and measure the owner's own… | `log voice aiIndex [--json]   (builds the AI tells index from vendor/aiTells with Jina, and his own replies' p50 and p99 closeness to it; rule 137)` |
+| `voiceIndex` | Build the owner's voice per chat and person from the conversations… | `log voice index [--json]   (builds his voice from the saved conversations: each reply paired with what came before, and a profile per chat, person and platform)` |
+| `voiceCalibrate` | Set the voice score's pass threshold from the owner's own held-out… | `log voice calibrate [--count <n>] [--json]   (sets the score's pass threshold so 95% of his held-out replies pass, stored dated)` |
 
 ## The rules these tools fall under
 

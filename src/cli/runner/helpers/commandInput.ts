@@ -70,7 +70,7 @@ export function inputSchemaOf(form: InputForm, options: { live?: boolean } = {})
 function numeric(spec: FlagSpec, value: unknown): unknown {
   if ((spec.kind === "integer" || spec.kind === "number") && typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) return Number(value);
   if (spec.kind === "booleanValue" && (value === "true" || value === "false")) return value === "true";
-  if (spec.kind === "list" && typeof value === "string") return value.split(",").map((v) => v.trim()).filter(Boolean);
+  if (spec.kind === "list" && typeof value === "string") return spec.whole ? [value.trim()].filter(Boolean) : value.split(",").map((v) => v.trim()).filter(Boolean);
   return value;
 }
 

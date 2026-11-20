@@ -11,6 +11,8 @@ export type StateScope =
   | 'mcpServerStart'
   | 'mcpReload'
   | 'voicePasses'
+  | 'voiceVerdicts'
+  | 'voiceCalibration'
   | 'consoleAccountCheck'
   | 'browserCheckProof'
   | 'signIn'

@@ -39,7 +39,7 @@ export function takesOf(spec: FlagSpec): string {
     case "enum":
       return `one of ${(spec.values ?? []).join(", ")}`;
     case "list":
-      return `a list${shape ? ` of ${shape}` : ""}, comma separated or the flag repeated`;
+      return spec.whole ? "a list, the flag repeated once per item" : `a list${shape ? ` of ${shape}` : ""}, comma separated or the flag repeated`;
     case "pairs":
       return "key=value";
     case "boolean":
@@ -73,7 +73,7 @@ export function readText(spec: FlagSpec, raw: string): ValueRead {
     case "enum":
       return (spec.values ?? []).includes(raw) ? { ok: true, value: raw } : bad;
     case "list": {
-      const items = raw.split(",").map((item) => item.trim()).filter(Boolean);
+      const items = spec.whole ? [raw.trim()].filter(Boolean) : raw.split(",").map((item) => item.trim()).filter(Boolean);
       return items.length && items.every((item) => shapeOk(spec, item)) ? { ok: true, value: items } : bad;
     }
     default:

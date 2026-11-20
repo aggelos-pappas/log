@@ -17,6 +17,9 @@ Most first drafts pass the voice gate, and a refusal always says what to change,
 
 The pack is built locally from `log.db`; nothing extra leaves the machine. No outside call in the pack may block: the Jina embeddings call gets a hard timeout of a few seconds and falls back to the local embedder (`storedEmbedder`), and his reply embeddings are read from `log.db`, never re-embedded.
 
+- **How he talks to this person, and how they talk:** his messages in this chat against his baseline (length, case, openers, punctuation and emoji, how often he asks), and the other person's style labelled as not to copy. LLMs over-converge to their partner's style (arXiv 2508.03276, 2605.29278); see research.md, "The conversation itself".
+- **His facts here:** the lines in this chat where he states something about himself or numbers; options state only facts he has said.
+
 ## 2. One calibrated score
 
 `voiceScore = Σ wᵢ·sᵢ` over the signals the gate already computes, each in 0..1, with fixed weights written in one place (`src/voice/score`):
@@ -28,6 +31,7 @@ The pack is built locally from `log.db`; nothing extra leaves the machine. No ou
 | not an AI tell | distance from the nearest known AI phrase |
 | SubQ voice | SubQ's voice answer (and chat answer when there is a chat) |
 | answers them | the context answer, only when an answer is owed (REQ-VOICE-25) |
+| not mirroring them | the draft's reuse of their words and style shift toward them, against his own convergence with this person (REQ-VOICE-33) |
 
 - **Threshold, calibrated:** set so his own held-out real replies pass 95% of the time, re-measured by `log voice calibrate` and stored with the date. The calibration also reports how many AI-written drafts of the same chats it fails.
 - **Hard blocks, unchanged:** a never-said phrase (REQ-VOICE-03), watermark artifacts (REQ-VOICE-05) and an ask in a first message (REQ-VOICE-04) fail whatever the score.
@@ -49,3 +53,7 @@ The pack is built locally from `log.db`; nothing extra leaves the machine. No ou
 
 - A refine round (critique-refine, arXiv 2510.24469) when a best option fails, if first-try passes stay under the bar.
 - A small local model or a style vector (arXiv 2503.05213, 2607.21620) only if the grounding pack can't reach the bar.
+
+## Built (PR on feat/voiceOptions)
+
+Every part above is built: REQ-VOICE-27 (Jina bounded at 4 s with the local fallback), REQ-VOICE-28 (the pack, with how he talks to this person, how they talk and his facts), REQ-VOICE-29 (the score in `src/voice/score`), REQ-VOICE-30 (`log voice calibrate`), REQ-VOICE-31 (verdict per text and last message id), REQ-VOICE-32 (ranked options with the fix) and REQ-VOICE-33 (convergence). The measured results are in `docs/decisions/voiceOptions/results.md`.
