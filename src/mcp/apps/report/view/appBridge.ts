@@ -36,6 +36,7 @@ export interface AppApi {
   resource(tool: string): Promise<AppResource>;
   result(directive: AppDirective): Promise<AppToolResult>;
   call(tool: string, name: string, args: Record<string, unknown>): Promise<AppToolResult>;
+  warm(): Promise<void>;
 }
 export interface HostTheme {
   theme: "light" | "dark";
@@ -269,15 +270,32 @@ function failure(error: unknown): string {
   return /logApp[A-Z][A-Za-z]+[^"]*/.exec(text)?.[0] ?? "logAppUnknown: the view could not be reached";
 }
 
-export function appApi(rest: Rest): AppApi {
+export const APP_RESOURCE_KEPT_MS = 30_000;
+
+export function appApi(rest: Rest, now: () => number = Date.now): AppApi {
   const base = (tool: string) => `/apps/${encodeURIComponent(tool)}`;
+  const kept = new Map<string, { at: number; resource: Promise<AppResource> }>();
+  const fetchResource = async (tool: string): Promise<AppResource> => {
+    const answer = (await answerOf(rest, `${base(tool)}/resource`).catch((error: unknown) => {
+      throw new Error(failure(error));
+    })) as Partial<AppResource> | null;
+    if (!answer || typeof answer.html !== "string" || typeof answer.uri !== "string") throw new Error("logAppUnknown: the view came back empty");
+    return { uri: answer.uri, html: answer.html, csp: answer.csp };
+  };
   return {
-    resource: async (tool) => {
-      const answer = (await answerOf(rest, `${base(tool)}/resource`).catch((error: unknown) => {
-        throw new Error(failure(error));
-      })) as Partial<AppResource> | null;
-      if (!answer || typeof answer.html !== "string" || typeof answer.uri !== "string") throw new Error("logAppUnknown: the view came back empty");
-      return { uri: answer.uri, html: answer.html, csp: answer.csp };
+    resource: (tool) => {
+      const found = kept.get(tool);
+      if (found && now() - found.at < APP_RESOURCE_KEPT_MS) return found.resource;
+      const resource = fetchResource(tool);
+      const entry = { at: now(), resource };
+      kept.set(tool, entry);
+      resource.catch(() => {
+        if (kept.get(tool) === entry) kept.delete(tool);
+      });
+      return resource;
+    },
+    warm: async () => {
+      await answerOf(rest, "/apps/warm", {}).catch(() => null);
     },
     result: async (directive) => (await answerOf(rest, `${base(directive.tool)}/result`, directive.view ? { view: directive.view } : { args: directive.args })) as AppToolResult,
     call: async (tool, name, args) => {

@@ -107,6 +107,12 @@ export async function appCall(tool: string, name: unknown, args: unknown, deps: 
   return { ok: true, result: await deps.call(asked, given) };
 }
 
+export async function warmApps(deps: LogAppDeps = logAppDeps): Promise<string[]> {
+  const uris = [...new Set((await deps.tools()).map(appUriOf).filter((uri): uri is string => uri !== null))];
+  await Promise.all(uris.map((uri) => deps.read(uri).catch(() => null)));
+  return uris;
+}
+
 export async function answerAppRequest(request: LogAppRequest, deps: LogAppDeps = logAppDeps): Promise<LogAppAnswer> {
   try {
     if (request.op === "resource") return await appResource(request.tool, deps);

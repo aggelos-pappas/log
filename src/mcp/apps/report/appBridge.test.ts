@@ -3,7 +3,7 @@ import { join } from "node:path";
 type Result = { isError?: boolean; content?: unknown[]; structuredContent?: Record<string, unknown> };
 type Directive = { tool: string; args: Record<string, unknown>; view: string | null };
 type Theme = { theme: "light" | "dark"; variables: Record<string, string> };
-type Api = { resource(tool: string): Promise<{ uri: string; html: string }>; result(directive: Directive): Promise<Result>; call(tool: string, name: string, args: Record<string, unknown>): Promise<Result> };
+type Api = { resource(tool: string): Promise<{ uri: string; html: string }>; result(directive: Directive): Promise<Result>; call(tool: string, name: string, args: Record<string, unknown>): Promise<Result>; warm(): Promise<void> };
 type Host = { post(frame: Record<string, unknown>): void; setHeight(h: number): void; send(text: string): boolean; open(url: string): boolean; theme(): Theme; now?: () => number };
 type Parsed = { ok: true; directive: Directive } | { ok: false; problem: string };
 type Rest = (path: string, opts?: { method?: string; body?: unknown }) => Promise<unknown>;
@@ -11,7 +11,8 @@ interface BridgeModule {
   APP_DIRECTIVE: string;
   APP_MAX_HEIGHT: number;
   APP_SANDBOX: string;
-  appApi(rest: Rest): Api;
+  APP_RESOURCE_KEPT_MS: number;
+  appApi(rest: Rest, now?: () => number): Api;
   appCsp(csp?: { connectDomains?: string[]; resourceDomains?: string[] }): string;
   withAppCsp(html: string, csp?: { connectDomains?: string[]; resourceDomains?: string[] }): string;
   createBridge(directive: Directive, api: Api, host: Host): { handle(message: unknown): Promise<void>; themeChanged(): void };
@@ -24,7 +25,7 @@ declare namespace Bridge {
   type AppApi = Api;
 }
 
-const { APP_DIRECTIVE, APP_MAX_HEIGHT, APP_SANDBOX, appApi, appCsp, createBridge, hostTheme, parseAppDirective, withAppCsp } = (await import(join(import.meta.dir, "view", "appBridge.ts"))) as BridgeModule;
+const { APP_DIRECTIVE, APP_MAX_HEIGHT, APP_RESOURCE_KEPT_MS, APP_SANDBOX, appApi, appCsp, createBridge, hostTheme, parseAppDirective, withAppCsp } = (await import(join(import.meta.dir, "view", "appBridge.ts"))) as BridgeModule;
 
 const DIRECTIVE: Bridge.AppDirective = { tool: "browserView", args: { account: "fakeSeller" }, view: null };
 const LIGHT: Bridge.HostTheme = { theme: "light", variables: { "--color-text-primary": "#1f2328" } };
@@ -44,6 +45,7 @@ function harness(over: Partial<Bridge.AppApi> = {}, clock = { now: 10_000 }) {
       calls.push({ tool, name, args });
       return name === "browserViewInput" && args.refuse ? { isError: true, content: [{ type: "text", text: "browserInputStopped: no" }], structuredContent: { error: "browserInputStopped" } } : { structuredContent: { ran: name } };
     },
+    warm: async () => {},
     ...over,
   };
   const bridge = createBridge(DIRECTIVE, api, {
@@ -176,5 +178,30 @@ describe("the vendored MCP Apps host card (::logapp)", () => {
     expect(refused.isError).toBe(true);
     expect(refused.structuredContent).toEqual({ error: "logAppToolRefused" });
     await expect(appApi(async () => Promise.reject(new Error('404: {"error":"logAppUnknown"}'))).resource("twitterDms")).rejects.toThrow("logAppUnknown");
+  });
+
+  test("cards drawn close together share one read of the view, a failed read is not kept, and the host is warmed through its route", async () => {
+    let clock = 0;
+    let reads = 0;
+    let fail = true;
+    const paths: string[] = [];
+    const rest = async (path: string) => {
+      paths.push(path);
+      if (path === "/apps/warm") return { ok: true };
+      reads++;
+      if (fail) throw new Error('404: {"error":"logAppUnknown"}');
+      return { uri: "ui://log/report", html: "<html></html>" };
+    };
+    const api = appApi(rest, () => clock);
+    await expect(api.resource("report")).rejects.toThrow("logAppUnknown");
+    fail = false;
+    const [a, b] = await Promise.all([api.resource("report"), api.resource("report")]);
+    expect(a).toBe(b);
+    expect(reads).toBe(2);
+    clock += APP_RESOURCE_KEPT_MS + 1;
+    await api.resource("report");
+    expect(reads).toBe(3);
+    await api.warm();
+    expect(paths.at(-1)).toBe("/apps/warm");
   });
 });

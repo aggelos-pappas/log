@@ -248,6 +248,33 @@ class BrowserViewerTests(unittest.TestCase):
             release.set()
         self.run_with(HOME_PAGE, scenario, owner_driven=True)
 
+    def test_a_page_whose_main_thread_is_busy_answers_the_last_state_within_the_budget(self):
+        async def scenario(owner, viewer, descriptor):
+            await call(descriptor["port"], descriptor["token"], "GET", "/state")
+            gate = asyncio.Event()
+            plain = owner.page.evaluate
+
+            async def stuck(script, *args):
+                await gate.wait()
+                return await plain(script, *args)
+
+            owner.page.evaluate = stuck
+            owner.page.signals = dict(HOME_PAGE)
+            viewer.stateBudget = 0.2
+            began = asyncio.get_running_loop().time()
+            status, _headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/state")
+            self.assertLess(asyncio.get_running_loop().time() - began, 2)
+            self.assertEqual(status, 200)
+            state = json.loads(body)
+            self.assertTrue(state["settling"])
+            self.assertEqual(state["url"], LOGIN_PAGE["url"])
+            gate.set()
+            await asyncio.sleep(0.1)
+            _status, _headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/state")
+            self.assertEqual(json.loads(body)["url"], HOME_PAGE["url"])
+            self.assertNotIn("settling", json.loads(body))
+        self.run_with(LOGIN_PAGE, scenario)
+
     def test_an_agent_step_in_flight_shows_busy_and_refuses_owner_input(self):
         async def scenario(owner, viewer, descriptor):
             async with owner.controlLock:

@@ -124,17 +124,19 @@ export function hookReaderOf(raw: string): string {
 export function takePending(reader?: string): InboxMessage[] {
   migrated()
   const key = reader ?? SHARED_READER
-  const cursor = readCursor(key)
-  const latest = latestSeq()
-  if (cursor === null && reader !== undefined) {
-    writeCursor(key, latest)
-    return []
-  }
-  const rows = eventsAfter(cursor ?? 0, { type: 'message' }).filter((row) => row.source !== 'backfill')
-  if (latest !== cursor) writeCursor(key, latest)
-  const now = new Date()
-  for (const row of rows) markStage(row.eventId, 'shown', now)
-  return rows.map(messageOf)
+  return immediate(() => {
+    const cursor = readCursor(key)
+    const latest = latestSeq()
+    if (cursor === null && reader !== undefined) {
+      writeCursor(key, latest)
+      return []
+    }
+    const rows = eventsAfter(cursor ?? 0, { type: 'message' }).filter((row) => row.source !== 'backfill')
+    if (latest !== cursor) writeCursor(key, latest)
+    const now = new Date()
+    for (const row of rows) markStage(row.eventId, 'shown', now)
+    return rows.map(messageOf)
+  })
 }
 
 export function claimPoll(now: Date = new Date(), random: () => number = Math.random): boolean {
@@ -256,12 +258,14 @@ export function releaseWatcher(platform: string, account: string, pid: number = 
 
 export function takeAlerts(reader: string): string[] {
   const key = ALERTS_READER(reader)
-  const cursor = readCursor(key)
-  const latest = (db().prepare('SELECT COALESCE(MAX(id), 0) AS id FROM alerts').get() as { id: number }).id
-  const from = cursor === null ? Math.max(0, latest - 5) : cursor
-  if (latest !== cursor) writeCursor(key, latest)
-  const rows = db().prepare('SELECT * FROM alerts WHERE id > ? ORDER BY id').all(from) as { platform: string; account: string; kind: string; detail: string; at: string }[]
-  return rows.map((a) => `!!! ${a.kind.toUpperCase()} ${a.platform} ${a.account} at ${a.at}: ${a.detail}`)
+  return immediate(() => {
+    const cursor = readCursor(key)
+    const latest = (db().prepare('SELECT COALESCE(MAX(id), 0) AS id FROM alerts').get() as { id: number }).id
+    const from = cursor === null ? Math.max(0, latest - 5) : cursor
+    if (latest !== cursor) writeCursor(key, latest)
+    const rows = db().prepare('SELECT * FROM alerts WHERE id > ? AND id <= ? ORDER BY id').all(from, latest) as { platform: string; account: string; kind: string; detail: string; at: string }[]
+    return rows.map((a) => `!!! ${a.kind.toUpperCase()} ${a.platform} ${a.account} at ${a.at}: ${a.detail}`)
+  })
 }
 
 export function ensureLiveWatchers(platform: string, accounts: readonly string[], start: (account: string) => number | null, alive: (pid: number) => boolean = processAlive): string[] {
