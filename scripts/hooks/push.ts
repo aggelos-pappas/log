@@ -1,6 +1,8 @@
 #!/usr/bin/env bun
 import { READER_PATTERN } from '../../src/inbox/pending/index'
+import { localEmotions, pushLabeller } from '../../src/inbox/pipeline/index'
 import { pushLoop } from '../../src/inbox/push/index'
+import { localEmbedder } from '../../src/search/conversations/index'
 
 const args = process.argv.slice(2)
 const flag = (name: string) => {
@@ -13,4 +15,8 @@ if (!READER_PATTERN.test(reader)) {
   process.stderr.write('log push: --reader <name> is required (letters, digits, _ and -), the same reader the session prompt hook uses, so a pushed message is never shown twice\n')
   process.exit(2)
 }
-await pushLoop(reader, host, (batch) => process.stdout.write(`${JSON.stringify(batch)}\n`))
+const embedder = localEmbedder()
+const emotions = localEmotions()
+const label = process.env.LOG_PIPELINE === 'off' ? undefined : pushLabeller(() => ({ embedder, emotions, emotionsLater: true }))
+if (label) void Promise.all([embedder.embed(['warm']), emotions(['warm'])]).catch(() => null)
+await pushLoop(reader, host, (batch) => process.stdout.write(`${JSON.stringify(batch)}\n`), { label })

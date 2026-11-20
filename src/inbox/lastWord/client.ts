@@ -65,6 +65,15 @@ interface Row {
   files: number
 }
 
+const ONE_CHAT_SQL = `
+SELECT c.platform, c.account, c.kind, c.name, c.conversationId, m.seq, m.sentAtMs AS ms, m.sentAt AS at, m.fromOwner, m.senderUserId,
+  COALESCE(i.handle, m.senderLabel) AS senderLabel, m.text,
+  (SELECT COUNT(*) FROM attachments a WHERE a.messageKey = m.messageKey) AS files
+FROM chats c
+JOIN messages m ON m.seq IN (SELECT seq FROM messages WHERE chatId = c.chatId ORDER BY sentAtMs DESC, seq DESC LIMIT ?3)
+LEFT JOIN identities i ON i.platform = m.senderPlatform AND i.userId = m.senderUserId
+WHERE c.kind IN ('dm', 'group') AND c.platform = ?1 AND c.account = ?2 AND c.conversationId IN (SELECT value FROM json_each(?4))`
+
 const RECENT_SQL = `
 SELECT c.platform, c.account, c.kind, c.name, c.conversationId, m.seq, m.sentAtMs AS ms, m.sentAt AS at, m.fromOwner, m.senderUserId,
   COALESCE(i.handle, m.senderLabel) AS senderLabel, m.text,
@@ -108,7 +117,7 @@ function labelOf(kind: 'dm' | 'group', rows: readonly Row[], name: Namer): strin
 }
 
 export function chatsOf(query: LastWordQuery = {}, on: Database = db(), perChat: number = RECENT_PER_CHAT): PersonChat[] {
-  const rows = on.prepare(RECENT_SQL).all(query.platform ?? null, query.account ?? null, perChat) as Row[]
+  const rows = (query.conversationIds && query.platform && query.account ? on.prepare(ONE_CHAT_SQL).all(query.platform, query.account, perChat, JSON.stringify(query.conversationIds)) : on.prepare(RECENT_SQL).all(query.platform ?? null, query.account ?? null, perChat)) as Row[]
   const groups = new Map<string, Row[]>()
   for (const r of rows) {
     const key = `${r.platform}\u0000${r.account}\u0000${personKeyOf(r.conversationId)}`
