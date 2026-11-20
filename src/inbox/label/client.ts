@@ -4,6 +4,8 @@ import { chatsOf, personKeyOf, saidOnly } from '../lastWord/index'
 import type { LastWordMessage, PersonChat } from '../lastWord/index'
 import { db } from '../store/index'
 import { pipelineRows } from '../pipeline/client'
+import { humanTalk, withoutFalseBot } from '../pipeline/helpers/fallback'
+import { botVerdict } from '../pipeline/helpers/model'
 import { SALES_WHO, TEACHER_BY } from '../pipeline/types'
 import type { PipelineRow } from '../pipeline/types'
 import { ACTIVE_DAYS, ASK, COLD_DAYS, LABELS, OLD_LABEL_FIELDS, READY_TURNS } from './types'
@@ -65,13 +67,16 @@ function oldLabelOf(who: string | null, where: string | null, counted: Label): L
   return counted
 }
 
-export function labelOfChat(chat: Pick<PersonChat, 'platform' | 'account' | 'storedAsGroup' | 'with' | 'personKey' | 'conversationIds' | 'messages'>, entries: readonly LabelEntry[], now: number = Date.now(), stored: PipelineRow | null = null): Labelled | null {
+export function labelOfChat(chat: Pick<PersonChat, 'platform' | 'account' | 'storedAsGroup' | 'with' | 'personKey' | 'conversationIds' | 'messages'>, entries: readonly LabelEntry[], now: number = Date.now(), held: PipelineRow | null = null): Labelled | null {
   const said = saidOnly(chat.messages)
   if (!said.length) return null
+  const talking = humanTalk(said)
+  const stored = held ? withoutFalseBot(held, talking) : null
   const last = said[said.length - 1]
   const found = entries.find((e) => samePerson(e, { platform: chat.platform, account: chat.account, person: chat.personKey }))
   const owner = found && found.by !== TEACHER_BY ? found : undefined
-  const teacher = found && found.by === TEACHER_BY && (!stored || (found.confidence ?? 0) > stored.confidence) ? found : undefined
+  const teacherBotOk = found?.who !== 'bot' || Boolean(held && botVerdict(held.features, { teacherSaysBot: true, humanTalk: talking }))
+  const teacher = found && found.by === TEACHER_BY && teacherBotOk && (!stored || (found.confidence ?? 0) > stored.confidence) ? found : undefined
   const auto = chat.storedAsGroup ? { label: 'skip' as Label, why: 'a group, label it by hand to work it' } : autoLabel(said, now)
   const handWho = owner?.who ?? (owner?.label ? OLD_LABEL_FIELDS[owner.label].who : null)
   const handWhere = owner?.who ? (owner.where ?? null) : owner?.label ? OLD_LABEL_FIELDS[owner.label].where : null

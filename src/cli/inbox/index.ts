@@ -11,11 +11,10 @@ import { PUSH_QUIET_MAX_MINUTES, setQuiet } from "../../inbox/push/index.ts";
 import { ignoredList, setIgnored } from "../../inbox/ignore/index.ts";
 import type { IgnoreEntry } from "../../inbox/ignore/index.ts";
 import { isLabel, LABEL_MEANS, LABELS, labelList, labelsOf, setLabel } from "../../inbox/label/index.ts";
-import { OLD_LABEL_FIELDS } from "../../inbox/label/types.ts";
 import type { Labelled } from "../../inbox/label/index.ts";
-import { labelQueue, PIPELINE_SETTING, pipelineLabels, pipelineRows, QUEUE_SIZE, refreshPipeline, SALES_WHO, TEACHER_BY, TEACHER_MIN_CONFIDENCE, teach, teachPlan, teachState, trainAndSave, uvTrainer, windowOf, windowText } from "../../inbox/pipeline/index.ts";
+import { labelQueue, PIPELINE_SETTING, pipelineLabels, pipelineRows, QUEUE_SIZE, refreshPipeline, SALES_WHO, subqDailyUsd, TEACHER_BY, TEACHER_MIN_CONFIDENCE, teach, teachContext, teachItemOf, teachPlan, teachQueue, teachSpend, trainAndSave, uvTrainer } from "../../inbox/pipeline/index.ts";
 import type { HeadTrainer, PipelineDeps, TeachItem } from "../../inbox/pipeline/index.ts";
-import { chatsOf, saidOnly } from "../../inbox/lastWord/index.ts";
+import { chatsOf } from "../../inbox/lastWord/index.ts";
 import { localEmbedder } from "../../search/conversations/index.ts";
 import { createDecisionsClient } from "../../subq/decisions/index.ts";
 import type { DecisionsClient } from "../../subq/decisions/index.ts";
@@ -287,28 +286,24 @@ async function labelTool(form: string, str: (name: string) => string, limit: num
   }
   const labels = pipelineLabels();
   const items: TeachItem[] = [];
-  const allChats = chatsOf(query);
-  const ownerWho = new Map(entries.filter((e) => e.by !== TEACHER_BY).map((e) => [keyOf(e), e.who ?? (e.label ? OLD_LABEL_FIELDS[e.label].who : null)] as const));
-  const examples = allChats.flatMap((c) => {
-    const who = ownerWho.get(keyOf({ platform: c.platform, account: c.account, person: c.personKey }));
-    return who && !c.storedAsGroup ? [{ with: c.with, platform: c.platform, who }] : [];
-  });
-  const context = { ...(labels.about ? { about: labels.about } : {}), examples };
-  for (const chat of allChats) {
+  const context = teachContext(entries, labels);
+  for (const chat of chatsOf(query)) {
     const key = keyOf({ platform: chat.platform, account: chat.account, person: chat.personKey });
     if (chat.storedAsGroup || owned.has(key) || taught.has(key)) continue;
-    const said = saidOnly(chat.messages);
-    if (!said.some((m) => !m.fromOwner)) continue;
-    items.push({ platform: chat.platform, account: chat.account, person: chat.personKey, with: chat.with, state: teachState({ platform: chat.platform, with: chat.with }, windowText(windowOf(said)), context) });
+    const item = teachItemOf(chat, context);
+    if (item) items.push(item);
     if (limit && items.length >= limit) break;
   }
   const plan = teachPlan(items, labels);
   if (!apply || !items.length) {
-    const text = `log inbox label teach: a dry run. ${items.length} chats have no owner or SubQ label; asking SubQ once about each is about ${plan.inputTokens.toLocaleString("en-US")} input tokens, about $${plan.usd.toFixed(4)}. Nothing was sent. --apply sends them and stores each answer by ${TEACHER_BY} with its confidence; an owner label always wins.`;
-    return { code: 0, stdout: json ? JSON.stringify({ dryRun: true, chats: items.length, inputTokens: plan.inputTokens, usd: plan.usd }, null, 2) : text };
+    const queued = teachQueue().length;
+    const spent = teachSpend(new Date().toISOString().slice(0, 10));
+    const text = `log inbox label teach: a dry run. ${items.length} chats have no owner or SubQ label; asking SubQ once about each is about ${plan.inputTokens.toLocaleString("en-US")} input tokens, about $${plan.usd.toFixed(4)}. Nothing was sent. --apply sends them and stores each answer by ${TEACHER_BY} with its confidence; an owner label always wins. In the background the push asks SubQ about ${queued} queued chat${queued === 1 ? "" : "s"} the head is unsure of; today $${spent.usd.toFixed(4)} of $${subqDailyUsd()} on ${spent.chats} chats.`;
+    return { code: 0, stdout: json ? JSON.stringify({ dryRun: true, chats: items.length, inputTokens: plan.inputTokens, usd: plan.usd, queued, spentToday: spent.usd, dailyCapUsd: subqDailyUsd() }, null, 2) : text };
   }
   const answers = await teach(plan, labelDeps.decisions(), labels);
-  for (const a of answers) setLabel({ platform: a.platform, account: a.account, chat: a.person }, { who: a.who, where: a.where, confidence: a.confidence, ...(a.candidates.length ? { candidates: a.candidates } : {}) }, TEACHER_BY);
+  const through = new Map(items.map((i) => [keyOf(i), i.throughSeq]));
+  for (const a of answers) setLabel({ platform: a.platform, account: a.account, chat: a.person }, { who: a.who, where: a.where, confidence: a.confidence, ...(a.candidates.length ? { candidates: a.candidates } : {}), ...(typeof through.get(keyOf(a)) === "number" ? { throughSeq: through.get(keyOf(a)) } : {}) }, TEACHER_BY);
   const tokens = answers.reduce((sum, a) => sum + a.inputTokens, 0);
   if (json) return { code: 0, stdout: JSON.stringify({ dryRun: false, labelled: answers.length, inputTokens: tokens, answers }, null, 2) };
   return { code: 0, stdout: `log inbox label teach: SubQ labelled ${answers.length} of ${items.length} chats (${tokens} input tokens); ${answers.filter((a) => a.candidates.length).length} were unsure and carry candidate labels. log inbox label queue shows what the owner should label next.` };

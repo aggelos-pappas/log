@@ -13,6 +13,7 @@ export interface TeachItem {
   person: string
   with: string
   state: string
+  throughSeq?: number
 }
 
 export interface TeachPlan {

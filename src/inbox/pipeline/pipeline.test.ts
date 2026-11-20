@@ -10,6 +10,12 @@ import { db } from '../store/index'
 import {
   applyLayer,
   botSignal,
+  drainTeacher,
+  fallbackReason,
+  humanTalk,
+  queueForTeacher,
+  teachQueue,
+  teachSpend,
   buildPrototypes,
   FEATURE_NAMES,
   emotionsSettled,
@@ -81,10 +87,10 @@ describe('who each person is and where they are (the pipeline labeller)', () => 
     const prototypes = await buildPrototypes(labels, embedder)
     const [friendly] = await embedder.embed(['haha miss you man, how is the family, lets grab food this weekend'])
     expect(guessOf(friendly, features(), labels, prototypes, null)).toMatchObject({ who: 'friend', where: null })
-    expect(guessOf(friendly, features({ botScore: 0.95 }), labels, prototypes, null, ['the name reads as a bot'])).toMatchObject({ who: 'bot', where: null, source: 'bot' })
+    expect(guessOf(friendly, features({ botScore: 0.95 }), labels, prototypes, null, ['the name reads as a bot'], { teacherSaysBot: true })).toMatchObject({ who: 'bot', where: null, source: 'bot' })
     const chat = { platform: 'discord', account: 'discordAccount', storedAsGroup: false, with: 'linus_k', personKey: 'linus', conversationIds: ['linus'], messages: said([[false, 'lets ship it', 1000]], 'linus_k') }
     expect(labelOfChat(chat, [], NOW, row({ person: 'linus', who: 'partner', where: 'offered' }))).toMatchObject({ who: 'partner', where: null, label: 'friend' })
-    expect(labelOfChat(chat, [], NOW, row({ person: 'linus', who: 'bot', where: null }))).toMatchObject({ who: 'bot', label: 'skip' })
+    expect(labelOfChat(chat, [], NOW, row({ person: 'linus', who: 'bot', where: null, source: 'bot', features: features({ botScore: 0.95 }) }))).toMatchObject({ who: 'bot', label: 'skip' })
   })
 
   test('old labels map onto the two fields, and the owner\'s hand label always wins over the labeller and the teacher', () => {
@@ -234,5 +240,79 @@ describe('who each person is and where they are (the pipeline labeller)', () => 
       expect(pipelineLabels(file).where).toEqual(WHERE_LABELS)
       expect(pipelineLabels(`${file}.missing`).who).toEqual(WHO_LABELS)
     })
+  })
+
+  test('a bot needs the bot signal and the teacher, and never a chat the owner is talking in both ways', async () => {
+    const prototypes = await buildPrototypes(labels, embedder)
+    const [v] = await embedder.embed(['hey there, what are you building these days'])
+    expect(guessOf(v, features({ botScore: 0.95 }), labels, prototypes, null, ['the name reads as a bot']).who).not.toBe('bot')
+    expect(guessOf(v, features({ botScore: 0.95 }), labels, prototypes, null, [], { teacherSaysBot: true, humanTalk: true }).who).not.toBe('bot')
+    const width = 256 + FEATURE_NAMES.length
+    const hot = Array.from({ length: width }, (_, i) => (i === 256 + 4 ? 20 : 0))
+    const botHead: PipelineHead = { model: 'hash', features: [...FEATURE_NAMES], featureScale: FEATURE_NAMES.map(() => 1), who: { labels: ['bot', 'friend', 'lead'], weights: [hot, hot.map(() => 0), hot.map(() => 0)], bias: [5, 0, 0] }, where: { labels: [], weights: [], bias: [] }, trainedAt: '2026-11-18T00:00:00Z', counts: { rows: 3 }, trainer: 'test' }
+    expect(guessOf(v, features({ botScore: 0 }), labels, prototypes, botHead, [], { teacherSaysBot: true }).who).not.toBe('bot')
+    const talk = said([[true, 'yo', 5000], [false, 'hey', 4000], [true, 'whats up', 3000], [false, 'shipping', 2000]], 'linus_k')
+    expect(humanTalk(talk)).toBe(true)
+    expect(humanTalk(said([[false, 'gm', 1000]], 'linus_k'))).toBe(false)
+    const chat = { platform: 'discord', account: 'discordAccount', storedAsGroup: false, with: 'linus_k', personKey: 'linus2', conversationIds: ['linus2'], messages: talk }
+    const teacherBot: LabelEntry[] = [{ platform: 'discord', account: 'discordAccount', person: 'linus2', who: 'bot', confidence: 0.99, by: 'subq', at: '2026-11-18T00:00:00Z' }]
+    const headBot = row({ person: 'linus2', who: 'bot', where: null, source: 'head', confidence: 0.6, scores: { who: { bot: 0.6, friend: 0.3, lead: 0.1 }, where: {} }, features: features({ botScore: 0 }) })
+    expect(labelOfChat(chat, teacherBot, NOW, headBot)).toMatchObject({ who: 'friend' })
+    const realBot = row({ person: 'linus2', who: 'bot', where: null, source: 'bot', confidence: 0.97, scores: { who: { bot: 0.97, friend: 0.03 }, where: {} }, features: features({ botScore: 0.95 }) })
+    const notice = { ...chat, messages: said([[false, 'you have reached level 5', 2000], [false, 'you have reached level 6', 1000]], 'levels') }
+    expect(labelOfChat(notice, teacherBot, NOW, realBot)).toMatchObject({ who: 'bot' })
+  })
+
+  test('a chat goes to SubQ when the head is unsure, has no teacher label, the label is stale or the stage moved', () => {
+    const lines = said([[false, 'hey', 5000], [true, 'yo', 4000], [false, 'we need 500 leads a month', 3000], [false, 'can you help', 2000], [false, 'budget is fine', 1000]])
+    const base = { confidence: 0.3, where: 'needFound', whereScores: { needFound: 0.6, warming: 0.4 }, botScore: 0, said: lines, ownerLabelled: false }
+    expect(fallbackReason(base)).toBe('noTeacherLabel')
+    expect(fallbackReason({ ...base, ownerLabelled: true })).toBeNull()
+    const old = { platform: 'discord', account: 'a', person: 'p', who: 'lead', where: 'warming', confidence: 0.9, by: 'subq', at: '2026-11-01T00:00:00Z' }
+    expect(fallbackReason({ ...base, teacher: old })).toBe('stageChange')
+    expect(fallbackReason({ ...base, teacher: { ...old, where: 'needFound' } })).toBe('unsure')
+    expect(fallbackReason({ ...base, confidence: 0.9, teacher: { ...old, where: 'needFound' } })).toBeNull()
+    expect(fallbackReason({ ...base, teacher: { ...old, throughSeq: lines[lines.length - 1].seq } })).toBeNull()
+    const many = said(Array.from({ length: 13 }, (_, i) => [i % 2 === 0, `line ${i}`, 20_000 - i * 1000] as [boolean, string, number]))
+    expect(fallbackReason({ ...base, confidence: 0.9, said: many, teacher: { ...old, where: 'needFound', throughSeq: many[0].seq - 1 } })).toBe('staleTeacher')
+  })
+
+  test('new messages queue unsure chats for SubQ off the push path, and the drain keeps to the daily cap, stores what it read up to and tries a retrain once enough new teacher labels arrived', async () => {
+    db().exec("DELETE FROM state WHERE scope = 'pipelineTeach'")
+    const now = new Date('2026-11-18T12:00:00Z')
+    for (const c of ['fb1', 'fb2', 'fb3']) {
+      storeRead('discord', 'fallbackAcct', c, 'dm', { id: `${c}a`, at: '2026-11-18T10:00:00Z', from: 'grace_ships', fromId: `${c}g`, fromMe: false, text: 'we need someone to build our outreach' }, now, 'live')
+      storeRead('discord', 'fallbackAcct', c, 'dm', { id: `${c}b`, at: '2026-11-18T10:01:00Z', from: 'me', fromMe: true, text: 'what volume do you need' }, now, 'live')
+    }
+    await refreshPipeline({ platform: 'discord', account: 'fallbackAcct' }, { embedder, labels, head: null, now: NOW })
+    const queued = teachQueue().filter((q) => q.account === 'fallbackAcct')
+    expect(queued.map((q) => q.reason)).toEqual(['noTeacherLabel', 'noTeacherLabel', 'noTeacherLabel'])
+    let asked = 0
+    const client = async () => {
+      asked++
+      return { model: 'fake', usage: { input_tokens: 400_000, output_tokens: 0 }, answers: { who: { type: 'choice' as const, choice: 'lead', probabilities: { lead: 0.9, friend: 0.1 }, confidence: 0.9 }, where: { type: 'choice' as const, choice: 'needFound', probabilities: { needFound: 0.9 }, confidence: 0.9 } } }
+    }
+    let trained = 0
+    const trainer = async () => {
+      trained++
+      return { model: 'hash', features: [...FEATURE_NAMES], featureScale: FEATURE_NAMES.map(() => 1), who: { labels: ['lead', 'friend', 'partner'], weights: [], bias: [] }, where: { labels: [], weights: [], bias: [] }, trainedAt: '2026-11-18T12:00:01Z', counts: { rows: 3 }, trainer: 'fake' }
+    }
+    const first = await drainTeacher({ client, labels, embedderModel: 'hash', trainer, capUsd: 0.04, now: NOW, retrainAfter: 1000 })
+    expect(first.chats).toBe(3)
+    expect(first.retrainedHead).toBeNull()
+    expect(teachQueue().filter((q) => q.account === 'fallbackAcct')).toHaveLength(0)
+    const taught = labelList().filter((e) => e.account === 'fallbackAcct')
+    expect(taught.every((e) => e.by === 'subq' && typeof e.throughSeq === 'number')).toBe(true)
+    expect(teachSpend(new Date(NOW).toISOString().slice(0, 10)).chats).toBe(3)
+    queueForTeacher(taught.map((e) => ({ platform: e.platform, account: e.account, person: e.person, reason: 'unsure' as const, confidence: 0.2, throughSeq: 0, queuedAt: '2026-11-18T12:00:00Z' })))
+    const capped = await drainTeacher({ client, labels, embedderModel: 'hash', trainer, capUsd: 0.04, now: NOW, retrainAfter: 1000 })
+    expect([capped.chats, asked]).toEqual([0, 3])
+    expect(capped.stopped).toContain('daily SubQ cap')
+    const again = await drainTeacher({ client, labels, embedderModel: 'hash', trainer, capUsd: 1, now: NOW + 86_400_000, retrainAfter: 1, batch: 1 })
+    expect([again.chats, again.left]).toEqual([1, 2])
+    expect(trained).toBe(0)
+    expect(again.retrain).toContain('needs at least')
+    for (const e of taught) setLabel({ platform: e.platform, account: e.account, chat: e.person }, null, 'the owner')
+    db().exec("DELETE FROM pipelineHeads WHERE 1 = 1; DELETE FROM state WHERE scope = 'pipelineTeach'")
   })
 })

@@ -1,6 +1,6 @@
 import type { Embedder } from '../../../search/conversations/types'
 import { BOT_THRESHOLD, HEAD_MIN_KINDS, NEVER_STAGED, NEW_TURNS, PROTOTYPE_TEMPERATURE, QUIET_DAYS, SALES_WHO, SEED_PHRASES } from '../types'
-import type { Features, Guess, HeadLayer, PipelineHead, PipelineLabels, Prototypes } from '../types'
+import type { BotGate, Features, Guess, HeadLayer, PipelineHead, PipelineLabels, Prototypes } from '../types'
 
 export function cosine(a: Float32Array, b: Float32Array): number {
   let dot = 0
@@ -90,18 +90,22 @@ export function stageAllowed(who: string): boolean {
   return SALES_WHO.includes(who) && !NEVER_STAGED.includes(who)
 }
 
-export function guessOf(vector: Float32Array, features: Features, labels: PipelineLabels, prototypes: Prototypes, head: PipelineHead | null, botWhy: readonly string[] = []): Guess {
+export function botVerdict(features: Pick<Features, 'botScore'>, gate: BotGate): boolean {
+  return features.botScore >= BOT_THRESHOLD && gate.teacherSaysBot === true && !gate.humanTalk
+}
+
+export function guessOf(vector: Float32Array, features: Features, labels: PipelineLabels, prototypes: Prototypes, head: PipelineHead | null, botWhy: readonly string[] = [], gate: BotGate = {}): Guess {
   const useHead = Boolean(head && head.who.labels.length >= HEAD_MIN_KINDS && head.who.labels.every((l) => l in labels.who))
   const input = useHead && head ? headInput(vector, features, head) : []
   let whoScores = useHead && head ? applyLayer(head.who, input) : prototypeScores(vector, prototypes.who)
+  const verdict = botVerdict(features, gate)
   if ('bot' in whoScores) {
-    const detected = features.botScore >= BOT_THRESHOLD ? features.botScore : 0
-    const bot = useHead ? Math.max(detected, whoScores.bot) : detected
+    const bot = verdict ? Math.max(features.botScore, useHead ? (whoScores.bot ?? 0) : 0) : 0
     whoScores = renormalized(Object.fromEntries(Object.entries(whoScores).map(([k, v]) => [k, k === 'bot' ? bot : v * (1 - bot)])))
   }
   const who = ranked(whoScores)
-  if (who.top === 'bot' && features.botScore >= BOT_THRESHOLD) {
-    return { who: 'bot', where: null, confidence: who.first, margin: who.first - who.second, whoScores: rounded(whoScores), whereScores: {}, source: 'bot', why: botWhy.join('; ') || 'reads as a bot' }
+  if (who.top === 'bot' && verdict) {
+    return { who: 'bot', where: null, confidence: who.first, margin: who.first - who.second, whoScores: rounded(whoScores), whereScores: {}, source: 'bot', why: `${botWhy.join('; ') || 'reads as a bot'}; the teacher agrees` }
   }
   if (!stageAllowed(who.top)) return { who: who.top, where: null, confidence: who.first, margin: who.first - who.second, whoScores: rounded(whoScores), whereScores: {}, source: useHead ? 'head' : 'prototype', why: `nearest to ${who.top} (${Math.round(who.first * 100)}%), no sales stage for ${who.top}` }
   const useWhereHead = Boolean(useHead && head && head.where.labels.length && head.where.labels.every((l) => l in labels.where))

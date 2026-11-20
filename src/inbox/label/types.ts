@@ -31,6 +31,7 @@ export interface LabelEntry {
   where?: string | null
   confidence?: number
   candidates?: string[]
+  throughSeq?: number
   by: string
   at: string
 }
@@ -41,6 +42,7 @@ export interface LabelFields {
   where?: string | null
   confidence?: number
   candidates?: string[]
+  throughSeq?: number
 }
 
 export interface LabelList {

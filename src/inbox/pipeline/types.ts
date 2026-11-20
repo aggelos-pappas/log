@@ -89,6 +89,28 @@ export const SUBQ_USD_PER_MILLION_INPUT = 0.04
 
 export const CHARS_PER_TOKEN = 4
 
+export const FALLBACK_BELOW = 0.5
+
+export const UNSURE_MIN_NEW = 3
+
+export const TEACHER_STALE_MESSAGES = 12
+
+export const STAGE_CHANGE_SCORE = 0.5
+
+export const SUBQ_DAILY_USD = 0.05
+
+export const TEACH_BATCH = 20
+
+export const TEACH_EVERY_MS = 300_000
+
+export const RETRAIN_AFTER = 50
+
+export const TWO_WAY_TURNS = 3
+
+export const TWO_WAY_OWNER_LINES = 2
+
+export const TEACH_QUEUE_KEPT = 500
+
 export const FEATURE_NAMES = ['turns', 'daysQuiet', 'openAsk', 'lastFromMe', 'theirShare', 'botScore', 'neverWroteBack', 'feelsGood', 'feelsBad', 'feelsCurious'] as const
 
 export const EMOTION_GROUPS: Readonly<Record<'feelsGood' | 'feelsBad' | 'feelsCurious', readonly string[]>> = {
@@ -200,4 +222,39 @@ export interface QueueRow {
   margin: number
   uncertainty: number
   chat: string
+}
+
+export type FallbackReason = 'noTeacherLabel' | 'staleTeacher' | 'unsure' | 'stageChange' | 'botCheck'
+
+export interface TeachQueueItem {
+  platform: string
+  account: string
+  person: string
+  reason: FallbackReason
+  confidence: number
+  throughSeq: number
+  queuedAt: string
+}
+
+export interface TeachRun {
+  at: string
+  chats: number
+  inputTokens: number
+  usd: number
+  left: number
+  stopped: string | null
+  retrainedHead: number | null
+  retrain: string | null
+}
+
+export interface TeachSpend {
+  day: string
+  usd: number
+  chats: number
+  runs: TeachRun[]
+}
+
+export interface BotGate {
+  teacherSaysBot?: boolean
+  humanTalk?: boolean
 }

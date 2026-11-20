@@ -27,6 +27,7 @@ export type StateScope =
   | 'pushQuiet'
   | 'inboxIgnore'
   | 'inboxLabels'
+  | 'pipelineTeach'
   | 'hermesView'
   | 'handRolled'
   | 'turnStart'

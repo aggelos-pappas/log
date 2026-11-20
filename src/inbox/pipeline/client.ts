@@ -6,13 +6,14 @@ import { chatsOf, personKeyOf, saidOnly } from '../lastWord/index'
 import type { LastWordMessage, PersonChat } from '../lastWord/index'
 import { db } from '../store/index'
 import { botSignal, featuresOf } from './helpers/features'
+import { conversationIdsOf, fallbackReason, humanTalk, queueForTeacher, withoutFalseBot } from './helpers/fallback'
 import { buildPrototypes, entropyOf, guessOf, withExemplars } from './helpers/model'
 import { chatsMovedSince, lastMessageSeq, latestHead, messageIdOf, putRow, setEmotions, storedRow, storedRows } from './helpers/store'
 import { getState } from '../../storage/state/index'
 import { OLD_LABEL_FIELDS } from '../label/types'
-import type { LabelList } from '../label/types'
+import type { LabelEntry, LabelList } from '../label/types'
 import { EMBED_BATCH, EMOTION_CHARS, PIPELINE_SETTING, QUEUE_SIZE, SALES_WHO, SLIDE_LINES, TEACHER_BY, WHERE_LABELS, WHO_LABELS, WINDOW_LINE_CHARS, WINDOW_MESSAGES } from './types'
-import type { EmotionReader, PipelineHead, PipelineLabels, PipelineRow, Prototypes, QueueRow } from './types'
+import type { EmotionReader, PipelineHead, PipelineLabels, PipelineRow, Prototypes, QueueRow, TeachQueueItem } from './types'
 
 export function pipelineLabels(file: string = settingsPath()): PipelineLabels {
   const defaults = { who: { ...WHO_LABELS }, where: { ...WHERE_LABELS } }
@@ -141,13 +142,21 @@ export async function labelChats(chats: readonly Chat[], deps: PipelineDeps, on:
     else if (mine.length) vectors.set(p.d, meanOf(mine))
   }
   const written: PipelineRow[] = []
+  const entries = new Map((getState<LabelList>('inboxLabels', 'all')?.body.entries ?? []).map((e) => [`${e.platform} ${e.account} ${e.person}`, e] as const))
+  const ownIds = ownAccountsOf(on)
+  const queued: TeachQueueItem[] = []
   due.forEach((d) => {
     const bot = botSignal(d.chat.with, d.said)
+    const entry: LabelEntry | undefined = entries.get(`${d.chat.platform} ${d.chat.account} ${d.chat.personKey}`)
+    const teacher = entry?.by === TEACHER_BY ? entry : undefined
+    const ownerLabelled = Boolean(entry && entry.by !== TEACHER_BY)
+    const talking = humanTalk(d.said, ownIds.has(`${d.chat.platform}:${d.chat.personKey.toLowerCase()}`) || ownIds.has(`${d.chat.platform}:${d.chat.with.replace(/^@/, '').toLowerCase()}`))
+    const gate = { teacherSaysBot: (ownerLabelled ? entry?.who : teacher?.who) === 'bot', humanTalk: talking }
     const vector = vectors.get(d) ?? null
     const at = feel.indexOf(d)
     const feeling = at >= 0 ? feelings?.[at] : undefined
     const features = featuresOf(d.said, bot, now, feeling?.length ? feeling : (d.previous?.emotions ?? null))
-    const guess = vector && prototypes ? guessOf(vector, features, labels, prototypes, head, bot.why) : { who: 'community' in labels.who ? 'community' : Object.keys(labels.who)[0], where: null, confidence: 1, margin: 1, whoScores: {}, whereScores: {}, source: 'group' as const, why: 'a group chat' }
+    const guess = vector && prototypes ? guessOf(vector, features, labels, prototypes, head, bot.why, gate) : { who: 'community' in labels.who ? 'community' : Object.keys(labels.who)[0], where: null, confidence: 1, margin: 1, whoScores: {}, whereScores: {}, source: 'group' as const, why: 'a group chat' }
     const moved = !d.previous || d.previous.who !== guess.who || d.previous.where !== guess.where
     const row = {
       platform: d.chat.platform,
@@ -170,7 +179,10 @@ export async function labelChats(chats: readonly Chat[], deps: PipelineDeps, on:
     }
     putRow(on, row)
     written.push(row)
+    const reason = guess.source === 'group' ? null : fallbackReason({ confidence: row.confidence, where: row.where, whereScores: guess.whereScores, botScore: features.botScore, said: d.said, teacher, ownerLabelled })
+    if (reason) queued.push({ platform: row.platform, account: row.account, person: row.person, reason, confidence: row.confidence, throughSeq: d.lastSeq, queuedAt: new Date(now).toISOString() })
   })
+  queueForTeacher(queued, on, now)
   if (deps.emotionsLater && feel.length) {
     const settling: Promise<void> = feelingsLater.then((later) => {
       later?.forEach((f, i) => {
@@ -187,11 +199,9 @@ export async function refreshPipeline(query: { platform?: string; account?: stri
   return labelChats(chatsOf(query, on), deps, on)
 }
 
-export function conversationIdsOf(conversationId: string): string[] {
-  const pair = conversationId.match(/^(\d+)[-:](\d+)$/)
-  if (!pair) return [conversationId]
-  const [a, b] = [pair[1], pair[2]]
-  return [`${a}-${b}`, `${a}:${b}`, `${b}-${a}`, `${b}:${a}`]
+function ownAccountsOf(on: Database): Set<string> {
+  const rows = on.prepare('SELECT platform, account, userId FROM accounts').all() as { platform: string; account: string; userId: string }[]
+  return new Set(rows.flatMap((r) => [`${r.platform}:${r.account.toLowerCase()}`, `${r.platform}:${r.userId.toLowerCase()}`]))
 }
 
 export function pushLabeller(deps: () => PipelineDeps, on: () => Database = db): () => Promise<number> {
@@ -227,6 +237,7 @@ export function pipelineLine(platform: string, account: string, conversationId: 
     return null
   }
   if (!row) return null
+  row = withoutFalseBot(row, false)
   const stage = row.where ? `, where ${row.where}` : ''
   const feels = row.emotions?.length ? `; their last message feels ${row.emotions.map((e) => `${e.label} ${Math.round(e.score * 100)}%`).join(', ')}` : ''
   return `  who ${row.who}${stage} (${Math.round(row.confidence * 100)}% sure, ${row.source}${row.movedById ? `, moved by message ${row.movedById}` : ''})${feels}`
