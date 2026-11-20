@@ -135,6 +135,45 @@ def http_client(platform: str | None = None, env: Mapping[str, str] | None = Non
     return resolve(platform, env)["client"]
 
 
+DRIVER_FAMILY = {"camoufox": "firefox", "firefox": "firefox", "adsPower": "chrome", "brave": "chrome", "chrome": "chrome"}
+FIREFOX_FETCH_HEAD = ("user-agent", "accept", "accept-language", "accept-encoding", "referer")
+FIREFOX_FETCH_TAIL = ("content-length", "origin", "cookie", "sec-fetch-dest", "sec-fetch-mode", "sec-fetch-site", "priority", "te")
+FIREFOX_FETCH_EXTRA = {"priority": "u=4", "te": "trailers"}
+DESKTOP_APPS = ("Discord Client",)
+
+
+def browser_of(user_agent: str) -> tuple[str, int] | None:
+    text = str(user_agent or "")
+    if "Electron/" in text or re.search(r"\bdiscord/\d", text):
+        return None
+    firefox = re.search(r"\bFirefox/(\d{2,3})", text)
+    if firefox:
+        return "firefox", int(firefox.group(1))
+    chrome = re.search(r"\bChrome/(\d{2,3})", text)
+    if chrome:
+        return "chrome", int(chrome.group(1))
+    return None
+
+
+def curl_target_for(user_agent: str, available: set[str] | None = None) -> str | None:
+    found = browser_of(user_agent)
+    if not found:
+        return None
+    family, version = found
+    mac = "Macintosh" in str(user_agent)
+    targets = curl_targets() if available is None else available
+    if not targets:
+        return f"{family}{version}"
+    parsed = [(m.group(1), int(m.group(2)), bool(m.group(3)), t) for t in targets for m in [re.fullmatch(r"(chrome|firefox)(\d{2,3})(_macos)?", t)] if m]
+    own = [p for p in parsed if p[0] == family]
+    macos = mac and any(p[2] for p in own)
+    pinned = [(p[1], p[3]) for p in own if p[2] == macos]
+    if not pinned:
+        return None
+    below = [p for p in pinned if p[0] <= version]
+    return max(below)[1] if below else min(pinned)[1]
+
+
 def describe(platform: str | None = None) -> str:
     i = resolve(platform)
     return f"{i['browser']} on {i['os']} through {i['client']} (curl {i['curl']}, httpcloak {i['httpcloak']})"

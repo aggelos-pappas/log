@@ -5,7 +5,7 @@ Read from Discord's own internal calls, never guessed (rules 73, 85): the 2026-1
 ## 1. One account, one token, many sessions
 
 - The account's session is one **token** (discord.com localStorage `token`). Every REST call carries it in `Authorization`; the gateway carries it once, in IDENTIFY.
-- A token belongs to the **client that signed in**. The browser that signed in says who it is on every call: `X-Super-Properties` (base64 JSON: os, browser, browser version, `client_build_number`, a per-launch `client_launch_id` and `launch_signature`), `X-Installation-Id`, `X-Discord-Timezone`, `X-Discord-Locale`, the `sec-ch-ua` set and Chrome's own TLS.
+- A token belongs to the **client that signed in**. The browser that signed in says who it is on every call: `X-Super-Properties` (base64 JSON: os, browser, browser version, `client_build_number`, a per-launch `client_launch_id` and `launch_signature`), `X-Installation-Id`, `X-Discord-Timezone`, `X-Discord-Locale`, its own TLS and its own header order. Chrome and Brave add the `sec-ch-ua` set and `Priority: u=1, i`; Firefox (Camoufox) sends no client hints, `Priority: u=4` and `TE: trailers`, with `Referer` right after `Accept-Encoding`. The super properties carry the browser's own user agent, even when their `browser` field says Chrome.
 - Discord keeps a list of the account's sessions (the client that signed in, where, when). Signing in anew adds one; a token that is revoked answers **401** to REST and **close 4004** to the gateway.
 
 ## 2. Signing in: three ways in, and what stops each
@@ -56,13 +56,14 @@ The web client never sends the classic op 1 heartbeat; it sends op 40 with its Q
 | 2026-11-13 23:19:20 | the browser closed; the new token saved; `GET /users/@me` 200 | loggedIn |
 | 23:19:25 | the hook started the watcher: endcord's gateway, the 11-11 browser's properties (build 670026), endcord's capabilities, `client_app_state: unfocused`, op 1 heartbeats, Python's TLS | |
 | 23:19:29 | | REST 401; the token is revoked |
+| 2026-11-20 | the account moved to Camoufox (Firefox 156) and signed in there; the engine still loaded its 11-13 AdsPower recording (only `adsPower/` captures were read, and a Camoufox capture has no gateway frames) and called as Chrome 155: Chrome UA and client hints, build 671535 against the browser's 677695, `chrome152` TLS, navigation headers (`Upgrade-Insecure-Requests`, `Sec-Fetch-User`) and Discord's own headers last | fixed by #114: the identity follows the account's browser driver |
 
 Both times the token died while a client that wasn't the browser held the gateway with it. Which difference Discord reacts to isn't proven by these two runs: the client identity, the capabilities, the heartbeat op, the TLS, or a second login landing on a token right after a refused password. Stage 2 is built to tell them apart.
 
 ## 7. Stages, each built on the one before
 
 1. **Understand** (this page, and each call's doc).
-2. **Hold a session** as the browser does: the identity recorded from the account's own browser (`python/discordApi/browserIdentity.py`), REST over curl_cffi as Chrome (`browserRest.py`), the gateway as the web client (`browserGateway.py`: IDENTIFY, then op 4, 41, 40, heartbeats on op 40). No recording, no call (`templateStale`). Tested by session checks at 1, 5 and 15 minutes; the first 401 or 4004 stops it.
+2. **Hold a session** as the browser does: the identity recorded from the account's own browser (`python/discordApi/browserIdentity.py`), picked by its `browserDriver` (Camoufox is Firefox; AdsPower and Brave are Chrome) from that driver's captures. When a capture has no gateway frames (Camoufox's), IDENTIFY is built from the same super properties plus `installation_id`, `is_fast_connect` and `gateway_connect_reasons`. REST goes over curl_cffi with the recorded browser's TLS (the newest curl_cffi target of its family at or below its version) and fetch() header order (`browserRest.py`), the gateway as the web client (`browserGateway.py`: IDENTIFY, then op 4, 41, 40, heartbeats on op 40). No recording from the account's own browser, no call (`templateStale`); an identity that disagrees with itself or with the driver (another browser family, a build or user agent that differs between REST and IDENTIFY, client hints on Firefox, the desktop app) is refused as `identityMismatch`. Tested by session checks at 1, 5 and 15 minutes; the first 401 or 4004 stops it.
 3. **Read and watch** on top of 2.
 4. **Send** on top of 3.
 5. **Sign in again** when a session dies: the account's browser, the saved login, a person for the captcha or the QR.
