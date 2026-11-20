@@ -18,13 +18,14 @@ export function pipelineLabels(file: string = settingsPath()): PipelineLabels {
   const defaults = { who: { ...WHO_LABELS }, where: { ...WHERE_LABELS } }
   if (!existsSync(file)) return defaults
   try {
-    const saved = (JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>)[PIPELINE_SETTING] as { who?: unknown; where?: unknown } | undefined
+    const saved = (JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>)[PIPELINE_SETTING] as { who?: unknown; where?: unknown; about?: unknown } | undefined
     const listOf = (value: unknown, fallback: Record<string, string>) => {
       if (!value || typeof value !== 'object' || Array.isArray(value)) return fallback
       const entries = Object.entries(value as Record<string, unknown>).filter(([k, v]) => /^[a-z][A-Za-z0-9]*$/.test(k) && typeof v === 'string' && v.trim())
       return entries.length >= 2 ? Object.fromEntries(entries.map(([k, v]) => [k, String(v).trim()])) : fallback
     }
-    return { who: listOf(saved?.who, defaults.who), where: listOf(saved?.where, defaults.where) }
+    const about = typeof saved?.about === 'string' && saved.about.trim() ? saved.about.trim() : undefined
+    return { who: listOf(saved?.who, defaults.who), where: listOf(saved?.where, defaults.where), ...(about ? { about } : {}) }
   } catch {
     return defaults
   }

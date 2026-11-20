@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import type { DecisionAnswer, DecisionsClient } from '../../../subq/decisions/index'
 import { OLD_LABEL_FIELDS } from '../../label/types'
 import type { LabelEntry } from '../../label/types'
-import { CHARS_PER_TOKEN, FEATURE_NAMES, HEAD_MIN_KINDS, HEAD_MIN_ROWS, SALES_WHO, SUBQ_USD_PER_MILLION_INPUT, TEACHER_BY, TEACHER_MIN_CONFIDENCE, TEACHER_STATE_CHARS } from '../types'
+import { CHARS_PER_TOKEN, FEATURE_NAMES, HEAD_MIN_KINDS, HEAD_MIN_ROWS, SALES_WHO, SUBQ_USD_PER_MILLION_INPUT, TEACHER_BY, TEACHER_MIN_CONFIDENCE, TEACHER_STATE_CHARS, TEACHER_TRAIN_FLOOR } from '../types'
 import type { PipelineHead, PipelineLabels, PipelineRow, TeacherLabel } from '../types'
 import { saveHead } from './store'
 
@@ -29,8 +29,15 @@ function whereQuestion(labels: PipelineLabels) {
   return { type: 'choice' as const, instructions: 'Treat this person as a lead or client of the owner. Where are they in the sales cycle right now?', criteria: labels.where }
 }
 
-export function teachState(item: Pick<TeachItem, 'with' | 'platform'>, window: string): string {
-  const head = `A direct conversation on ${item.platform} between the owner (lines marked me) and ${item.with} (lines marked them), oldest first:\n`
+export interface TeachContext {
+  about?: string
+  examples?: readonly { with: string; platform: string; who: string }[]
+}
+
+export function teachState(item: Pick<TeachItem, 'with' | 'platform'>, window: string, context: TeachContext = {}): string {
+  const about = context.about ? `About the owner: ${context.about}\n` : ''
+  const examples = context.examples?.length ? `People the owner labelled himself: ${context.examples.map((e) => `${e.with} on ${e.platform} is ${e.who}`).join('; ')}.\n` : ''
+  const head = `${about}${examples}A direct conversation on ${item.platform} between the owner (lines marked me) and ${item.with} (lines marked them), oldest first:\n`
   const body = window.length > TEACHER_STATE_CHARS ? window.slice(window.length - TEACHER_STATE_CHARS) : window
   return head + body
 }
@@ -78,10 +85,11 @@ export function trainingSet(rows: readonly PipelineRow[], entries: readonly Labe
     const who = entry?.who ?? (entry?.label ? OLD_LABEL_FIELDS[entry.label].who : null)
     if (!entry || !who || !(who in labels.who)) continue
     const teacher = entry.by === TEACHER_BY
-    if (teacher && (entry.confidence ?? 0) < TEACHER_MIN_CONFIDENCE) continue
+    if (teacher && (entry.confidence ?? 0) < TEACHER_TRAIN_FLOOR) continue
     const stage = entry.who ? entry.where : entry.label ? OLD_LABEL_FIELDS[entry.label].where : null
     const where = SALES_WHO.includes(who) && stage && stage in labels.where ? stage : null
-    set.push({ x: [...row.vector, ...FEATURE_NAMES.map((f) => row.features[f] ?? 0)], who, where, weight: teacher ? 0.5 : 1, source: teacher ? 'teacher' : 'owner' })
+    const weight = teacher ? Math.round(0.5 * Math.min(1, (entry.confidence ?? 0) / TEACHER_MIN_CONFIDENCE) * 1000) / 1000 : 1
+    set.push({ x: [...row.vector, ...FEATURE_NAMES.map((f) => row.features[f] ?? 0)], who, where, weight, source: teacher ? 'teacher' : 'owner' })
   }
   return set
 }
