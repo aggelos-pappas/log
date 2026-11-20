@@ -1,0 +1,69 @@
+[
+  {
+    "id": "D1",
+    "question": "What labels should each conversation carry?",
+    "options": [
+      { "id": "A", "name": "Today's seven labels", "description": "warming, readyToAsk, askedWaiting, friend, client, cold, skip, as one field." },
+      { "id": "B", "name": "Two fields: who and where", "description": "who: lead, client, partner, friend, community, bot (owner-editable list); where, only for leads and clients: new, warming, need found, offered, call booked, won, lost, gone quiet (owner-editable list)." },
+      { "id": "C", "name": "Two fields plus next move", "description": "B, plus the next move the plays should make (answer, follow up, ask, book the call, stop), learnt later from outcomes." },
+      { "id": "D", "name": "Free-text summary only", "description": "No fixed labels; a model writes a short summary of each conversation." }
+    ],
+    "criteria": [
+      { "id": "correct", "question": "How well does it keep bots, friends and partners out of sales stages and say where a lead really is?", "levels": ["Worse than today", "About today", "Somewhat better", "Much better", "Near perfect"] },
+      { "id": "plays", "question": "How directly can log's plays choose their move from it?", "levels": ["Not at all", "Poorly", "With work", "Directly", "Directly, with the next move"] },
+      { "id": "learnable", "question": "How easy is it for a small local model to learn from a few examples?", "levels": ["Not learnable", "Hard", "Possible", "Easy", "Easiest"] },
+      { "id": "owner", "question": "How easy is it for the owner to read and correct?", "levels": ["Opaque", "Hard", "Readable", "Clear", "Obvious"] },
+      { "id": "effort", "question": "How small is the change to src/inbox/label and its readers?", "levels": ["Very large", "Large", "Medium", "Small", "Tiny"] }
+    ]
+  },
+  {
+    "id": "D2",
+    "question": "What should label each conversation, every time a message lands?",
+    "options": [
+      { "id": "A", "name": "Today's counting rules", "description": "autoLabel: back-and-forth counts, days quiet, an unanswered ask." },
+      { "id": "B", "name": "SubQ on every message", "description": "Send the chat to SubQ on each new message and use its answer." },
+      { "id": "C", "name": "Zero-shot local classifier", "description": "A small zero-shot classifier (GLiClass-style) on the CPU, no training, labels from their names." },
+      { "id": "D", "name": "Distilled local labeller", "description": "The owner labels 30-40 chats picked by active learning; SubQ labels all chats once with candidate labels when unsure; a SetFit labeller on the shipped MiniLM learns from his labels plus the confident ones and runs on every message on the CPU; unsure chats go back to SubQ or the owner." },
+      { "id": "E", "name": "Fine-tuned small generative model", "description": "Fine-tune a 0.5-2B generative model to output the labels." }
+    ],
+    "criteria": [
+      { "id": "accuracy", "question": "How often will it agree with the owner on who and where?", "levels": ["Worse than today", "About today", "Somewhat better", "Much better", "Near perfect"] },
+      { "id": "latency", "question": "How fast per new message on this laptop's CPU?", "levels": ["Over 10 s", "2-10 s", "0.5-2 s", "50-500 ms", "Under 50 ms"] },
+      { "id": "cost", "question": "How little does it cost to run on every message?", "levels": ["Expensive", "Costly", "Moderate", "Cheap", "Free"] },
+      { "id": "privacy", "question": "How little of the owner's messages leaves the machine on each message?", "levels": ["Everything", "Most", "Some", "Little", "Nothing"] },
+      { "id": "upkeep", "question": "How well does it keep up as stages and people change?", "levels": ["Breaks", "Retrain often", "Retrain sometimes", "Mostly self-updating", "Self-updating"] },
+      { "id": "effort", "question": "How small is the build for log (Bun/TypeScript, Python, ONNX models already pinned)?", "levels": ["Very large", "Large", "Medium", "Small", "Tiny"] }
+    ]
+  },
+  {
+    "id": "D3",
+    "question": "How should log find that two accounts are the same person?",
+    "options": [
+      { "id": "A", "name": "Today's Fellegi-Sunter, three comparisons", "description": "Shared posts, handle, display name; the owner says yes." },
+      { "id": "B", "name": "More comparisons in the same model", "description": "Keep Fellegi-Sunter and the owner's yes; add comparisons: writing style (character n-grams and his-style embedding of their messages), activity hours, topics they discuss with the owner, in-chat mentions of another handle ('my insta is ...'), and shared group chats; hard vetoes (different known real names, both active in the same chat as two people); a merge across existing people is re-checked." },
+      { "id": "C", "name": "LLM decides each pair", "description": "SubQ reads both identities' profiles and messages and says same or different, with multi-step reasoning." },
+      { "id": "D", "name": "B, then SubQ on the review band", "description": "B scores every pair; only pairs in the review band go to SubQ's multi-step check; the owner still says yes." }
+    ],
+    "criteria": [
+      { "id": "recall", "question": "How many real same-person pairs (like a friend's Discord, X and Instagram with different handles) will it find?", "levels": ["Fewer than today", "About today", "Somewhat more", "Many more", "Nearly all"] },
+      { "id": "precision", "question": "How safe is it from merging two different people?", "levels": ["Unsafe", "Risky", "Fair", "Safe", "Very safe"] },
+      { "id": "explain", "question": "Can the owner see why a pair was suggested?", "levels": ["No", "Barely", "Partly", "Clearly", "Every factor shown"] },
+      { "id": "cost", "question": "How cheap to run over all pairs?", "levels": ["Expensive", "Costly", "Moderate", "Cheap", "Free"] },
+      { "id": "effort", "question": "How small is the change to src/people?", "levels": ["Very large", "Large", "Medium", "Small", "Tiny"] }
+    ]
+  },
+  {
+    "id": "D4",
+    "question": "Where does the ground truth come from?",
+    "options": [
+      { "id": "A", "name": "Only the owner's hand labels", "description": "The owner labels everything he cares about by hand." },
+      { "id": "B", "name": "Only SubQ's labels", "description": "SubQ labels every chat; no owner labels." },
+      { "id": "C", "name": "Owner labels chosen by active learning, plus confident SubQ labels", "description": "The owner labels 30-40 chats picked as the most informative, in a form in the chat; SubQ labels the rest with candidates when unsure; only confident SubQ labels train the labeller; disagreements go to the owner; outcomes (deals won, clients) are recorded as they happen." }
+    ],
+    "criteria": [
+      { "id": "quality", "question": "How trustworthy are the labels a model learns from?", "levels": ["Poor", "Weak", "Fair", "Good", "Excellent"] },
+      { "id": "ownerTime", "question": "How little of the owner's time does it take?", "levels": ["Hours", "An hour", "Half an hour", "Ten minutes", "Minutes"] },
+      { "id": "stable", "question": "How stable is a model trained on it across runs?", "levels": ["Unstable", "Shaky", "Fair", "Stable", "Very stable"] }
+    ]
+  }
+]
