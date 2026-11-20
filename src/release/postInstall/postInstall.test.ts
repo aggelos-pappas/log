@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { parsePostInstall, postInstallText, PYTHON_VENDORS, runPostInstall, stepsWithout, vendorArgs } from './index'
+import { heldFileOf, installVendors, parsePostInstall, postInstallText, PYTHON_VENDORS, runPostInstall, stepsWithout, vendorArgs, vendorHash } from './index'
+import type { VendorDeps } from './index'
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import type { PostInstallDeps } from './index'
 import type { ModelFetch } from '../../models/store/index'
 
@@ -68,5 +71,49 @@ describe('the after-install routine install and update share', () => {
       expect(text).not.toContain('uv pip install')
       expect(text).toMatch(/[Ss]ay "installed log \$[A-Za-z]+"\n$/)
     }
+  })
+})
+
+describe('the vendor step', () => {
+  const HELD = "uv pip install exited 2: error: failed to remove file `C:\\py\\Lib\\site-packages\\orjson\\orjson.cp312-win_amd64.pyd`: Access is denied. (os error 5)"
+  function vendorDeps(calls: string[], answer: { ok: boolean; detail?: string }, saved: string | null = null): VendorDeps & { stored: string[] } {
+    const stored: string[] = []
+    return { python: 'C:/py/python.exe', run: () => (calls.push('uv'), answer), hash: () => 'h1', saved: () => saved, save: (hash) => void stored.push(hash), holders: () => ['4242 C:/py/python.exe engine.py', '5151 C:/py/python.exe host.py'], stored }
+  }
+
+  test('skips uv when vendor/ and the requirements are unchanged since the last good install, and records the hash after one', () => {
+    const calls: string[] = []
+    expect(installVendors(root, vendorDeps(calls, { ok: true }, 'h1'))).toEqual({ ok: true, detail: 'vendor/ and the requirements are unchanged since the last install: skipped' })
+    expect(calls).toEqual([])
+    const fresh = vendorDeps(calls, { ok: true, detail: 'installed' }, 'h0')
+    expect(installVendors(root, fresh).ok).toBe(true)
+    expect(calls).toEqual(['uv'])
+    expect(fresh.stored).toEqual(['h1'])
+  })
+
+  test('a package file Windows will not replace names the Python processes holding it instead of failing the update', () => {
+    const calls: string[] = []
+    const deps = vendorDeps(calls, { ok: false, detail: HELD })
+    const result = installVendors(root, deps)
+    expect(result.ok).toBe(true)
+    expect(result.detail).toContain('orjson.cp312-win_amd64.pyd')
+    expect(result.detail).toContain('4242 C:/py/python.exe engine.py')
+    expect(deps.stored).toEqual([])
+    expect(heldFileOf(HELD)).toBe('C:\\py\\Lib\\site-packages\\orjson\\orjson.cp312-win_amd64.pyd')
+    expect(installVendors(root, vendorDeps(calls, { ok: false, detail: 'uv exited 2: No solution found' }))).toEqual({ ok: false, detail: 'uv exited 2: No solution found' })
+  })
+
+  test('the hash moves when a vendored file changes, not when a build folder does', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'vendorHash'))
+    mkdirSync(join(dir, 'vendor', 'fbk', 'build'), { recursive: true })
+    writeFileSync(join(dir, 'vendor', 'fbk', 'setup.py'), 'a')
+    const args = ['pip', 'install', './vendor/fbk']
+    const first = vendorHash(dir, args)
+    writeFileSync(join(dir, 'vendor', 'fbk', 'build', 'x.py'), 'b')
+    expect(vendorHash(dir, args)).toBe(first)
+    writeFileSync(join(dir, 'vendor', 'fbk', 'setup.py'), 'c')
+    expect(vendorHash(dir, args)).not.toBe(first)
+    expect(vendorHash(dir, [...args, 'pycurl'])).not.toBe(vendorHash(dir, args))
+    rmSync(dir, { recursive: true, force: true })
   })
 })

@@ -1,4 +1,5 @@
 export type StateScope =
+  | 'postInstallVendors'
   | 'hookMemory'
   | 'lastHook'
   | 'hookOffsets'
