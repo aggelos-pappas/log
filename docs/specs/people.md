@@ -28,19 +28,18 @@ Checked by: code and SubQ
 
 ## Suggestions
 
-### REQ-PEOPLE-04: Suggestions are scored with Fellegi-Sunter record linkage
+### REQ-PEOPLE-04: Suggestions are scored with Fellegi-Sunter record linkage, weights learned by EM
 
-`log people suggest` compares identities on different platforms. Candidates are pairs whose handles match once digits, `_` and `.` are dropped, and pairs where one identity's messages link to the other platform's posts (`x.com/<handle>/status/…`, Instagram profiles, Discord user links). Each pair is scored on three comparisons:
+`log people suggest` compares identities on different platforms. Candidates (blocking, `linkCandidates`) are pairs whose handles match once digits, `_` and `.` are dropped, pairs where one identity's messages link to the other platform's posts (`x.com/<handle>/status/…`, Instagram profiles, Discord user links), pairs where one identity writes the other's handle in a message (`mentionsIn`), and pairs with the same display name. Each pair is scored on these comparisons:
 - **sharesOwnPosts:** 5+ / 2–4 / once / never, counting the times they asked to like or share;
 - **handle:** same / same without digits, `_` and `.` / different;
-- **displayName:** same / different.
+- **displayName:** same / different;
+- **mentionsHandle:** handed over in a DM with the owner (a message that is only the handle, or says "my insta is …", and the other account also DMs the owner) / said as their own / in passing / never;
+- **claimsPlatform:** one of them says "my <the other's platform>" / never;
+- **writingStyle:** character 3-gram cosine of their messages; **meaning:** cosine of the mean MiniLM vector of their messages; **activeHours:** cosine of their UTC hour histograms; **topicsWithOwner:** word cosine of what they say in chats with the owner. Each is close / near / far, cut at the 99th and 90th percentile of random cross-platform pairs, and left out when either side has too little text;
+- **sharedCircle:** people in common in their group chats, 3+ / 1–2 / none.
 
-Each level's Bayes factor is m/u:
-- `u` is measured from log.db, as the share of all cross-platform identity pairs at that level, smoothed;
-- `m` is set in `M_PROBABILITIES`;
-- a handle match is divided by how many distinct handles on that platform reduce to the same letters.
-
-The match weight is the prior, log2 of 4% of identities over all pairs, plus the sum of log2 of the factors. At 4 bits or more a pair is `strong`, at 0 or more it's `review`, and below that it's hidden. Each suggestion returns every comparison with its level, m, u, factor and weight, and up to 3 source messages by `messageKey`.
+`u` is measured from log.db: the share of all cross-platform identity pairs at that level, smoothed, or of random pairs for the similarity levels. `m` is learned by expectation maximisation (Splink-style): one session per blocking rule, the blocked comparison left out of that session, starting from `M_PRIORS` with prior strength `EM_PRIOR_STRENGTH`, pooled. A handle match is divided by how many distinct handles on that platform reduce to the same letters. The match weight is the prior, log2 of 4% of identities over all pairs, plus the sum of log2 of the factors. At 4 bits or more a pair is `strong`, at 0 or more it's `review`, and below that it's hidden. Each suggestion returns every comparison with its level, m, u, factor and weight, and up to 3 source messages by `messageKey`; `log people suggest` prints every factor.
 
 Checked by: code and SubQ
 
@@ -74,5 +73,11 @@ Checked by: code and SubQ
 ### REQ-PEOPLE-07: The hook and the graph see a person, not one identity
 
 When a prompt names a linked person, by a handle on any platform or by a word of their name, the `relate` hook adds their card, at most 2 people and 2,000 characters each. The Relate graph marks every linked identity with its `personId` and the person's name words. `findPeople` groups identities by person, expands to all of the person's identities, and matches by name. So the connected context and the relationship retriever cover every platform.
+
+Checked by: code and SubQ
+
+### REQ-PEOPLE-08: Vetoes, merge re-checks, accounts together, and SubQ on the review band
+
+Two hard vetoes drop a pair whatever its score: both display names are real names with no word in common, or two identities on one platform, one from each side (with every identity already linked to either side), talk in the same DM or group. Links the owner already made are scored again and listed when they fall below `REVIEW_BITS` or hit a veto. Suggested pairs that share an identity are joined into one person across several accounts (`clustersOf`), the pairs between their other ends are scored too, and the output gives one `log people link` for all of them. `--check` asks SubQ, for up to `REVIEW_CHECKS` review-band pairs, whether one person runs both accounts, from `REVIEW_LINES` of each one's messages and the measured evidence; when the first answer is under `REVIEW_SURE` it asks again with more lines. The answer is shown beside the pair; nothing is linked until the owner says yes.
 
 Checked by: code and SubQ

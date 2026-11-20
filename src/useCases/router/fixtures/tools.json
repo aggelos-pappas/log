@@ -91,7 +91,7 @@
 {"name":"relateQuery","platform":null,"summary":"Run a read-only Cypher query on the current Relate graph (at most 100 rows)","flags":[],"required":[],"notes":"","effect":"read"},
 {"name":"people","platform":null,"summary":"List everyone linked across platforms, with each person's identities","flags":[],"required":[],"notes":"","effect":"read"},
 {"name":"peopleShow","platform":null,"summary":"The person card for someone across every platform: chats, groups, who is waiting, and the last lines in time order","flags":[],"required":[],"notes":"","effect":"read"},
-{"name":"peopleSuggest","platform":null,"summary":"Identities on different platforms that are probably one person (Fellegi-Sunter record linkage over shared posts, handles and names), with the evidence for each","flags":["limit"],"required":[],"notes":"","effect":"read"},
+{"name":"peopleSuggest","platform":null,"summary":"Accounts on different platforms that are probably one person, with every factor","flags":["limit","check"],"required":[],"notes":"","effect":"read"},
 {"name":"peopleLink","platform":null,"summary":"Make these identities one person, after the owner says yes (appended to log.db as events; nothing is sent)","flags":["approvedBy","name","evidence"],"required":[],"notes":"","effect":"write"},
 {"name":"peopleUnlink","platform":null,"summary":"Take an identity out of its person, after the owner says so (the link stays in the history)","flags":["approvedBy"],"required":[],"notes":"","effect":"write"},
 {"name":"peopleDifferent","platform":null,"summary":"Record that two identities are not the same person, after the owner says so, so they are never suggested again","flags":["approvedBy"],"required":[],"notes":"","effect":"write"},

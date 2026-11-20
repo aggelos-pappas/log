@@ -24,7 +24,7 @@ Checked by: code and SubQ
 
 ### REQ-PIPELINE-03: Day one is nearest-prototype on the shipped MiniLM, with the counting signals and a bot detector as features
 
-`labelChats` embeds a window of the chat's last `WINDOW_MESSAGES` said messages, both sides, each line marked `me:` or `them:` (`windowText`), with the shipped embedder, and scores it against one prototype per label built from the label's meaning and its `SEED_PHRASES` (`buildPrototypes`, softmax at `PROTOTYPE_TEMPERATURE`). When the owner has labelled at least one chat of every `who`, those chats' vectors join the prototypes (`withExemplars`). The counting signals become features (`featuresOf`: back and forths, days quiet, an open ask, who wrote last, their share, never wrote back). `botSignal` scores a bot from its name (`BOT_NAMES`, a `bot` word, system handles), messages that share one template, replies faster than `FAST_REPLY_MS` on the median of long replies, and notices nobody answers; at `BOT_THRESHOLD` or more the chat is a bot with no stage. For a lead or client a chat quiet `QUIET_DAYS` is goneQuiet and one with fewer than `NEW_TURNS` back and forths is new (offered if the owner's ask is open). A stored group is community and is never embedded.
+`labelChats` embeds a window of the chat's last `WINDOW_MESSAGES` said messages, both sides, each line marked `me:` or `them:` (`windowText`), with the shipped embedder, and scores it against one prototype per label built from the label's meaning and its `SEED_PHRASES` (`buildPrototypes`, softmax at `PROTOTYPE_TEMPERATURE`). When the owner has labelled at least one chat of every `who`, those chats' vectors join the prototypes (`withExemplars`). The counting signals become features (`featuresOf`: back and forths, days quiet, an open ask, who wrote last, their share, never wrote back). `botSignal` scores a bot from its name (`BOT_NAMES`, a `bot` word, system handles), messages that share one template, replies faster than `FAST_REPLY_MS` on the median of long replies, and notices nobody answers; at `BOT_THRESHOLD` or more, and only when the teacher (or the owner) also says bot (`botVerdict`), the chat is a bot with no stage. For a lead or client a chat quiet `QUIET_DAYS` is goneQuiet and one with fewer than `NEW_TURNS` back and forths is new (offered if the owner's ask is open). A stored group is community and is never embedded.
 
 Checked by: code and SubQ
 
@@ -51,5 +51,19 @@ Checked by: code and SubQ
 ### REQ-PIPELINE-07: SubQ labels every chat once, as a dry run until applied
 
 `log inbox label teach` (`inboxLabelTeach`) lists the chats with no owner or SubQ label and prints the input tokens and dollars at `SUBQ_USD_PER_MILLION_INPUT` (`teachPlan`) without sending anything. Only `--apply` asks SubQ's decision model one who and one where choice per chat (`teach`) and stores each answer as a label entry by `subq` with its confidence and, under `TEACHER_MIN_CONFIDENCE`, the two candidate labels. A SubQ entry never replaces the owner's (`setLabel`), and it is shown only when it is surer than the labeller.
+
+Checked by: code and SubQ
+
+## Asking SubQ when the head is unsure
+
+### REQ-PIPELINE-08: Unsure chats go to SubQ off the push path, within a daily cap, and the head retrains itself
+
+On every new message `labelChats` asks `fallbackReason` whether the chat needs the teacher: it has no SubQ label yet, its SubQ label is `TEACHER_STALE_MESSAGES` messages old, the head's stage differs from SubQ's with at least `STAGE_CHANGE_SCORE`, the bot signal fired but SubQ never said bot, or the head is under `FALLBACK_BELOW` after `UNSURE_MIN_NEW` new messages. An owner-labelled chat is never asked about. Such chats are queued in log.db (`queueForTeacher`, state `pipelineTeach`) and the head's label is used meanwhile. The push process runs `startTeacher`, which claims the drain in log.db so only one push loop asks, and every `TEACH_EVERY_MS` `drainTeacher` sends up to `TEACH_BATCH` queued chats to SubQ, never past the day's cap (`subqDailyUsd`: `subqDailyUsd` under `pipelineLabels` in settings.json, default `SUBQ_DAILY_USD` = $0.05). Each answer is stored by `subq` with its confidence, candidates and the last message it read (`throughSeq`); each run (chats, tokens, dollars, what stopped it) is logged in log.db per day. Once `RETRAIN_AFTER` SubQ labels are newer than the head, the head is retrained. `log inbox label teach` shows the queue and today's spend; `LOG_PIPELINE_TEACHER=off` turns the background asking off. `scripts/pipeline/benchFallback.ts` measures held-out agreement and the daily cost on a copy of log.db.
+
+Checked by: code and SubQ
+
+### REQ-PIPELINE-09: A bot needs the bot signal and the teacher, and never a two-way human conversation
+
+A chat is a bot only when `botVerdict` holds: the bot signal is at `BOT_THRESHOLD` or more and SubQ or the owner says bot. A chat where the owner and the person go back and forth (`humanTalk`: `TWO_WAY_TURNS` turns with `TWO_WAY_OWNER_LINES` lines from the owner) or one with an account the owner runs is never a bot. A stored row that says bot without that (`withoutFalseBot`) reads as its next likeliest label in `labelOfChat` and `pipelineLine`.
 
 Checked by: code and SubQ

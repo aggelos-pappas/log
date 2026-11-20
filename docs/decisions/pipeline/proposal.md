@@ -49,5 +49,26 @@ Per new message: MiniLM ~6 ms + head under 1 ms + emotion ~24 ms + features unde
 
 - On 40 held-out chats the owner labels, agreement is at least 90% on `who` and 80% on `where`; no bot, friend or partner is in a sales stage.
 - Labelling a new message adds under 50 ms p95 to the inbox push on this laptop.
-- Linking finds the known cross-platform pairs the owner names (for example Mandeep's Discord, X and Instagram) and makes no wrong merge on the owner's checked list.
+- Linking finds the known cross-platform pairs the owner names (for example one friend's Discord, X and Instagram) and makes no wrong merge on the owner's checked list.
 - The person, who and stage appear on the chat card and in the voice pack.
+
+## Measured: SubQ when the head is unsure, the bot guard, and linking (2026-11-21, a copy of log.db)
+
+`bun scripts/pipeline/benchFallback.ts` with `LOG_DB` on a copy: 268 chats SubQ labelled, 6 kinds of who, 5 folds by chat (the head is retrained on the other four each time).
+
+| | who agreement with SubQ on held-out chats |
+|---|---|
+| head alone (before) | 47.8% |
+| head with the bot guard | 48.5% |
+| served label with SubQ under 0.5 confidence (after) | 98.5%, with 95.9% of chats sent to SubQ |
+
+| bar | sent to SubQ | served agreement | head agreement on the chats it keeps |
+|---|---|---|---|
+| 0.3 | 62.3% | 81.7% | 51.5% |
+| 0.4 | 89.9% | 94.4% | 44.4% |
+| 0.5 | 95.9% | 98.5% | 63.6% |
+| 0.6 | 98.1% | 100% | 100% |
+
+The head is unsure on almost every chat, so at the 0.5 bar nearly every chat that gets new messages goes to SubQ. That is cheap: 23.9 DM chats a day get new inbound messages, at about $0.0000224 a chat that is about $0.0005 a day, a hundredth of the $0.05 daily cap (and less in practice, since an unsure chat is asked again only after 3 new messages). The bot guard drops 61 of 66 stored bot verdicts; the 5 kept are named system and bot accounts. Chats the teacher called bot with no bot signal (spam-like DMs) now read as their next likeliest label until the signal fires.
+
+Linking on the same copy: 87 candidate pairs, EM over 3 blocking sessions. `log people suggest` gives 12 pairs (9 strong) against 9 before; the three new ones are a handle handed over in a DM, a handle said as their own, and a loose handle match with a display name. The friend's Discord, X and Instagram accounts now come out together as one person, the Instagram pair at 6.3 bits from a handle handed over in a DM plus "my insta". `--check` asked SubQ about the 3 review-band pairs for $0.00005.

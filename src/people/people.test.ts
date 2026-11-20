@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openDatabase } from '../storage/schema/index'
 import { derivedFingerprint, identityLearnedEvent, insertEventRow, rebuildDerived } from '../storage/platform/index'
-import { cardFor, cardsNamedIn, linkIdentities, listPeople, markNotLinked, resolveWho, suggestLinks, unlinkIdentity } from './index'
+import { cardFor, cardsNamedIn, linkCandidates, linkIdentities, listPeople, markNotLinked, resolveWho, reviewBand, scoreLinks, suggestLinks, unlinkIdentity } from './index'
 
 const NOW = Date.parse('2026-11-17T12:00:00Z')
 const at = (hoursAgo: number): string => new Date(NOW - hoursAgo * 3_600_000).toISOString()
@@ -157,6 +157,73 @@ describe('suggestions: Fellegi-Sunter record linkage, no AI', () => {
     const on = world()
     linkIdentities(on, ['discord:quill', 'twitter:quill_1'], 'yes', { now: new Date(NOW) })
     expect(suggestLinks(on).some((s) => s.a.handle === 'quill' || s.b.handle === 'quill')).toBe(false)
+  })
+})
+
+describe('more comparisons, EM weights, vetoes and the merge re-check', () => {
+  function withTern(): Database {
+    const on = world()
+    identity(on, 'discord', '9000000006', 'tern')
+    identity(on, 'twitter', '1000000006', 'tern_1', 'Tern Wave')
+    identity(on, 'instagram', '@t3rnwave', 't3rnwave')
+    const dm = chat(on, 'discord', 'discordAccount', 'dmTern')
+    for (let n = 0; n < 5; n++) say(on, dm, 'discord', '9000000006', false, `https://x.com/tern_1/status/20${n} like and repost please`, 300 - n)
+    say(on, dm, 'discord', '9000000006', false, 't3rnwave', 120)
+    say(on, dm, 'discord', '9000000006', false, 'i never post on my insta anyway', 119)
+    say(on, dm, 'discord', '9000000001', true, 'followed', 118)
+    const ig = chat(on, 'instagram', 'igAccount', 'igTern')
+    say(on, ig, 'instagram', '@t3rnwave', false, 'yo its me from discord', 100)
+    say(on, ig, 'instagram', '1000000000', true, 'haha nice', 99)
+    return on
+  }
+
+  test('a handle handed over in a dm, and saying "my insta", suggest the account on that platform, and the three accounts come out together', () => {
+    const report = scoreLinks(linkCandidates(withTern()))
+    const ig = report.suggestions.find((s) => [s.a.handle, s.b.handle].includes('t3rnwave') && [s.a.handle, s.b.handle].includes('tern'))!
+    expect(ig).toBeDefined()
+    expect(ig.comparisons.find((c) => c.comparison === 'mentionsHandle')?.level).toBe('handedOver')
+    expect(ig.comparisons.find((c) => c.comparison === 'claimsPlatform')?.level).toBe('says')
+    expect(ig.matchWeight).toBeCloseTo(ig.prior + ig.comparisons.reduce((n, c) => n + c.matchWeight, 0))
+    const together = report.clusters.find((c) => c.identities.some((i) => i.handle === 't3rnwave'))!
+    expect(together.identities.map((i) => i.handle).sort()).toEqual(['t3rnwave', 'tern', 'tern_1'])
+    expect(report.learned.sessions).toBeGreaterThan(0)
+    expect(Object.keys(report.learned.m)).toContain('writingStyle')
+  })
+
+  test('different real names and two identities talking in one chat are hard vetoes', () => {
+    const on = world()
+    on.prepare("UPDATE identities SET displayName = 'Ada Stone' WHERE platform = 'discord' AND userId = '9000000005'").run()
+    on.prepare("UPDATE identities SET displayName = 'Bo Reed' WHERE platform = 'twitter' AND userId = '1000000005'").run()
+    identity(on, 'discord', '9000000010', 'quill9')
+    say(on, 'discord:discordAccount:dmQuill', 'discord', '9000000010', false, 'i am the other quill', 5)
+    for (let n = 0; n < 5; n++) say(on, 'discord:discordAccount:dmQuill', 'discord', '9000000010', false, `https://x.com/quill_1/status/30${n} like it`, 4)
+    linkIdentities(on, ['discord:quill', 'twitter:quill_1'], 'yes', { now: new Date(NOW) })
+    const report = scoreLinks(linkCandidates(on))
+    const pair = (s: { a: { handle: string | null }; b: { handle: string | null } }) => `${s.a.handle}~${s.b.handle}`
+    expect(report.suggestions.map(pair)).not.toContain('rivet~rivet')
+    expect(report.suggestions.map(pair)).not.toContain('quill9~quill_1')
+    expect(report.vetoed.find((s) => pair(s) === 'quill9~quill_1')?.veto).toContain('talk in the same chat')
+  })
+
+  test('links already made are checked again against the evidence', () => {
+    const on = world()
+    linkIdentities(on, ['discord:fan', 'twitter:rivet'], 'yes', { now: new Date(NOW) })
+    const recheck = scoreLinks(linkCandidates(on)).rechecks
+    expect(recheck.map((r) => `${r.a.handle}~${r.b.handle}`)).toContain('fan~rivet')
+    expect(recheck[0].matchWeight).toBeLessThan(0)
+  })
+
+  test('the review band goes to SubQ in two steps when the first answer is unsure, and nothing is linked', async () => {
+    const on = world()
+    const report = scoreLinks(linkCandidates(on))
+    const review = report.suggestions.filter((s) => s.band === 'review')
+    expect(review.length).toBeGreaterThan(0)
+    let calls = 0
+    const client = async () => ({ model: 'fake', usage: { input_tokens: 400, output_tokens: 0 }, answers: { samePerson: { type: 'choice' as const, choice: 'same', probabilities: { same: 0.6, different: 0.4 }, confidence: ++calls === 1 ? 0.6 : 0.9 } } })
+    const checked = await reviewBand(on, report, client)
+    expect(checked.checked).toBe(review.length)
+    expect(review[0].review).toMatchObject({ choice: 'same', steps: 2 })
+    expect((on.prepare('SELECT COUNT(*) AS n FROM identityLinks').get() as { n: number }).n).toBe(0)
   })
 })
 

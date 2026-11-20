@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 56 domains, 645 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 56 domains, 648 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -661,10 +661,11 @@ One person often has several identities: a Discord account, an X account, an Ins
 - **REQ-PEOPLE-01** Links are events, and the tables are derived from them
 - **REQ-PEOPLE-02** One identity belongs to at most one person, enforced by the database
 - **REQ-PEOPLE-03** A link follows an identity when its id is learned
-- **REQ-PEOPLE-04** Suggestions are scored with Fellegi-Sunter record linkage
+- **REQ-PEOPLE-04** Suggestions are scored with Fellegi-Sunter record linkage, weights learned by EM
 - **REQ-PEOPLE-05** What never becomes a suggestion
 - **REQ-PEOPLE-06** One card across every platform of a person
 - **REQ-PEOPLE-07** The hook and the graph see a person, not one identity
+- **REQ-PEOPLE-08** Vetoes, merge re-checks, accounts together, and SubQ on the review band
 
 ## [Local accounts](./localAccounts.md)
 
@@ -886,6 +887,8 @@ Every chat in the owner's inbox carries two fields: `who` the person is to the o
 - **REQ-PIPELINE-05** Stored per chat on every new message, cached by the last message
 - **REQ-PIPELINE-06** The owner labels what log is least sure of
 - **REQ-PIPELINE-07** SubQ labels every chat once, as a dry run until applied
+- **REQ-PIPELINE-08** Unsure chats go to SubQ off the push path, within a daily cap, and the head retrains itself
+- **REQ-PIPELINE-09** A bot needs the bot signal and the teacher, and never a two-way human conversation
 
 ## [Slack](./slack.md)
 

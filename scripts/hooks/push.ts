@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { READER_PATTERN } from '../../src/inbox/pending/index'
-import { localEmotions, pushLabeller } from '../../src/inbox/pipeline/index'
+import { localEmotions, pipelineLabels, pushLabeller, startTeacher } from '../../src/inbox/pipeline/index'
+import { createDecisionsClient } from '../../src/subq/decisions/index'
 import { pushLoop } from '../../src/inbox/push/index'
 import { localEmbedder } from '../../src/search/conversations/index'
 
@@ -18,5 +19,6 @@ if (!READER_PATTERN.test(reader)) {
 const embedder = localEmbedder()
 const emotions = localEmotions()
 const label = process.env.LOG_PIPELINE === 'off' ? undefined : pushLabeller(() => ({ embedder, emotions, emotionsLater: true }))
+if (label && process.env.LOG_PIPELINE_TEACHER !== 'off') startTeacher(() => ({ client: createDecisionsClient(), labels: pipelineLabels(), embedderModel: embedder.model }))
 if (label) void Promise.all([embedder.embed(['warm']), emotions(['warm'])]).catch(() => null)
 await pushLoop(reader, host, (batch) => process.stdout.write(`${JSON.stringify(batch)}\n`), { label })
