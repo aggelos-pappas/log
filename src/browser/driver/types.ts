@@ -1,6 +1,8 @@
 export const BROWSER_DRIVERS = ['camoufox', 'adsPower', 'brave'] as const
 export type BrowserDriverName = (typeof BROWSER_DRIVERS)[number]
 export const DEFAULT_BROWSER_DRIVER: BrowserDriverName = 'camoufox'
+
+export const DEPRECATED_BROWSER_DRIVERS: readonly BrowserDriverName[] = ['adsPower']
 export const BROWSER_DRIVER_ENV = 'LOG_BROWSER_DRIVER'
 
 export interface BrowserBrand {

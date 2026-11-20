@@ -34,7 +34,7 @@ describe('one way to pick the browser', () => {
     expect(driverNameOf({ browserDriver: 'brave' }, {})).toBe('brave')
     expect(driverNameOf({ browserDriver: ' brave ' }, { LOG_BROWSER_DRIVER: 'camoufox' })).toBe('brave')
     expect(driverNameOf({ browserDriver: null }, { LOG_BROWSER_DRIVER: 'brave' })).toBe('brave')
-    expect(driverNameOf({ browserDriver: null, adsPowerProfileId: 'k1' }, { LOG_BROWSER_DRIVER: 'brave' })).toBe('adsPower')
+    expect(driverNameOf({ browserDriver: null, adsPowerProfileId: 'k1' }, { LOG_BROWSER_DRIVER: 'brave' })).toBe('brave')
     expect(driverNameOf({ browserDriver: 'camoufox', adsPowerProfileId: 'k1' }, { LOG_BROWSER_DRIVER: 'brave' })).toBe('camoufox')
     expect(browserFor({ browserDriver: 'brave', adsPowerProfileId: null }, {})).toEqual({ driver: 'brave', profileId: null })
   })

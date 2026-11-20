@@ -2315,6 +2315,54 @@
     ],
     "action": "Nothing: run it again in a minute. The plan sets the requests per minute (300, 900 or 1500)."
   },
+  "adsPowerKeyMismatch": {
+    "layer": "adsPower",
+    "meaning": "The AdsPower app is running but refuses log's ADSPOWER_API_KEY (API Key mismatch): the app's key was changed or reset.",
+    "retryable": false,
+    "raisedIn": [
+      "browser/adsPower",
+      "browser/move"
+    ],
+    "action": "Replace ADSPOWER_API_KEY with the key from AdsPower > Automation > API, then `log adsPower profiles` to confirm. `log adsPower status` answers without a key."
+  },
+  "adsPowerPlanLapsed": {
+    "layer": "adsPower",
+    "meaning": "AdsPower answers that the Local API call is only in paid subscriptions: the plan has lapsed, so profiles can't be listed, started or read.",
+    "retryable": false,
+    "raisedIn": [
+      "browser/adsPower",
+      "browser/move"
+    ],
+    "action": "AdsPower is deprecated in log: move accounts with `log browser move --all --to camoufox` (the saved session carries)."
+  },
+  "adsPowerProfileWontStart": {
+    "layer": "adsPower",
+    "meaning": "The account's AdsPower profile would not start, headless or headed, so its session could not be read for a browser move.",
+    "retryable": true,
+    "raisedIn": [
+      "browser/move"
+    ],
+    "action": "Read the detail (a missing kernel, the plan limit, the profile open elsewhere); fix it in AdsPower and run the move again. Nothing was changed on the account."
+  },
+  "browserMoveNotSignedIn": {
+    "layer": "browser",
+    "meaning": "After a browser move the platform's own session check did not say signed in, so the move was rolled back (driver, AdsPower link and session put back).",
+    "retryable": false,
+    "raisedIn": [
+      "browser/move"
+    ],
+    "action": "Read the check verdict in the detail. Sign the account in (sessionsSignIn) on its current browser, then move it again."
+  },
+  "cdpStateFailed": {
+    "layer": "browser",
+    "meaning": "Reading the cookies and localStorage of a browser attached over CDP failed.",
+    "retryable": true,
+    "raisedIn": [
+      "browser/move",
+      "python/browser"
+    ],
+    "action": "Read the detail; check LOG_PYTHON has playwright, then run the move again. Nothing was changed on the account."
+  },
   "adsPowerProfileMissing": {
     "layer": "adsPower",
     "meaning": "The account has no AdsPower profile linked in Twenty (socialAccounts.adsPowerProfileId).",

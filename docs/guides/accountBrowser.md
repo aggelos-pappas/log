@@ -18,6 +18,7 @@ When the owner asks for one of these, follow its page step by step.
 | `getGuide({ useCase: "instagram/newPlatform" })` | Bringing a new platform up, then vendoring its client | "make a new platform via the MCP for <platform>", "open <platform> in AdsPower", "find me via the gh api the most likely to go into the vendor", "make it work" |
 | `getGuide({ useCase: "linkedin/network" })` | Growing a LinkedIn network, and reading and answering its inbox | "connect with people on linkedin", "who does linkedin suggest", "read my linkedin messages", "what did <someone> say on linkedin", "reply to <someone> on linkedin" |
 | `getGuide({ useCase: "linkedin/posts" })` | Posting on LinkedIn, liking or reposting, and taking a post down | "post this on linkedin", "put this up on linkedin with the picture", "like <someone>'s post on linkedin", "repost that on linkedin", "delete that linkedin post" |
+| `getGuide({ useCase: "log/browserMove" })` | Moving accounts to another browser | "move my accounts off adspower", "move everything to camoufox", "switch this account to brave", "get rid of adspower" |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM | "read the messages with <someone> on slack", "reply to <someone> on slack", "what did <someone> say in <workspace>" |
 
 ## The tools in this guide
@@ -43,6 +44,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `inspectSessions` | The open sessions | `log inspect sessions   (the open sessions)` |
 | `browsers` | Where every open browser is, and what resolves its page | `log browsers [--json]   (every open browser: its step and page, the known page state it sits on, the call that resolves it, and what only the owner can clear)` |
 | `browserView` | The account's live browser | `log browser view --account <accountName> [--json]   (the account's live browser: whether it needs a person to sign in, the page state and its revision; an MCP Apps host or Hermes shows it live inline, streamed from the page)` |
+| `browserMove` | Move accounts to another browser with their signed-in session… | `log browser move [<account>] [--to camoufox\|brave] [--all] [--apply --approvedBy <who>] [--release] [--json]   (a dry run unless --apply)` |
+| `browserMoveLive` | Move accounts to another browser with their signed-in…, live on the platform | `log browser move [<account>] [--to camoufox\|brave] [--all] [--apply --approvedBy <who>] [--release] [--json]   (a dry run unless --apply)` |
 
 ## The work, step by step: inspect
 

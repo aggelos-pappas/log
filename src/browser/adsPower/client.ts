@@ -43,6 +43,8 @@ export function createAdsPowerClient(
         }
         throw new AdsPowerError('adsPowerRateLimited', `${path}: ${reply.msg}`)
       }
+      if (/api.?key mismatch|require api.?key/i.test(reply.msg ?? '')) throw new AdsPowerError('adsPowerKeyMismatch', `${path}: ${reply.msg}`)
+      if (/paid subscription/i.test(reply.msg ?? '')) throw new AdsPowerError('adsPowerPlanLapsed', `${path}: ${reply.msg}`)
       throw new AdsPowerError('adsPowerRequestFailed', `${path}: ${reply.msg || `code ${reply.code}`}`)
     }
   }
@@ -100,7 +102,7 @@ export function createAdsPowerClient(
     async startBrowser(profileId, options = {}) {
       const data = await call<{ ws?: { puppeteer?: string }; debug_port?: string }>('POST', '/api/v2/browser-profile/start', {
         profile_id: profileId,
-        headless: '0',
+        headless: options.headless ? '1' : '0',
         last_opened_tabs: '0',
         proxy_detection: '0',
         cdp_mask: '1',

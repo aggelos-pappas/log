@@ -1,10 +1,10 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { BROWSER_CAPABILITIES, BROWSER_DRIVERS } from "../../src/browser/driver/types.ts";
+import { BROWSER_CAPABILITIES, BROWSER_DRIVERS, DEPRECATED_BROWSER_DRIVERS } from "../../src/browser/driver/types.ts";
 import type { BrowserCapabilities } from "../../src/browser/driver/types.ts";
 
 const root = join(import.meta.dir, "..", "..");
-const SHARED_DOMAINS = ["driver", "run", "proxy", "inspect", "flow", "runStore", "viewer", "identity"];
+const SHARED_DOMAINS = ["driver", "run", "proxy", "inspect", "flow", "runStore", "viewer", "identity", "move"];
 const problems: string[] = [];
 const rows = new Map<string, BrowserCapabilities>();
 const capabilities = Object.keys(BROWSER_CAPABILITIES) as (keyof typeof BROWSER_CAPABILITIES)[];
@@ -62,7 +62,7 @@ const cell = (row: BrowserCapabilities | undefined, c: (typeof capabilities)[num
 const table = [
   START,
   "",
-  `| Capability | What it means | ${BROWSER_DRIVERS.join(" | ")} |`,
+  `| Capability | What it means | ${BROWSER_DRIVERS.map((n) => (DEPRECATED_BROWSER_DRIVERS.includes(n) ? `${n} (deprecated)` : n)).join(" | ")} |`,
   `| --- | --- | ${BROWSER_DRIVERS.map(() => "---").join(" | ")} |`,
   ...capabilities.map((c) => `| \`${c}\` | ${BROWSER_CAPABILITIES[c]} | ${BROWSER_DRIVERS.map((n) => cell(rows.get(n), c)).join(" | ")} |`),
   "",

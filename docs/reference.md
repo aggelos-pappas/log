@@ -226,7 +226,7 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 300 command tools + saved flows"]
+  mcp["MCP server log: 302 command tools + saved flows"]
   bin["bin/log.ts"]
   runCli["runCli: 141 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
@@ -333,7 +333,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log inbox`](#log-inbox) | Chat claims and their action log, who is waiting on a reply, what the watchers heard, quiet the push | any (none) | `[--platform <twitter|discord|slack|instagram>]` `[--account <a>]` `[--chat <conversationId|handle>]` `[--event <eventId>]` `[--json]` `--by <who>` `[--limit <integer 1..1000>]` `[--tail <integer 0..60>]` `[--oldest]` `--reader <name>` `--minutes <integer 0..720>` `[--server <id>]` `[--undo]` `[--label <warming|readyToAsk|askedWaiting|friend|client|cold|skip>]` `[--as <warming|readyToAsk|askedWaiting|friend|client|cold|skip>]` | none | none | `inboxClaim`, `inboxRelease`, `inboxResume`, `inboxWaiting`, `inboxPending`, `inboxQuiet`, `inboxIgnore`, `inboxIgnored`, `inboxLabels`, `inboxLabel`, `inboxClaims`, `inboxActions` | PreToolUse, PostToolUse · PostToolUse | no | 94, 105, 109, 133, 134, 138, 30, 38, 39, 40, 41 |
 | [`log media`](#log-media) | Turn every image, meme and video into text any model reads, kept in the .db with a small preview, so replies read what was sent | any (none) | `[--json]` `[--wait <number 0..>]` | none | none | `mediaDescriber`, `mediaDescribe`, `mediaStatus`, `mediaView` | PreToolUse, PostToolUse · PostToolUse | no | 26, 41, 138, 105, 137, 30, 38, 39, 40, 41 |
 | [`log browsers`](#log-browsers) | Where every open browser is: its page, the known page state it sits on, the call that resolves it, and what only the owner can clear (rule 35) | any (none) | `[--json]` | none | none | `browsers` | PreToolUse, PostToolUse · PostToolUse | no | 29, 35, 30, 38, 39, 40, 41 |
-| [`log browser`](#log-browser) | One account's live browser: whether it needs a person to sign in, streamed inline into the chat | any (none) | `--account <accountName>` `[--json]` | none | none | `browserView` | PreToolUse, PostToolUse · PostToolUse | no | 8, 19, 35, 94, 105, 30, 38, 39, 40, 41 |
+| [`log browser`](#log-browser) | One account's live browser: whether it needs a person to sign in, streamed inline into the chat | any (none) | `--account <accountName>` `[--json]` `[--to <camoufox|brave>]` `[--all]` `[--release]` `[--apply]` `[--approvedBy <who>]` | none | none | `browserView`, `browserMove`, `browserMoveLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 19, 35, 94, 105, 30, 38, 39, 40, 41 |
 | [`log report`](#log-report) | The numbers behind a report, read from log.db only (who messaged an account and how often, or one person's stored profile, by source), for the MCP report view | any (none) | `--source <twitterDmsBySender|dmsBySender|identityProfile|waitingOnYou>` `[--platform <facebook|twitter|reddit|discord|linkedin|slack|instagram|tiktok>]` `[--account <accountName>]` `[--since <dateOrSpan>]` `[--limit <integer 1..200>]` `[--userId <id>]` `[--handle <handle>]` `[--json]` | none | none | `reportData` | PreToolUse, PostToolUse · PostToolUse | no | 134, 154, 160, 30, 38, 39, 40, 41 |
 | [`log job`](#log-job) | Follow or stop a long MCP run: each runs as a job when it outlasts its call's wait | any (none) | `[--afterLine <integer 0..>]` `[--waitMs <integer 0..>]` `[--json]` | none | none | `jobStatus`, `jobCancel`, `jobList` | PreToolUse, PostToolUse · PostToolUse | no | 8, 26, 35, 30, 38, 39, 40, 41 |
 | [`log mcp`](#log-mcp) | This server's MCP sign-ins over OAuth (through Twenty, the owner only): list the clients, revoke them | any (none) | `[--json]` | none | none | terminal only: manages who may sign in to this server's MCP (OAuth through Twenty). The owner runs `log mcp clients` or `mcp revoke <clientId\|all>` in a terminal on the server. | PreToolUse, PostToolUse · n/a | no | 35, 47, 167, 30, 38, 39, 40, 41 |
@@ -1687,10 +1687,11 @@ log browsers [--json]   (every open browser: its step and page, the known page s
 
 #### log browser
 
-One account's live browser: whether it needs a person to sign in, streamed inline into the chat MCP tools: `browserView`, one per form, with named fields.
+One account's live browser: whether it needs a person to sign in, streamed inline into the chat MCP tools: `browserView`, `browserMove`, `browserMoveLive`, one per form, with named fields.
 
 ```text
 log browser view --account <accountName> [--json]   (the account's live browser: whether it needs a person to sign in, the page state and its revision; an MCP Apps host or Hermes shows it live inline, streamed from the page)
+log browser move [<account>] [--to camoufox|brave] [--all] [--apply --approvedBy <who>] [--release] [--json]   (a dry run unless --apply)
 Where the runtime is comes from LOG_BROWSER_VIEW_LOCATION (local or remote), which the stdio MCP, the HTTP MCP and the hosted bridge each set for their own process.
 ```
 

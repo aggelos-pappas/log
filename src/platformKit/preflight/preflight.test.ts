@@ -10,6 +10,7 @@ const EXETER: PreflightAccount = {
   activeHoursEnd: null,
   proxy: 'http://user:pass@proxy.example:8080',
   adsPowerProfileId: 'k1ib8m0k',
+  browserDriver: 'adsPower',
   profilePhoto: 'C:/Users/tester/.buzz/REPOS/log-cli/media/personas/exeterPartTimeEmployeeMale20/profilePicture.png'
 }
 

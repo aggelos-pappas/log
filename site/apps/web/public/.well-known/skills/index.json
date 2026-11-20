@@ -213,6 +213,14 @@
       "summary": "Posting on LinkedIn, liking or reposting, and taking a post down"
     },
     {
+      "name": "log-log-browser-move",
+      "description": "Moving accounts to another browser. A log play (docs/useCases/log/browserMove.md): AdsPower is deprecated and Camoufox is log's browser. The agent moves accounts off AdsPower (or between any two browsers) with their signed-in session, and only calls one moved when the platform says it is signed in.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Moving accounts to another browser"
+    },
+    {
       "name": "log-log-local-models",
       "description": "Local models. A log play (docs/useCases/log/localModels.md): See which local models this release pins and whether each is on this machine at that revision, and, with the owner's yes, fetch the missing ones: the judge's injection classifier, the meaning model behind search and the router, the image describer and the mouse planner.",
       "files": [

@@ -7,7 +7,7 @@ const sessionStates = ['loggedIn', 'loggedOut', 'restricted', 'checkpoint', 'unk
 export type CheckState = 'signedIn' | 'signInNeeded' | 'stopped' | 'unknown' | 'checking' | 'skipped'
 export type SignInKind = 'cookies' | 'connect' | 'browser'
 export type LaunchOutcome = { phase: string; retryAt: string | null; code: string }
-export type BrowserChoice = { name: string; label: string; logo: string | null; isDefault: boolean }
+export type BrowserChoice = { name: string; label: string; logo: string | null; isDefault: boolean; deprecated: boolean }
 export type LocalConnection = { id: string; name: string; browser: string | null; homeCountry: string | null; proxyProvider: 'twoCaptcha' | 'byteful' | 'unknown' | null; platform: ConnectionPlatform; status: AccountStatus | 'unknown'; state: typeof sessionStates[number]; checkedAt: string | null; signIn: SignInKind; lastCheck: { state: CheckState; checkedAt: string; launchOutcome?: LaunchOutcome } | null }
 export type SavedKeyField = { id: string; label: string; secret: boolean; required: boolean; inputType: 'url' | 'password' | 'text'; hasValue: boolean; masked: string | null }
 export type ExtensionConnection = { key: string; state: 'configured' | 'notConfigured' | 'unavailable'; fields: SavedKeyField[]; persisted: boolean }
@@ -64,7 +64,7 @@ export function parseConnections(value: unknown): LocalConnections {
     browsers: (Array.isArray(body.browsers) ? body.browsers : []).map((item): BrowserChoice => {
       const row = record(item)
       if (!browserName(row.name) || typeof row.label !== 'string' || row.label.length > 40) throw new Error('consoleResponseInvalid')
-      return { name: row.name as string, label: row.label, logo: logoOf(row.logo), isDefault: row.isDefault === true }
+      return { name: row.name as string, label: row.label, logo: logoOf(row.logo), isDefault: row.isDefault === true, deprecated: row.deprecated === true }
     }),
     extensions: body.extensions.map((item): ExtensionConnection => {
       const row = record(item)
@@ -107,6 +107,14 @@ export async function openSignInLink(target: ConsoleTarget, token: string): Prom
 
 export async function setConnectionBrowser(target: ConsoleTarget, accountId: string, browser: string): Promise<LocalConnections> {
   return parseConnections(await consoleRequest(target, { local: '/api/console/connections/browser', hosted: '/console/accountBrowser', method: 'POST' }, { body: { accountId, browser } }))
+}
+
+export async function moveConnectionBrowser(target: ConsoleTarget, accountId: string, browser: string, apply: boolean): Promise<{ text: string; ok: boolean; connections: LocalConnections }> {
+  const body = record(await consoleRequest(target, { local: '/api/console/connections/move', hosted: '/console/accountBrowserMove', method: 'POST' }, { body: { accountId, browser, apply } }))
+  const move = record(body.move)
+  const lines = (Array.isArray(move.results) ? move.results : Array.isArray(move.entries) ? move.entries : []).map((item) => { const row = record(item); return `${String(row.accountName ?? '')}: ${String(row.outcome ?? row.action ?? '')} ${String(row.detail ?? row.note ?? '')}`.trim() })
+  const ok = !Array.isArray(move.results) || move.results.every((item) => ['moved', 'skipped'].includes(String(record(item).outcome)))
+  return { text: lines.join('\n') || 'Nothing to move.', ok, connections: parseConnections(body.connections) }
 }
 
 export async function checkConnection(target: ConsoleTarget, accountId: string): Promise<LocalConnections> {

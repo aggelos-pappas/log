@@ -14,12 +14,22 @@ function known(name: string, where: string): BrowserDriverName {
   throw new BrowserDriverError('browserDriverUnknown', `${where} names "${name}", which is not a browser log drives (${BROWSER_DRIVERS.join(', ')})`)
 }
 
+export const ADS_POWER_DEPRECATED = 'adsPowerDeprecated: AdsPower is deprecated in log; move this account with `log browser move <account> --to camoufox`'
+
+const warned = new Set<string>()
+
+export function warnAdsPower(where: string, write: (line: string) => void = (line) => process.stderr.write(`${line}\n`)): void {
+  if (warned.has(where)) return
+  warned.add(where)
+  write(`${ADS_POWER_DEPRECATED} (${where})`)
+}
+
 export function driverNameOf(account: { browserDriver: string | null; adsPowerProfileId?: string | null }, env: Env = process.env): BrowserDriverName {
   const name = account.browserDriver?.trim() ?? ''
-  if (name) return known(name, "the account's browserDriver")
-  if (account.adsPowerProfileId) return 'adsPower'
   const fallback = env[BROWSER_DRIVER_ENV]?.trim() ?? ''
-  return fallback ? known(fallback, BROWSER_DRIVER_ENV) : DEFAULT_BROWSER_DRIVER
+  const driver = name ? known(name, "the account's browserDriver") : fallback ? known(fallback, BROWSER_DRIVER_ENV) : DEFAULT_BROWSER_DRIVER
+  if (driver === 'adsPower') warnAdsPower(name ? "the account's browserDriver" : BROWSER_DRIVER_ENV)
+  return driver
 }
 
 export function driverOrNull(account: { browserDriver: string | null; adsPowerProfileId?: string | null }, env: Env = process.env): BrowserDriverName | null {

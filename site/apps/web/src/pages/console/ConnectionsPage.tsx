@@ -16,7 +16,7 @@ import { ConnectionPlatformFilter } from './ConnectionPlatformFilter'
 import { PlatformSignInDialog } from './PlatformSignInDialog'
 import { PlatformConnectionTongue } from './PlatformConnectionTongue'
 import { BrowserCheckDialog } from './BrowserCheckDialog'
-import { checkConnection, loadConnections, openSignInLink, saveConnectionKeys, setConnectionBrowser, type LocalConnections } from './connectionsData'
+import { checkConnection, loadConnections, moveConnectionBrowser, openSignInLink, saveConnectionKeys, setConnectionBrowser, type LocalConnections } from './connectionsData'
 import { targetKey } from './consoleClient'
 import { useConsoleTarget } from './useConsoleTarget'
 
@@ -117,6 +117,20 @@ export function ConnectionsPage() {
     finally { setPickingId(null) }
   }
 
+  async function moveBrowser(accountId: string, browser: string) {
+    if (!target || pickingId) return
+    setPickingId(accountId)
+    try {
+      const plan = await moveConnectionBrowser(target, accountId, browser, false)
+      if (!window.confirm(`Move with its signed-in session, checked by the platform:\n${plan.text}`)) return
+      const done = await moveConnectionBrowser(target, accountId, browser, true)
+      keep(done.connections)
+      if (done.ok) toast.success('Browser moved', done.text)
+      else toast.error('Browser not moved', done.text)
+    } catch (error) { toast.error('Browser not moved', errorText(error)) }
+    finally { setPickingId(null) }
+  }
+
   const browserOptions = connections.data?.browsers ?? []
   const accountItems: ConnectionItem[] = connected.filter((account) => !selectedPlatforms.length || selectedPlatforms.includes(account.platform === 'twitter' ? 'x' : account.platform)).map((account) => {
     const platform = PLATFORMS.find((item) => item.service === (account.platform === 'twitter' ? 'x' : account.platform))
@@ -138,7 +152,7 @@ export function ConnectionsPage() {
     return {
       id: account.id, name: account.name, subtitle: platform?.label ?? account.platform, status, tone,
       icon: <FontAwesomeIcon icon={platform?.icon ?? faPlug} className="size-7" />,
-      browser: hasBrowser ? { value: account.browser, options: browserOptions, disabled: !running || pickingId !== null, onChange: (browser: string) => void pickBrowser(account.id, browser) } : undefined,
+      browser: hasBrowser ? { value: account.browser, options: browserOptions, disabled: !running || pickingId !== null, onChange: (browser: string) => void pickBrowser(account.id, browser), onMove: (browser: string) => void moveBrowser(account.id, browser) } : undefined,
       homeCountry: account.homeCountry, proxyProvider: account.proxyProvider, checkedAt: browserVerified ? account.lastCheck!.checkedAt : account.checkedAt, checkNote,
       search: `${account.name} ${platform?.label ?? account.platform} ${status}`,
       action: {
