@@ -11,8 +11,9 @@ import { PUSH_QUIET_MAX_MINUTES, setQuiet } from "../../inbox/push/index.ts";
 import { ignoredList, setIgnored } from "../../inbox/ignore/index.ts";
 import type { IgnoreEntry } from "../../inbox/ignore/index.ts";
 import { isLabel, LABEL_MEANS, LABELS, labelList, labelsOf, setLabel } from "../../inbox/label/index.ts";
+import { OLD_LABEL_FIELDS } from "../../inbox/label/types.ts";
 import type { Labelled } from "../../inbox/label/index.ts";
-import { labelQueue, PIPELINE_SETTING, pipelineLabels, pipelineRows, QUEUE_SIZE, refreshPipeline, SALES_WHO, TEACHER_BY, teach, teachPlan, teachState, trainAndSave, uvTrainer, windowOf, windowText } from "../../inbox/pipeline/index.ts";
+import { labelQueue, PIPELINE_SETTING, pipelineLabels, pipelineRows, QUEUE_SIZE, refreshPipeline, SALES_WHO, TEACHER_BY, TEACHER_MIN_CONFIDENCE, teach, teachPlan, teachState, trainAndSave, uvTrainer, windowOf, windowText } from "../../inbox/pipeline/index.ts";
 import type { HeadTrainer, PipelineDeps, TeachItem } from "../../inbox/pipeline/index.ts";
 import { chatsOf, saidOnly } from "../../inbox/lastWord/index.ts";
 import { localEmbedder } from "../../search/conversations/index.ts";
@@ -230,7 +231,7 @@ async function labelTool(form: string, str: (name: string) => string, limit: num
   const query = { platform: PLATFORMS.includes(platform) ? platform : undefined, account: str("account") || undefined };
   const entries = labelList();
   const owned = new Set(entries.filter((e) => e.by !== TEACHER_BY).map(keyOf));
-  const taught = new Set(entries.filter((e) => e.by === TEACHER_BY).map(keyOf));
+  const taught = new Set(entries.filter((e) => e.by === TEACHER_BY && (e.confidence ?? 0) >= TEACHER_MIN_CONFIDENCE).map(keyOf));
   if (form === "queue") {
     await refreshed(query);
     const names = new Map(labelsOf(query).map((r) => [keyOf(r), r.with]));
@@ -259,12 +260,19 @@ async function labelTool(form: string, str: (name: string) => string, limit: num
   }
   const labels = pipelineLabels();
   const items: TeachItem[] = [];
-  for (const chat of chatsOf(query)) {
+  const allChats = chatsOf(query);
+  const ownerWho = new Map(entries.filter((e) => e.by !== TEACHER_BY).map((e) => [keyOf(e), e.who ?? (e.label ? OLD_LABEL_FIELDS[e.label].who : null)] as const));
+  const examples = allChats.flatMap((c) => {
+    const who = ownerWho.get(keyOf({ platform: c.platform, account: c.account, person: c.personKey }));
+    return who && !c.storedAsGroup ? [{ with: c.with, platform: c.platform, who }] : [];
+  });
+  const context = { ...(labels.about ? { about: labels.about } : {}), examples };
+  for (const chat of allChats) {
     const key = keyOf({ platform: chat.platform, account: chat.account, person: chat.personKey });
     if (chat.storedAsGroup || owned.has(key) || taught.has(key)) continue;
     const said = saidOnly(chat.messages);
     if (!said.some((m) => !m.fromOwner)) continue;
-    items.push({ platform: chat.platform, account: chat.account, person: chat.personKey, with: chat.with, state: teachState({ platform: chat.platform, with: chat.with }, windowText(windowOf(said))) });
+    items.push({ platform: chat.platform, account: chat.account, person: chat.personKey, with: chat.with, state: teachState({ platform: chat.platform, with: chat.with }, windowText(windowOf(said)), context) });
     if (limit && items.length >= limit) break;
   }
   const plan = teachPlan(items, labels);

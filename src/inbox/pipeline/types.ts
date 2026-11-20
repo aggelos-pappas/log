@@ -81,6 +81,8 @@ export const EMOTIONS_KEPT = 3
 
 export const TEACHER_MIN_CONFIDENCE = 0.8
 
+export const TEACHER_TRAIN_FLOOR = 0.35
+
 export const TEACHER_STATE_CHARS = 6000
 
 export const SUBQ_USD_PER_MILLION_INPUT = 0.04
@@ -102,6 +104,7 @@ export type Features = Record<FeatureName, number>
 export interface PipelineLabels {
   who: Record<string, string>
   where: Record<string, string>
+  about?: string
 }
 
 export interface WindowLine {

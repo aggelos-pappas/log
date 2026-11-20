@@ -26,6 +26,7 @@ import {
   teach,
   teachPlan,
   trainAndSave,
+  teachState,
   trainingSet,
   WHERE_LABELS,
   WHO_LABELS,
@@ -148,17 +149,25 @@ describe('who each person is and where they are (the pipeline labeller)', () => 
     expect(answer).toMatchObject({ who: 'lead', where: 'needFound', confidence: 0.55, candidates: ['lead', 'friend'], inputTokens: 1200 })
   })
 
-  test('training rows come from owner labels and confident teacher labels only', () => {
+  test('the teacher is told who the owner is and the people he labelled himself', () => {
+    const state = teachState({ platform: 'discord', with: 'linus_k' }, 'them: hey me: yo', { about: 'a builder who sells content work', examples: [{ with: 'grace_ships', platform: 'twitter', who: 'client' }] })
+    expect(state).toContain('About the owner: a builder who sells content work')
+    expect(state).toContain('grace_ships on twitter is client')
+    expect(state.endsWith('them: hey me: yo')).toBe(true)
+  })
+
+  test('training rows come from owner labels and teacher labels above the floor, weighted by how sure the teacher was', () => {
     const v = new Float32Array([0.1, 0.2])
-    const rows = [row({ person: 'a', vector: v }), row({ person: 'b', vector: v }), row({ person: 'c', vector: v }), row({ person: 'd', vector: null })]
+    const rows = [row({ person: 'a', vector: v }), row({ person: 'b', vector: v }), row({ person: 'c', vector: v }), row({ person: 'e', vector: v }), row({ person: 'd', vector: null })]
     const entries: LabelEntry[] = [
       { platform: 'discord', account: 'discordAccount', person: 'a', who: 'friend', by: 'the owner', at: 'x' },
       { platform: 'discord', account: 'discordAccount', person: 'b', who: 'lead', where: 'offered', confidence: 0.9, by: 'subq', at: 'x' },
       { platform: 'discord', account: 'discordAccount', person: 'c', who: 'lead', confidence: 0.5, by: 'subq', at: 'x' },
+      { platform: 'discord', account: 'discordAccount', person: 'e', who: 'lead', confidence: 0.2, by: 'subq', at: 'x' },
       { platform: 'discord', account: 'discordAccount', person: 'd', who: 'lead', by: 'the owner', at: 'x' },
     ]
     const set = trainingSet(rows, entries, labels)
-    expect(set.map((r) => [r.who, r.where, r.weight, r.source])).toEqual([['friend', null, 1, 'owner'], ['lead', 'offered', 0.5, 'teacher']])
+    expect(set.map((r) => [r.who, r.where, r.weight, r.source])).toEqual([['friend', null, 1, 'owner'], ['lead', 'offered', 0.5, 'teacher'], ['lead', null, 0.313, 'teacher']])
     expect(set[0].x).toHaveLength(2 + FEATURE_NAMES.length)
   })
 
