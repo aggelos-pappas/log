@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 56 domains, 645 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 56 domains, 647 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -781,6 +781,8 @@ Every call is timed, never guessed: one timing layer across Bun and Python gives
 - **REQ-TIMING-03** The guards and the voice gate are timed stage by stage
 - **REQ-TIMING-04** Timings are stored and reported, never lost to a failure
 - **REQ-TIMING-05** Whole agent turns are timed and split into tool and agent time
+- **REQ-TIMING-06** Landed to pushed is measured per platform, and watch sessions are listed apart
+- **REQ-TIMING-07** A watcher's reads have deadlines and spend requests only where something changed
 
 ## [treg](./treg.md)
 

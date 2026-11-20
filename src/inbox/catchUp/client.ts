@@ -62,9 +62,32 @@ async function readChats(platform: string, account: PlatformAccount, gap: GapRow
   return { appended, skipped: skipped.length ? skipped : undefined, detail: skipped.length ? `${summary}; ${skipped.length} skipped without access: ${skipped.join('; ')}` : summary }
 }
 
-export function discordCatchUp(account: PlatformAccount, gap: GapRow, read: PlatformRead, now: Date = new Date(), wait: () => Promise<void> = pacedWait): Promise<CatchUpResult> {
-  const chats = Object.entries(positionsOf('discord', account.accountName)).filter(([chat]) => chat && !chat.startsWith(BACKFILL_SCOPE))
-  return readChats('discord', account, gap, read, chats.map(([chat, after]) => ({ chat, box: 'dm', spec: { action: 'read', channel: chat, limit: 100, after }, position: (m) => m.id ?? null })), now, wait)
+function snowflakeAfter(last: string, after: string): boolean {
+  if (!/^\d+$/.test(last) || !/^\d+$/.test(after)) return last !== after
+  return BigInt(last) > BigInt(after)
+}
+
+export function changedChats(saved: readonly [string, string][], latest: ReadonlyMap<string, string | null>): [string, string][] {
+  const newest = (chat: string) => latest.get(chat) ?? ''
+  return saved
+    .filter(([chat, after]) => {
+      const last = newest(chat)
+      return Boolean(last) && snowflakeAfter(last, after)
+    })
+    .sort(([a], [b]) => (snowflakeAfter(newest(a), newest(b)) ? -1 : snowflakeAfter(newest(b), newest(a)) ? 1 : 0))
+}
+
+export async function discordCatchUp(account: PlatformAccount, gap: GapRow, read: PlatformRead, now: Date = new Date(), wait: () => Promise<void> = pacedWait): Promise<CatchUpResult> {
+  const saved = Object.entries(positionsOf('discord', account.accountName)).filter(([chat]) => chat && !chat.startsWith(BACKFILL_SCOPE))
+  const listed = read(account, { action: 'chats', dmsOnly: true, catchUp: true } as PlatformEngineSpec)
+  const refused = refusedOf(listed)
+  if (refused && ACCOUNT_REFUSAL.test(refused)) return { appended: 0, refused: `listing the chats: ${refused}` }
+  const chats = ((listed.answer.chats as { id: string; lastMessageId?: string | null }[] | undefined) ?? []).map((c) => [String(c.id), c.lastMessageId ? String(c.lastMessageId) : null] as const)
+  const changed = refused ? saved : changedChats(saved, new Map(chats))
+  if (changed.length) await wait()
+  const got = await readChats('discord', account, gap, read, changed.map(([chat, after]) => ({ chat, box: 'dm', spec: { action: 'read', channel: chat, limit: 100, after }, position: (m) => m.id ?? null })), now, wait)
+  const how = refused ? `the chat list wasn't read (${refused}), so all ${saved.length} chat(s) were read` : `${changed.length} of ${saved.length} chat(s) had a message newer than their saved position, newest first`
+  return { ...got, detail: `${how}; ${got.detail ?? ''}`.replace(/; $/, '') }
 }
 
 export function slackCatchUp(account: PlatformAccount, gap: GapRow, read: PlatformRead, now: Date = new Date(), wait: () => Promise<void> = pacedWait, workspace: Record<string, unknown> = {}): Promise<CatchUpResult> {
@@ -73,7 +96,7 @@ export function slackCatchUp(account: PlatformAccount, gap: GapRow, read: Platfo
 }
 
 export async function instagramCatchUp(account: PlatformAccount, gap: GapRow, read: PlatformRead, now: Date = new Date(), wait: () => Promise<void> = pacedWait): Promise<CatchUpResult> {
-  const listed = read(account, { action: 'inbox', limit: 20 })
+  const listed = read(account, { action: 'inbox', limit: 20, catchUp: true })
   const refused = refusedOf(listed)
   if (refused) return { appended: 0, refused: `reading the inbox: ${refused}` }
   const since = positionsOf('instagram', account.accountName)[''] ?? gap.fromAt

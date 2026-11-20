@@ -34,10 +34,22 @@ identity: dict[str, Any] | None = None
 launched = browserIdentity.launch()
 
 
+CLIENTS: dict[str, Any] = {}
+CLIENTS_LOCK = threading.Lock()
+
+
 def client_of(token: str) -> Any:
     if identity is None:
         raise SystemExit("templateStale: no recording of this account's browser")
-    return browserRest.browser_discord(token, identity, launched)
+    key = f"{token}\u0000{json.dumps(identity, sort_keys=True, default=str)}"
+    with CLIENTS_LOCK:
+        held = CLIENTS.get(key)
+        if held is not None:
+            return held
+        client = browserRest.browser_discord(token, identity, launched)
+        CLIENTS.clear()
+        CLIENTS[key] = client
+        return client
 
 
 def with_identity(action: Any) -> Any:
@@ -172,7 +184,7 @@ def dms_of(client: Any) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     for dm in json.loads(data):
         recipients = [{"id": r["id"], "username": r["username"], "global_name": r.get("global_name")} for r in dm.get("recipients") or []]
         name = dm["name"] if "name" in dm else (recipients[0].get("global_name") if recipients else None)
-        dms.append({"id": dm["id"], "type": dm["type"], "recipients": recipients, "name": name})
+        dms.append({"id": dm["id"], "type": dm["type"], "recipients": recipients, "name": name, "lastMessageId": str(dm.get("last_message_id") or "") or None})
     return dms, None
 
 
@@ -230,7 +242,9 @@ def chats_of(token: str, spec: dict[str, Any] | None = None) -> dict[str, Any]:
     if refused:
         return refused
     kinds = {1: "dm", 3: "group"}
-    chats = [{"id": d["id"], "kind": kinds.get(d["type"], str(d["type"])), "name": d["name"], "members": [r.get("global_name") or r["username"] for r in d["recipients"]]} for d in dms]
+    chats = [{"id": d["id"], "kind": kinds.get(d["type"], str(d["type"])), "name": d["name"], "members": [r.get("global_name") or r["username"] for r in d["recipients"]], "lastMessageId": d.get("lastMessageId")} for d in dms]
+    if (spec or {}).get("dmsOnly") is True:
+        return {"ok": True, "loginState": "loggedIn", "chats": chats}
     channels, problem = server_channels_of(client, spec or {})
     return {"ok": True, "loginState": "loggedIn", "chats": chats + channels + kept_threads(spec or {}), **({"serversProblem": problem} if problem else {})}
 

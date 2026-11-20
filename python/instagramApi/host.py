@@ -21,6 +21,7 @@ from platformKit import timing
 
 IDLE_SECONDS = 1800
 START_WAIT_SECONDS = 30.0
+CALL_SECONDS = 180.0
 REQUEST_LIMIT = 16 * 1024 * 1024
 CODE_ROOTS = (ROOT / "instagramApi", ROOT / "platformKit", ROOT.parent / "vendor" / "instagrapi" / "instagrapi")
 
@@ -113,6 +114,7 @@ class Host:
         self.writers: set[asyncio.StreamWriter] = set()
         self.port = 0
         self.serial = asyncio.Lock()
+        self.poisoned = False
 
     def record(self) -> None:
         path = host_path(self.state_root, self.account)
@@ -165,6 +167,7 @@ class Host:
                 out = {"ok": False, "code": "instagramSessionHostRefused", "detail": "the call didn't carry this Instagram session's token"}
             else:
                 out = await self.answer(request.get("spec") or {}, writer)
+                self.poisoned = self.poisoned or kit.poisoned(out)
                 self.calls += 1
                 self.last = time.time()
                 self.record()
@@ -199,6 +202,9 @@ class Host:
                     break
                 if self.active == self.watching and code_stamp() != self.stamp:
                     print("log's Instagram engine code changed: closing so the next call starts the new code", flush=True)
+                    break
+                if self.active == self.watching and self.poisoned:
+                    print("an import failed inside this Instagram session: closing so the next call starts a fresh interpreter", flush=True)
                     break
         finally:
             e.STOPPING.set()
@@ -264,8 +270,15 @@ def call(spec: dict[str, Any]) -> dict[str, Any]:
         sock, info, error_text = connect_host(state_root, account)
     if sock is None or info is None:
         return {"ok": False, "code": "instagramSessionHostDown", "detail": f"{error_text}, so nothing was sent and no second session was opened (rule 129). Its log: {host_log(state_root, account)}"}
+    try:
+        return round_trip(sock, info, spec, account)
+    except (socket.timeout, TimeoutError):
+        return {"ok": False, "code": "instagramSessionHostTimedOut", "detail": f"the Instagram session for {account} (pid {info.get('pid')}) didn't answer {spec.get('action')} within {int(CALL_SECONDS)} s; nothing was retried, and a send may still finish there, so read the thread before sending again", "loginState": "unknown"}
+
+
+def round_trip(sock: socket.socket, info: dict[str, Any], spec: dict[str, Any], account: str) -> dict[str, Any]:
     with sock, timing.span("host.roundTrip"):
-        sock.settimeout(None)
+        sock.settimeout(None if spec.get("action") == "watch" else CALL_SECONDS)
         sent = {**spec, "trace": timing.child_trace(spec.get("trace"))}
         sock.sendall((json.dumps({"token": info["token"], "spec": sent}) + "\n").encode("utf-8"))
         for line in sock.makefile("r", encoding="utf-8"):

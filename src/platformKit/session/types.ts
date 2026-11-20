@@ -43,3 +43,7 @@ export interface PlatformShape {
 }
 
 export type PlatformGate = { ok: true } | { ok: false; code: 'accountNotOnPlatform' | 'accountDeactivated' | 'noPlatformSession'; detail: string }
+
+export const ENGINE_CALL_MS = 600_000
+
+export const ENGINE_CATCH_UP_MS = 120_000

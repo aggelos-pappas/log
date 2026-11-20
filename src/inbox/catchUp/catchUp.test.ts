@@ -122,20 +122,53 @@ describe("catching up after a gap (rule 135)", () => {
     const specs: Record<string, unknown>[] = [];
     const read: PlatformRead = (_a, spec) => {
       specs.push(spec);
+      if (spec.action === "chats") return { answer: { ok: true, chats: [{ id: "D1", lastMessageId: "900" }, { id: "D2", lastMessageId: "600" }] } } as unknown as ReturnType<PlatformRead>;
       if (spec.channel === "D1") return { answer: { ok: true, messages: [{ id: "101", at: "2026-11-04T02:00:00Z", from: "x", text: "missed this" }, { id: "102", at: "2026-11-04T02:01:00Z", from: "me", fromMe: true, text: "and my answer" }] } } as unknown as ReturnType<PlatformRead>;
       return { answer: { ok: false, code: "rateLimited", detail: "429" } } as unknown as ReturnType<PlatformRead>;
     };
     const got = await discordCatchUp(account, openGap("discord", "acct", "2026-11-04T01:00:00Z", "socketDropped"), read, new Date(), noWait);
-    expect(specs).toEqual([{ action: "read", channel: "D1", limit: 100, after: "100", catchUp: true }, { action: "read", channel: "D2", limit: 100, after: "500", catchUp: true }]);
+    expect(specs).toEqual([{ action: "chats", dmsOnly: true, catchUp: true }, { action: "read", channel: "D1", limit: 100, after: "100", catchUp: true }, { action: "read", channel: "D2", limit: 100, after: "500", catchUp: true }]);
     expect(got).toMatchObject({ appended: 2, refused: "reading D2: rateLimited: 429" });
     expect(positionsOf("discord", "acct").D1).toBe("102");
     expect(db().prepare("SELECT type, source FROM events ORDER BY seq").all()).toEqual([{ type: "message", source: "catchUp" }, { type: "ownMessage", source: "catchUp" }]);
+  });
+
+  test("Discord reads only the chats whose newest message is past their saved position, newest first, from one chat list", async () => {
+    recordPosition("discord", "acct", "100", "QUIET");
+    recordPosition("discord", "acct", "200", "BUSY");
+    recordPosition("discord", "acct", "300", "OLDER");
+    recordPosition("discord", "acct", "400", "CLOSED");
+    const specs: Record<string, unknown>[] = [];
+    const read: PlatformRead = (_a, spec) => {
+      specs.push(spec);
+      if (spec.action === "chats") return { answer: { ok: true, chats: [{ id: "QUIET", lastMessageId: "100" }, { id: "OLDER", lastMessageId: "350" }, { id: "BUSY", lastMessageId: "1200" }, { id: "EMPTY", lastMessageId: null }] } } as unknown as ReturnType<PlatformRead>;
+      return { answer: { ok: true, messages: [] } } as unknown as ReturnType<PlatformRead>;
+    };
+    const got = await discordCatchUp(account, openGap("discord", "acct", "2026-11-04T01:00:00Z", "socketDropped"), read, new Date(), noWait);
+    expect(specs.map((s) => s.channel ?? s.action)).toEqual(["chats", "BUSY", "OLDER"]);
+    expect(got.detail).toContain("2 of 4 chat(s)");
+  });
+
+  test("a refused chat list stops the Discord catch-up on an account refusal and reads every chat on any other failure", async () => {
+    recordPosition("discord", "acct", "100", "D1");
+    const limited: PlatformRead = () => ({ answer: { ok: false, code: "rateLimited", detail: "Discord answered 429" } }) as unknown as ReturnType<PlatformRead>;
+    const stopped = await discordCatchUp(account, openGap("discord", "acct", "2026-11-04T01:00:00Z", "socketDropped"), limited, new Date(), noWait);
+    expect(stopped).toEqual({ appended: 0, refused: "listing the chats: rateLimited: Discord answered 429" });
+    const specs: Record<string, unknown>[] = [];
+    const dropped: PlatformRead = (_a, spec) => {
+      specs.push(spec);
+      return (spec.action === "chats" ? { answer: { ok: false, code: "platformError", detail: "the network dropped" } } : { answer: { ok: true, messages: [] } }) as unknown as ReturnType<PlatformRead>;
+    };
+    const got = await discordCatchUp(account, openGap("discord", "acct", "2026-11-04T01:00:00Z", "socketDropped"), dropped, new Date(), noWait);
+    expect(specs.map((s) => s.channel ?? s.action)).toEqual(["chats", "D1"]);
+    expect(got.detail).toContain("wasn't read");
   });
 
   test("a chat the account can't read is skipped, and the catch-up carries on with the others", async () => {
     recordPosition("discord", "acct", "100", "DEAD");
     recordPosition("discord", "acct", "100", "D1");
     const read: PlatformRead = (_a, spec) => {
+      if (spec.action === "chats") return { answer: { ok: true, chats: [{ id: "DEAD", lastMessageId: "150" }, { id: "D1", lastMessageId: "101" }] } } as unknown as ReturnType<PlatformRead>;
       if (spec.channel === "DEAD") return { answer: { ok: false, code: "platformError", detail: 'Discord answered 403 to channel DEAD messages: {"message": "Missing Access", "code": 50001}' } } as unknown as ReturnType<PlatformRead>;
       return { answer: { ok: true, messages: [{ id: "101", at: "2026-11-04T02:00:00Z", from: "x", text: "still read" }] } } as unknown as ReturnType<PlatformRead>;
     };

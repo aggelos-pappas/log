@@ -59,6 +59,11 @@ def redact(text: Any, cookies: dict[str, str]) -> str:
 
 READ_MIN_GAP_S = 0.8
 READ_MEAN_GAP_S = 1.6
+POISONED_CODES = ("ImportError", "ModuleNotFoundError")
+
+
+def poisoned(out: dict[str, Any]) -> bool:
+    return out.get("code") in POISONED_CODES or "DLL load failed" in str(out.get("detail") or "")
 
 
 def governor_for(state_root: str, account: str, writes_per_day: int | None = None, continues_send: bool = False, read: bool = False) -> Any:
