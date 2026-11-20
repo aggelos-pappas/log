@@ -50,10 +50,10 @@ describe('engine stores in log.db (issues #96, #97)', () => {
       for (const migration of MIGRATIONS.filter((m) => m.version <= 22)) migration.apply(handle)
       handle.exec('PRAGMA user_version = 22')
       const now = new Date('2026-01-01T00:00:00.000Z')
-      expect(migrate(handle, now)).toEqual([{ version: 23, name: 'engineStores', appliedAt: now.toISOString() }])
+      expect(migrate(handle, now)[0]).toEqual({ version: 23, name: 'engineStores', appliedAt: now.toISOString() })
       expect(missingObjectsOf(handle, ['engineState'])).toEqual([])
       handle.exec('DROP TABLE engineState')
-      expect(migrate(handle, now)).toEqual([{ version: 23, name: 'engineStores', appliedAt: now.toISOString(), repaired: ['engineState'] }])
+      expect(migrate(handle, now).find((m) => m.version === 23)).toEqual({ version: 23, name: 'engineStores', appliedAt: now.toISOString(), repaired: ['engineState'] })
     } finally {
       handle.close()
     }

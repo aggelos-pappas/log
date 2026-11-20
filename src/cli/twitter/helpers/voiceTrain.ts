@@ -71,17 +71,21 @@ export function recordDrafts(texts: readonly string[], to: string, moment: strin
 }
 
 export function trainDeps(context: CommandContext): TrainDeps & { stop: () => void } {
-  const raw = localEmbedder();
-  const stored = voiceDeps.embedder();
+  let raw: ReturnType<typeof localEmbedder> | null = null;
+  let stored: ReturnType<typeof voiceDeps.embedder> | null = null;
+  const storedOf = () => (stored ??= voiceDeps.embedder());
+  const rawOf = () => (raw ??= localEmbedder());
   return {
-    embedModel: stored.model,
-    embed: (texts) => stored.embed(texts),
-    rawEmbed: (texts) => raw.embed(texts),
+    get embedModel() {
+      return storedOf().model;
+    },
+    embed: (texts) => storedOf().embed(texts),
+    rawEmbed: (texts) => rawOf().embed(texts),
     fit: pythonFit(),
     agentDrafts: () => agentSessionDrafts(),
     owner: (aiTexts) => ownerMessages(db(), aiTexts),
     log: (line) => context.err(line),
-    stop: () => raw.stop?.(),
+    stop: () => raw?.stop?.(),
   };
 }
 

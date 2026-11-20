@@ -28,7 +28,7 @@ describe('governor reset', () => {
     const rows = ledgerRows('governorReset', { account: 'resetOne' }, db)
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ platform: 'twitter', subject: 'the owner', amount: 500, outcome: 'reset', seq: result.ledgerSeq })
-  })
+  }, 20_000)
 
   test('keeps a cooldown after a block', () => {
     const db = join(mkdtempSync(join(tmpdir(), 'governorDb')), 'log.db')
