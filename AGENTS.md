@@ -84,7 +84,7 @@ For platform work, read the relevant skill/use-case and current domain spec. Pla
 
 90. 2026-10-28 · Preserve platform message splitting: draft lines send as separate messages unless The owner explicitly requests the supported asOne behavior.
 
-94. 2026-10-29 · Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies. A refusal, failed send, 429, block, disable, captcha or cooldown stops that run/account until The owner authorizes continuation. Do not retry through refusals. Bulk reading and sending are separate sessions; cold DMs stay a few a day, minutes apart, and opening a DM counts as a write.
+94. 2026-10-29 · Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies. A refusal, failed send, 429, block, disable, captcha or cooldown stops that run/account until The owner authorizes continuation. Do not retry through refusals. Bulk reading and sending are separate sessions; cold DMs stay a few a day, minutes apart, and opening a DM counts as a write. Live-view input: a browser the agent opened takes it only on sign-in pages, one the owner opened to drive on every page (2026-11-20).
 
 103. 2026-10-31 · The public log repository on origin is the working repository. Keep archived repository references as history, not implementation destinations.
 

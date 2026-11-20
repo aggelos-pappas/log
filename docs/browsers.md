@@ -191,8 +191,10 @@ minimised, 100.8 hidden. Clicks and typing reach a hidden window's page.
 
 ## The live browser viewer
 
-An account's browser can be watched and, while its page asks for sign-in,
-used by a person: in the local console and inline in an MCP Apps host
+An account's browser can be watched and used by a person, on every page when
+the owner opened it to watch and drive (`ownerDriven`, the owner's decision of
+2026-11-20, `LOG_BROWSER_INPUT=owner|signInOnly`) and otherwise while its page asks
+for sign-in: in the local console and inline in an MCP Apps host
 (ChatGPT, Claude, Cursor). The frame path and the input path meet only in the
 viewer.
 
@@ -237,12 +239,13 @@ answers into a view with a phase (`browserMissing`, `viewerUnavailable`,
 **Input, both paths.** Clicks, text, keys and scrolls never travel on the frame
 channel. They go to `POST /input`, which refuses them unless the generation and
 the revision still match (`browserStateChanged`), the page still reports a
-sign-in state (`browserInputStopped`) and no other step holds the browser
+sign-in state unless the session is owner-driven (`browserInputStopped`) and no other step holds the browser
 (`browserBusy`), then replays them with Playwright's `page.mouse`,
 `page.keyboard` and `mouse.wheel` inside `owner.step("viewerInput", ...)`, so
 every viewer action is a recorded step with its HAR and reading. The answer is
 the page read again once the step has let go of the browser. A checkpoint or
-other blocked page is shown but takes no input: it stays a stop (rule 94).
+other blocked page is shown but takes no input unless the owner drives the
+browser: it stays a stop for the agent (rule 94).
 
 **Picture, page screencast first, on every browser.** On the machine the
 browser runs on, the page screencast is the stream: the same `PageCast` code

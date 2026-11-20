@@ -154,7 +154,7 @@ class BrowserViewer:
         seen = viewer_state(signals)
         state = seen["state"]
         revision = hashlib.sha256(json.dumps([signals["url"], signals["text"], self.owner.index, self.inputRevision, self.owner.recorder.seen()], ensure_ascii=True).encode()).hexdigest()
-        return {"generation": self.generation, "revision": revision, "state": state, "url": signals["url"], "historyLength": signals["historyLength"], "blocked": seen["blocked"], "inputAllowed": seen["inputAllowed"], "width": signals["width"], "height": signals["height"], "busy": self.owner.controlLock.locked(), "stream": await streamSurface.surface(self.owner)}
+        return {"generation": self.generation, "revision": revision, "state": state, "url": signals["url"], "historyLength": signals["historyLength"], "blocked": seen["blocked"], "inputAllowed": seen["inputAllowed"], "ownerDriven": self.owner.config.get("ownerDriven") is True, "width": signals["width"], "height": signals["height"], "busy": self.owner.controlLock.locked(), "stream": await streamSurface.surface(self.owner)}
 
     async def input(self, data: dict[str, Any]) -> dict[str, Any]:
         if self.owner.controlLock.locked():
@@ -163,7 +163,7 @@ class BrowserViewer:
             state = await self.state()
             if data.get("generation") != self.generation or data.get("revision") != state["revision"]:
                 raise ValueError("browserStateChanged")
-            if state["blocked"] or not state["inputAllowed"]:
+            if not state["ownerDriven"] and (state["blocked"] or not state["inputAllowed"]):
                 raise ValueError("browserInputStopped")
             kind = data.get("type")
             async def perform() -> None:

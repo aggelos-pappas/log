@@ -104,7 +104,7 @@ async function ownerRequest(descriptor: ViewerDescriptor, path: string, body?: u
 
 function liveOf(descriptor: ViewerDescriptor, value: unknown): ViewerLiveState {
   const state = value as ViewerLiveState
-  if (!state || state.generation !== descriptor.generation || typeof state.revision !== 'string' || !/^[a-f0-9]{64}$/.test(state.revision) || typeof state.state !== 'string' || typeof state.blocked !== 'boolean' || typeof state.inputAllowed !== 'boolean') throw new ViewerError('browserGenerationChanged')
+  if (!state || state.generation !== descriptor.generation || typeof state.revision !== 'string' || !/^[a-f0-9]{64}$/.test(state.revision) || typeof state.state !== 'string' || typeof state.blocked !== 'boolean' || typeof state.inputAllowed !== 'boolean' || (state.ownerDriven !== undefined && typeof state.ownerDriven !== 'boolean')) throw new ViewerError('browserGenerationChanged')
   return state
 }
 
@@ -130,7 +130,7 @@ export function viewOf(account: string, state: ViewerLiveState): ViewerView {
     address: addressOf(state.url),
     width: Number.isSafeInteger(state.width) ? (state.width as number) : null,
     height: Number.isSafeInteger(state.height) ? (state.height as number) : null,
-    canInteract: phase === 'signInRequired',
+    canInteract: phase === 'signInRequired' || (state.ownerDriven === true && phase !== 'busy'),
     stream: streamOf(state.stream),
   }
 }

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { connectionIdOf } from "../../console/connections/index.ts";
 import type { ConnectionsView } from "../../console/connections/index.ts";
 import { runConsoleOperation } from "../../console/operations/index.ts";
-import { runToolCall } from "../../mcp/server/index.ts";
+import { gateDeps, runToolCall } from "../../mcp/server/index.ts";
 import type { SessionReport, SessionToolAnswer } from "../../platformKit/sessionCheck/index.ts";
 import { createContext } from "../runner/client.ts";
 import { showBrowserOf, signInActorsOf } from "./helpers/index.ts";
@@ -136,6 +136,32 @@ describe("one check state on every surface", () => {
     const again = await cli(["signIn", "--account", "fakeGuild", "--open", "--json"]);
     expect(again.json.browser).toBe("alreadyOpen");
     open.delete("fakeGuild");
+  });
+
+  test("MCP sessionsSignIn with open is not refused by its own job, and opens the browser for the owner to drive", async () => {
+    signedInNow = new Set([...signedInNow, "fakeGuild"]);
+    open.delete("fakeGuild");
+    const starts: Record<string, unknown>[] = [];
+    const gated = async (name: string, input: Record<string, unknown>): Promise<SessionToolAnswer> => {
+      if (name === "inspectStart") {
+        const holder = gateDeps.busy(String(input.account));
+        if (holder) return { isError: true, structuredContent: { ok: false, stderr: `accountBusy: job ${holder.id} (${holder.tool}) holds ${String(input.account)}` } };
+        starts.push(input);
+      }
+      return callTool(name, input);
+    };
+    const kept = sessionsDeps.callTool;
+    sessionsDeps.callTool = async () => gated;
+    try {
+      const shown = await runToolCall("sessionsSignIn", { account: "fakeGuild", open: true, json: true, waitMs: 20000 });
+      const content = shown.structuredContent as { ok: boolean; stderr: string; json?: Record<string, unknown> };
+      expect(content.stderr).not.toContain("accountBusy");
+      expect(content.json).toMatchObject({ signIn: { state: "signedIn" }, browser: "opened" });
+      expect(starts).toEqual([expect.objectContaining({ account: "fakeGuild", detach: true, ownerDriven: true })]);
+    } finally {
+      sessionsDeps.callTool = kept;
+      open.delete("fakeGuild");
+    }
   });
 
   test("X has no browser, so sign-in by browser is refused with the routes it has", async () => {

@@ -6,7 +6,7 @@ import { browserCheckMachine } from './browserCheckMachine'
 import { castBrowser } from './browserCheckData'
 import type { BrowserInput } from './browserCheckTypes'
 import type { LocalConnection } from './connectionsData'
-import { ERROR_TITLES, frameModel, ICONS, mountBrowserFrame, PHASE_LABELS, PHASE_NOTES } from '../../../../../../src/mcp/apps/browserView/widget/view'
+import { ERROR_TITLES, frameModel, ICONS, mountBrowserFrame, PHASE_NOTES, phaseLabel } from '../../../../../../src/mcp/apps/browserView/widget/view'
 import type { BrowserFrame, FrameAction } from '../../../../../../src/mcp/apps/browserView/widget/view'
 
 export function BrowserCheckDialog({ account, target, autoSignIn = false, onClose, onResolved, onConfigureProvider }: { account: LocalConnection; target: ConsoleTarget; autoSignIn?: boolean; onClose: () => void; onResolved: () => void; onConfigureProvider: () => void }) {
@@ -42,7 +42,7 @@ export function BrowserCheckDialog({ account, target, autoSignIn = false, onClos
   const completing = snapshot.matches({ session: 'completing' })
   const navigating = snapshot.matches({ session: 'navigating' })
   const closing = snapshot.matches('closing') || (snapshot.context.closeRequested && pending)
-  const label = closing ? 'Closing browser…' : snapshot.matches('closeFailed') ? 'Browser closure could not be confirmed' : disconnected ? 'Browser viewer could not connect' : reconnecting ? 'Connecting to browser…' : failed ? ERROR_TITLES[error ?? ''] ?? 'Browser operation failed' : snapshot.matches('opening') ? 'Opening account browser…' : snapshot.matches('linking') ? 'Preparing browser profile…' : navigating ? 'Loading page…' : checking ? 'Verifying session…' : resolving ? 'Signing in with the saved login…' : completing ? 'Saving confirmed session…' : starting || (!hasFrame && view?.generation) ? 'Connecting to browser…' : phase ? PHASE_LABELS[phase] : 'Connecting to browser…'
+  const label = closing ? 'Closing browser…' : snapshot.matches('closeFailed') ? 'Browser closure could not be confirmed' : disconnected ? 'Browser viewer could not connect' : reconnecting ? 'Connecting to browser…' : failed ? ERROR_TITLES[error ?? ''] ?? 'Browser operation failed' : snapshot.matches('opening') ? 'Opening account browser…' : snapshot.matches('linking') ? 'Preparing browser profile…' : navigating ? 'Loading page…' : checking ? 'Verifying session…' : resolving ? 'Signing in with the saved login…' : completing ? 'Saving confirmed session…' : starting || (!hasFrame && view?.generation) ? 'Connecting to browser…' : phase ? phaseLabel(phase, view?.canInteract === true) : 'Connecting to browser…'
   const busy = reconnecting || starting || (pending && !snapshot.matches({ session: 'interacting' })) || (!failed && !!view?.generation && !hasFrame)
   const note = failed ? (error ? CONSOLE_MESSAGES[error] ?? view?.reason?.message ?? 'The check has not been confirmed.' : 'The check has not been confirmed.') : view?.reason?.message ?? (phase ? PHASE_NOTES[phase] : null)
   if (view?.generation !== lastAddress.current.generation) lastAddress.current = { generation: view?.generation ?? null, address: null }

@@ -80,22 +80,25 @@ export function platformNameOf(account: string): string {
 const REMOTE: Record<ViewerView["phase"], string> = {
   browserMissing: "No browser is open for this account. Open it with sessionsSignIn { account } (add open: true when it is signed in already), on the local and the hosted server alike, then call browserView again.",
   viewerUnavailable: "The account's browser is open but its viewer could not be reached, so it cannot be shown. Nothing was sent to the page.",
-  signInRequired: "The page asks for sign-in. The person signs in inside the browser view; their clicks and keys go to the page only while it still asks for sign-in, each one a recorded step. Wait for them, then call browserView again before carrying on.",
+  signInRequired: "The page asks for sign-in. The person signs in inside the browser view; their clicks and keys reach the page, each one a recorded step (any page when the owner opened it to drive, else only while it asks for sign-in). Wait for them, then call browserView again before carrying on.",
   needsAttention: "The page needs a person and is a stop (rule 94): input is off. Tell the person what the page shows; do not continue this account until they clear it.",
   busy: "The browser is running a step. Call browserView again in a moment.",
   ready: "The page does not ask for sign-in. Nothing is needed from the person; carry on.",
 };
 
+const DRIVEN = "The owner opened this browser to watch and drive it: his clicks, scrolls and keys in the live view reach every page, each one a recorded step. The agent never types into it; wait for him, then call browserView again before carrying on.";
+
 function localText(view: ViewerView, platform: string): string {
-  if (view.phase === "signInRequired") return `The ${platform} sign-in is open in this account's browser on this machine. The person signs in in the live view shown in the chat (or its window, when it has one); their clicks and keys reach the page only while it asks for sign-in. Then call browserView again to check before carrying on.`;
-  if (view.phase === "needsAttention") return `The ${platform} page needs a person and is a stop (rule 94): input is off. Tell the person what it shows; do not continue this account until they clear it.`;
+  if (view.phase === "signInRequired") return `The ${platform} sign-in is open in this account's browser on this machine. The person signs in in the live view shown in the chat (or its window, when it has one); their clicks and keys reach the page, each one a recorded step (any page when the owner opened it to drive, else only while it asks for sign-in). Then call browserView again to check before carrying on.`;
+  if (view.canInteract && view.phase === "ready") return DRIVEN;
+  if (view.phase === "needsAttention") return `The ${platform} page needs a person and is a stop (rule 94): ${view.canInteract ? "the owner can answer it in the live view" : "input is off"}. Tell the person what it shows; do not continue this account until they clear it.`;
   return REMOTE[view.phase];
 }
 
 export function browserViewText(view: ViewerView, location: BrowserViewLocation = browserViewLocation(), platform = platformNameOf(view.account)): string {
   const head = `${view.account}: ${view.phase}${view.pageState ? ` (page state ${view.pageState})` : ""}${view.address ? ` on ${view.address}` : ""}`;
   if (location === "local") return [head, localText(view, platform)].join("\n");
-  return [head, REMOTE[view.phase], ...(view.needsHuman ? ["Without an inline view (a host without MCP Apps), sessionsSignIn answers with a console link that works once, for ten minutes, for the person who asked; the console's Connections page shows the same live browser."] : [])].join("\n");
+  return [head, view.canInteract && view.phase === "ready" ? DRIVEN : REMOTE[view.phase], ...(view.needsHuman ? ["Without an inline view (a host without MCP Apps), sessionsSignIn answers with a console link that works once, for ten minutes, for the person who asked; the console's Connections page shows the same live browser."] : [])].join("\n");
 }
 
 export type BrowserViewJson = Omit<ViewerView, "stream"> & { location: BrowserViewLocation; streamKind: "voxl" | "cast" | "frames" | "none"; platform: string; browser: { name: string; label: string; logo: string | null } | null };

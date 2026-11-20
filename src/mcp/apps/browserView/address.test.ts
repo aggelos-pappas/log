@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { ADDRESS_NONE, ADDRESS_WAITING, addressText, CONNECTING, frameModel, PHASE_LABELS, PHASE_NOTES } from "./widget/viewModel.ts";
+import { ADDRESS_NONE, ADDRESS_WAITING, addressText, CONNECTING, DRIVE_LABEL, frameModel, PHASE_LABELS, PHASE_NOTES, phaseLabel } from "./widget/viewModel.ts";
 
 describe("the browser view's address bar", () => {
   test("a page that is shown but has no web address no longer says it is waiting", () => {
@@ -25,6 +25,16 @@ describe("one view model for the console dialog and the chat's view", () => {
     const busy = frameModel({ ...base, phase: "busy", live: true, connecting: false });
     expect(busy).toMatchObject({ cover: { hidden: false, spin: true, shade: true }, status: { tone: "busy" } });
     expect(frameModel({ ...base, phase: "needsAttention", live: true, connecting: false }).pill).toEqual({ tone: "stop", text: "Stopped" });
+  });
+
+  test("a browser the owner drives takes input on any page and its footer says where the input goes", () => {
+    const driven = frameModel({ ...base, phase: "ready", live: true, connecting: false, canInteract: true, address: "https://discord.com/app" });
+    expect(driven).toMatchObject({ input: true, take: true, bubble: null, status: { tone: "ok", text: DRIVE_LABEL } });
+    expect(DRIVE_LABEL).toBe("Click and type here; it goes to the account's browser");
+    expect(phaseLabel("ready", true)).toBe(DRIVE_LABEL);
+    expect(phaseLabel("ready", false)).toBe(PHASE_LABELS.ready);
+    expect(phaseLabel("signInRequired", true)).toBe(PHASE_LABELS.signInRequired);
+    expect(phaseLabel("busy", true)).toBe(PHASE_LABELS.busy);
   });
 
   test("the page in view never says it is waiting for a page", () => {

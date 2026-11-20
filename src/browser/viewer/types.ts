@@ -20,6 +20,7 @@ export interface ViewerLiveState {
   historyLength?: number
   blocked: boolean
   inputAllowed: boolean
+  ownerDriven?: boolean
   busy: boolean
   width?: number
   height?: number
@@ -82,7 +83,7 @@ export const VIEWER_ERROR_TEXT: Readonly<Record<ViewerErrorCode, string>> = {
   browserGenerationChanged: 'The account browser owner changed. The stale action was refused.',
   browserBusy: 'The account browser is handling another step.',
   browserStateChanged: 'The page changed before the action. The stale action was refused; nothing reached the page.',
-  browserInputStopped: 'The page no longer asks for sign-in, so input is refused.',
+  browserInputStopped: 'The page no longer asks for sign-in and the owner did not open this browser to drive it, so input is refused.',
   browserInputInvalid: 'The input was rejected as invalid.',
   browserInputFailed: 'The input step failed in the browser.',
 }

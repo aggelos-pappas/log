@@ -46,7 +46,7 @@ export function parseView(value: unknown): BrowserCheckView {
     accountId: row.accountId, account: row.account, platform: typeof row.platform === 'string' ? row.platform : undefined, browser: browserOf(row.browser), phase, location: row.location === 'remote' ? 'remote' : 'local',
     viewerId: row.viewerId as string | null, generation: row.generation as string | null, revision: row.revision as string | null, pageState: row.pageState as string | null, address: text(row.address, 2048),
     width: size('width'), height: size('height'),
-    canInteract: row.canInteract === true && phase === 'signInRequired', canResolve: row.canResolve === true && ['signInRequired', 'needsResolution'].includes(phase), canComplete: row.canComplete === true && phase === 'verified', canNavigate: row.canNavigate === true, canGoBack: row.canGoBack === true,
+    canInteract: row.canInteract === true && ['signInRequired', 'ready', 'verified', 'needsAttention'].includes(phase), canResolve: row.canResolve === true && ['signInRequired', 'needsResolution'].includes(phase), canComplete: row.canComplete === true && phase === 'verified', canNavigate: row.canNavigate === true, canGoBack: row.canGoBack === true,
     stream: streamOf(row.stream),
     reason: reason && typeof reason.code === 'string' && /^[a-zA-Z]+$/.test(reason.code) && typeof reason.message === 'string' && reason.message.length <= 800 ? { code: reason.code, message: reason.message } : null,
   }
