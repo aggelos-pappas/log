@@ -10,7 +10,7 @@ Every chat in the owner's inbox carries two fields: `who` the person is to the o
 
 ### REQ-PIPELINE-01: Two owner-editable lists, and no sales stage for a bot, friend, partner or community
 
-`who` is one of lead, client, partner, friend, community or bot (`WHO_LABELS`); `where` is one of new, warming, needFound, offered, callBooked, won, lost or goneQuiet (`WHERE_LABELS`). Each label has a one-line meaning, and the owner replaces either list in `~/.logCli/settings.json` under `pipelineLabels` (`pipelineLabels()`), keeping the defaults when the key is missing or holds fewer than two labels. Only a lead or a client (`SALES_WHO`) ever gets a `where`: `guessOf`, `setLabel` and `labelOfChat` all drop it for anyone else, and `log inbox label` refuses to store one, saying why.
+`who` is one of lead, client, partner, friend, community or bot (`WHO_LABELS`); `where` is one of new, warming, needFound, offered, callBooked, won, lost or goneQuiet (`WHERE_LABELS`). Each label has a one-line meaning, and the owner replaces either list in `~/.logCli/settings.json` under `pipelineLabels` (`pipelineLabels()`), keeping the defaults when the key is missing or holds fewer than two labels. Only community, a lead or a client (`SALES_WHO`) ever gets a `where`: the owner turns people from his communities into clients, so community is the top of the cycle, not a dead end. A bot, friend or partner never gets one: `guessOf`, `setLabel` and `labelOfChat` all drop it for anyone else, and `log inbox label` refuses to store one, saying why.
 
 Checked by: code and SubQ
 

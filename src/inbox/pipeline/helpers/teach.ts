@@ -26,7 +26,7 @@ function whoQuestion(labels: PipelineLabels) {
 }
 
 function whereQuestion(labels: PipelineLabels) {
-  return { type: 'choice' as const, instructions: 'Treat this person as a lead or client of the owner. Where are they in the sales cycle right now?', criteria: labels.where }
+  return { type: 'choice' as const, instructions: 'The owner turns people from his communities into leads and clients. Where is this person in that cycle right now?', criteria: labels.where }
 }
 
 export interface TeachContext {
