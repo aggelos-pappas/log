@@ -195,7 +195,7 @@ def launch_prefs(profile: dict[str, Any], run: dict[str, Any], exit_ip: str) -> 
     return prefs
 
 
-def build_launch(profile: dict[str, Any], run: dict[str, Any], exit_ip: str, exit_timezone: str, proxy: dict[str, str], visible: dict[str, Any]) -> dict[str, Any]:
+def build_launch(profile: dict[str, Any], run: dict[str, Any], exit_ip: str, exit_timezone: str, proxy: dict[str, str] | None, visible: dict[str, Any]) -> dict[str, Any]:
     from camoufox.addons import add_default_addons
     from camoufox.pkgman import installed_verstr, launch_path
     from camoufox.utils import get_env_vars, get_target_os, validate_config
@@ -220,5 +220,5 @@ def build_launch(profile: dict[str, Any], run: dict[str, Any], exit_ip: str, exi
         "env": env,
         "firefox_user_prefs": prefs,
         "headless": bool(visible["headless"]),
-        "proxy": proxy,
+        **({"proxy": proxy} if proxy else {}),
     }

@@ -276,7 +276,7 @@ def apply(kwargs: dict[str, Any], visible: dict[str, Any]) -> dict[str, Any]:
             deviceProfile.write_run_file(_armed["devicePath"], run)
     except deviceProfile.ProfileError as exc:
         raise GateError("deviceProfileInvalid", str(exc)) from None
-    options = deviceProfile.build_launch(profile, run, exit_["exitIp"], exit_["timezone"], playwright_proxy(proxy), visible)
+    options = deviceProfile.build_launch(profile, run, exit_["exitIp"], exit_["timezone"], None if proxy.get("direct") else playwright_proxy(proxy), visible)
     _armed.update({
         "proxy": proxy,
         "launch": options,
@@ -363,7 +363,7 @@ def _require_gate(args: tuple, kwargs: dict[str, Any]) -> None:
     same = (
         not args
         and kwargs.get("env") == built["env"]
-        and kwargs.get("proxy") == built["proxy"]
+        and kwargs.get("proxy") == built.get("proxy")
         and "headless" in kwargs and kwargs["headless"] is False
         and str(kwargs.get("executablePath")) == str(built["executable_path"])
     )
