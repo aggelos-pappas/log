@@ -71,9 +71,19 @@ class Dispatcher:
     settings: Settings
     engine: Engine
     bridges: Bridges
+    reads: dict[str, frozenset] = field(default_factory=dict)
+
+    def remember_reads(self, teamId, names) -> None:
+        self.reads[str(teamId)] = frozenset(name for name in names if isinstance(name, str))
+
+    def knows(self, teamId, tool: str) -> bool:
+        return tool_kind(tool) is not None or tool in self.reads.get(str(teamId), frozenset())
+
+    def kind_of(self, teamId, tool: str) -> str | None:
+        return tool_kind(tool) or ("read" if tool in self.reads.get(str(teamId), frozenset()) else None)
 
     def admit(self, actor: Actor, operationId: uuid.UUID, tool: str, record: bool, app: bool = False):
-        kind = tool_kind(tool)
+        kind = self.kind_of(actor.teamId, tool)
         if kind is None or (tool in APP_TOOLS and not app):
             raise ApiError("invalidInput", f"{tool} is not a registered tool")
         with Session(self.engine, expire_on_commit=False) as db:
