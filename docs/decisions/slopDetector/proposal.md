@@ -26,3 +26,15 @@ Today's Jina phrase index scored 0.6 of 4 on letting his own messages pass and 0
 - At least 90% of held-out frontier drafts are flagged, or caught by another signal, without SubQ.
 - Under 20 ms p95 per option on the CPU, with no network call.
 - Each flag names the words or habit beside his phrasing.
+
+## Measured before building (2026-11-21, read-only, nothing sent)
+
+Human side: the owner's messages from log.db. AI side: the 81 drafts (one per moment plus 3-5 options) written as him for the 20 waiting DMs in the #238 replay, all by one model family.
+
+| Detector | His messages flagged | AI drafts caught |
+|---|---|---|
+| `nakas/gpttrace-ettin150-text-v5e`, int8 ONNX, #3 on RAID, off the shelf (400 of his) | 52% | 30% |
+| Character 2-4 grams + MiniLM, logistic regression, his messages from any chat (1,500), 5-fold | 5% (bar) | 94% |
+| Same, his messages from the same 20 chats only (733), folds split by chat | 5% (bar) | 60% |
+
+The 94% was inflated: with his messages drawn from other chats the classifier partly learnt the topic. Holding the chats fixed, it catches 60% at a 5% false-flag rate. Off-the-shelf detectors are worse than chance on his short DMs (they warn they are unreliable under ~150 words). So the classifier is trained on his data, and the next gains come from paired data (his real reply and model drafts for the same moment, from several model families) and from the over-use list and structural checks, which are not yet measured. The classifier's job is to stop slop, not to fail options that are already indistinguishable from him.
