@@ -102,7 +102,7 @@ Checked by: code and SubQ
 
 ### REQ-MCP-14: They are said at session start and whenever they change
 
-The engines hook writes its text at every session start, and on a prompt only when the text differs from the last one it wrote.
+The engines hook (`enginesAnswer`) writes its text when a session resumes, clears or compacts, and otherwise only when its fingerprint differs from the last one that session was shown (REQ-HOOKS-34): each open session's pid and call count and the checked clock are left out, so a busy account doesn't bring the block back every turn.
 
 Checked by: code and SubQ
 

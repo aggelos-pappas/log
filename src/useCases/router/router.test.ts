@@ -6,7 +6,7 @@ import { askAnswer } from '../../mcp/server/helpers/guideAnswer.ts'
 import { clearActivePlay, playScope } from '../../mcp/server/helpers/activePlay.ts'
 import { listUseCases } from '../../mcp/server/helpers/guides.ts'
 import { askOf, buildMeaningIndex, playToolsOf, contentWords, folderOf, fuseSkills, fuseTools, isPlatformFolder, loadToolFacts, meaningWithin, openMeaningIndex, outcomeOf, phrasesOf, platformsOf, playMatchText, rankTools, route, routerCatalog, routerIndexState, routerSection, shippedSkills, toolMatchText } from './client'
-import { asksToWrite, callOf, catalogHash, fillOf, meaningRanks, reciprocalRankFusion, skillOf, stepRowsOf, writesToAccount } from './helpers'
+import { asksToWrite, callOf, catalogHash, fillOf, meaningRanks, playSkipOf, reciprocalRankFusion, skillOf, stepRowsOf, writesToAccount } from './helpers'
 import { GOLDEN_FILE, ROUTER_INDEX_NAME, ROUTER_MEANING_FILE, TOOL_GOLDEN_FILE, TOOL_TEXT_BUDGET } from './types'
 import type { CatalogKind, GoldenPrompt, RouterGolden, RouterMeaning, RouterMeaningFixture, ToolFusion, ToolGolden } from './types'
 import { hashEmbedder } from '../../search/conversations/helpers/embed.ts'
@@ -364,5 +364,21 @@ describe('a long prompt is routed by its ask, not by every word pasted after it'
     expect(asked[119]).toBe('w119')
     expect(asked[120]).toBe('w1960')
     expect(asked.at(-1)).toBe('w1999')
+  })
+})
+
+describe('a typo-heavy prompt or one about building log names no play', () => {
+  test('playSkipOf reads typos and log building, and leaves a clean ask alone', () => {
+    expect(playSkipOf('alright so tihs ehre is soemthign thawe nede ot ocnfigure ebcuase its nto wokring')).toBe('typos')
+    expect(playSkipOf('open the pr, merge the branch and run the tests')).toBe('buildingLog')
+    expect(playSkipOf('reply to grace_ships on discord')).toBeNull()
+    expect(playSkipOf('ask linus_k')).toBeNull()
+  })
+
+  test('the prompt hook writes no play line for a skipped prompt but still records why', async () => {
+    const result = await hookAnswer({ hook_event_name: 'UserPromptSubmit', prompt: 'i am tlaking abotu thsi hree we nede ot maek teh log thign betetr adn sign in' }, async () => null, listUseCases, () => '')
+    expect(result.text).not.toContain('PLAY MATCH')
+    expect(result.text).not.toContain('MAYBE A PLAY')
+    expect(result.outcome).toBe('wordsOnly none')
   })
 })

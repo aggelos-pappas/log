@@ -332,3 +332,11 @@ export const SKILL_SUMMARY_CHARS = 60
 export const EMBED_BATCH = 64
 
 export type ToolFusion = 'lexical' | 'meaning' | 'rrf' | 'weighted'
+
+export const TYPO_HEAVY_SHARE = 0.5
+
+export const TYPO_MIN_WORDS = 4
+
+export const LOG_BUILD_STRONG: ReadonlySet<string> = new Set('repo pr prs commit commits branch merge merged worktree typecheck subagent subagents hook hooks bench benchmark spec specs plugin mcp router refactor codebase devlog ci tests'.split(' '))
+
+export const LOG_BUILD_WEAK: ReadonlySet<string> = new Set('log code build built building fix fixed bug bugs feature implement deploy release test tool tools'.split(' '))

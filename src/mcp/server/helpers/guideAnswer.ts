@@ -1,4 +1,5 @@
-import { outcomeOf, route } from "../../../useCases/router/index.ts";
+import { outcomeOf, route, useCaseVocabulary } from "../../../useCases/router/index.ts";
+import { playSkipOf } from "../../../useCases/router/helpers/index.ts";
 import type { RouteDecision } from "../../../useCases/router/index.ts";
 import { activePlay, clearActivePlay, handleOf, processPlayScope, setActivePlay } from "./activePlay.ts";
 import type { ActivePlay, PlayLoadedBy, PlayScope } from "./activePlay.ts";
@@ -28,7 +29,8 @@ export function askDecision(ask: string): RouteDecision {
 
 export function askAnswer(ask: string, scope: PlayScope = processPlayScope(), handle: unknown = null): GuideAnswer {
   const useCases = listUseCases();
-  const decision = route(ask, { useCases });
+  const skip = playSkipOf(ask, useCaseVocabulary(useCases));
+  const decision = skip ? { ...route(ask, { useCases }), play: null, menu: [] } : route(ask, { useCases });
   const routed = outcomeOf(decision);
   if (decision.play) {
     const top = decision.play;

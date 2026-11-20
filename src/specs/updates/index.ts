@@ -60,7 +60,7 @@ export const updates = {
       { kind: 'symbol', file: CHECK, name: 'consoleNotice' },
       { kind: 'symbol', file: CHECK, name: 'updateSettings' },
       { kind: 'uses', file: ANSWERS, name: 'agentNotice' },
-      { kind: 'uses', file: STORAGE_HOOK, name: 'agentNotice' },
+      { kind: 'uses', file: STORAGE_HOOK, name: 'storageAnswer' },
     ],
     'REQ-UPDATE-04': [
       { kind: 'symbol', file: APPLY, name: 'runUpdate' },

@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 56 domains, 645 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 56 domains, 648 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -162,6 +162,9 @@ The agent hooks put log-cli's state in front of the agent (Claude Code or Codex)
 - **REQ-HOOKS-30** The prompt router ranks plays, tools and skills by meaning as well as words
 - **REQ-HOOKS-28** Setup installs the hooks for each harness it finds
 - **REQ-HOOKS-31** The warm service never makes a hook wait on a walk, a git run or a second embed
+- **REQ-HOOKS-32** A typo of a common word is never pointed at a chat
+- **REQ-HOOKS-33** A typo-heavy prompt or one about building log names no play
+- **REQ-HOOKS-34** An unchanged block is said once per session
 
 ## [Inspect rule one](./inspectRuleOne.md)
 
