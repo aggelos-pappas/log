@@ -140,3 +140,15 @@ export function modelsSummary(checks: readonly (ModelCheck | ModelFetch)[]): str
   const bad = checks.filter((c) => !c.ready)
   return bad.length ? `${checks.length - bad.length}/${checks.length} on the pinned revision; not yet: ${bad.map((c) => c.key).join(', ')}` : `all ${checks.length} on the pinned revision`
 }
+
+export async function readyPinned(id: string, deps: ModelsDeps, models: readonly LocalModel[]): Promise<ModelCheck | ModelFetch | null> {
+  const model = models.find((m) => m.id === id && m.source === 'huggingFace')
+  if (!model) return null
+  const check = await checkModel(model, deps)
+  if (check.ready) return check
+  try {
+    return await fetchModel(model, deps)
+  } catch {
+    return check
+  }
+}

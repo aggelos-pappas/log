@@ -2,9 +2,10 @@ import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { copyFileSync, createReadStream, existsSync, mkdirSync, renameSync, rmSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import { LOCAL_MODELS } from '../../manifest/index'
 import type { LocalModel } from '../../manifest/index'
-import { hfCacheDir, placeOf } from '../client'
-import type { HashKind, ModelsDeps, StepAnswer } from '../types'
+import { hfCacheDir, placeOf, readyPinned } from '../client'
+import type { HashKind, ModelCheck, ModelFetch, ModelsDeps, StepAnswer } from '../types'
 
 const DOWNLOAD_MS = 30 * 60 * 1000
 
@@ -103,4 +104,8 @@ export function liveModelsDeps(log: (line: string) => void = () => {}): ModelsDe
     pipInstall: pipInstallOf,
     log,
   }
+}
+
+export function pinnedModelReady(id: string): Promise<ModelCheck | ModelFetch | null> {
+  return readyPinned(id, liveModelsDeps(), LOCAL_MODELS)
 }

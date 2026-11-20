@@ -2,11 +2,12 @@ import type { Tensor } from '@huggingface/transformers'
 import { DESCRIBE_PROMPT, MAX_NEW_TOKENS, REPETITION_PENALTY, VISION_DTYPE, VISION_MODEL } from '../types'
 import type { Describer } from '../types'
 import { revisionOf } from '../../../models/manifest/index'
-import { hfCacheDir } from '../../../models/store/client'
+import { hfCacheDir, pinnedModelReady } from '../../../models/store/index'
 
 export async function loadDescriber(model = VISION_MODEL): Promise<Describer> {
   const { AutoModelForImageTextToText, AutoProcessor, env, RawImage } = await import('@huggingface/transformers')
   env.cacheDir = hfCacheDir()
+  await pinnedModelReady(model)
   const revision = revisionOf(model)
   const processor = await AutoProcessor.from_pretrained(model, { revision })
   const vision = await AutoModelForImageTextToText.from_pretrained(model, { dtype: VISION_DTYPE, device: 'cpu', revision })

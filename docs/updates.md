@@ -102,7 +102,7 @@ The pinned models today:
 | `onnx-community/LFM2.5-VL-450M-ONNX` | `24e63007ff1aaafbde27c89eb01a0513f4f61482` | 368 MB (q4 ONNX + processor) | the media describer (transformers.js, `revision`) |
 | `myuri` | `5.0.0` | a pip package | every browser session in `LOG_PYTHON` (`python/human`) |
 
-Where the files live: the judge in `~/.logCli/models/wolfDefenderSmall` (`LOG_JUDGE_MODEL` moves it), the transformers.js models in `~/.logCli/models/hf/<id>/<revision>/` (outside the package, so an update keeps them and a new pin lands beside the old). `log models --fetch` moves a matching copy from transformers.js's old cache inside `node_modules` instead of downloading it again. `HF_ENDPOINT` points the downloads at a mirror; `LOG_MODELS=off` makes the after-install routine skip models (`log models --fetch` gets them later).
+Where the files live: the judge in `~/.logCli/models/wolfDefenderSmall` (`LOG_JUDGE_MODEL` moves it), the transformers.js models in `~/.logCli/models/hf/<id>/<revision>/` (outside the package, so an update keeps them and a new pin lands beside the old). `log models --fetch`, and each loader before its first load, moves a matching copy from transformers.js's old cache inside `node_modules` instead of downloading it again. `HF_ENDPOINT` points the downloads at a mirror; `LOG_MODELS=off` makes the after-install routine skip models (`log models --fetch` gets them later).
 
 To move a model to a new revision: change its `revision`, files, sizes and hashes in `src/models/manifest` (read them from `https://huggingface.co/api/models/<id>/revision/<sha>?blobs=true`), keep `MODEL_REVISION` in `python/judge/server.py` equal for the judge, run its tests, and the next release's `Models:` line and README row say `changed`.
 

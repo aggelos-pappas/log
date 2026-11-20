@@ -36,6 +36,7 @@ describe('the models manifest', () => {
       const text = read(rel)
       expect(text).toContain('revisionOf(model)')
       expect(text).toContain('env.cacheDir = hfCacheDir()')
+      expect(text).toContain('await pinnedModelReady(model)')
     }
   })
 

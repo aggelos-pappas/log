@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
-import { checkModels, fetchModels, modelLine, modelsSummary, placeOf, hfCacheDir, judgeModelDir } from './index'
+import { checkModels, fetchModels, modelLine, modelsSummary, placeOf, hfCacheDir, judgeModelDir, readyPinned } from './index'
 import type { HashKind, ModelsDeps } from './index'
 import type { LocalModel } from '../manifest/index'
 
@@ -139,6 +139,16 @@ describe('local models', () => {
   test('the summary names the models not on their pin', async () => {
     const checks = await checkModels([HF, PIP], fake({ pip: '5.0.0' }).deps)
     expect(modelsSummary(checks)).toBe('1/2 on the pinned revision; not yet: embed')
+  })
+
+  test('a loader makes its pinned model ready first: kept when it matches, moved from the old cache, never for an unpinned id', async () => {
+    const ready = fake({ files: { [join(place, 'onnx/model.onnx')]: WEIGHTS.text, [join(place, 'config.json')]: CONFIG.text } })
+    expect((await readyPinned(HF.id, ready.deps, [HF]))?.status).toBe('ready')
+    expect(ready.calls).toEqual([])
+    const old = fake({ legacy: ['/old'], files: { [join('/old', 'onnx/model.onnx')]: WEIGHTS.text, [join('/old', 'config.json')]: CONFIG.text } })
+    const moved = await readyPinned(HF.id, old.deps, [HF])
+    expect(moved && 'action' in moved ? moved.action : null).toBe('adopted')
+    expect(await readyPinned('someOther/model', fake().deps, [HF])).toBeNull()
   })
 
   test('models live under log home: the judge in its own folder, transformers.js models by revision', () => {
