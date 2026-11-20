@@ -74,10 +74,6 @@ export function isAppTool(name: string): name is AppToolName {
   return (APP_TOOLS as readonly string[]).includes(name);
 }
 
-export function withBrowserViewUi<T extends { name: string; _meta?: Record<string, unknown> }>(tool: T): T {
-  if (tool.name !== BROWSER_VIEW_TOOL && tool.name !== SIGN_IN_TOOL) return tool;
-  return { ...tool, _meta: { ...(tool._meta ?? {}), ...appToolMeta(BROWSER_VIEW_URI, { invoking: "Opening the live browser", invoked: "Live browser" }) } };
-}
 
 function refusal(code: string, message: string): CallToolResult {
   return { isError: true, content: [{ type: "text", text: `${code}: ${message}` }], structuredContent: { error: code, message } };

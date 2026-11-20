@@ -5,9 +5,10 @@ import { z } from "zod";
 import { rulesLine } from "../../server/helpers/agentRules.ts";
 import { guideLine } from "../../server/helpers/guides.ts";
 import { MCP_APP_MIME_TYPE } from "../browserView/types.ts";
+import { appResourceMeta, appToolMeta } from "../meta.ts";
 import { checkReport, hermesViewNote, readReportSource, REPORT_DEPS, ReportSourceRefusal, reportDataSource, reportText, saveHermesView, sourceBlocks, sourceStarter } from "./helpers/index.ts";
 import type { ReportDataSource, ReportDeps } from "./helpers/index.ts";
-import { REPORT_GUIDE, REPORT_LIMITS as L, REPORT_REFUSALS, REPORT_TOOL, REPORT_URI } from "./types.ts";
+import { REPORT_GUIDE, REPORT_LIMITS as L, REPORT_REFUSALS, REPORT_TOOL, REPORT_URI, REPORT_VIEW_META_KEY } from "./types.ts";
 
 export interface ReportToolDefinition {
   name: typeof REPORT_TOOL;
@@ -44,7 +45,7 @@ export const reportInput = z.strictObject({
   blocks: z.array(z.record(z.string(), z.unknown())).min(1).max(L.blocks).optional().describe("The older block list (heading, text, stat, barChart, lineChart, table, personList, callout)"),
 });
 
-const reportOutput = z.object({ title: z.string(), subtitle: z.string().optional(), compiled: z.string(), data: z.record(z.string(), z.unknown()), hermesView: z.string().optional() });
+const reportOutput = z.object({ title: z.string(), subtitle: z.string().optional(), shown: z.boolean().optional(), rows: z.record(z.string(), z.number()).optional(), compiled: z.string().optional(), data: z.record(z.string(), z.unknown()).optional(), hermesView: z.string().optional() });
 
 const schemas: Partial<Record<"input" | "output", ObjectSchema>> = {};
 const jsonSchema = (schema: z.ZodType, io: "input" | "output"): ObjectSchema => {
@@ -84,9 +85,6 @@ export function reportTool(): ReportToolDefinition {
   };
 }
 
-export function withReportUi(tool: ReportToolDefinition): ReportToolDefinition {
-  return { ...tool, _meta: { ...(tool._meta ?? {}), ui: { resourceUri: REPORT_URI } } };
-}
 
 
 const refused = (code: string, issues: string[]): CallToolResult => ({ isError: true, content: [{ type: "text", text: `${code}: The view can't be drawn (getGuide({ topic: "ui" })). Fix: ${issues.join("; ")}` }] });
@@ -143,7 +141,7 @@ export async function runReport(input: unknown, ui: boolean, given: Partial<Repo
   const compiled = view.compileView(source);
   if (!compiled.ok) return refused("reportFieldInvalid", [`code: ${compiled.error}`]);
   const payload = { ...head, compiled: compiled.compiled, data };
-  if (ui) return { content: [{ type: "text", text: `The view "${spec.title}" is shown to the person. It already carries the data, so reply with what it means in a sentence or two, not the numbers again.` }], structuredContent: payload };
+  if (ui) return { content: [{ type: "text", text: `The view "${spec.title}" is shown to the person. It already carries the data, so reply with what it means in a sentence or two, not the numbers again.` }], structuredContent: { ...head, shown: true, rows: rowCounts(data) }, _meta: { [REPORT_VIEW_META_KEY]: payload } };
   let text: string;
   if (blocksText && !spec.code) text = blocksText;
   else if (reads[0] && !spec.code) text = reportText({ ...head, blocks: sourceBlocks(reads[0].source, reads[0].read) });
@@ -158,13 +156,19 @@ export async function runReport(input: unknown, ui: boolean, given: Partial<Repo
   return { content: [{ type: "text", text: drawn ? `${text}\n\n${hermesViewNote(drawn)}` : text }], structuredContent: drawn ? { ...payload, hermesView: drawn } : payload };
 }
 
+export const REPORT_RESOURCE_DESCRIPTION = "A view the agent built for the question: stats, charts, tables and people, drawn from log's data";
+
+function rowCounts(data: Record<string, unknown>): Record<string, number> {
+  return Object.fromEntries(Object.entries(data).map(([name, value]) => [name, Array.isArray(value) ? value.length : value && typeof value === "object" ? Object.keys(value).length : 1]));
+}
+
 export function reportResource() {
-  return { uri: REPORT_URI, name: "View", description: "A view the agent built for the question: stats, charts, tables and people, drawn from log's data", mimeType: MCP_APP_MIME_TYPE };
+  return { uri: REPORT_URI, name: "View", description: REPORT_RESOURCE_DESCRIPTION, mimeType: MCP_APP_MIME_TYPE };
 }
 
 export async function readReportResource() {
   const view = await loadViewServer();
   return {
-    contents: [{ uri: REPORT_URI, mimeType: MCP_APP_MIME_TYPE, text: await view.viewHtml(), _meta: { ui: { csp: { connectDomains: [], resourceDomains: [] }, prefersBorder: false } } }],
+    contents: [{ uri: REPORT_URI, mimeType: MCP_APP_MIME_TYPE, text: await view.viewHtml(), _meta: appResourceMeta({ connectDomains: [], resourceDomains: [] }, false, REPORT_RESOURCE_DESCRIPTION) }],
   };
 }

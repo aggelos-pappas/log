@@ -1,12 +1,14 @@
+import "../../widgetKit/jitless.ts";
 import { App, applyDocumentTheme, applyHostStyleVariables } from "@modelcontextprotocol/ext-apps";
 import type { McpUiHostContext } from "@modelcontextprotocol/ext-apps";
 import { drawBlob, jpegBlob, readCast } from "./cast.ts";
 import { broadcastLink, liveClaim } from "./liveClaim.ts";
 import type { LiveClaim } from "./liveClaim.ts";
-import { ERROR_TITLES, frameModel, ICONS, MOVED_NOTE, MOVED_TITLE, mountBrowserFrame, pullFailure, SHOW_HERE, viewStatus } from "./view.ts";
+import { cardActions, ERROR_TITLES, frameModel, ICONS, MOVED_NOTE, MOVED_TITLE, mountBrowserFrame, pullFailure, SHOW_HERE, viewStatus } from "./view.ts";
 import type { FramePhase } from "./view.ts";
 import { connectVoxl, voxlSupported } from "./voxl.ts";
 import type { VoxlConnection, VoxlStream } from "./voxl.ts";
+
 
 type Phase = "browserMissing" | "viewerUnavailable" | "signInRequired" | "needsAttention" | "busy" | "ready";
 interface View {
@@ -115,7 +117,7 @@ function render(): void {
     canGoBack: false,
     canInteract: Boolean(view?.canInteract),
     hasControl: state.hasControl,
-    actions: view?.ownerDriven || state.closed ? [{ id: "close", label: state.closed ? "Browser closed" : "Close browser", icon: "check", primary: true, disabled: state.pending || state.closed }] : [{ id: "done", label: state.finished ? "Agent told" : "Done, carry on", icon: "check", primary: true, disabled: !view || state.pending || state.finished }],
+    actions: cardActions({ hasView: Boolean(view), running: Boolean(view) && view?.phase !== "browserMissing" && view?.phase !== "viewerUnavailable", ownerDriven: view?.ownerDriven === true, closed: state.closed, finished: state.finished, pending: state.pending }),
     mode: state.mode,
   }));
   root.dataset.source = state.source ?? "";

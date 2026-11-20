@@ -37,9 +37,10 @@ import type { LogToolInput, ProgressLine, ResultIdentity, ToolResult } from "./t
 import { RESULT_SIZE_META } from "./types.ts";
 import { readConsoleEvents } from "../../observability/console/index.ts";
 import { viewerState } from "../../browser/viewer/index.ts";
-import { accountOfArgs, appTools, BROWSER_VIEW_TOOL, BROWSER_VIEW_URI, browserViewResource, httpLocation, isAppTool, MCP_APP_MIME_TYPE, readBrowserViewResource, runAppTool, settleLocation, UI_EXTENSION_ID, uiCapable, withBrowserView, withBrowserViewUi } from "../apps/browserView/index.ts";
+import { accountOfArgs, appTools, BROWSER_VIEW_TOOL, httpLocation, isAppTool, MCP_APP_MIME_TYPE, runAppTool, settleLocation, UI_EXTENSION_ID, uiCapable, withBrowserView } from "../apps/browserView/index.ts";
 import { browserViewLocation } from "../../cli/browser/index.ts";
-import { hermesClient, readReportResource, REPORT_TOOL, REPORT_URI, reportResource, reportTool, runReport, withReportUi } from "../apps/report/index.ts";
+import { CARDS, cardResources, readCard, withCard } from "../apps/cards.ts";
+import { hermesClient, REPORT_TOOL, reportTool, runReport } from "../apps/report/index.ts";
 import { deferredElicitation, isSignInCall, localSignInSurface, SIGN_IN_INPUT_KEY, signInCall } from "../apps/signIn/index.ts";
 import { answeredAction, argumentsDigest, dualEraTransport, hostAllowed, isModernHttp, statelessHttp, urlInputRequired } from "../stateless/index.ts";
 import type { StatelessHandlers } from "../stateless/index.ts";
@@ -371,19 +372,18 @@ export function createLogMcpServer(context: Partial<CommandContext> = {}, option
     const capable = uiCapable(server.getClientCapabilities());
     const sized = listed.map((tool) => ({ ...tool, _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }));
     const report = { ...reportTool(), _meta: { ...RESULT_SIZE_META } as Record<string, unknown> };
-    return { tools: [...sized.map(withBrowserViewUi), capable ? withReportUi(report) : report, ...appTools().map((tool) => ({ ...tool, _meta: { ...tool._meta, ...RESULT_SIZE_META } }))] };
+    return { tools: [...sized.map((tool) => withCard(tool, capable)), withCard(report, capable), ...appTools().map((tool) => ({ ...tool, _meta: { ...tool._meta, ...RESULT_SIZE_META } }))] };
   });
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
     resources: [
       { uri: AGENTS_URI, name: "AGENTS.md", description: "The owner's rules for log-cli, every one numbered and dated, the newest at the bottom. Every tool's description cites the ones it falls under.", mimeType: "text/markdown" },
-      browserViewResource(),
-      ...(uiCapable(server.getClientCapabilities()) ? [reportResource()] : []),
+      ...cardResources(uiCapable(server.getClientCapabilities())),
     ],
   }));
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    if (request.params.uri === BROWSER_VIEW_URI) return readBrowserViewResource();
-    if (request.params.uri === REPORT_URI) return readReportResource();
-    if (request.params.uri !== AGENTS_URI) throw new Error(`No resource ${request.params.uri} (the resources are ${AGENTS_URI}, ${BROWSER_VIEW_URI} and ${REPORT_URI})`);
+    const card = await readCard(request.params.uri);
+    if (card) return card;
+    if (request.params.uri !== AGENTS_URI) throw new Error(`No resource ${request.params.uri} (the resources are ${[AGENTS_URI, ...CARDS.map((each) => each.uri)].join(", ")})`);
     return { contents: [{ uri: AGENTS_URI, mimeType: "text/markdown", text: readFileSync(AGENTS_MD, "utf8") }] };
   });
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
@@ -429,8 +429,8 @@ export interface StatelessLogOptions extends LogMcpOptions {
 export function statelessTools(): Record<string, unknown>[] {
   const commands = [...toolsFromCommands(COMMANDS, { shell: false }), ...toolsFromFlows(savedFlows(), { shell: false })];
   const listed = [guideTool(), ...catalogTools(), ...withUseCases(commands, listUseCases(commands.map((t) => t.name)))];
-  const sized = listed.map((tool) => withBrowserViewUi({ ...tool, _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }));
-  return [...sized, withReportUi({ ...reportTool(), _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }), ...appTools().map((tool) => ({ ...tool, _meta: { ...tool._meta, ...RESULT_SIZE_META } }))] as unknown as Record<string, unknown>[];
+  const sized = listed.map((tool) => withCard({ ...tool, _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }));
+  return [...sized, withCard({ ...reportTool(), _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }), ...appTools().map((tool) => ({ ...tool, _meta: { ...tool._meta, ...RESULT_SIZE_META } }))] as unknown as Record<string, unknown>[];
 }
 
 export function statelessLogHandlers(context: Partial<CommandContext> = {}, options: StatelessLogOptions = {}): StatelessHandlers {
@@ -446,10 +446,10 @@ export function statelessLogHandlers(context: Partial<CommandContext> = {}, opti
     instructions: SERVER_INSTRUCTIONS,
     capabilities: { tools: {}, resources: {}, extensions: { [UI_EXTENSION_ID]: { mimeTypes: [MCP_APP_MIME_TYPE] } } },
     listTools: async () => statelessTools(),
-    listResources: async () => [{ uri: AGENTS_URI, name: "AGENTS.md", description: "The owner's rules for log-cli, every one numbered and dated, the newest at the bottom. Every tool's description cites the ones it falls under.", mimeType: "text/markdown" }, browserViewResource(), reportResource()],
+    listResources: async () => [{ uri: AGENTS_URI, name: "AGENTS.md", description: "The owner's rules for log-cli, every one numbered and dated, the newest at the bottom. Every tool's description cites the ones it falls under.", mimeType: "text/markdown" }, ...cardResources(true)],
     readResource: async (uri) => {
-      if (uri === BROWSER_VIEW_URI) return (await readBrowserViewResource()) as unknown as Record<string, unknown>;
-      if (uri === REPORT_URI) return (await readReportResource()) as unknown as Record<string, unknown>;
+      const card = await readCard(uri);
+      if (card) return card as unknown as Record<string, unknown>;
       if (uri !== AGENTS_URI) return null;
       return { contents: [{ uri: AGENTS_URI, mimeType: "text/markdown", text: readFileSync(AGENTS_MD, "utf8") }] };
     },

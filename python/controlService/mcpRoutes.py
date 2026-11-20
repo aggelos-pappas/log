@@ -27,6 +27,7 @@ BROWSER_VIEW_URI = "ui://log/browserView"
 SIGN_IN_TOOL = "sessionsSignIn"
 SIGN_IN_INPUT_KEY = "signIn"
 PENDING_FIELD = "inputRequired"
+VIEW_META_KEY = "log/view"
 SIGN_IN_SERVER_ARGUMENTS = {"urlElicitation", "elicitation"}
 
 
@@ -163,7 +164,11 @@ def mcp_router(settings: Settings, engine: Engine, dispatcher: Dispatcher) -> AP
         if name == "report" and isinstance(view.result, dict):
             spec = view.result.get("spec")
             answer = {"content": [{"type": "text", "text": str(view.result.get("text") or "")}]}
-            if isinstance(spec, dict):
+            summary = view.result.get("summary")
+            if isinstance(spec, dict) and isinstance(summary, dict):
+                answer["structuredContent"] = summary
+                answer["_meta"] = {VIEW_META_KEY: spec}
+            elif isinstance(spec, dict):
                 answer["structuredContent"] = spec
             return answer
         result = view.result
