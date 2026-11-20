@@ -32,7 +32,7 @@ describe('browser parity (rule 44)', () => {
     expect(() => browserFor({ browserDriver: 'netscape' })).toThrow(/browserDriverUnknown/)
     expect(browserFor({ browserDriver: 'adsPower', adsPowerProfileId: 'k1' })).toEqual({ driver: 'adsPower', profileId: 'k1' })
     expect(browserFor({ browserDriver: null, adsPowerProfileId: null })).toEqual({ driver: 'camoufox', profileId: null })
-    expect(browserFor({ browserDriver: null, adsPowerProfileId: 'k9' })).toEqual({ driver: 'adsPower', profileId: 'k9' })
+    expect(browserFor({ browserDriver: null, adsPowerProfileId: 'k9' }, {})).toEqual({ driver: 'camoufox', profileId: 'k9' })
     expect(browserFor({ browserDriver: 'camoufox', adsPowerProfileId: 'k9' })).toEqual({ driver: 'camoufox', profileId: 'k9' })
   })
 

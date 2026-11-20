@@ -10,14 +10,14 @@ import { vendorOfProxy } from "../../../proxyVendor/vendor/helpers/vendorOfProxy
 import { localAccountsPath, readLocalAccounts } from "../../../twenty/graphql/index.ts";
 import { ACCOUNT_STATUSES, SESSION_STATES } from "../types.ts";
 import type { AccountStatus, BrowserChoice, ConnectionAccount, ProxyProvider, SessionState } from "../types.ts";
-import { BROWSER_BRANDS, BROWSER_DRIVERS, DEFAULT_BROWSER_DRIVER, driverOrNull } from "../../../browser/driver/index.ts";
+import { BROWSER_BRANDS, BROWSER_DRIVERS, DEFAULT_BROWSER_DRIVER, DEPRECATED_BROWSER_DRIVERS, driverOrNull } from "../../../browser/driver/index.ts";
 import type { BrowserDriverName } from "../../../browser/driver/index.ts";
 
 type Env = Record<string, string | undefined>;
 
 export function browserChoices(env: Env = process.env): BrowserChoice[] {
   const fallback = driverOrNull({ browserDriver: null, adsPowerProfileId: null }, env) ?? DEFAULT_BROWSER_DRIVER;
-  return BROWSER_DRIVERS.map((name) => ({ name, label: BROWSER_BRANDS[name].label, logo: BROWSER_BRANDS[name].logo, isDefault: name === fallback }));
+  return BROWSER_DRIVERS.map((name) => ({ name, label: BROWSER_BRANDS[name].label, logo: BROWSER_BRANDS[name].logo, isDefault: name === fallback, deprecated: DEPRECATED_BROWSER_DRIVERS.includes(name) }));
 }
 
 export function connectionIdOf(platform: string, name: string): string {

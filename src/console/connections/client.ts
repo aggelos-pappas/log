@@ -48,6 +48,18 @@ export function setAccountBrowser(args: { accountId?: unknown; browser?: unknown
   return loadConnectionsView(env);
 }
 
+export async function moveConsoleAccount(args: { accountId?: unknown; browser?: unknown; apply?: unknown }, env: Env = process.env): Promise<{ applied: boolean; move: unknown }> {
+  if (!isBrowserDriver(args.browser) || args.browser === "adsPower") throw new Error("consoleInputInvalid");
+  const account = loadConnectionsView(env).accounts.find((item) => item.id === args.accountId);
+  if (!account) throw new Error("accountNotFound");
+  const { inProcessToolCaller } = await import("../accountCheck/index.ts");
+  const callTool = await inProcessToolCaller();
+  const apply = args.apply === true;
+  const answer = await callTool(apply ? "browserMoveLive" : "browserMove", { account: account.name, to: args.browser, json: true, ...(apply ? { apply: true, approvedBy: "the owner, from the console", confirmLive: true } : {}) });
+  const content = answer.structuredContent && typeof answer.structuredContent === "object" ? (answer.structuredContent as Record<string, unknown>) : {};
+  return { applied: apply, move: content.json ?? content };
+}
+
 export function loadConsoleConnections(options: { platform?: string; path?: string } = {}): ConsoleConnections {
   const path = options.path ?? localAccountsPath();
   const wanted = options.platform?.trim().toLowerCase();

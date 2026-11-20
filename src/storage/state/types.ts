@@ -26,6 +26,7 @@ export type StateScope =
   | 'hermesView'
   | 'handRolled'
   | 'turnStart'
+  | 'browserMove'
 
 export interface StateRow<T> {
   body: T

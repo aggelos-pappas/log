@@ -1,5 +1,5 @@
 import { inProcessToolCaller, runAccountCheck } from "../accountCheck/index.ts";
-import { loadConnectionsView, setAccountBrowser } from "../connections/index.ts";
+import { loadConnectionsView, moveConsoleAccount, setAccountBrowser } from "../connections/index.ts";
 import { readConsoleCredentials, saveConsoleCredentials } from "../credentials/index.ts";
 import { loadConsoleEvents, MAX_PAGE_SIZE } from "../events/index.ts";
 import { finishConsoleSignIn, signInConsoleAccount } from "../signIn/index.ts";
@@ -81,6 +81,7 @@ export async function runConsoleOperation(tool: string, args: Record<string, unk
   if (tool === "credentialsRead") return { values: readConsoleCredentials({ provider: args.provider }) };
   if (tool === "accountCheck") return accountCheck(args, deps);
   if (tool === "accountBrowser") return setAccountBrowser(args);
+  if (tool === "accountBrowserMove") return { ...(await moveConsoleAccount(args)), connections: loadConnectionsView() };
   if (tool === "signInLinkOpen") {
     const target = redeemSignInLink(args.token, deps.requester ?? OWNER_REQUESTER);
     const connections = loadConnectionsView();

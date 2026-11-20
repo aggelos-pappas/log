@@ -44,7 +44,7 @@ export interface AdsPowerClient {
   createProfile(body: CreateProfileBody): Promise<{ profileId: string; profileNo: string | null }>
   updateProfile(profileId: string, fields: Record<string, unknown>): Promise<void>
   deleteProfiles(profileIds: string[]): Promise<void>
-  startBrowser(profileId: string, options?: { launchArgs?: string[] }): Promise<StartedBrowser>
+  startBrowser(profileId: string, options?: { launchArgs?: string[]; headless?: boolean }): Promise<StartedBrowser>
   activeBrowser(profileId: string): Promise<StartedBrowser | null>
   stopBrowser(profileId: string): Promise<void>
   kernels(): Promise<AdsPowerKernel[]>
@@ -64,7 +64,7 @@ export interface KernelDownload {
 
 export class AdsPowerError extends Error {
   constructor(
-    readonly code: 'adsPowerUnavailable' | 'adsPowerRequestFailed' | 'adsPowerRateLimited',
+    readonly code: 'adsPowerUnavailable' | 'adsPowerRequestFailed' | 'adsPowerRateLimited' | 'adsPowerKeyMismatch' | 'adsPowerPlanLapsed',
     readonly detail: string
   ) {
     super(`${code}: ${detail}`)

@@ -64,7 +64,7 @@ describe('prepareRun: home, hours and device', () => {
   })
 
   test("the capture folder is named after the browser that runs: inspect, flow, warmup and host follow the account, the rest are Camoufox", () => {
-    const linked = { browserDriver: null, adsPowerProfileId: 'k1' }
+    const linked = { browserDriver: 'adsPower', adsPowerProfileId: 'k1' }
     expect(runBrowserOf(linked, 'inspect')).toBe('adsPower')
     expect(runBrowserOf(linked, 'host')).toBe('adsPower')
     expect(runBrowserOf(linked, 'connect')).toBe('camoufox')

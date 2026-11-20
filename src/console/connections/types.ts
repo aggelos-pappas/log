@@ -64,6 +64,7 @@ export interface BrowserChoice {
   label: string;
   logo: string;
   isDefault: boolean;
+  deprecated: boolean;
 }
 
 export interface SavedKeyField {

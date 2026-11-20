@@ -1,4 +1,4 @@
-export { loadConnectionsView, loadConsoleConnections, readConnectionRows, readConsoleAccounts, setAccountBrowser } from "./client.ts";
+export { loadConnectionsView, loadConsoleConnections, readConnectionRows, readConsoleAccounts, setAccountBrowser, moveConsoleAccount } from "./client.ts";
 export { browserChoices, connectionIdOf, credentialValue, readConnectionAccounts, readExtensionPublicValues, readExtensionStates, sessionRoots } from "./helpers/index.ts";
 export { ACCOUNT_STATUSES, CHECK_STATES, SESSION_STATES } from "./types.ts";
 export type { AccountStatus, BrowserChoice, CheckState, ConnectionAccount, ConnectionsView, ConsoleAccount, ConsoleConnections, ConsolePlatformGroup, ExtensionConnection, ExtensionState, LastCheck, SavedKeyField, SessionState, SignInKind } from "./types.ts";

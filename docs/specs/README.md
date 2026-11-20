@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 55 domains, 611 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 55 domains, 612 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -292,7 +292,7 @@ AdsPower is the account's browser. Each account holds one AdsPower profile, link
 
 - **REQ-ADSPOWER-01** Each account is linked to one profile
 - **REQ-ADSPOWER-02** A profile holds no proxy
-- **REQ-ADSPOWER-03** The account's browser is AdsPower when it has a profile
+- **REQ-ADSPOWER-03** AdsPower is deprecated: an account opens on it only when it names it
 - **REQ-ADSPOWER-04** An account without a profile is refused
 - **REQ-ADSPOWER-05** The gate runs before the proxy goes on
 - **REQ-ADSPOWER-06** The proxy goes on only to open
@@ -305,6 +305,7 @@ AdsPower is the account's browser. Each account holds one AdsPower profile, link
 - **REQ-ADSPOWER-13** Setting DEACTIVATED gives the profile back at once
 - **REQ-ADSPOWER-14** The sync releases before it creates
 - **REQ-ADSPOWER-15** Only the homes in LOG_ADSPOWER_HOMES hold a profile
+- **REQ-ADSPOWER-16** Moving an account off a browser keeps its session and is confirmed by the platform
 
 ## [Account lifecycle](./accountLifecycle.md)
 
