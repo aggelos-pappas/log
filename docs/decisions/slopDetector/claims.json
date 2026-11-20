@@ -1,0 +1,10 @@
+[
+  { "id": "C1", "statement": "log's current AI-tells check compares draft chunks with a Jina-embedded index of curated generic AI phrases by meaning." },
+  { "id": "C2", "statement": "The curated phrase lists log uses were not built from drafts written for this owner's chats." },
+  { "id": "C3", "statement": "A fine-tuned embedding classifier distinguished five frontier model families at 97.1% accuracy (arXiv 2502.12150)." },
+  { "id": "C4", "statement": "Detector false-positive rates rise as text gets shorter unless thresholds are calibrated per length (arXiv 2611.10901)." },
+  { "id": "C5", "statement": "Em dashes persist in model prose even when models are told to avoid markdown (arXiv 2603.27006)." },
+  { "id": "C6", "statement": "Perplexity-based zero-shot detectors like Binoculars need a causal language model to run." },
+  { "id": "C7", "statement": "slop-radar is a TypeScript library with buzzword and structural pattern checks." },
+  { "id": "C8", "statement": "The AI-tells reading in the voice gate took about 2.3 seconds per option at p50." }
+]

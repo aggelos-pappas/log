@@ -1,0 +1,39 @@
+[
+  {
+    "id": "D1",
+    "question": "What should detect frontier-model writing conventions in a draft of the owner's DM?",
+    "options": [
+      { "id": "A", "name": "Today's AI-phrase index", "description": "Keep src/voice/aiTells as is: vale-ai-tells rules plus the Jina-embedded index of curated AI phrases, nearest chunk against the owner's p99." },
+      { "id": "B", "name": "Rule linter", "description": "Replace the index with a rule linter like eric-tramel/slop-guard (24 rules, 200+ heuristics) or renefichtmueller/slop-radar (600+ buzzwords, 16 structural patterns, TypeScript), muted where the owner uses the rule himself." },
+      { "id": "C", "name": "Owner-baseline over-use profile", "description": "The slop-forensics/Antislop method with the owner as the human baseline: words, bigrams and trigrams that agent drafts for his chats use far more than his own messages do, plus em dash, curly quotes and markdown habits; a draft is scored by the over-used n-grams it contains. Pure code, under 1 ms." },
+      { "id": "D", "name": "Small classifier on MiniLM", "description": "The Idiosyncrasies method: a logistic head on the shipped MiniLM embedding (and character n-grams) trained on his real messages versus frontier drafts written for his chats; about 6 ms on the CPU." },
+      { "id": "E", "name": "Perplexity zero-shot", "description": "Binoculars or Fast-DetectGPT with a small local causal language model (0.5-1.5B, ONNX on the CPU)." },
+      { "id": "F", "name": "C + D + structure, length-calibrated", "description": "C and D combined with structural checks (opener repetition across the options, em dash and markdown leakage, sentence-length variance, Biber-lite features), calibrated per length band so 95% of his own messages pass in every band, abstaining on lines too short to tell; flags name the words beside how he says it; replaces the Jina index in the gate." },
+      { "id": "G", "name": "SlopTotal ensemble", "description": "Self-host pablocaeg/sloptotal: 23 detector engines with one calibrated score, on the CPU." }
+    ],
+    "criteria": [
+      { "id": "ownerPass", "question": "How reliably will the owner's own short casual messages pass (few false flags)?", "levels": ["Flags many", "Flags some", "Fair", "Rarely flags", "Almost never flags"] },
+      { "id": "catches", "question": "How well will it catch frontier-model drafts written to sound like him?", "levels": ["Misses most", "Misses many", "Fair", "Catches most", "Catches nearly all"] },
+      { "id": "explain", "question": "Can it say which words or habit gave the draft away, beside how he says it?", "levels": ["No", "Barely", "Partly", "Clearly", "Exactly"] },
+      { "id": "speed", "question": "How fast per option on this laptop's CPU, with no network?", "levels": ["Over 2 s", "0.5-2 s", "100-500 ms", "20-100 ms", "Under 20 ms"] },
+      { "id": "small", "question": "How small is what it needs on disk and in memory?", "levels": ["Several GB", "1-3 GB", "300 MB-1 GB", "Under 300 MB", "Nothing new"] },
+      { "id": "effort", "question": "How small is the build into log's voice score (TypeScript, onnxruntime, the MiniLM already shipped)?", "levels": ["Very large", "Large", "Medium", "Small", "Tiny"] }
+    ]
+  },
+  {
+    "id": "D2",
+    "question": "Where should the frontier-model side of the training data come from?",
+    "options": [
+      { "id": "A", "name": "Public AI-text corpora", "description": "Use public AI-vs-human datasets and curated AI phrase lists." },
+      { "id": "B", "name": "Drafts log already has", "description": "The agent drafts for his chats in log's run records and gate history, passed and failed." },
+      { "id": "C", "name": "Fresh drafts from several frontier models", "description": "For a few hundred of his real past moments (their message plus the chat), ask Claude, GPT, Gemini, Grok and DeepSeek to reply as him with today's grounding pack, and pair each with what he really said." },
+      { "id": "D", "name": "B plus C", "description": "Start from the drafts log already has, top up with fresh multi-model drafts on his real moments, refreshed when models change." }
+    ],
+    "criteria": [
+      { "id": "relevance", "question": "How close is it to the drafts the gate will actually see?", "levels": ["Unrelated", "Loose", "Fair", "Close", "Exact"] },
+      { "id": "coverage", "question": "How well does it cover the different frontier models and new ones?", "levels": ["One model", "Few", "Fair", "Most", "All, refreshable"] },
+      { "id": "cost", "question": "How cheap is it to make?", "levels": ["Expensive", "Costly", "Moderate", "Cheap", "Free"] },
+      { "id": "paired", "question": "Does each AI example have his real reply to the same moment beside it?", "levels": ["Never", "Rarely", "Sometimes", "Mostly", "Always"] }
+    ]
+  }
+]
