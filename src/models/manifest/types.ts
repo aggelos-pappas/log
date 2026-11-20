@@ -6,7 +6,7 @@ export const MODEL_LOADERS = ['huggingfaceHub', 'transformersJs', 'pip'] as cons
 
 export type ModelLoader = (typeof MODEL_LOADERS)[number]
 
-export const MODEL_KEYS = ['judge', 'embed', 'vision', 'mouse'] as const
+export const MODEL_KEYS = ['judge', 'embed', 'emotion', 'vision', 'mouse'] as const
 
 export type ModelKey = (typeof MODEL_KEYS)[number]
 
@@ -62,6 +62,22 @@ export const LOCAL_MODELS: readonly LocalModel[] = [
       { path: 'onnx/model_quantized.onnx', size: 22972370, sha256: 'afdb6f1a0e45b715d0bb9b11772f032c399babd23bfc31fed1c170afc848bdb1' },
     ],
     bytes: 23685047,
+  },
+  {
+    key: 'emotion',
+    id: 'SamLowe/roberta-base-go_emotions-onnx',
+    purpose: 'the top emotions of each new inbound message, a feature for who and where',
+    source: 'huggingFace',
+    loader: 'transformersJs',
+    revision: '90ee0c1c4796d370e68968687b8ba51fc11224f4',
+    process: 'the pipeline labeller in the inbox push (emotion worker)',
+    files: [
+      { path: 'config.json', size: 1924, gitSha1: 'a9d71647a2250ff0d6e4e0d790054415231b4ebe' },
+      { path: 'tokenizer.json', size: 2108856, gitSha1: 'd535bff2abebc2741089c8d653ff4254a6bccc83' },
+      { path: 'tokenizer_config.json', size: 380, gitSha1: '2dafa1f1f31d5838218326dd0abe5ec002587516' },
+      { path: 'onnx/model_quantized.onnx', size: 125397543, sha256: '0c1981c5b479674747911c8e2228f0c4ec90bf47bf66e830f7d4fc62be082958' },
+    ],
+    bytes: 127508703,
   },
   {
     key: 'vision',

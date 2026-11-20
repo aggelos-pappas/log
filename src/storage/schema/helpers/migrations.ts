@@ -113,6 +113,11 @@ export const ENGINE_STATE_TABLES: readonly string[] = [
   'CREATE TABLE IF NOT EXISTS engineState (platform TEXT NOT NULL, account TEXT NOT NULL, store TEXT NOT NULL, part TEXT NOT NULL, body TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (platform, account, store, part)) WITHOUT ROWID',
 ]
 
+export const PIPELINE_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS chatPipeline (platform TEXT NOT NULL, account TEXT NOT NULL, person TEXT NOT NULL, lastSeq INTEGER NOT NULL, who TEXT NOT NULL, stage TEXT, confidence REAL NOT NULL, margin REAL NOT NULL, movedBySeq INTEGER, movedById TEXT, source TEXT NOT NULL, model TEXT NOT NULL, scores TEXT NOT NULL, features TEXT NOT NULL, emotions TEXT, vector BLOB, labelledAt TEXT NOT NULL, PRIMARY KEY (platform, account, person)) WITHOUT ROWID',
+  'CREATE TABLE IF NOT EXISTS pipelineHeads (id INTEGER PRIMARY KEY AUTOINCREMENT, model TEXT NOT NULL, head TEXT NOT NULL, trainedAt TEXT NOT NULL)',
+]
+
 export const MIN_READER_VERSION = 1
 
 export const MIGRATIONS: readonly Migration[] = [
@@ -326,6 +331,14 @@ export const MIGRATIONS: readonly Migration[] = [
     creates: ['engineState'],
     apply(handle) {
       for (const statement of ENGINE_STATE_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 24,
+    name: 'pipeline',
+    creates: ['chatPipeline', 'pipelineHeads'],
+    apply(handle) {
+      for (const statement of PIPELINE_TABLES) handle.exec(statement)
     },
   },
 ]

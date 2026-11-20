@@ -6,7 +6,8 @@ import { heldText, judgeText, judgedMessages } from '../judge/index'
 import type { DbMessage } from '../dbRead/types'
 import { inboxContext, localTime, storedInboxContext, takeAlerts, takePending, twitterAccounts } from '../watch/index'
 import type { InboxMessage } from '../watch/types'
-import type { ChatRead, PendingRead } from './types'
+import { pipelineLine } from '../pipeline/client'
+import type { ChatRead, PendingRead, WhoLine } from './types'
 
 export const ONE_PROCESS_LINE = '>>> ONE PROCESS PER ACCOUNT, NEVER TWO (rule 105): a second watcher tried to start and was refused. Every session shares the one watcher per account through the inbox; another is never started. The owner is told now.'
 
@@ -26,6 +27,15 @@ function safeRead(read: ChatRead, m: InboxMessage): DbMessage[] {
   }
 }
 
+function safeWhoLine(platform: string, account: string, conversationId: string): string | null {
+  try {
+    const line = pipelineLine(platform, account, conversationId)
+    return line ? `  log's read of them:${line.slice(1)}` : null
+  } catch {
+    return null
+  }
+}
+
 function rowText(r: DbMessage): string {
   const judged = r.fromMe ? null : judgeText(r.text ?? '')
   if (judged?.verdict === 'held') return heldText(judged, (r.text ?? '').length)
@@ -33,7 +43,7 @@ function rowText(r: DbMessage): string {
   return text.replace(/\s+/g, ' ').slice(0, 240)
 }
 
-export function againstTheDb(messages: readonly InboxMessage[], read: ChatRead = chatMessages): { fresh: InboxMessage[]; behind: InboxMessage[]; conversations: string[] } {
+export function againstTheDb(messages: readonly InboxMessage[], read: ChatRead = chatMessages, whoLine: WhoLine = safeWhoLine): { fresh: InboxMessage[]; behind: InboxMessage[]; conversations: string[] } {
   const chats = new Map<string, InboxMessage[]>()
   for (const m of messages) chats.set(chatKeyOf(m), [...(chats.get(chatKeyOf(m)) ?? []), m])
   const fresh: InboxMessage[] = []
@@ -52,6 +62,7 @@ export function againstTheDb(messages: readonly InboxMessage[], read: ChatRead =
     conversations.push([
       `>>> THE CONVERSATION WITH ${who} NOW (${platform} ${account}, chat ${conversationId}), read from the .db as this turn starts, newest last. Answer this, not the single lines above: everything they sent since the owner last wrote is the context.`,
       ...rows.map((r) => `  ${localTime(r.at)} ${r.fromMe ? 'the owner' : r.from}: ${rowText(r)}`),
+      ...[whoLine(platform, account, conversationId)].filter((l): l is string => Boolean(l)),
     ].join('\n'))
   }
   return { fresh, behind, conversations }

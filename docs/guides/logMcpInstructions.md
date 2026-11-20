@@ -27,6 +27,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "inbox/bossMaxxing" })` | Bossmaxxing: giving out tasks to the team |
 | `getGuide({ useCase: "inbox/governorReset" })` | Resetting an account's governor count |
 | `getGuide({ useCase: "inbox/ignoreServer" })` | Ignoring a server or a chat |
+| `getGuide({ useCase: "inbox/labelQueue" })` | Teaching log who your people are |
 | `getGuide({ useCase: "inbox/quietPush" })` | Quieting the live push |
 | `getGuide({ useCase: "inbox/reaLooksmaxxing" })` | /rea-looksmaxxing: moneymaxx like a creator |
 | `getGuide({ useCase: "inbox/reactions" })` | Reacting to a message |

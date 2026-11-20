@@ -26,9 +26,21 @@ export interface LabelEntry {
   platform: string
   account: string
   person: string
-  label: Label
+  label?: Label
+  who?: string
+  where?: string | null
+  confidence?: number
+  candidates?: string[]
   by: string
   at: string
+}
+
+export interface LabelFields {
+  label?: Label
+  who?: string
+  where?: string | null
+  confidence?: number
+  candidates?: string[]
 }
 
 export interface LabelList {
@@ -42,6 +54,11 @@ export interface Labelled {
   person: string
   conversationIds: string[]
   label: Label
+  who: string | null
+  where: string | null
+  confidence: number | null
+  labelledBy: string
+  emotions: { label: string; score: number }[] | null
   set: boolean
   why: string
   lastAt: string
@@ -53,4 +70,16 @@ export interface LabelQuery {
   platform?: string
   account?: string
   label?: Label
+  who?: string
+  where?: string
+}
+
+export const OLD_LABEL_FIELDS: Readonly<Record<Label, { who: string | null; where: string | null }>> = {
+  warming: { who: 'lead', where: 'warming' },
+  readyToAsk: { who: 'lead', where: 'warming' },
+  askedWaiting: { who: 'lead', where: 'offered' },
+  friend: { who: 'friend', where: null },
+  client: { who: 'client', where: null },
+  cold: { who: null, where: 'goneQuiet' },
+  skip: { who: null, where: null },
 }

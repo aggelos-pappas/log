@@ -5,6 +5,7 @@ import { LOCAL_MODELS, MODEL_KEYS, modelByKey, pipSpecs, revisionOf } from './in
 import { MODEL_NAME } from '../../inbox/judgeModel/types'
 import { EMBED_MODEL } from '../../search/conversations/types'
 import { VISION_MODEL } from '../../media/describer/types'
+import { EMOTION_MODEL } from '../../inbox/pipeline/types'
 import { PYTHON_VENDORS } from '../../release/postInstall/index'
 
 const root = join(import.meta.dir, '..', '..', '..')
@@ -27,12 +28,13 @@ describe('the models manifest', () => {
     expect(modelByKey('judge').id).toBe(MODEL_NAME)
     expect(modelByKey('embed').id).toBe(EMBED_MODEL)
     expect(modelByKey('vision').id).toBe(VISION_MODEL)
+    expect(modelByKey('emotion').id).toBe(EMOTION_MODEL)
     expect(revisionOf(EMBED_MODEL)).toBe(modelByKey('embed').revision)
     expect(revisionOf('someOther/model')).toBe('main')
   })
 
   test('the transformers.js loaders pass the pinned revision and keep models under log home', () => {
-    for (const rel of ['src/search/conversations/helpers/embedWorker.ts', 'src/media/describer/helpers/model.ts']) {
+    for (const rel of ['src/search/conversations/helpers/embedWorker.ts', 'src/media/describer/helpers/model.ts', 'src/inbox/pipeline/helpers/emotionWorker.ts']) {
       const text = read(rel)
       expect(text).toContain('revisionOf(model)')
       expect(text).toContain('env.cacheDir = hfCacheDir()')
