@@ -1,7 +1,10 @@
 import { VIEWER_ERRORS, ViewerError, viewerFrame, viewerInput, viewerState } from "../../../browser/viewer/index.ts";
 import type { ViewerErrorCode } from "../../../browser/viewer/index.ts";
+import { browserCheckStream } from "../../browserCheck/index.ts";
+import { loadConnectionsView } from "../../connections/index.ts";
+import type { ConnectionAccount } from "../../connections/index.ts";
 
-export const CONSOLE_BROWSER_PATHS = ["/api/console/browser", "/api/console/browser/frame", "/api/console/browser/input"] as const;
+export const CONSOLE_BROWSER_PATHS = ["/api/console/browser", "/api/console/browser/frame", "/api/console/browser/input", "/api/console/browserCheck/stream"] as const;
 
 const HEADERS = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 const ACCOUNT = /^[A-Za-z0-9_.@+-]{1,128}$/;
@@ -43,7 +46,26 @@ export function consoleBrowserAnswer(url: URL, request: Request): Promise<Respon
   return answer(url, request);
 }
 
+export const consoleStreamDeps: { account: (accountId: string) => ConnectionAccount | null } = {
+  account: (accountId) => loadConnectionsView().accounts.find((item) => item.id === accountId) ?? null,
+};
+
+async function streamAnswer(url: URL, request: Request): Promise<Response> {
+  if (request.method !== "GET") return Response.json({ error: "consoleMethodNotAllowed" }, { status: 405, headers: { ...HEADERS, Allow: "GET" } });
+  if (request.headers.get("x-log-console") !== "1") return refusal("consoleMethodNotAllowed", 405);
+  const accountId = url.searchParams.get("accountId") ?? "";
+  const account = /^[A-Za-z0-9_-]{1,128}$/.test(accountId) ? consoleStreamDeps.account(accountId) : null;
+  if (!account) return refusal("accountNotFound", 404);
+  try {
+    const upstream = await browserCheckStream(account, url.searchParams.get("generation"), request.signal);
+    return new Response(upstream.body, { headers: { ...HEADERS, "Content-Type": upstream.headers.get("content-type") ?? "", "X-Log-Browser-Generation": upstream.headers.get("X-Log-Browser-Generation") ?? "" } });
+  } catch (error) {
+    return failed(error);
+  }
+}
+
 async function answer(url: URL, request: Request): Promise<Response> {
+  if (url.pathname === "/api/console/browserCheck/stream") return streamAnswer(url, request);
   if (url.pathname === "/api/console/browser/input") {
     if (request.method !== "POST") return Response.json({ error: "consoleMethodNotAllowed" }, { status: 405, headers: { ...HEADERS, Allow: "POST" } });
     const body = await bodyOf(request);

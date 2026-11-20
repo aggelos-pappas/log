@@ -115,7 +115,18 @@ and the HAR count, whether the page is blocked (a checkpoint, a disabled
 account, a captcha, a video selfie, automated behaviour) and whether input is
 allowed (only the sign-in states). `GET /frame` answers one
 `page.screenshot(type="jpeg", quality=65, scale="css")` with the generation and
-revision in its headers. `src/browser/viewer` is the one TypeScript client both
+revision in its headers. `GET /stream` answers
+`multipart/x-mixed-replace; boundary=logFrame`: one JPEG part per frame of
+Playwright's page screencast (`PageCast` in the same file), started at the
+viewport's own size so a point on the picture is a point on the page. The first
+part is a screenshot so a still page has a picture at once, and the last frame
+is sent again every 2 seconds while nothing changes. Every part carries the
+generation and the frame's width and height. One screencast serves every reader
+of a viewer; it starts with the first and stops when the last disconnects, and a
+slow reader gets only the newest frame (older ones are dropped, never queued).
+When the session's page changes the stream ends with the closing boundary, and a
+screencast that fails to start answers `browserStreamUnavailable`, so the reader
+falls back to `/frame`. `src/browser/viewer` is the one TypeScript client both
 surfaces use: `viewerState`, `viewerFrame` and `viewerInput` find the account's
 inspect session, read its descriptor, check the generation, and turn the
 answers into a view with a phase (`browserMissing`, `viewerUnavailable`,
@@ -131,8 +142,15 @@ every viewer action is a recorded step with its HAR and reading. The answer is
 the page read again once the step has let go of the browser. A checkpoint or
 other blocked page is shown but takes no input: it stays a stop (rule 94).
 
-**Picture, voxl first.** voxl is the stream, chosen because screenshots are
-slow. When `LOG_VOXL_URL` names a running
+**Picture, page screencast first.** On the machine the browser runs on, the
+page screencast is the stream: measured on Camoufox headless, about 22 frames a
+second (a frame every ~45 ms), click to screen about 33 ms at the median and
+46 ms at p95 on loopback, ~13 KB a frame. Neither JPEG quality nor frame size
+moves that rate, and patching Firefox's capture limits in the binary did not
+raise it either, so ~22 fps is Camoufox's ceiling for now. Through the console
+at a full 1100x700 viewport it measured 21 parts a second.
+
+**voxl, optional.** When `LOG_VOXL_URL` names a running
 [voxl](https://github.com/tembo/voxl) server (`--read-only`) on the account's
 display, `python/browser/streamSurface.py` reports a stream in `/state`:
 `{kind: "voxl", url, page, window}`. It first puts the browser window into
@@ -150,9 +168,9 @@ are never used; Playwright still supplies the input. voxl captures X11 or Xvfb
 on Linux, DXGI on Windows (the logged-in session, not a service) and
 ScreenCaptureKit on macOS (Screen Recording permission).
 
-**Fallback, screenshots.** Only when voxl cannot run (a Camoufox account, no
-`LOG_VOXL_URL`, a URL that is neither https nor loopback, or a stream that
-fails), the console's `/api/console/browser/frame` and the MCP App's
+**Fallback, screenshots.** When neither stream runs (a hosted console, no
+`LOG_VOXL_URL` for the MCP App, a screencast that fails or ends three times
+without a frame), the console's `/api/console/browser/frame` and the MCP App's
 `browserViewFrame` read `GET /frame`, about 2 frames a second: the screenshot,
 not the network, is the limit.
 
@@ -165,9 +183,16 @@ there (see [the live browser in the chat](mcp.md#the-live-browser-in-the-chat)).
 from `consoleBrowserAnswer` (`src/console/web/helpers/browser.ts`), behind the
 same loopback, origin and fetch-site guard as every console route. On
 Connections each local account has a live browser button that opens
-`BrowserCheckDialog.tsx`; `browserCheckMachine.ts` polls the frame every 500 ms
-into a `<canvas>`, takes the revision from each frame, and sends input only
-while the view can take it. With a voxl stream the console embeds voxl's own
+`BrowserCheckDialog.tsx`. While the browser runs on this machine and has no voxl
+stream, the dialog reads `GET /api/console/browserCheck/stream?accountId=&generation=`
+(`consoleBrowserAnswer`, which needs the console's own `x-log-console` header
+and pipes the viewer's `/stream` through unchanged, never journaled) with
+`fetch()`, splits the parts (`partReader` in `browserCheckData.ts`) and draws
+the newest JPEG into the `<canvas>`; a frame that arrives while one is drawing
+replaces the waiting one. If the stream can't start or ends, `castBrowser` tries
+again up to three times and meanwhile `browserCheckMachine.ts` polls the frame
+every 500 ms as before. Clicks map onto the page by the view's width and
+height, and input is sent only while the view can take it. With a voxl stream the console embeds voxl's own
 client in an iframe under a transparent overlay that maps clicks by fraction.
 Errors are toasts. The console attaches to a browser that is already open (by
 `log inspect start` or a flow); opening, closing, provisioning a profile and

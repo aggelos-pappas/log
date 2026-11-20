@@ -2,14 +2,16 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { addressOf, eventOf, streamOf, viewerDeps, viewerFrame, viewerInput, viewerState, viewOf, voxlOrigins } from "./index.ts";
+import { addressOf, eventOf, streamOf, viewerDeps, viewerFrame, viewerInput, viewerState, viewerStream, viewOf, voxlOrigins } from "./index.ts";
 import { ViewerError } from "./types.ts";
-import { consoleBrowserAnswer } from "../../console/web/helpers/browser.ts";
+import { consoleBrowserAnswer, consoleStreamDeps } from "../../console/web/helpers/browser.ts";
+import type { ConnectionAccount } from "../../console/connections/index.ts";
 
 const GENERATION = "a".repeat(32);
 const REVISION = "b".repeat(64);
 const NEXT = "c".repeat(64);
 const TOKEN = "fixtureToken";
+const PART = "--logFrame\r\nContent-Type: image/jpeg\r\nContent-Length: 4\r\n\r\njpeg\r\n";
 
 interface Fake {
   state: { state: string; inputAllowed: boolean; blocked: boolean; busy: boolean; url: string };
@@ -26,6 +28,7 @@ function fakeViewer(fake: Fake) {
       if (request.headers.get("authorization") !== `Bearer ${TOKEN}`) return Response.json({ error: "browserAccessDenied" }, { status: 403 });
       const path = new URL(request.url).pathname;
       if (path === "/state") return Response.json(live());
+      if (path === "/stream") return new Response(new ReadableStream({ start: (controller) => controller.enqueue(new TextEncoder().encode(PART)) }), { headers: { "content-type": "multipart/x-mixed-replace; boundary=logFrame", "X-Log-Browser-Generation": GENERATION } });
       if (path === "/frame") return new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), { headers: { "content-type": "image/jpeg", "X-Log-Browser-Generation": GENERATION, "X-Log-Browser-Revision": revision() } });
       const body = (await request.json()) as Record<string, unknown>;
       if (body.generation !== GENERATION || body.revision !== revision()) return Response.json({ error: "browserStateChanged" }, { status: 409 });
@@ -123,6 +126,41 @@ describe("the viewer client against a running viewer", () => {
     fake.state = { ...fake.state, state: "loggedIn", inputAllowed: false };
     await expect(viewerInput("fixtureAccount", { generation: GENERATION, revision: NEXT, event: { type: "key", key: "Enter" } })).rejects.toThrow("browserInputStopped");
     fake.state = { ...fake.state, state: "loginForm", inputAllowed: true };
+  });
+
+  test("the stream needs the current generation and hands back the viewer's multipart body", async () => {
+    await expect(viewerStream("fixtureAccount", "d".repeat(32), AbortSignal.timeout(5000))).rejects.toThrow("browserGenerationChanged");
+    const controller = new AbortController();
+    const response = await viewerStream("fixtureAccount", GENERATION, controller.signal);
+    const reader = response.body!.getReader();
+    expect(new TextDecoder().decode((await reader.read()).value)).toBe(PART);
+    controller.abort();
+    await reader.cancel().catch(() => {});
+  });
+
+  test("the console pipes the stream through for a known account and the console's own header only", async () => {
+    const held = consoleStreamDeps.account;
+    consoleStreamDeps.account = (accountId) => (accountId === "a1" ? ({ id: "a1", name: "fixtureAccount" } as ConnectionAccount) : null);
+    try {
+      const url = (accountId: string) => new URL(`http://127.0.0.1/api/console/browserCheck/stream?accountId=${accountId}&generation=${GENERATION}`);
+      const controller = new AbortController();
+      const answer = await consoleBrowserAnswer(url("a1"), new Request(url("a1").href, { headers: { "x-log-console": "1" }, signal: controller.signal }))!;
+      expect(answer.status).toBe(200);
+      expect(answer.headers.get("content-type")).toStartWith("multipart/x-mixed-replace");
+      expect(answer.headers.get("X-Log-Browser-Generation")).toBe(GENERATION);
+      const reader = answer.body!.getReader();
+      expect(new TextDecoder().decode((await reader.read()).value)).toBe(PART);
+      controller.abort();
+      await reader.cancel().catch(() => {});
+      expect((await consoleBrowserAnswer(url("a1"), new Request(url("a1").href))!).status).toBe(405);
+      expect((await consoleBrowserAnswer(url("a2"), new Request(url("a2").href, { headers: { "x-log-console": "1" } }))!).status).toBe(404);
+      const stale = new URL(`http://127.0.0.1/api/console/browserCheck/stream?accountId=a1&generation=${"d".repeat(32)}`);
+      const refused = await consoleBrowserAnswer(stale, new Request(stale.href, { headers: { "x-log-console": "1" } }))!;
+      expect(refused.status).toBe(409);
+      expect(await refused.json()).toEqual({ error: "browserGenerationChanged" });
+    } finally {
+      consoleStreamDeps.account = held;
+    }
   });
 
   test("the local console answers the same routes, and refuses a bad account name", async () => {

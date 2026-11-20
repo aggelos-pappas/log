@@ -10,6 +10,89 @@ from typing import Any
 from browser import streamSurface
 from browser.viewerState import CODE_FIELD_SELECTOR, viewer_state
 
+BOUNDARY = "logFrame"
+CAST_QUALITY = 70
+
+
+async def screencast_start(page: Any, on_frame: Any, width: int, height: int) -> None:
+    try:
+        cast = page.screencast._impl_obj
+        channel = page._impl_obj._channel
+    except AttributeError:
+        await page.screencast.start(on_frame=on_frame, quality=CAST_QUALITY)
+        return
+    if cast._started:
+        raise RuntimeError("screencastBusy")
+    cast._started = True
+    cast._on_frame = on_frame
+    try:
+        await channel.send_return_as_dict("screencastStart", None, {"size": {"width": width, "height": height}, "quality": CAST_QUALITY, "sendFrames": True, "record": False})
+    except Exception:
+        cast._started = False
+        cast._on_frame = None
+        raise
+
+
+async def screencast_stop(page: Any) -> None:
+    await page.screencast.stop()
+
+
+class CastClient:
+    def __init__(self) -> None:
+        self.latest: dict[str, Any] | None = None
+        self.ready = asyncio.Event()
+
+    def offer(self, frame: dict[str, Any]) -> None:
+        self.latest = frame
+        self.ready.set()
+
+    def take(self) -> dict[str, Any] | None:
+        frame, self.latest = self.latest, None
+        self.ready.clear()
+        return frame
+
+
+class PageCast:
+    def __init__(self, owner: Any) -> None:
+        self.owner = owner
+        self.clients: set[CastClient] = set()
+        self.page: Any = None
+        self.lock = asyncio.Lock()
+        self.start = screencast_start
+        self.stop = screencast_stop
+
+    def frame(self, frame: dict[str, Any]) -> None:
+        if not isinstance(frame.get("data"), (bytes, bytearray)):
+            return
+        for client in list(self.clients):
+            client.offer(frame)
+
+    async def halt(self) -> None:
+        page, self.page = self.page, None
+        if page is not None:
+            try:
+                await self.stop(page)
+            except Exception:
+                pass
+
+    async def join(self, client: CastClient, width: int, height: int) -> Any:
+        async with self.lock:
+            page = self.owner.page
+            if self.page is not None and self.page is not page:
+                await self.halt()
+            if self.page is None:
+                await self.start(page, self.frame, width, height)
+                self.page = page
+            self.clients.add(client)
+            return page
+
+    async def leave(self, client: CastClient) -> None:
+        async with self.lock:
+            self.clients.discard(client)
+            if not self.clients:
+                await self.halt()
+
+
 class BrowserViewer:
     def __init__(self, owner: Any) -> None:
         self.owner = owner
@@ -18,6 +101,9 @@ class BrowserViewer:
         self.path = owner.run_dir / "browserViewer.json"
         self.server: Any = None
         self.inputRevision = 0
+        self.cast = PageCast(owner)
+        self.castPoll = 0.25
+        self.castRepeat = 2.0
 
     async def start(self) -> None:
         self.server = await asyncio.start_server(self.request, "127.0.0.1", 0, limit=65536)
@@ -28,6 +114,7 @@ class BrowserViewer:
             target.write(json.dumps(descriptor))
 
     async def close(self) -> None:
+        await self.cast.halt()
         if self.server:
             self.server.close()
             await self.server.wait_closed()
@@ -96,8 +183,45 @@ class BrowserViewer:
                 await asyncio.sleep(0.3)
         return await self.state()
 
+    def part(self, frame: dict[str, Any]) -> bytes:
+        data = bytes(frame["data"])
+        head = {"Content-Type": "image/jpeg", "Content-Length": str(len(data)), "X-Log-Browser-Generation": self.generation, "X-Log-Frame-Width": str(frame.get("viewportWidth", 0)), "X-Log-Frame-Height": str(frame.get("viewportHeight", 0))}
+        return (f"--{BOUNDARY}\r\n" + "".join(f"{key}: {value}\r\n" for key, value in head.items()) + "\r\n").encode() + data + b"\r\n"
+
+    async def stream(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, opened: list[bool]) -> None:
+        state = await asyncio.wait_for(self.state(), 5)
+        client = CastClient()
+        page = await self.cast.join(client, int(state["width"]), int(state["height"]))
+        try:
+            first = await page.screenshot(type="jpeg", quality=65, scale="css", timeout=5000)
+            head = {"Content-Type": f"multipart/x-mixed-replace; boundary={BOUNDARY}", "Cache-Control": "no-store", "Connection": "close", "X-Log-Browser-Generation": self.generation}
+            writer.write(("HTTP/1.1 200 Result\r\n" + "".join(f"{key}: {value}\r\n" for key, value in head.items()) + "\r\n").encode())
+            opened.append(True)
+            last = {"data": first, "viewportWidth": state["width"], "viewportHeight": state["height"]}
+            writer.write(self.part(last))
+            await writer.drain()
+            sent = asyncio.get_running_loop().time()
+            while not reader.at_eof() and not writer.is_closing() and self.owner.page is page and self.cast.page is page and not getattr(page, "is_closed", lambda: False)():
+                try:
+                    await asyncio.wait_for(client.ready.wait(), self.castPoll)
+                except asyncio.TimeoutError:
+                    if asyncio.get_running_loop().time() - sent < self.castRepeat:
+                        continue
+                frame = client.take() or last
+                last = frame
+                writer.write(self.part(frame))
+                await writer.drain()
+                sent = asyncio.get_running_loop().time()
+            if not writer.is_closing():
+                writer.write(f"--{BOUNDARY}--\r\n".encode())
+                await writer.drain()
+        finally:
+            await self.cast.leave(client)
+
     async def request(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         status, contentType, body, extra = 503, "application/json", b'{"error":"browserUnavailable"}', {}
+        streamed = False
+        opened: list[bool] = []
         try:
             header = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), 5)
             lines = header.decode("latin1").split("\r\n")
@@ -106,6 +230,9 @@ class BrowserViewer:
             headers = {key.lower(): value.strip() for key, value in headers.items()}
             if not secrets.compare_digest(headers.get("authorization", ""), f"Bearer {self.token}"):
                 status, body = 403, b'{"error":"browserAccessDenied"}'
+            elif method == "GET" and path == "/stream":
+                streamed = True
+                await self.stream(reader, writer, opened)
             elif method == "GET" and path in {"/state", "/frame"}:
                 state = await asyncio.wait_for(self.state(), 5)
                 if path == "/frame":
@@ -134,9 +261,16 @@ class BrowserViewer:
         except Exception:
             pass
         try:
+            if opened:
+                return
+            if streamed and status == 503:
+                body = b'{"error":"browserStreamUnavailable"}'
             responseHeaders = {"Content-Type": contentType, "Content-Length": str(len(body)), "Cache-Control": "no-store", "Connection": "close", **extra}
             writer.write((f"HTTP/1.1 {status} Result\r\n" + "".join(f"{key}: {value}\r\n" for key, value in responseHeaders.items()) + "\r\n").encode() + body)
             await writer.drain()
         finally:
             writer.close()
-            await writer.wait_closed()
+            try:
+                await writer.wait_closed()
+            except OSError:
+                pass

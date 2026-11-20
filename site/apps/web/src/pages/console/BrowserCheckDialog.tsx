@@ -6,6 +6,7 @@ import { faFacebook } from '@fortawesome/free-brands-svg-icons'
 import { toast } from '@listeningkit/ui'
 import { CONSOLE_MESSAGES, type ConsoleTarget } from './consoleClient'
 import { browserCheckMachine } from './browserCheckMachine'
+import { castBrowser } from './browserCheckData'
 import { browserKeys, type BrowserInput, type BrowserPhase } from './browserCheckTypes'
 import type { LocalConnection } from './connectionsData'
 
@@ -22,11 +23,12 @@ export function BrowserCheckDialog({ account, target, autoSignIn = false, onClos
   const queued = useRef<BrowserInput[]>([])
   const [inputVersion, setInputVersion] = useState(0)
   const [hasControl, setHasControl] = useState(false)
+  const casting = useRef(false)
   const drawFrame = useCallback(async (blob: Blob) => {
     const bitmap = await createImageBitmap(blob)
     try { const element = canvas.current; if (!element) return; const context = element.getContext('2d'); if (!context) throw new Error('browserCanvasUnavailable'); if (element.width !== bitmap.width || element.height !== bitmap.height) { element.width = bitmap.width; element.height = bitmap.height } context.drawImage(bitmap, 0, 0) } finally { bitmap.close() }
   }, [])
-  const [snapshot, send] = useMachine(browserCheckMachine, { input: { target, accountId: account.id, drawFrame, autoSignIn } })
+  const [snapshot, send] = useMachine(browserCheckMachine, { input: { target, accountId: account.id, drawFrame, autoSignIn, casting: () => casting.current } })
   const { view, hasFrame, pending, error } = snapshot.context
   const disconnected = snapshot.matches('disconnected')
   const failed = snapshot.matches('failure') || snapshot.matches('closeFailed') || disconnected
@@ -70,7 +72,15 @@ export function BrowserCheckDialog({ account, target, autoSignIn = false, onClos
   }, [inputAllowed, inputVersion, failed, view?.canInteract, send])
   useEffect(() => () => { queued.current = [] }, [])
   useEffect(() => { setHasControl(false) }, [view?.generation])
-  const size = () => stream ? { width: stream.page.width, height: stream.page.height } : { width: canvas.current?.width ?? 1, height: canvas.current?.height ?? 1 }
+  const generation = view?.generation ?? null
+  const castable = target.kind === 'local' && local && !stream && Boolean(generation)
+  useEffect(() => {
+    if (!castable || !generation) return
+    const controller = new AbortController()
+    void castBrowser(account.id, generation, controller.signal, async (blob) => { await drawFrame(blob); if (!casting.current && !controller.signal.aborted) { casting.current = true; send({ type: 'FRAME_READY' }) } }, () => { casting.current = false })
+    return () => { controller.abort(); casting.current = false }
+  }, [castable, generation, account.id, drawFrame, send])
+  const size = () => stream ? { width: stream.page.width, height: stream.page.height } : view?.width && view?.height ? { width: view.width, height: view.height } : { width: canvas.current?.width ?? 1, height: canvas.current?.height ?? 1 }
   const handlers = {
     onClick: (event: MouseEvent<HTMLElement>) => { if (!inputAllowed) return; const rect = event.currentTarget.getBoundingClientRect(); const { width, height } = size(); event.currentTarget.focus(); setHasControl(true); enqueue({ type: 'click', x: (event.clientX - rect.left) * width / rect.width, y: (event.clientY - rect.top) * height / rect.height }) },
     onPaste: (event: ClipboardEvent<HTMLElement>) => { if (!keyboardAllowed) return; setHasControl(true); event.preventDefault(); const value = event.clipboardData.getData('text'); if (value && value.length <= 2048) enqueue({ type: 'text', text: value }) },

@@ -1,4 +1,4 @@
-import { ViewerError, viewerFrame, viewerInput, viewerState } from "../../browser/viewer/index.ts";
+import { ViewerError, viewerFrame, viewerInput, viewerState, viewerStream } from "../../browser/viewer/index.ts";
 import type { ViewerView } from "../../browser/viewer/index.ts";
 import { browserViewLocation } from "../../cli/browser/index.ts";
 import { localAccountsPath, readLocalAccounts } from "../../twenty/graphql/index.ts";
@@ -30,9 +30,10 @@ function dropProof(accountId: string): void {
 }
 const GOAL = "Check the account's browser from the console and sign it in where the page asks";
 
-export const browserCheckDeps: { state: typeof viewerState; frame: typeof viewerFrame; input: typeof viewerInput; now: () => number; record: (accountId: string, state: "signedIn") => void } = {
+export const browserCheckDeps: { state: typeof viewerState; frame: typeof viewerFrame; stream: typeof viewerStream; input: typeof viewerInput; now: () => number; record: (accountId: string, state: "signedIn") => void } = {
   state: viewerState,
   frame: viewerFrame,
+  stream: viewerStream,
   input: viewerInput,
   now: () => Date.now(),
   record: (accountId, state) => recordCheck(accountId, state),
@@ -166,6 +167,10 @@ export async function closeBrowser(account: ConnectionAccount, callTool: Browser
 
 export async function browserCheckFrame(account: ConnectionAccount, generation: unknown): Promise<BrowserCheckFrame> {
   return browserCheckDeps.frame(account.name, generation);
+}
+
+export async function browserCheckStream(account: ConnectionAccount, generation: unknown, signal: AbortSignal): Promise<Response> {
+  return browserCheckDeps.stream(account.name, generation, signal);
 }
 
 export async function sendBrowserInput(account: ConnectionAccount, input: { generation?: unknown; revision?: unknown; event?: unknown }, env: Env = process.env): Promise<BrowserCheckView> {

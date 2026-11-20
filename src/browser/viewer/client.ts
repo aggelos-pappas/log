@@ -7,6 +7,7 @@ import type { ViewerDescriptor, ViewerErrorCode, ViewerEvent, ViewerFrame, Viewe
 
 export const VIEWER_FILE = 'browserViewer.json'
 export const MAX_FRAME_BYTES = 10_000_000
+export const STREAM_TYPE = 'multipart/x-mixed-replace'
 const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '[::1]']
 
 export const viewerDeps: { owner: (account: string) => CurrentInspect | null; alive: (pid: number) => boolean; fetch: (url: string, init: RequestInit) => Promise<Response> } = {
@@ -161,6 +162,22 @@ export async function viewerFrame(account: string, generation: unknown): Promise
   const data = await response.arrayBuffer()
   if (data.byteLength > MAX_FRAME_BYTES) throw new ViewerError('browserViewerUnavailable')
   return { generation: descriptor.generation, revision, mimeType: 'image/jpeg', data: Buffer.from(data).toString('base64') }
+}
+
+export async function viewerStream(account: string, generation: unknown, signal: AbortSignal): Promise<Response> {
+  const descriptor = attach(account)
+  sameGeneration(descriptor, generation)
+  let response: Response
+  try {
+    response = await viewerDeps.fetch(`http://127.0.0.1:${descriptor.port}/stream`, { method: 'GET', headers: { authorization: `Bearer ${descriptor.token}` }, redirect: 'error', signal })
+  } catch {
+    throw new ViewerError('browserViewerUnavailable')
+  }
+  if (!response.ok || !response.body || !(response.headers.get('content-type') ?? '').startsWith(STREAM_TYPE) || response.headers.get('X-Log-Browser-Generation') !== descriptor.generation) {
+    await response.body?.cancel().catch(() => {})
+    throw new ViewerError('browserViewerUnavailable')
+  }
+  return response
 }
 
 export function eventOf(value: unknown): ViewerEvent {

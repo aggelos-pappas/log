@@ -151,13 +151,14 @@ So a view written once with `show_blocks` reads the same in Hermes, ChatGPT, Cla
 
 ### J. The live browser, streamed and driven from the chat, wherever it runs
 
-`browserView` already has the parts: a voxl video stream (`python/browser/streamSurface.py`), a screenshot fallback (`browserViewFrame`, about 2 frames a second) and the person's clicks, typing, keys and scroll replayed with Playwright as recorded steps (`browserViewInput`). It has never worked from a hosted chat, and it was built as a sign-in helper. The owner's decision (20 Nov 2026): the stream is the normal picture, not screenshots, and the person drives the browser from the chat for whatever they need, wherever the browser runs.
+`browserView` already has the parts: the page screencast (`GET /stream` in `python/browser/browserViewer.py`, the default local stream: about 22 frames a second measured on Camoufox headless, a frame every ~45 ms; a binary patch matrix of the Juggler capture limits did not raise it), an optional voxl video stream (`python/browser/streamSurface.py`), a screenshot fallback (`browserViewFrame`, about 2 frames a second) and the person's clicks, typing, keys and scroll replayed with Playwright as recorded steps (`browserViewInput`). It has never worked from a hosted chat, and it was built as a sign-in helper. The owner's decision (20 Nov 2026): the stream is the normal picture, not screenshots, and the person drives the browser from the chat for whatever they need, wherever the browser runs.
 
 Where the browser runs, and how the chat reaches it:
 
 | Browser on | Calls (state, frames, input) | Picture |
 | --- | --- | --- |
-| the person's own machine, chat in Hermes or Claude Desktop | local stdio | voxl on loopback (`http://127.0.0.1:<port>`), allowed in the view's CSP |
+| the person's own machine, local web console | the console's loopback routes | the page screencast, piped through `/api/console/browserCheck/stream` (built); voxl only if set |
+| the person's own machine, chat in Hermes or Claude Desktop | local stdio | the page screencast; voxl on loopback (`http://127.0.0.1:<port>`) optional, allowed in the view's CSP |
 | the person's own machine, chat in ChatGPT or claude.ai | through `mcp.listeningkit.com` and the relay, or Secure MCP Tunnel | voxl through an https tunnel from the same machine, its origin in the CSP |
 | the person's own server or VM (Xvfb or a desktop session, AdsPower headless with its Local API, `docs/deployment.md`) | `log runtime connect` runs on that server, so the hosted server relays to it | voxl on the server's display, published over https (its own tunnel or reverse proxy) |
 
@@ -165,7 +166,7 @@ Changes:
 
 1. **Streaming on by default.** `log` starts voxl `--read-only` beside each open account browser on its display, sets `LOG_VOXL_URL` itself, and publishes it over https when the chat isn't on the same machine. The URL (with voxl's read-only password) reaches only the view, never the model (as now).
 2. **Streaming locally too.** The "use your own window" refusal (`browserViewLocal`) goes: a chat on the same machine streams as well, so a Hermes or Claude Desktop chat shows the browser inline.
-3. **Camoufox streams too.** voxl needs the page to fill the display so a point on the video is a point on the page. Chromium does it over CDP; Camoufox (Firefox, no CDP) gets it by launching kiosk/fullscreen at the display's size and checking the viewport against the display before the stream is offered. The screenshot path stays only as the fallback when voxl can't run.
+3. **Camoufox streams too.** The page screencast already does, at about 22 fps, with no window arrangement (built for the local console). For voxl: it needs the page to fill the display so a point on the video is a point on the page. Chromium does it over CDP; Camoufox (Firefox, no CDP) gets it by launching kiosk/fullscreen at the display's size and checking the viewport against the display before the stream is offered. The screenshot path stays only as the fallback when voxl can't run.
 4. **The person drives, not just signs in.** `browserViewInput` takes input on any page while the person holds control (a "Take control" / "Hand back" toggle in the view), still as recorded steps with their HAR. While the person holds control no flow or agent step runs in that browser (`browserBusy` the other way round). A checkpoint or blocked page is something only the person may act on: the agent still stops there (rule 94), and the person can clear it from the chat.
 5. **The server or VM setup is one command.** On a server with AdsPower: `log runtime pair` once, then the supervisor keeps the account hosts, voxl and `runtime connect` running together, and the chat sees that server's browsers the same way as local ones.
 6. **Proof.** The replica-host bench (Verification) loads the view with a stream and with frames, sends a click and a typed line, and checks they reached the page; a manual run in ChatGPT, claude.ai and Hermes per release.
