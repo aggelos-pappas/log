@@ -2,6 +2,8 @@ import { join } from "node:path";
 import { browserViewJson } from "../../src/cli/browser/index.ts";
 import { viewerState } from "../../src/browser/viewer/index.ts";
 import { browserViewCsp, readBrowserViewResource, runAppTool } from "../../src/mcp/apps/browserView/index.ts";
+import { runReport } from "../../src/mcp/apps/report/index.ts";
+import { openDatabase } from "../../src/storage/schema/index.ts";
 
 const root = join(import.meta.dir, "..", "..");
 const account = process.env.BENCH_ACCOUNT ?? "benchAccount";
@@ -53,19 +55,31 @@ default:window.__host.unknown.push(msg.method);if(msg.id!==undefined)fail(msg.id
 </script></body></html>`;
 }
 
-function hermesPage(theme: "light" | "dark", mode: string): string {
-  const variables = Object.entries(HERMES_VARIABLES[theme]).map(([key, value]) => `${key}:${value}`).join(";");
+function hermesPage(theme: "light" | "dark", mode: string, script: string, app: Record<string, string>): string {
+  const css = (name: "light" | "dark") => Object.entries(HERMES_VARIABLES[name]).map(([key, value]) => `${key}:${value}`).join(";");
   const background = theme === "dark" ? "#0d1117" : "#f6f8fa";
-  return `<!doctype html><html class="${theme === "dark" ? "dark" : ""}"><head><meta charset="utf-8"><title>replica Hermes transcript</title><style>:root{${variables};color-scheme:${theme}}body{margin:0;padding:24px;background:${background};color:var(--ui-text-primary);font-family:system-ui}#root{width:900px}</style></head><body><div id="root"></div><script>window.__benchAccount=${JSON.stringify(account)};window.__benchMode=${JSON.stringify(mode)};</script><script type="module" src="/hermes.js"></script></body></html>`;
+  return `<!doctype html><html class="${theme === "dark" ? "dark" : ""}"><head><meta charset="utf-8"><title>replica Hermes transcript</title><style>:root{${css("light")};color-scheme:light}:root.dark{${css("dark")};color-scheme:dark}body{margin:0;padding:24px;background:${background};color:var(--ui-text-primary);font-family:system-ui}#root{width:900px}</style></head><body><div id="root"></div><script>window.__benchAccount=${JSON.stringify(account)};window.__benchMode=${JSON.stringify(mode)};window.__benchApp=${JSON.stringify(app)};</script><script type="module" src="${script}"></script></body></html>`;
 }
 
-let hermesBundle: Promise<string> | null = null;
-function hermesScript(): Promise<string> {
-  hermesBundle ??= Bun.build({ entrypoints: [join(root, "scripts", "browserView", "benchHermes.tsx")], target: "browser", format: "esm", minify: true, define: { "process.env.NODE_ENV": '"production"' } }).then(async (output) => {
-    if (!output.success || !output.outputs[0]) throw new Error(output.logs.map((log) => log.message).join("; "));
-    return output.outputs[0].text();
-  });
-  return hermesBundle;
+const bundles = new Map<string, Promise<string>>();
+function benchScript(entry: string): Promise<string> {
+  let built = bundles.get(entry);
+  if (!built) {
+    built = Bun.build({ entrypoints: [join(root, "scripts", "browserView", entry)], target: "browser", format: "esm", minify: true, define: { "process.env.NODE_ENV": '"production"' } }).then(async (output) => {
+      if (!output.success || !output.outputs[0]) throw new Error(output.logs.map((log) => log.message).join("; "));
+      return output.outputs[0].text();
+    });
+    bundles.set(entry, built);
+  }
+  return built;
+}
+
+const REPORT_SPEC = { title: "Who messaged the bench account", subtitle: "Fake data", blocks: [{ type: "stat", items: [{ label: "Messages in", value: 120 }, { label: "People", value: 3 }] }, { type: "barChart", title: "Messages by person", unit: "msgs", data: [{ label: "linus_k", value: 64 }, { label: "grace_ships", value: 41 }, { label: "Fake Three", value: 15 }] }] };
+let reportView: Promise<string | null> | null = null;
+function benchReportView(): Promise<string | null> {
+  const db = process.env.LOG_DB;
+  reportView ??= db ? runReport(REPORT_SPEC, false, {}, { hermes: true, db: openDatabase(db) }).then((result) => ((result.structuredContent ?? {}) as { hermesView?: string }).hermesView ?? null) : Promise.resolve(null);
+  return reportView;
 }
 
 const server = Bun.serve({
@@ -77,8 +91,12 @@ const server = Bun.serve({
     const theme = url.searchParams.get("theme") === "dark" ? "dark" : "light";
     const mode = url.searchParams.get("mode") === "pull" ? "pull" : "cast";
     if (url.pathname === "/host") return new Response(hostPage(theme, mode), { headers: { "content-type": "text/html" } });
-    if (url.pathname === "/hermes") return new Response(hermesPage(theme, mode), { headers: { "content-type": "text/html" } });
-    if (url.pathname === "/hermes.js") return new Response(await hermesScript(), { headers: { "content-type": "text/javascript" } });
+    if (url.pathname === "/logapp.js") return new Response(await benchScript("benchApp.tsx"), { headers: { "content-type": "text/javascript" } });
+    if (url.pathname === "/logapp") {
+      const tool = url.searchParams.get("tool") === "report" ? "report" : "browserView";
+      const app = tool === "report" ? { tool, view: (await benchReportView()) ?? "" } : { tool, args: JSON.stringify({ account }) };
+      return new Response(hermesPage(theme, mode, "/logapp.js", app), { headers: { "content-type": "text/html" } });
+    }
     if (url.pathname === "/widget") {
       const read = await readBrowserViewResource();
       return Response.json({ html: read.contents[0].text, csp: cspOf(browserViewCsp(process.env, "local").connectDomains), meta: read.contents[0]._meta });
@@ -90,8 +108,6 @@ const server = Bun.serve({
       return Response.json(await runAppTool(body.name as never, body.arguments ?? {}, true, "local"));
     }
     if (url.pathname.startsWith("/api/plugins/log/")) {
-      if (url.searchParams.get("benchMode") === "pull" && url.pathname.endsWith("/ticket")) return Response.json({ error: "browserStreamUnavailable" }, { status: 503 });
-      url.searchParams.delete("benchMode");
       const target = `${pluginApi}${url.pathname}${url.search}`;
       const forwarded = await fetch(target, { method: request.method, headers: { "content-type": "application/json" }, body: request.method === "POST" ? await request.text() : undefined });
       return new Response(await forwarded.text(), { status: forwarded.status, headers: { "content-type": "application/json" } });

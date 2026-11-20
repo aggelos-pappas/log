@@ -237,21 +237,24 @@ flowchart LR
     H["One session per account<br/>like the platform's own app"]
     W["One live watcher per account<br/>holds the platform's push channel"]
     DB[("log.db<br/>every event, once")]
-    V["Derived tables<br/>messages, people, media text,<br/>transcripts, search"]
+    V["Worked out from the events<br/>chats, messages, people, search,<br/>with media text and transcripts beside them"]
+    J["The judge<br/>reads what other people wrote"]
+    K["Hooks and the push loop<br/>put new messages in front of the agent"]
     P["logMcp<br/>reload proxy"]
     M["log MCP server"]
-    K["Hooks<br/>put new messages in front of the agent"]
+    G["Play gate, voice gate<br/>and the chat claim"]
   end
   subgraph agents["Your agent"]
     C["Claude Code, Codex, Cursor,<br/>Hermes, OpenCode, ChatGPT..."]
   end
   X & D & S & I -- "push: new message, reaction, media" --> W
-  W -- "append once" --> DB
+  W -- "append once, by its id" --> DB
+  W -- "after a gap, catch up through the session" --> H
   DB --> V
+  DB -- "new since this session last looked" --> J --> K --> C
   C -- "tool call" --> P --> M
   M -- "reads in about 1 ms" --> V
-  M -- "send, react, voice note" --> H --> X & D & S & I
-  V --> K --> C
+  M -- "send, react, voice note" --> G --> H --> X & D & S & I
 ```
 
 In plain words:
@@ -259,29 +262,35 @@ In plain words:
 2. **One watcher per account.** It holds the platform's own push channel (X Chat's socket, Discord's gateway, Slack's socket, Instagram's realtime connection). Everything that arrives is written to `log.db` once, as an event.
 3. **Everything else is worked out from those events.** That covers the chats, who said what, what a picture or video shows, what a voice note said, and the search index. The chats and messages can be rebuilt from the events at any time.
 4. **Your agent asks the database, not the platform.** A tool call reads the database. The platform is only called to send something, or to catch up after a gap.
-5. **Hooks push new things to your agent.** When someone writes, the agent sees it in its context straight away, without asking.
+5. **Hooks push new things to your agent.** When someone writes, the judge reads it first, and then the agent sees it in its context straight away, without asking.
+6. **Every send passes the gates.** The play gate, the voice gate and the chat claim come before anything goes out through the account's session.
 
 ### How your agent connects, and why you never restart it
 
 ```mermaid
 sequenceDiagram
-  participant C as Claude Code
+  participant C as Your agent, e.g. Claude Code
   participant P as logMcp, the reload proxy
   participant A as log server, old code
   participant B as log server, new code
   C->>P: initialize, then tool calls over stdio
   P->>A: passes every call through
   Note over P: log's code changes on disk
-  P->>P: waits until no call or job is running
+  P->>P: waits until no call is in flight, holding new calls
   P->>B: starts the new server and replays initialize
-  B-->>P: ready
-  P->>A: stops the old server
+  B-->>P: ready within 30 s
+  alt the old server is running a job
+    Note over A: keeps running it to its end, then stops
+  else nothing is running
+    P->>A: stops the old server
+  end
   P-->>C: tools/list_changed
   C->>P: next tool call
   P->>B: runs on the new code
+  Note over P,B: no answer in 30 s and the new server is stopped, the old code keeps serving
 ```
 
-Claude Code starts `logMcp` once. `logMcp` is a small proxy that never exits, and it runs the real server as a child process. When log's code changes, it waits until nothing is running, starts the new code, and swaps it in. A long job, like a queue sending over an hour, is never cut off. Your agent keeps working without a restart. This design was picked from four open-source options by a SubQ matrix ([`docs/decisions/mcpReload`](docs/decisions/mcpReload)).
+Claude Code starts `logMcp` once. `logMcp` is a small proxy that never exits, and it runs the real server as a child process. When log's code changes, it waits until no call is in flight, starts the new code, and swaps it in. A long job, like a queue sending over an hour, is never cut off: it keeps running in the old server until it ends, and every new call goes to the new code. If the new code doesn't start within 30 s, the old code keeps serving. Your agent keeps working without a restart. This design was picked from four open-source options by a SubQ matrix ([`docs/decisions/mcpReload`](docs/decisions/mcpReload)).
 
 ### How the router tells your agent what to do
 
@@ -292,44 +301,52 @@ flowchart TD
   ASK["You: who's waiting on me on X?"] --> HOOK{"Does the harness<br/>have a prompt hook?"}
   HOOK -- "yes: Claude Code, Codex, Hermes,<br/>OpenCode, Antigravity" --> H["The hook runs the router<br/>on every prompt, by itself"]
   HOOK -- "no: Cursor, Claude, ChatGPT, Grok" --> G["The model calls getGuide({ ask })<br/>the same router, on the server"]
-  H & G --> R["The router<br/>your words against every play's phrases,<br/>plus a meaning score from a local model"]
+  H & G --> R["The router<br/>fixes typos, then scores your words against every play's phrases,<br/>plus a meaning score from MiniLM in the warm context service"]
   R -- "clear match" --> M["PLAY MATCH<br/>the play's steps load with<br/>getGuide({ useCase })"]
-  R -- "near tie" --> T["MAYBE A PLAY<br/>a short menu, nothing loaded"]
+  R -- "close, but below the bar or a near tie" --> T["MAYBE A PLAY<br/>a short menu, nothing loaded"]
   R -- "no match" --> N["No play<br/>the agent answers as usual"]
   M --> PG["Play gate<br/>only the sends the loaded play names go through"]
-  PG --> VG["Voice gate<br/>the draft is checked against how you write"]
+  PG --> VG["Voice gate<br/>already answered? the same as sent?<br/>then the draft is read against how you write"]
   VG --> LIVE["Sent as you, only with --live<br/>and your approval"]
 ```
 
 1. **The hook runs it for you.** In a harness with a prompt hook, the router runs before the model sees your message, and its answer is added to the turn. In Hermes this is the `log` plugin's `pre_llm_call`.
 2. **Or the model asks.** Everywhere else, the server's instructions and every tool's description tell the model to call `getGuide({ ask: "<your words>" })` first. It's the same router, so the same prompt gets the same play. A golden set of prompts checks that (`src/useCases/router/fixtures/golden.json`).
 3. **Words, then meaning.** Each play lists how people ask for it. The hook's warm context service adds a meaning score from MiniLM, a small model on your machine, in about 12 ms. If the service is down, the hook falls back to the word score, so a play is still named.
-4. **A clear match loads the play. A near tie doesn't.** A clear match names the play and its steps load with `getGuide({ useCase })`. A near tie shows a short menu and loads nothing. Building or fixing log itself is never a play.
+4. **A clear match loads the play. A near one doesn't.** A clear match clears its play's bar with room to spare over the next one, and its steps load with `getGuide({ useCase })`. A play that is close but below the bar, or a near tie, shows a short menu and loads nothing. Building or fixing log itself is never a play.
 5. **The play gate.** A send only goes through when the play that's loaded names it. An agent can't wander from "read my DMs" into sending.
 
 ### How notifications stream into your agent
 
-Your agent doesn't have to ask what's new. Every account's watcher holds the platform's own push channel, and the hooks put what arrived in front of the agent before its next step:
+Your agent doesn't have to ask what's new. Every account's watcher holds the platform's own push channel, and the hooks put what arrived in front of the agent before its next step. In Hermes, OpenCode and Claude Code (through a `Monitor`), a push loop also starts a turn when a message lands while the agent is idle ([docs/liveInbox.md](docs/liveInbox.md)). The hooks are answered by the warm context service on your machine (port 47317), or by a one-off process when it's down:
 
 ```mermaid
 sequenceDiagram
   participant P as The platform
   participant W as Your account's watcher
   participant DB as log.db
-  participant K as Hook
+  participant K as Hook or push loop
+  participant J as The judge
   participant A as Your agent
   participant S as Your account's session
   Note over K,W: a hook starts any signed-in account's watcher that isn't running
   P->>W: push: new message, reaction, notification
   W->>DB: append the event once, by its id
-  A->>K: you type, a tool call ends, or (Hermes) a model call starts
+  alt a hook
+    A->>K: you type, a tool call ends, or (Hermes) a model call starts
+  else the push loop
+    K->>K: wakes on every watcher write, or every 15 s
+  end
   K->>DB: what's new since this session last looked?
+  K->>J: the new messages, a voice note as its transcript
+  J-->>K: clean, marked as data, or the chat held behind one alert
   K-->>A: NEW MESSAGE, who said what and what to do
+  K-->>A: the conversation from log.db, each of their lines judged again
   K-->>A: each account's session, today's limits, X's unread counts
   K-->>A: a gap, a refused catch-up, a second watcher refused
   A->>DB: claim the chat, so no other agent answers it
   A->>DB: read the conversation, about 1 ms
-  A->>S: send the reply through the one session
+  A->>S: send the reply, past the catch-up check, the voice gate and the claim
   S-->>DB: the platform's answer, recorded with the reply
 ```
 
@@ -353,8 +370,34 @@ Its steps load with getGuide({ useCase: "twitter/dmInbox" }).
 - **Every session has its own cursor.** Nothing is shown twice, and nothing is missed between turns.
 - **Gaps are caught up, never guessed.** When a connection drops, the watcher pulls what it missed through the account's own session, paced like a person. Until it has, a send that needs that context waits. If the platform refuses, the run stops and you're told.
 - **Two agents never answer the same chat.** An agent claims a chat before it drafts, and every claim, send and release is written down in `log.db`.
-- **Judged before it's shown.** Everything other people wrote passes the judge first. A strong hit holds the whole chat behind one alert (who, where, why); a weak hit or a model flag is shown marked as data, never as an instruction.
+- **Judged before it's shown.** Everything other people wrote passes the judge first. A strong hit, or two weak ones, holds the whole chat behind one alert (who, where, why); one weak hit or a model flag is shown marked as data, never as an instruction. How it decides is below.
 - **It waits its turn.** While they are typing, a reply waits; their message stops the rest of a multi-line reply, so it never talks over them.
+
+### How the judge reads what comes in
+
+The voice gate checks what goes out. The judge checks what comes in, before your agent reads a word of it. It runs where every new message is picked up for a session, so the hooks and the push loop both get judged text:
+
+```mermaid
+flowchart TD
+  NEW["New messages since this session last looked<br/>ignored chats left out, a voice note as its transcript"] --> RULES["The rules<br/>each message, and each chat's messages joined"]
+  NEW --> MODEL["The local injection model<br/>wolf-defender small, on your machine<br/>every text of 12 characters or more"]
+  RULES --> STRONG["Strong hits<br/>token stealers: Windows credential decryption,<br/>saved login stores, a Discord webhook,<br/>encoded or downloaded PowerShell, writing into another process<br/>prompt injection: drop your instructions, fake harness markers,<br/>asks for keys or account files, names log's send tools"]
+  RULES --> WEAK["Weak hits<br/>a script piped into a shell, code with scrambled names,<br/>a long base64 blob, a new role or mode"]
+  MODEL -- "scores 0.9 or more" --> FLAG["A model flag<br/>counts as one weak hit"]
+  MODEL -. "down: the rules decide alone, and it is started" .-> VERDICT
+  STRONG & WEAK & FLAG --> VERDICT{"The chat's verdict"}
+  VERDICT -- "a strong hit, or two weak ones" --> HELD["Held<br/>every message in the chat withheld,<br/>one alert: who, where, why<br/>the agent tells you and drafts nothing"]
+  VERDICT -- "one weak hit or a model flag" --> MARKED["Shown marked as data<br/>the judge flagged this, never an instruction"]
+  VERDICT -- "nothing" --> CLEAN["Shown as it is"]
+  HELD & MARKED & CLEAN --> CONV["The conversation from log.db<br/>each of their lines checked by the rules again"]
+  CONV --> AGENT["Your agent"]
+  AGENT -- "a reply" --> VG["The voice gate, on the way out<br/>already answered? the same as sent?<br/>does it sound like you?"]
+  VG --> SEND["Sent through the account's one session"]
+```
+
+- **Rules first.** Each rule is strong or weak. Strong rules catch token stealers (the Windows credential decryption they use, an app's saved logins, a Discord webhook to send the loot to), encoded or downloaded PowerShell, code that writes into another process, and prompt injection: text that tells the agent to drop its instructions, imitates the harness's own markers, asks for your keys or account files, or names log's send tools.
+- **Then a small model.** A prompt injection classifier runs on your machine as a warm service, with no key ([#190](https://github.com/matthewdonsemail-lab/log/pull/190)). A score of 0.9 or more is a flag, counted as one weak hit. If the model isn't running, the rules still decide, and the model is started for the next time. `LOG_JUDGE_MODEL_OFF=1` turns it off.
+- **A held chat stays held.** Its text never reaches the agent: you read it on the platform yourself.
 
 ### Pictures, voice notes and videos
 
@@ -362,9 +405,10 @@ Every model can read text, even one that can't see images. So every piece of med
 
 ```mermaid
 flowchart LR
-  IN["A picture, voice note or video arrives"] --> REC["Kept in log.db: size, length, a small preview"]
+  IN["A picture, voice note or video arrives"] --> Q["The describer, one warm process<br/>takes one at a time from a queue of 20"]
+  Q --> REC["Kept in log.db: size, length, hash, a small preview"]
   REC --> PIC["Picture: what is in it,<br/>its words read out"]
-  REC --> AUD["Voice note: what was said"]
+  REC --> AUD["Voice note: what was said, by AssemblyAI"]
   REC --> VID["Video: cut where the picture changes,<br/>each scene described,<br/>its sound transcribed"]
   PIC & AUD & VID --> TXT["One line of text<br/>any model can read"]
   TXT --> DEL["The downloaded file is deleted"]
@@ -384,14 +428,15 @@ A video with no sound, like motion graphics, says `no sound` and is told by what
 
 ### The models it uses
 
-Two models run on your own machine, with no key. Four are hosted, and each needs its key:
+Three models run on your own machine, with no key. Four are hosted, and each needs its key:
 
 | Model | Runs | What it does |
 |---|---|---|
 | all-MiniLM-L6-v2 (23 MB) | your machine | meaning search over every conversation, your voice index, matching what you typed to a play |
 | LFM2.5-VL-450M (352 MB) | your machine | describes every picture and video frame as text |
+| wolf-defender prompt injection small | your machine | the judge's model: flags prompt injection in what comes in |
 | SubQ `subq-snap-1.1` | hosted, `SUBQ_API_KEY` | the voice gate: does a draft sound like you |
-| Jina embeddings v5 and reranker v3.5 | hosted, `JINA_API_KEY` | the AI tells check, and ranking a chat's history for the gate |
+| Jina embeddings v5 and reranker v3.5 | hosted, `JINA_API_KEY` | the AI tells check, ranking a chat's history for the gate, and a meaning vector for each piece of media |
 | AssemblyAI | hosted, `ASSEMBLYAI_API_KEY` | what was said in a voice note or a video |
 | Inworld or Fish Audio | hosted, `INWORLD_API_KEY` or `FISH_API_KEY` | a voice note in your cloned voice, only when you ask |
 
@@ -401,13 +446,14 @@ flowchart LR
   IN -->|picture or video| VL["LFM2.5-VL, your machine"] --> DB
   IN -->|voice| AA["AssemblyAI"] --> DB
   DB --> ML["MiniLM, your machine"] --> IDX["search and voice indexes"]
-  IDX --> DRAFT["your agent drafts"] --> GATE["voice gate: SubQ and Jina"] --> SEND["sent as you"]
+  DB --> WD["the judge: wolf-defender, your machine"] --> READ["your agent reads it"]
+  READ & IDX --> DRAFT["your agent drafts"] --> GATE["voice gate: SubQ and Jina"] --> SEND["sent as you"]
 ```
 
 **What your machine needs,** measured here on 2026-11-09 (16 threads, CPU only):
-- **A 64-bit machine.** There's no GPU: both local models run on the CPU.
+- **A 64-bit machine.** There's no GPU: the local models run on the CPU.
 - **About 2 GB of free memory.** The picture model peaked at 1.25 GB and takes 6 to 7 s a picture. It stops itself past 4 GB.
-- **About 400 MB of disk** for the two models, downloaded the first time they're needed.
+- **About 400 MB of disk** for MiniLM and the picture model, plus the judge's model, each downloaded the first time it's needed.
 - **ffmpeg on your PATH** for videos and voice notes.
 
 **Building the indexes** on a new machine, in this order:
@@ -471,6 +517,17 @@ What's built, what's next and what's planned is kept in one pinned issue: **[Roa
 | Speed | | the prompt hook under 150 ms |
 
 Built here means written, tested and in an open PR; each lands in a release once merged.
+
+## Releases
+
+Newest first. Each release pins the local models it runs with (`log models`), and `log update` moves code, harness plugins and models to the release together ([docs/updates.md](docs/updates.md)).
+
+<!-- releases:start: written by `bun run docs:releases` from CHANGELOG.md and src/models/manifest, not edited by hand -->
+| Version | Date | What's in it | Models |
+| --- | --- | --- | --- |
+| [0.2.1](https://github.com/matthewdonsemail-lab/log/pull/179) | 2026-11-20 | The relate graph, the live inbox push (messages during tool calls, burst batching, late copies dropped), inbox labels and ignoring a server or chat (+2 more) | not pinned (newest by name) |
+| [0.2.0](https://github.com/matthewdonsemail-lab/log/pull/166) | 2026-11-15 | The one-command Hermes pack, the catalog review, the README rewrite and the catch-up machine (+1 more) | not pinned (newest by name) |
+<!-- releases:end -->
 
 ## CLI
 

@@ -129,12 +129,18 @@ and dark defaults that follow the host's theme (`hostContext.theme`, its
 updates, `window.openai.theme`) and otherwise the system's.
 
 **In Hermes Desktop**, which doesn't draw MCP Apps yet, `browserView`'s answer
-tells the agent to put `::logbrowser{account="<accountName>"}` on its own line.
-log's Desktop plugin draws that line as the same live browser, in Hermes's own
-theme, reading the stream through the plugin's routes (`/browser/{account}` in
-`hermesPlugin/dashboard/plugin_api.py`) and sending clicks and keys through the
-same sign-in-only gate. Chats that can't draw it (Telegram, the CLI) get a
-short note instead.
+tells the agent to put `::logbrowser{account="<accountName>"}` on its own line:
+the shortcut for `::logapp{tool="browserView" args='{"account":"<accountName>"}'}`.
+log's Desktop plugin draws a `::logapp` line with its own MCP Apps host card
+(vendored from Hermes's parked host PR, NousResearch/hermes-agent#75828): the
+same widget ChatGPT and Claude get, in a sandboxed iframe with the view's CSP,
+themed from Hermes's own colours, light and dark. The card reads the view and
+runs the view's tool calls through the plugin's routes (`/apps/{tool}/resource`,
+`/result` and `/call` in `hermesPlugin/dashboard/plugin_api.py`), which run
+log's own tool path, so clicks and keys pass the same sign-in-only gate and a
+view can never send. A report draws the same way, from
+`::logapp{tool="report" view="<id>"}`. Chats that can't draw it (Telegram, the
+CLI) get the report's text or a short note instead.
 
 **How log decides.** `LOG_BROWSER_VIEW_LOCATION` (`local` or `remote`) is
 settled once per process by whatever serves the call (`settleLocation` in
