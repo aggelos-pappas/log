@@ -284,7 +284,7 @@ describe('the meaning router', () => {
     expect(fused[0].score).toBeCloseTo(1 / 62 + 1 / 61, 10)
   })
 
-  test('on the 44 tool asks, words alone rank the tool first in 25 and in the top 3 in 27; fused with the recorded local meaning, 26 and 30; skills 3 and 4 of 13; no status or chat question gets a line', () => {
+  test('on the 44 tool asks, words alone rank the tool first in 25 and in the top 3 in 27; fused with the recorded local meaning, 26 and 31; skills 3 and 4 of 13; no status or chat question gets a line', () => {
     const facts = loadToolFacts()
     const skills = shippedSkills()
     const names = new Set(facts.map((f) => f.name))
@@ -301,7 +301,7 @@ describe('the meaning router', () => {
     }
     expect(asks.length).toBe(44)
     expect(count('lexical')).toEqual({ first: 25, three: 27 })
-    expect(count('rrf')).toEqual({ first: 26, three: 30 })
+    expect(count('rrf')).toEqual({ first: 26, three: 31 })
     const skillAsks = routerGolden.filter((g) => g.skills?.length)
     const chosen = (g: RouterGolden) => fuseSkills(g.prompt, recorded(g.prompt), skills, 'rrf')
     expect(skillAsks.filter((g) => g.skills!.includes(chosen(g)[0] ?? '')).length).toBe(3)
