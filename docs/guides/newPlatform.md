@@ -12,6 +12,7 @@ When the owner asks for one of these, follow its page step by step.
 |---|---|---|
 | `getGuide({ useCase: "instagram/newPlatform" })` | Bringing a new platform up, then vendoring its client | "make a new platform via the MCP for <platform>", "open <platform> in AdsPower", "find me via the gh api the most likely to go into the vendor", "make it work" |
 | `getGuide({ useCase: "log/toolFromOneOff" })` | Turning a hand-rolled one-off into a log tool | "turn that one-off into a tool", "make that script a log command", "stop hand-rolling that", "vendor that query into log" |
+| `getGuide({ useCase: "log/toolHealth" })` | Tool health | "tool health", "which guides went stale" |
 
 ## The tools in this guide
 
@@ -19,10 +20,11 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 
 | Tool | What it does | Usage |
 |---|---|---|
-| `newPlatform` | Make a new platform's session, command, MCP tool, engine and docs… | `log new platform <name> [--label <shown name>] [--twentyPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]` |
-| `newPlatformLive` | Make a new platform's session, command, MCP tool…, live on the platform | `log new platform <name> [--label <shown name>] [--twentyPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]` |
 | `toolScaffold` | A hand-rolled one-off made a log command and MCP tool | `log tool scaffold [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]` |
 | `toolScaffoldLive` | A hand-rolled one-off made a log command and MCP tool, live on the platform | `log tool scaffold [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]` |
+| `toolHealth` | Which tools are used, fail or went stale, with a fix per flag | `log tool health [--days <n>] [--json]` |
+| `newPlatform` | Make a new platform's session, command, MCP tool, engine and docs… | `log new platform <name> [--label <shown name>] [--twentyPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]` |
+| `newPlatformLive` | Make a new platform's session, command, MCP tool…, live on the platform | `log new platform <name> [--label <shown name>] [--twentyPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]` |
 
 ## The work, step by step: layout
 
@@ -73,4 +75,6 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 - **Rule 39.** Use only the scope, options and intent The owner stated or implied.
 - **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
+- **Rule 73.** For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence.
 - **Rule 163.** Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients.
+- **Rule 165.** Preserve per-stage call timings in the private observability store so latency can be traced to its cause.

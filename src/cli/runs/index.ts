@@ -7,7 +7,7 @@ import { liveThroughAction } from "../../platformKit/action/index.ts";
 export const RUNS_USAGE = [
   "Usage: log runs [list] [--json]   (every recorded run: its size, settled by rea, in the request docs, and why it is kept or that it may go)",
   "       log runs exchanges   (takes every recorded step's internal API calls, what was sent and what came back, out of its HAR into exchanges.json, for every run still on disk; prune does it first too)",
-  "       log runs prune [--before <YYYY-MM-DD>] [--apply]   (deletes each analysed run, started before the day when given, after taking out every step's exchanges, keeping its findings.md, steps.jsonl, settle.json, every step's exchanges.json, reading.json and readingState.json, its goalFindings and its requests by domain; a dry run unless --apply)",
+  "       log runs prune [--before <YYYY-MM-DD>] [--apply]   (deletes each analysed run, before the day when given, after taking out its exchanges; keeps findings.md, steps.jsonl, settle.json, each step's exchanges and readings, goalFindings and requests by domain; a dry run unless --apply)",
   "       log runs space   (the size of ~/.logCli/runs and the disk's free space, as the storage hook says them)",
 ].join("\n");
 
@@ -42,7 +42,7 @@ export const runsCommand: Command = liveThroughAction<Command>({
   name: "runs",
   effect: "read",
   input: RUNS_INPUT,
-  summary: "The recorded runs on this machine, and pruning the ones rea settled and the request docs hold, keeping each one's findings and domains",
+  summary: "Recorded runs, and pruning the ones rea settled and the request docs hold",
   args: "[list|exchanges|prune|space] [--before <day>] [--apply]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(RUNS_INPUT));

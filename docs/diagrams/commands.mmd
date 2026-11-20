@@ -24,6 +24,7 @@ flowchart TB
     c_relate["relate"]
     c_people["people"]
     c_timing["timing"]
+    c_tool["tool"]
     c_inbox["inbox"]
     c_media["media"]
     c_browsers["browsers"]
@@ -51,7 +52,6 @@ flowchart TB
     c_transcribe["transcribe"]
     c_new["new"]
     c_saidBy["saidBy"]
-    c_tool["tool"]
   end
   subgraph g_byArgument["Platform named first"]
     c_warmup["#lt;platform#gt; warmup"]
@@ -262,6 +262,8 @@ flowchart TB
   mcp --> c_people
   cli --> c_timing
   mcp --> c_timing
+  cli --> c_tool
+  mcp --> c_tool
   cli --> c_inbox
   mcp --> c_inbox
   cli --> c_media
@@ -457,8 +459,6 @@ flowchart TB
   mcp --> c_tiktokSession
   cli --> c_saidBy
   mcp --> c_saidBy
-  cli --> c_tool
-  mcp --> c_tool
   cli --> c_tiktokStats
   mcp --> c_tiktokStats
   cli --> c_tiktokPost

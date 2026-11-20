@@ -21,11 +21,13 @@ const DB_READ = 'src/inbox/dbRead/client.ts'
 const CLAIMS = 'src/inbox/claims/client.ts'
 const STORE = 'src/inbox/store/client.ts'
 const SCHEMA_FILE = 'src/storage/schema/helpers/inbox.ts'
+const HEALTH = 'src/observability/toolHealth/helpers/report.ts'
+const HEALTH_COMMAND = 'src/cli/tool/index.ts'
 
 export const callTiming = {
   description: 'Every call timed: a call id, every stage a span across Bun and Python, stored in log.db and reported as p50, p95 and p99',
   specPath: 'docs/specs/callTiming.md',
-  codePaths: [TIMING, REPORT, SHAPE, SERVER, BIN, COMMAND, PY, PLATFORM, TWITTER, FBK, X_ENGINE, X_HOST, KIT, IG_HOST, VOICE, CATCH_UP, DB_READ, CLAIMS, STORE, SCHEMA_FILE],
+  codePaths: [TIMING, REPORT, SHAPE, SERVER, BIN, COMMAND, PY, PLATFORM, TWITTER, FBK, X_ENGINE, X_HOST, KIT, IG_HOST, VOICE, CATCH_UP, DB_READ, CLAIMS, STORE, SCHEMA_FILE, HEALTH, HEALTH_COMMAND],
   anchors: {
     'REQ-TIMING-01': [
       { kind: 'symbol', file: TIMING, name: 'timeCall' },
@@ -67,6 +69,8 @@ export const callTiming = {
       { kind: 'symbol', file: REPORT, name: 'waterfallLines' },
       { kind: 'symbol', file: COMMAND, name: 'timingCommand' },
       { kind: 'uses', file: TIMING, name: 'LOG_OTLP_URL' },
+      { kind: 'symbol', file: HEALTH, name: 'healthReport' },
+      { kind: 'symbol', file: HEALTH_COMMAND, name: 'toolCommand' },
     ],
   },
   rubrics: {
@@ -74,7 +78,7 @@ export const callTiming = {
     'REQ-TIMING-02': noul('Do runTwitterEngine, runTwitterEngineLive, runPlatformEngine, runPlatformEngineLive and spawnEngine each run through timedEngineSync or timedEngine and put the trace into the spec they write; does python/platformKit/timing.py begin from spec trace, record nested spans with contextvars, patch curl_cffi Session.request and AsyncSession.request once, and attach the spans and the boot time to the answer; do the X host and the Instagram host record host.queue, does host.call record host.connect and host.roundTrip and send child_trace as the trace; does the X engine record account.lock, spacing, governor, client, action and session.keep, and the platform kit governor and action; and does harvestEngine remove spans and bootAt from the answer, store them under the engine span and add python.start?'),
     'REQ-TIMING-03': noul('Are waitCaughtUp, readSourceFor and claimChat each wrapped in a span named inbox.waitCaughtUp, inbox.readSource and inbox.claim that records what it decided, and is gateSend a voice.gate span whose steps voice.sameness, voice.chatContext, voice.room, voice.rankedContext, voice.evidence and voice.reading (and voice.briefReading in gateBrief) are spans of their own?'),
     'REQ-TIMING-05': noul('Does the UserPromptSubmit hook start a turn per session and the Stop hook (Hermes post_llm_call) end it as one spans row with source turn, counting log tool calls inside it and their ms against agent time; and does log timing --turns print p50, p95 and p99 with each turn split?'),
-    'REQ-TIMING-04': noul('Does timeCall store every span of the call in the spans table of log.db in one transaction, delete spans older than 90 days once per process, swallow any storing or export error, and post OTLP JSON to LOG_OTLP_URL/v1/traces when it is set; does toolStats give p50, p95 and p99 per tool and per stage with a share and an unaccounted stage; and does timingCommand show the report, a waterfall for --call, and refuse an unknown call with callTimingMissing?'),
+    'REQ-TIMING-04': noul('Does timeCall store every span of the call in the spans table of log.db in one transaction, delete spans older than 90 days once per process, swallow any storing or export error, and post OTLP JSON to LOG_OTLP_URL/v1/traces when it is set; does toolStats give p50, p95 and p99 per tool and per stage with a share and an unaccounted stage; does timingCommand show the report, a waterfall for --call, and refuse an unknown call with callTimingMissing; does runTimed keep a failed call\'s refusal code as code on its root span; and does toolCommand, through healthReport, only read log.db and git to list per-tool calls, failures, the commonest code, p50, p95 and last use, with unused, failing and stale flags each carrying a fix?'),
     unspecifiedBehavior: noul('Does the timing layer change what any command sends, block or slow a call by more than writing its spans, put a cookie, token or message text into a span name or attribute, or fail a call because timing failed, by a route the specification does not describe?'),
   },
   assertions: {

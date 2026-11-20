@@ -10,7 +10,7 @@ The guides describe the current command implementation. Legacy storage names and
 
 ## Use cases: the work the owner asks for, tool by tool
 
-This is how the owner works. Each use case is something the owner asks for again and again, written as its steps in order, each step naming its tool and what counts as done. When the owner asks for work a use case covers, read that use case and follow it step by step instead of improvising. Work no use case covers yet, done for the owner more than once, gets a page of its own in docs/useCases/<platform>/.
+This is how the owner works. Each use case is something the owner asks for again and again, written as its steps in order, each step naming its tool and what counts as done. When the owner asks for work a use case covers, follow it step by step instead of improvising. Repeated work no use case covers gets its own page in docs/useCases/<platform>/.
 
 With no prompt hook, getGuide({ ask }) routes the owner's words to the one that fits; each page's own asks line holds the words it is matched on.
 
@@ -42,6 +42,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "linkedin/network" })` | Growing a LinkedIn network, and reading and answering its inbox |
 | `getGuide({ useCase: "linkedin/posts" })` | Posting on LinkedIn, liking or reposting, and taking a post down |
 | `getGuide({ useCase: "log/toolFromOneOff" })` | Turning a hand-rolled one-off into a log tool |
+| `getGuide({ useCase: "log/toolHealth" })` | Tool health |
 | `getGuide({ useCase: "reddit/contributorMaxxing" })` | Contributor maxxing: finding talented builders through what they share |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM |
 | `getGuide({ useCase: "tiktok/post" })` | Posting a video on TikTok, and deleting it |

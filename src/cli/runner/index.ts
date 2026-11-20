@@ -45,6 +45,7 @@ import { storageCommand } from "../storage/index.ts";
 import { relateCommand } from "../relate/index.ts";
 import { peopleCommand } from "../people/index.ts";
 import { timingCommand } from "../timing/index.ts";
+import { toolCommand } from "../tool/index.ts";
 import { inboxCommand } from "../inbox/index.ts";
 import { mediaCommand } from "../media/index.ts";
 import { browsersCommand } from "../browsers/index.ts";
@@ -65,7 +66,6 @@ import { slackChatsCommand, slackCookiesCommand, slackReadCommand, slackSendComm
 import { instagramDmsCommand, instagramSendCommand, instagramSessionCommand, instagramWatchCommand } from "../instagram/index.ts";
 import { discordReactCommand, instagramReactCommand, slackReactCommand, twitterReactCommand } from "../react/index.ts";
 import { saidByCommand } from "../saidBy/index.ts";
-import { toolCommand } from "../tool/index.ts";
 import { tiktokDeleteCommand, tiktokPostCommand, tiktokSessionCommand, tiktokStatsCommand } from "../tiktok/index.ts";
 
 export * from "./helpers/index.ts";
@@ -114,6 +114,7 @@ export const COMMANDS: Command[] = [
   relateCommand,
   peopleCommand,
   timingCommand,
+  toolCommand,
   inboxCommand,
   mediaCommand,
   browsersCommand,
@@ -207,7 +208,6 @@ export const COMMANDS: Command[] = [
   twitterVoiceCommand,
   tiktokSessionCommand,
   saidByCommand,
-  toolCommand,
   tiktokStatsCommand,
   tiktokPostCommand,
   tiktokDeleteCommand,

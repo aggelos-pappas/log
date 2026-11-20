@@ -76,7 +76,7 @@ flowchart LR
   anyB --> b_slack
   anyB --> b_instagram
   anyB --> b_tiktok
-  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, router, runs, storage, relate, people, timing, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy, tool"]
+  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, router, runs, storage, relate, people, timing, tool, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy"]
   anyN -.-> twenty
   newP["log new platform name: one more platform, wired whole (rule 83)"] -.-> twenty
   drivers --> api
@@ -112,7 +112,7 @@ Source: [`docs/diagrams/browsers.mmd`](diagrams/browsers.mmd).
 
 - **The account's browser, through the driver:** `facebook host`, `inspect`, `flow`, `<platform> warmup`, `facebook join`, `facebook read`, `facebook poll`, `facebook check`, `reddit read`, `discord read`, `slack read`. They run on whichever browser the account uses: AdsPower when it has a linked profile (`socialAccounts.adsPowerProfileId`), Camoufox otherwise, or what `socialAccounts.browserDriver` says.
 - **Camoufox only, not on the driver yet:** `facebook doctor`, `facebook connect`, `facebook profile`, `facebook scan`, `facebook status`, `facebook watch`, `facebook publish`, `facebook campaign`, `discord watch`, `linkedin connect`, `slack watch`, `instagram watch`. They launch Camoufox themselves (facebook-camofox-client's worker, or the publish, connect and profile sessions), so on an AdsPower account they don't open its AdsPower profile. Moving one onto the driver is moving it into `OPENER_ACTIONS` (`src/browser/run`).
-- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `relate`, `people`, `timing`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tool`, `tiktok stats`, `tiktok post`, `tiktok delete`.
+- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `relate`, `people`, `timing`, `tool`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`.
 - **No browser path at all:** X. Its accounts run on the direct API only (rule 80).
 
 Each browser's capabilities, built or not: [`docs/browsers.md`](browsers.md) (generated, `bun run check:browsers`). AdsPower's setup: [`docs/adsPower.md`](adsPower.md).
@@ -224,7 +224,7 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 294 command tools + saved flows"]
+  mcp["MCP server log: 295 command tools + saved flows"]
   bin["bin/log.ts"]
   runCli["runCli: 138 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
@@ -319,11 +319,12 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log graph`](#log-graph) | Print a machine's states and transitions as a Mermaid diagram | any (none) | none | none | none | `graph` | PreToolUse, PostToolUse · PostToolUse | no | 25, 30, 38, 39, 40, 41 |
 | [`log capture`](#log-capture) | Read a run's raw HAR and scripts with offline rea (any platform or browser driver), settle a run's capture, or build every platform's client docs. No browser. | any (none) | `[--out <dir>]` `[--noRea]` `[--json]` | none | none | `captureHar`, `captureSettle`, `captureDocs` | PreToolUse, PostToolUse · PostToolUse | yes: watch it | 19, 26, 73, 30, 38, 39, 40, 41 |
 | [`log router`](#log-router) | The prompt router's meaning index | any (none) | `[--apply]` `[--json]` | none | none | `routerIndex` | PreToolUse, PostToolUse · PostToolUse | no | 26, 73, 30, 38, 39, 40, 41 |
-| [`log runs`](#log-runs) | The recorded runs on this machine, and pruning the ones rea settled and the request docs hold, keeping each one's findings and domains | any (none) | `[--json]` `[--before <date>]` `[--apply]` | none | none | `runsList`, `runsExchanges`, `runsPrune`, `runsPruneLive`, `runsSpace` | PreToolUse, PostToolUse · PostToolUse | no | 19, 25, 66, 73, 30, 38, 39, 40, 41 |
+| [`log runs`](#log-runs) | Recorded runs, and pruning the ones rea settled and the request docs hold | any (none) | `[--json]` `[--before <date>]` `[--apply]` | none | none | `runsList`, `runsExchanges`, `runsPrune`, `runsPruneLive`, `runsSpace` | PreToolUse, PostToolUse · PostToolUse | no | 19, 25, 66, 73, 30, 38, 39, 40, 41 |
 | [`log storage`](#log-storage) | Check that log.db's typed tables are exactly what its events derive, and rebuild them from the events | any (none) | `[--json]` `[--apply]` | none | none | `storageVerify`, `storageRebuild`, `storageRebuildLive` | PreToolUse, PostToolUse · PostToolUse | no | 73, 134, 30, 38, 39, 40, 41 |
 | [`log relate`](#log-relate) | A Relate (Neo4j) graph of who talks, engages and shares rooms with the owner's accounts, projected from log.db and injected as connected context | any (none) | `[--json]` | none | none | `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk`, `relateQuery` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
 | [`log people`](#log-people) | One person across platforms: the owner links identities (Discord, X, Instagram…) into a person, suggestions come from Fellegi-Sunter record linkage, and the person card shows the whole relationship | any (none) | `[--json]` `[--limit <integer 1..200>]` `[--approvedBy <text>]` `[--name <text>]` `[--evidence <text>]` | none | none | `people`, `peopleShow`, `peopleSuggest`, `peopleLink`, `peopleUnlink`, `peopleDifferent` | PreToolUse, PostToolUse · PostToolUse | no | 30, 89, 134, 154, 163, 30, 38, 39, 40, 41 |
 | [`log timing`](#log-timing) | Where the time goes in every call: p50, p95 and p99 per tool and per stage, from the timings every call stores in log.db, or one call as a waterfall | any (none) | `[--tool <name>]` `[--hours <number>]` `[--stages <number>]` `[--top <number>]` `[--all]` `[--call <callId>]` `[--turns]` `[--json]` | none | none | `timing` | PreToolUse, PostToolUse · PostToolUse | no | 26, 73, 165, 30, 38, 39, 40, 41 |
+| [`log tool`](#log-tool) | Turn a one-off into a log tool, and see which tools are used | any (none) | `[--summary <text>]` `[--acts]` `[--flags <a,b,…>]` `[--area <f>]` `[--asks <a,b,…>]` `[--guide <g>]` `[--apply]` `[--json]` `[--days <integer 1..90>]` | none | none | `toolScaffold`, `toolScaffoldLive`, `toolHealth` | PreToolUse, PostToolUse · PostToolUse | no | 30, 73, 163, 165, 30, 38, 39, 40, 41 |
 | [`log inbox`](#log-inbox) | Chat claims and their action log, who is waiting on a reply, what the watchers heard, quiet the push | any (none) | `[--platform <twitter|discord|slack|instagram>]` `[--account <a>]` `[--chat <conversationId|handle>]` `[--event <eventId>]` `[--json]` `--by <who>` `[--limit <integer 1..1000>]` `[--tail <integer 0..60>]` `[--oldest]` `--reader <name>` `--minutes <integer 0..720>` `[--server <id>]` `[--undo]` `[--label <warming|readyToAsk|askedWaiting|friend|client|cold|skip>]` `[--as <warming|readyToAsk|askedWaiting|friend|client|cold|skip>]` | none | none | `inboxClaim`, `inboxRelease`, `inboxResume`, `inboxWaiting`, `inboxPending`, `inboxQuiet`, `inboxIgnore`, `inboxIgnored`, `inboxLabels`, `inboxLabel`, `inboxClaims`, `inboxActions` | PreToolUse, PostToolUse · PostToolUse | no | 94, 105, 109, 133, 134, 138, 30, 38, 39, 40, 41 |
 | [`log media`](#log-media) | Turn every image, meme and video into text any model reads, kept in the .db with a small preview, so replies read what was sent | any (none) | `[--json]` `[--wait <number 0..>]` | none | none | `mediaDescriber`, `mediaDescribe`, `mediaStatus`, `mediaView` | PreToolUse, PostToolUse · PostToolUse | no | 26, 41, 138, 105, 137, 30, 38, 39, 40, 41 |
 | [`log browsers`](#log-browsers) | Where every open browser is: its page, the known page state it sits on, the call that resolves it, and what only the owner can clear (rule 35) | any (none) | `[--json]` | none | none | `browsers` | PreToolUse, PostToolUse · PostToolUse | no | 29, 35, 30, 38, 39, 40, 41 |
@@ -417,7 +418,6 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log twitter voice`](#log-twitter-voice) | Send a voice note in the owner's cloned voice as Twitter's own voice note, from text; a dry run unless --live | `twitter` first | `--account <accountName>` `--with <with>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `twitterVoice`, `twitterVoiceLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 89, 94, 105, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log tiktok session`](#log-tiktok-session) | Check that TikTok still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `tiktok` first | `--account <accountName>` `[--json]` | direct API only | none | `tiktokSessionCheck` | PreToolUse, PostToolUse · PostToolUse | no | 73, 30, 38, 39, 40, 41 |
 | [`log saidBy`](#log-saidby) | Someone's messages on every platform, found by name, newest first | any (none) | `[--name <name>]` `[--limit <integer 1..500>]` `[--json]` | none | none | `saidBy` | PreToolUse, PostToolUse · PostToolUse | no | 30, 163, 30, 38, 39, 40, 41 |
-| [`log tool`](#log-tool) | Turn a hand-rolled one-off into a log command and MCP tool | any (none) | `[--summary <text>]` `[--acts]` `[--flags <a,b,…>]` `[--area <f>]` `[--asks <a,b,…>]` `[--guide <g>]` `[--apply]` `[--json]` | none | none | `toolScaffold`, `toolScaffoldLive` | PreToolUse, PostToolUse · PostToolUse | no | 30, 163, 30, 38, 39, 40, 41 |
 | [`log tiktok stats`](#log-tiktok-stats) | Read an account's TikTok followers and its own posts' views, likes, comments, shares and saves, on the direct-API engine | `tiktok` first | `--account <accountName>` `[--limit <integer 1..500>]` `[--json]` | direct API only | none | `tiktokStats` | PreToolUse, PostToolUse · PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log tiktok post`](#log-tiktok-post) | Post one video on TikTok on the direct-API engine, with no browser; a dry run unless --live | `tiktok` first | `--account <accountName>` `--video <path>` `--caption <text>` `[--visibility <text>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `tiktokPost`, `tiktokPostLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
 | [`log tiktok delete`](#log-tiktok-delete) | Delete one of the account's own TikTok posts on the direct-API engine, with no browser; a dry run unless --live | `tiktok` first | `--account <accountName>` `--id <postId>` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `tiktokDelete`, `tiktokDeleteLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
@@ -477,6 +477,7 @@ flowchart TB
     c_relate["relate"]
     c_people["people"]
     c_timing["timing"]
+    c_tool["tool"]
     c_inbox["inbox"]
     c_media["media"]
     c_browsers["browsers"]
@@ -504,7 +505,6 @@ flowchart TB
     c_transcribe["transcribe"]
     c_new["new"]
     c_saidBy["saidBy"]
-    c_tool["tool"]
   end
   subgraph g_byArgument["Platform named first"]
     c_warmup["#lt;platform#gt; warmup"]
@@ -715,6 +715,8 @@ flowchart TB
   mcp --> c_people
   cli --> c_timing
   mcp --> c_timing
+  cli --> c_tool
+  mcp --> c_tool
   cli --> c_inbox
   mcp --> c_inbox
   cli --> c_media
@@ -910,8 +912,6 @@ flowchart TB
   mcp --> c_tiktokSession
   cli --> c_saidBy
   mcp --> c_saidBy
-  cli --> c_tool
-  mcp --> c_tool
   cli --> c_tiktokStats
   mcp --> c_tiktokStats
   cli --> c_tiktokPost
@@ -1537,12 +1537,12 @@ log router index [--apply] [--json]   (is the prompt router's meaning index curr
 
 #### log runs
 
-The recorded runs on this machine, and pruning the ones rea settled and the request docs hold, keeping each one's findings and domains MCP tools: `runsList`, `runsExchanges`, `runsPrune`, `runsPruneLive`, `runsSpace`, one per form, with named fields.
+Recorded runs, and pruning the ones rea settled and the request docs hold MCP tools: `runsList`, `runsExchanges`, `runsPrune`, `runsPruneLive`, `runsSpace`, one per form, with named fields.
 
 ```text
 log runs [list] [--json]   (every recorded run: its size, settled by rea, in the request docs, and why it is kept or that it may go)
 log runs exchanges   (takes every recorded step's internal API calls, what was sent and what came back, out of its HAR into exchanges.json, for every run still on disk; prune does it first too)
-log runs prune [--before <YYYY-MM-DD>] [--apply]   (deletes each analysed run, started before the day when given, after taking out every step's exchanges, keeping its findings.md, steps.jsonl, settle.json, every step's exchanges.json, reading.json and readingState.json, its goalFindings and its requests by domain; a dry run unless --apply)
+log runs prune [--before <YYYY-MM-DD>] [--apply]   (deletes each analysed run, before the day when given, after taking out its exchanges; keeps findings.md, steps.jsonl, settle.json, each step's exchanges and readings, goalFindings and requests by domain; a dry run unless --apply)
 log runs space   (the size of ~/.logCli/runs and the disk's free space, as the storage hook says them)
 ```
 
@@ -1552,7 +1552,7 @@ Check that log.db's typed tables are exactly what its events derive, and rebuild
 
 ```text
 log storage verify [--json]   (replays every event in ~/.logCli/log.db into a scratch copy and compares each typed table, row by row, with the live one; nothing is changed)
-log storage rebuild [--apply] [--json]   (clears the typed tables (messages, attachments, chats, identities, memberships, interactions) and replays every event into them in order, in one transaction; a verify unless --apply)
+log storage rebuild [--apply] [--json]   (clears the typed tables and replays every event into them in order, in one transaction; a verify unless --apply)
 The events are the record: every typed row is derived from them, so a rebuild loses nothing (docs/storageAgainstTheBook.md, item 2).
 ```
 
@@ -1591,6 +1591,16 @@ Where the time goes in every call: p50, p95 and p99 per tool and per stage, from
 log timing [--tool <name>] [--hours <n>] [--stages <n>] [--top <n>] [--all] [--json]   (p50, p95 and p99 per tool call and per stage inside it; the slowest --top tools by p99, default 12, or --all; newest --hours, default 24)
 log timing --call <callId> [--json]   (one call as a waterfall: every stage in order, when it started and how long it took; the id is on the call's ▶ and ■ lines in the live log)
 log timing --turns [--hours <n>] [--json]   (p50, p95 and p99 per agent turn, each split into log's tool time and agent time)
+```
+
+#### log tool
+
+Turn a one-off into a log tool, and see which tools are used MCP tools: `toolScaffold`, `toolScaffoldLive`, `toolHealth`, one per form, with named fields.
+
+```text
+log tool scaffold [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]
+A hand-rolled one-off as a command and MCP tool with its test and use case, each edit made through the syntax tree and checked before anything is written; no name lists the one-offs the hook counted. Without --apply it writes nothing.
+log tool health [--days <n>] [--json]
 ```
 
 #### log inbox
@@ -2581,15 +2591,6 @@ Someone's messages on every platform, found by name, newest first MCP tools: `sa
 
 ```text
 log saidBy [--name <name>] [--limit <n>] [--json]   (Someone's messages on every platform, found by name, newest first)
-```
-
-#### log tool
-
-Turn a hand-rolled one-off into a log command and MCP tool MCP tools: `toolScaffold`, `toolScaffoldLive`, one per form, with named fields.
-
-```text
-log tool scaffold [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]
-A hand-rolled one-off as a command and MCP tool with its test and use case, each edit made through the syntax tree and checked before anything is written; no name lists the one-offs the hook counted. Without --apply it writes nothing.
 ```
 
 #### log tiktok stats
