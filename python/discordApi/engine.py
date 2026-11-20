@@ -43,9 +43,14 @@ def client_of(token: str) -> Any:
 def with_identity(action: Any) -> Any:
     async def run(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:
         global identity
-        identity = browserIdentity.load(str(spec.get("stateRoot") or ""), str(spec.get("account") or "")) if spec.get("stateRoot") and spec.get("account") else None
+        driver = str(spec.get("browserDriver") or "") or None
+        identity = browserIdentity.load(str(spec.get("stateRoot") or ""), str(spec.get("account") or ""), driver=driver) if spec.get("stateRoot") and spec.get("account") else None
         if identity is None:
-            return {"ok": False, "code": "templateStale", "detail": f"no recording of {spec.get('account') or 'this account'}'s own browser to talk to Discord as: sign in once in its browser (log inspect start --account <a>, then close it), so its gateway sign-on and headers are recorded", "loginState": "unknown"}
+            return {"ok": False, "code": "templateStale", "detail": f"no recording of {spec.get('account') or 'this account'}'s own browser{f' ({driver})' if driver else ''} to talk to Discord as: sign in once in its browser (log inspect start --account <a>, then close it), so its headers are recorded", "loginState": "unknown"}
+        mismatched = browserIdentity.problems(identity, driver)
+        if mismatched:
+            identity = None
+            return {"ok": False, "code": "identityMismatch", "detail": f"the engine would not talk to Discord as {spec.get('account') or 'this account'}'s own browser{f' ({driver})' if driver else ''}: {'; '.join(mismatched)}", "loginState": "unknown"}
         return await action(spec, cookies)
     return run
 
