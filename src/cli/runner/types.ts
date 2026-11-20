@@ -73,6 +73,7 @@ export interface FlagSpec {
   takes?: string;
   refusal?: string;
   approval?: true;
+  whole?: true;
 }
 
 export interface PositionalSpec {

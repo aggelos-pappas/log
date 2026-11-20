@@ -54,6 +54,25 @@ For log: steering needs access to a model's activations (llama.cpp control vecto
 - **LaMP** (arXiv 2304.11406): the standard benchmark for personalized generation, with retrieval-augmented baselines.
 - **A Survey of Personalization: From RAG to Agent** (arXiv 2504.10147).
 
+## The conversation itself: how they talk, and how he talks to them
+
+Added 2026-11-20 at the owner's ask: the model should see how the other person talks and how he talks to that person, not only how he writes in general.
+
+- **LLMs over-converge to their partner** (arXiv 2508.03276: 16 LLMs on 3 dialogue corpora; arXiv 2605.29278: WildChat in 8 languages). Models adapt to the other speaker's style far beyond human baselines. For log: an agent replying in a chat drifts into the other person's style and words, not his. A draft has to be measured against how much he converges with this person, not only against his writing in general.
+- **Real or Robotic** (arXiv 2409.08330, 100k dialogues). LLM-simulated replies diverge from real human replies in both style and content, systematically. For log: few-shot from his replies alone does not make a reply his; the check has to measure the divergence.
+- **RealTalk** (arXiv 2502.13270, 21 days of real messaging-app chats). Models struggle to continue a conversation as a specific user from dialogue history alone; their replies show excess empathy and a stable persona where real people vary. For log: give the writer his measured traits with this person, and contrast the polite-empathetic register as not him.
+- **The Personal Imitation Game** (arXiv 2611.24888, November 2026). A system grounded in 10 years of one person's messages was picked over his real friends in 7 of 10 rounds; interrogators judged identity by stylometry, personality and biographical facts. For log: style features, his register and only the facts he has actually said.
+
+What log builds from it (REQ-VOICE-28 and REQ-VOICE-33):
+
+| Finding | In log |
+|---|---|
+| Over-convergence to the partner | `convergenceOf`: the draft's reuse of their words and its style shift toward them against his own in this chat; the gap costs the not-mirroring signal in the score |
+| His style with this person differs from his general style | the pack's "how he talks to this person" line against "how he writes everywhere" (`compareLines`) |
+| The partner's style is what the model copies | the pack's "how they talk, NOT to copy" line |
+| Excess empathy, stable persona | contrastive not-him lines (AI phrases near this reply, their own latest line) |
+| Identity is judged on biographical facts | the pack lists his facts said in this chat (`hisFacts`); options may state only those |
+
 ## Open source
 
 - **WeClone** (github.com/xming521/WeClone, 18.4k stars, AGPL-3.0, pushed 2026-11-16): two modes. A fine-tuned clone (Qwen2.5-7B with LoRA, about 16 GB NVIDIA VRAM) and an in-development "agent clone" with no training, where a large model drives replies from the person's portrait, memories and speaking style.

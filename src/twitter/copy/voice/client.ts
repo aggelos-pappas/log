@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { DecisionsClient } from '../../../subq/decisions/index'
+import type { DecisionRequest, DecisionsClient } from '../../../subq/decisions/index'
 import { ANSWER_WINDOW_MS, CONTEXT_PASS, OWNER_DMS, NEVER_SAYS, VOICE_MODEL, VOICE_PASS } from './types'
-import type { VoiceDraft, VoiceReading } from './types'
+import type { OptionDraft, VoiceDraft, VoiceReading } from './types'
 import { watermarkReadingOf } from '../watermark/index'
 
 export function guidePath(env: Record<string, string | undefined> = process.env): string {
@@ -56,15 +56,14 @@ export function nobodyToAnswer(draft: Pick<VoiceDraft, 'room'>): boolean {
   return !!draft.room?.nobodyElseLately && draft.room.kind !== 'dm'
 }
 
-export async function readVoice(draft: VoiceDraft, guide: string, decide: DecisionsClient): Promise<VoiceReading> {
-  const neverSays = neverSaysIn(draft.text)
+export function voiceRequestOf(draft: VoiceDraft, guide: string): DecisionRequest {
   const publicReply = draft.publicReply === true
   const alreadyTalked = alreadyTalkedIn(draft)
   const coldDm = !alreadyTalked && !publicReply
   const burst = burstOf(draft.text)
   const outside = outsideXVoice(draft)
   const notX = outside ? ` howOwnerWrites is how he writes on X only, his public posts and replies; this is ${outside.where}, where he writes in bursts of shorter lines and does ask questions, so read howOwnerWritesInThisChat (its burst median, messageWords and medianWords) and ownersRealRepliesHere first, and use howOwnerWrites only for his vocabulary and his spelling.` : ''
-  const response = await decide({
+  return {
     model: VOICE_MODEL,
     state: {
       howOwnerWrites: guide,
@@ -96,16 +95,55 @@ export async function readVoice(draft: VoiceDraft, guide: string, decide: Decisi
       ...(draft.spoken ? { buildsOn: { type: 'noul', instructions: 'Read the whole conversation (thisChat, ownersLatestMessagesHere, thisConversationRankedForThisMoment and whatTheySaid). Does this voice note build on what they are talking about, taking their points further and adding something new to them, rather than repeating or re-explaining what the owner has already told them in this chat?', criteria: { true: 'It builds on what they said and adds to it', false: 'It repeats what the owner already said or ignores what they are talking about' } } } : {}),
       ...(draft.evidence ? { toThem: draft.spoken ? { type: 'noul', instructions: 'Going by ownersRealRepliesHere and howOwnerWritesInThisChat, does this voice note sound like the owner talking to them in this chat: his words, slang and register here? It is spoken, so its length and punctuation never count against it.', criteria: { true: 'It sounds like him talking to them here', false: 'It sounds like how he talks somewhere else, or like nobody' } } : { type: 'noul', instructions: 'Going by ownersRealRepliesHere (what they said and how the owner really replied, the same chat first) and howOwnerWritesInThisChat (counted from his own messages there), does this dm read like the owner writing to them in this chat: the same length, case, punctuation, words and register he uses here?', criteria: { true: 'It reads like his real replies here', false: 'It reads like how he writes somewhere else, or like nobody' } } } : {}),
     },
-  })
-  const answers = response.answers as Record<string, { noul?: number }>
-  const voice = answers.voice?.noul ?? 0
-  const inContext = answers.inContext?.noul ?? 0
-  const friendLike = answers.friendLike?.noul ?? 0
-  const openerOnly = alreadyTalked || publicReply ? 1 : answers.openerOnly?.noul ?? 0
-  const toThem = draft.evidence ? answers.toThem?.noul ?? 0 : null
-  const buildsOn = draft.spoken ? answers.buildsOn?.noul ?? 0 : null
-  const fitsTheRoom = draft.room ? answers.fitsTheRoom?.noul ?? 0 : null
+  }
+}
+
+export function voiceReadingOf(draft: VoiceDraft, raw: Record<string, unknown>, model: string | null, suffix = ''): VoiceReading {
+  const answers = raw as Record<string, { noul?: number }>
+  const of = (key: string) => answers[`${key}${suffix}`]?.noul ?? 0
+  const neverSays = neverSaysIn(draft.text)
+  const publicReply = draft.publicReply === true
+  const alreadyTalked = alreadyTalkedIn(draft)
+  const coldDm = !alreadyTalked && !publicReply
+  const voice = of('voice')
+  const inContext = of('inContext')
+  const friendLike = of('friendLike')
+  const openerOnly = alreadyTalked || publicReply ? 1 : of('openerOnly')
+  const toThem = draft.evidence ? of('toThem') : null
+  const buildsOn = draft.spoken ? of('buildsOn') : null
+  const fitsTheRoom = draft.room ? of('fitsTheRoom') : null
   const watermark = watermarkReadingOf(draft.text)
   const answerRequired = !nobodyToAnswer(draft) && (draft.cardAnswerOwed ?? !nothingWaiting(draft))
-  return { firstContact: coldDm, to: draft.to, voice, inContext, answerRequired, friendLike, openerOnly, toThem, buildsOn, fitsTheRoom, neverSays, watermark, pass: !neverSays.length && watermark.level !== 'artifacts' && voice >= VOICE_PASS && (!answerRequired || inContext >= CONTEXT_PASS) && friendLike >= CONTEXT_PASS && openerOnly >= CONTEXT_PASS && (toThem === null || toThem >= CONTEXT_PASS) && (buildsOn === null || buildsOn >= CONTEXT_PASS) && (fitsTheRoom === null || fitsTheRoom >= CONTEXT_PASS), model: response.model ?? null }
+  return { firstContact: coldDm, to: draft.to, voice, inContext, answerRequired, friendLike, openerOnly, toThem, buildsOn, fitsTheRoom, neverSays, watermark, pass: !neverSays.length && watermark.level !== 'artifacts' && voice >= VOICE_PASS && (!answerRequired || inContext >= CONTEXT_PASS) && friendLike >= CONTEXT_PASS && openerOnly >= CONTEXT_PASS && (toThem === null || toThem >= CONTEXT_PASS) && (buildsOn === null || buildsOn >= CONTEXT_PASS) && (fitsTheRoom === null || fitsTheRoom >= CONTEXT_PASS), model }
+}
+
+export async function readVoice(draft: VoiceDraft, guide: string, decide: DecisionsClient): Promise<VoiceReading> {
+  const response = await decide(voiceRequestOf(draft, guide))
+  return voiceReadingOf(draft, response.answers, response.model ?? null)
+}
+
+const PER_OPTION_STATE = ['dm', 'dmAsItWillBeSent', 'wordsInEachMessageAsSent', 'wordPairsOwnerHasNeverWritten', 'watermarkScramblerLayerA']
+
+export function optionsRequestOf(draft: VoiceDraft, options: readonly OptionDraft[], guide: string): DecisionRequest {
+  const base = voiceRequestOf({ ...draft, text: options[0]?.text ?? '' }, guide)
+  const state = Object.fromEntries(Object.entries(base.state as Record<string, unknown>).filter(([key]) => !PER_OPTION_STATE.includes(key)))
+  const listed = options.map((o, i) => {
+    const burst = burstOf(o.text)
+    return { option: i + 1, dm: o.text, ...(draft.publicReply !== true && burst.messages.length > 1 ? { asItWillBeSent: burst.messages, wordsInEachMessage: burst.words } : {}), ...(o.phrasesNewToOwner ? { wordPairsOwnerHasNeverWritten: o.phrasesNewToOwner } : {}), ...(o.scrambler ? { watermarkScramblerLayerA: o.scrambler } : {}) }
+  })
+  const questions: DecisionRequest['questions'] = {}
+  options.forEach((_, i) => {
+    for (const [key, question] of Object.entries(base.questions)) questions[`${key}_${i + 1}`] = { ...question, instructions: `${optionPreamble(i)} ${question.instructions}` }
+  })
+  return { model: base.model, state: { ...state, options: listed }, questions }
+}
+
+export function optionPreamble(i: number): string {
+  return `Judge option ${i + 1} only (options[${i}].dm). Its own asItWillBeSent, wordsInEachMessage and wordPairsOwnerHasNeverWritten stand in for dmAsItWillBeSent, wordsInEachMessageAsSent and wordPairsOwnerHasNeverWritten. Grade it on its own, never against the other options.`
+}
+
+export async function readVoices(draft: VoiceDraft, options: readonly OptionDraft[], guide: string, decide: DecisionsClient): Promise<VoiceReading[]> {
+  if (options.length === 1) return [await readVoice({ ...draft, ...options[0] }, guide, decide)]
+  const response = await decide(optionsRequestOf(draft, options, guide))
+  return options.map((o, i) => voiceReadingOf({ ...draft, text: o.text }, response.answers, response.model ?? null, `_${i + 1}`))
 }

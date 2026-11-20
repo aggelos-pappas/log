@@ -5,11 +5,12 @@ const VOICE = 'src/twitter/copy/voice/client.ts'
 const COMMAND = 'src/cli/twitter/helpers/voice.ts'
 const PHRASES = 'src/voice/phrases/client.ts'
 const SCRAMBLER = 'src/twitter/copy/scrambler/client.ts'
+const OPTIONS = 'src/cli/twitter/helpers/voiceOptions.ts'
 
 export const voiceGate = {
   description: 'The voice gate every message to send as the owner passes',
   specPath: 'docs/specs/voiceGate.md',
-  codePaths: ['src/voice/brief/client.ts', 'src/voice/brief/types.ts', 'src/cli/discord/index.ts', 'src/voice/passes/client.ts', 'src/voice/sameness/client.ts', 'src/voice/sameness/types.ts', 'src/twitter/queue/plan/client.ts', 'src/inbox/store/client.ts', 'src/voice/aiTells/helpers/jina.ts', 'src/cli/discord/index.ts', 'src/cli/slack/index.ts', 'src/cli/instagram/index.ts', 'src/cli/twitter/helpers/send.ts', 'src/cli/twitter/helpers/queue.ts', 'src/twitter/copy/voice/client.ts', 'src/twitter/copy/voice/types.ts', 'src/cli/twitter/helpers/voice.ts', 'src/voice/phrases/client.ts', 'src/voice/phrases/types.ts', 'src/twitter/copy/scrambler/client.ts', 'src/twitter/copy/scrambler/types.ts', 'src/voice/room/index.ts', 'src/voice/room/types.ts', 'src/cli/voiceNote/index.ts'],
+  codePaths: ['src/voice/brief/client.ts', 'src/voice/brief/types.ts', 'src/cli/discord/index.ts', 'src/voice/passes/client.ts', 'src/voice/sameness/client.ts', 'src/voice/sameness/types.ts', 'src/twitter/queue/plan/client.ts', 'src/inbox/store/client.ts', 'src/voice/aiTells/helpers/jina.ts', 'src/cli/discord/index.ts', 'src/cli/slack/index.ts', 'src/cli/instagram/index.ts', 'src/cli/twitter/helpers/send.ts', 'src/cli/twitter/helpers/queue.ts', 'src/twitter/copy/voice/client.ts', 'src/twitter/copy/voice/types.ts', 'src/cli/twitter/helpers/voice.ts', 'src/voice/phrases/client.ts', 'src/voice/phrases/types.ts', 'src/twitter/copy/scrambler/client.ts', 'src/twitter/copy/scrambler/types.ts', 'src/voice/room/index.ts', 'src/voice/room/types.ts', 'src/cli/voiceNote/index.ts', 'src/voice/aiTells/helpers/bounded.ts', 'src/voice/aiTells/types.ts', 'src/voice/aiTells/client.ts', 'src/voice/pack/client.ts', 'src/voice/pack/types.ts', 'src/voice/score/client.ts', 'src/voice/score/types.ts', 'src/voice/converge/client.ts', 'src/voice/converge/types.ts', 'src/cli/twitter/helpers/voiceOptions.ts'],
   anchors: {
     'REQ-VOICE-09': [
       { kind: 'symbol', file: COMMAND, name: 'gateSend' },
@@ -96,6 +97,51 @@ export const voiceGate = {
     'REQ-VOICE-06': [
       { kind: 'symbol', file: 'src/twitter/copy/voice/types.ts', name: 'VOICE_PASS' },
       { kind: 'symbol', file: 'src/twitter/copy/voice/types.ts', name: 'CONTEXT_PASS' },
+      { kind: 'symbol', file: COMMAND, name: 'gateReadings' },
+      { kind: 'uses', file: COMMAND, name: 'scoreOf' },
+    ],
+    'REQ-VOICE-27': [
+      { kind: 'value', file: 'src/voice/aiTells/types.ts', name: 'JINA_GATE_MS', equals: 4000 },
+      { kind: 'symbol', file: 'src/voice/aiTells/helpers/bounded.ts', name: 'embedBounded' },
+      { kind: 'symbol', file: 'src/voice/aiTells/helpers/bounded.ts', name: 'rerankBounded' },
+      { kind: 'symbol', file: 'src/voice/aiTells/helpers/bounded.ts', name: 'withinMs' },
+      { kind: 'uses', file: COMMAND, name: 'embedBounded' },
+    ],
+    'REQ-VOICE-28': [
+      { kind: 'symbol', file: 'src/voice/pack/client.ts', name: 'packOf' },
+      { kind: 'symbol', file: 'src/voice/pack/client.ts', name: 'renderPack' },
+      { kind: 'symbol', file: OPTIONS, name: 'packFor' },
+      { kind: 'value', file: 'src/voice/pack/types.ts', name: 'PACK_PER_TIER', equals: 5 },
+    ],
+    'REQ-VOICE-29': [
+      { kind: 'symbol', file: 'src/voice/score/types.ts', name: 'SCORE_WEIGHTS' },
+      { kind: 'symbol', file: 'src/voice/score/client.ts', name: 'scoreOf' },
+      { kind: 'symbol', file: 'src/voice/score/client.ts', name: 'hardBlocks' },
+      { kind: 'symbol', file: 'src/voice/score/client.ts', name: 'scoreTable' },
+    ],
+    'REQ-VOICE-30': [
+      { kind: 'symbol', file: OPTIONS, name: 'calibrate' },
+      { kind: 'symbol', file: 'src/voice/score/client.ts', name: 'thresholdFrom' },
+      { kind: 'symbol', file: 'src/voice/score/client.ts', name: 'saveCalibration' },
+      { kind: 'value', file: 'src/voice/score/types.ts', name: 'HELD_OUT_PASS', equals: 0.95 },
+    ],
+    'REQ-VOICE-31': [
+      { kind: 'symbol', file: 'src/voice/score/client.ts', name: 'recordVerdict' },
+      { kind: 'symbol', file: 'src/voice/score/client.ts', name: 'verdictFor' },
+      { kind: 'uses', file: COMMAND, name: 'verdictFor' },
+    ],
+    'REQ-VOICE-32': [
+      { kind: 'symbol', file: VOICE, name: 'readVoices' },
+      { kind: 'symbol', file: VOICE, name: 'optionsRequestOf' },
+      { kind: 'symbol', file: OPTIONS, name: 'gradeOptions' },
+      { kind: 'symbol', file: OPTIONS, name: 'rankOptions' },
+      { kind: 'symbol', file: OPTIONS, name: 'fixFor' },
+    ],
+    'REQ-VOICE-33': [
+      { kind: 'symbol', file: 'src/voice/converge/client.ts', name: 'convergenceOf' },
+      { kind: 'symbol', file: 'src/voice/converge/client.ts', name: 'compareLines' },
+      { kind: 'symbol', file: 'src/voice/converge/client.ts', name: 'hisFacts' },
+      { kind: 'uses', file: COMMAND, name: 'convergenceOf' },
     ],
   },
   rubrics: {
@@ -104,22 +150,29 @@ export const voiceGate = {
     'REQ-VOICE-03': noul('Does readVoice set pass to false when any never-said phrase is found in the draft text, whatever SubQ answers?'),
     'REQ-VOICE-04': noul('Does readVoice ask SubQ whether a first message to someone the owner never talked with carries an ask, fail the draft when openerOnly is below its threshold, and pass the opener check when the chat already holds messages of the owner (alreadyTalkedInThisChat)?'),
     'REQ-VOICE-05': noul('Does readVoice set pass to false when the watermark reading level is artifacts?'),
-    'REQ-VOICE-06': noul('Is pass true only when voice, inContext, friendLike and openerOnly reach their thresholds, toThem reaches its threshold when it is set, buildsOn reaches CONTEXT_PASS when it is set, no never-said phrase is found and the watermark level is not artifacts?'),
+    'REQ-VOICE-06': noul('Does gateReadings set pass from scoreOf alone (no hard block and the score at or above the calibrated threshold), while still computing strictPass from the old every-check rule?'),
+    'REQ-VOICE-27': noul('Is every Jina embeddings and rerank call inside the gate bounded by JINA_GATE_MS, does rankedContext fall back to the local embedder and cosine order when Jina is late or missing, and does readAiTells keep its rule hits and mark the closeness skipped when its embeddings are late?'),
+    'REQ-VOICE-28': noul('Does voice with a chat and no text return a pack built locally with his real replies (this chat or person first, then other chats), his features line, how he talks to this person against how he writes everywhere, how they talk labelled not to copy, his facts in this chat, two or three not-him lines and the ask to write 3-5 options?'),
+    'REQ-VOICE-29': noul('Does scoreOf weigh only the signals named in SCORE_WEIGHTS, share a missing signal weight among the rest, and do hardBlocks fail a never-said phrase, watermark artifacts or hidden characters and an ask in a first message to someone who has not written, whatever the score?'),
+    'REQ-VOICE-30': noul('Does calibrate leave each held-out reply out of its own evidence, word pairs and nearest replies, set the threshold with thresholdFrom so HELD_OUT_PASS of them pass, and store it dated with the before and after pass rates?'),
+    'REQ-VOICE-31': noul('Is every verdict recorded by the exact text and the chat last message id, and does gateSend reuse it only when the chat last message id is unchanged?'),
+    'REQ-VOICE-32': noul('Does voice with options grade them all in one SubQ request, rank them passing first and by score, fail only when none passes, and then give the fix for the best one with his nearest real phrasing per failing span?'),
+    'REQ-VOICE-33': noul('Does convergenceOf compare the draft reuse of their words and its style shift toward them with his own in this chat (or everywhere when this chat is thin), and does the not-mirroring signal drop as that gap grows?'),
     'REQ-VOICE-07': noul('Does buildPhraseIndex count every word pair in the replies of the owner and set a p10 baseline from his replies with the own pairs of each reply left out, does readPhrases leave out pairs using words from what they said and fail a draft whose share of pairs the owner wrote at least FAMILIAR_MIN_USES times is below that floor, and does the voice command fail the draft then and hand the unfamiliar pairs to readVoice?'),
     'REQ-VOICE-08': noul('Does the voice command run scramblerReadingOf on the draft through the vendored aiWatermarkScrambler inspect_text script, fail the draft when it finds any suspicious character, and hand its count and kinds to readVoice?'),
     'REQ-VOICE-09': noul('Do the discord send, slack send, instagram send (when there is text) and twitter dm commands call gateDeps.gate (gateSend) after waitCaughtUp and before guardSend, and return voiceGateFailed with nothing sent when it fails; does the queue contextChanged call it for an item with text and return the failed parts so runQueue holds the item; does gateSend run gateReading (readVoice, the AI tells index, readPhrases, the watermark reading and the scrambler) and answer a one line pass or a refusal listing only failedParts?'),
     'REQ-VOICE-10': noul('Does rankedContext take the chat messages from chatContextOf, embed the moment and the messages with voiceDeps.aiEmbedder, keep the RANKED_SHORTLIST closest by cosine, rerank them, return the top RANKED_CONTEXT in time order with their full text, and does readVoice put them in its state as thisConversationRankedForThisMoment and ask inContext against them?'),
     'REQ-VOICE-12': noul('Does gateSend call chatEvidence with the send platform, conversation id, user id and handle, and pass its evidence to gateReading; does chatIdFor match a saved conversation of the same platform by its conversation id, then on twitter by the user id being one of the conversation id parties, then by handle on that platform only, and return null when none matches; and does chatEvidence then read that chat with evidenceFor? Does alreadyTalkedIn return true when the evidence has recent messages, when the ranked conversation has a message from the owner, or when a real reply is from the same chat or the same person, and does readVoice then set openerOnly to 1 without using the SubQ answer? Does gateSend take what is being answered from momentAnswered, which returns every message they sent after the owner last spoke, oldest first and one per line, and an empty string when the owner spoke last; and does gateSend rank the chat for the gate against what they said together with the draft itself?'),
-    'REQ-VOICE-11': noul('Does storedEmbedder look up every text with vectorsFor by its hash, model and dimensions, embed only the missing ones and store them with saveVectors, does jinaEmbedder do the same, do buildAiIndex and openAiIndex keep the phrase vectors and the index meta in the .db (saveVectors, saveAiIndex, aiIndexOf), and is no reading, score or verdict written anywhere?'),
+    'REQ-VOICE-11': noul('Does storedEmbedder look up every text with vectorsFor by its hash, model and dimensions, embed only the missing ones and store them with saveVectors, does jinaEmbedder do the same, do buildAiIndex and openAiIndex keep the phrase vectors and the index meta in the .db (saveVectors, saveAiIndex, aiIndexOf), and are the only gate results kept the verdicts and the calibration in the state table?'),
     'REQ-VOICE-19': noul('Does gateSend hand a send with brief set to gateBrief after the sameness check; does gateBrief refuse a draft the scrambler finds suspicious, then call readBrief with the ranked chat context, the room and attachedOf over the files; does readBrief ask clear, why, doneWhen, kind and steerable (and fitsTheRoom with a room) and pass only when every answer is at least BRIEF_PASS; and does the discord send command attach the files from filesOf to the last part only, refusing fileRefused for a file outside OUTBOX or ~/.logCli or over 10 MB?'),
-    'REQ-VOICE-18': noul('Does gateSend, after the sameness check, return a pass without calling SubQ only when recentPass finds the same text passed under PASS_REUSE_MS ago and incomingSince finds nothing new in that chat since, and do gateSend and the voice command record each pass with recordPass?'),
+    'REQ-VOICE-18': noul('Does gateSend, after the sameness check, first reuse verdictFor for the exact text and the chat last message id, and otherwise return a pass without calling SubQ only when recentPass finds the same text passed under PASS_REUSE_MS ago and incomingSince finds nothing new in that chat since, and do gateSend and the voice command record each pass with recordPass?'),
     'REQ-VOICE-17': noul('Do the voiceGateFailed refusal of gateSend and the sameAsSent refusal both end with rewriteSteps, which tells the agent to call voice with the person and no text, then search, then write a draft unlike anything sent today?'),
     'REQ-VOICE-16': noul('Does sameAsSent read ownTextsSince for the last SAMENESS_WINDOW_HOURS and refuse when samenessOf finds the share of the draft word pairs (links left out) already in one sent text at or above SAMENESS_LIMIT, never refusing a draft with fewer than SAMENESS_MIN_PAIRS word pairs; does gateSend run gateDeps.same before reading the voice, do the twitter dm and Discord sends run gateDeps.same before skipping the gate for overGate and refuse sameAsSent, and does itemProblems add a sameAsSent problem for each pending queue item batchSameness finds repeating an earlier one?'),
     'REQ-VOICE-15': noul('Does gateSend pass gateReading a room (the one given, the one readRoom reads, or roomOf over the chat in the .db); does roomOf in src/voice/room/index.ts give the kind, who else spoke in the last 24 hours, the last of them, how many of the owner messages end the chat and an addressTo that, for a channel or group with nobody else lately, says to talk to it as a whole; does readVoice give SubQ theRoom and ask fitsTheRoom, failing a draft under CONTEXT_PASS; and do the Discord send and voice note pass a readRoom built with roomFromRead from the chat last 20 messages?'),
     'REQ-VOICE-14': noul('In src/cli/twitter/helpers/send.ts, does the dm command declare an overGate flag (OVER_GATE) only on dm, skip gateDeps.gate only when overGate is true while still refusing voiceGateFailed when it is not, and does the planSend aiArtifacts refusal still apply before it? In src/cli/discord/index.ts, does DISCORD_SEND_INPUT declare an overGate flag, and does the Discord send skip gateDeps.gate only when overGate is true, still refusing voiceGateFailed when it is not, with its watermark aiArtifacts check before it?'),
     'REQ-VOICE-13': noul('In src/twitter/copy/voice/client.ts, when the draft has spoken set, does readVoice ask a voice question that says it is a voice note whose length and punctuation never count against it, ask a buildsOn question about building on the whole conversation rather than repeating what the owner already said, and fail the draft when buildsOn is under CONTEXT_PASS, while without spoken there is no buildsOn question and buildsOn is null; and in src/cli/twitter/helpers/voice.ts does gateReading pass spoken to readVoice and skip offProfile for it, does gateSend take spoken and pass it on, does failedParts name a low buildsOn, and does the voice command take a spoken flag; and with spoken does gateReading pass howOwnerTalks from voiceDeps (transcripts of ownersOwnVoiceNotes, which keeps only recordings made before firstClonedAt) so that readVoice puts them in its state as howOwnerTalksInHisOwnVoiceNotes and its spoken voice question reads them first?'),
     'REQ-VOICE-23': noul('Does cardFor in src/inbox/card/client.ts build a card only from the messages of the chats that chatsFor finds, joining an X dm stored under both of its ids (A:B and A-B) into one card, store it in conversationCards with its throughSeq, and rebuild it only when a newer message exists; does appendEvent call refreshWorkedCards, which rebuilds only a chat that already has a card or is claimed?'),
-    'REQ-VOICE-24': noul('Does the voice command with a chat and no text show renderCard first, then how the owner writes there and at most NEAR_WHEN_SCOPED of his real replies, with the instruction to answer only what is open in one or two short lines; and does readVoice put the rendered card in its state as thisConversation?'),
+    'REQ-VOICE-24': noul('Does the voice command with a chat and no text show renderCard first, then what is open and the grounding pack; and does readVoice put the rendered card in its state as thisConversation?'),
     'REQ-VOICE-25': noul('When a card is known and the owner has spoken in the chat, does readVoice require inContext only when answerOwed is true, that is the card waits on the owner and their last line is under ANSWER_OWED_MS old?'),
     'REQ-VOICE-26': noul('Does gateReading skip evidenceAnywhere when scopedToThisChat is true, that is the owner has OWN_CHAT_MESSAGES or more messages in the chat?'),
     unspecifiedBehavior: noul('Does readVoice let a draft pass by a route the specification does not describe, such as skipping SubQ or passing when an answer is missing?'),
@@ -148,6 +201,13 @@ export const voiceGate = {
     'REQ-VOICE-17': MET,
     'REQ-VOICE-18': MET,
     'REQ-VOICE-19': MET,
+    'REQ-VOICE-27': MET,
+    'REQ-VOICE-28': MET,
+    'REQ-VOICE-29': MET,
+    'REQ-VOICE-30': MET,
+    'REQ-VOICE-31': MET,
+    'REQ-VOICE-32': MET,
+    'REQ-VOICE-33': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

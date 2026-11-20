@@ -37,6 +37,26 @@ describe("the voice gate inside every send (rule 137)", () => {
       voiceDeps.aiEmbedder = before;
     }
   });
+
+  test("a Jina call that never answers falls back to the local embedder within the bound, so the send never waits on it", async () => {
+    process.env.LOG_INBOX_STATE = mkdtempSync(join(tmpdir(), "gate"));
+    const saved = { ai: voiceDeps.aiEmbedder, local: voiceDeps.embedder, ms: voiceDeps.jinaMs };
+    const words = ["camera", "video", "tax", "weather"];
+    voiceDeps.aiEmbedder = () => ({ model: "jina", dimensions: 4, embed: () => new Promise(() => {}), rerank: () => new Promise(() => {}) });
+    voiceDeps.embedder = () => ({ model: "local", dimensions: 4, embed: async (texts: string[]) => texts.map((t) => Float32Array.from(words.map((w) => (t.toLowerCase().includes(w) ? 1 : 0)))) });
+    voiceDeps.jinaMs = 50;
+    try {
+      for (const [i, text] of ["the weather is grim", "camera arrived today, sent you the video", "tax return done"].entries()) appendEvent({ platform: "discord", account: "acct", conversationId: "D2", type: "message", with: "abby", text, sourceAt: `2026-11-04T0${i}:00:00Z`, receivedAt: `2026-11-04T0${i}:00:01Z` });
+      const started = Date.now();
+      const ranked = await rankedContext("discord", "acct", { conversationId: "D2" }, "camera ok?", 1);
+      expect(Date.now() - started).toBeLessThan(2000);
+      expect(ranked.map((r) => r.text)).toEqual(["camera arrived today, sent you the video"]);
+    } finally {
+      voiceDeps.aiEmbedder = saved.ai;
+      voiceDeps.embedder = saved.local;
+      voiceDeps.jinaMs = saved.ms;
+    }
+  });
 });
 
 describe("the gate inside a send finds the chat's real replies by what the send knows", () => {

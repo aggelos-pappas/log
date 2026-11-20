@@ -44,9 +44,9 @@ Checked by: code and SubQ
 
 ## Pass
 
-### REQ-VOICE-06: A draft passes only when every answer passes
+### REQ-VOICE-06: A draft passes on one calibrated score and three hard blocks
 
-A draft passes only when the voice answer reaches its threshold, the context answer reaches its threshold when an answer is owed (they wrote last, within the last day, or the owner has never talked with them; a share to someone he already talks to with nothing of theirs waiting answers nothing), the friend-like and opener answers reach theirs, the chat answer reaches its threshold when there is a chat, the builds-on answer reaches its threshold when the draft is spoken (REQ-VOICE-13), no never-said phrase is found and the watermark finds no artifacts.
+A draft passes when no hard block is hit and its one voice score (REQ-VOICE-29) reaches the calibrated threshold (REQ-VOICE-30). The SubQ answers (voice, friend-like, chat, context when an answer is owed, room, builds-on) are signals inside the score, not separate pass/fail checks. The old every-check rule (the voice answer at `VOICE_PASS`, every other answer at `CONTEXT_PASS`, his phrasing at his floor, no AI tell) is still computed as `strictPass` and reported by `log voice calibrate` as today's gate, so the two can be compared on the same readings.
 
 Checked by: code and SubQ
 
@@ -96,9 +96,9 @@ The gate takes the chat's messages from the .db (both ways), embeds them and wha
 
 Checked by: code and SubQ
 
-### REQ-VOICE-11: Only embeddings are stored, each once, in the .db
+### REQ-VOICE-11: Embeddings are stored once in the .db, and only a verdict and the calibration beside them
 
-A vector is stored in the .db's `embeddings` table by the text's hash, the model and the dimensions, and an embedder looks there first and embeds only what has no vector yet. The AI tells index's phrase list and the owner's baseline are in `aiIndexes`. No reading, score or verdict is saved. Rule 137.
+A vector is stored in the .db's `embeddings` table by the text's hash, the model and the dimensions, and an embedder looks there first and embeds only what has no vector yet, so the owner's reply embeddings are read from the .db and never re-embedded per call. The AI tells index's phrase list and the owner's baseline are in `aiIndexes`. The only gate results kept are a verdict per exact text and chat's last message id (REQ-VOICE-31) and the dated calibration (REQ-VOICE-30), both in the `state` table; no reading is saved. Rule 137.
 
 Checked by: code and SubQ
 
@@ -126,9 +126,9 @@ Checked by: code and SubQ
 
 Checked by: code and SubQ
 
-### REQ-VOICE-18: A draft that just passed is not sent to SubQ again
+### REQ-VOICE-18: A draft that was just gated is not sent to SubQ again
 
-When `gateSend` or the `log voice` command passes a draft, it records the pass by the draft's text (`recordPass`, `src/voice/passes`). `gateSend` then answers a send of the same text as passed without asking SubQ (`recentPass`) when that pass is under `PASS_REUSE_MS` (10 minutes) old and nothing has come in on the chat since (`incomingSince`). The sameness check (REQ-VOICE-16) still runs first. On a Discord DM or group whose .db is current (`readSourceFor`), the room the gate reads comes from `chatMessages`, not a read from Discord. the owner, 2026-11-07. Rule 161.
+`gateSend` first looks up the verdict of this exact text for the chat's last message id (`verdictFor`, REQ-VOICE-31) and reuses it, pass or fail, so the send gives the same verdict the pre-gate gave when nobody has written since. Without one, when `gateSend` or the `log voice` command passed a draft, it records the pass by the draft's text (`recordPass`, `src/voice/passes`), and `gateSend` answers a send of the same text as passed without asking SubQ (`recentPass`) when that pass is under `PASS_REUSE_MS` (10 minutes) old and nothing has come in on the chat since (`incomingSince`). The sameness check (REQ-VOICE-16) still runs first. On a Discord DM or group whose .db is current (`readSourceFor`), the room the gate reads comes from `chatMessages`, not a read from Discord. the owner, 2026-11-07. Rule 161.
 
 Checked by: code and SubQ
 
@@ -160,7 +160,7 @@ Checked by: code and SubQ
 
 ### REQ-VOICE-24: The writer and the gate read the card first
 
-`voice` with a chat and no text shows `renderCard` first, then how the owner writes there and at most four of his real replies, and tells the writer to answer only what is open in one or two short lines, never a list of questions, never what he already asked, nothing from another conversation. `readVoice` gives the rendered card to SubQ as `thisConversation`. The owner, 12 November: "it keeps scoring really low on the gate and it's because it's a mountain wall of text".
+`voice` with a chat and no text shows `renderCard` first, then what they said that is open, then the grounding pack (REQ-VOICE-28). `readVoice` gives the rendered card to SubQ as `thisConversation`. The owner, 12 November: "it keeps scoring really low on the gate and it's because it's a mountain wall of text".
 
 Checked by: code and SubQ
 
@@ -173,5 +173,49 @@ Checked by: code
 ### REQ-VOICE-26: A chat with history is judged on that history
 
 With `OWN_CHAT_MESSAGES` (5) or more of the owner's messages in the chat (`scopedToThisChat`), `gateReading` does not read his replies from other conversations (`evidenceAnywhere`), so a draft to one person is never graded against a chat with someone else.
+
+Checked by: code
+
+## Options
+
+### REQ-VOICE-27: No Jina call inside the gate waits more than a few seconds
+
+Every Jina embeddings and rerank call the gate makes is bounded by `JINA_GATE_MS` (4 s): `voiceDeps.aiEmbedder` passes it to `jinaEmbedder` as a fetch timeout with no retries, and `withinMs` races the call against it. `rankedContext` embeds through `embedBounded`, which falls back to the local embedder (`voiceDeps.embedder`, the stored MiniLM the router uses) when Jina is late, fails or has no key, and then ranks by cosine without a rerank (`rerankBounded` answers `null`). `readAiTells` keeps its rule hits and skips the closeness to AI phrases (`skipped`) when its embeddings are late. Building the AI tells index (`log voice aiIndex`) is not bounded. On 2026-11-20 one unbounded Jina embeddings call inside a Discord send took 167 s.
+
+Checked by: code
+
+### REQ-VOICE-28: The grounding pack comes before any draft
+
+`voice { to, with }` with no text returns the grounding pack (`packFor`, `packOf`, `renderPack` in `src/voice/pack`), built locally from the .db and the voice index: his real replies to messages like what is open (they wrote, he answered), up to `PACK_PER_TIER` from this chat or person first and then up to `PACK_PER_TIER` from his other chats; one line of his features here (median length, burst, case, the punctuation he uses and never uses, his top word pairs here, his openers); how he talks to this person against how he writes everywhere, and how they talk, labelled not to copy (`compareLines`); his facts said in this chat (`hisFacts`), the only facts an option may state; two or three contrastive lines that are not him (AI phrases nearest to this kind of reply, and their own latest line); and the ask to write 3-5 options and grade them in one call. What is open defaults to what they sent since the owner last wrote.
+
+Checked by: code
+
+### REQ-VOICE-29: One voice score with fixed written weights
+
+`scoreOf` in `src/voice/score` adds the signals the gate already has, each in 0..1, with the weights in `SCORE_WEIGHTS`: his phrasing (his share of familiar word pairs against his median, less `NOT_HERE_COST` for each thing he never writes here), the nearest real reply (cosine to his closest real reply by the local embedder), not an AI tell (distance from the nearest AI phrase between his p50 and p99, less `RULE_HIT_COST` per rule hit), SubQ voice (the mean of voice, friend-like and, with a chat, the chat answer), answers them (the context answer when owed, the room and builds-on answers when asked) and not mirroring them (REQ-VOICE-33). A missing signal is left out and the others share its weight. `hardBlocks` fail a draft whatever its score: a never-said phrase, watermark artifacts or hidden characters, and an ask in a first message to someone who has not written. `scoreTable` prints the score, the threshold and each signal's value, weight and share.
+
+Checked by: code
+
+### REQ-VOICE-30: The threshold is calibrated on his own held-out replies
+
+`log voice calibrate` (MCP `voiceCalibrate`) holds out `CALIBRATE_COUNT` of his dm replies (`heldOutSample`, one per chat first), grades each against its chat's evidence with that reply left out of the evidence, his word pairs and the nearest replies, grades `CALIBRATE_AI_DRAFTS` AI-written lines against the same chats, and sets the threshold with `thresholdFrom` so `HELD_OUT_PASS` (95%) of his held-out replies pass, inside `THRESHOLD_FLOOR` and `THRESHOLD_CEILING`. It stores the threshold, the date, his pass rate under today's every-check gate and under the score, and the share of AI lines each fails, in the `state` table (`saveCalibration`), and every gate reads it (`currentThreshold`).
+
+Checked by: code and SubQ
+
+### REQ-VOICE-31: The same text gets the same verdict at gate and at send
+
+Every gate with a known chat records its verdict by the exact text and the chat's last message id (`recordVerdict`), and `gateSend` reuses it when the chat's last message id is still the same (`verdictFor`), naming the time and score it came from. The pre-gate and the send read what is open from the chat the same way (`momentAnswered`), so a pre-gate without a hand-written context grades what the send grades.
+
+Checked by: code
+
+### REQ-VOICE-32: Options are graded together and ranked
+
+`voice { to, with, options: [..] }` takes up to `OPTIONS_MAX` drafts (a list flag whose items are never split on commas) and grades them in one SubQ request (`readVoices`, `optionsRequestOf`: every question asked once per option, each option's own messages and unfamiliar pairs beside it), then ranks them passing first and by the score (`rankOptions`). The call fails only when no option passes, and then returns the fix for the best one (`fixFor`): each failing span (a never-said phrase, an AI tell, a pair he has never written, something he never writes here) next to his nearest real phrasing for it, and the weakest signals in plain words. Every option's verdict is recorded (REQ-VOICE-31), so the send of the chosen one reuses it.
+
+Checked by: code and SubQ
+
+### REQ-VOICE-33: A draft that mirrors them more than he does loses
+
+LLMs over-converge to their conversation partner's style beyond human baselines (arXiv 2508.03276, 2605.29278), so an agent replying in a chat drifts into the other person's style rather than his. `convergenceOf` in `src/voice/converge` measures how much of the draft's words come from their last messages against how much of his replies reuse what they said (in this chat with `HERE_MIN_PAIRS` or more of his replies, else everywhere), and how far the draft's style (`styleOf`: length, case, commas, full stops, questions, !, emoji) moves toward theirs from how he writes to this person; the larger gap, at `STYLE_WEIGHT` for style, costs `CONVERGENCE_COST` per unit in the not-mirroring signal. `convergenceLine` prints both sides for the best option.
 
 Checked by: code
