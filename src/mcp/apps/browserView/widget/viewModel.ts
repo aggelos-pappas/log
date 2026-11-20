@@ -89,6 +89,8 @@ export interface FrameAction {
   busy?: boolean;
 }
 
+const RAW_STATES = new Set(["unknown", "null", "undefined", "none"]);
+
 export interface FrameInput {
   platform: string | null;
   account: string | null;
@@ -143,7 +145,7 @@ export function frameModel(input: FrameInput): FrameModel {
   const showCover = !input.live || busy || Boolean(input.failed);
   return {
     title: input.platform ?? "Live browser",
-    accountLine: input.account ? `${input.account}${input.pageState ? ` · ${input.pageState}` : ""}` : "",
+    accountLine: input.account ? `${input.account}${input.pageState && !RAW_STATES.has(input.pageState) ? ` · ${input.pageState}` : ""}` : "",
     badge: input.browser ? { label: input.browser.label, logo: input.browser.logo, name: input.browser.name } : null,
     pill: stopped ? { tone: "stop", text: "Stopped" } : input.live && !input.failed ? { tone: "live", text: "Live browser" } : { tone: "idle", text: busy ? "Connecting" : "Not connected" },
     address: addressText({ address: input.address, generation: input.generation }, input.live),

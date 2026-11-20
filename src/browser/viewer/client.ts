@@ -131,6 +131,7 @@ export function viewOf(account: string, state: ViewerLiveState): ViewerView {
     width: Number.isSafeInteger(state.width) ? (state.width as number) : null,
     height: Number.isSafeInteger(state.height) ? (state.height as number) : null,
     canInteract: phase === 'signInRequired' || (state.ownerDriven === true && phase !== 'busy'),
+    ownerDriven: state.ownerDriven === true,
     stream: streamOf(state.stream),
   }
 }
