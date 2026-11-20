@@ -80,7 +80,7 @@ describe("the service's freshness cache", () => {
     let clock = 0;
     let listed = 0;
     const source = cachedFreshness(".", {
-      stamps: { current: () => stamp, refresh: () => false, close: () => {} },
+      stamps: { current: () => stamp, refresh: () => false, refreshAsync: async () => false, close: () => {} },
       files: () => {
         listed += 1;
         return [`file${listed}`];
@@ -97,6 +97,37 @@ describe("the service's freshness cache", () => {
     clock = 60_000;
     expect(source.changes()).toEqual(["file3"]);
     expect(source.stamp()).toBe(2);
+    source.close();
+  });
+
+  test("in the service a hook never waits on git or the tree walk: it answers the last listing and refreshes behind", async () => {
+    let stamp = 1;
+    let clock = 0;
+    let synced = 0;
+    let walked = 0;
+    let listedLater = 0;
+    const source = cachedFreshness(".", {
+      stamps: { current: () => stamp, refresh: () => (synced += 1) > 0, refreshAsync: async () => ((walked += 1), false), close: () => {} },
+      files: () => ["first"],
+      filesAsync: async () => [`later${(listedLater += 1)}`],
+      refreshMs: 60_000,
+      now: () => clock,
+      background: true,
+    });
+    expect(source.changes()).toEqual(["first"]);
+    await source.settled();
+    expect(listedLater).toBe(0);
+    stamp = 2;
+    expect(source.changes()).toEqual(["first"]);
+    await source.settled();
+    expect(source.changes()).toEqual(["later1"]);
+    await source.settled();
+    clock = 60_000;
+    source.changes();
+    await source.settled();
+    expect(source.changes()).toEqual(["later2"]);
+    expect(synced).toBe(0);
+    expect(walked).toBeGreaterThan(0);
     source.close();
   });
 });

@@ -206,6 +206,52 @@ describe("the native Hermes plugin's pre_llm_call", () => {
     expect(out.after).toEqual(["idle", "b\n\nc"]);
   });
 
+  test("one push loop per session however often the turn hook asks, so no extra push.ts piles up while one is between restarts", () => {
+    const scratch = mkdtempSync(join(tmpdir(), "harnessContract-pushOnce-"));
+    try {
+      mkdirSync(join(scratch, "scripts", "hooks"), { recursive: true });
+      writeFileSync(join(scratch, "scripts", "hooks", "push.ts"), "");
+      const plugin = join(root, HERMES_PLUGIN_DIR, "__init__.py");
+      const script = [
+        "import importlib.util, json, threading, time",
+        `spec = importlib.util.spec_from_file_location("logHooks", ${JSON.stringify(plugin)})`,
+        "module = importlib.util.module_from_spec(spec)",
+        "spec.loader.exec_module(module)",
+        "spawned = []",
+        "class Proc:",
+        "    def __init__(self, *a, **k):",
+        "        spawned.append(threading.current_thread().name)",
+        "        self.stdout = iter([])",
+        "    def poll(self):",
+        "        return 0",
+        "    def kill(self):",
+        "        pass",
+        "module.subprocess.Popen = Proc",
+        "module.PUSH_RETRY_SECONDS = 0.05",
+        "class Ctx:",
+        "    def inject_message(self, text, role, session_key):",
+        "        pass",
+        "module.PUSH.ctx = Ctx()",
+        "for i in range(6):",
+        "    module.PUSH.follow('key', 'reader')",
+        "    time.sleep(0.03)",
+        "time.sleep(0.2)",
+        "first = set(spawned)",
+        "module.PUSH.follow('key', 'other')",
+        "time.sleep(0.2)",
+        "module.PUSH.key = ''",
+        "print(json.dumps({'threads': len(first), 'after': len(set(spawned))}))",
+      ].join("\n");
+      const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, env: { ...process.env, HERMES_HOME: HERMES_HOME_WITH_LOG, LOG_ROOT: scratch, LOG_CONTEXT_SERVICE: "off" } });
+      expect(run.status).toBe(0);
+      const out = JSON.parse(run.stdout.trim()) as { threads: number; after: number };
+      expect(out.threads).toBe(1);
+      expect(out.after).toBe(2);
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
+  });
+
   test("adds what landed while a log tool ran to its result, and leaves other tools alone", () => {
     const scratch = mkdtempSync(join(tmpdir(), "harnessContract-pyHermesLive-"));
     try {

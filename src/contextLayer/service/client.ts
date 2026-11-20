@@ -1,10 +1,10 @@
-import { closeSync, mkdirSync, openSync } from 'node:fs'
+import { closeSync, mkdirSync, openSync, promises as fsp } from 'node:fs'
 import { claimState, deleteState, getState, putState } from '../../storage/state/index'
 import { spawn } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { openDatabase } from '../../storage/schema/client'
 import { join } from 'node:path'
-import { CONTEXT_PORT, CURL_CONNECT_SECONDS, CURL_MAX_SECONDS, HOST, SERVICE_START_GRACE_MS, SERVICE_TIMEOUT_MS } from './types'
+import { CONTEXT_PORT, CURL_CONNECT_SECONDS, CURL_MAX_SECONDS, EMBED_KEEP, HOST, SERVICE_START_GRACE_MS, SERVICE_TIMEOUT_MS } from './types'
 import type { ServiceInfo, TimingLine } from './types'
 import type { MeaningAnswer, PlayMatch } from '../../useCases/router/index'
 import { logHome } from '../../config/logHome/index'
@@ -103,4 +103,50 @@ export async function askRoute(prompt: string, info: ServiceInfo | null = readSe
 
 export function serviceHookCommand(path: string, fallback: string): string {
   return `curl -sf --connect-timeout ${CURL_CONNECT_SECONDS} --max-time ${CURL_MAX_SECONDS} -X POST --data-binary @- http://${HOST}:${CONTEXT_PORT}${path} || ${fallback}`
+}
+
+export function sharedEmbed(embed: (texts: string[]) => Promise<Float32Array[]>, options: { uncased?: boolean; keep?: number } = {}): (texts: string[]) => Promise<Float32Array[]> {
+  const keep = options.keep ?? EMBED_KEEP
+  const known = new Map<string, Promise<Float32Array>>()
+  return (texts) => {
+    const keys = texts.map((t) => (options.uncased ? t.toLowerCase() : t))
+    const wanted = new Map<string, Promise<Float32Array>>()
+    const missing: string[] = []
+    for (const key of keys) {
+      if (wanted.has(key)) continue
+      const held = known.get(key)
+      if (held) wanted.set(key, held)
+      else missing.push(key)
+    }
+    if (missing.length) {
+      const made = embed(missing)
+      missing.forEach((key, i) => {
+        const one = made.then((vectors) => vectors[i])
+        wanted.set(key, one)
+        known.set(key, one)
+      })
+      made.catch(() => missing.forEach((key) => known.delete(key)))
+      while (known.size > keep) known.delete(known.keys().next().value!)
+    }
+    return Promise.all(keys.map((key) => wanted.get(key)!))
+  }
+}
+
+export async function newestChange(dir: string): Promise<number> {
+  let stat
+  try {
+    stat = await fsp.stat(dir)
+  } catch {
+    return 0
+  }
+  if (!stat.isDirectory()) return stat.mtimeMs
+  let out = stat.mtimeMs
+  let entries: string[] = []
+  try {
+    entries = await fsp.readdir(dir)
+  } catch {
+    return out
+  }
+  for (const name of entries) out = Math.max(out, await newestChange(join(dir, name)))
+  return out
 }

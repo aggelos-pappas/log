@@ -4,7 +4,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openDatabase } from '../../storage/schema/index'
-import { classifyCall, handRolledAdvice, listHandRolled, normaliseCall, recordHandRolled } from './index'
+import { classifyCall, handRolledAdvice, handRolledText, listHandRolled, normaliseCall, recordHandRolled } from './index'
 
 const REPO = join(import.meta.dir, '..', '..', '..')
 const SCRATCH = 'C:/Users/someone/AppData/Local/hermes/cache/scratch'
@@ -170,6 +170,18 @@ describe('the advice and the record', () => {
     expect(listed.map((r) => [r.target, r.count])).toEqual([['log.db (messages, chats)', 2], ['a link (t.co)', 1]])
     expect(listed[0].tools.sort()).toEqual(['Bash', 'execute_code'])
     expect(listed[0].firstAt).toBe(1000)
+  })
+
+  test('the warm service answers the same advice in process, counting each hit, and nothing for a quiet call', () => {
+    const counted: string[] = []
+    const record = (verdict: { target: string }) => (counted.push(verdict.target), 4)
+    const text = handRolledText(JSON.stringify({ tool_name: 'Bash', tool_input: { command: LINK } }), record)
+    expect(text).toContain('a link (t.co)')
+    expect(text).toContain('come up 4 times')
+    expect(counted).toEqual(['a link (t.co)'])
+    expect(handRolledText(JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'git status' } }), record)).toBe('')
+    expect(handRolledText('not json', record)).toBe('')
+    expect(counted).toHaveLength(1)
   })
 
   test('the hook script answers each host in its own shape and exits 0', () => {
