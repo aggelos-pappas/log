@@ -487,6 +487,8 @@ Measured on this project's own `log.db` on 2026-11-08, not estimated:
 | Claim a chat so no other agent answers it | 1 ms | 5 ms | 16 ms | 27 ms | `log timing` (79 claims) |
 | Lock the account for one call | 0.2 ms | 0.3 ms | 0.4 ms | 0.5 ms | `log timing` (62 calls) |
 | Match what you typed to a play (in the warm service) | 12 ms | 36 ms | 47 ms | n/a | `bun scripts/useCases/benchRouter.ts` |
+| A new message reaches the session's push (watcher store to push loop, 25 messages, 2026-11-20) | 248 ms | 354 ms | 408 ms | n/a | inbox push bench, see `docs/browsers.md` |
+| First live-browser or report card resource in Hermes (warm host) | 16 ms | 31 ms | 31 ms | n/a | `scripts/browserView/routeBench.py` |
 | Read the same Discord chat from Discord itself | 2.3 s | 3.6 s | 5.1 s | 6.0 s | `log timing` (190 reads) |
 
 That last row is why log reads its own database: asking the platform takes thousands of times longer. Sends are slower again, on purpose. Each account keeps human pacing between actions, and a refusal from a platform stops the run.

@@ -83,6 +83,7 @@ export default {
     injectStyles();
     injectAppStyles();
     const apps = appApi(ctx.rest);
+    void apps.warm();
     const load: Load = (id) => ctx.rest(`/views/${id}`);
     const send: Send = (text) => composerActions(host?.composer).send(text);
     const sent = (text: string) => {

@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { settleLocation } from "../../src/mcp/apps/browserView/index.ts";
-import { answerAppRequest } from "../../src/mcp/apps/logApp/index.ts";
+import { answerAppRequest, warmApps } from "../../src/mcp/apps/logApp/index.ts";
 import type { LogAppRequest } from "../../src/mcp/apps/logApp/index.ts";
 import { codeStampWatcher } from "../../src/mcp/freshness/index.ts";
 import { parseEnvText } from "../../src/mcp/server/helpers/index.ts";
@@ -48,3 +48,4 @@ lines.on("close", () => {
   if (inFlight === 0) process.exit(0);
 });
 write({ id: null, ok: true, ready: true });
+void warmApps().catch(() => null);

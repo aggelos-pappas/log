@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { batchOf, pushLoop } from './index'
+import { batchOf, inboxWaitOf, pushLoop } from './index'
 
 const quiet = { messages: [], alerts: [], text: null }
 
@@ -47,6 +47,31 @@ describe('the inbox push stream', () => {
     })
     expect(seen).toEqual(['held three'])
     expect(reads).toBe(1)
+  })
+
+  test('a message stored in log.db wakes the wait at once instead of after the fallback', async () => {
+    let stored = 'seq:1'
+    const wait = inboxWaitOf(() => stored)
+    const began = Date.now()
+    setTimeout(() => {
+      stored = 'seq:2'
+    }, 100)
+    await wait('', 10_000, 'seq:1')
+    expect(Date.now() - began).toBeLessThan(2000)
+  })
+
+  test('the loop hands the wait the mark it saw before reading, so a message landing during the read is not missed', async () => {
+    const seen: (string | undefined)[] = []
+    let n = 0
+    await pushLoop('session1', 'hermes', () => {}, {
+      read: () => quiet,
+      mark: () => `m${n++}`,
+      wait: async (_root, _ms, since) => {
+        seen.push(since)
+      },
+      rounds: 2,
+    })
+    expect(seen).toEqual(['m0', 'm1'])
   })
 
   test('an alert alone, such as a refused second watcher, is pushed too', () => {
