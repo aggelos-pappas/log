@@ -1649,7 +1649,7 @@ log browsers [--json]   (every open browser: its step and page, the known page s
 One account's live browser: whether it needs a person to sign in, in the window on this machine or inline from a remote runtime MCP tools: `browserView`, one per form, with named fields.
 
 ```text
-log browser view --account <accountName> [--json]   (the account's live browser: whether it needs a person to sign in, the page state and its revision; when log runs on the person's own machine the sign-in is in the browser window there, and from a remote runtime an MCP Apps host shows it inline through browserView)
+log browser view --account <accountName> [--json]   (the account's live browser: whether it needs a person to sign in, the page state and its revision; an MCP Apps host or Hermes shows it live inline, streamed from the page)
 Where the runtime is comes from LOG_BROWSER_VIEW_LOCATION (local or remote), which the stdio MCP, the HTTP MCP and the hosted bridge each set for their own process.
 ```
 

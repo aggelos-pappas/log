@@ -67,11 +67,10 @@ describe("the local log server speaks 2026-07-28 beside the older revisions", ()
     expect(ran.structuredContent.ok).toBe(true);
   });
 
-  test("what differs per host is decided per request: app-only tools refuse a caller that declared no MCP Apps", async () => {
+  test("the view's app tools answer a caller that declared no MCP Apps too, since hosts draw views without declaring them", async () => {
     const { ask } = await pair();
-    const refused = (await ask(call("s", "tools/call", { name: "browserViewStream", arguments: { account: "fakeGuild", generation: "g" } }))).result as { isError: boolean; structuredContent: { error: string } };
-    expect(refused.isError).toBe(true);
-    expect(refused.structuredContent.error).toBe("browserViewAppOnly");
+    const answered = (await ask(call("s", "tools/call", { name: "browserViewStream", arguments: { account: "fakeGuild", generation: "g" } }))).result as { isError: boolean; structuredContent: { error: string } };
+    expect(answered.structuredContent.error).not.toBe("browserViewAppOnly");
   });
 
   test("an initialize on the same connection still gets the legacy server", async () => {
@@ -81,7 +80,7 @@ describe("the local log server speaks 2026-07-28 beside the older revisions", ()
     await client.connect(clientSide);
     expect(client.getServerVersion()?.name).toBe("log");
     const { tools } = await client.listTools();
-    expect(tools.some((tool) => tool.name === "browserViewStream")).toBe(false);
+    expect(tools.some((tool) => tool.name === "browserViewStream")).toBe(true);
     await client.close();
     await server.close();
   });

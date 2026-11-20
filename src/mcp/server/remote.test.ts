@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { isAppTool } from "../apps/index.ts";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -77,7 +78,7 @@ describe("what a client needs from the server (MCP client best practices)", () =
     const [a, b] = InMemoryTransport.createLinkedPair();
     await Promise.all([server.connect(b), client.connect(a)]);
     const { tools } = await client.listTools();
-    expect(tools.filter((t) => t.name !== "getGuide" && t.name !== "report").every((t) => JSON.stringify(t.outputSchema) === JSON.stringify(TOOL_RESULT_SCHEMA))).toBe(true);
+    expect(tools.filter((t) => t.name !== "getGuide" && t.name !== "report" && !isAppTool(t.name)).every((t) => JSON.stringify(t.outputSchema) === JSON.stringify(TOOL_RESULT_SCHEMA))).toBe(true);
     expect(JSON.stringify(tools.find((t) => t.name === "report")?.outputSchema)).toBe(JSON.stringify(reportOutputSchema()));
     expect(client.getServerCapabilities()?.tools?.listChanged).toBe(true);
     await client.close();

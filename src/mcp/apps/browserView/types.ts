@@ -1,4 +1,5 @@
 export const BROWSER_VIEW_URI = "ui://log/browserView";
+export const BROWSER_DIRECTIVE = "logbrowser";
 export const BROWSER_VIEW_TOOL = "browserView";
 export const BROWSER_VIEW_FRAME_TOOL = "browserViewFrame";
 export const BROWSER_VIEW_INPUT_TOOL = "browserViewInput";
@@ -20,5 +21,5 @@ export interface AppToolDefinition {
   description: string;
   inputSchema: { type: "object"; properties: Record<string, unknown>; required: string[]; additionalProperties: false };
   annotations: { title: string; readOnlyHint: boolean; destructiveHint: boolean; idempotentHint: boolean; openWorldHint: boolean };
-  _meta: { ui: { resourceUri: string; visibility: ["app"] } };
+  _meta: { ui: { resourceUri: string; visibility: ["app"] } } & Record<string, unknown>;
 }

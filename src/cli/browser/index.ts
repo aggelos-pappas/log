@@ -6,7 +6,7 @@ import { knownPlatformOfAccount, PLATFORM_LABELS } from "../runner/helpers/platf
 import type { Command, CommandInput } from "../runner/types.ts";
 
 export const BROWSER_USAGE = [
-  "Usage: log browser view --account <accountName> [--json]   (the account's live browser: whether it needs a person to sign in, the page state and its revision; when log runs on the person's own machine the sign-in is in the browser window there, and from a remote runtime an MCP Apps host shows it inline through browserView)",
+  "Usage: log browser view --account <accountName> [--json]   (the account's live browser: whether it needs a person to sign in, the page state and its revision; an MCP Apps host or Hermes shows it live inline, streamed from the page)",
   "Where the runtime is comes from LOG_BROWSER_VIEW_LOCATION (local or remote), which the stdio MCP, the HTTP MCP and the hosted bridge each set for their own process.",
 ].join("\n");
 
@@ -49,8 +49,8 @@ const REMOTE: Record<ViewerView["phase"], string> = {
 };
 
 function localText(view: ViewerView, platform: string): string {
-  if (view.phase === "signInRequired") return `The ${platform} sign-in is open in the browser window on this machine. Finish there, then continue: call browserView again to check before carrying on.`;
-  if (view.phase === "needsAttention") return `The ${platform} page in the browser window on this machine needs a person and is a stop (rule 94). Tell the person what it shows; do not continue this account until they clear it there.`;
+  if (view.phase === "signInRequired") return `The ${platform} sign-in is open in this account's browser on this machine. The person signs in in the live view shown in the chat (or its window, when it has one); their clicks and keys reach the page only while it asks for sign-in. Then call browserView again to check before carrying on.`;
+  if (view.phase === "needsAttention") return `The ${platform} page needs a person and is a stop (rule 94): input is off. Tell the person what it shows; do not continue this account until they clear it.`;
   return REMOTE[view.phase];
 }
 
@@ -60,11 +60,11 @@ export function browserViewText(view: ViewerView, location: BrowserViewLocation 
   return [head, REMOTE[view.phase], ...(view.needsHuman ? ["Without an inline view (a host without MCP Apps), sessionsSignIn answers with a console link that works once, for ten minutes, for the person who asked; the console's Connections page shows the same live browser."] : [])].join("\n");
 }
 
-export type BrowserViewJson = Omit<ViewerView, "stream"> & { location: BrowserViewLocation; streamKind: "voxl" | "frames" | "none" };
+export type BrowserViewJson = Omit<ViewerView, "stream"> & { location: BrowserViewLocation; streamKind: "voxl" | "cast" | "frames" | "none" };
 
 export function browserViewJson(view: ViewerView, location: BrowserViewLocation = browserViewLocation()): BrowserViewJson {
   const { stream, ...rest } = view;
-  if (location === "local") return { ...rest, location, streamKind: "none" };
+  if (location === "local") return { ...rest, location, streamKind: rest.generation ? "cast" : "none" };
   return { ...rest, location, streamKind: stream ? "voxl" : "frames" };
 }
 

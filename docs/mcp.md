@@ -101,22 +101,40 @@ tail -f ~/.logCli/mcp/$(date -u +%F).log
 ## The live browser in the chat
 
 When an account's browser needs a person (a sign-in page), the agent calls
-`browserView { account }`. What the person sees depends on where the runtime
-is.
+`browserView { account }`. Every host that draws MCP Apps views (Claude on the
+web and Desktop, ChatGPT, Cursor, VS Code, Goose, MCPJam) renders
+`ui://log/browserView` inline: the account's live page streamed from the
+browser, its address and state, and a Done button. The person clicks and types
+in it without leaving the chat, only while the page asks for sign-in. log lists
+the view to every client, whether or not it declares the
+`io.modelcontextprotocol/ui` extension (claude.ai draws views without
+declaring it), and keeps the text answer for hosts that draw nothing. ChatGPT
+reads the same tool through `openai/outputTemplate` and `openai/widgetAccessible`,
+and the resource carries `openai/widgetCSP` beside `ui.csp`.
 
-**On the person's own machine** (log runs where they are), the browser window
-is already on their screen, so nothing is streamed. `browserView` says "the
-<platform> sign-in is open in the browser window on this machine. Finish
-there, then continue", in text for every client and in the inline view as a
-card with a Done button. The view-only frame and input tools refuse with
-`browserViewLocal`.
+**The picture.** On the person's own machine the view asks `browserViewStream`
+for a one-time loopback URL of the page screencast and reads it as a multipart
+stream (about 20 frames a second). The URL goes through log's stream relay at a
+fixed loopback origin (`http://127.0.0.1:47613`, `LOG_BROWSER_STREAM_PORT` moves
+it), which the view's CSP names. Where the stream can't be read (a remote
+runtime, or a host whose frame isn't allowed to reach loopback), the view pulls
+`browserViewFrame` back to back, each call answering the newest screencast
+frame (about 20 frames a second measured through the tool-call path). Remote
+runtimes with voxl use voxl's own stream. The view stops pulling when it is
+hidden or done.
 
-**From a remote runtime** (a VPS or Boat instance reached through the hosted
-side), a host that supports MCP Apps (the `io.modelcontextprotocol/ui`
-extension: Claude on the web and Desktop, ChatGPT, Cursor, VS Code, Goose,
-MCPJam) renders `ui://log/browserView` inline: the account's live page, its
-address and state, and a Done button. The person clicks and types in it
-without leaving the chat.
+**Theme.** Every colour in the view comes from the host's style variables
+(`--color-background-primary`, `--color-text-primary`, and so on), with light
+and dark defaults that follow the host's theme (`hostContext.theme`, its
+updates, `window.openai.theme`) and otherwise the system's.
+
+**In Hermes Desktop**, which doesn't draw MCP Apps yet, `browserView`'s answer
+tells the agent to put `::logbrowser{account="<accountName>"}` on its own line.
+log's Desktop plugin draws that line as the same live browser, in Hermes's own
+theme, reading the stream through the plugin's routes (`/browser/{account}` in
+`hermesPlugin/dashboard/plugin_api.py`) and sending clicks and keys through the
+same sign-in-only gate. Chats that can't draw it (Telegram, the CLI) get a
+short note instead.
 
 **How log decides.** `LOG_BROWSER_VIEW_LOCATION` (`local` or `remote`) is
 settled once per process by whatever serves the call (`settleLocation` in
@@ -132,9 +150,9 @@ example for an HTTP MCP on loopback behind a tunnel.
 
 | Tool | Who sees it | Input | Answer |
 | --- | --- | --- | --- |
-| `browserView` | the model and the view | `account` | text for the model; `structuredContent.json` is the view: `phase`, `needsHuman`, `pageState`, `generation`, `revision`, `address`, `width`, `height`, `canInteract`, `location` and `streamKind` (`voxl`, `frames` or `none`); never the voxl URL |
-| `browserViewStream` | the view only | `account`, `generation` | from a remote runtime, the voxl stream descriptor: `url` (with voxl's read-only password), `page` and `window` geometry; refused locally (`browserViewLocal`) or when there is none (`browserStreamUnavailable`) |
-| `browserViewFrame` | the view only | `account`, `generation`, `withState` | the fallback picture: the latest JPEG (base64) and its revision, plus the view when asked |
+| `browserView` | the model and the view | `account` | text for the model; `structuredContent.json` is the view: `phase`, `needsHuman`, `pageState`, `generation`, `revision`, `address`, `width`, `height`, `canInteract`, `location` and `streamKind` (`cast`, `voxl`, `frames` or `none`); never a stream URL |
+| `browserViewStream` | the view only | `account`, `generation` | locally `{kind: "cast", url, expiresIn}`, a one-time loopback URL of the page screencast; from a remote runtime the voxl descriptor: `url` (with voxl's read-only password), `page` and `window` geometry; `browserStreamUnavailable` when there is none |
+| `browserViewFrame` | the view only | `account`, `generation`, `after`, `withState` | the newest screencast frame (base64 JPEG), its `seq`, `source` (`cast` or `screenshot`) and revision, waiting up to 250 ms for a frame newer than `after`; plus the view when asked |
 | `browserViewInput` | the view only | `account`, `generation`, `revision`, `event` (`click` x/y in page pixels, `text`, `key`, `scroll`) | the new view, or a refusal: `browserStateChanged`, `browserInputStopped`, `browserBusy`, `browserGenerationChanged`, `browserInputInvalid` |
 | `browserViewDone` | the view only | `account` | the page read again and `done` (no sign-in or stop left); the view polls it for state |
 

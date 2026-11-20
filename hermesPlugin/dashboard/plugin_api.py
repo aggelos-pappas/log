@@ -1,16 +1,19 @@
 from __future__ import annotations
 
+import base64
 import importlib.util
 import json
 import os
 import re
 import sqlite3
 import time
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Body
 from fastapi.responses import JSONResponse
 
 router = APIRouter()
@@ -191,6 +194,124 @@ def get_view(view_id: str):
     if view is None:
         return JSONResponse({"error": "noSuchView"}, status_code=404)
     return view
+
+
+BROWSER_ACCOUNT = re.compile(r"^[A-Za-z0-9_.@+-]{1,128}$")
+BROWSER_GENERATION = re.compile(r"^[a-f0-9]{32}$")
+BROWSER_ERRORS = {"browserBusy", "browserStateChanged", "browserInputStopped", "browserInputInvalid", "browserInputFailed"}
+
+
+def _inspect_sessions() -> Path:
+    named = os.environ.get("LOG_INSPECT_CURRENT", "").strip()
+    if named:
+        return Path(named).parent / "sessions"
+    home = os.environ.get("LOG_HOME", "").strip()
+    return (Path(home) if home else _home()) / "runs" / "inspect" / "sessions"
+
+
+def _browser_viewer(account: str) -> dict[str, Any] | None:
+    if not BROWSER_ACCOUNT.fullmatch(account or ""):
+        return None
+    session = _read(_inspect_sessions() / f"{re.sub(r'[^A-Za-z0-9_.-]', '_', account)}.json")
+    if not isinstance(session, dict) or session.get("account") != account or not isinstance(session.get("runDir"), str):
+        return None
+    descriptor = _read(Path(session["runDir"]) / "browserViewer.json")
+    if not isinstance(descriptor, dict) or not isinstance(descriptor.get("port"), int) or not isinstance(descriptor.get("token"), str):
+        return None
+    if not BROWSER_GENERATION.fullmatch(str(descriptor.get("generation") or "")) or not 0 < descriptor["port"] < 65536:
+        return None
+    return descriptor
+
+
+def _browser_call(descriptor: dict[str, Any], method: str, path: str, body: Any = None, timeout: float = 8) -> tuple[int, dict[str, str], bytes]:
+    data = json.dumps(body).encode() if body is not None else None
+    request = urllib.request.Request(f"http://127.0.0.1:{descriptor['port']}{path}", data=data, method=method, headers={"Authorization": f"Bearer {descriptor['token']}", **({"Content-Type": "application/json"} if data is not None else {})})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return response.status, {key.lower(): value for key, value in response.headers.items()}, response.read()
+    except urllib.error.HTTPError as error:
+        return error.code, {}, error.read()
+
+
+def _browser_view(account: str, state: Any, generation: str) -> dict[str, Any] | None:
+    if not isinstance(state, dict) or state.get("generation") != generation or not isinstance(state.get("revision"), str):
+        return None
+    phase = "needsAttention" if state.get("blocked") else "busy" if state.get("busy") else "signInRequired" if state.get("inputAllowed") else "ready"
+    url = state.get("url") if isinstance(state.get("url"), str) else ""
+    address = re.sub(r"[?#].*$", "", url) if url.startswith(("http://", "https://")) else None
+    return {"account": account, "phase": phase, "needsHuman": bool(state.get("blocked") or state.get("inputAllowed")), "generation": generation, "revision": state["revision"], "pageState": state.get("state"), "address": address, "width": state.get("width"), "height": state.get("height"), "canInteract": phase == "signInRequired"}
+
+
+def _browser_missing(account: str, phase: str) -> dict[str, Any]:
+    return {"account": account, "phase": phase, "needsHuman": False, "generation": None, "revision": None, "pageState": None, "address": None, "width": None, "height": None, "canInteract": False}
+
+
+@router.get("/browser/{account}")
+def browser_state(account: str):
+    descriptor = _browser_viewer(account)
+    if descriptor is None:
+        return {"view": _browser_missing(account, "browserMissing")}
+    try:
+        status, _headers, body = _browser_call(descriptor, "GET", "/state")
+        view = _browser_view(account, json.loads(body), descriptor["generation"]) if status == 200 else None
+    except (OSError, ValueError):
+        view = None
+    return {"view": view or _browser_missing(account, "viewerUnavailable")}
+
+
+def _browser_attached(account: str, generation: Any) -> dict[str, Any] | JSONResponse:
+    descriptor = _browser_viewer(account)
+    if descriptor is None:
+        return JSONResponse({"error": "browserMissing"}, status_code=404)
+    if generation != descriptor["generation"]:
+        return JSONResponse({"error": "browserGenerationChanged"}, status_code=409)
+    return descriptor
+
+
+@router.post("/browser/{account}/ticket")
+def browser_ticket(account: str, payload: dict = Body(default={})):
+    descriptor = _browser_attached(account, payload.get("generation"))
+    if isinstance(descriptor, JSONResponse):
+        return descriptor
+    try:
+        status, _headers, body = _browser_call(descriptor, "POST", "/ticket", {"seconds": 60})
+        ticket = json.loads(body).get("ticket") if status == 200 else None
+    except (OSError, ValueError, AttributeError):
+        ticket = None
+    if not isinstance(ticket, str) or not re.fullmatch(r"[A-Za-z0-9_-]{16,64}", ticket):
+        return JSONResponse({"error": "browserStreamUnavailable"}, status_code=503)
+    return {"url": f"http://127.0.0.1:{descriptor['port']}/stream?ticket={ticket}", "generation": descriptor["generation"]}
+
+
+@router.get("/browser/{account}/frame")
+def browser_frame(account: str, generation: str = "", after: int = 0):
+    descriptor = _browser_attached(account, generation)
+    if isinstance(descriptor, JSONResponse):
+        return descriptor
+    try:
+        status, headers, body = _browser_call(descriptor, "GET", f"/frame?after={max(0, int(after))}")
+    except OSError:
+        status, headers, body = 503, {}, b""
+    if status != 200 or headers.get("x-log-browser-generation") != descriptor["generation"]:
+        return JSONResponse({"error": "browserViewerUnavailable"}, status_code=503)
+    return {"data": base64.b64encode(body).decode(), "revision": headers.get("x-log-browser-revision"), "seq": int(headers.get("x-log-frame-seq") or 0), "source": headers.get("x-log-frame-source") or "screenshot"}
+
+
+@router.post("/browser/{account}/input")
+def browser_input(account: str, payload: dict = Body(default={})):
+    descriptor = _browser_attached(account, payload.get("generation"))
+    if isinstance(descriptor, JSONResponse):
+        return descriptor
+    event = payload.get("event") if isinstance(payload.get("event"), dict) else {}
+    try:
+        status, _headers, body = _browser_call(descriptor, "POST", "/input", {**event, "generation": descriptor["generation"], "revision": payload.get("revision")}, timeout=120)
+        answer = json.loads(body)
+    except (OSError, ValueError):
+        return JSONResponse({"error": "browserViewerUnavailable"}, status_code=503)
+    if status != 200:
+        code = answer.get("error") if isinstance(answer, dict) and answer.get("error") in BROWSER_ERRORS else "browserViewerUnavailable"
+        return JSONResponse({"error": code}, status_code=409)
+    return {"view": _browser_view(account, answer, descriptor["generation"]) or _browser_missing(account, "viewerUnavailable")}
 
 
 GENUI_API = ("vendor", "hermesGenui", "dashboard", "plugin_api.py")

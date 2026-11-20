@@ -158,7 +158,8 @@ Where the browser runs, and how the chat reaches it:
 | Browser on | Calls (state, frames, input) | Picture |
 | --- | --- | --- |
 | the person's own machine, local web console | the console's loopback routes | the page screencast, piped through `/api/console/browserCheck/stream` (built); voxl only if set |
-| the person's own machine, chat in Hermes or Claude Desktop | local stdio | the page screencast; voxl on loopback (`http://127.0.0.1:<port>`) optional, allowed in the view's CSP |
+| the person's own machine, chat in Claude Desktop or another MCP Apps host | local stdio | the page screencast through the loopback relay (`http://127.0.0.1:47613`, in the view's CSP), frames pulled when the host blocks loopback; voxl on loopback optional |
+| the person's own machine, chat in Hermes Desktop | local stdio + log's Desktop plugin | `::logbrowser{account}`: the page screencast read by the plugin from the viewer with a one-time ticket, frames through the plugin's routes as the fallback |
 | the person's own machine, chat in ChatGPT or claude.ai | through `mcp.listeningkit.com` and the relay, or Secure MCP Tunnel | voxl through an https tunnel from the same machine, its origin in the CSP |
 | the person's own server or VM (Xvfb or a desktop session, AdsPower headless with its Local API, `docs/deployment.md`) | `log runtime connect` runs on that server, so the hosted server relays to it | voxl on the server's display, published over https (its own tunnel or reverse proxy) |
 
@@ -170,6 +171,19 @@ Changes:
 4. **The person drives, not just signs in.** `browserViewInput` takes input on any page while the person holds control (a "Take control" / "Hand back" toggle in the view), still as recorded steps with their HAR. While the person holds control no flow or agent step runs in that browser (`browserBusy` the other way round). A checkpoint or blocked page is something only the person may act on: the agent still stops there (rule 94), and the person can clear it from the chat.
 5. **The server or VM setup is one command.** On a server with AdsPower: `log runtime pair` once, then the supervisor keeps the account hosts, voxl and `runtime connect` running together, and the chat sees that server's browsers the same way as local ones.
 6. **Proof.** The replica-host bench (Verification) loads the view with a stream and with frames, sends a click and a typed line, and checks they reached the page; a manual run in ChatGPT, claude.ai and Hermes per release.
+
+Built (20 Nov 2026, PR #207):
+
+| Step | State |
+| --- | --- |
+| Frames from the screencast everywhere: `browserViewFrame` answers the newest screencast frame with a `seq`, waiting up to 250 ms for a newer one (`BrowserViewer.pull`) | built; ~20 fps through the tool-call path in the bench, the same as the direct stream |
+| Streaming locally too (2): `browserViewLocal` is gone; locally `browserViewStream` gives a one-time loopback URL read through the relay at a fixed origin the CSP names (`relayTicket`) | built; ~20 fps in the bench |
+| The view pulls back to back when it can't stream, and stops when hidden or done | built |
+| The view listed to every client, both servers, with the ChatGPT keys from one helper (`appToolMeta`, `appResourceMeta`) | built for `browserView`; `report` still gated |
+| Every colour from host variables, light and dark defaults, `window.openai.theme` | built; light and dark checked in the bench |
+| Hermes: `::logbrowser{account}` drawn by log's Desktop plugin (`LogBrowser`), stream and input through the plugin's routes | built; checked in a replica transcript page, not yet in a live Hermes Desktop |
+| Replica-host bench: `scripts/browserView/hostBench.py` (real Camoufox viewer, Edge headless, replica MCP Apps host and replica Hermes transcript, light and dark, a click reaching the page) | built; run by hand |
+| voxl started by log (1), Camoufox kiosk (3), take control on any page (4), server setup (5) | not built |
 
 ## Verification
 
@@ -187,7 +201,7 @@ A host matrix test per release, each cell a check with a pass/fail:
 
 ## Order
 
-1. Make the hosted server answer: list UI tools whatever the client declares (both servers), keep `log runtime connect` running under the same supervisor as the watchers, and generate the hosted tool list from the local catalog. Without this, every hosted connector is empty.
+1. Make the hosted server answer: list UI tools whatever the client declares (both servers; done for `browserView`), keep `log runtime connect` running under the same supervisor as the watchers, and generate the hosted tool list from the local catalog. Without this, every hosted connector is empty.
 2. The live browser (J): voxl started and published by log, streaming locally too, Camoufox in kiosk, take control from the chat, and the server/VM setup.
 3. Card views (B) and the ChatGPT metadata (D), through one card registration helper. Makes the existing view ready.
 4. The blocks card (I), so `show_blocks` output reaches every host.

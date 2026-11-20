@@ -259,7 +259,7 @@ export async function runToolCall(
   const given = withoutHandle(input);
   const again = (tool: string, next: LogToolInput | undefined, app: boolean = appCaller, by: Exclude<GateCaller, "cli"> = caller) => runToolCall(tool, handle && next ? { ...next, [PLAY_HANDLE_FIELD]: handle } : next, context, onLine, readBrowsers, signal, app, scope, shell, by, client);
   if (renamedTool(name)) return withRenamedNote(name, await again(currentToolName(name), input, appCaller, caller === "mcp" ? "alias" : caller));
-  if (isAppTool(name)) return runAppTool(name, given, appCaller);
+  if (isAppTool(name)) return runAppTool(name, given, appCaller || caller === "mcp" || caller === "stateless");
   if (name === REPORT_TOOL) return runReport(given, appCaller, {}, { hermes: hermesClient(client) });
   if (name === GUIDE_TOOL) {
     const answer = guideAnswer(input, scope, shell);
@@ -305,7 +305,7 @@ export async function runToolCall(
   if (!entry || !guard.longRunning) {
     const ran = await runGuarded(name, guard.argv, context, onLine, progress, null, identity, signal);
     const answered = noted(withBrowsers(ran.base, ran.text, ran.base.exit !== 0, readBrowsers, ran.images));
-    return name === BROWSER_VIEW_TOOL ? withViewer(answered, input) : answered;
+    return name === BROWSER_VIEW_TOOL ? withViewer(answered, input, hermesClient(client)) : answered;
   }
   const account = guard.account;
   const job = startJob({ tool: name, argv: guard.argv, account, live: entry.live });
@@ -331,11 +331,11 @@ export function withCallFooter(name: string, input: LogToolInput | undefined, re
   return withPlayFooter(tool, capResult(tool, result, narrowingFlags(commandOfTool(tool)?.form?.flags ?? [])), activePlay(scope, handleOf(input)));
 }
 
-async function withViewer(result: CallToolResult, input: LogToolInput | undefined): Promise<CallToolResult> {
+async function withViewer(result: CallToolResult, input: LogToolInput | undefined, hermes: boolean = false): Promise<CallToolResult> {
   const account = accountOfArgs(input);
   if (result.isError || !account) return result;
   try {
-    return withBrowserView(result, await viewerState(account));
+    return withBrowserView(result, await viewerState(account), undefined, hermes);
   } catch {
     return result;
   }
@@ -370,12 +370,13 @@ export function createLogMcpServer(context: Partial<CommandContext> = {}, option
     const capable = uiCapable(server.getClientCapabilities());
     const sized = listed.map((tool) => ({ ...tool, _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }));
     const report = { ...reportTool(), _meta: { ...RESULT_SIZE_META } as Record<string, unknown> };
-    return { tools: capable ? [...sized.map(withBrowserViewUi), withReportUi(report), ...appTools()] : [...sized, report] };
+    return { tools: [...sized.map(withBrowserViewUi), capable ? withReportUi(report) : report, ...appTools().map((tool) => ({ ...tool, _meta: { ...tool._meta, ...RESULT_SIZE_META } }))] };
   });
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
     resources: [
       { uri: AGENTS_URI, name: "AGENTS.md", description: "The owner's rules for log-cli, every one numbered and dated, the newest at the bottom. Every tool's description cites the ones it falls under.", mimeType: "text/markdown" },
-      ...(uiCapable(server.getClientCapabilities()) ? [browserViewResource(), reportResource()] : []),
+      browserViewResource(),
+      ...(uiCapable(server.getClientCapabilities()) ? [reportResource()] : []),
     ],
   }));
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
@@ -428,7 +429,7 @@ export function statelessTools(): Record<string, unknown>[] {
   const commands = [...toolsFromCommands(COMMANDS, { shell: false }), ...toolsFromFlows(savedFlows(), { shell: false })];
   const listed = [guideTool(), ...catalogTools(), ...withUseCases(commands, listUseCases(commands.map((t) => t.name)))];
   const sized = listed.map((tool) => withBrowserViewUi({ ...tool, _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }));
-  return [...sized, withReportUi({ ...reportTool(), _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }), ...appTools()] as unknown as Record<string, unknown>[];
+  return [...sized, withReportUi({ ...reportTool(), _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }), ...appTools().map((tool) => ({ ...tool, _meta: { ...tool._meta, ...RESULT_SIZE_META } }))] as unknown as Record<string, unknown>[];
 }
 
 export function statelessLogHandlers(context: Partial<CommandContext> = {}, options: StatelessLogOptions = {}): StatelessHandlers {

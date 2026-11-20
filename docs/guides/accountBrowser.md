@@ -42,7 +42,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `inspectFinding` | Write a P.E.E | `log inspect finding --step <step> --point <text> --explain <text> [--evidence <text>] [--account <accountName>]   (a step that went wrong: Point, the issue in one sentence; Evidence, quoted from the step's reading, plus your own; Explain, why the evidence shows it and what caused it)` |
 | `inspectSessions` | The open sessions | `log inspect sessions   (the open sessions)` |
 | `browsers` | Where every open browser is, and what resolves its page | `log browsers [--json]   (every open browser: its step and page, the known page state it sits on, the call that resolves it, and what only the owner can clear)` |
-| `browserView` | The account's live browser | `log browser view --account <accountName> [--json]   (the account's live browser: whether it needs a person to sign in, the page state and its revision; when log runs on the person's own machine the sign-in is in the browser window there, and from a remote runtime an MCP Apps host shows it inline through browserView)` |
+| `browserView` | The account's live browser | `log browser view --account <accountName> [--json]   (the account's live browser: whether it needs a person to sign in, the page state and its revision; an MCP Apps host or Hermes shows it live inline, streamed from the page)` |
 
 ## The work, step by step: inspect
 

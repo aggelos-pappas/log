@@ -41,7 +41,7 @@ beforeAll(() => {
   process.env.LOG_BROWSER_VIEW_LOCATION = "remote";
   writeFileSync(process.env.LOG_LOCAL_ACCOUNTS, JSON.stringify({ socialAccounts: [{ id: "local:facebook:fakeSeller", platform: "FACEBOOK", accountName: "fakeSeller", browserDriver: "camoufox", email: "seller@example.com", password: "fakePassword" }] }));
   browserCheckDeps.state = async () => live;
-  browserCheckDeps.frame = async (_account, generation) => ({ generation: String(generation), revision: "b".repeat(64), mimeType: "image/jpeg", data: "ZmFrZUZyYW1l" });
+  browserCheckDeps.frame = async (_account, generation) => ({ generation: String(generation), revision: "b".repeat(64), mimeType: "image/jpeg", data: "ZmFrZUZyYW1l", seq: 0, source: "screenshot" });
   browserCheckDeps.input = async () => live;
 });
 

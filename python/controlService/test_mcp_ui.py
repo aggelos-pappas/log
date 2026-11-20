@@ -22,7 +22,7 @@ def answer(envelope: dict) -> dict:
     tool = envelope["payload"]["tool"]
     args = envelope["payload"]["args"]
     if tool == "toolManifest":
-        tools = MANIFEST_UI if args.get("ui") else [{key: value for key, value in tool.items() if key != "_meta"} for tool in MANIFEST_UI if tool["name"] in ("browserView", "search")]
+        tools = MANIFEST_UI if args.get("ui") or args.get("views") else [{key: value for key, value in tool.items() if key != "_meta"} for tool in MANIFEST_UI if tool["name"] in ("browserView", "search")]
         return {"kind": "result", "payload": {"state": "succeeded", "result": {"tools": tools}}}
     if tool == "uiResourcesList":
         return {"kind": "result", "payload": {"state": "succeeded", "result": {"resources": [{"uri": "ui://log/browserView", "name": "Live browser", "mimeType": "text/html;profile=mcp-app"}, {"uri": "log://agents", "name": "not ui"}]}}}
@@ -65,26 +65,30 @@ def initialize(world: World, token: str, capabilities: dict) -> str:
     return response.headers["Mcp-Session-Id"]
 
 
-def test_a_client_without_mcp_apps_sees_no_widget_tools_resources_or_meta(world: World) -> None:
+def test_a_client_without_mcp_apps_still_gets_the_browser_view_its_app_tools_and_resource(world: World) -> None:
     link = attach(world, answer)
     token = bearer(world)
     session = initialize(world, token, {})
-    tools = rpc(world, token, "tools/list", session=session).json()["result"]["tools"]
-    names = [tool["name"] for tool in tools]
-    assert "browserView" in names and "browserViewStream" not in names and "browserViewFrame" not in names
-    assert all("_meta" not in tool for tool in tools)
-    assert rpc(world, token, "resources/list", session=session).json()["result"]["resources"] == []
-    assert rpc(world, token, "resources/read", {"uri": "ui://log/browserView"}, session=session).json()["error"]["code"] == -32002
-    sent = len(link.sent)
-    refused = rpc(world, token, "tools/call", {"name": "browserViewStream", "arguments": {"account": "a", "generation": "b"}}, session=session).json()["result"]
-    assert refused["isError"] is True and len(link.sent) == sent
+    tools = {tool["name"]: tool for tool in rpc(world, token, "tools/list", session=session).json()["result"]["tools"]}
+    assert tools["browserView"]["_meta"]["ui"]["resourceUri"] == "ui://log/browserView"
+    assert tools["browserViewStream"]["_meta"]["ui"]["visibility"] == ["app"] and "browserViewFrame" in tools
+    assert "_meta" not in tools["search"]
+    manifest = next(envelope for envelope in link.sent if envelope["payload"]["tool"] == "toolManifest")
+    assert manifest["payload"]["args"]["views"] is True and "ui" not in manifest["payload"]["args"]
+    resources = rpc(world, token, "resources/list", session=session).json()["result"]["resources"]
+    assert [item["uri"] for item in resources] == ["ui://log/browserView"]
+    read = rpc(world, token, "resources/read", {"uri": "ui://log/browserView"}, session=session).json()["result"]
+    assert read["contents"][0]["mimeType"] == "text/html;profile=mcp-app"
+    called = rpc(world, token, "tools/call", {"name": "browserViewStream", "arguments": {"account": "a", "generation": "b"}}, session=session).json()["result"]
+    assert called["structuredContent"]["stream"]["kind"] == "voxl"
 
 
-def test_a_forged_session_is_not_a_ui_client(world: World) -> None:
-    attach(world, answer)
+def test_a_forged_session_is_not_a_ui_client_for_the_report(world: World) -> None:
+    link = attach(world, answer)
     token = bearer(world)
-    names = [tool["name"] for tool in rpc(world, token, "tools/list", session="ui.forged").json()["result"]["tools"]]
-    assert "browserViewStream" not in names
+    rpc(world, token, "tools/list", session="ui.forged")
+    manifest = next(envelope for envelope in link.sent if envelope["payload"]["tool"] == "toolManifest")
+    assert "ui" not in manifest["payload"]["args"]
 
 
 def test_an_mcp_apps_client_gets_the_widget_its_app_tools_and_the_meta(world: World) -> None:

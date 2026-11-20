@@ -53,7 +53,7 @@ export async function toolManifest(args: Record<string, unknown>): Promise<Resul
     .map((tool) => ({ name: tool.name, title: tool.title, description: tool.description, inputSchema: tool.inputSchema, annotations: tool.annotations }));
   const { appTools, reportTool, withBrowserViewUi, withReportUi } = await import("../../mcp/apps/index.ts");
   const report = [...(names.has(GUIDE_TOOL) ? [guideTool()] : []), ...(names.has("report") ? [args.ui === true ? withReportUi(reportTool()) : reportTool()] : [])];
-  if (args.ui !== true) return { state: "succeeded", result: { tools: [...tools, ...report] } };
+  if (args.ui !== true && args.views !== true) return { state: "succeeded", result: { tools: [...tools, ...report] } };
   return { state: "succeeded", result: { tools: [...tools.map((tool) => withBrowserViewUi(tool as typeof tool & { _meta?: Record<string, unknown> })), ...report, ...appTools()] } };
 }
 

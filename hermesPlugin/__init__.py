@@ -28,6 +28,8 @@ VIEW_TAG = re.compile(r'::logview\{id="([0-9a-f]{8})"\}')
 DRAWING_PLATFORMS = frozenset({"local", "desktop"})
 VIEW_TEXT_LIMIT = 3500
 VIEW_ELSEWHERE = "(a view that draws only in Hermes Desktop and the Hermes Webapp)"
+BROWSER_TAG = re.compile(r'::logbrowser\{account="([A-Za-z0-9_.@+-]{1,128})"\}')
+BROWSER_ELSEWHERE = "({account}'s live browser, which shows only in Hermes Desktop)"
 GENUI = ("vendor", "hermesGenui")
 GENUI_PACKAGE = "log_hermes_genui"
 SKILLS = ("hermesPlugin", "skills")
@@ -507,10 +509,11 @@ def view_text(view_id, db=None):
 def transform_llm_output(response_text="", platform="", **kwargs):
     if not isinstance(response_text, str) or str(platform or "").strip().lower() in DRAWING_PLATFORMS:
         return None
-    if not VIEW_TAG.search(response_text):
+    if not VIEW_TAG.search(response_text) and not BROWSER_TAG.search(response_text):
         return None
     try:
         replaced = VIEW_TAG.sub(lambda match: view_text(match.group(1)), response_text)
+        replaced = BROWSER_TAG.sub(lambda match: BROWSER_ELSEWHERE.format(account=match.group(1)), replaced)
     except Exception:
         return None
     return replaced if replaced != response_text else None

@@ -155,6 +155,8 @@ describe("the Desktop half shipped in hermesPlugin", () => {
     expect(log).toContain('"logview"');
     expect(log).toContain(".dark .logview");
     expect(log).toContain('"hermes-genui-tag"');
+    expect(log).toContain('"logbrowser"');
+    expect(log).toContain(".dark .logbrowser");
     const genui = readFileSync(join(root, DESKTOP_BUNDLES[1].out), "utf8");
     expect(genui).toContain("--hb-chart-1: #16181d");
   });
@@ -181,6 +183,23 @@ describe("the logHooks text fallback", () => {
     expect(out.desktop).toBeNull();
     expect(out.missing).toContain("draws only in Hermes Desktop");
     expect(out.plain).toBeNull();
+  });
+
+  test("swaps the live browser line for a short note on chats that can't draw it", () => {
+    const plugin = join(root, "hermesPlugin", "__init__.py");
+    const script = [
+      "import importlib.util, json",
+      `spec = importlib.util.spec_from_file_location("logHooksBrowser", ${JSON.stringify(plugin)})`,
+      "module = importlib.util.module_from_spec(spec)",
+      "spec.loader.exec_module(module)",
+      "reply = 'Sign in here:\\n::logbrowser{account=\"fakeSeller\"}'",
+      "print(json.dumps({'telegram': module.transform_llm_output(response_text=reply, platform='telegram'), 'desktop': module.transform_llm_output(response_text=reply, platform='desktop')}))",
+    ].join("\n");
+    const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true });
+    expect(run.status).toBe(0);
+    const out = JSON.parse(run.stdout.trim()) as Record<string, string | null>;
+    expect(out.telegram).toBe("Sign in here:\n(fakeSeller's live browser, which shows only in Hermes Desktop)");
+    expect(out.desktop).toBeNull();
   });
 });
 

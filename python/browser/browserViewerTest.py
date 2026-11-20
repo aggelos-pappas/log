@@ -241,7 +241,7 @@ async def read_part(reader):
     return headers, data
 
 
-class BrowserStreamTests(unittest.TestCase):
+class CastCase(unittest.TestCase):
     def run_cast(self, scenario, fail=False):
         async def main():
             with tempfile.TemporaryDirectory() as folder:
@@ -266,6 +266,8 @@ class BrowserStreamTests(unittest.TestCase):
             await asyncio.sleep(0.02)
         self.fail("the condition never held")
 
+
+class BrowserStreamTests(CastCase):
     def test_the_stream_needs_the_token(self):
         async def scenario(_owner, _viewer, cast, descriptor):
             status, _headers, body = await call(descriptor["port"], "wrong", "GET", "/stream")
@@ -345,6 +347,88 @@ class BrowserStreamTests(unittest.TestCase):
             self.assertEqual(json.loads(body)["error"], "browserStreamUnavailable")
             self.assertEqual(viewer.cast.clients, set())
         self.run_cast(scenario, fail=True)
+
+
+async def raw_request(port, method, path, headers=""):
+    reader, writer = await asyncio.open_connection("127.0.0.1", port)
+    writer.write(f"{method} {path} HTTP/1.1\r\nHost: 127.0.0.1\r\n{headers}\r\n".encode())
+    await writer.drain()
+    header = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), 5)
+    lines = header.decode("latin1").split("\r\n")
+    found = {line.split(":", 1)[0]: line.split(":", 1)[1].strip() for line in lines[1:] if ":" in line}
+    return reader, writer, int(lines[0].split(" ")[1]), found
+
+
+class BrowserFramePullTests(CastCase):
+    def test_frames_come_from_the_screencast_and_wait_for_one_newer_than_the_last(self):
+        async def scenario(owner, viewer, cast, descriptor):
+            asyncio.get_running_loop().call_later(0.05, cast.emit, b"\xff\xd8one\xff\xd9")
+            status, headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/frame?after=0")
+            self.assertEqual((status, body, headers["X-Log-Frame-Seq"], headers["X-Log-Frame-Source"]), (200, b"\xff\xd8one\xff\xd9", "1", "cast"))
+            self.assertEqual(cast.started, [(owner.page, 800, 600)])
+            started = asyncio.get_running_loop().time()
+            status, headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/frame?after=1")
+            self.assertGreaterEqual(asyncio.get_running_loop().time() - started, 0.2)
+            self.assertEqual((body, headers["X-Log-Frame-Seq"]), (b"\xff\xd8one\xff\xd9", "1"))
+            asyncio.get_running_loop().call_later(0.05, cast.emit, b"\xff\xd8two\xff\xd9")
+            status, headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/frame?after=1")
+            self.assertEqual((body, headers["X-Log-Frame-Seq"]), (b"\xff\xd8two\xff\xd9", "2"))
+            self.assertEqual(len(cast.started), 1)
+        self.run_cast(scenario)
+
+    def test_the_screencast_stops_when_no_view_pulls_for_the_lease(self):
+        async def scenario(owner, viewer, cast, descriptor):
+            viewer.pullLease = 0.1
+            asyncio.get_running_loop().call_later(0.05, cast.emit, b"frame")
+            await call(descriptor["port"], descriptor["token"], "GET", "/frame?after=0")
+            await self.until(lambda: cast.stopped == [owner.page])
+            self.assertIsNone(viewer.puller)
+        self.run_cast(scenario)
+
+    def test_without_a_screencast_the_frame_is_a_screenshot(self):
+        async def scenario(_owner, _viewer, _cast, descriptor):
+            status, headers, body = await call(descriptor["port"], descriptor["token"], "GET", "/frame?after=0")
+            self.assertEqual((status, headers["X-Log-Frame-Source"], headers["X-Log-Frame-Seq"]), (200, "screenshot", "0"))
+            self.assertTrue(body.startswith(b"\xff\xd8"))
+        self.run_cast(scenario, fail=True)
+
+
+class BrowserTicketTests(CastCase):
+    def test_a_ticket_opens_the_stream_once_without_the_token_and_allows_any_origin(self):
+        async def scenario(_owner, viewer, cast, descriptor):
+            status, _headers, body = await call(descriptor["port"], descriptor["token"], "POST", "/ticket", {"seconds": 30})
+            given = json.loads(body)
+            self.assertEqual((status, given["expiresIn"], given["generation"]), (200, 30, viewer.generation))
+            reader, writer, status, headers = await raw_request(descriptor["port"], "GET", f"/stream?ticket={given['ticket']}")
+            try:
+                self.assertEqual(status, 200)
+                self.assertEqual(headers["Access-Control-Allow-Origin"], "*")
+                self.assertEqual(headers["X-Log-Browser-Generation"], viewer.generation)
+                part, data = await read_part(reader)
+                self.assertTrue(data.startswith(b"\xff\xd8"))
+            finally:
+                writer.close()
+            _reader, again, status, _headers = await raw_request(descriptor["port"], "GET", f"/stream?ticket={given['ticket']}")
+            again.close()
+            self.assertEqual(status, 403)
+        self.run_cast(scenario)
+
+    def test_a_ticket_is_minted_only_with_the_token_and_a_made_up_one_is_refused(self):
+        async def scenario(_owner, _viewer, cast, descriptor):
+            status, _headers, _body = await call(descriptor["port"], "wrong", "POST", "/ticket", {})
+            self.assertEqual(status, 403)
+            _reader, writer, status, headers = await raw_request(descriptor["port"], "GET", "/stream?ticket=madeUp")
+            writer.close()
+            self.assertEqual((status, headers["Access-Control-Allow-Origin"]), (403, "*"))
+            self.assertEqual(cast.started, [])
+        self.run_cast(scenario)
+
+    def test_the_preflight_allows_a_private_network_read(self):
+        async def scenario(_owner, _viewer, _cast, descriptor):
+            _reader, writer, status, headers = await raw_request(descriptor["port"], "OPTIONS", "/stream?ticket=any", "Access-Control-Request-Private-Network: true\r\n")
+            writer.close()
+            self.assertEqual((status, headers["Access-Control-Allow-Private-Network"], headers["Access-Control-Allow-Origin"]), (204, "true", "*"))
+        self.run_cast(scenario)
 
 
 class StreamSurfaceTests(unittest.TestCase):

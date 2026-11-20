@@ -113,9 +113,19 @@ answers the classified page state (`classify` from `login/autoLogin.py`), a
 revision hashed from the URL, the page text, the step index, the input count
 and the HAR count, whether the page is blocked (a checkpoint, a disabled
 account, a captcha, a video selfie, automated behaviour) and whether input is
-allowed (only the sign-in states). `GET /frame` answers one
-`page.screenshot(type="jpeg", quality=65, scale="css")` with the generation and
-revision in its headers. `GET /stream` answers
+allowed (only the sign-in states). `GET /frame?after=<seq>` answers the newest
+screencast frame with the generation, revision, `X-Log-Frame-Seq` and
+`X-Log-Frame-Source` (`cast`) in its headers: it keeps the screencast running
+while frames are pulled (`BrowserViewer.pull`, stopped five seconds after the
+last pull), and when the newest frame is not newer than `after` it waits up to
+250 ms for one, so a view that asks again as soon as it has an answer gets each
+frame once. Without a screencast it answers one
+`page.screenshot(type="jpeg", quality=65, scale="css")` (`X-Log-Frame-Source:
+screenshot`, seq 0). `POST /ticket` mints a one-time ticket (60 s by default,
+900 s at most) and `GET /stream?ticket=<ticket>` opens the stream once with no
+token, answering any origin (`Access-Control-Allow-Origin: *`, and a preflight
+that allows a private network read), which is how a view inside a chat reads
+it. `GET /stream` answers
 `multipart/x-mixed-replace; boundary=logFrame`: one JPEG part per frame of
 Playwright's page screencast (`PageCast` in the same file), started at the
 viewport's own size so a point on the picture is a point on the page. The first
@@ -168,15 +178,24 @@ are never used; Playwright still supplies the input. voxl captures X11 or Xvfb
 on Linux, DXGI on Windows (the logged-in session, not a service) and
 ScreenCaptureKit on macOS (Screen Recording permission).
 
-**Fallback, screenshots.** When neither stream runs (a hosted console, no
-`LOG_VOXL_URL` for the MCP App, a screencast that fails or ends three times
+**Fallback, frames pulled.** When the stream can't be read (a hosted chat, a
+host whose frame can't reach loopback, a screencast that ends three times
 without a frame), the console's `/api/console/browser/frame` and the MCP App's
-`browserViewFrame` read `GET /frame`, about 2 frames a second: the screenshot,
-not the network, is the limit.
+`browserViewFrame` read `GET /frame` back to back, each call carrying the seq of
+the frame the view has. Measured in the replica host bench on Camoufox headless
+through the real viewer: about 20 frames a second over the tool-call path, the
+same as the direct stream, because each answer is the screencast's newest frame
+rather than a fresh screenshot. Only when there is no screencast at all does it
+drop to screenshots (about 2 a second).
 
-**On the person's own machine** the MCP App streams nothing: the browser
-window is already on their screen, and `browserView` tells them to finish
-there (see [the live browser in the chat](mcp.md#the-live-browser-in-the-chat)).
+**The replica host bench.** `scripts/browserView/hostBench.py <screenshot dir>`
+(run with `LOG_PYTHON`; it needs `uv` for the plugin routes and Microsoft Edge)
+opens a Camoufox page behind the real viewer, then loads the built MCP App
+inside a replica MCP Apps host (a sandboxed iframe with the host's CSP and
+bridge) and the `::logbrowser` card inside a replica Hermes transcript, each in
+light and dark, streamed and pulled. It reports frames a second, which source
+drew them, and whether a click on the picture reached the page, and saves
+`light.png`, `dark.png`, `hermes-light.png` and `hermes-dark.png`.
 
 **In the local console.** `log console --web` serves `/api/console/browser`
 (the view), `/api/console/browser/frame` and `POST /api/console/browser/input`
@@ -198,4 +217,4 @@ Errors are toasts. The console attaches to a browser that is already open (by
 `log inspect start` or a flow); opening, closing, provisioning a profile and
 verifying a session from the console are not ported yet.
 
-**In an MCP Apps host.** See [the live browser in the chat](mcp.md#the-live-browser-in-the-chat).
+**In an MCP Apps host and in Hermes.** See [the live browser in the chat](mcp.md#the-live-browser-in-the-chat).

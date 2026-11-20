@@ -5,13 +5,19 @@ import hashlib
 import json
 import os
 import secrets
+import time
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlsplit
 from browser import streamSurface
 from browser.viewerState import CODE_FIELD_SELECTOR, viewer_state
 
 BOUNDARY = "logFrame"
 CAST_QUALITY = 70
+TICKET_SECONDS = 60
+TICKET_MAX_SECONDS = 900
+TICKET_LIMIT = 64
+CORS_HEADERS = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Private-Network": "true", "Access-Control-Expose-Headers": "X-Log-Browser-Generation", "Access-Control-Max-Age": "600"}
 
 
 async def screencast_start(page: Any, on_frame: Any, width: int, height: int) -> None:
@@ -60,15 +66,23 @@ class PageCast:
         self.lock = asyncio.Lock()
         self.start = screencast_start
         self.stop = screencast_stop
+        self.seq = 0
+        self.latest: dict[str, Any] | None = None
+        self.fresh = asyncio.Event()
 
     def frame(self, frame: dict[str, Any]) -> None:
         if not isinstance(frame.get("data"), (bytes, bytearray)):
             return
+        self.seq += 1
+        self.latest = frame
+        fresh, self.fresh = self.fresh, asyncio.Event()
+        fresh.set()
         for client in list(self.clients):
             client.offer(frame)
 
     async def halt(self) -> None:
         page, self.page = self.page, None
+        self.latest = None
         if page is not None:
             try:
                 await self.stop(page)
@@ -104,6 +118,13 @@ class BrowserViewer:
         self.cast = PageCast(owner)
         self.castPoll = 0.25
         self.castRepeat = 2.0
+        self.puller: CastClient | None = None
+        self.pullUntil = 0.0
+        self.pullLease = 5.0
+        self.pullWait = 0.25
+        self.firstWait = 1.5
+        self.reaper: asyncio.Task[None] | None = None
+        self.tickets: dict[str, float] = {}
 
     async def start(self) -> None:
         self.server = await asyncio.start_server(self.request, "127.0.0.1", 0, limit=65536)
@@ -114,6 +135,9 @@ class BrowserViewer:
             target.write(json.dumps(descriptor))
 
     async def close(self) -> None:
+        if self.reaper is not None:
+            self.reaper.cancel()
+            self.reaper = None
         await self.cast.halt()
         if self.server:
             self.server.close()
@@ -183,18 +207,79 @@ class BrowserViewer:
                 await asyncio.sleep(0.3)
         return await self.state()
 
+    def ticket(self, seconds: Any) -> dict[str, Any]:
+        now = time.monotonic()
+        self.tickets = {key: until for key, until in self.tickets.items() if until > now}
+        while len(self.tickets) >= TICKET_LIMIT:
+            self.tickets.pop(next(iter(self.tickets)))
+        ttl = seconds if isinstance(seconds, int) and not isinstance(seconds, bool) and 0 < seconds <= TICKET_MAX_SECONDS else TICKET_SECONDS
+        value = secrets.token_urlsafe(24)
+        self.tickets[value] = now + ttl
+        return {"ticket": value, "expiresIn": ttl, "generation": self.generation}
+
+    def redeem(self, value: str) -> bool:
+        until = self.tickets.pop(value, None) if value else None
+        return until is not None and until > time.monotonic()
+
+    async def reap(self) -> None:
+        loop = asyncio.get_running_loop()
+        try:
+            while loop.time() < self.pullUntil:
+                await asyncio.sleep(min(0.5, max(0.05, self.pullUntil - loop.time())))
+            puller, self.puller = self.puller, None
+            if puller is not None:
+                await self.cast.leave(puller)
+        finally:
+            self.reaper = None
+
+    async def pull(self, after: int, width: int, height: int) -> tuple[dict[str, Any], int] | None:
+        loop = asyncio.get_running_loop()
+        self.pullUntil = loop.time() + self.pullLease
+        if self.puller is None or self.cast.page is not self.owner.page:
+            client = self.puller or CastClient()
+            try:
+                await self.cast.join(client, width, height)
+            except Exception:
+                self.puller = None
+                return None
+            self.puller = client
+        if self.reaper is None:
+            self.reaper = asyncio.create_task(self.reap())
+        cast = self.cast
+        if cast.latest is None or cast.seq <= after:
+            fresh = cast.fresh
+            try:
+                await asyncio.wait_for(fresh.wait(), self.pullWait if cast.latest is not None else self.firstWait)
+            except asyncio.TimeoutError:
+                pass
+        if cast.latest is None:
+            return None
+        return cast.latest, cast.seq
+
+    async def frame(self, query: dict[str, list[str]]) -> tuple[bytes, dict[str, str]]:
+        raw = (query.get("after") or ["0"])[0]
+        after = int(raw) if raw.isdigit() and len(raw) < 16 else 0
+        state = await asyncio.wait_for(self.state(), 5)
+        pulled = await self.pull(after, int(state["width"]), int(state["height"]))
+        if pulled is None:
+            body = await self.owner.page.screenshot(type="jpeg", quality=65, scale="css", timeout=5000)
+            source, seq = "screenshot", 0
+        else:
+            body, source, seq = bytes(pulled[0]["data"]), "cast", pulled[1]
+        return body, {"X-Log-Browser-Generation": self.generation, "X-Log-Browser-Revision": state["revision"], "X-Log-Frame-Seq": str(seq), "X-Log-Frame-Source": source}
+
     def part(self, frame: dict[str, Any]) -> bytes:
         data = bytes(frame["data"])
         head = {"Content-Type": "image/jpeg", "Content-Length": str(len(data)), "X-Log-Browser-Generation": self.generation, "X-Log-Frame-Width": str(frame.get("viewportWidth", 0)), "X-Log-Frame-Height": str(frame.get("viewportHeight", 0))}
         return (f"--{BOUNDARY}\r\n" + "".join(f"{key}: {value}\r\n" for key, value in head.items()) + "\r\n").encode() + data + b"\r\n"
 
-    async def stream(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, opened: list[bool]) -> None:
+    async def stream(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, opened: list[bool], cors: bool = False) -> None:
         state = await asyncio.wait_for(self.state(), 5)
         client = CastClient()
         page = await self.cast.join(client, int(state["width"]), int(state["height"]))
         try:
             first = await page.screenshot(type="jpeg", quality=65, scale="css", timeout=5000)
-            head = {"Content-Type": f"multipart/x-mixed-replace; boundary={BOUNDARY}", "Cache-Control": "no-store", "Connection": "close", "X-Log-Browser-Generation": self.generation}
+            head = {"Content-Type": f"multipart/x-mixed-replace; boundary={BOUNDARY}", "Cache-Control": "no-store", "Connection": "close", "X-Log-Browser-Generation": self.generation, **(CORS_HEADERS if cors else {})}
             writer.write(("HTTP/1.1 200 Result\r\n" + "".join(f"{key}: {value}\r\n" for key, value in head.items()) + "\r\n").encode())
             opened.append(True)
             last = {"data": first, "viewportWidth": state["width"], "viewportHeight": state["height"]}
@@ -225,22 +310,39 @@ class BrowserViewer:
         try:
             header = await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), 5)
             lines = header.decode("latin1").split("\r\n")
-            method, path, _version = lines[0].split(" ", 2)
+            method, target, _version = lines[0].split(" ", 2)
+            address = urlsplit(target)
+            path, query = address.path, parse_qs(address.query)
             headers = dict(line.split(":", 1) for line in lines[1:] if ":" in line)
             headers = {key.lower(): value.strip() for key, value in headers.items()}
-            if not secrets.compare_digest(headers.get("authorization", ""), f"Bearer {self.token}"):
+            ticketed = path == "/stream" and "ticket" in query
+            if ticketed:
+                extra = dict(CORS_HEADERS)
+            if method == "OPTIONS" and path == "/stream":
+                status, body, extra = 204, b"", dict(CORS_HEADERS)
+            elif ticketed and method == "GET" and self.redeem((query.get("ticket") or [""])[0]):
+                streamed = True
+                await self.stream(reader, writer, opened, cors=True)
+            elif ticketed:
+                status, body = 403, b'{"error":"browserAccessDenied"}'
+            elif not secrets.compare_digest(headers.get("authorization", ""), f"Bearer {self.token}"):
                 status, body = 403, b'{"error":"browserAccessDenied"}'
             elif method == "GET" and path == "/stream":
                 streamed = True
                 await self.stream(reader, writer, opened)
-            elif method == "GET" and path in {"/state", "/frame"}:
-                state = await asyncio.wait_for(self.state(), 5)
-                if path == "/frame":
-                    body = await self.owner.page.screenshot(type="jpeg", quality=65, scale="css", timeout=5000)
-                    contentType = "image/jpeg"
-                    extra = {"X-Log-Browser-Generation": self.generation, "X-Log-Browser-Revision": state["revision"]}
-                else:
-                    body = json.dumps(state).encode()
+            elif method == "GET" and path == "/frame":
+                body, extra = await self.frame(query)
+                contentType = "image/jpeg"
+                status = 200
+            elif method == "GET" and path == "/state":
+                body = json.dumps(await asyncio.wait_for(self.state(), 5)).encode()
+                status = 200
+            elif method == "POST" and path == "/ticket":
+                length = int(headers.get("content-length", "0"))
+                if not 0 <= length <= 1024:
+                    raise ValueError("browserInputInvalid")
+                data = json.loads(await asyncio.wait_for(reader.readexactly(length), 5)) if length else {}
+                body = json.dumps(self.ticket(data.get("seconds") if isinstance(data, dict) else None)).encode()
                 status = 200
             elif method == "POST" and path == "/input":
                 length = int(headers.get("content-length", "0"))
