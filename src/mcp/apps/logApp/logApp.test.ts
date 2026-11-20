@@ -148,7 +148,7 @@ describe("the plugin's warm app host", () => {
     ].join("\n");
     const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, timeout: 60_000 });
     expect(run.stderr).toBe("");
-    const out = JSON.parse(run.stdout.trim()) as { first: { echo: Record<string, unknown> }; again: { echo: Record<string, unknown> }; restarted: boolean; bad: [number, { error: string }] };
+    const out = JSON.parse(run.stdout.trim()) as { first: { echo: Record<string, unknown> }; again: { echo: Record<string, unknown> }; restarted: boolean; bad: [number, { error: string; message: string }] };
     expect(out.first.echo).toMatchObject({ op: "call", tool: "browserView", name: "browserViewDone", arguments: { account: "fakeSeller" } });
     expect(out.again.echo).toMatchObject({ name: "stopOnce" });
     expect(out.restarted).toBe(true);
