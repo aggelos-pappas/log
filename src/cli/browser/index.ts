@@ -76,7 +76,7 @@ export const browserCommand: Command = {
   name: "browser",
   effect: "read",
   input: BROWSER_INPUT,
-  summary: "One account's live browser: whether it needs a person to sign in, in the window on this machine or inline from a remote runtime",
+  summary: "One account's live browser: whether it needs a person to sign in, streamed inline into the chat",
   args: "view --account <accountName> [--json]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(BROWSER_INPUT));

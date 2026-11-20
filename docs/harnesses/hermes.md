@@ -13,8 +13,8 @@ Hermes (Nous Research) is an agent that runs on a server and answers through gat
   - **Tool names:** Hermes names tools `mcp_<server>_<tool>`, so log's tools appear as `mcp_log_report` and so on.
   - **Reloading:** after a config change, run `/reload-mcp`.
 - **Draws MCP Apps:** Hermes's MCP page doesn't mention MCP Apps or `ui://` resources, and Hermes isn't in the [support matrix](https://modelcontextprotocol.io/extensions/client-matrix). Treat it as text.
-  - **Views:** `report` comes back as text, and that is what reaches Telegram.
-  - **Sign-in:** happens in the log console or, when log runs on the owner's machine, the window on their screen.
+  - **Views:** in Hermes Desktop, `report`'s answer names a `::logview` line that log's Desktop plugin draws as the view; Telegram and the CLI get it as text.
+  - **Sign-in:** in Hermes Desktop, `sessionsSignIn` opens the account's browser and `browserView`'s answer names a `::logbrowser{account="..."}` line; the agent writes it on its own line and the Desktop plugin draws the live browser there, on the owner's machine too, so the owner signs in in the chat. Telegram and the CLI sign in in the log console or, when log runs on the owner's machine, the window on their screen.
 - **Guidance:**
   - **Prompt router:** with the plugin enabled, `pre_llm_call` names the play before each model call. Without it the model routes each request with `getGuide({ ask: "<the owner's words>" })` (as `mcp_log_getGuide`).
   - **Server instructions:** Hermes's MCP page doesn't mention them.

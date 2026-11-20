@@ -40,7 +40,7 @@ export async function hookAnswer(input: HookInput, route: RouteFn, useCases: Use
   const namesMs = Math.round(performance.now() - namesStarted)
   const sectionStarted = performance.now()
   const meaning = served?.meaning ?? null
-  const tools = routerSection(prompt, known, meaning?.meaning ?? null, { decision: answer.ranked ? { ranked: answer.ranked } : null, playShown: Boolean(play || menu.length), facts: toolFacts() })
+  const tools = routerSection(prompt, known, meaning?.meaning ?? null, { decision: answer.ranked ? { ranked: answer.ranked } : null, playShown: Boolean(play || menu.length), facts: toolFacts(), play: play?.id ?? null })
   const fallback = !served ? 'noService' : meaning?.meaning ? null : meaning ? (meaning.fallback ?? 'nothingToEmbed') : 'notLoaded'
   logTiming({ event, provider: 'router', ms: (meaning?.ms ?? 0) + performance.now() - sectionStarted, chars: tools.text.length, outcome: fallback ? `lexical:${fallback}` : 'fused', attrs: { meaning: fallback ?? 'used', meaningMs: Math.round((meaning?.ms ?? 0) * 10) / 10, play: tools.play, tools: tools.tools, skills: tools.skills } })
   const text = [[playMatchText(play ? [play] : [], menu), tools.text].filter(Boolean).join('\n'), named].filter(Boolean).join('\n\n')
