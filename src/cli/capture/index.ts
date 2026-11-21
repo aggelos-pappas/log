@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { buildClientMap, capturesRoot } from "../../rea/facebookClient/index.ts";
 import { captureFromHar, defaultReaRunner, settleRunCapture } from "../../rea/capture/index.ts";
 import { buildPlatformClientMap } from "../../rea/platformClient/index.ts";
+import { recordDocsBuilt } from "../../browser/runStore/index.ts";
 import { PLATFORM_SITES, PLATFORMS } from "../runner/helpers/platforms.ts";
 import type { ReaRunner } from "../../rea/capture/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
@@ -58,13 +59,14 @@ export async function runCapture(argv: string[], runner?: ReaRunner, log: (line:
   if (form === "docs") {
     const root = capturesRoot();
     const notes: string[] = [];
+    const startedAt = Date.now();
     for (const platform of PLATFORMS.filter((p) => PLATFORM_SITES[p].browser)) {
-      if (platform === "facebook") {
-        notes.push(await buildClientMap({ capturesRoot: root, outDir: join(root, "rea", "facebookClient"), docsDir: platformClientDocs(platform), runner: reaRunner, log }));
-        continue;
+      if (platform === "facebook") notes.push(await buildClientMap({ capturesRoot: root, outDir: join(root, "rea", "facebookClient"), docsDir: platformClientDocs(platform), runner: reaRunner, log }));
+      else {
+        log(`${platform}: its runs' calls, their code in its bundles, rea reading each`);
+        notes.push(await buildPlatformClientMap({ platform, capturesRoot: root, outDir: join(root, "rea", `${platform}Client`), docsDir: platformClientDocs(platform), runner: reaRunner, log }));
       }
-      log(`${platform}: its runs' calls, their code in its bundles, rea reading each`);
-      notes.push(await buildPlatformClientMap({ platform, capturesRoot: root, outDir: join(root, "rea", `${platform}Client`), docsDir: platformClientDocs(platform), runner: reaRunner, log }));
+      recordDocsBuilt(platform, startedAt);
     }
     return { code: 0, stdout: notes.join("\n") };
   }

@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { backfillAll, countDomains, domainsInHar, listRuns, pruneRuns, remeasureRunsBytes, servedRunsBytes, storageVerdict } from './index'
+import { backfillAll, countDomains, docsBuiltAt, domainsInHar, listRuns, pruneRuns, recordDocsBuilt, remeasureRunsBytes, servedRunsBytes, storageVerdict } from './index'
+import { openDatabase } from '../../storage/schema/client'
 import { readRecords } from '../../storage/records/index'
 
 const NOW = Date.parse('2026-10-22T12:00:00Z')
@@ -22,6 +23,16 @@ const LIKE_HAR = JSON.stringify({ log: { entries: [{ startedDateTime: '2026-10-2
 const HAR = 'fb_api_req_friendly_name=GroupsCometFeedRegularStoriesPaginationQuery&x fb_api_req_friendly_name=MarketplaceCometBrowseFeedLightPaginationQuery'
 
 describe('runStore', () => {
+  test('when the docs were built is read from log.db, the oldest platform build, not from the repo', () => {
+    const handle = openDatabase(join(mkdtempSync(join(tmpdir(), 'logDocsBuilt')), 'log.db'))
+    expect(docsBuiltAt(handle)).toBe(0)
+    recordDocsBuilt('facebook', BUILT, handle)
+    recordDocsBuilt('reddit', BUILT - 1000, handle)
+    expect(docsBuiltAt(handle)).toBe(BUILT - 1000)
+    recordDocsBuilt('reddit', BUILT, handle)
+    expect(docsBuiltAt(handle)).toBe(BUILT)
+  })
+
   test('a run rea settled and the docs hold may go; one not settled, not documented or still written is kept', () => {
     const root = mkdtempSync(join(tmpdir(), 'logRuns'))
     run(root, 'inspect', '20261020T100000_a', { 'adsPower/session.har': HAR, 'adsPower/settle.json': '{}', 'adsPower/findings.md': '# f' })

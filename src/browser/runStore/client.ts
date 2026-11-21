@@ -1,12 +1,14 @@
 import { appendRecord } from '../../storage/records/index'
 import { appendFileSync, promises as fsp, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statfsSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { knownRequests } from '../../subq/stepReading/client.ts'
 import { exchangesOf } from '../../subq/stepReading/helpers/exchangesOf.ts'
 import { DOCUMENT_FIELDS, EXCHANGES_FILE } from '../../subq/stepReading/types.ts'
 import { openInspects } from '../inspect/index.ts'
 import { domainsInHar } from './helpers/domainsInHar.ts'
+import type { Database } from 'bun:sqlite'
+import { readEngineStore, writeEngineStore } from '../../storage/engineStore/index'
+import { DOCS_BUILT_ACCOUNT } from './types.ts'
 import type { Backfill, PrunedRun, RunEntry, StepHar } from './types.ts'
 import { logHome } from '../../config/logHome/index.ts'
 
@@ -45,13 +47,14 @@ function newestChange(path: string): number {
   return readdirSync(path).filter((name) => !TAKEN_OUT.test(name)).reduce((n, name) => Math.max(n, newestChange(join(path, name))), 0)
 }
 
-export function docsBuiltAt(repoRoot = fileURLToPath(new URL('../../../', import.meta.url))): number {
-  const index = join(repoRoot, 'docs', 'platforms', 'facebook', 'operations.json')
-  try {
-    return Date.parse((JSON.parse(readFileSync(index, 'utf8')) as { builtAt?: string }).builtAt ?? '') || 0
-  } catch {
-    return 0
-  }
+export function recordDocsBuilt(platform: string, at: number, handle?: Database): void {
+  writeEngineStore('clientDocs', DOCS_BUILT_ACCOUNT, { builtAt: { [platform]: at } }, handle)
+}
+
+export function docsBuiltAt(handle?: Database): number {
+  const stored = readEngineStore<{ builtAt?: Record<string, unknown> }>('clientDocs', DOCS_BUILT_ACCOUNT, undefined, handle)
+  const times = Object.values(stored?.builtAt ?? {}).filter((t): t is number => typeof t === 'number' && t > 0)
+  return times.length ? Math.min(...times) : 0
 }
 
 export function listRuns(options: { root?: string; builtAt?: number; now?: number; open?: string[] } = {}): RunEntry[] {
