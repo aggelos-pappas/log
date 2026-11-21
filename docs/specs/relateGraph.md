@@ -16,7 +16,7 @@ Checked by: code and SubQ
 
 ### REQ-RELATE-02: Each build writes a new graph file and only then points at it
 
-A build runs in its own short-lived Bun process (`buildGraph` spawns `buildGraphHere`), so no long-lived process (the MCP server, the context service) keeps a writable handle that would make every read-only open fail. It writes a new single-file Relate store `graph-<throughSeq>-<ms>.rl` under a `relate` folder beside log.db, in one Relate transaction, checkpoints it, and only then stores its pointer (file, throughSeq, projector version, schema version, workspace, counts) in log.db's `state` table under `relateGraph`. A reader opens only the file the pointer names, read-only, so it never sees a half-written graph. Old files beyond the last three are removed when nothing in the process holds them. One build or update runs at a time per log.db (`relateGraphBuilding` claim).
+A full build runs on one read snapshot of log.db in its own short-lived Bun process (`buildGraph` spawns `buildGraphHere`; the graph owner spawns `buildFileHere`). It writes a new single-file Relate store `graph-<throughSeq>-<ms>.rl` under a `relate` folder beside log.db, in one Relate transaction, with the snapshot's offsets (`throughSeq`, interactions, merges, network import) and the writer's owner generation on its `Snapshot` node, checkpoints it, and closes it. Only then is its pointer (file, throughSeq, projector version, schema version, workspace, counts) stored in log.db's `state` table under `relateGraph`, in the same `BEGIN IMMEDIATE` transaction that checks the owner generation. Old files beyond the last three are removed. A one-shot `buildGraphHere` takes the graph owner claim (REQ-RELATE-19) for its run, so it never writes beside a running owner.
 
 Checked by: code and SubQ
 
@@ -46,15 +46,15 @@ For each person it says: the owner's accounts that talk with them and how many m
 
 Checked by: code and SubQ
 
-### REQ-RELATE-07: The graph is built at install and kept current
+### REQ-RELATE-07: The graph is built at install and kept current by its owner
 
-The after-install routine (`POST_INSTALL_STEPS`) builds the graph right after log.db's migrations, as a non-blocking step. After that, when the graph is behind log.db and was built more than a minute ago, the hook starts a hidden detached process that applies the new events in place (REQ-RELATE-15) and answers from the current graph meanwhile. With no graph yet and events in log.db, the hook and `log relate status` start that build at once, so status is never empty for long on a machine with data. A build already running is not started twice.
+The after-install routine (`POST_INSTALL_STEPS`) builds the graph right after log.db's migrations, as a non-blocking step. After that the graph owner (REQ-RELATE-18) keeps it current. The hook and the MCP server only check that the owner is alive, from its `owners` row (a status of starting, building or streaming and a heartbeat under `OWNER_STALE_MS` old), and start it when it is missing, at most once per `OWNER_START_BACKOFF_MS` (`relateStatus` { owner: start } claim). They never spawn a build or an apply. With no graph yet, `log relate status` starts the owner, which builds the first graph.
 
 Checked by: code and SubQ
 
 ### REQ-RELATE-08: Agents can read the graph with Cypher
 
-`log relate query "<cypher>"` (MCP `relateQuery`) runs one statement on the current graph's read-only handle and returns at most 100 rows. `log relate ask "<text>"` returns the same context the hook injects.
+`log relate query "<cypher>"` (MCP `relateQuery`) runs one read statement on the current graph and returns at most 100 rows. The owner checks the statement's query type with `EXPLAIN` first and refuses one that would write (`graphReadOnly`); a read-only open of the file refuses it too. `log relate ask "<text>"` returns the same context the hook injects.
 
 Checked by: code and SubQ
 
@@ -88,7 +88,7 @@ Checked by: code and SubQ
 
 ### REQ-RELATE-13: A graph that can't be opened is a coded outcome
 
-When the current graph file can't be opened read-only, `relateContext` answers `graphUnreadable` with the reason, the search prior is skipped, and the hook adds nothing instead of failing with the engine's error.
+When the graph owner is down and the last graph file can't be opened read-only, `relateContext` answers `graphUnreadable` with the reason, the search prior is skipped, and the hook adds nothing instead of failing with the engine's error.
 
 Checked by: code and SubQ
 
@@ -100,9 +100,9 @@ Every person other than the owner sits in one ring, kept in log.db's `networkRin
 
 Checked by: code and SubQ
 
-### REQ-RELATE-15: New events are applied to the graph in place
+### REQ-RELATE-15: New events are applied to the graph in place, in microbatches
 
-Between full builds, the update copies the current graph file, works out again from log.db only the rooms, engagement and people the events after the graph's `throughSeq` touched (plus the rooms naming a person whose handle is new, and the people whose ring moved), writes them into the copy in batches (rooms' edges replaced, people and posts merged, a new person who matches an imported placeholder taking over its edges), and then moves the pointer to the copy, which records `mode: 'applied'` and how many events it applied. It checkpoints only once about `CHECKPOINT_ROWS` rows have gone in since the last checkpoint. A full build happens instead when there is no graph, the projector version changed, identities were merged, the network import changed, more than `APPLY_MAX_EVENTS` events are new, or the owner runs `log relate build`. The applied graph equals a full build of the same log.db.
+`applyBatch` takes the events after the store's `throughSeq`, at most `OWNER_BATCH_EVENTS` of them, works out again from log.db only the rooms, engagement and people they touched (plus the rooms naming a person whose handle is new, and the people whose ring moved), and writes them into the open store in one Relate transaction: rooms' edges replaced, people and posts merged, a new person who matches an imported placeholder taking over its edges. The same transaction sets the `Snapshot` node's `throughSeq`, interaction, merge and import offsets and the owner generation, so the offset is stored with the output: a restart resumes from it, and applying a batch again gives the same graph. It checkpoints only once about `CHECKPOINT_ROWS` rows have gone in since the last checkpoint. A full build (REQ-RELATE-21) happens instead when there is no graph, the projector version changed, identities were merged, the network import changed, or more than `APPLY_MAX_EVENTS` events are new. The applied graph equals a full build of the same log.db.
 
 Checked by: code and SubQ
 
@@ -117,3 +117,36 @@ Checked by: code and SubQ
 Rings are counted per person, not per account. Accounts the owner linked into one person (`log people link`, active `identityLinks`) count once, at the closest ring any of them holds, and list every account with its own ring, reason and who put it there, so it shows which platform each tie came from (`networkMapOf`, `peopleOf`). Pairs `log people suggest` only suggests are never merged: they stay separate people and `log network status` lists them as suggested (`suggestedMatches`). A reply to or mention of someone whose linked account is ring 1 or follows the owner puts the replier in ring 2 on their own platform (`linkedTo`), and linking or unlinking accounts recomputes the rings. `log network status --platform <p>` (MCP `networkStatus` { platform }) gives that platform's accounts, rings and counts alone and the linked people who have an account there; with no platform it gives the per-platform breakdown (`platformRingsOf`) and the combined per-person view. In the graph each Person node carries its ring, reason, the platform of its closest tie, its lead account, platforms and accounts, and whether any linked account has a dm (`applyPersonRings`). The who-to-talk-to query lists a linked person once through that lead account, leaves out a person with a dm on any linked account, and takes `$platform`, which `log relate query --platform <p>` sets and which is empty otherwise.
 
 Checked by: code and SubQ
+
+## The graph owner
+
+### REQ-RELATE-18: One long-lived owner per log.db follows log.db's events
+
+`log relate owner start` (and the hook or MCP server, REQ-RELATE-07) runs `scripts/relate/owner.ts`, which runs `runGraphOwner`: it opens the current graph store once, writable, keeps it open, and on one loop every `OWNER_BATCH_MS` applies the new events in order (REQ-RELATE-15), writes a fenced pointer and a heartbeat (`OWNER_HEARTBEAT_MS`) to its `owners` row (`relate`/`graph`). Nothing else writes the graph: every writer appends to log.db, and the owner projects. `log relate owner stop` asks it to stop after its batch, and stops the process only when it doesn't answer and its start time matches.
+
+Checked by: code and SubQ
+
+### REQ-RELATE-19: The owner is fenced by its generation, in log.db and in the store
+
+Taking ownership raises `owners.generation` inside `BEGIN IMMEDIATE`. A second owner exits while the first one's heartbeat is fresh. A silent owner is replaced only after two stale readings `OWNER_STALE_CONFIRM_MS` apart, and its process is stopped only when its recorded start time matches (a reused pid is left alone). Before each batch commit the owner checks that `owners` still names its pid and generation and rolls back and exits when it doesn't (`graphOwnerFenced`); a heartbeat or pointer write is fenced the same way. The store records the generation on its `Snapshot` node, and an owner whose generation is older than the store's refuses to write it. Relate's single-writer lease on the store file is the store-level fence.
+
+Checked by: code and SubQ
+
+### REQ-RELATE-20: Readers ask the owner, and fall back to the last file
+
+The hook, `relateAsk`, `relateQuery`, `relateVerify`, `relateStatus`, `relateMachine` and the search prior ask the owner over loopback HTTP on the port and token in its `owners` row (`ownerRequest`, `OWNER_READ_MS`). Each read gets its own connection to the in-memory store and runs while a batch applies, seeing the last committed batch. When the owner is down, a reader opens the last graph file read-only for that one read, closes it, and says it is behind (`served: 'file'`).
+
+Checked by: code and SubQ
+
+### REQ-RELATE-21: A full rebuild runs on a snapshot outside the loop
+
+A rebuild (asked by `log relate build` while the owner runs, or needed under REQ-RELATE-15) runs `buildFileHere` in a child process on one read snapshot of log.db at a known `throughSeq`, while the loop keeps applying batches to the current store. The owner then opens the new file, applies the events since that snapshot, swaps it in once readers on the old store have finished, and moves the pointer.
+
+Checked by: code and SubQ
+
+### REQ-RELATE-22: Lag is visible
+
+`log relate status`, `log relate owner status` and the hook's context say how many events the graph is behind log.db, from the owner's offset against log.db's highest event `seq`.
+
+Checked by: code and SubQ
+

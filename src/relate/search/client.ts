@@ -42,7 +42,7 @@ async function within<T>(work: Promise<T>, ms: number): Promise<T | null> {
 export async function connectedSearch(prompt: string, deps: ConnectedSearchDeps = {}): Promise<ConnectedSearch | null> {
   const dir = deps.indexDir ?? join(searchRoot(), 'conversations')
   if (!existsSync(join(dir, 'chunks.json'))) return null
-  const graph = graphPriorFor(prompt, deps.dbPath ?? defaultDbPath())
+  const graph = await graphPriorFor(prompt, deps.dbPath ?? defaultDbPath())
   if (!graph) return null
   const started = performance.now()
   const embedder = (deps.embedder ?? (() => localEmbedder()))()

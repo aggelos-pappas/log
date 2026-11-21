@@ -205,7 +205,7 @@ export const searchCommand: Command = {
         const fusion = pick("fusion") ?? "bayes";
         if (fusion !== "rrf" && fusion !== "bayes") return refuseInput("search", `--fusion is rrf or bayes, not ${fusion}`, SEARCH_USAGE);
         const started = performance.now();
-        const graph = fusion === "bayes" ? graphPriorFor(query) : null;
+        const graph = fusion === "bayes" ? await graphPriorFor(query) : null;
         const relation = graph ? (chunk: { platform: string; account: string; conversationId: string }) => graph.strength(chatIdOf(chunk.platform, chunk.account, chunk.conversationId)) : undefined;
         const hits = await search(index, query, { limit, fusion, relation, platform: pick("platform"), account: pick("account"), with: pick("with"), after, kind: pick("kind"), server: pick("server"), channel: pick("channel") });
         const ms = performance.now() - started;

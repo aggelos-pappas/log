@@ -8,10 +8,6 @@ export const KEPT_SNAPSHOTS = 3
 
 export const WRITE_BATCH = 1000
 
-export const BUILD_GRACE_MS = 120_000
-
-export const REFRESH_AFTER_MS = 60_000
-
 export const QUERY_ROWS = 100
 
 export const PLATFORM_PARAM = /\$platform\b/
@@ -42,7 +38,40 @@ export const APPLY_MAX_EVENTS = 20_000
 
 export const CHECKPOINT_ROWS = 20_000
 
-export const TXN_ROWS = 10_000
+export const OPEN_RETRY_MS = 30_000
+
+export const OPEN_RETRY_STEP_MS = 250
+
+export type Ask = (cypher: string, params?: Record<string, unknown>) => Promise<Record<string, unknown>[]>
+
+export interface GraphStore {
+  file: string
+  db: import('@relate/relate').Database
+  connect: () => import('@relate/relate').Connection
+  release: (conn: import('@relate/relate').Connection) => void
+  close: () => void
+}
+
+export interface StoreOffset {
+  throughSeq: number
+  interactionsThrough: number | null
+  mergesThrough: number | null
+  networkStamp: string | null
+  generation: number
+}
+
+export interface BuiltFile {
+  file: string
+  throughSeq: number
+  schemaVersion: number
+  builtAt: string
+  ms: number
+  counts: GraphCounts
+  networkCounts: NetworkGraphCounts
+  interactionsThrough: number
+  mergesThrough: number
+  networkStamp: string | null
+}
 
 export interface GraphPointer {
   file: string
@@ -61,6 +90,7 @@ export interface GraphPointer {
   interactionsThrough?: number
   mergesThrough?: number
   networkStamp?: string | null
+  generation?: number
 }
 
 export interface GraphCounts {

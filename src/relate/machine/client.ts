@@ -1,12 +1,12 @@
 import { Database } from 'bun:sqlite'
 import { existsSync } from 'node:fs'
-import type { Connection } from '@relate/relate'
 import { defaultDbPath } from '../../storage/schema/index'
-import { findPeople, graphConnection, GraphUnreadable, pointerOf } from '../graph/index'
-import type { PersonFound } from '../graph/index'
+import { findPeople, GraphUnreadable, pointerOf, readFromFile, readOffset } from '../graph/index'
+import { ownerRequest } from '../owner/helpers/index'
+import type { Ask, PersonFound } from '../graph/index'
 import { evidenceOf, firstInteractions, networkBlock, ownerAccounts, personBlock, rankLinks, routeBlock, routeCandidates, standingOf } from './helpers/index'
 import { machineText } from './render/text'
-import { ROUTE_CONNECTORS } from './types'
+import { MACHINE_READ_MS, ROUTE_CONNECTORS } from './types'
 import { MACHINE_PLATFORMS } from './types'
 import type { EvidenceTime, MachineAccount, MachinePlatform, MachinePlatformView, MachineView, PersonStanding, StageEvidence, StateMachineBlock } from './types'
 
@@ -64,26 +64,27 @@ function merged(keys: readonly string[], evidence: Map<string, StageEvidence>, p
   return base
 }
 
-function personOf(conn: Connection, text: string): PersonFound | null {
+async function personOf(read: Ask, text: string): Promise<PersonFound | null> {
   const asked = text.trim()
   const tagged = asked.startsWith('@') || asked.includes(' ') ? asked : `@${asked}`
-  const found = findPeople(conn, tagged)[0]
+  const found = (await findPeople(read, tagged))[0]
   if (found) return found
-  const rows = conn.query('MATCH (i:Identity) WHERE NOT i.owner AND toLower(i.handle) = $handle RETURN i.key AS key, i.platform AS platform, i.handle AS handle, i.name AS name ORDER BY key', { handle: asked.replace(/^@/, '').toLowerCase() }).rows
+  const rows = await read('MATCH (i:Identity) WHERE NOT i.owner AND toLower(i.handle) = $handle RETURN i.key AS key, i.platform AS platform, i.handle AS handle, i.name AS name ORDER BY key', { handle: asked.replace(/^@/, '').toLowerCase() })
   if (!rows.length) return null
   const first = rows[0]
   return { key: String(first.key), keys: rows.filter((r) => r.platform === first.platform).map((r) => String(r.key)), personId: null, platform: String(first.platform), handle: (first.handle as string | null) ?? null, name: (first.name as string | null) ?? null }
 }
 
-export function accountsOf(conn: Connection, person: PersonFound): MachineAccount[] {
-  const mine = conn.query('MATCH (i:Identity) WHERE i.key IN $keys RETURN i.key AS key, i.platform AS platform, i.handle AS handle, i.handleLower AS handleLower, i.personId AS personId ORDER BY platform, key', { keys: [...person.keys] }).rows
+export async function accountsOf(read: Ask, person: PersonFound): Promise<MachineAccount[]> {
+  const mine = await read('MATCH (i:Identity) WHERE i.key IN $keys RETURN i.key AS key, i.platform AS platform, i.handle AS handle, i.handleLower AS handleLower, i.personId AS personId ORDER BY platform, key', { keys: [...person.keys] })
   const linked: MachineAccount[] = mine.map((r) => ({ platform: String(r.platform), handle: String(r.handle ?? r.key), link: 'linked' as const }))
   const handles = [...new Set(mine.map((r) => String(r.handleLower ?? r.handle ?? '').toLowerCase()).filter(Boolean))]
   const platforms = new Set(mine.map((r) => String(r.platform)))
   if (!handles.length) return linked
-  const suggested = conn
-    .query('MATCH (j:Identity) WHERE NOT j.owner AND NOT j.key IN $keys AND toLower(coalesce(j.handleLower, j.handle)) IN $handles AND (j.personId IS NULL OR $personId IS NULL OR j.personId <> $personId) RETURN j.platform AS platform, j.handle AS handle ORDER BY platform', { keys: [...person.keys], handles, personId: person.personId ?? null })
-    .rows.filter((r) => !platforms.has(String(r.platform)))
+  const suggested = (
+    await read('MATCH (j:Identity) WHERE NOT j.owner AND NOT j.key IN $keys AND toLower(coalesce(j.handleLower, j.handle)) IN $handles AND (j.personId IS NULL OR $personId IS NULL OR j.personId <> $personId) RETURN j.platform AS platform, j.handle AS handle ORDER BY platform', { keys: [...person.keys], handles, personId: person.personId ?? null })
+  )
+    .filter((r) => !platforms.has(String(r.platform)))
     .map((r) => ({ platform: String(r.platform), handle: String(r.handle), link: 'suggested' as const }))
   return [...linked, ...suggested]
 }
@@ -116,20 +117,20 @@ function people(evidence: Map<string, StageEvidence>): StageEvidence[] {
   })
 }
 
-function standingFor(conn: Connection, person: PersonFound, firsts: ReturnType<typeof firstInteractions>, platform?: MachinePlatform): PersonStanding | null {
-  const evidence = evidenceOf(conn, person.keys, firsts)
+async function standingFor(read: Ask, person: PersonFound, firsts: ReturnType<typeof firstInteractions>, platform?: MachinePlatform): Promise<PersonStanding | null> {
+  const evidence = await evidenceOf(read, person.keys, firsts)
   const keys = person.keys.filter((k) => { const e = evidence.get(k); return e ? onPlatform(platform)(e) : platform === undefined || platform === 'all' })
   if (!keys.length) return null
   const lead = evidence.get(keys[0])
   return standingOf(merged(keys, evidence, lead ? { ...person, key: keys.includes(person.key) ? person.key : keys[0], platform: lead.platform } : person))
 }
 
-export function machineFrom(conn: Connection, ask: MachineAsk, throughSeq: number | null, handle: Database | null = null, now: number = Date.now()): MachineAnswer {
+export async function machineFrom(read: Ask, ask: MachineAsk, throughSeq: number | null, handle: Database | null = null, now: number = Date.now()): Promise<MachineAnswer> {
   const view = viewOf(ask)
   const firsts = firstInteractions(handle)
   let block: StateMachineBlock
   if (view === 'network') {
-    const evidence = evidenceOf(conn, null, firsts)
+    const evidence = await evidenceOf(read, null, firsts)
     const everyone = people(evidence)
     const views = platformViews((platform) => {
       const kept = platform === 'all' ? everyone : people(new Map([...evidence].filter(([, e]) => e.platform === platform)))
@@ -139,20 +140,22 @@ export function machineFrom(conn: Connection, ask: MachineAsk, throughSeq: numbe
   } else {
     const asked = view === 'route' ? ask.to ?? ask.person : ask.person ?? ask.to
     if (!asked) return { ok: false, code: 'relateMachineNobody', problem: `the ${view} view needs ${view === 'route' ? 'to' : 'person'}: a handle or name` }
-    const person = personOf(conn, asked)
+    const person = await personOf(read, asked)
     if (!person) return { ok: false, code: 'relateMachineNobody', problem: `nobody in the Relate graph matches "${asked}"` }
-    const target = standingFor(conn, person, firsts)!
-    const accounts = accountsOf(conn, person)
+    const target = (await standingFor(read, person, firsts))!
+    const accounts = await accountsOf(read, person)
     if (view === 'person') {
+      const standings = new Map<MachinePlatform, PersonStanding | null>()
+      for (const platform of MACHINE_PLATFORMS) standings.set(platform, platform === 'all' ? target : await standingFor(read, person, firsts, platform))
       const views = platformViews((platform) => {
-        const standing = platform === 'all' ? target : standingFor(conn, person, firsts, platform)
+        const standing = standings.get(platform) ?? null
         return standing ? { block: personBlock(standing, throughSeq, accounts), count: platform === 'all' ? person.keys.length : accounts.filter((a) => a.link === 'linked' && a.platform === platform).length } : null
       })
       block = withPlatforms(views, ask.platform, personBlock(target, throughSeq, accounts))
     }
     else {
-      const candidates = routeCandidates(conn, person.keys)
-      const evidence = evidenceOf(conn, [...candidates.keys()], firsts)
+      const candidates = await routeCandidates(read, person.keys)
+      const evidence = await evidenceOf(read, [...candidates.keys()], firsts)
       const links = rankLinks(
         [...candidates.values()].flatMap((c) => {
           const e = evidence.get(c.key)
@@ -163,7 +166,7 @@ export function machineFrom(conn: Connection, ask: MachineAsk, throughSeq: numbe
         }),
         ROUTE_CONNECTORS,
       )
-      const accounts = ownerAccounts(conn).sort((a, b) => Number(b.platform === target.evidence.platform) - Number(a.platform === target.evidence.platform))
+      const accounts = (await ownerAccounts(read)).sort((a, b) => Number(b.platform === target.evidence.platform) - Number(a.platform === target.evidence.platform))
       const note = accounts.slice(0, 3).map((a) => `@${a.account.replace(/^@/, '')} on ${a.platform}`).join(', ')
       block = routeBlock({ label: 'You', note: note || 'your accounts' }, target, links, throughSeq)
     }
@@ -171,20 +174,21 @@ export function machineFrom(conn: Connection, ask: MachineAsk, throughSeq: numbe
   return { ok: true, block, text: machineText(block), throughSeq: throughSeq ?? 0 }
 }
 
-export function relateMachine(ask: MachineAsk, dbPath: string = defaultDbPath(), now: number = Date.now()): MachineAnswer {
+export async function relateMachine(ask: MachineAsk, dbPath: string = defaultDbPath(), now: number = Date.now()): Promise<MachineAnswer> {
   if (!existsSync(dbPath)) return { ok: false, code: 'relateMachineNoGraph', problem: `no log.db at ${dbPath}` }
   const handle = new Database(dbPath, { readonly: true })
   try {
+    const reply = await ownerRequest<MachineAnswer>(handle, 'machine', { ask, now }, MACHINE_READ_MS)
+    if (reply?.ok) return reply.value
+    if (reply) return { ok: false, code: 'graphUnreadable', problem: reply.error }
     const pointer = pointerOf(dbPath, handle)
     if (!pointer) return { ok: false, code: 'relateMachineNoGraph', problem: 'no Relate graph for this log.db yet: `log relate build` makes one' }
-    let conn: Connection
     try {
-      conn = graphConnection(pointer.file)
+      return await readFromFile(pointer.file, async (read) => machineFrom(read, ask, (await readOffset(read))?.throughSeq ?? pointer.throughSeq, handle, now))
     } catch (error) {
       if (error instanceof GraphUnreadable) return { ok: false, code: 'graphUnreadable', problem: error.message }
       throw error
     }
-    return machineFrom(conn, ask, pointer.throughSeq, handle, now)
   } finally {
     handle.close()
   }

@@ -23,7 +23,7 @@ export type StateScope =
   | 'watcherEnd'
   | 'watcherHold'
   | 'relateGraph'
-  | 'relateGraphBuilding'
+  | 'relateOwnerStart'
   | 'pushQuiet'
   | 'inboxIgnore'
   | 'inboxLabels'

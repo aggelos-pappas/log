@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 56 domains, 667 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 56 domains, 672 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -655,7 +655,7 @@ log keeps a Relate (Neo4j's embedded graph database) projection of log.db: the o
 - **REQ-RELATE-04** A graph belongs to one log.db
 - **REQ-RELATE-05** The hook names only people the prompt names
 - **REQ-RELATE-06** The context is what the graph connects, as facts
-- **REQ-RELATE-07** The graph is built at install and kept current
+- **REQ-RELATE-07** The graph is built at install and kept current by its owner
 - **REQ-RELATE-08** Agents can read the graph with Cypher
 - **REQ-RELATE-09** The hook adds what was said, found by all three retrievers together
 - **REQ-RELATE-10** Discord rooms carry their kind, their own name and their server
@@ -663,9 +663,14 @@ log keeps a Relate (Neo4j's embedded graph database) projection of log.db: the o
 - **REQ-RELATE-12** SAID keeps first and last times, and replies and mentions are edges
 - **REQ-RELATE-13** A graph that can't be opened is a coded outcome
 - **REQ-RELATE-14** Rings come from every stored event, live and free
-- **REQ-RELATE-15** New events are applied to the graph in place
+- **REQ-RELATE-15** New events are applied to the graph in place, in microbatches
 - **REQ-RELATE-16** `log network status` shows the rings live
 - **REQ-RELATE-17** The network is per person and per platform
+- **REQ-RELATE-18** One long-lived owner per log.db follows log.db's events
+- **REQ-RELATE-19** The owner is fenced by its generation, in log.db and in the store
+- **REQ-RELATE-20** Readers ask the owner, and fall back to the last file
+- **REQ-RELATE-21** A full rebuild runs on a snapshot outside the loop
+- **REQ-RELATE-22** Lag is visible
 
 ## [People across platforms](./people.md)
 

@@ -21,7 +21,8 @@ import { quietUntil } from '../../inbox/push/index'
 import { superviseLocalWatchers } from '../../platformKit/watcher/index'
 import { hookAnswer } from '../../contextLayer/hook/index'
 import type { HookInput } from '../../contextLayer/hook/index'
-import { refreshGraph, relateContext } from '../../relate/graph/index'
+import { relateContext } from '../../relate/graph/index'
+import { ensureGraphOwner, startGraphOwner } from '../../relate/owner/index'
 import { connectedSearch } from '../../relate/search/index'
 import { cardsNamedIn } from '../../people/index'
 import { defaultDbPath, openDatabase } from '../../storage/schema/index'
@@ -199,18 +200,18 @@ export function promptOf(raw: string): string {
   }
 }
 
-export async function relateAnswer(raw: string, repo: string, searched: (prompt: string) => Promise<ConnectedSearch | null> = connectedSearch, dbPath?: string): Promise<HookAnswer> {
+export async function relateAnswer(raw: string, repo: string, searched: (prompt: string) => Promise<ConnectedSearch | null> = connectedSearch, dbPath?: string, start: (repo: string, dbPath: string) => number | null = startGraphOwner): Promise<HookAnswer> {
+  try {
+    ensureGraphOwner(repo, dbPath ?? defaultDbPath(), start)
+  } catch {}
   const prompt = promptOf(raw)
   if (!prompt.trim() || prompt.trimStart().startsWith('<')) return {}
-  const answer = relateContext(prompt, dbPath)
+  const answer = await relateContext(prompt, dbPath)
   let cards = ''
   try {
     cards = cardsNamedIn(openDatabase(dbPath ?? defaultDbPath()), prompt).map((c) => c.text).join('\n')
   } catch {}
   const found = answer.outcome === 'answered' ? await searched(prompt).catch(() => null) : null
-  try {
-    if (!dbPath) refreshGraph(repo)
-  } catch {}
   const text = [cards, answer.text, found?.text ?? ''].filter(Boolean).join('\n')
   return text ? { context: text } : {}
 }

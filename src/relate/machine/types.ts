@@ -135,6 +135,8 @@ export const STUCK_AFTER_MS = 14 * 86_400_000
 
 export const ROUTE_CONNECTORS = 3
 
+export const MACHINE_READ_MS = 60_000
+
 export const NETWORK_NAMES = 3
 
 export const RING_STAGE: Record<number, Stage> = { 1: 'engaged', 2: 'nearYou', 3: 'followsYou', 4: 'new' }
