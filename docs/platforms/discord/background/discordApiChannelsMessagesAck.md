@@ -1,6 +1,6 @@
 # discordApiChannelsMessagesAck
 
-<!-- facts:start · written by `log facebook capture --docs` from the run captures and rea. Not edited by hand. -->
+<!-- facts:start · written by `log capture docs` from the run captures and rea. Not edited by hand. -->
 
 | | |
 | --- | --- |
@@ -10,10 +10,10 @@
 | Path | `discord.com/api/channels/messages/ack` |
 | Sends | `version`, `read_state_type` |
 | Reads | `token` |
-| Called from | `runs/inspect/20261113T141543_<name:1>/script1.js:232 625075`, `runs/inspect/20261113T141543_<name:1>/script1.js:124 559868`, `runs/inspect/20261113T141543_<name:1>/script1.js:124 961943`, `runs/inspect/20261113T141543_<name:1>/script1294.js:1 634654` |
+| Called from | `runs/inspect/20261120T115645_<name:1>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:1>/script1326.js:1 634654` |
 | rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 23 time(s) in 6 run(s).
+Seen 39 time(s) in 14 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -28,14 +28,16 @@ Seen 23 time(s) in 6 run(s).
 | inspect | step 25: goto /channels/@me | 2 | 204 | 324–370 ms | 14201–14303 ms | — |
 | inspect | step 28: press Enter | 1 | 200 | 350 ms | 3015 ms | — |
 | inspect | step 31: wait 60s | 1 | 200 | 301 ms | 39716 ms | — |
-| inspect | step 1: goto /login | 6 | 204 | 309–1581 ms | 19948–1054567 ms | — |
+| inspect | step 1: goto /login | 16 | 204 | 309–1581 ms | 19948–1054567 ms | — |
 | inspect | step 2: snapshot | 2 | 204 | 301–410 ms | 57834–57944 ms | — |
+| inspect | step 1: goto /quest-home | 4 | 204 | 339–395 ms | 31490–32448 ms | — |
+| inspect | step 1: goto /channels/@me | 2 | 204 | 296–342 ms | 28386–31371 ms | — |
 
 ### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261113T141543_<name:1>**, step 1: goto /login: 204, 339 ms
+**runs/inspect/20261120T115645_<name:1>**, step 1: goto /login: 204, 352 ms
 
 Sent:
 
@@ -52,7 +54,7 @@ Answered:
 null
 ```
 
-**runs/inspect/20261030T222341_<name:1>**, step 2: snapshot: 204, 410 ms
+**runs/inspect/20261120T111021_<name:1>**, step 1: goto /quest-home: 204, 345 ms
 
 Sent:
 
@@ -69,7 +71,7 @@ Answered:
 null
 ```
 
-**runs/inspect/20261028T065202_<name:1>**, step 1: goto /channels/@me/<id>: 204, 402 ms
+**runs/inspect/20261120T091412_<name:1>**, step 1: goto /channels/@me: 204, 342 ms
 
 Sent:
 

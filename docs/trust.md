@@ -26,6 +26,17 @@ Answering the people you already talk to: who is waiting on a reply, what they s
 - Retry after a platform says no. A refusal stops the run until you decide.
 - Send your sign-ins anywhere. When you run it locally they stay in `~/.logCli` on your machine.
 
+## Your sign-ins never reach the agent
+
+Your agent asks log to act; log holds the session and makes the request itself. The agent picks an account by name and never handles the session values.
+
+- **Typed by you, in a terminal.** Every command that takes a sign-in (`log twitter cookies save`, `log linkedin cookies save`, `log slack cookies save`, `log discord secrets`, `log credentials save`, `log localAccount add`) runs only in a terminal with a masked prompt. An agent calling log over MCP is refused with `terminalOnly`, and the values are never accepted as flags, where they would land in shell history.
+- **Never read back.** `log credentials read` returns only the values that are not secret, such as a provider's URL. No tool returns a session value.
+- **Taken out of recordings.** When a run is recorded to document a platform's requests, secrets and signed link tokens are removed before anything is written to the docs.
+- **Checked before saving.** A session is tested with the platform before it is saved; a refused one is never written.
+
+This is the separation security research recommends for agents: the model chooses what to do, and a trusted layer outside the model supplies the credential ([Kenney et al., 2026](https://arxiv.org/abs/2609.33371)). Leaking a secret into the model's context, through prompts or debug output, is the most common way agent tools expose credentials ([Chen et al., 2026](https://arxiv.org/abs/2604.03070)).
+
 ## Where your data lives
 
 | What | Where |
