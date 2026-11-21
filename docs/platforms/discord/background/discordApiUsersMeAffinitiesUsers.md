@@ -10,24 +10,22 @@
 | Path | `discord.com/api/users/@me/affinities/users` |
 | Sends | — |
 | Reads | `user_affinities` |
-| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:232 625075`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 559868`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 961943`, `runs/inspect/20261111T233723_discordAccount/script1280.js:1 anonymous` |
-| rea | `ev_f6daff8038b4f477b27b852e31fc1f2f76f7dd725b1883891e74b824ed6f0ac3` |
+| Called from | `runs/inspect/20261120T115645_<name:1>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:1>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 10 time(s) in 10 run(s).
+Seen 5 time(s) in 5 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 5: click e40 | 1 | 200 | 789 ms | 6560 ms | — |
 | inspect | step 2: snapshot | 1 | 200 | 740 ms | 48694 ms | — |
-| inspect | step 1: goto /login | 6 | 200 | 200–804 ms | 25829–1045767 ms | — |
-| inspect | step 6: wait 45s | 1 | 200 | 209 ms | 22346 ms | — |
-| inspect | step 9: wait 45s | 1 | 200 | 173 ms | 13148 ms | — |
+| inspect | step 1: goto /login | 3 | 200 | 567–863 ms | 32327–1045767 ms | — |
 
 ### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261114T184328_discordAccount**, step 9: wait 45s: 200, 173 ms
+**runs/inspect/20261120T084152_<name:1>**, step 1: goto /login: 200, 863 ms
 
 Sent:
 
@@ -41,249 +39,249 @@ Answered:
 {
   "user_affinities": [
     {
-      "other_user_id": "1434443116663930960",
+      "other_user_id": "428660066716090378",
       "user_segment": "HFU_MAU",
       "other_user_segment": "HFU_MAU",
       "is_friend": true,
-      "dm_probability": 0.865576799397533,
+      "dm_probability": 0.868118679332314,
       "dm_rank": 1,
-      "vc_probability": 0.8464587222067467,
+      "vc_probability": 0.8329808455771183,
       "vc_rank": 1,
-      "server_message_probability": 0.011555590954788506,
-      "server_message_rank": 3,
-      "communication_probability": 0.5745303708530227,
+      "server_message_probability": 0.0675239665545675,
+      "server_message_rank": 29,
+      "communication_probability": 0.5895411638213333,
       "communication_rank": 1
-    },
-    {
-      "other_user_id": "1568181084384919620",
-      "user_segment": "HFU_MAU",
-      "other_user_segment": "HFU_MAU",
-      "is_friend": true,
-      "dm_probability": 0.8511721047908763,
-      "dm_rank": 5,
-      "vc_probability": 0.7448869026800492,
-      "vc_rank": 2,
-      "server_message_probability": 0.003987525496744214,
-      "server_message_rank": 11,
-      "communication_probability": 0.5333488443225566,
-      "communication_rank": 2
     },
     {
       "other_user_id": "541647035317747722",
       "user_segment": "HFU_MAU",
       "other_user_segment": "HFU_MAU",
       "is_friend": true,
-      "dm_probability": 0.8606199317141302,
-      "dm_rank": 3,
-      "vc_probability": 0.5405300810220512,
-      "vc_rank": 3,
-      "server_message_probability": 0.006190073983361413,
-      "server_message_rank": 4,
-      "communication_probability": 0.46911336223984756,
-      "communication_rank": 3
+      "dm_probability": 0.8572496179275535,
+      "dm_rank": 4,
+      "vc_probability": 0.777301929086438,
+      "vc_rank": 2,
+      "server_message_probability": 0.004113237849325427,
+      "server_message_rank": 174,
+      "communication_probability": 0.546221594954439,
+      "communication_rank": 2
     },
     {
-      "other_user_id": "1173020076509773965",
+      "other_user_id": "197014787945791488",
       "user_segment": "HFU_MAU",
       "other_user_segment": "HFU_MAU",
       "is_friend": true,
-      "dm_probability": 0.8564165679125413,
-      "dm_rank": 4,
-      "vc_probability": 0.1624031707313787,
-      "vc_rank": 4,
-      "server_message_probability": 0.0030916126171514576,
-      "server_message_rank": 21,
-      "communication_probability": 0.3406371170870238,
+      "dm_probability": 0.7729288511543547,
+      "dm_rank": 10,
+      "vc_probability": 0.0029691820358079017,
+      "vc_rank": 68,
+      "server_message_probability": 0.8030203089018778,
+      "server_message_rank": 1,
+      "communication_probability": 0.5263061140306802,
+      "communication_rank": 3
+    },
+    {
+      "other_user_id": "1186364405743624192",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.7651596067383517,
+      "dm_rank": 13,
+      "vc_probability": 0.02799853904719779,
+      "vc_rank": 13,
+      "server_message_probability": 0.7777044395461289,
+      "server_message_rank": 2,
+      "communication_probability": 0.5236208617772261,
       "communication_rank": 4
     },
     {
-      "other_user_id": "1477452679960854578",
-      "user_segment": "HFU_MAU",
-      "other_user_segment": "NON_HFU_MAU",
-      "is_friend": false,
-      "dm_probability": 0.836452860699848,
-      "dm_rank": 8,
-      "vc_probability": 0.07867472876894796,
-      "vc_rank": 5,
-      "server_message_probability": 0.0025637372800829538,
-      "server_message_rank": 70,
-      "communication_probability": 0.305897108916293,
-      "communication_rank": 5
-    },
-    {
-      "other_user_id": "1177427345733324870",
-      "user_segment": "HFU_MAU",
-      "other_user_segment": "HFU_MAU",
-      "is_friend": false,
-      "dm_probability": 0.8505873971995275,
-      "dm_rank": 6,
-      "vc_probability": 0.015431362816817742,
-      "vc_rank": 7,
-      "server_message_probability": 0.01852830931693116,
-      "server_message_rank": 2,
-      "communication_probability": 0.2948490231110921,
-      "communication_rank": 6
-    },
-    "… 90 more"
-  ]
-}
-```
-
-**runs/inspect/20261113T231616_discordAccount**, step 6: wait 45s: 200, 209 ms
-
-Sent:
-
-```json
-null
-```
-
-Answered:
-
-```json
-{
-  "user_affinities": [
-    {
-      "other_user_id": "1434443116663930960",
+      "other_user_id": "1231328132427153461",
       "user_segment": "HFU_MAU",
       "other_user_segment": "HFU_MAU",
       "is_friend": true,
-      "dm_probability": 0.8649888777530657,
-      "dm_rank": 1,
-      "vc_probability": 0.8384374641430918,
-      "vc_rank": 1,
-      "server_message_probability": 0.01159895717029362,
-      "server_message_rank": 3,
-      "communication_probability": 0.571675099688817,
-      "communication_rank": 1
-    },
-    {
-      "other_user_id": "1568181084384919620",
-      "user_segment": "HFU_MAU",
-      "other_user_segment": "NON_HFU_MAU",
-      "is_friend": true,
-      "dm_probability": 0.7194415675687208,
-      "dm_rank": 6,
-      "vc_probability": 0.46243374403706544,
-      "vc_rank": 2,
-      "server_message_probability": 0.004531981780448748,
-      "server_message_rank": 11,
-      "communication_probability": 0.3954690977954117,
-      "communication_rank": 2
-    },
-    {
-      "other_user_id": "541647035317747722",
-      "user_segment": "HFU_MAU",
-      "other_user_segment": "HFU_MAU",
-      "is_friend": true,
-      "dm_probability": 0.8317501805713895,
-      "dm_rank": 3,
-      "vc_probability": 0.3089209846330373,
+      "dm_probability": 0.6824153507811419,
+      "dm_rank": 18,
+      "vc_probability": 0.5801331641194938,
       "vc_rank": 3,
-      "server_message_probability": 0.005436193214017644,
-      "server_message_rank": 4,
-      "communication_probability": 0.3820357861394815,
-      "communication_rank": 3
+      "server_message_probability": 0.11813818451654216,
+      "server_message_rank": 17,
+      "communication_probability": 0.46022889980572596,
+      "communication_rank": 5
     },
     {
       "other_user_id": "1192133857198223460",
       "user_segment": "HFU_MAU",
       "other_user_segment": "HFU_MAU",
       "is_friend": true,
-      "dm_probability": 0.8350497945295688,
-      "dm_rank": 2,
-      "vc_probability": 0.006447767541073292,
-      "vc_rank": 9,
-      "server_message_probability": 0.003580258386305242,
-      "server_message_rank": 13,
-      "communication_probability": 0.28169260681898245,
-      "communication_rank": 4
-    },
-    {
-      "other_user_id": "1327503062356590636",
-      "user_segment": "HFU_MAU",
-      "other_user_segment": "HFU_MAU",
-      "is_friend": false,
-      "dm_probability": 0.7800661402909699,
-      "dm_rank": 4,
-      "vc_probability": 0.003881907749344152,
-      "vc_rank": 12,
-      "server_message_probability": 0.003193042536268376,
-      "server_message_rank": 17,
-      "communication_probability": 0.26238036352552746,
-      "communication_rank": 5
-    },
-    {
-      "other_user_id": "949667587732680735",
-      "user_segment": "HFU_MAU",
-      "other_user_segment": "NON_HFU_MAU",
-      "is_friend": true,
-      "dm_probability": 0.7399947462107985,
-      "dm_rank": 5,
-      "vc_probability": 0.0024686419526251864,
-      "vc_rank": 20,
-      "server_message_probability": 0.003034602623310867,
-      "server_message_rank": 22,
-      "communication_probability": 0.24849933026224486,
-      "communication_rank": 6
-    },
-    "… 90 more"
-  ]
-}
-```
-
-**runs/inspect/20261111T233723_discordAccount**, step 1: goto /login: 200, 257 ms
-
-Sent:
-
-```json
-null
-```
-
-Answered:
-
-```json
-{
-  "user_affinities": [
-    {
-      "other_user_id": "1434443116663930960",
-      "user_segment": "HFU_MAU",
-      "other_user_segment": "HFU_MAU",
-      "is_friend": true,
-      "dm_probability": 0.8653584930842243,
-      "dm_rank": 1,
-      "vc_probability": 0.8359550989805676,
-      "vc_rank": 1,
-      "server_message_probability": 0.00653867643290295,
-      "server_message_rank": 4,
-      "communication_probability": 0.5692840894992317,
-      "communication_rank": 1
-    },
-    {
-      "other_user_id": "541647035317747722",
-      "user_segment": "HFU_MAU",
-      "other_user_segment": "HFU_MAU",
-      "is_friend": true,
-      "dm_probability": 0.8607169920402292,
-      "dm_rank": 2,
-      "vc_probability": 0.6304665332171245,
-      "vc_rank": 2,
-      "server_message_probability": 0.004002721750822658,
-      "server_message_rank": 12,
-      "communication_probability": 0.4983954156693921,
-      "communication_rank": 2
-    },
-    {
-      "other_user_id": "1568181084384919620",
-      "user_segment": "HFU_MAU",
-      "other_user_segment": "NON_HFU_MAU",
-      "is_friend": true,
-      "dm_probability": 0.8449604242001966,
+      "dm_probability": 0.8486500422239412,
       "dm_rank": 7,
-      "vc_probability": 0.6116325946299872,
-      "vc_rank": 3,
-      "server_message_probability": 0.006660732204090521,
+      "vc_probability": 0.40687628901240175,
+      "vc_rank": 4,
+      "server_message_probability": 0.029439592416318727,
+      "server_message_rank": 48,
+      "communication_probability": 0.4283219745508872,
+      "communication_rank": 6
+    },
+    "… 1915 more"
+  ]
+}
+```
+
+**runs/inspect/20261030T222341_<name:1>**, step 2: snapshot: 200, 740 ms
+
+Sent:
+
+```json
+null
+```
+
+Answered:
+
+```json
+{
+  "user_affinities": [
+    {
+      "other_user_id": "428660066716090378",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.8643636102350072,
+      "dm_rank": 2,
+      "vc_probability": 0.8255596310980683,
+      "vc_rank": 2,
+      "server_message_probability": 0.3062781273687434,
       "server_message_rank": 3,
-      "communication_probability": 0.48775125034475814,
+      "communication_probability": 0.6654004562339396,
+      "communication_rank": 1
+    },
+    {
+      "other_user_id": "541647035317747722",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.8645748232426937,
+      "dm_rank": 1,
+      "vc_probability": 0.8493159768033763,
+      "vc_rank": 1,
+      "server_message_probability": 0.00555013901642494,
+      "server_message_rank": 53,
+      "communication_probability": 0.5731469796874984,
+      "communication_rank": 2
+    },
+    {
+      "other_user_id": "1177427345733324870",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.860912193565373,
+      "dm_rank": 5,
+      "vc_probability": 0.7015095818585135,
+      "vc_rank": 3,
+      "server_message_probability": 0.021203940445420805,
+      "server_message_rank": 16,
+      "communication_probability": 0.5278752386231025,
+      "communication_rank": 3
+    },
+    {
+      "other_user_id": "1192133857198223460",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.8628775567284265,
+      "dm_rank": 3,
+      "vc_probability": 0.6142673051609551,
+      "vc_rank": 4,
+      "server_message_probability": 0.04272257299513136,
+      "server_message_rank": 9,
+      "communication_probability": 0.5066224782948376,
+      "communication_rank": 4
+    },
+    {
+      "other_user_id": "1173020076509773965",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.8580826073453751,
+      "dm_rank": 6,
+      "vc_probability": 0.6115944246337351,
+      "vc_rank": 5,
+      "server_message_probability": 0.010937512416067231,
+      "server_message_rank": 25,
+      "communication_probability": 0.4935381814650591,
+      "communication_rank": 5
+    },
+    {
+      "other_user_id": "1016308664119857202",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.8382034161517002,
+      "dm_rank": 9,
+      "vc_probability": 0.21580670512032407,
+      "vc_rank": 6,
+      "server_message_probability": 0.05303509648587448,
+      "server_message_rank": 8,
+      "communication_probability": 0.3690150725859663,
+      "communication_rank": 6
+    },
+    "… 1665 more"
+  ]
+}
+```
+
+**runs/inspect/20261028T062914_<name:1>**, step 5: click e40: 200, 789 ms
+
+Sent:
+
+```json
+null
+```
+
+Answered:
+
+```json
+{
+  "user_affinities": [
+    {
+      "other_user_id": "428660066716090378",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.8643658221695745,
+      "dm_rank": 2,
+      "vc_probability": 0.836348199793196,
+      "vc_rank": 2,
+      "server_message_probability": 0.3598735948759675,
+      "server_message_rank": 3,
+      "communication_probability": 0.6868625389462459,
+      "communication_rank": 1
+    },
+    {
+      "other_user_id": "541647035317747722",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.8645838800717208,
+      "dm_rank": 1,
+      "vc_probability": 0.8505251562385611,
+      "vc_rank": 1,
+      "server_message_probability": 0.006904361688764468,
+      "server_message_rank": 38,
+      "communication_probability": 0.574004465999682,
+      "communication_rank": 2
+    },
+    {
+      "other_user_id": "1177427345733324870",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.8631666113317887,
+      "dm_rank": 3,
+      "vc_probability": 0.7813187369513939,
+      "vc_rank": 3,
+      "server_message_probability": 0.02500637897799835,
+      "server_message_rank": 13,
+      "communication_probability": 0.5564972424203937,
       "communication_rank": 3
     },
     {
@@ -291,44 +289,44 @@ Answered:
       "user_segment": "HFU_MAU",
       "other_user_segment": "HFU_MAU",
       "is_friend": true,
-      "dm_probability": 0.8533741832153393,
-      "dm_rank": 4,
-      "vc_probability": 0.12898052381474523,
+      "dm_probability": 0.8609676471181841,
+      "dm_rank": 6,
+      "vc_probability": 0.6976196622219482,
       "vc_rank": 4,
-      "server_message_probability": 0.0031619970584653594,
-      "server_message_rank": 17,
-      "communication_probability": 0.32850556802951664,
+      "server_message_probability": 0.005601138309123053,
+      "server_message_rank": 52,
+      "communication_probability": 0.5213961492164184,
       "communication_rank": 4
-    },
-    {
-      "other_user_id": "1177427345733324870",
-      "user_segment": "HFU_MAU",
-      "other_user_segment": "HFU_MAU",
-      "is_friend": false,
-      "dm_probability": 0.8471571330944685,
-      "dm_rank": 5,
-      "vc_probability": 0.017510653211941063,
-      "vc_rank": 8,
-      "server_message_probability": 0.013674508629035229,
-      "server_message_rank": 2,
-      "communication_probability": 0.2927807649784816,
-      "communication_rank": 5
     },
     {
       "other_user_id": "1192133857198223460",
       "user_segment": "HFU_MAU",
       "other_user_segment": "HFU_MAU",
       "is_friend": true,
-      "dm_probability": 0.8593038617187031,
-      "dm_rank": 3,
-      "vc_probability": 0.007789409007541532,
-      "vc_rank": 10,
-      "server_message_probability": 0.003580258386305242,
-      "server_message_rank": 14,
-      "communication_probability": 0.29022450970418334,
+      "dm_probability": 0.8622789754175471,
+      "dm_rank": 5,
+      "vc_probability": 0.4437963111304042,
+      "vc_rank": 5,
+      "server_message_probability": 0.02614309038385969,
+      "server_message_rank": 12,
+      "communication_probability": 0.44407279231060365,
+      "communication_rank": 5
+    },
+    {
+      "other_user_id": "1016308664119857202",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.8467236514951515,
+      "dm_rank": 8,
+      "vc_probability": 0.24969665040916272,
+      "vc_rank": 6,
+      "server_message_probability": 0.21321692540280923,
+      "server_message_rank": 4,
+      "communication_probability": 0.4365457424357079,
       "communication_rank": 6
     },
-    "… 88 more"
+    "… 1658 more"
   ]
 }
 ```

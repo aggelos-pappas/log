@@ -9,22 +9,22 @@
 | doc_id | — |
 | Path | `discord.com/api/users/@me` |
 | Sends | — |
-| Reads | `message`, `code` |
-| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:232 625075`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 559868`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 961943`, `runs/inspect/20261111T233723_discordAccount/script1280.js:1 anonymous` |
-| rea | `ev_f6daff8038b4f477b27b852e31fc1f2f76f7dd725b1883891e74b824ed6f0ac3` |
+| Reads | `id`, `username`, `avatar`, `discriminator`, `public_flags`, `flags`, `banner`, `accent_color`, `global_name`, `avatar_decoration_data`, `collectibles`, `display_name_styles` and 23 more |
+| Called from | `runs/inspect/20261120T115645_<name:1>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:1>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 16 time(s) in 10 run(s).
+Seen 11 time(s) in 9 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
-| inspect | step 1: goto /login | 14 | 200, 401 | 126–397 ms | 1049–7827 ms | — |
-| inspect | step 1: goto /channels/@me | 2 | 401 | 280–1147 ms | 1971–10897 ms | — |
+| inspect | step 1: goto /login | 10 | 200, 401 | 304–447 ms | 4449–25795 ms | — |
+| inspect | step 1: goto /channels/@me | 1 | 401 | 1147 ms | 10897 ms | — |
 
 ### What it sent and what came back (the newest 2 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261114T184328_discordAccount**, step 1: goto /login: 401, 141 ms
+**runs/inspect/20261120T115645_<name:1>**, step 1: goto /login: 200, 369 ms
 
 Sent:
 
@@ -36,12 +36,51 @@ Answered:
 
 ```json
 {
-  "message": "<messageText>",
-  "code": 0
+  "id": "<id:1>",
+  "username": "<username:1>",
+  "avatar": "82e338d2355f93220637a3ec394ca3c4",
+  "discriminator": "0",
+  "public_flags": 0,
+  "flags": 0,
+  "banner": null,
+  "accent_color": null,
+  "global_name": null,
+  "avatar_decoration_data": null,
+  "collectibles": null,
+  "display_name_styles": null,
+  "banner_color": null,
+  "clan": {
+    "identity_guild_id": null,
+    "identity_enabled": false,
+    "tag": null,
+    "badge": null
+  },
+  "primary_guild": {
+    "identity_guild_id": null,
+    "identity_enabled": false,
+    "tag": null,
+    "badge": null
+  },
+  "mfa_enabled": false,
+  "locale": "en-US",
+  "premium_type": 0,
+  "email": "<email>",
+  "verified": true,
+  "phone": "<phone>",
+  "nsfw_allowed": true,
+  "linked_users": [],
+  "bio": "try out log on https://log.listeningkit.com\ntokenmaxxing on https://inferencesaver.com/en/",
+  "authenticator_types": [],
+  "age_verification_status": 4,
+  "store_country": {
+    "country": "VN",
+    "set_at": null,
+    "is_locked": false
+  }
 }
 ```
 
-**runs/inspect/20261109T193411_discordAccount**, step 1: goto /channels/@me: 401, 280 ms
+**runs/inspect/20261030T222341_<name:1>**, step 1: goto /channels/@me: 401, 1147 ms
 
 Sent:
 

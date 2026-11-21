@@ -10,24 +10,22 @@
 | Path | `discord.com/api/users/@me/affinities/guilds` |
 | Sends | — |
 | Reads | `guild_affinities` |
-| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:232 625075`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 559868`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 961943`, `runs/inspect/20261111T233723_discordAccount/script1280.js:1 anonymous` |
-| rea | `ev_f6daff8038b4f477b27b852e31fc1f2f76f7dd725b1883891e74b824ed6f0ac3` |
+| Called from | `runs/inspect/20261120T115645_<name:1>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:1>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 10 time(s) in 10 run(s).
+Seen 5 time(s) in 5 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 5: click e40 | 1 | 200 | 352 ms | 5395 ms | — |
 | inspect | step 2: snapshot | 1 | 200 | 640 ms | 47867 ms | — |
-| inspect | step 1: goto /login | 6 | 200 | 161–514 ms | 25496–1044582 ms | — |
-| inspect | step 6: wait 45s | 1 | 200 | 171 ms | 22084 ms | — |
-| inspect | step 9: wait 45s | 1 | 200 | 407 ms | 12821 ms | — |
+| inspect | step 1: goto /login | 3 | 200 | 359–514 ms | 29131–1044582 ms | — |
 
 ### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261114T184328_discordAccount**, step 9: wait 45s: 200, 407 ms
+**runs/inspect/20261120T084152_<name:1>**, step 1: goto /login: 200, 359 ms
 
 Sent:
 
@@ -41,35 +39,35 @@ Answered:
 {
   "guild_affinities": [
     {
-      "guild_id": "1483217544214085663",
-      "affinity": 38.35481877669739
+      "guild_id": "1053877538025386074",
+      "affinity": 1634.7521438681463
     },
     {
       "guild_id": "1290725749543927941",
-      "affinity": 31.447502316543655
+      "affinity": 1334.1589153478053
     },
     {
-      "guild_id": "1019350475847499849",
-      "affinity": 26.389629900834567
+      "guild_id": "1359579021108842617",
+      "affinity": 363.71310008744933
     },
     {
-      "guild_id": "1272308870919880735",
-      "affinity": 8.28964492710318
+      "guild_id": "1556595354999332884",
+      "affinity": 320.36386312965305
     },
     {
-      "guild_id": "1442518050527248436",
-      "affinity": 6.778734512637333
+      "guild_id": "1458911680376606957",
+      "affinity": 255.4580321096507
     },
     {
-      "guild_id": "1490078307754967311",
-      "affinity": 6.126599483982498
+      "guild_id": "1130383047699738754",
+      "affinity": 237.7634816829892
     },
-    "… 11 more"
+    "… 64 more"
   ]
 }
 ```
 
-**runs/inspect/20261113T231616_discordAccount**, step 6: wait 45s: 200, 171 ms
+**runs/inspect/20261030T222341_<name:1>**, step 2: snapshot: 200, 640 ms
 
 Sent:
 
@@ -83,35 +81,35 @@ Answered:
 {
   "guild_affinities": [
     {
-      "guild_id": "1483217544214085663",
-      "affinity": 38.50195729277904
+      "guild_id": "1053877538025386074",
+      "affinity": 1635.3694287875048
     },
     {
       "guild_id": "1290725749543927941",
-      "affinity": 31.807588713147823
-    },
-    {
-      "guild_id": "1019350475847499849",
-      "affinity": 26.49876478016221
-    },
-    {
-      "guild_id": "1272308870919880735",
-      "affinity": 8.319992727926854
+      "affinity": 1313.1123110344417
     },
     {
       "guild_id": "1442518050527248436",
-      "affinity": 6.792019963129855
+      "affinity": 431.20519581788784
     },
     {
-      "guild_id": "1456806362351669492",
-      "affinity": 4.138054338109923
+      "guild_id": "1130383047699738754",
+      "affinity": 247.01759045031068
     },
-    "… 11 more"
+    {
+      "guild_id": "1019350475847499849",
+      "affinity": 223.8806022930477
+    },
+    {
+      "guild_id": "1529710922749181963",
+      "affinity": 208.34762746343887
+    },
+    "… 67 more"
   ]
 }
 ```
 
-**runs/inspect/20261111T233723_discordAccount**, step 1: goto /login: 200, 161 ms
+**runs/inspect/20261028T062914_<name:1>**, step 5: click e40: 200, 352 ms
 
 Sent:
 
@@ -125,30 +123,30 @@ Answered:
 {
   "guild_affinities": [
     {
-      "guild_id": "1483217544214085663",
-      "affinity": 38.826297857455955
+      "guild_id": "1053877538025386074",
+      "affinity": 1646.2934671355592
     },
     {
       "guild_id": "1290725749543927941",
-      "affinity": 31.587999377369414
-    },
-    {
-      "guild_id": "1019350475847499849",
-      "affinity": 26.739905254328974
-    },
-    {
-      "guild_id": "1272308870919880735",
-      "affinity": 8.387254949106504
+      "affinity": 1319.293853734509
     },
     {
       "guild_id": "1442518050527248436",
-      "affinity": 6.820714980531783
+      "affinity": 433.8327795401903
     },
     {
-      "guild_id": "1456806362351669492",
-      "affinity": 4.172930515699126
+      "guild_id": "1130383047699738754",
+      "affinity": 247.87436595899314
     },
-    "… 10 more"
+    {
+      "guild_id": "1019350475847499849",
+      "affinity": 227.40028227161596
+    },
+    {
+      "guild_id": "1529710922749181963",
+      "affinity": 215.55699466751432
+    },
+    "… 68 more"
   ]
 }
 ```
