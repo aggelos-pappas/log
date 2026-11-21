@@ -3,9 +3,10 @@ import { randomBytes } from 'node:crypto'
 import { identityLinkedEvent, identityNotLinkedEvent, identityUnlinkedEvent, insertEventRow, personNamedEvent } from '../storage/platform/index'
 import { identitiesNamed, infoOf, keyOf } from './helpers/identity'
 import { personCardOf } from './helpers/card'
+import { sharedLinkTo } from './helpers/match'
 import { mentionedTokens } from '../relate/graph/helpers/mentions'
 import { PEOPLE_IN_PROMPT, PERSON_ID_PREFIX } from './types'
-import type { IdentityInfo, PersonCard, PersonRow } from './types'
+import type { IdentityInfo, IdentityRef, MessageSource, PersonCard, PersonRow } from './types'
 
 export type Resolved = { ok: true; personId: string | null; identities: IdentityInfo[] } | { ok: false; problem: string }
 
@@ -45,27 +46,55 @@ function oneIdentity(handle: Database, spec: string): IdentityInfo | string {
   return found.find((f) => !f.userId.startsWith('@')) ?? found[0]
 }
 
+export interface SeenIdentity {
+  identity: IdentityInfo
+  seenIn: MessageSource
+}
+
 export interface LinkResult {
   ok: boolean
   problem?: string
   personId?: string
   linked: IdentityInfo[]
   already: IdentityInfo[]
+  seen: SeenIdentity[]
+}
+
+function refOf(spec: string): IdentityRef | null {
+  const text = spec.trim()
+  const colon = text.indexOf(':')
+  if (colon <= 0) return null
+  const who = text.slice(colon + 1).trim()
+  const bare = who.replace(/^@/, '')
+  if (!bare) return null
+  return { platform: text.slice(0, colon).toLowerCase(), userId: !who.startsWith('@') && /^\d{5,}$/.test(who) ? who : `@${bare.toLowerCase()}` }
+}
+
+export function linkableIdentity(handle: Database, spec: string): IdentityInfo | SeenIdentity | string {
+  const one = oneIdentity(handle, spec)
+  if (typeof one !== 'string' || !one.startsWith('log.db knows no identity')) return one
+  const ref = refOf(spec)
+  const seenIn = ref ? sharedLinkTo(handle, ref) : null
+  if (!ref || !seenIn) return `${one}, and no message in log.db shares a link to it`
+  return { identity: { platform: ref.platform, userId: ref.userId, handle: ref.userId.startsWith('@') ? ref.userId.slice(1) : null, name: null, personId: null, runByLogAs: null }, seenIn }
 }
 
 export function linkIdentities(handle: Database, specs: readonly string[], by: string, options: { name?: string | null; evidence?: string | null; now?: Date } = {}): LinkResult {
   const now = options.now ?? new Date()
   const identities: IdentityInfo[] = []
+  const seen: SeenIdentity[] = []
   for (const spec of specs) {
-    const one = oneIdentity(handle, spec)
-    if (typeof one === 'string') return { ok: false, problem: one, linked: [], already: [] }
+    const found = linkableIdentity(handle, spec)
+    if (typeof found === 'string') return { ok: false, problem: found, linked: [], already: [], seen: [] }
+    const one = 'seenIn' in found ? found.identity : found
+    if ('seenIn' in found && !seen.some((s) => keyOf(s.identity) === keyOf(one))) seen.push(found)
     if (!identities.some((i) => keyOf(i) === keyOf(one))) identities.push(one)
   }
-  if (identities.length < 2 && !options.name) return { ok: false, problem: 'name at least two identities to link, or one with --name to start a person', linked: [], already: [] }
+  if (identities.length < 2 && !options.name) return { ok: false, problem: 'name at least two identities to link, or one with --name to start a person', linked: [], already: [], seen: [] }
   return handle.transaction((): LinkResult => {
-    const fresh = identities.map((i) => infoOf(handle, i))
+    const fresh = identities.map((i) => (seen.some((s) => keyOf(s.identity) === keyOf(i)) ? i : infoOf(handle, i)))
     const people = [...new Set(fresh.map((i) => i.personId).filter((p): p is string => Boolean(p)))]
-    if (people.length > 1) return { ok: false, problem: `these identities already belong to ${people.length} different people (${people.join(', ')}); unlink one first, merging people isn't built yet`, linked: [], already: [] }
+    if (people.length > 1) return { ok: false, problem: `these identities already belong to ${people.length} different people (${people.join(', ')}); unlink one first, merging people isn't built yet`, linked: [], already: [], seen: [] }
     const personId = people[0] ?? `${PERSON_ID_PREFIX}${randomBytes(6).toString('hex')}`
     const at = now.toISOString()
     if (!people.length || options.name) insertEventRow(handle, personNamedEvent(personId, options.name ?? null, by, at), now)
@@ -76,10 +105,11 @@ export function linkIdentities(handle: Database, specs: readonly string[], by: s
         already.push(i)
         continue
       }
-      insertEventRow(handle, identityLinkedEvent(personId, i, by, options.evidence ?? null, at), now)
+      const seenIn = seen.find((s) => keyOf(s.identity) === keyOf(i))?.seenIn ?? null
+      insertEventRow(handle, identityLinkedEvent(personId, i, by, options.evidence ?? null, at, seenIn ? { handle: i.handle, ...seenIn } : null), now)
       linked.push({ ...i, personId })
     }
-    return { ok: true, personId, linked, already }
+    return { ok: true, personId, linked, already, seen }
   }).immediate()
 }
 

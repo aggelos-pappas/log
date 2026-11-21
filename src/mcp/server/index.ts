@@ -166,12 +166,16 @@ async function runTimed(name: string, argv: string[], context: Partial<CommandCo
   onLine(name, "out", `▶ log ${argv.join(" ")}${job ? `  (job ${job.id})` : ""}  (call ${call.callId})`);
   let code: number;
   let refusal: string | null = null;
+  let wroteTo: string | null = null;
   let cancelled = false;
   try {
     code = await runCli(argv, {
       ...context,
       refused: (said) => {
         refusal ??= said;
+      },
+      wroteTo: (path) => {
+        wroteTo = path;
       },
       ...(job
         ? {
@@ -216,7 +220,7 @@ async function runTimed(name: string, argv: string[], context: Partial<CommandCo
   const json = jsonOf(stdout);
   if (keptJob) finishJob(keptJob.id, code === 0 ? "completed" : "failed", { exit: code, ok: code === 0, stdout, stderr: err.join("\n"), cancelledByClient: true }, text);
   const failed = code === 0 ? null : (refusal ?? "commandFailed");
-  return { base: { exit: code, ok: code === 0, code: failed, ...identity, stdout, stderr: err.join("\n"), log: processLog, progress, ...(json === undefined ? {} : { json }) }, text, cancelled, images };
+  return { base: { exit: code, ok: code === 0, code: failed, ...identity, stdout, stderr: err.join("\n"), log: processLog, progress, ...(wroteTo ? { db: wroteTo } : {}), ...(json === undefined ? {} : { json }) }, text, cancelled, images };
 }
 
 export const gateDeps: Pick<GateDeps, "accounts" | "busy" | "session"> = {

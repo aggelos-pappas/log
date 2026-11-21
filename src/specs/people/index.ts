@@ -33,6 +33,9 @@ const anchors: RequirementAnchors = {
   'REQ-PEOPLE-03': [
     { kind: 'symbol', file: storage, name: 'rekeyIdentity' },
     { kind: 'string', file: storage, includes: 'rekeyConflict' },
+    { kind: 'symbol', file: match, name: 'sharedLinkTo' },
+    { kind: 'symbol', file: client, name: 'linkableIdentity' },
+    { kind: 'symbol', file: events, name: 'IdentitySeenIn' },
   ],
   'REQ-PEOPLE-04': [
     { kind: 'symbol', file: match, name: 'suggestLinks' },
@@ -89,9 +92,9 @@ export const people = {
   rubrics: {
     'REQ-PEOPLE-01': noul('Does log people link append personNamed and identityLinked events (unlink identityUnlinked, different identityNotLinked) through insertEventRow, do deriveInternal write persons, identityLinks and identityNotLinked from them, are those tables in DERIVED_TABLES and the fingerprint, and does an unlink only set revokedAt?'),
     'REQ-PEOPLE-02': noul('Is one active link per identity enforced by the identityLinksActive partial unique index, does linkIdentities refuse identities of two different people, and does a replayed link to an already linked identity get ignored?'),
-    'REQ-PEOPLE-03': noul('Does rekeyIdentity move identityLinks rows to the new id and revoke with rekeyConflict a handle link that could not move because the id was linked already?'),
+    'REQ-PEOPLE-03': noul('Does rekeyIdentity move identityLinks rows to the new id and revoke with rekeyConflict a handle link that could not move because the id was linked already; does linkIdentities accept an identity with no identities row only when sharedLinkTo finds a non-owner, non-recommending message linking to it, carry that message as seenIn on the identityLinked event, and does the projection create the handle-keyed identity from it?'),
     'REQ-PEOPLE-04': noul('Does scoreLinks score candidate pairs (loose handle matches, cross-platform post links, handles written in messages, same display names) on sharesOwnPosts, handle, displayName, mentionsHandle, claimsPlatform, writingStyle, meaning, activeHours, topicsWithOwner and sharedCircle, with u measured from log.db (similarity levels cut at random-pair quantiles), m learned by EM per blocking session from the M_PRIORS, the handle factor divided by the distinct handles that reduce to the same letters, the prior from PRIOR_MATCH_SHARE, bands at STRONG_BITS and REVIEW_BITS, and up to SOURCES_KEPT sources per comparison?'),
-    'REQ-PEOPLE-05': noul('Does suggestLinks skip bots, recommending messages, account pairs without a handle match, identityNotLinked pairs, already linked pairs and handle-keyed duplicates, and does every people write require --approvedBy?'),
+    'REQ-PEOPLE-05': noul('Does suggestLinks skip bots, recommending messages, account pairs without a handle match, identityNotLinked pairs, already linked pairs, pairs whose sides belong to two different people and handle-keyed duplicates, does clusterLines print no link command for a group spanning two people, and does every people write require --approvedBy?'),
     'REQ-PEOPLE-06': noul('Does personCardOf cover every linked identity, treat a chat as one-to-one when no other sender wrote twice or the two wrote ONE_TO_ONE_SHARE of it, leave out chats on an account log runs for that person, dedupe repeated lines, show empty lines as [attachment], flag chats never read from the start, and keep CARD_LINES lines in time order tagged by platform?'),
     'REQ-PEOPLE-08': noul('Are pairs with different real names or with identities on one platform that talk in the same chat vetoed, are links already made re-checked, are accounts suggested together grouped as one person, and does --check ask SubQ about the review band in at most two steps without linking anything?'),
     'REQ-PEOPLE-07': noul('Does relateAnswer add cardsNamedIn cards (by any linked handle or a word of the name, at most PEOPLE_IN_PROMPT), does the projection set personId and personNames on linked identities, and does findPeople group by person, expand to every identity of the person and match by name?'),

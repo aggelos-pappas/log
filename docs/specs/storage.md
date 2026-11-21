@@ -168,3 +168,9 @@ Checked by: code and tests
 Instagram, Reddit, Facebook and LinkedIn extenders stored every chat as `dm`, and Discord did whenever the event carried no group box, so a group chat made every member ring 1 as if they had a one-to-one chat with the owner. An extender that only guesses dm says so (`kindFromMembers`); for those platforms the chat upsert in `writeTypedRows` and `conversationSeen` calls `groupByMembers` (`src/storage/platform/helpers/members.ts`) after storing a member, which turns a `dm` into a `group` once it has `GROUP_OTHERS` (2) or more members besides the owner (the owner's own ids and handles, `self:` and `unknown:` ids left out). X and Slack keep the kind their conversation ids carry. A server kind from the channel catalog still wins over `group`. When a chat moves, `insertEventRow` recomputes the rings (REQ-RELATE-14) in the same transaction. Migration 31 (`chatGroups`) runs `repairChatPlaces` and then `repairChatGroups` once over the rows stored before, and recomputes the rings when any row moved.
 
 Checked by: code and tests
+
+### REQ-STORAGE-23: A write to a database LOG_DB points at says so
+
+An exported `LOG_DB` left in a shared shell sent another session's writes into a scratch copy, and they reported success. `runOne` (`src/cli/runner/client.ts`), which every CLI and MCP command goes through, compares `writesSinceOpen` on the database `dbOverride` names (`LOG_DB`, when it is not `logHome()/log.db`) before and after the command. When the command wrote to it, stderr gets `writing to <path> (LOG_DB is set; not your usual log.db)`, a JSON object result gets `db: <path>`, and the MCP tool result carries `db` and the note in its stderr. With the usual database nothing is added.
+
+Checked by: code and tests

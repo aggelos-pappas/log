@@ -38,6 +38,7 @@ export interface CommandContext {
   out: (line: string) => void;
   err: (line: string) => void;
   refused?: (code: string) => void;
+  wroteTo?: (path: string) => void;
   image?: (data: string, mimeType: string) => void;
   now?: () => Date;
   sleep?: (ms: number) => Promise<void>;

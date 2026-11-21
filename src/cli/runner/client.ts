@@ -10,6 +10,7 @@ import { runRedditEngine } from "../../reddit/account/session/index.ts";
 import { runDiscordEngine, runDiscordEngineLive } from "../../discord/account/session/index.ts";
 import { isPlatform, renderUsage, resolvePlatformForm, resultCodeOf, RETIRED_COMMANDS } from "./helpers/index.ts";
 import { COMMAND_INDEX } from "./helpers/commandIndex.ts";
+import { dbOverride, writesSinceOpen } from "../../storage/schema/index.ts";
 import type { CommandIndexEntry } from "./helpers/commandIndex.ts";
 import type { Command, CommandContext } from "./types.ts";
 import { runLinkedinEngine } from "../../linkedin/account/session/index.ts";
@@ -129,9 +130,26 @@ export async function dispatchWith(ctx: CommandContext, argv: string[], commands
   return runOne(ctx, form.command, form.argv);
 }
 
+function withDb(stdout: string, path: string): string {
+  try {
+    const parsed = JSON.parse(stdout) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? JSON.stringify({ ...parsed, db: path }, null, 2) : stdout;
+  } catch {
+    return stdout;
+  }
+}
+
 async function runOne(ctx: CommandContext, command: Command, argv: string[]): Promise<number> {
+  const override = dbOverride();
+  const before = override ? writesSinceOpen(override) : 0;
   const result = await command.run(ctx, argv);
-  if (result.stdout) ctx.out(result.stdout);
+  const wrote = override && writesSinceOpen(override) > before ? override : null;
+  if (wrote) {
+    ctx.err(`writing to ${wrote} (LOG_DB is set; not your usual log.db)`);
+    ctx.wroteTo?.(wrote);
+  }
+  const stdout = wrote && result.stdout ? withDb(result.stdout, wrote) : result.stdout;
+  if (stdout) ctx.out(stdout);
   if (result.stderr) ctx.err(result.stderr);
   const code = resultCodeOf(result);
   if (code) ctx.refused?.(code);

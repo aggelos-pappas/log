@@ -24,6 +24,8 @@ Each agent works in its own worktree and never in the live clone:
 4. Push. Pre-push runs every check and `test:affected`, never the full suite; push only once an affected run has passed for the tree you are pushing, and don't edit the worktree while its push runs (pre-push tests the working tree). CI's full run is the gate before merge.
 5. Remove the junction first (PowerShell `(Get-Item <worktree>\node_modules).Delete()`), check the live clone's `node_modules` is still whole, then `git worktree remove --force <worktree>`: removing the worktree with the junction still in it empties the live clone's `node_modules`.
 
+Never `export LOG_DB` or `LOG_HOME` in a shared shell: every later command there, yours or another agent's, then reads and writes that database. Pass them inline per command (`LOG_DB=<copy> log people suggest`).
+
 ## Releasing
 
 Releases are cut from `main` by release-please; nobody tags or publishes by hand.
