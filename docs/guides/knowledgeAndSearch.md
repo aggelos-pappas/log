@@ -30,18 +30,18 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 |---|---|---|
 | `routerIndex` | Is the prompt router's meaning index of plays, tools and skills… | `log router index [--apply] [--json]   (is the prompt router's meaning index current; --apply builds it)` |
 | `relateBuild` | Project log.db into a new Relate graph file and make it the current… | `log relate build [--json]` |
-| `relateStatus` | Show the current Relate graph file, the event it was built through… | `log relate status [--json]           (the current graph and how far behind log.db it is)` |
+| `relateStatus` | Show the current Relate graph file, the event it was built through… | `log relate status [--json]           (the graph and how far behind log.db it is)` |
 | `relateVerify` | Compare every node and edge count in the Relate graph with what… | `log relate verify [--json]` |
 | `relateAsk` | Show the connected context | `log relate ask "<text>" [--json]     (the context the hook injects)` |
-| `relateQuery` | Run a read-only Cypher query on the current Relate graph | `log relate query "<cypher>" [--json] (read-only, at most 100 rows)` |
-| `people` | List everyone linked across platforms, with each person's identities | `log people [--json]                                        (everyone linked across platforms: each person and their identities)` |
-| `peopleShow` | The person card for someone across every platform | `log people show <who> [--json]                             (the person card: every platform, one-to-one chats and groups, who is waiting, the last lines across platforms)` |
+| `relateQuery` | Run a read-only Cypher query on the current Relate graph | `log relate query "<cypher>" [--platform <p>] [--json] (read-only, at most 100 rows)` |
+| `people` | List everyone linked across platforms, with each person's identities | `log people [--json]                                        (everyone linked across platforms)` |
+| `peopleShow` | The person card for someone across every platform | `log people show <who> [--json]                             (the person card: every platform, chats, who is waiting, last lines)` |
 | `peopleSuggest` | Accounts on different platforms that are probably one person, with… | `log people suggest [--limit <n>] [--check] [--json]        (probably one person across platforms, every factor; --check asks SubQ)` |
 | `peopleLink` | Make these identities one person, after the owner says yes | `log people link <identity> <identity>... --approvedBy "<the owner's words>" [--name "<name>"] [--evidence "<why>"]   (one person across these identities, appended to log.db as events)` |
 | `peopleUnlink` | Take an identity out of its person, after the owner says so | `log people unlink <identity> --approvedBy "<the owner's words>"   (that identity is no longer part of its person; the link stays in the history)` |
 | `peopleDifferent` | Record that two identities are not the same person, after the owner… | `log people different <identity> <identity> --approvedBy "<the owner's words>"   (not the same person, so they are never suggested again)` |
 | `networkImport` | Read your network into log.db, replacing the last import | `log network import [--from <dir>] [--account <handle>] [--json]` |
-| `networkStatus` | Your network's rings, live | `log network status [--json]` |
+| `networkStatus` | Your network's rings per person, live | `log network status [--platform <p>] [--json]` |
 | `mediaDescriber` | Run the one media describer on this machine | `log media describer [--json]` |
 | `mediaDescribe` | Queue one local image or video for the describer and wait for its… | `log media describe <path> [--wait <seconds>] [--json]` |
 | `mediaStatus` | The media queue | `log media status [--json]` |

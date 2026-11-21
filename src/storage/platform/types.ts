@@ -129,6 +129,7 @@ export interface ExtenderContext {
 
 export interface PlatformExtender {
   platform: string
+  kindFromMembers: boolean
   toChat(event: EventInput): ChatRow | null
   toIdentities(event: EventInput, context: ExtenderContext): IdentityRow[]
   toMessage(event: EventInput, context: ExtenderContext): MessageRow | null
@@ -147,6 +148,8 @@ export interface TypedRows {
 }
 
 export const MESSAGE_TYPES: readonly string[] = ['message', 'ownMessage']
+
+export const RING_MOVING_EVENTS: readonly string[] = ['identityLinked', 'identityUnlinked']
 
 export const DERIVED_EVENT_TYPES: readonly string[] = ['attachmentsSeen', 'messageEdited', 'conversationSeen', 'identityLearned', 'accountIdentified', 'profileSeen', 'personNamed', 'identityLinked', 'identityUnlinked', 'identityNotLinked']
 

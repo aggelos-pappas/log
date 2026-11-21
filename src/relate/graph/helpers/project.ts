@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import { channelNameOf, roomCatalog } from '../../../storage/platform/helpers/places'
 import { TOKEN_MIN } from '../types'
-import { applyRings, networkProjectionOf } from './network'
+import { applyPersonRings, applyRings, networkProjectionOf } from './network'
 import type { AccountRow, EngagedRow, IdentityRow, LinkRow, MemberRow, PersonRow, PointedRow, PostRow, Projection, ProjectionScope, RoomRow, SaidRow, ServerRow } from '../types'
 import { nameKeyOf, namesOf, pointedAt } from './mentions'
 
@@ -230,6 +230,7 @@ export function projectionOf(handle: Database, scope?: ProjectionScope): Project
       row.labels = namesOf([row.handle, row.name, ...(labelsOf.get(row.key) ?? []).sort()])
     }
     applyRings(handle, identities)
+    applyPersonRings(handle, persons)
     const network = networkProjectionOf(handle, identities, accounts, scope ? marked : undefined)
     const servedRooms = new Set(rooms_.map((r) => r.serverKey).filter(Boolean))
     return {

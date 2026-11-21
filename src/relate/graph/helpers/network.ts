@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import type { Connection } from '@relate/relate'
 import { IMPORTED_REASON, KNOWN_REASON, KNOWN_RING, NETWORK_LIMIT, WRITE_BATCH } from '../types'
-import type { AccountRow, IdentityRow, NetworkGraphCounts, NetworkProjection } from '../types'
+import type { AccountRow, IdentityRow, NetworkGraphCounts, NetworkProjection, PersonRow } from '../types'
 
 const X = 'twitter'
 
@@ -27,6 +27,22 @@ export function applyRings(handle: Database, identities: Map<string, IdentityRow
     if (row.owner) continue
     const r = rings.get(row.key)
     Object.assign(row, { ring: r?.ring ?? KNOWN_RING, degree: r?.ring ?? KNOWN_RING, ringReason: r?.reason ?? KNOWN_REASON, ringSinceMs: r?.sinceMs ?? null, followsOwner: r?.follows === 1 })
+  }
+}
+
+export function applyPersonRings(handle: Database, persons: Map<string, PersonRow>): void {
+  if (!persons.size || !hasTable(handle, 'networkRings')) return
+  const imported = hasTable(handle, 'networkPeople') ? 'LEFT JOIN networkPeople np ON l.platform = ?1 AND np.handleLower = lower(ltrim(i.handle, \'@\'))' : ''
+  const rows = handle.prepare(`SELECT l.personId, l.platform, l.userId, i.handle, r.ring, r.reason${imported ? ', np.ring AS importedRing' : ', NULL AS importedRing'}, EXISTS (SELECT 1 FROM messages m JOIN chats c ON c.chatId = m.chatId WHERE c.kind = 'dm' AND m.senderPlatform = l.platform AND m.senderUserId = l.userId) AS dm FROM identityLinks l LEFT JOIN identities i ON i.platform = l.platform AND i.userId = l.userId LEFT JOIN networkRings r ON r.platform = l.platform AND r.userId = l.userId ${imported} WHERE l.revokedAt IS NULL ORDER BY l.platform, l.userId`).all(...((imported ? [X] : []) as never[])) as { personId: string; platform: string; userId: string; handle: string | null; ring: number | null; reason: string | null; importedRing: number | null; dm: number }[]
+  for (const r of rows) {
+    const person = persons.get(`person:${r.personId}`)
+    if (!person) continue
+    const live = r.ring ?? KNOWN_RING
+    const ring = Math.min(live, r.importedRing ?? KNOWN_RING)
+    const reason = r.importedRing !== null && r.importedRing < live ? IMPORTED_REASON : (r.reason ?? KNOWN_REASON)
+    const label = `${r.platform}:${r.handle?.replace(/^@/, '') ?? r.userId} ring ${ring} (${reason})`
+    const closer = person.ring === undefined || ring < person.ring
+    Object.assign(person, { ring: closer ? ring : person.ring, ringReason: closer ? reason : person.ringReason, ringPlatform: closer ? r.platform : person.ringPlatform, lead: closer ? `${r.platform}:${r.userId}` : person.lead, platforms: [...new Set([...(person.platforms ?? []), r.platform])].sort(), accounts: [...(person.accounts ?? []), label], dm: Boolean(person.dm) || r.dm === 1 })
   }
 }
 
@@ -138,4 +154,4 @@ export function networkCountsIn(conn: Connection): NetworkGraphCounts {
   }
 }
 
-export const WHO_TO_TALK_TO = "MATCH (i:Identity) WHERE NOT i.owner AND (i.inNetwork OR i.ring < 4) AND coalesce(i.passesGates, true) AND (i.band IS NULL OR i.band IN ['collaborator', 'member']) AND NOT (i)-[:SAID|MEMBER_OF]->(:Room {kind: 'dm'}) OPTIONAL MATCH (i)-[:IN_CIRCLE_OF]->(l:Leader) WITH i, count(DISTINCT l) AS circles, collect(DISTINCT l.handle)[0..5] AS leaders ORDER BY CASE i.ring WHEN 2 THEN 0 WHEN 1 THEN 1 WHEN 3 THEN 2 ELSE 3 END, circles DESC, coalesce(i.fit, 0) DESC, coalesce(i.lastPostAtMs, 0) DESC LIMIT 25 OPTIONAL MATCH (i)-[:IN_CIRCLE_OF]->(:Leader)<-[:IN_CIRCLE_OF]-(c:Identity)-[:SAID]->(:Room {kind: 'dm'}) WITH i, circles, leaders, collect(DISTINCT c.handle)[0..3] AS sameCircleTalksToYou OPTIONAL MATCH (m:Identity)-[:MENTIONED]->(i) WITH i, circles, leaders, sameCircleTalksToYou, collect(DISTINCT m.handle)[0..3] AS mentionedBy RETURN i.handle AS handle, i.platform AS platform, i.ring AS ring, i.ringReason AS why, i.band AS band, circles, leaders, sameCircleTalksToYou, mentionedBy, i.fit AS fit, i.themes AS themes, i.followsOwner AS followsYou, i.lastPost AS lastPost, i.lastPostAtMs AS lastPostAtMs ORDER BY CASE ring WHEN 2 THEN 0 WHEN 1 THEN 1 WHEN 3 THEN 2 ELSE 3 END, circles DESC, coalesce(fit, 0) DESC, coalesce(lastPostAtMs, 0) DESC"
+export const WHO_TO_TALK_TO = "MATCH (i:Identity) WHERE NOT i.owner AND (i.inNetwork OR i.ring < 4) AND ($platform = '' OR i.platform = $platform) AND coalesce(i.passesGates, true) AND (i.band IS NULL OR i.band IN ['collaborator', 'member']) AND NOT (i)-[:SAID|MEMBER_OF]->(:Room {kind: 'dm'}) OPTIONAL MATCH (i)-[:LINKED_TO]->(p:Person) WITH i, p WHERE p IS NULL OR (NOT coalesce(p.dm, false) AND ($platform <> '' OR p.lead = i.key)) WITH i, p, CASE WHEN p IS NULL OR $platform <> '' THEN i.ring ELSE p.ring END AS ring OPTIONAL MATCH (i)-[:IN_CIRCLE_OF]->(l:Leader) WITH i, p, ring, count(DISTINCT l) AS circles, collect(DISTINCT l.handle)[0..5] AS leaders ORDER BY CASE ring WHEN 2 THEN 0 WHEN 1 THEN 1 WHEN 3 THEN 2 ELSE 3 END, circles DESC, coalesce(i.fit, 0) DESC, coalesce(i.lastPostAtMs, 0) DESC LIMIT 25 OPTIONAL MATCH (i)-[:IN_CIRCLE_OF]->(:Leader)<-[:IN_CIRCLE_OF]-(c:Identity)-[:SAID]->(:Room {kind: 'dm'}) WITH i, p, ring, circles, leaders, collect(DISTINCT c.handle)[0..3] AS sameCircleTalksToYou OPTIONAL MATCH (m:Identity)-[:MENTIONED]->(i) WITH i, p, ring, circles, leaders, sameCircleTalksToYou, collect(DISTINCT m.handle)[0..3] AS mentionedBy RETURN coalesce(p.name, i.handle) AS who, i.handle AS handle, i.platform AS platform, ring, CASE WHEN p IS NULL OR $platform <> '' THEN i.ringReason ELSE p.ringReason END AS why, CASE WHEN p IS NULL OR $platform <> '' THEN i.platform ELSE p.ringPlatform END AS tieFrom, p.accounts AS accounts, i.band AS band, circles, leaders, sameCircleTalksToYou, mentionedBy, i.fit AS fit, i.themes AS themes, i.followsOwner AS followsYou, i.lastPost AS lastPost, i.lastPostAtMs AS lastPostAtMs ORDER BY CASE ring WHEN 2 THEN 0 WHEN 1 THEN 1 WHEN 3 THEN 2 ELSE 3 END, circles DESC, coalesce(fit, 0) DESC, coalesce(lastPostAtMs, 0) DESC"

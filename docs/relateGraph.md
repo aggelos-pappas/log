@@ -64,12 +64,12 @@ Everyone who uses log has a network: the people around their own accounts. It ne
 
 | Ring | Who | From |
 | --- | --- | --- |
-| 1 | engaged with you: a like, reply, quote, repost, reaction or mention of you, or a DM from them, on any platform | `interactions`, `messages` |
+| 1 | engaged with you: a like, reply, quote, repost, reaction or mention of you, or a DM from them in a one-to-one chat (more than two members is a group), on any platform | `interactions`, `messages` |
 | 2 | talks to (replies to or names) one of your followers or a ring-1 person | `messages` replies and mentions (`networkTalks`) |
 | 3 | follows you | `interactions` |
 | 4 | known, none of these | `identities` |
 
-The store's write path applies each event as a watcher stores it, inside the same transaction, so a new follower is ring 3 and their first reply moves them to ring 1 within the event, with no paid call. Ring 2 is kept from both sides: a reply to someone who is already a follower or ring 1, and an earlier reply to someone who later becomes one. The first `log network status`, `log relate build` or install computes them once from log.db; after that only events move them. `log network status` (`networkStatus`) shows the counts per ring and the last event applied.
+The store's write path applies each event as a watcher stores it, inside the same transaction, so a new follower is ring 3 and their first reply moves them to ring 1 within the event, with no paid call. Ring 2 is kept from both sides: a reply to someone who is already a follower or ring 1, and an earlier reply to someone who later becomes one. The first `log network status`, `log relate build` or install computes them once from log.db; after that only events move them. `log network status` (`networkStatus`) shows the counts per ring and the last event applied, per person (accounts the owner linked count once, at their closest ring, with every account listed; suggested pairs stay apart) and per platform (`--platform <p>` for one alone). The who-to-talk-to query takes the same `$platform` through `log relate query --platform <p>`.
 
 **An imported network.** `log network import [--from <dir>]` (MCP `networkImport`) reads a research folder (`final_scores.json` and `nicheMap.json`, from `LOG_NETWORK_DIR`, else `LOG_NICHE_MAP`'s folder) into log.db's `network*` tables, replacing the last import. Its field names are read in one import adapter, and its score is stored as a neutral `fit`. A person in it and a chat identity with the same X handle (any case) are one `Identity`, whose ring is the closer of the live one and the imported one.
 
