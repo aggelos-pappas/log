@@ -430,13 +430,14 @@ describe("the one Hermes plugin carries what the portable half used to", () => {
 });
 
 describe("the check's scratch state", () => {
-  test("points every store the hooks open at the scratch folder and turns the service and the watchers off", () => {
+  test("points every store the hooks open at the scratch folder and turns the service, the watchers and the graph owner off", () => {
     const dir = mkdtempSync(join(tmpdir(), "harnessContract-env-"));
     try {
       const env = scratchHookEnv(dir, { LOG_DB: "/real/log.db" });
       for (const key of ["LOG_DB", "LOG_INBOX_STATE", "LOG_CONTEXT_LAYER", "LOG_QUEUES_DIR", "LOG_TWITTER_STATE", "LOG_PLATFORM_STATE", "LOG_FBK_STATE", "LOG_HOOK_MEMORY"]) expect(String(env[key]).startsWith(dir)).toBe(true);
       expect(env.LOG_CONTEXT_SERVICE).toBe("off");
       expect(env.LOG_INBOX_POLL).toBe("off");
+      expect(env.LOG_GRAPH_OWNER).toBe("off");
       expect(watcherLogsIn(dir)).toEqual([]);
       mkdirSync(join(dir, "inbox", "twitter", "fakeBird"), { recursive: true });
       writeFileSync(join(dir, "inbox", "twitter", "fakeBird", "watch.log"), "");
