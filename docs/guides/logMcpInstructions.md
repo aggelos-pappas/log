@@ -50,6 +50,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "log/toolFromOneOff" })` | Turning a hand-rolled one-off into a log tool |
 | `getGuide({ useCase: "log/toolHealth" })` | Tool health |
 | `getGuide({ useCase: "log/updateLog" })` | Update log |
+| `getGuide({ useCase: "network/whoToTalkTo" })` | Who to talk to next |
 | `getGuide({ useCase: "reddit/contributorMaxxing" })` | Contributor maxxing: finding talented builders through what they share |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM |
 | `getGuide({ useCase: "tiktok/post" })` | Posting a video on TikTok, and deleting it |
@@ -115,7 +116,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `linkedin` | A LinkedIn account: saving its cookies, checking its session, posting or deleting its own posts, inviting people LinkedIn suggests, liking and reposting posts, seeing how its own posts are doing, and reading and writing in its conversations |
 | `accountsAndProxies` | Every account in the workspace with its session state, and each account's proxy: checking it, giving it one from a provider in its home city, and providers' traffic; and the interactive launcher that sets log up and adds accounts |
 | `runsAndEvidence` | What runs leave behind: run folders and pruning, captures and request docs, error codes, jobs, every call's timings, log.db's typed tables checked and rebuilt from its events, and the MCP server itself |
-| `knowledgeAndSearch` | Finding context: the knowledge base, the conversation search (keyword and meaning at once), the Relate graph of who connects to whom, one person across platforms (people), and every voice note transcribed into it |
+| `knowledgeAndSearch` | Finding context: the knowledge base, search, the Relate graph (who connects to whom, your network), people across platforms, voice notes |
 | `extensions` | Extensions that make an account more human on social media: Memelord's memes found for the moment in a chat and sent in context, the owner's cloned voice (Inworld or Fish Audio) for the voice notes they ask for, every paid provider's balance, and treg's catalog of endpoints for every lookup |
 | `console` | The local console: this machine's log.db, MCP, accounts, usage, events, AI client config, settings and provider keys, read in the terminal, as JSON per screen, or in the web console on loopback with no sign-in |
 | `governor` | Every platform account's governor: its daily count of requests and writes, reading it, and putting it back to 0 when the owner says so, recorded in log.db |

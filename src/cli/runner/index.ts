@@ -47,6 +47,7 @@ import { versionCommand } from "../version/index.ts";
 import { storageCommand } from "../storage/index.ts";
 import { relateCommand } from "../relate/index.ts";
 import { peopleCommand } from "../people/index.ts";
+import { networkCommand } from "../network/index.ts";
 import { timingCommand } from "../timing/index.ts";
 import { toolCommand } from "../tool/index.ts";
 import { inboxCommand } from "../inbox/index.ts";
@@ -119,6 +120,7 @@ export const COMMANDS: Command[] = [
   modelsCommand,
   relateCommand,
   peopleCommand,
+  networkCommand,
   timingCommand,
   toolCommand,
   inboxCommand,

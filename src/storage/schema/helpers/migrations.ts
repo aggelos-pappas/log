@@ -128,6 +128,18 @@ export const CONVENTION_CORPUS_TABLES: readonly string[] = [
   'CREATE INDEX IF NOT EXISTS conventionCorpusBySide ON conventionCorpus (side, source)',
 ]
 
+export const NETWORK_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS networkImports (id INTEGER PRIMARY KEY CHECK (id = 1), formatVersion INTEGER NOT NULL, mapVersion TEXT, generatedAt TEXT, source TEXT NOT NULL, account TEXT, counts TEXT NOT NULL, ms INTEGER NOT NULL, importedAt TEXT NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS networkPeople (handleLower TEXT PRIMARY KEY, handle TEXT NOT NULL, name TEXT, followers INTEGER, degree INTEGER, ring INTEGER, band TEXT, bandProbabilities TEXT, score REAL, components TEXT, themes TEXT, topThemes TEXT, workflowStage TEXT, passesGates INTEGER, followsOwner INTEGER NOT NULL DEFAULT 0, company TEXT, rank INTEGER, role TEXT, bio TEXT, tieStrength REAL, lastPostText TEXT, lastPostAtMs INTEGER) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS networkPeopleByBand ON networkPeople (band, ring)',
+  'CREATE TABLE IF NOT EXISTS networkLeaders (handleLower TEXT PRIMARY KEY, handle TEXT NOT NULL, name TEXT, followers INTEGER, world TEXT) WITHOUT ROWID',
+  'CREATE TABLE IF NOT EXISTS networkCommunities (communityId TEXT PRIMARY KEY, name TEXT, url TEXT, platform TEXT, topic TEXT) WITHOUT ROWID',
+  'CREATE TABLE IF NOT EXISTS networkRuns (leaderLower TEXT NOT NULL, communityId TEXT NOT NULL, PRIMARY KEY (leaderLower, communityId)) WITHOUT ROWID',
+  'CREATE TABLE IF NOT EXISTS networkCircles (personLower TEXT NOT NULL, leaderLower TEXT NOT NULL, PRIMARY KEY (personLower, leaderLower)) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS networkCirclesByLeader ON networkCircles (leaderLower)',
+  'CREATE TABLE IF NOT EXISTS networkMentions (fromLower TEXT NOT NULL, toLower TEXT NOT NULL, times INTEGER NOT NULL, lastAtMs INTEGER, PRIMARY KEY (fromLower, toLower)) WITHOUT ROWID',
+]
+
 export const MIN_READER_VERSION = 1
 
 export const MIGRATIONS: readonly Migration[] = [
@@ -365,6 +377,14 @@ export const MIGRATIONS: readonly Migration[] = [
     creates: ['secrets', 'secretKeys'],
     apply(handle) {
       for (const statement of SECRET_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 27,
+    name: 'network',
+    creates: ['networkImports', 'networkPeople', 'networkPeopleByBand', 'networkLeaders', 'networkCommunities', 'networkRuns', 'networkCircles', 'networkCirclesByLeader', 'networkMentions'],
+    apply(handle) {
+      for (const statement of NETWORK_TABLES) handle.exec(statement)
     },
   },
 ]

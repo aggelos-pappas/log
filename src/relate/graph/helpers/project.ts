@@ -2,6 +2,7 @@ import type { Database } from 'bun:sqlite'
 import { assembleEngineStore } from '../../../storage/engineStore/index'
 import type { EngineStoreName } from '../../../storage/engineStore/index'
 import { TOKEN_MIN } from '../types'
+import { networkProjectionOf } from './network'
 import type { AccountRow, EngagedRow, IdentityRow, LinkRow, MemberRow, PersonRow, PointedRow, PostRow, Projection, RoomRow, SaidRow, ServerRow } from '../types'
 import { nameKeyOf, namesOf, pointedAt } from './mentions'
 
@@ -247,6 +248,7 @@ export function projectionOf(handle: Database): Projection {
       if (row.handleLower && ownerHandles.has(`${row.platform}:${row.handleLower}`)) row.owner = true
       row.labels = namesOf([row.handle, row.name, ...(labelsOf.get(row.key) ?? [])])
     }
-    return { throughSeq, schemaVersion, accounts, identities: [...identities.values()], rooms, members, said, posts: [...posts.values()], engaged, servers: [...servers.values()], persons: [...persons.values()], links, replies: [...replies.values()], mentions: [...mentions.values()] }
+    const network = networkProjectionOf(handle, identities, accounts)
+    return { throughSeq, schemaVersion, accounts, identities: [...identities.values()], rooms, members, said, posts: [...posts.values()], engaged, servers: [...servers.values()], persons: [...persons.values()], links, replies: [...replies.values()], mentions: [...mentions.values()], network }
   })
 }

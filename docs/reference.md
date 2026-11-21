@@ -76,7 +76,7 @@ flowchart LR
   anyB --> b_slack
   anyB --> b_instagram
   anyB --> b_tiktok
-  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, router, runs, storage, version, update, models, relate, people, timing, tool, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy"]
+  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, router, runs, storage, version, update, models, relate, people, network, timing, tool, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy"]
   anyN -.-> twenty
   newP["log new platform name: one more platform, wired whole (rule 83)"] -.-> twenty
   drivers --> api
@@ -114,7 +114,7 @@ Source: [`docs/diagrams/browsers.mmd`](diagrams/browsers.mmd).
 
 - **The account's browser, through the driver:** `facebook host`, `inspect`, `flow`, `<platform> warmup`, `facebook join`, `facebook read`, `facebook poll`, `facebook check`, `reddit read`, `discord read`, `slack read`. They run on whichever browser the account uses: whatever `socialAccounts.browserDriver` names (Camoufox, AdsPower, Brave), else AdsPower when it has a linked profile (`socialAccounts.adsPowerProfileId`), else `LOG_BROWSER_DRIVER`, else Camoufox.
 - **Camoufox only, not on the driver yet:** `facebook doctor`, `facebook connect`, `facebook profile`, `facebook scan`, `facebook status`, `facebook watch`, `facebook publish`, `facebook campaign`, `discord watch`, `linkedin connect`, `slack watch`, `instagram watch`. They launch Camoufox themselves (facebook-camofox-client's worker, or the publish, connect and profile sessions), so on an AdsPower account they don't open its AdsPower profile. Moving one onto the driver is moving it into `OPENER_ACTIONS` (`src/browser/run`).
-- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `version`, `update`, `models`, `relate`, `people`, `timing`, `tool`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord friend`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`.
+- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `version`, `update`, `models`, `relate`, `people`, `network`, `timing`, `tool`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord friend`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`.
 - **No browser path at all:** X. Its accounts run on the direct API only (rule 80).
 
 Each browser's capabilities, built or not: [`docs/browsers.md`](browsers.md) (generated, `bun run check:browsers`). AdsPower's setup: [`docs/adsPower.md`](adsPower.md).
@@ -227,9 +227,9 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 311 command tools + saved flows"]
+  mcp["MCP server log: 313 command tools + saved flows"]
   bin["bin/log.ts"]
-  runCli["runCli: 142 commands (COMMANDS)"]
+  runCli["runCli: 143 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
   engine{"commandEngine: DIRECT_ROUTES"}
   direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi, tiktokApi (curl_cffi, TikTok Studio calls) (vendor/), the account's saved session, a governor per account"]
@@ -327,8 +327,9 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log version`](#log-version) | Which log runs here and the newest release | any (none) | `[--check]` `[--json]` | none | none | `version` | PreToolUse, PostToolUse · PostToolUse | no | 73, 167, 30, 38, 39, 40, 41 |
 | [`log update`](#log-update) | Update log to the newest release and resume what ran | any (none) | `[--to <v>]` `[--track <stable|nightly>]` `[--approvedBy <who>]` `[--apply]` `[--json]` | none | none | `updateLog`, `updateLogLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 167, 30, 38, 39, 40, 41 |
 | [`log models`](#log-models) | Is each pinned local model here | any (none) | `[--approvedBy <who>]` `[--fetch]` `[--json]` | none | none | `models`, `modelsLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 167, 30, 38, 39, 40, 41 |
-| [`log relate`](#log-relate) | A Relate (Neo4j) graph of who talks, engages and shares rooms with the owner's accounts, projected from log.db and injected as connected context | any (none) | `[--json]` | none | none | `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk`, `relateQuery` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
+| [`log relate`](#log-relate) | A Relate graph of who talks, engages and shares rooms with the owner, and your network, projected from log.db | any (none) | `[--json]` | none | none | `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk`, `relateQuery` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
 | [`log people`](#log-people) | One person across platforms: link identities into a person, Fellegi-Sunter suggestions, the person card | any (none) | `[--json]` `[--limit <integer 1..200>]` `[--check]` `[--approvedBy <text>]` `[--name <text>]` `[--evidence <text>]` | none | none | `people`, `peopleShow`, `peopleSuggest`, `peopleLink`, `peopleUnlink`, `peopleDifferent` | PreToolUse, PostToolUse · PostToolUse | no | 30, 89, 134, 154, 163, 30, 38, 39, 40, 41 |
+| [`log network`](#log-network) | The owner's network in log.db, for the Relate graph | any (none) | `[--from <dir>]` `[--account <handle>]` `[--json]` | none | none | `networkImport`, `networkStatus` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
 | [`log timing`](#log-timing) | Where the time goes: p50, p95, p99 per tool and stage from log.db, one call as a waterfall, or landed to pushed per platform | any (none) | `[--tool <name>]` `[--hours <number>]` `[--stages <number>]` `[--top <number>]` `[--all]` `[--call <callId>]` `[--turns]` `[--landed]` `[--json]` | none | none | `timing` | PreToolUse, PostToolUse · PostToolUse | no | 26, 73, 165, 30, 38, 39, 40, 41 |
 | [`log tool`](#log-tool) | Turn a one-off into a log tool, and see which tools are used | any (none) | `[--summary <text>]` `[--acts]` `[--flags <a,b,…>]` `[--area <f>]` `[--asks <a,b,…>]` `[--guide <g>]` `[--apply]` `[--json]` `[--days <integer 1..90>]` | none | none | `toolScaffold`, `toolScaffoldLive`, `toolHealth` | PreToolUse, PostToolUse · PostToolUse | no | 30, 73, 163, 165, 30, 38, 39, 40, 41 |
 | [`log inbox`](#log-inbox) | Chat claims and their action log, who is waiting on a reply, what the watchers heard, quiet the push | any (none) | `[--platform <twitter|discord|slack|instagram>]` `[--account <a>]` `[--chat <conversationId|handle>]` `[--event <eventId>]` `[--json]` `--by <who>` `[--limit <integer 1..1000>]` `[--tail <integer 0..60>]` `[--oldest]` `--reader <name>` `--minutes <integer 0..720>` `[--server <id>]` `[--undo]` `[--label <warming|readyToAsk|askedWaiting|friend|client|cold|skip>]` `[--who <w>]` `[--where <s>]` `[--as <warming|readyToAsk|askedWaiting|friend|client|cold|skip>]` `[--apply]` `[--feelings]` | none | none | `inboxClaim`, `inboxRelease`, `inboxResume`, `inboxWaiting`, `inboxPending`, `inboxQuiet`, `inboxIgnore`, `inboxIgnored`, `inboxLabels`, `inboxLabel`, `inboxLabelQueue`, `inboxLabelTeach`, `inboxLabelTrain`, `inboxOutcomes`, `inboxClaims`, `inboxActions` | PreToolUse, PostToolUse · PostToolUse | no | 94, 105, 109, 133, 134, 138, 30, 38, 39, 40, 41 |
@@ -486,6 +487,7 @@ flowchart TB
     c_models["models"]
     c_relate["relate"]
     c_people["people"]
+    c_network["network"]
     c_timing["timing"]
     c_tool["tool"]
     c_inbox["inbox"]
@@ -730,6 +732,8 @@ flowchart TB
   mcp --> c_relate
   cli --> c_people
   mcp --> c_people
+  cli --> c_network
+  mcp --> c_network
   cli --> c_timing
   mcp --> c_timing
   cli --> c_tool
@@ -1606,14 +1610,14 @@ log models [--fetch --approvedBy <who>] [--json]
 
 #### log relate
 
-A Relate (Neo4j) graph of who talks, engages and shares rooms with the owner's accounts, projected from log.db and injected as connected context MCP tools: `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk`, `relateQuery`, one per form, with named fields.
+A Relate graph of who talks, engages and shares rooms with the owner, and your network, projected from log.db MCP tools: `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk`, `relateQuery`, one per form, with named fields.
 
 ```text
-log relate build [--json]            (projects log.db's people, rooms, posts and who said or engaged what into a new Relate graph file, then points at it)
-log relate status [--json]           (which graph file is current, through which event, and how far behind log.db it is)
-log relate verify [--json]           (compares every node and edge count in the graph with what log.db derives now)
-log relate ask "<text>" [--json]     (the connected context the hook injects for the people that text names, e.g. "@someone")
-log relate query "<cypher>" [--json] (a read-only Cypher query on the current graph, at most 100 rows)
+log relate build [--json]
+log relate status [--json]           (the current graph and how far behind log.db it is)
+log relate verify [--json]
+log relate ask "<text>" [--json]     (the context the hook injects)
+log relate query "<cypher>" [--json] (read-only, at most 100 rows)
 The graph is a projection: log.db's events stay the record, and a build can always be thrown away and redone (docs/relateGraph.md).
 ```
 
@@ -1629,6 +1633,16 @@ log people link <identity> <identity>... --approvedBy "<the owner's words>" [--n
 log people unlink <identity> --approvedBy "<the owner's words>"   (that identity is no longer part of its person; the link stays in the history)
 log people different <identity> <identity> --approvedBy "<the owner's words>"   (not the same person, so they are never suggested again)
 <who> is a person id (p_…), a linked person's name, or an identity. An identity is platform:handle or platform:id, e.g. discord:someone, twitter:@someone, twitter:1234567890.
+```
+
+#### log network
+
+The owner's network in log.db, for the Relate graph MCP tools: `networkImport`, `networkStatus`, one per form, with named fields.
+
+```text
+log network import [--from <dir>] [--account <handle>] [--json]
+log network status [--json]
+<dir>: LOG_NETWORK_DIR by default. Then `log relate build`.
 ```
 
 #### log timing

@@ -1,16 +1,16 @@
 import { join } from "node:path";
 import { buildGraph, pointerOf, eventsThrough, queryGraph, refreshGraph, relateContext, verifyGraph, graphDir } from "../../relate/graph/index.ts";
-import type { GraphCounts } from "../../relate/graph/index.ts";
+import type { GraphCounts, NetworkGraphCounts } from "../../relate/graph/index.ts";
 import { defaultDbPath, openDatabase } from "../../storage/schema/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
 
 export const RELATE_USAGE = [
-  "Usage: log relate build [--json]            (projects log.db's people, rooms, posts and who said or engaged what into a new Relate graph file, then points at it)",
-  "       log relate status [--json]           (which graph file is current, through which event, and how far behind log.db it is)",
-  "       log relate verify [--json]           (compares every node and edge count in the graph with what log.db derives now)",
-  "       log relate ask \"<text>\" [--json]     (the connected context the hook injects for the people that text names, e.g. \"@someone\")",
-  "       log relate query \"<cypher>\" [--json] (a read-only Cypher query on the current graph, at most 100 rows)",
+  "Usage: log relate build [--json]",
+  "       log relate status [--json]           (the current graph and how far behind log.db it is)",
+  "       log relate verify [--json]",
+  "       log relate ask \"<text>\" [--json]     (the context the hook injects)",
+  "       log relate query \"<cypher>\" [--json] (read-only, at most 100 rows)",
   "The graph is a projection: log.db's events stay the record, and a build can always be thrown away and redone (docs/relateGraph.md).",
 ].join("\n");
 
@@ -24,7 +24,7 @@ export const RELATE_INPUT: CommandInput = {
   ],
 };
 
-const countsLine = (c: GraphCounts): string => `${c.accounts} accounts, ${c.identities} people, ${c.rooms} rooms, ${c.servers} servers, ${c.posts} posts, ${c.persons} linked persons, ${c.memberOf} memberships, ${c.said} said, ${c.repliedTo} replied, ${c.mentioned} mentioned, ${c.engaged} engaged`;
+const countsLine = (c: GraphCounts, n?: NetworkGraphCounts): string => `${c.accounts} accounts, ${c.identities} people, ${c.rooms} rooms, ${c.servers} servers, ${c.posts} posts, ${c.persons} linked persons, ${c.memberOf} memberships, ${c.said} said, ${c.repliedTo} replied, ${c.mentioned} mentioned, ${c.engaged} engaged${n?.leaders ? `; network: ${n.leaders} leaders, ${n.communities} communities, ${n.inCircleOf} in circles, ${n.networkMentioned} mentioned, ${n.follows} follows` : ""}`;
 
 const REPO = join(import.meta.dir, "..", "..", "..");
 
@@ -34,7 +34,7 @@ export const relateCommand: Command = {
   name: "relate",
   effect: "read",
   input: RELATE_INPUT,
-  summary: "A Relate (Neo4j) graph of who talks, engages and shares rooms with the owner's accounts, projected from log.db and injected as connected context",
+  summary: "A Relate graph of who talks, engages and shares rooms with the owner, and your network, projected from log.db",
   args: "build|status|verify|ask <text>|query <cypher> [--json]",
   run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(RELATE_INPUT));
@@ -46,7 +46,7 @@ export const relateCommand: Command = {
       context.err(`log relate build: projecting ${dbPath} into a new graph under ${graphDir(dbPath)}`);
       const pointer = buildGraph(dbPath);
       if (json) return { code: 0, stdout: JSON.stringify(pointer, null, 2) };
-      return { code: 0, stdout: `log relate build: ${countsLine(pointer.counts)}, through event ${pointer.throughSeq}, in ${pointer.ms} ms.\n  ${pointer.file}` };
+      return { code: 0, stdout: `log relate build: ${countsLine(pointer.counts, pointer.networkCounts)}, through event ${pointer.throughSeq}, in ${pointer.ms} ms.\n  ${pointer.file}` };
     }
     if (sub === "status") {
       const handle = openDatabase(dbPath);
@@ -56,14 +56,15 @@ export const relateCommand: Command = {
       if (json) return { code: 0, stdout: JSON.stringify({ pointer, eventsThrough: through, behind: pointer ? through - pointer.throughSeq : null, building }, null, 2) };
       if (!pointer && building) return { code: 1, stdout: `log relate status: no graph for this log.db yet, so a build of its ${through} events has started in the background; ask again in a few seconds.` };
       if (!pointer) return { code: 1, stdout: "log relate status: no graph for this log.db yet. `log relate build` makes one." };
-      return { code: 0, stdout: `log relate status: ${pointer.file}\n  built ${pointer.builtAt} through event ${pointer.throughSeq} (log.db is at ${through}, ${through - pointer.throughSeq} behind)\n  ${countsLine(pointer.counts)}` };
+      return { code: 0, stdout: `log relate status: ${pointer.file}\n  built ${pointer.builtAt} through event ${pointer.throughSeq} (log.db is at ${through}, ${through - pointer.throughSeq} behind)\n  ${countsLine(pointer.counts, pointer.networkCounts)}` };
     }
     if (sub === "verify") {
       const result = verifyGraph(dbPath);
       if (json) return { code: result.ok ? 0 : 1, stdout: JSON.stringify(result, null, 2) };
       if (!result.pointer) return { code: 1, stdout: "log relate verify: no graph for this log.db yet. `log relate build` makes one." };
       if (result.behind > 0) return { code: 1, stdout: `log relate verify: the graph is ${result.behind} events behind log.db, so its counts can't match yet. \`log relate build\` catches it up.` };
-      const lines = (Object.keys(result.expected) as (keyof GraphCounts)[]).map((k) => `  ${k.padEnd(10)} log.db ${String(result.expected[k]).padStart(6)}  graph ${String(result.found[k]).padStart(6)}  ${result.differs.includes(k) ? "DIFFERS" : "same"}`);
+      const all: [string, number, number][] = [...(Object.keys(result.expected) as (keyof GraphCounts)[]).map((k): [string, number, number] => [k, result.expected[k], result.found[k]]), ...(result.network ? (Object.keys(result.network.expected) as (keyof NetworkGraphCounts)[]).map((k): [string, number, number] => [k, result.network!.expected[k], result.network!.found[k]]) : [])];
+      const lines = all.map(([k, e, f]) => `  ${k.padEnd(11)} log.db ${String(e).padStart(6)}  graph ${String(f).padStart(6)}  ${result.differs.includes(k) ? "DIFFERS" : "same"}`);
       return { code: result.ok ? 0 : 1, stdout: [result.ok ? "log relate verify: the graph holds exactly what log.db derives." : `log relate verify: >>> DIFFERS: ${result.differs.join(", ")}. \`log relate build\` replaces it.`, ...lines].join("\n") };
     }
     if (sub === "ask" && rest.length === 1) {

@@ -1,4 +1,4 @@
-export const PROJECTOR_VERSION = 2
+export const PROJECTOR_VERSION = 3
 
 export const GRAPH_FILE_PREFIX = 'graph-'
 
@@ -22,11 +22,13 @@ export const LISTED = 5
 
 export const TOKEN_MIN = 4
 
-export const KEYED_LABELS: readonly string[] = ['Account', 'Identity', 'Room', 'Post', 'Server', 'Person', 'Snapshot']
+export const KEYED_LABELS: readonly string[] = ['Account', 'Identity', 'Room', 'Post', 'Server', 'Person', 'Snapshot', 'Leader', 'Community']
 
 export const BUILD_CHILD_MS = 300_000
 
 export const NAME_MIN = 3
+
+export const NETWORK_LIMIT = { postChars: 280 }
 
 export interface GraphPointer {
   file: string
@@ -37,6 +39,7 @@ export interface GraphPointer {
   builtAt: string
   ms: number
   counts: GraphCounts
+  networkCounts?: NetworkGraphCounts
 }
 
 export interface GraphCounts {
@@ -75,6 +78,12 @@ export interface IdentityRow {
   owner: boolean
   personId: string | null
   personNames: string[]
+  inNetwork?: boolean
+  band?: string | null
+  ring?: number | null
+  degree?: number | null
+  score?: number | null
+  themes?: string[]
 }
 
 export interface RoomRow {
@@ -171,6 +180,26 @@ export interface Projection {
   links: LinkRow[]
   replies: PointedRow[]
   mentions: PointedRow[]
+  network?: NetworkProjection
+}
+
+export interface NetworkProjection {
+  account: string | null
+  leaders: { key: string; handle: string; handleLower: string; name: string | null; followers: number | null; world: string | null; identity: string | null }[]
+  communities: { key: string; communityId: string; name: string | null; url: string | null; platform: string | null; topic: string | null }[]
+  inCircle: { identity: string; leader: string }[]
+  runs: { leader: string; community: string }[]
+  mentioned: { from: string; to: string; times: number; lastAtMs: number | null }[]
+  follows: { identity: string; accountKey: string }[]
+}
+
+export interface NetworkGraphCounts {
+  leaders: number
+  communities: number
+  inCircleOf: number
+  runs: number
+  networkMentioned: number
+  follows: number
 }
 
 export interface PersonFound {
@@ -200,6 +229,7 @@ export interface GraphVerify {
   found: GraphCounts
   differs: string[]
   behind: number
+  network?: { expected: NetworkGraphCounts; found: NetworkGraphCounts }
 }
 
 export const PRIOR_KAPPA = 0.5

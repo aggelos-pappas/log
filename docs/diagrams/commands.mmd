@@ -26,6 +26,7 @@ flowchart TB
     c_models["models"]
     c_relate["relate"]
     c_people["people"]
+    c_network["network"]
     c_timing["timing"]
     c_tool["tool"]
     c_inbox["inbox"]
@@ -270,6 +271,8 @@ flowchart TB
   mcp --> c_relate
   cli --> c_people
   mcp --> c_people
+  cli --> c_network
+  mcp --> c_network
   cli --> c_timing
   mcp --> c_timing
   cli --> c_tool
