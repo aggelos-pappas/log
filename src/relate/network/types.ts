@@ -10,6 +10,8 @@ export const NETWORK_WRITE_BATCH = 2000
 
 export const X_PLATFORM = 'twitter'
 
+export const NETWORK_LIST = 10
+
 export interface NetworkPersonRow {
   handleLower: string
   handle: string
@@ -159,9 +161,50 @@ export interface InteractionFacts {
 
 export type RingCounts = Record<'1' | '2' | '3' | '4', number>
 
+export interface NetworkAccount {
+  platform: string
+  userId: string
+  handle: string | null
+  ring: number
+  reason: string
+  via: string | null
+  imported?: boolean
+}
+
+export interface NetworkPersonView {
+  personId: string | null
+  name: string | null
+  key: string
+  ring: number
+  live: number
+  reason: string
+  platform: string
+  platforms: string[]
+  accounts: NetworkAccount[]
+}
+
+export interface PlatformRings {
+  platform: string
+  counts: RingCounts
+  identities: number
+  linked: number
+}
+
+export interface SuggestedMatch {
+  a: NetworkAccount
+  b: NetworkAccount
+  probability: number
+  band: string
+}
+
 export interface NetworkRings {
+  platform: string | null
   counts: RingCounts
   live: RingCounts
+  people: number
+  identities: number
+  byPlatform: PlatformRings[]
+  linked: NetworkPersonView[]
   imported: number
   merged: number
   state: RingState | null

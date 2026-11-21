@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 56 domains, 664 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 56 domains, 666 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -665,6 +665,7 @@ log keeps a Relate (Neo4j's embedded graph database) projection of log.db: the o
 - **REQ-RELATE-14** Rings come from every stored event, live and free
 - **REQ-RELATE-15** New events are applied to the graph in place
 - **REQ-RELATE-16** `log network status` shows the rings live
+- **REQ-RELATE-17** The network is per person and per platform
 
 ## [People across platforms](./people.md)
 
@@ -940,6 +941,7 @@ How log keeps what it reads and does: one SQLite database, `~/.logCli/log.db`, w
 - **REQ-STORAGE-17** The small shared state is keyed rows in log.db
 - **REQ-STORAGE-20** The engines' own stores are rows in log.db
 - **REQ-STORAGE-21** A chat's kind and name come from the best source that knows them
+- **REQ-STORAGE-22** A chat with more than two members is a group
 
 ## [TikTok](./tiktok.md)
 

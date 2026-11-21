@@ -8,8 +8,8 @@ import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuseInput } from "../ru
 import type { Command, CommandInput } from "../runner/types.ts";
 
 export const PEOPLE_USAGE = [
-  "Usage: log people [--json]                                        (everyone linked across platforms: each person and their identities)",
-  "       log people show <who> [--json]                             (the person card: every platform, one-to-one chats and groups, who is waiting, the last lines across platforms)",
+  "Usage: log people [--json]                                        (everyone linked across platforms)",
+  "       log people show <who> [--json]                             (the person card: every platform, chats, who is waiting, last lines)",
   "       log people suggest [--limit <n>] [--check] [--json]        (probably one person across platforms, every factor; --check asks SubQ)",
   "       log people link <identity> <identity>... --approvedBy \"<the owner's words>\" [--name \"<name>\"] [--evidence \"<why>\"]   (one person across these identities, appended to log.db as events)",
   "       log people unlink <identity> --approvedBy \"<the owner's words>\"   (that identity is no longer part of its person; the link stays in the history)",

@@ -31,9 +31,25 @@ function ringOf(handle: Database, platform: string, userId: string): RingRow | n
 
 const hub = (row: RingRow | null): boolean => Boolean(row) && (row!.ring === RINGS.engaged || row!.follows === 1)
 
+export function linkedTo(handle: Database, platform: string, userId: string): { platform: string; userId: string }[] {
+  return handle.query('SELECT DISTINCT o.platform, o.userId FROM identityLinks l JOIN identityLinks o ON o.personId = l.personId AND o.revokedAt IS NULL AND NOT (o.platform = l.platform AND o.userId = l.userId) WHERE l.platform = ? AND l.userId = ? AND l.revokedAt IS NULL').all(platform, userId) as { platform: string; userId: string }[]
+}
+
+function hubRow(handle: Database, platform: string, userId: string): RingRow | null {
+  const own = ringOf(handle, platform, userId)
+  if (hub(own)) return own
+  for (const other of linkedTo(handle, platform, userId)) {
+    const row = ringOf(handle, other.platform, other.userId)
+    if (hub(row)) return row
+  }
+  return null
+}
+
 function spread(handle: Database, platform: string, userId: string, atMs: number | null, seq: number): void {
-  const talkers = handle.query('SELECT fromId, firstAtMs FROM networkTalks WHERE platform = ? AND toId = ?').all(platform, userId) as { fromId: string; firstAtMs: number | null }[]
-  for (const t of talkers) promote(handle, platform, t.fromId, RINGS.talksTo, TALKS_TO, later(t.firstAtMs, atMs), seq, userId)
+  for (const one of [{ platform, userId }, ...linkedTo(handle, platform, userId)]) {
+    const talkers = handle.query('SELECT fromId, firstAtMs FROM networkTalks WHERE platform = ? AND toId = ?').all(one.platform, one.userId) as { fromId: string; firstAtMs: number | null }[]
+    for (const t of talkers) promote(handle, one.platform, t.fromId, RINGS.talksTo, TALKS_TO, later(t.firstAtMs, atMs), seq, one.userId)
+  }
 }
 
 const later = (a: number | null, b: number | null): number | null => (a === null ? b : b === null ? a : Math.max(a, b))
@@ -42,7 +58,7 @@ const earlier = (a: number | null, b: number | null): boolean => a !== null && (
 
 function promote(handle: Database, platform: string, userId: string, ring: number, reason: string, atMs: number | null, seq: number, via: string | null = null, follows = false): void {
   const held = ringOf(handle, platform, userId)
-  const wasHub = hub(held)
+  const wasHub = Boolean(hubRow(handle, platform, userId))
   if (!held) {
     handle.query('INSERT INTO networkRings (platform, userId, ring, reason, sinceMs, follows, via, seq) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(platform, userId, ring, reason, atMs, follows ? 1 : 0, via, seq)
   } else {
@@ -56,8 +72,8 @@ function promote(handle: Database, platform: string, userId: string, ring: numbe
 function talk(handle: Database, platform: string, fromId: string, toId: string, atMs: number | null, seq: number): void {
   if (fromId === toId) return
   handle.query('INSERT INTO networkTalks (platform, fromId, toId, times, firstAtMs) VALUES (?, ?, ?, 1, ?) ON CONFLICT(platform, fromId, toId) DO UPDATE SET times = times + 1, firstAtMs = CASE WHEN excluded.firstAtMs IS NOT NULL AND (networkTalks.firstAtMs IS NULL OR excluded.firstAtMs < networkTalks.firstAtMs) THEN excluded.firstAtMs ELSE networkTalks.firstAtMs END').run(platform, fromId, toId, atMs)
-  const to = ringOf(handle, platform, toId)
-  if (hub(to)) promote(handle, platform, fromId, RINGS.talksTo, TALKS_TO, later(atMs, to!.sinceMs), seq, toId)
+  const to = hubRow(handle, platform, toId)
+  if (to) promote(handle, platform, fromId, RINGS.talksTo, TALKS_TO, later(atMs, to.sinceMs), seq, toId)
 }
 
 function knownId(handle: Database, platform: string, userId: string): boolean {

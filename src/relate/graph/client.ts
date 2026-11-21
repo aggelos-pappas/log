@@ -9,7 +9,7 @@ import { defaultDbPath, openDatabase } from '../../storage/schema/index'
 import { claimState, deleteState, getState, putState } from '../../storage/state/index'
 import { ensureRings } from '../network/client'
 import { EMPTY_NETWORK, mentionedTokens, networkCountsIn, networkCountsOf, paddedPrompt, pointedAt, projectionOf, writeNetwork } from './helpers/index'
-import { APPLY_MAX_EVENTS, BUILD_CHILD_MS, CHECKPOINT_ROWS, TXN_ROWS, BUILD_GRACE_MS, CONTEXT_CHARS, QUERY_ROWS, REFRESH_AFTER_MS, GRAPH_FILE_PREFIX, GRAPH_FILE_SUFFIX, KEPT_SNAPSHOTS, KEYED_LABELS, LISTED, MENTIONED_PEOPLE, PRIOR_FLOOR, PRIOR_KAPPA, PRIOR_WEIGHT_NEAR, PRIOR_WEIGHT_SPOKE, PROJECTOR_VERSION, WRITE_BATCH } from './types'
+import { APPLY_MAX_EVENTS, BUILD_CHILD_MS, CHECKPOINT_ROWS, TXN_ROWS, BUILD_GRACE_MS, CONTEXT_CHARS, PLATFORM_PARAM, QUERY_ROWS, REFRESH_AFTER_MS, GRAPH_FILE_PREFIX, GRAPH_FILE_SUFFIX, KEPT_SNAPSHOTS, KEYED_LABELS, LISTED, MENTIONED_PEOPLE, PRIOR_FLOOR, PRIOR_KAPPA, PRIOR_WEIGHT_NEAR, PRIOR_WEIGHT_SPOKE, PROJECTOR_VERSION, WRITE_BATCH } from './types'
 import type { ConnectedContext, GraphCounts, GraphPointer, GraphVerify, PersonFound, Projection, ProjectionScope } from './types'
 
 type Relate = typeof import('@relate/relate')
@@ -568,7 +568,8 @@ export function relateContext(prompt: string, dbPath: string = defaultDbPath(), 
 export function queryGraph(cypher: string, params: Record<string, string> = {}, dbPath: string = defaultDbPath()): { pointer: GraphPointer; rows: Record<string, unknown>[]; truncated: boolean } {
   const pointer = pointerOf(dbPath)
   if (!pointer) throw new Error('no Relate graph for this log.db yet: build it with `log relate build`')
-  const rows = graphConnection(pointer.file).query(cypher, params).rows
+  const filled = PLATFORM_PARAM.test(cypher) && !('platform' in params) ? { ...params, platform: '' } : params
+  const rows = graphConnection(pointer.file).query(cypher, filled).rows
   return { pointer, rows: rows.slice(0, QUERY_ROWS), truncated: rows.length > QUERY_ROWS }
 }
 

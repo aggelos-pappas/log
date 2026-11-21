@@ -14,6 +14,8 @@ export const REFRESH_AFTER_MS = 60_000
 
 export const QUERY_ROWS = 100
 
+export const PLATFORM_PARAM = /\$platform\b/
+
 export const CONTEXT_CHARS = 2000
 
 export const MENTIONED_PEOPLE = 3
@@ -139,6 +141,13 @@ export interface PersonRow {
   key: string
   personId: string
   name: string | null
+  ring?: number
+  ringReason?: string
+  ringPlatform?: string | null
+  lead?: string | null
+  platforms?: string[]
+  accounts?: string[]
+  dm?: boolean
 }
 
 export interface LinkRow {

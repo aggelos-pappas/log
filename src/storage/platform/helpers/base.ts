@@ -17,6 +17,7 @@ export function attachmentKindOf(contentType: string | null, name: string | null
 export interface BaseOptions {
   platform: string
   chatKind(event: EventInput): ChatKind
+  kindFromMembers?: boolean
   serverIdOf?(event: EventInput): string | null
   senderIdOf?(event: EventInput, context: ExtenderContext): string | null
   ownerIdOf?(event: EventInput, context: ExtenderContext): string | null
@@ -50,6 +51,7 @@ export function makeExtender(options: BaseOptions): PlatformExtender {
   }
   return {
     platform: options.platform,
+    kindFromMembers: options.kindFromMembers ?? false,
     toChat(event) {
       if (!event.conversationId) return null
       const kind = options.chatKind(event)
