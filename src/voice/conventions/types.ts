@@ -136,6 +136,7 @@ export interface ConventionsReading {
   hits: { rule: string; match: string; message: string }[]
   value: number | null
   ms: number
+  owned?: string
 }
 
 export interface TrainerInput {

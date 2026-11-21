@@ -14,7 +14,7 @@ import { renderCard } from "../../../inbox/card/index.ts";
 import type { ConversationCard } from "../../../inbox/card/index.ts";
 import type { VoiceEvidence } from "../../../twitter/copy/voice/index.ts";
 import type { CommandContext, CommandResult } from "../../runner/types.ts";
-import { baselineReplies, evidenceFor, gateReadings, momentAnswered, profileLine, saidOnly, voiceDeps } from "./voice.ts";
+import { baselineReplies, cardOfHandle, evidenceFor, gateReadings, momentAnswered, profileLine, saidOnly, voiceDeps } from "./voice.ts";
 import { aiTellsMode, recordDrafts } from "./voiceTrain.ts";
 import { conventionsNear, openConventions } from "../../../voice/conventions/index.ts";
 import { convergenceLine, hisFacts, styleOf } from "../../../voice/converge/index.ts";
@@ -133,19 +133,22 @@ export async function gradeOptions(context: CommandContext, input: { to: string;
   let said = input.said;
   let lastId: string | null = null;
   let target: VoiceTarget = { with: [input.to.replace(/^@/, "")] };
+  let hisHere: string[] = [];
   if (input.chat) {
     const found = await evidenceFor(context, said || input.options[0], input.chat, input.options[0]);
     if (found.ok) {
       evidence = found.evidence;
       card = found.card;
       target = found.chat.target;
+      hisHere = found.hisHere;
       const chat = theirLinesOf(found.chat.platform, found.chat.account, chatWho(found.chat));
       said ||= chat.said;
       lastId = chat.lastId;
     }
   }
-  const readings = await gateReadings(context, { to: input.to, said, guide: input.guide, card, ...(evidence ? { evidence } : {}), ...(input.spoken ? { spoken: true } : {}) }, input.options);
-  if (!input.spoken) recordDrafts(input.options, input.chat || input.to, lastId);
+  card ??= cardOfHandle(input.to);
+  const readings = await gateReadings(context, { to: input.to, said, guide: input.guide, card, hisHere, ...(evidence ? { evidence } : {}), ...(input.spoken ? { spoken: true } : {}) }, input.options);
+  if (!input.spoken) recordDrafts(input.options.filter((_, i) => !readings[i].owned), input.chat || input.to, lastId);
   const ranked = rankOptions(input.options, readings);
   for (const o of ranked) {
     recordVerdict(o.text, lastId, { pass: o.pass, score: o.score, threshold: o.reading.score?.threshold ?? 0, voice: o.reading.voice });

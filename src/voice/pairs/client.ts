@@ -7,6 +7,7 @@ import { reciprocalRankFusion, searchRoot } from '../../search/conversations/ind
 import type { Conversation, Embedder } from '../../search/conversations/index'
 import { profileOf, startRatesOf, wordCounts } from './helpers/index'
 import { buildPhraseIndex, writePhraseIndex } from '../phrases/index'
+import { sameChatId } from '../../twitter/dm/person/client'
 import { NEAR_PAIRS, SAID_MESSAGES, TIER_ORDER, VOICE_DEPTH } from './types'
 import type { NearPair, VoicePair, VoiceProfile, VoiceTarget } from './types'
 
@@ -198,7 +199,7 @@ export function isOneToOneWith(pair: VoicePair, target: VoiceTarget): boolean {
 }
 
 export function tierOf(pair: VoicePair, target: VoiceTarget): NearPair['tier'] {
-  if (target.conversationId && pair.conversationId === target.conversationId && (!target.platform || pair.platform === target.platform)) return 'sameChat'
+  if (target.conversationId && sameChatId(pair.platform, pair.conversationId, target.conversationId) && (!target.platform || pair.platform === target.platform)) return 'sameChat'
   if (!target.conversationId && isOneToOneWith(pair, target)) return 'sameChat'
   const people = new Set((target.with ?? []).map((w) => w.toLowerCase()))
   if (people.size && pair.with.some((w) => people.has(w.toLowerCase()))) return 'samePerson'

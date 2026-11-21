@@ -6,6 +6,7 @@ import { percentile } from '../../aiTells/client'
 import { bandOf, bandWords, loadConventions, readConventionsOf } from '../client'
 import { agentSessionDrafts, corpusOf, draftsFromFile, normalText, ownerMessages, saveCorpus, usableText } from './corpus'
 import type { OwnerMessage } from './corpus'
+import { buildOwnIndex, ownMatchIn } from '../../owned/index'
 import { buildProfile, gramHits, habitHits, repeatedOpeners, wordCountOf } from './profile'
 import type { ProfileRow } from './profile'
 import { planFresh, runFresh } from './fresh'
@@ -23,7 +24,7 @@ export interface TrainDeps {
   rawEmbed?: (texts: string[]) => Promise<ArrayLike<number>[]>
   fit: (input: TrainerInput) => Promise<TrainerOutput>
   agentDrafts: () => Omit<CorpusRow, 'id'>[]
-  owner: (aiTexts: ReadonlySet<string>) => { messages: OwnerMessage[]; droppedAsSends: number }
+  owner: (aiTexts: ReadonlySet<string>) => { messages: OwnerMessage[]; droppedAsSends: number; sent?: string[] }
   rules?: () => AiTellRule[]
   log: (line: string) => void
   now?: () => Date
@@ -234,9 +235,12 @@ export async function trainConventions(deps: TrainDeps, options: TrainOptions = 
     fresh = { ...ran, estimateUsd: plan.estimateUsd, moments: plan.moments.length }
     deps.log(`voice train: ${ran.calls} moments answered, ${ran.rows.filter((r) => r.side === 'ai').length} drafts, $${ran.spentUsd.toFixed(3)} spent${ran.failed.length ? `, ${ran.failed.length} calls failed` : ''}`)
   }
-  const aiRows = corpusOf('ai').filter((r) => usableText(r.text))
-  const aiTexts = new Set(aiRows.filter((r) => SENT_SOURCES.includes(r.source)).map((r) => normalText(r.text)))
+  const aiCorpus = corpusOf('ai').filter((r) => usableText(r.text))
+  const aiTexts = new Set(aiCorpus.filter((r) => SENT_SOURCES.includes(r.source)).map((r) => normalText(r.text)))
   const owned = deps.owner(aiTexts)
+  const hisSent = buildOwnIndex(owned.sent ?? owned.messages.map((m) => m.text))
+  const aiRows = aiCorpus.filter((r) => !ownMatchIn(hisSent, r.text))
+  if (aiRows.length < aiCorpus.length) deps.log(`voice train: ${aiCorpus.length - aiRows.length} drafts left off the model-written side because the owner sent those words himself`)
   const pairedOwner = corpusOf('owner').filter((r) => usableText(r.text) && !aiTexts.has(normalText(r.text)))
   const aiSeen = new Set<string>()
   const aiUnique = aiRows.filter((r) => (aiSeen.has(normalText(r.text)) ? false : (aiSeen.add(normalText(r.text)), true)))

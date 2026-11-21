@@ -13,6 +13,7 @@ export interface VoiceDraft {
   to: string
   text: string
   ownerWroteHere?: number
+  messagesHere?: number
   context?: string
   evidence?: VoiceEvidence
   everywhere?: VoiceEvidence

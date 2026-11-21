@@ -3,10 +3,9 @@ import { db, handleOfIdentity, isBareId, namedLabel, UNNAMED } from '../store/in
 import { MIN_MIRROR_CHARS, NOT_SAID, REACTION, RECENT_PER_CHAT } from './types'
 import type { LastWord, LastWordMessage, LastWordQuery, PersonChat } from './types'
 
-export function personKeyOf(conversationId: string): string {
-  const pair = conversationId.match(/^(\d+)[-:](\d+)$/)
-  return pair ? [pair[1], pair[2]].sort().join('-') : conversationId
-}
+import { personKeyOf, xPartiesOf } from '../../twitter/dm/person/client'
+
+export { personKeyOf }
 
 const said = (text: string): string => text.replace(/https?:\/\/\S+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase()
 
@@ -112,7 +111,7 @@ function labelOf(kind: 'dm' | 'group', rows: readonly Row[], name: Namer): strin
   const theirs = [...rows].filter((r) => !r.fromOwner).sort((a, b) => b.ms - a.ms || b.seq - a.seq)[0]
   if (theirs) return name(theirs.senderLabel, theirs.senderUserId)
   const mine = new Set(rows.filter((r) => r.fromOwner).map((r) => r.senderUserId))
-  const other = rows.flatMap((r) => r.conversationId.match(/^(\d+)[-:](\d+)$/)?.slice(1) ?? []).find((id) => !mine.has(id))
+  const other = rows.flatMap((r) => xPartiesOf(r.conversationId)).find((id) => !mine.has(id))
   return name(names[0] ?? null, other ?? '')
 }
 

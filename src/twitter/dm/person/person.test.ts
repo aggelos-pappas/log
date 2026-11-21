@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import type { TwitterDmThread } from '../../account/session/index'
 import { onePerPerson } from '../../../search/conversations/helpers/index'
 import { newMessages } from '../../../inbox/watch/client'
-import { dropMirrors, followUpDue, mergeThreads, openedNoReply, personKeyOf, reactedOnly, storedThreads, waitingOnYou } from './index'
+import { dropMirrors, followUpDue, isXConversationId, mergeThreads, openedNoReply, personKeyOf, reactedOnly, sameChatId, sameXConversation, storedThreads, waitingOnYou, xPartiesOf } from './index'
 
 const thread = (conversationId: string, lastAt: string, over: Partial<TwitterDmThread> = {}): TwitterDmThread => ({
   conversationId,
@@ -18,6 +18,16 @@ const thread = (conversationId: string, lastAt: string, over: Partial<TwitterDmT
 })
 
 describe('one conversation per person', () => {
+  test('one canonical id: colon, dash and pair order are the same X conversation, and nothing else is', () => {
+    expect(personKeyOf('300400500:100200300')).toBe('100200300-300400500')
+    expect(xPartiesOf(' 100200300:300400500 ')).toEqual(['100200300', '300400500'])
+    expect(sameXConversation('100200300:300400500', '300400500-100200300')).toBe(true)
+    expect(sameXConversation('100200300:300400500', '100200300:300400501')).toBe(false)
+    expect(isXConversationId('g1234567890')).toBe(false)
+    expect(sameChatId('twitter', '100200300-300400500', '300400500:100200300')).toBe(true)
+    expect(sameChatId('discord', '100200300-300400500', '300400500:100200300')).toBe(false)
+  })
+
   test('the old thread and its X Chat mirror have one key, either order', () => {
     expect(personKeyOf('1653922877803036672-1974596626342686720')).toBe(personKeyOf('1653922877803036672:1974596626342686720'))
     expect(personKeyOf('1974596626342686720:1653922877803036672')).toBe('1653922877803036672-1974596626342686720')

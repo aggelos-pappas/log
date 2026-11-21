@@ -10,6 +10,7 @@ import { RELATION_TRUST, SEARCH_DEPTH } from './types'
 import type { Chunk, Conversation, Embedder, Latency, SearchHit, SearchOptions } from './types'
 import type { TwitterDmConversation } from '../../twitter/account/session/index'
 import { applyTranscripts } from '../../media/voiceNotes/helpers/store'
+import { isXConversationId, personKeyOf } from '../../twitter/dm/person/client'
 import type { Database } from 'bun:sqlite'
 import { defaultDbPath, useDatabase } from '../../storage/schema'
 import { loadConversationRows, saveConversationRows } from '../../storage/platform'
@@ -102,10 +103,7 @@ export function loadConversations(path = conversationsDbPath(), filter: { platfo
   return filter.platform ? named.filter((c) => c.platform === filter.platform) : named
 }
 
-const pairKeyOf = (conversationId: string): string | null => {
-  const pair = conversationId.match(/^(\d+)[-:](\d+)$/)
-  return pair ? [pair[1], pair[2]].sort().join('-') : null
-}
+const pairKeyOf = (conversationId: string): string | null => (isXConversationId(conversationId) ? personKeyOf(conversationId) : null)
 
 export function withSiblingNames(conversations: readonly Conversation[]): Conversation[] {
   const names = new Map<string, string[]>()

@@ -9,6 +9,7 @@ import type { LabelEntry } from '../../label/types'
 import { chatsOf, saidOnly } from '../../lastWord/index'
 import type { LastWordMessage, PersonChat } from '../../lastWord/index'
 import { db } from '../../store/index'
+import { xPartiesOf } from '../../../twitter/dm/person/client'
 import { BOT_THRESHOLD, FALLBACK_BELOW, PIPELINE_SETTING, RETRAIN_AFTER, SALES_WHO, STAGE_CHANGE_SCORE, SUBQ_DAILY_USD, SUBQ_USD_PER_MILLION_INPUT, TEACH_BATCH, TEACH_EVERY_MS, TEACH_QUEUE_KEPT, TEACHER_BY, TEACHER_STALE_MESSAGES, TWO_WAY_OWNER_LINES, TWO_WAY_TURNS, UNSURE_MIN_NEW } from '../types'
 import type { FallbackReason, PipelineLabels, PipelineRow, TeachQueueItem, TeachRun, TeachSpend } from '../types'
 import { turnsIn, windowOf, windowText } from './features'
@@ -107,9 +108,9 @@ export function teachItemOf(chat: Pick<PersonChat, 'platform' | 'account' | 'per
 }
 
 export function conversationIdsOf(conversationId: string): string[] {
-  const pair = conversationId.match(/^(\d+)[-:](\d+)$/)
-  if (!pair) return [conversationId]
-  const [a, b] = [pair[1], pair[2]]
+  const pair = xPartiesOf(conversationId)
+  if (!pair.length) return [conversationId]
+  const [a, b] = pair
   return [`${a}-${b}`, `${a}:${b}`, `${b}-${a}`, `${b}:${a}`]
 }
 

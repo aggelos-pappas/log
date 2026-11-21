@@ -4,7 +4,7 @@ import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync
 import { hostname } from 'node:os'
 import { dirname, join } from 'node:path'
 import { twitterStateRoot } from '../../directApi/engine/index'
-import { personKeyOf } from '../../twitter/dm/person/index'
+import { personKeyOf, sameChatId } from '../../twitter/dm/person/index'
 import { SHARED_SESSION } from '../../agentHooks/sessionOffsets/index'
 import { mediaLine, mediaOf } from '../../media/describer/index'
 import { addAlertRow, appendEvent, db, dropFence, holdFence, eventIdOf, eventsAfter, immediate, importPendingFile, retirePendingFile, lastEventAt, latestSeq, markStage, namedLabel, openGap, readCursor, UNNAMED, writeCursor } from '../store/index'
@@ -78,7 +78,7 @@ export function addPending(messages: readonly InboxMessage[]): void {
 }
 
 export function incomingSince(platform: string, account: string, inChat: string | ((conversationId: string) => boolean), since: string): InboxMessage[] {
-  const matches = typeof inChat === 'string' ? (id: string) => id === inChat : inChat
+  const matches = typeof inChat === 'string' ? (id: string) => sameChatId(platform, id, inChat) : inChat
   const rows = db().prepare(`SELECT * FROM events WHERE platform = ? AND account = ? AND type = 'message' AND receivedAt > ? ORDER BY seq`).all(platform, account, since) as StoredEvent[]
   return rows.filter((row) => matches(row.conversationId)).map(messageOf)
 }
