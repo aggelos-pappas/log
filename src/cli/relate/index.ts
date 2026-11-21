@@ -56,7 +56,8 @@ export const relateCommand: Command = {
       if (json) return { code: 0, stdout: JSON.stringify({ pointer, eventsThrough: through, behind: pointer ? through - pointer.throughSeq : null, building }, null, 2) };
       if (!pointer && building) return { code: 1, stdout: `log relate status: no graph for this log.db yet, so a build of its ${through} events has started in the background; ask again in a few seconds.` };
       if (!pointer) return { code: 1, stdout: "log relate status: no graph for this log.db yet. `log relate build` makes one." };
-      return { code: 0, stdout: `log relate status: ${pointer.file}\n  built ${pointer.builtAt} through event ${pointer.throughSeq} (log.db is at ${through}, ${through - pointer.throughSeq} behind)\n  ${countsLine(pointer.counts, pointer.networkCounts)}` };
+      const how = pointer.mode === "applied" ? `applied ${pointer.applied ?? 0} new events in place in ${pointer.ms} ms` : `full build in ${pointer.ms} ms`;
+      return { code: 0, stdout: `log relate status: ${pointer.file}\n  ${how}, ${pointer.builtAt}, through event ${pointer.throughSeq} (log.db is at ${through}, ${through - pointer.throughSeq} behind)\n  ${countsLine(pointer.counts, pointer.networkCounts)}` };
     }
     if (sub === "verify") {
       const result = verifyGraph(dbPath);

@@ -1,8 +1,8 @@
 import type { Database } from 'bun:sqlite'
 import { channelNameOf, roomCatalog } from '../../../storage/platform/helpers/places'
 import { TOKEN_MIN } from '../types'
-import { networkProjectionOf } from './network'
-import type { AccountRow, EngagedRow, IdentityRow, LinkRow, MemberRow, PersonRow, PointedRow, PostRow, Projection, RoomRow, SaidRow, ServerRow } from '../types'
+import { applyRings, networkProjectionOf } from './network'
+import type { AccountRow, EngagedRow, IdentityRow, LinkRow, MemberRow, PersonRow, PointedRow, PostRow, Projection, ProjectionScope, RoomRow, SaidRow, ServerRow } from '../types'
 import { nameKeyOf, namesOf, pointedAt } from './mentions'
 
 const identityKeyOf = (platform: string, userId: string): string => `${platform}:${userId}`
@@ -27,7 +27,11 @@ function readOnce<T>(handle: Database, work: () => T): T {
   }
 }
 
-export function projectionOf(handle: Database): Projection {
+const inList = (column: string): string => `${column} IN (SELECT value FROM json_each(?))`
+
+const scoped = <T>(scope: ProjectionScope | undefined, keys: () => Iterable<T>): unknown[] => (scope ? [JSON.stringify([...keys()])] : [])
+
+export function projectionOf(handle: Database, scope?: ProjectionScope): Projection {
   return readOnce(handle, () => {
     const throughSeq = (handle.prepare('SELECT COALESCE(MAX(seq), 0) AS seq FROM events').get() as { seq: number }).seq
     const schemaVersion = (handle.prepare('PRAGMA user_version').get() as { user_version: number }).user_version
@@ -36,12 +40,13 @@ export function projectionOf(handle: Database): Projection {
     const identityRows = handle.prepare('SELECT platform, userId, handle, displayName FROM identities').all() as { platform: string; userId: string; handle: string | null; displayName: string | null }[]
     const aliasRows = handle.prepare('SELECT platform, handle, userId FROM handleAliases').all() as { platform: string; handle: string; userId: string }[]
     const linkRows = handle.prepare('SELECT l.platform, l.userId, l.personId, l.linkedBy, l.linkedAt, p.name FROM identityLinks l LEFT JOIN persons p ON p.personId = l.personId WHERE l.revokedAt IS NULL').all() as { platform: string; userId: string; personId: string; linkedBy: string | null; linkedAt: string | null; name: string | null }[]
-    const memberRows = handle.prepare('SELECT platform, roomId, userId, firstSeenAt, lastSeenAt FROM memberships').all() as { platform: string; roomId: string; userId: string; firstSeenAt: string; lastSeenAt: string }[]
-    const saidRows = handle.prepare('SELECT m.chatId, m.senderPlatform AS platform, m.senderUserId AS userId, m.fromOwner, c.account, COUNT(*) AS messages, MIN(m.sentAtMs) AS firstAtMs, MAX(m.sentAtMs) AS lastAtMs FROM messages m JOIN chats c ON c.chatId = m.chatId GROUP BY m.chatId, m.senderPlatform, m.senderUserId, m.fromOwner').all() as { chatId: string; platform: string; userId: string; fromOwner: number; account: string; messages: number; firstAtMs: number | null; lastAtMs: number | null }[]
-    const labelRows = handle.prepare('SELECT DISTINCT senderPlatform AS platform, senderUserId AS userId, senderLabel AS label FROM messages WHERE fromOwner = 0 AND senderLabel IS NOT NULL').all() as { platform: string; userId: string; label: string }[]
-    const replyRows = handle.prepare('SELECT r.chatId, r.senderPlatform AS platform, r.senderUserId AS fromId, r.fromOwner AS fromOwner, t.senderUserId AS toId, t.fromOwner AS toOwner, c.account, COUNT(*) AS times, MIN(r.sentAtMs) AS firstAtMs, MAX(r.sentAtMs) AS lastAtMs FROM messages r JOIN messages t ON t.messageKey = r.replyToKey JOIN chats c ON c.chatId = r.chatId WHERE r.replyToKey IS NOT NULL GROUP BY r.chatId, r.senderPlatform, r.senderUserId, r.fromOwner, t.senderUserId, t.fromOwner').all() as { chatId: string; platform: string; fromId: string; fromOwner: number; toId: string; toOwner: number; account: string; times: number; firstAtMs: number | null; lastAtMs: number | null }[]
-    const mentionRows = handle.prepare("SELECT m.chatId, m.senderPlatform AS platform, m.senderUserId AS fromId, m.fromOwner, c.account, m.text, m.sentAtMs FROM messages m JOIN chats c ON c.chatId = m.chatId WHERE m.text LIKE '%@%'").all() as { chatId: string; platform: string; fromId: string; fromOwner: number; account: string; text: string; sentAtMs: number | null }[]
-    const interactionRows = handle.prepare('SELECT platform, account, kind, actorUserId, targetRef, MAX(targetText) AS targetText, COUNT(*) AS times, MAX(atMs) AS lastAtMs FROM interactions GROUP BY platform, account, kind, actorUserId, targetRef').all() as { platform: string; account: string; kind: string; actorUserId: string | null; targetRef: string | null; targetText: string | null; times: number; lastAtMs: number | null }[]
+    const rooms = () => scope!.rooms
+    const memberRows = handle.prepare(`SELECT platform, roomId, userId, firstSeenAt, lastSeenAt FROM memberships${scope ? ` WHERE ${inList('roomId')}` : ''}`).all(...(scoped(scope, rooms) as never[])) as { platform: string; roomId: string; userId: string; firstSeenAt: string; lastSeenAt: string }[]
+    const saidRows = handle.prepare(`SELECT m.chatId, m.senderPlatform AS platform, m.senderUserId AS userId, m.fromOwner, c.account, COUNT(*) AS messages, MIN(m.sentAtMs) AS firstAtMs, MAX(m.sentAtMs) AS lastAtMs FROM messages m JOIN chats c ON c.chatId = m.chatId${scope ? ` WHERE ${inList('m.chatId')}` : ''} GROUP BY m.chatId, m.senderPlatform, m.senderUserId, m.fromOwner`).all(...(scoped(scope, rooms) as never[])) as { chatId: string; platform: string; userId: string; fromOwner: number; account: string; messages: number; firstAtMs: number | null; lastAtMs: number | null }[]
+    const replyRows = handle.prepare(`SELECT r.chatId, r.senderPlatform AS platform, r.senderUserId AS fromId, r.fromOwner AS fromOwner, t.senderUserId AS toId, t.fromOwner AS toOwner, c.account, COUNT(*) AS times, MIN(r.sentAtMs) AS firstAtMs, MAX(r.sentAtMs) AS lastAtMs FROM messages r JOIN messages t ON t.messageKey = r.replyToKey JOIN chats c ON c.chatId = r.chatId WHERE r.replyToKey IS NOT NULL${scope ? ` AND ${inList('r.chatId')}` : ''} GROUP BY r.chatId, r.senderPlatform, r.senderUserId, r.fromOwner, t.senderUserId, t.fromOwner`).all(...(scoped(scope, rooms) as never[])) as { chatId: string; platform: string; fromId: string; fromOwner: number; toId: string; toOwner: number; account: string; times: number; firstAtMs: number | null; lastAtMs: number | null }[]
+    const mentionRows = handle.prepare(`SELECT m.chatId, m.senderPlatform AS platform, m.senderUserId AS fromId, m.fromOwner, c.account, m.text, m.sentAtMs FROM messages m JOIN chats c ON c.chatId = m.chatId WHERE m.text LIKE '%@%'${scope ? ` AND ${inList('m.chatId')}` : ''}`).all(...(scoped(scope, rooms) as never[])) as { chatId: string; platform: string; fromId: string; fromOwner: number; account: string; text: string; sentAtMs: number | null }[]
+    const interactionRows = handle.prepare(`SELECT platform, account, kind, actorUserId, targetRef, MAX(targetText) AS targetText, COUNT(*) AS times, MAX(atMs) AS lastAtMs FROM interactions${scope ? ` WHERE ${inList("platform || ':' || actorUserId")}` : ''} GROUP BY platform, account, kind, actorUserId, targetRef`).all(...(scoped(scope, () => scope!.actors) as never[])) as { platform: string; account: string; kind: string; actorUserId: string | null; targetRef: string | null; targetText: string | null; times: number; lastAtMs: number | null }[]
+    const interactionAccounts = handle.prepare('SELECT DISTINCT platform, account FROM interactions ORDER BY platform, account').all() as { platform: string; account: string }[]
     const catalog = roomCatalog(handle)
 
     const ownerIds = new Set(accountRows.map((a) => identityKeyOf(a.platform, a.userId)))
@@ -55,34 +60,37 @@ export function projectionOf(handle: Database): Projection {
     }
     for (const a of accountRows) addAccount(a.platform, a.account, a.userId)
     for (const c of chatRows) addAccount(c.platform, c.account, null)
-    for (const i of interactionRows) addAccount(i.platform, i.account, null)
+    for (const i of interactionAccounts) addAccount(i.platform, i.account, null)
     const ownerHandles = new Set(accounts.map((a) => `${a.platform}:${a.account.replace(/^@/, '').toLowerCase()}`))
 
     const identities = new Map<string, IdentityRow>()
+    const marked = new Set<string>(scope?.identities ?? [])
     const aliasesOf = new Map<string, Set<string>>()
     for (const a of aliasRows) {
       const key = identityKeyOf(a.platform, a.userId)
       aliasesOf.set(key, (aliasesOf.get(key) ?? new Set()).add(a.handle.replace(/^@/, '').toLowerCase()))
     }
-    const touch = (platform: string, userId: string): string => {
+    const touch = (platform: string, userId: string, mark = true): string => {
       const key = identityKeyOf(platform, userId)
       if (!identities.has(key)) identities.set(key, { key, platform, userId, handle: null, handleLower: null, name: null, nameLower: null, labels: [], aliases: [], owner: ownerIds.has(key) || isSelf(userId), personId: null, personNames: [] })
+      if (mark) marked.add(key)
       return key
     }
+    const handleIndex = new Map<string, { platform: string; userId: string }>()
     for (const i of identityRows) {
-      const key = touch(i.platform, i.userId)
+      const key = touch(i.platform, i.userId, false)
       const row = identities.get(key)!
       row.handle = i.handle ? i.handle.replace(/^@/, '') : null
       row.handleLower = row.handle ? row.handle.toLowerCase() : null
       row.name = i.displayName
       row.nameLower = nameKeyOf(i.displayName)
+      if (row.handleLower && !handleIndex.has(`${i.platform}:${row.handleLower}`)) handleIndex.set(`${i.platform}:${row.handleLower}`, { platform: i.platform, userId: i.userId })
     }
-    const labelsOf = new Map<string, string[]>()
-    for (const l of labelRows) {
-      if (!usable(l.userId)) continue
-      const key = identityKeyOf(l.platform, l.userId)
-      labelsOf.set(key, [...(labelsOf.get(key) ?? []), l.label])
+    for (const a of aliasRows) {
+      const h = `${a.platform}:${a.handle.replace(/^@/, '').toLowerCase()}`
+      if (!handleIndex.has(h)) handleIndex.set(h, { platform: a.platform, userId: a.userId })
     }
+    const knownIds = new Set([...identityRows.map((i) => identityKeyOf(i.platform, i.userId)), ...aliasRows.map((a) => identityKeyOf(a.platform, a.userId))])
 
     const persons = new Map<string, PersonRow>()
     const links: LinkRow[] = []
@@ -97,7 +105,7 @@ export function projectionOf(handle: Database): Projection {
     }
 
     const servers = new Map<string, ServerRow>()
-    const rooms: RoomRow[] = chatRows.map((c) => {
+    const allRooms: RoomRow[] = chatRows.map((c) => {
       const entry = catalog.get(`${c.account}:${c.conversationId}`) ?? catalog.get(c.conversationId) ?? null
       const serverId = c.serverId ?? entry?.serverId ?? null
       const kind = entry?.kind ?? (serverId && c.platform === 'discord' ? 'channel' : c.kind)
@@ -110,8 +118,9 @@ export function projectionOf(handle: Database): Projection {
       }
       return { key: c.chatId, platform: c.platform, account: c.account, accountKey: accountKeyOf(c.platform, c.account), conversationId: c.conversationId, kind, name, server: serverKey ? (entry?.server ?? servers.get(serverKey)!.name) : null, serverKey, lastAtMs: c.lastMessageAtMs }
     })
-    for (const r of rooms) if (r.serverKey && !r.server) r.server = servers.get(r.serverKey)!.name
-    const roomKeys = new Set(rooms.map((r) => r.key))
+    for (const r of allRooms) if (r.serverKey && !r.server) r.server = servers.get(r.serverKey)!.name
+    const rooms_ = scope ? allRooms.filter((r) => scope.rooms.has(r.key)) : allRooms
+    const roomKeys = new Set(rooms_.map((r) => r.key))
 
     const members: MemberRow[] = memberRows.filter((m) => usable(m.userId) && roomKeys.has(m.roomId)).map((m) => ({ identity: touch(m.platform, m.userId), room: m.roomId, firstSeenAt: m.firstSeenAt, lastSeenAt: m.lastSeenAt }))
 
@@ -129,10 +138,6 @@ export function projectionOf(handle: Database): Projection {
     }
     const said: SaidRow[] = [...saidAll.filter((x) => !x.fromOwner), ...ownerSaid.values()]
 
-    const handleIndex = new Map<string, string>()
-    for (const row of identities.values()) {
-      for (const h of [row.handleLower, ...(aliasesOf.get(row.key) ?? [])]) if (h && !handleIndex.has(`${row.platform}:${h}`)) handleIndex.set(`${row.platform}:${h}`, row.key)
-    }
     const endOf = (platform: string, userId: string | null, owner: boolean, accountKey: string): { key: string; owner: boolean } | null => {
       if (owner || (userId && ownerIds.has(identityKeyOf(platform, userId))) || (userId && isSelf(userId))) return { key: accountKey, owner: true }
       if (!usable(userId)) return null
@@ -169,13 +174,15 @@ export function projectionOf(handle: Database): Projection {
       for (const id of ids) {
         const key = identityKeyOf(m.platform, id)
         if (ownerIds.has(key)) targets.set(accountKey, { key: accountKey, owner: true })
-        else if (identities.has(key)) targets.set(key, { key, owner: false })
+        else if (knownIds.has(key)) targets.set(key, { key: touch(m.platform, id), owner: false })
       }
       for (const h of handles) {
         if (ownerHandles.has(`${m.platform}:${h}`)) targets.set(accountKey, { key: accountKey, owner: true })
         else {
-          const key = handleIndex.get(`${m.platform}:${h}`)
-          if (key) targets.set(key, { key, owner: identities.get(key)!.owner })
+          const found = handleIndex.get(`${m.platform}:${h}`)
+          if (!found) continue
+          const key = touch(found.platform, found.userId)
+          targets.set(key, { key, owner: identities.get(key)!.owner })
         }
       }
       for (const to of targets.values()) pointed(mentions, m.chatId, from, to.owner ? { key: accountKey, owner: true } : to, 1, m.sentAtMs, m.sentAtMs)
@@ -190,22 +197,57 @@ export function projectionOf(handle: Database): Projection {
       let post: string | null = null
       if (i.targetRef) {
         post = `${i.platform}:${i.account}:${i.targetRef}`
-        const held = posts.get(post)
-        if (!held) posts.set(post, { key: post, platform: i.platform, account: i.account, accountKey, ref: i.targetRef, text: i.targetText })
-        else if (!held.text && i.targetText) held.text = i.targetText
+        if (!posts.has(post)) posts.set(post, { key: post, platform: i.platform, account: i.account, accountKey, ref: i.targetRef, text: null })
       }
       engaged.push({ identity, post, accountKey, kind: i.kind, times: i.times, lastAtMs: i.lastAtMs })
     }
+    const postTexts = scope ? (handle.prepare(`SELECT platform, account, actorUserId, targetRef, MAX(targetText) AS targetText FROM interactions WHERE ${inList("platform || ':' || account || ':' || targetRef")} GROUP BY platform, account, kind, actorUserId, targetRef`).all(JSON.stringify([...posts.keys()])) as { platform: string; account: string; actorUserId: string | null; targetRef: string; targetText: string | null }[]) : interactionRows
+    for (const t of postTexts) {
+      if (!usable(t.actorUserId) || !t.targetRef || !t.targetText) continue
+      const held = posts.get(`${t.platform}:${t.account}:${t.targetRef}`)
+      if (held && (!held.text || t.targetText > held.text)) held.text = t.targetText
+    }
 
+    for (const key of scope?.identities ?? []) {
+      const at = key.indexOf(':')
+      if (at > 0 && usable(key.slice(at + 1))) touch(key.slice(0, at), key.slice(at + 1))
+    }
+    const emitted = scope ? [...identities.values()].filter((r) => marked.has(r.key)) : [...identities.values()]
+    const senders = emitted.filter((r) => usable(r.userId)).map((r) => [r.platform, r.userId])
+    const labelRows = handle.prepare(`SELECT DISTINCT m.senderPlatform AS platform, m.senderUserId AS userId, m.senderLabel AS label FROM ${scope ? "json_each(?) j JOIN messages m ON m.senderPlatform = json_extract(j.value, '$[0]') AND m.senderUserId = json_extract(j.value, '$[1]') AND" : 'messages m WHERE'} m.fromOwner = 0 AND m.senderLabel IS NOT NULL`).all(...((scope ? [JSON.stringify(senders)] : []) as never[])) as { platform: string; userId: string; label: string }[]
+    const labelsOf = new Map<string, string[]>()
+    for (const l of labelRows) {
+      if (!usable(l.userId)) continue
+      const key = identityKeyOf(l.platform, l.userId)
+      labelsOf.set(key, [...(labelsOf.get(key) ?? []), l.label])
+    }
     for (const [key, set] of aliasesOf) {
       const row = identities.get(key)
       if (row) row.aliases = [...set]
     }
     for (const row of identities.values()) {
       if (row.handleLower && ownerHandles.has(`${row.platform}:${row.handleLower}`)) row.owner = true
-      row.labels = namesOf([row.handle, row.name, ...(labelsOf.get(row.key) ?? [])])
+      row.labels = namesOf([row.handle, row.name, ...(labelsOf.get(row.key) ?? []).sort()])
     }
-    const network = networkProjectionOf(handle, identities, accounts)
-    return { throughSeq, schemaVersion, accounts, identities: [...identities.values()], rooms, members, said, posts: [...posts.values()], engaged, servers: [...servers.values()], persons: [...persons.values()], links, replies: [...replies.values()], mentions: [...mentions.values()], network }
+    applyRings(handle, identities)
+    const network = networkProjectionOf(handle, identities, accounts, scope ? marked : undefined)
+    const servedRooms = new Set(rooms_.map((r) => r.serverKey).filter(Boolean))
+    return {
+      throughSeq,
+      schemaVersion,
+      accounts,
+      identities: scope ? [...identities.values()].filter((r) => marked.has(r.key)) : [...identities.values()],
+      rooms: rooms_,
+      members,
+      said,
+      posts: [...posts.values()],
+      engaged,
+      servers: scope ? [...servers.values()].filter((s) => servedRooms.has(s.key)) : [...servers.values()],
+      persons: [...persons.values()],
+      links,
+      replies: [...replies.values()],
+      mentions: [...mentions.values()],
+      network,
+    }
   })
 }

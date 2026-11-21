@@ -21,10 +21,13 @@ function fixtureDir(): string {
 
 const dir = fixtureDir()
 const dbPath = join(root, 'log.db')
+mkdirSync(join(root, 'plain'), { recursive: true })
+const plain = join(root, 'plain', 'log.db')
 seedDemoWorld(openDatabase(dbPath))
 
 afterAll(() => {
   openDatabase(dbPath).close()
+  openDatabase(plain).close()
   Bun.gc(true)
   rmSync(root, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 })
 })
@@ -81,15 +84,22 @@ describe('the network in the Relate graph', () => {
 
   test('merges a network person with the chat identity of the same X handle', () => {
     const rows = queryGraph("MATCH (i:Identity {handleLower: 'maya_ml'}) RETURN i.key AS key, i.band AS band, i.ring AS ring, i.themes AS themes", {}, dbPath).rows
-    expect(rows).toEqual([{ key: 'twitter:2000000005', band: 'member', ring: 2, themes: ['graphs', 'agents', 'outbound'] }])
+    expect(rows).toEqual([{ key: 'twitter:2000000005', band: 'member', ring: 1, themes: ['graphs', 'agents', 'outbound'] }])
     expect(queryGraph("MATCH (i:Identity {handleLower: 'maya_ml'})-[:FOLLOWS]->(a:Account) RETURN a.account AS account", {}, dbPath).rows).toEqual([{ account: 'builderOwner' }])
     expect(queryGraph("MATCH (l:Leader {handleLower: 'chart_lead'})-[:RUNS]->(c:Community) RETURN c.name AS name", {}, dbPath).rows).toEqual([{ name: 'Graph Guild' }])
   })
 
-  test('ranks who to talk to: ring 2 first, then most circles, collaborators and members only, nobody already talked to', () => {
+  test('ranks who to talk to: ring 2 first, then rings 1, 3 and 4, most circles, collaborators and members only, nobody already talked to', () => {
     const rows = queryGraph(WHO_TO_TALK_TO, {}, dbPath).rows
-    expect(rows.map((r) => r.handle)).toEqual(['kai_new', 'maya_ml', 'linus_k', 'rio_far'])
+    expect(rows.map((r) => [r.handle, r.ring, r.why])).toEqual([['kai_new', 2, 'imported'], ['maya_ml', 1, 'repost'], ['linus_k', 1, 'like'], ['linus_k', 1, 'like'], ['rio_far', 4, 'known']])
     expect(rows[0]).toMatchObject({ band: 'collaborator', ring: 2, circles: 3, sameCircleTalksToYou: ['ada_codes'], mentionedBy: ['ada_codes'], lastPost: 'my newest post about graphs' })
+  })
+
+  test('a user with no import still gets a ranked list, from their live rings alone', () => {
+    seedDemoWorld(openDatabase(plain))
+    buildGraph(plain, new Date(DEMO_NOW))
+    const rows = queryGraph(WHO_TO_TALK_TO, {}, plain).rows
+    expect(rows.map((r) => [r.handle, r.ring, r.why, r.band ?? null]).sort()).toEqual([['linus_k', 1, 'like', null], ['linus_k', 1, 'like', null], ['maya_ml', 1, 'repost', null]])
   })
 
   test('the play runs the same Cypher the code tests', () => {

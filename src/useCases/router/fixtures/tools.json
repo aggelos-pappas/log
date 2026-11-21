@@ -97,7 +97,7 @@
 {"name":"peopleUnlink","platform":null,"summary":"Take an identity out of its person, after the owner says so (the link stays in the history)","flags":["approvedBy"],"required":[],"notes":"","effect":"write"},
 {"name":"peopleDifferent","platform":null,"summary":"Record that two identities are not the same person, after the owner says so, so they are never suggested again","flags":["approvedBy"],"required":[],"notes":"","effect":"write"},
 {"name":"networkImport","platform":null,"summary":"Read your network into log.db, replacing the last import","flags":["from","account"],"required":[],"notes":"","effect":"write"},
-{"name":"networkStatus","platform":null,"summary":"What log.db holds of your network","flags":[],"required":[],"notes":"","effect":"read"},
+{"name":"networkStatus","platform":null,"summary":"Your network's rings, live","flags":[],"required":[],"notes":"","effect":"read"},
 {"name":"timing","platform":null,"summary":"How slow log is: p50, p95, p99 per tool and stage, or one call as a waterfall (--call); --tool and --hours narrow it. Where the time goes: p50, p95, p99 per tool and stage from log.db, one call as a waterfall, or landed to pushed per platform","flags":["tool","hours","stages","top","all","call","turns","landed"],"required":[],"notes":"","effect":"read"},
 {"name":"toolScaffold","platform":null,"summary":"A hand-rolled one-off made a log command and MCP tool; no name lists the counted one-offs","flags":["summary","acts","flags","area","asks","guide"],"required":[],"notes":"","effect":"write"},
 {"name":"toolHealth","platform":null,"summary":"Which tools are used, fail or went stale, with a fix per flag","flags":["days"],"required":[],"notes":"","effect":"read"},
