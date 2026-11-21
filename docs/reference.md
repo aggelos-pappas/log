@@ -1566,6 +1566,7 @@ Check log.db's sealed secrets and typed tables, and rebuild the tables from even
 
 ```text
 log storage status [--json]   (sealed vs plain secrets; reads only)
+log storage recovery set   (terminal: the recovery passphrase that reopens sealed secrets on a new machine)
 log storage verify [--json]   (replays every event into a scratch copy and compares each typed table with the live one; changes nothing)
 log storage rebuild [--apply] [--json]   (clears the typed tables and replays every event into them in order, in one transaction; a verify unless --apply)
 The events are the record: every typed row is derived from them, so a rebuild loses nothing (docs/storageAgainstTheBook.md, item 2).

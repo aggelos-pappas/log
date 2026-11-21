@@ -2498,7 +2498,7 @@ export const ERROR_CATALOG = {
     meaning: "log.db holds sealed secrets, but none of the store key's holders (OS keystore, LOG_STORE_PASSPHRASE) opened them on this machine.",
     retryable: false,
     raisedIn: ['storage/secrets'],
-    action: 'Run it as the user that sealed them, or set the LOG_STORE_PASSPHRASE used then; `log storage status` names the holders.'
+    action: 'On a new machine or after a reinstall, run `log storage recovery set` in a terminal with the recovery passphrase (or set LOG_STORE_RECOVERY); otherwise run it as the user that sealed them or with the LOG_STORE_PASSPHRASE used then. `log storage status` names the holders.'
   },
   secretTampered: {
     layer: 'auth',

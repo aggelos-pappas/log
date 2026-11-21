@@ -56,23 +56,33 @@ function handleOf(env: Env): { handle: Database; path: string } {
   return { handle: openDatabase(path), path }
 }
 
+function recoveryOf(env: Env): string {
+  return (env.LOG_STORE_RECOVERY ?? '').trim()
+}
+
 function cacheKey(path: string, env: Env): string {
   const pass = passphraseOf(env)
   return `${path}\u0000${pass ? createHash('sha256').update(pass).digest('hex') : ''}\u0000${env.LOG_STORE_KEYSTORE ?? ''}`
 }
 
+const RANK: Record<KeyMethod, number> = { dpapi: 0, keychain: 0, secretService: 0, passphrase: 1, recovery: 2 }
+
 function keyRows(handle: Database): KeyRow[] {
   return handle.prepare('SELECT keyId, method, wrapped, salt, params, createdAt FROM secretKeys ORDER BY createdAt DESC, keyId').all() as KeyRow[]
 }
 
+function scrypted(method: KeyMethod): boolean {
+  return method === 'passphrase' || method === 'recovery'
+}
+
 function recoverWith(row: KeyRow, env: Env, stores: Keystore[]): Uint8Array | null {
   try {
-    if (row.method === 'passphrase') {
-      const pass = passphraseOf(env)
-      if (!pass || !row.salt || !row.wrapped) return null
+    if (scrypted(row.method)) {
+      const secret = row.method === 'passphrase' ? passphraseOf(env) : recoveryOf(env)
+      if (!secret || !row.salt || !row.wrapped) return null
       const params = JSON.parse(row.params) as { nonce?: string }
       if (!params.nonce) return null
-      return open(passphraseKey(pass, row.salt), Buffer.from(params.nonce, 'hex'), row.wrapped, keyAad(row.keyId))
+      return open(passphraseKey(secret, row.salt), Buffer.from(params.nonce, 'hex'), row.wrapped, keyAad(row.keyId))
     }
     const store = stores.find((item) => item.method === row.method)
     const key = store?.recover(row.keyId, row.wrapped) ?? null
@@ -82,20 +92,48 @@ function recoverWith(row: KeyRow, env: Env, stores: Keystore[]): Uint8Array | nu
   }
 }
 
-function wrapInto(handle: Database, keyId: string, key: Uint8Array, env: Env, stores: Keystore[], have: Set<KeyMethod>): void {
-  const now = new Date().toISOString()
-  const insert = handle.prepare('INSERT OR IGNORE INTO secretKeys (keyId, method, wrapped, salt, params, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
+function putScrypted(handle: Database, keyId: string, key: Uint8Array, method: 'passphrase' | 'recovery', secret: string): void {
+  const salt = new Uint8Array(randomBytes(16))
+  const sealed = seal(passphraseKey(secret, salt), key, keyAad(keyId))
+  handle.prepare('INSERT OR REPLACE INTO secretKeys (keyId, method, wrapped, salt, params, createdAt) VALUES (?, ?, ?, ?, ?, ?)').run(keyId, method, sealed.ciphertext, salt, JSON.stringify({ kdf: 'scrypt', ...SCRYPT_PARAMS, nonce: Buffer.from(sealed.nonce).toString('hex') }), new Date().toISOString())
+}
+
+function wrapInto(handle: Database, keyId: string, key: Uint8Array, env: Env, stores: Keystore[], have: Set<KeyMethod>, replace = false): void {
+  const insert = handle.prepare(`INSERT OR ${replace ? 'REPLACE' : 'IGNORE'} INTO secretKeys (keyId, method, wrapped, salt, params, createdAt) VALUES (?, ?, ?, ?, ?, ?)`)
   for (const store of stores) {
     if (have.has(store.method)) continue
     const wrapped = store.protect(keyId, key)
-    if (wrapped) insert.run(keyId, store.method, wrapped, null, '{}', now)
+    if (wrapped) insert.run(keyId, store.method, wrapped, null, '{}', new Date().toISOString())
   }
-  const pass = passphraseOf(env)
-  if (pass && !have.has('passphrase')) {
-    const salt = new Uint8Array(randomBytes(16))
-    const sealed = seal(passphraseKey(pass, salt), key, keyAad(keyId))
-    insert.run(keyId, 'passphrase', sealed.ciphertext, salt, JSON.stringify({ kdf: 'scrypt', ...SCRYPT_PARAMS, nonce: Buffer.from(sealed.nonce).toString('hex') }), now)
+  if (passphraseOf(env) && !have.has('passphrase')) putScrypted(handle, keyId, key, 'passphrase', passphraseOf(env))
+  if (recoveryOf(env) && !have.has('recovery')) putScrypted(handle, keyId, key, 'recovery', recoveryOf(env))
+}
+
+function missingWraps(env: Env, stores: Keystore[], have: Set<KeyMethod>): boolean {
+  return stores.some((store) => !have.has(store.method)) || Boolean(passphraseOf(env) && !have.has('passphrase'))
+}
+
+interface Found extends Unlocked {
+  opened: Set<KeyMethod>
+}
+
+function findKey(handle: Database, env: Env, stores: Keystore[]): Found | null {
+  const rows = keyRows(handle)
+  if (!rows.length) return null
+  const keyId = rows[0].keyId
+  const mine = rows.filter((row) => row.keyId === keyId).sort((x, y) => RANK[x.method] - RANK[y.method])
+  for (const row of mine) {
+    const key = recoverWith(row, env, stores)
+    if (!key) continue
+    const opened = new Set<KeyMethod>([row.method])
+    if (scrypted(row.method)) {
+      const fresh = stores
+      wrapInto(handle, keyId, key, {}, fresh, new Set(), true)
+      for (const store of fresh) opened.add(store.method)
+    }
+    return { keyId, key, opened }
   }
+  throw new SecretStoreError('secretStoreLocked', `log.db holds sealed secrets under key ${keyId}, but none of its holders (${mine.map((row) => row.method).join(', ')}) opened it here${mine.some((row) => row.method === 'recovery') ? '; `log storage recovery set` reopens it with the recovery passphrase' : ''}`)
 }
 
 function unlock(env: Env, create: boolean): Unlocked | null {
@@ -108,38 +146,29 @@ function unlock(env: Env, create: boolean): Unlocked | null {
     const have = new Set(keyRows(handle).filter((row) => row.keyId === cached.keyId).map((row) => row.method))
     if (!have.size) unlocked.delete(cacheKey(path, env))
     else {
-      if (stores.some((store) => !have.has(store.method)) || (passphraseOf(env) && !have.has('passphrase'))) wrapInto(handle, cached.keyId, cached.key, env, stores, have)
+      if (missingWraps(env, stores, have)) wrapInto(handle, cached.keyId, cached.key, env, stores, have)
       return cached
     }
   }
-  const found = (): Unlocked | null => {
-    const rows = keyRows(handle)
-    if (!rows.length) return null
-    const keyId = rows[0].keyId
-    const mine = rows.filter((row) => row.keyId === keyId)
-    for (const row of mine) {
-      const key = recoverWith(row, env, stores)
-      if (key) return { keyId, key }
-    }
-    throw new SecretStoreError('secretStoreLocked', `log.db holds sealed secrets under key ${keyId}, but none of its holders (${mine.map((row) => row.method).join(', ')}) opened it here`)
-  }
-  const held = found()
+  const held = findKey(handle, env, stores)
   if (held) {
     if (create) {
       const have = new Set(keyRows(handle).filter((row) => row.keyId === held.keyId).map((row) => row.method))
-      if (stores.some((store) => !have.has(store.method)) || (passphraseOf(env) && !have.has('passphrase'))) wrapInto(handle, held.keyId, held.key, env, stores, have)
+      if (missingWraps(env, stores, have)) wrapInto(handle, held.keyId, held.key, env, stores, have)
     }
-    unlocked.set(cacheKey(path, env), held)
-    return held
+    const kept = { keyId: held.keyId, key: held.key }
+    unlocked.set(cacheKey(path, env), kept)
+    return kept
   }
-  if (!create || (!stores.length && !passphraseOf(env))) return null
+  if (!create || (!stores.length && !passphraseOf(env) && !recoveryOf(env))) return null
   handle.exec('BEGIN IMMEDIATE')
   try {
-    const raced = found()
+    const raced = findKey(handle, env, stores)
     if (raced) {
       handle.exec('COMMIT')
-      unlocked.set(cacheKey(path, env), raced)
-      return raced
+      const kept = { keyId: raced.keyId, key: raced.key }
+      unlocked.set(cacheKey(path, env), kept)
+      return kept
     }
     const made = { keyId: randomBytes(8).toString('hex'), key: new Uint8Array(randomBytes(32)) }
     wrapInto(handle, made.keyId, made.key, env, stores, new Set())
@@ -149,6 +178,7 @@ function unlock(env: Env, create: boolean): Unlocked | null {
     }
     handle.exec('COMMIT')
     unlocked.set(cacheKey(path, env), made)
+    if (!recoveryOf(env)) secretStoreDeps.warn('log: a new store key was made with no recovery passphrase. A Windows reinstall, a new PC or a restored log home cannot open it again; run `log storage recovery set` in a terminal now.')
     return made
   } catch (error) {
     if (handle.inTransaction) handle.exec('ROLLBACK')
@@ -156,12 +186,38 @@ function unlock(env: Env, create: boolean): Unlocked | null {
   }
 }
 
+export function recoverySet(env: Env = process.env): boolean {
+  if (!secretStoreOn(env)) return false
+  const rows = keyRows(handleOf(env).handle)
+  return rows.some((row) => row.keyId === rows[0].keyId && row.method === 'recovery')
+}
+
+export function setRecoveryPassphrase(passphrase: string, env: Env = process.env): { restored: boolean; keyId: string; wrappedBy: KeyMethod[] } {
+  const secret = passphrase.trim()
+  const withRecovery = { ...env, LOG_STORE_RECOVERY: secret }
+  let restored = false
+  let held: Unlocked | null
+  try {
+    held = unlock(env, true)
+  } catch (error) {
+    if ((error as SecretStoreError).code !== 'secretStoreLocked') throw error
+    held = unlock(withRecovery, true)
+    restored = true
+  }
+  if (!held) held = unlock(withRecovery, true)
+  if (!held) throw new SecretStoreError('secretStoreLocked', 'no store key could be made or opened')
+  const { handle } = handleOf(env)
+  putScrypted(handle, held.keyId, held.key, 'recovery', secret)
+  const wrappedBy = (handle.prepare('SELECT method FROM secretKeys WHERE keyId = ? ORDER BY method').all(held.keyId) as { method: KeyMethod }[]).map((row) => row.method)
+  return { restored, keyId: held.keyId, wrappedBy }
+}
+
 export function secretStoreReady(env: Env = process.env): boolean {
   if (!secretStoreOn(env)) return false
   try {
     const { handle } = handleOf(env)
     if (keyRows(handle).length) return unlock(env, false) !== null
-    return keystoresOf(env).length > 0 || Boolean(passphraseOf(env))
+    return keystoresOf(env).length > 0 || Boolean(passphraseOf(env)) || Boolean(recoveryOf(env))
   } catch {
     return false
   }
@@ -169,8 +225,8 @@ export function secretStoreReady(env: Env = process.env): boolean {
 
 export function secretStoreState(env: Env = process.env): SecretStoreState {
   const on = secretStoreOn(env)
-  const methods: KeyMethod[] = [...keystoresOf(env).map((store) => store.method), ...(passphraseOf(env) ? (['passphrase'] as const) : [])]
-  if (!on) return { on, ready: false, methods, keyMethods: [], unlocks: false, reason: 'the store is off in tests unless LOG_STORE_KEYSTORE or LOG_STORE_PASSPHRASE is set' }
+  const methods: KeyMethod[] = [...keystoresOf(env).map((store) => store.method), ...(passphraseOf(env) ? (['passphrase'] as const) : []), ...(recoveryOf(env) ? (['recovery'] as const) : [])]
+  if (!on) return { on, ready: false, methods, keyMethods: [], unlocks: false, recovery: false, reason: 'the store is off in tests unless LOG_STORE_KEYSTORE or LOG_STORE_PASSPHRASE is set' }
   const { handle } = handleOf(env)
   const rows = keyRows(handle)
   const keyMethods = rows.filter((row) => row.keyId === rows[0]?.keyId).map((row) => row.method)
@@ -183,7 +239,7 @@ export function secretStoreState(env: Env = process.env): SecretStoreState {
   }
   const ready = rows.length ? unlocks : methods.length > 0
   if (!ready && !reason) reason = 'no OS keystore was found and LOG_STORE_PASSPHRASE is not set, so secrets stay in plain files'
-  return { on, ready, methods, keyMethods, unlocks, reason }
+  return { on, ready, methods, keyMethods, unlocks, recovery: keyMethods.includes('recovery'), reason }
 }
 
 export function putSecret(ref: string, kind: SecretKind, value: string, env: Env = process.env): boolean {

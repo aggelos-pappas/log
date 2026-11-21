@@ -10,6 +10,11 @@ log keeps every account session (cookies, the Discord token in storage origins, 
   - macOS: stored in the login Keychain (`security`, service `logCli`, account `storeKey:<keyId>`).
   - Linux: stored in the Secret Service (`secret-tool`, same attributes) when a D-Bus session answers.
   - Headless or no keystore: set `LOG_STORE_PASSPHRASE`. The key is then wrapped with a key derived by scrypt (N=32768, r=8, p=1) from the passphrase. With both a keystore and a passphrase, both wrap the same key, so either one opens it.
+- **Recovery passphrase, so logins survive a reinstall.** An OS keystore wrap is tied to one Windows user profile, one Keychain or one Secret Service. After a Windows reinstall, on a new PC, or with a log home restored from a backup, that wrap no longer opens. Run `log storage recovery set` in a terminal (masked prompt, at least 12 characters; agents cannot run it). It wraps the same data key with a scrypt key derived from the recovery passphrase and stores that wrap in `secretKeys` next to the OS wrap. Running it again changes the passphrase.
+  - **Restoring on a new machine:** when no OS wrap opens the key, run `log storage recovery set` there and type the same recovery passphrase. log unwraps the key with it and wraps it again with the new machine's keystore, so later runs need no passphrase. On a headless machine, `LOG_STORE_RECOVERY` in the environment does the same without a prompt.
+  - Order tried: the OS keystore first, then `LOG_STORE_PASSPHRASE`, then the recovery passphrase. A wrong recovery passphrase refuses with `secretStoreLocked` and changes nothing.
+  - `log storage status` says whether a recovery passphrase is set and prints a `>>> NO RECOVERY PASSPHRASE` warning when it is not. log also warns when it makes a new key without one. If `LOG_STORE_RECOVERY` is set when the key is first made, that passphrase wraps it from the start.
+  - Keep the recovery passphrase off the machine (a password manager, paper). Anyone who has it and a copy of log.db can open the secrets.
 - **Every secret is sealed with AES-256-GCM** into log.db's `secrets` table, with a fresh 96-bit nonce and the secret's ref (`account:…`, `session:<platform>:<account>`, `env:<NAME>`) as authenticated data, so a row copied to another ref fails its check.
 - **One module does it**: `src/storage/secrets` (Bun) and `python/secretStore` (Python, same format; it opens and seals rows with a key Bun made).
 - Keystore calls run with a 10 s timeout, so a keystore that does not answer (a stuck D-Bus) falls back to the passphrase or to the plain-file path instead of hanging.
@@ -49,5 +54,7 @@ log keeps every account session (cookies, the Discord token in storage origins, 
 | A secret copied to another account's row | The ref is authenticated data, so the row fails its check (`secretTampered`) |
 | A changed or corrupted row | AES-GCM's tag fails, so the value is refused, never used |
 | A keystore that hangs | 10 s timeout, then the passphrase or the plain file |
+| A Windows reinstall, a new PC or a restored log home | The recovery passphrase unwraps the key, and log wraps it again with the new OS keystore; status warns loudly while none is set |
+| A wrong recovery passphrase | `secretStoreLocked`, nothing re-wrapped or changed |
 | Two processes making a key at once | Key creation runs in one `BEGIN IMMEDIATE` transaction; the second process uses the first one's key |
 | Values in logs or status output | Status prints counts and field names only; refusals name the ref, never the value |

@@ -5,19 +5,21 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openDatabase } from '../schema/client'
 import { dpapiKeystore } from './helpers/index'
-import { forgetUnlockedKeys, putSecret, readSecret, sealedSecrets, secretStoreDeps, secretStoreReady, sessionHandoff } from './index'
+import { forgetUnlockedKeys, putSecret, readSecret, recoverySet, sealedSecrets, secretStoreDeps, secretStoreReady, sessionHandoff, setRecoveryPassphrase } from './index'
 import type { Keystore } from './types'
 import { plainLocalAccounts, readLocalAccounts, writeLocalAccounts } from '../../twenty/graphql/index'
 import { loadUserEnv, parseEnvFile } from '../../config/userEnv/index'
 import { saveProviderCredentials, savedCredential } from '../../auth/credentials/client'
-import { secretStatus } from '../../cli/storage/index'
+import { secretStatus, secretStatusLines, storageCommand, storageDeps } from '../../cli/storage/index'
 
-const NAMES = ['LOG_DB', 'LOG_STORE_PASSPHRASE', 'LOG_STORE_KEYSTORE', 'LOG_LOCAL_ACCOUNTS', 'LOG_USER_ENV'] as const
+const NAMES = ['LOG_DB', 'LOG_STORE_PASSPHRASE', 'LOG_STORE_KEYSTORE', 'LOG_STORE_RECOVERY', 'LOG_LOCAL_ACCOUNTS', 'LOG_USER_ENV'] as const
 const saved = Object.fromEntries(NAMES.map((name) => [name, process.env[name]]))
 const root = mkdtempSync(join(tmpdir(), 'secretStore'))
 const dbs: string[] = []
 const realKeystores = secretStoreDeps.keystores
 const realWarn = secretStoreDeps.warn
+const realPrompts = storageDeps.prompts
+const realTty = storageDeps.tty
 let warnings: string[] = []
 let n = 0
 let dir = ''
@@ -33,6 +35,7 @@ function fresh(): void {
   process.env.LOG_USER_ENV = join(dir, '.env')
   process.env.LOG_STORE_KEYSTORE = 'none'
   process.env.LOG_STORE_PASSPHRASE = 'correct horse battery staple'
+  delete process.env.LOG_STORE_RECOVERY
   forgetUnlockedKeys()
 }
 
@@ -50,6 +53,8 @@ beforeEach(() => {
 afterEach(() => {
   secretStoreDeps.keystores = realKeystores
   secretStoreDeps.warn = realWarn
+  storageDeps.prompts = realPrompts
+  storageDeps.tty = realTty
   for (const name of NAMES) {
     if (saved[name] === undefined) delete process.env[name]
     else process.env[name] = saved[name]
@@ -111,6 +116,91 @@ describe('the encrypted secret store', () => {
     const wrapped = dpapiKeystore.protect('k', key)
     expect(wrapped && wrapped.length > 32).toBe(true)
     expect(Buffer.from(dpapiKeystore.recover('k', wrapped)!).equals(Buffer.from(key))).toBe(true)
+  })
+})
+
+function machine(): { vault: Map<string, Uint8Array>; store: Keystore } {
+  const vault = new Map<string, Uint8Array>()
+  return { vault, store: { method: 'dpapi', available: () => true, protect: (keyId, key) => (vault.set(keyId, key), new Uint8Array([1, 2, 3])), recover: (keyId) => vault.get(keyId) ?? null } }
+}
+
+describe('the recovery passphrase', () => {
+  const RECOVERY = 'paper in the drawer at home'
+
+  test('after a reinstall the key opens with the recovery passphrase and is wrapped again by the new OS keystore', async () => {
+    delete process.env.LOG_STORE_PASSPHRASE
+    process.env.LOG_STORE_KEYSTORE = 'os'
+    const old = machine()
+    secretStoreDeps.keystores = () => [old.store]
+    expect(putSecret('env:SOME_API_KEY', 'apiKey', 'survives a reinstall')).toBe(true)
+    expect(warnings.some((line) => line.includes('no recovery passphrase'))).toBe(true)
+    expect(recoverySet()).toBe(false)
+    expect(setRecoveryPassphrase(RECOVERY)).toMatchObject({ restored: false, wrappedBy: ['dpapi', 'recovery'] })
+    expect(recoverySet()).toBe(true)
+    const fresh = machine()
+    secretStoreDeps.keystores = () => [fresh.store]
+    forgetUnlockedKeys()
+    expect(() => readSecret('env:SOME_API_KEY')).toThrow(expect.objectContaining({ code: 'secretStoreLocked' }))
+    storageDeps.tty = () => ({ stdinTTY: true, stdoutTTY: true })
+    storageDeps.prompts = { intro: () => {}, outro: () => {}, cancel: () => {}, password: async () => RECOVERY }
+    const restored = await storageCommand.run({ err: () => {}, out: () => {} } as never, ['recovery', 'set'])
+    expect(restored.code).toBe(0)
+    expect(restored.stdout).toContain('Reopened the store key with the recovery passphrase')
+    expect(fresh.vault.size).toBe(1)
+    forgetUnlockedKeys()
+    secretStoreDeps.keystores = () => [fresh.store]
+    expect(readSecret('env:SOME_API_KEY')).toBe('survives a reinstall')
+  })
+
+  test('LOG_STORE_RECOVERY opens it without a prompt and re-wraps it for this machine', () => {
+    delete process.env.LOG_STORE_PASSPHRASE
+    process.env.LOG_STORE_KEYSTORE = 'os'
+    process.env.LOG_STORE_RECOVERY = RECOVERY
+    const old = machine()
+    secretStoreDeps.keystores = () => [old.store]
+    putSecret('env:SOME_API_KEY', 'apiKey', 'headless restore')
+    expect(recoverySet()).toBe(true)
+    const fresh = machine()
+    secretStoreDeps.keystores = () => [fresh.store]
+    forgetUnlockedKeys()
+    expect(readSecret('env:SOME_API_KEY')).toBe('headless restore')
+    delete process.env.LOG_STORE_RECOVERY
+    forgetUnlockedKeys()
+    secretStoreDeps.keystores = () => [fresh.store]
+    expect(readSecret('env:SOME_API_KEY')).toBe('headless restore')
+  })
+
+  test('a wrong recovery passphrase leaves it locked with secretStoreLocked', () => {
+    delete process.env.LOG_STORE_PASSPHRASE
+    process.env.LOG_STORE_KEYSTORE = 'os'
+    const old = machine()
+    secretStoreDeps.keystores = () => [old.store]
+    putSecret('env:SOME_API_KEY', 'apiKey', 'value')
+    setRecoveryPassphrase(RECOVERY)
+    const fresh = machine()
+    secretStoreDeps.keystores = () => [fresh.store]
+    forgetUnlockedKeys()
+    expect(() => setRecoveryPassphrase('not the recovery words')).toThrow(expect.objectContaining({ code: 'secretStoreLocked' }))
+    process.env.LOG_STORE_RECOVERY = 'not the recovery words'
+    expect(() => readSecret('env:SOME_API_KEY')).toThrow(expect.objectContaining({ code: 'secretStoreLocked' }))
+    expect(fresh.vault.size).toBe(0)
+  })
+
+  test('status says loudly when no recovery passphrase is set, and that it is set once it is', () => {
+    putSecret('env:SOME_API_KEY', 'apiKey', 'value')
+    const missing = secretStatus()
+    expect(missing.store.recovery).toBe(false)
+    expect(secretStatusLines(missing).join('\n')).toContain('NO RECOVERY PASSPHRASE')
+    setRecoveryPassphrase(RECOVERY)
+    const set = secretStatus()
+    expect(set.store.recovery).toBe(true)
+    expect(secretStatusLines(set).join('\n')).toContain('recovery passphrase: set')
+  })
+
+  test('recovery set refuses without a terminal', async () => {
+    storageDeps.tty = () => ({ stdinTTY: false, stdoutTTY: false })
+    const out = await storageCommand.run({ err: () => {}, out: () => {} } as never, ['recovery', 'set'])
+    expect(out.error).toBe('terminalOnly')
   })
 })
 

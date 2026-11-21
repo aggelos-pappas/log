@@ -96,8 +96,8 @@ def _cli_lookup(args: list[str]) -> bytes | None:
 def _recover(row: sqlite3.Row) -> bytes | None:
     method = row["method"]
     key_id = row["keyId"]
-    if method == "passphrase":
-        passphrase = _passphrase()
+    if method in ("passphrase", "recovery"):
+        passphrase = _passphrase() if method == "passphrase" else (os.environ.get("LOG_STORE_RECOVERY") or "").strip()
         if not passphrase or not row["salt"] or not row["wrapped"]:
             return None
         params = json.loads(row["params"] or "{}")
@@ -130,7 +130,8 @@ def _unlock(connection: sqlite3.Connection) -> tuple[str, bytes]:
     if not rows:
         raise SecretStoreError("secretStoreLocked", "log.db has no store key yet")
     key_id = rows[0]["keyId"]
-    mine = [row for row in rows if row["keyId"] == key_id]
+    rank = {"passphrase": 1, "recovery": 2}
+    mine = sorted([row for row in rows if row["keyId"] == key_id], key=lambda row: rank.get(row["method"], 0))
     for row in mine:
         try:
             key = _recover(row)
