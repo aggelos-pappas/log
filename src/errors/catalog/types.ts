@@ -271,6 +271,13 @@ export const ERROR_CATALOG = {
     raisedIn: ['cli/update'],
     action: 'Let the named send or job finish (jobStatus, or the queue run), then run log update --apply again.'
   },
+  embedderUnavailable: {
+    layer: 'tool',
+    meaning: 'The local embedding model behind the inbox labeller could not run: its worker stopped or failed to load (often while its files download or after a cut-off download), so no chat was relabelled and nothing was trained.',
+    retryable: true,
+    raisedIn: ['cli/inbox'],
+    action: 'Run log models --fetch to download the pinned model, then run the label tool again; the labels already stored are untouched.'
+  },
   modelFetchFailed: {
     layer: 'tool',
     meaning: 'log models --fetch could not download a local model at its pinned revision, or the download did not match the pinned hash; nothing half-written was kept.',

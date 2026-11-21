@@ -5,7 +5,7 @@ import { lastWordOf, waitingOf } from "../../inbox/lastWord/index.ts";
 import { chatMessages } from "../../inbox/dbRead/index.ts";
 import type { LastWord } from "../../inbox/lastWord/index.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
-import type { Command, CommandInput, FlagSpec } from "../runner/types.ts";
+import type { Command, CommandContext, CommandInput, CommandResult, FlagSpec } from "../runner/types.ts";
 import { readPending, READER_PATTERN } from "../../inbox/pending/index.ts";
 import { PUSH_QUIET_MAX_MINUTES, setQuiet } from "../../inbox/push/index.ts";
 import { ignoredList, setIgnored } from "../../inbox/ignore/index.ts";
@@ -15,7 +15,7 @@ import type { Labelled } from "../../inbox/label/index.ts";
 import { labelQueue, PIPELINE_SETTING, pipelineLabels, pipelineRows, QUEUE_SIZE, refreshPipeline, SALES_WHO, subqDailyUsd, TEACHER_BY, TEACHER_MIN_CONFIDENCE, teach, teachContext, teachItemOf, teachPlan, teachQueue, teachSpend, trainAndSave, uvTrainer } from "../../inbox/pipeline/index.ts";
 import type { HeadTrainer, PipelineDeps, TeachItem } from "../../inbox/pipeline/index.ts";
 import { chatsOf } from "../../inbox/lastWord/index.ts";
-import { localEmbedder } from "../../search/conversations/index.ts";
+import { EMBEDDER_UNAVAILABLE, localEmbedder } from "../../search/conversations/index.ts";
 import { createDecisionsClient } from "../../subq/decisions/index.ts";
 import type { DecisionsClient } from "../../subq/decisions/index.ts";
 import { db } from "../../inbox/store/index.ts";
@@ -191,13 +191,37 @@ export const labelDeps: { pipeline: () => PipelineDeps & { stop?: () => void }; 
   trainer: uvTrainer,
 };
 
-async function refreshed(query: { platform?: string; account?: string }): Promise<void> {
-  const deps = labelDeps.pipeline();
+type LabelPipeline = PipelineDeps & { stop?: () => void };
+
+function unavailable(error: unknown): Error {
+  const detail = error instanceof Error ? error.message : String(error);
+  return Object.assign(new Error(detail), { code: EMBEDDER_UNAVAILABLE });
+}
+
+function pipelineOf(context: Pick<CommandContext, "embedder">): LabelPipeline {
+  let given: LabelPipeline;
+  try {
+    const own = context.embedder?.();
+    given = own ? { embedder: own, stop: () => own.stop?.() } : labelDeps.pipeline();
+  } catch (error) {
+    throw unavailable(error);
+  }
+  const { embedder } = given;
+  return { ...given, embedder: { model: embedder.model, embed: (texts) => embedder.embed(texts).catch((error: unknown) => Promise.reject(unavailable(error))) } };
+}
+
+async function refreshed(query: { platform?: string; account?: string }, context: Pick<CommandContext, "embedder">): Promise<void> {
+  const deps = pipelineOf(context);
   try {
     await refreshPipeline(query, deps);
   } finally {
     deps.stop?.();
   }
+}
+
+function refusedEmbedder(form: string, error: unknown): CommandResult {
+  if ((error as { code?: unknown } | null)?.code !== EMBEDDER_UNAVAILABLE) throw error;
+  return { code: 1, error: EMBEDDER_UNAVAILABLE, stderr: `log inbox ${form}: the local embedding model could not run (${(error as Error).message}), so no chat was relabelled and nothing was trained; the stored labels are untouched. log models --fetch downloads the pinned model.` };
 }
 
 const keyOf = (r: { platform: string; account: string; person: string }) => `${r.platform} ${r.account} ${r.person}`;
@@ -252,14 +276,14 @@ function actionLine(a: ActionRecord): string {
   return `  ${a.at} ${a.kind.padEnd(11)} ${a.platform} ${a.account} ${a.with ? `@${a.with} ` : ""}${a.conversationId} pid ${a.by}${a.eventId ? ` event ${a.eventId}` : ""}${a.detail ? `: ${a.detail}` : ""}`;
 }
 
-async function labelTool(form: string, str: (name: string) => string, limit: number | undefined, apply: boolean, json: boolean) {
+async function labelTool(engines: Pick<CommandContext, "embedder">, form: string, str: (name: string) => string, limit: number | undefined, apply: boolean, json: boolean) {
   const platform = str("platform");
   const query = { platform: PLATFORMS.includes(platform) ? platform : undefined, account: str("account") || undefined };
   const entries = labelList();
   const owned = new Set(entries.filter((e) => e.by !== TEACHER_BY).map(keyOf));
   const taught = new Set(entries.filter((e) => e.by === TEACHER_BY && (e.confidence ?? 0) >= TEACHER_MIN_CONFIDENCE && !(e.who && SALES_WHO.includes(e.who) && !e.where)).map(keyOf));
   if (form === "queue") {
-    await refreshed(query);
+    await refreshed(query, engines);
     const names = new Map(labelsOf(query).map((r) => [keyOf(r), r.with]));
     const queue = labelQueue(pipelineRows(query).map((r) => ({ ...r, with: names.get(keyOf(r)) ?? r.person })), (r) => owned.has(keyOf(r)), limit ?? QUEUE_SIZE);
     if (json) return { code: 0, stdout: JSON.stringify({ queue, labelled: owned.size }, null, 2) };
@@ -276,8 +300,8 @@ async function labelTool(form: string, str: (name: string) => string, limit: num
     };
   }
   if (form === "train") {
-    await refreshed(query);
-    const deps = labelDeps.pipeline();
+    await refreshed(query, engines);
+    const deps = pipelineOf(engines);
     const result = await trainAndSave(pipelineRows(query), entries, pipelineLabels(), deps.embedder.model, db(), labelDeps.trainer).finally(() => deps.stop?.());
     if ("refused" in result) return { code: 0, stdout: json ? JSON.stringify(result, null, 2) : `log inbox label train: nothing trained, it ${result.refused}. Label the queue first: log inbox label queue.` };
     if (json) return { code: 0, stdout: JSON.stringify({ id: result.id, counts: result.head.counts, trainedAt: result.head.trainedAt }, null, 2) };
@@ -317,14 +341,14 @@ export const inboxCommand: Command = {
   input: INBOX_INPUT,
   summary: "Chat claims and their action log, who is waiting on a reply, what the watchers heard, quiet the push",
   args: "claim|release|claims|actions|resume|waiting|pending|quiet|ignore|ignored|labels|label [queue|teach|train]|outcomes [--label <l>] [--as <l>] [--who <w>] [--where <s>] [--apply] [--server <id>] [--undo] [--reader <name>] [--minutes <n>] [--by <who>] [--platform <p>] [--account <a>] [--chat <id|handle>] [--event <id>] [--limit <n>] [--oldest]",
-  async run(_context, argv) {
+  async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(INBOX_INPUT));
     if (!parsed.ok) return refuseInput("inbox", parsed.error, INBOX_USAGE);
     const [sub = "claims", ...rest] = parsed.positionals;
     if (rest.length && !(sub === "label" && rest.length === 1 && ["queue", "teach", "train"].includes(rest[0]))) return { code: 1, error: "inputInvalid", stderr: `log inbox: unexpected argument "${rest[0]}"\n${INBOX_USAGE}` };
     const json = parsed.flags["json"] === true;
     const str = (name: string) => (typeof parsed.flags[name] === "string" ? String(parsed.flags[name]).trim() : "");
-    if (sub === "label" && rest.length === 1) return labelTool(rest[0], str, numberOf(parsed, "limit"), parsed.flags["apply"] === true, json);
+    if (sub === "label" && rest.length === 1) return labelTool(context, rest[0], str, numberOf(parsed, "limit"), parsed.flags["apply"] === true, json).catch((error: unknown) => refusedEmbedder(`label ${rest[0]}`, error));
     if (sub === "outcomes") return outcomesTool(str, parsed.flags["feelings"] === true, json);
     if (sub === "pending") {
       const reader = str("reader");
@@ -365,7 +389,8 @@ export const inboxCommand: Command = {
       if (label && !isLabel(label)) return { code: 1, error: "inputInvalid", stderr: `log inbox labels: --label is one of ${LABELS.join(", ")}\n${INBOX_USAGE}` };
       const limit = Number(parsed.flags["limit"] ?? 40);
       const query = { platform: platform || undefined, account: str("account") || undefined };
-      await refreshed(query);
+      const failed = await refreshed(query, context).then(() => null, (error: unknown) => refusedEmbedder("labels", error));
+      if (failed) return failed;
       const rows = labelsOf({ ...query, ...(label && isLabel(label) ? { label } : {}), ...(str("who") ? { who: str("who") } : {}), ...(str("where") ? { where: str("where") } : {}) });
       const counts = LABELS.map((l) => [l, rows.filter((r) => r.label === l).length] as const).filter(([, n]) => n);
       const tally = (values: (string | null)[]) => Object.fromEntries([...new Set(values.filter((v): v is string => Boolean(v)))].map((v) => [v, values.filter((x) => x === v).length]));

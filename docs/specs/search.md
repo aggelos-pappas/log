@@ -28,7 +28,7 @@ Checked by: code and SubQ
 
 ### REQ-SEARCH-04: The embeddings are local all-MiniLM-L6-v2
 
-Chunks and queries are embedded on this machine with all-MiniLM-L6-v2 (`@huggingface/transformers`, mean pooled and normalised), never through a hosted API.
+Chunks and queries are embedded on this machine with all-MiniLM-L6-v2 (`@huggingface/transformers`, mean pooled and normalised), never through a hosted API. When the embedding worker stops before it answers (it failed to load, or its download was cut off), every waiting call is refused with `embedderUnavailable` instead of waiting forever. The inbox label tools (`inbox labels`, `inbox label queue`, `inbox label train`) take their embedder from the command context when one is given, the way the platform tools take their engines, and refuse with `embedderUnavailable` when it can't run; the stored labels are left as they were.
 
 Checked by: code (anchors)
 
