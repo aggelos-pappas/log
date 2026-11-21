@@ -12,6 +12,12 @@ const registry = 'src/agentHooks/registry/index.ts'
 const searched = 'src/relate/search/client.ts'
 const searchedTypes = 'src/relate/search/types.ts'
 const postInstallTypes = 'src/release/postInstall/types.ts'
+const rings = 'src/relate/network/helpers/rings.ts'
+const networkClient = 'src/relate/network/client.ts'
+const networkRead = 'src/relate/network/helpers/read.ts'
+const storeClient = 'src/storage/platform/client.ts'
+const networkCli = 'src/cli/network/index.ts'
+const graphNetwork = 'src/relate/graph/helpers/network.ts'
 
 const anchors: RequirementAnchors = {
   'REQ-RELATE-01': [
@@ -38,7 +44,7 @@ const anchors: RequirementAnchors = {
     { kind: 'symbol', file: client, name: 'workspaceOf' },
     { kind: 'symbol', file: client, name: 'graphDir' },
     { kind: 'symbol', file: client, name: 'pointerOf' },
-    { kind: 'value', file: types, name: 'PROJECTOR_VERSION', equals: 3 },
+    { kind: 'value', file: types, name: 'PROJECTOR_VERSION', equals: 4 },
   ],
   'REQ-RELATE-05': [
     { kind: 'symbol', file: mentions, name: 'mentionedTokens' },
@@ -75,8 +81,8 @@ const anchors: RequirementAnchors = {
     { kind: 'uses', file: answers, name: 'connectedSearch' },
   ],
   'REQ-RELATE-10': [
-    { kind: 'symbol', file: project, name: 'roomCatalog' },
-    { kind: 'symbol', file: project, name: 'channelNameOf' },
+    { kind: 'uses', file: project, name: 'roomCatalog' },
+    { kind: 'uses', file: project, name: 'channelNameOf' },
     { kind: 'string', file: client, includes: 'IN_SERVER' },
   ],
   'REQ-RELATE-11': [
@@ -92,12 +98,35 @@ const anchors: RequirementAnchors = {
     { kind: 'symbol', file: client, name: 'GraphUnreadable' },
     { kind: 'string', file: client, includes: 'graphUnreadable' },
   ],
+  'REQ-RELATE-14': [
+    { kind: 'symbol', file: rings, name: 'ringsFromEvent' },
+    { kind: 'symbol', file: rings, name: 'ringsFromMessage' },
+    { kind: 'symbol', file: rings, name: 'ringsFromInteraction' },
+    { kind: 'symbol', file: rings, name: 'rebuildRingsIn' },
+    { kind: 'symbol', file: networkClient, name: 'ensureRings' },
+    { kind: 'symbol', file: graphNetwork, name: 'applyRings' },
+    { kind: 'uses', file: storeClient, name: 'ringsFromEvent' },
+    { kind: 'symbol', file: networkRead, name: 'RESEARCH_FIT_FIELD' },
+  ],
+  'REQ-RELATE-15': [
+    { kind: 'symbol', file: client, name: 'applyGraphHere' },
+    { kind: 'symbol', file: client, name: 'applyProjection' },
+    { kind: 'symbol', file: client, name: 'deltaScopeOf' },
+    { kind: 'symbol', file: project, name: 'projectionOf' },
+    { kind: 'value', file: types, name: 'CHECKPOINT_ROWS', equals: 20000 },
+    { kind: 'value', file: types, name: 'APPLY_MAX_EVENTS', equals: 20000 },
+    { kind: 'uses', file: client, name: 'copyFileSync' },
+  ],
+  'REQ-RELATE-16': [
+    { kind: 'symbol', file: networkClient, name: 'networkRings' },
+    { kind: 'symbol', file: networkCli, name: 'networkCommand' },
+  ],
 }
 
 export const relateGraph = {
   description: "The Relate graph projected from log.db and the connected context its hook injects for the people a prompt names",
   specPath: 'docs/specs/relateGraph.md',
-  codePaths: [client, types, project, mentions, cli, answers, postInstallTypes],
+  codePaths: [client, types, project, mentions, cli, answers, postInstallTypes, rings, networkClient, networkRead, networkCli, graphNetwork, storeClient],
   anchors,
   rubrics: {
     'REQ-RELATE-01': noul('Does projectionOf run every read inside one read transaction (readOnce), take throughSeq as the highest events seq in that same transaction, and mark as owner the identities that are an account\'s own id, a self: id or an account\'s own handle?'),
@@ -113,7 +142,10 @@ export const relateGraph = {
     'REQ-RELATE-11': noul('Does every active identityLinks row become a LINKED_TO edge from its Identity to one Person node per personId?'),
     'REQ-RELATE-12': noul('Does SAID carry firstAtMs and lastAtMs, and do replies (replyToKey) and mentions (<@id> or @handle of a known identity or the owner) become REPLIED_TO and MENTIONED edges with room, times and first and last times, the owner side being the room\'s Account?'),
     'REQ-RELATE-13': noul('When the graph file cannot be opened read-only, does relateContext return the graphUnreadable outcome and graphPriorFor return null instead of throwing?'),
-    unspecifiedBehavior: noul('Does the Relate graph code write to log.db anything other than its relateGraph pointer and its build claim, read a platform, or send anything off the machine?'),
+    'REQ-RELATE-14': noul('Does ringsFromEvent, called by insertEventRow in the same transaction, put a like, reply, quote, repost, reaction or mention of the owner or a DM from them in ring 1, a follow in ring 3, a reply to or mention of a follower or ring-1 person in ring 2 (also when that person qualifies later), only ever move a person closer, need no imported data, and does rebuildRingsIn give the same rings from log.db?'),
+    'REQ-RELATE-15': noul('Does applyGraphHere copy the current graph file, project only the rooms, actors and ring changes after throughSeq (plus rooms naming a new handle), write them into the copy, move the pointer with mode applied, checkpoint only past CHECKPOINT_ROWS, and fall back to a full build on no pointer, a merge, a new import or more than APPLY_MAX_EVENTS events?'),
+    'REQ-RELATE-16': noul('Does log network status compute the rings once when missing and show the count per ring, the event they are live through against the latest event, and the import or that nothing was imported?'),
+    unspecifiedBehavior: noul('Does the Relate graph or network code write to log.db anything other than its relateGraph pointer, its build claim, the network import and the ring tables, read a platform, or send anything off the machine?'),
   },
   assertions: {
     'REQ-RELATE-01': MET,
@@ -129,6 +161,9 @@ export const relateGraph = {
     'REQ-RELATE-11': MET,
     'REQ-RELATE-12': MET,
     'REQ-RELATE-13': MET,
+    'REQ-RELATE-14': MET,
+    'REQ-RELATE-15': MET,
+    'REQ-RELATE-16': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

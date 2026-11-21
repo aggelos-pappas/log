@@ -18,6 +18,7 @@ const COMMAND = 'src/cli/storage/index.ts'
 const PLATFORM_SESSION = 'src/platformKit/session/client.ts'
 const X_SESSION = 'src/twitter/account/session/client.ts'
 const WATCH = 'src/inbox/watch/client.ts'
+const PLACES = 'src/storage/platform/helpers/places.ts'
 const RELAY = 'src/inbox/relay/client.ts'
 const CLAIMS = 'src/inbox/claims/client.ts'
 const LEDGER = 'src/storage/ledger/client.ts'
@@ -207,6 +208,18 @@ export const storage = {
       { kind: 'uses', file: 'src/twitter/notification/feed/client.ts', name: 'readEngineStore' },
       { kind: 'uses', file: 'src/media/voiceNotes/helpers/notes.ts', name: 'readEngineStore' },
     ],
+    'REQ-STORAGE-21': [
+      { kind: 'symbol', file: PLACES, name: 'placedChat' },
+      { kind: 'symbol', file: PLACES, name: 'repairChatPlaces' },
+      { kind: 'symbol', file: PLACES, name: 'roomCatalog' },
+      { kind: 'uses', file: TYPED, name: 'placedChat' },
+      { kind: 'uses', file: TYPED, name: 'PLACE_UPDATE' },
+      { kind: 'uses', file: MIGRATIONS, name: 'repairChatPlaces' },
+      { kind: 'string', file: MIGRATIONS, includes: 'chatPlaces' },
+      { kind: 'uses', file: WATCH, name: 'placeNameOf' },
+      { kind: 'uses', file: 'src/inbox/lastWord/client.ts', name: 'placeNameOf' },
+      { kind: 'uses', file: 'src/cli/discord/index.ts', name: 'channelSendersOf' },
+    ],
     'REQ-STORAGE-18': [
       { kind: 'symbol', file: MIGRATIONS, name: 'IDENTITY_PROFILE_TABLES' },
       { kind: 'string', file: PLATFORM_TYPES, includes: 'identityProfiles' },
@@ -251,6 +264,7 @@ export const storage = {
     'REQ-STORAGE-18': noul('Does migration 19 create identityProfiles keyed by platform and userId with extra checked by json_valid; is identityProfiles in DERIVED_TABLES and derivedFingerprint; is every row written only by writeIdentityProfile from a profileSeen event or an extender toProfile row, merging a sighting by keeping stored fields it lacks, merging extra key by key and keeping the latest fetchedAt; is the profileSeen event id the platform, user id and fields so a repeat appends nothing; do recordPlatformSession, recordTwitterSession and the X followers command pass only fields already in the engine answer through sessionProfileOf or twitterFollowerProfile into rememberProfiles, with no new platform call; does profileExtraOf keep only IDENTITY_PROFILE_EXTRA_KEYS; and do putBlob and readBlobBytes store and return a kind in RAW_BLOB_KINDS unchanged with codec raw?'),
     'REQ-STORAGE-19': noul('After the version loop, does migrate call repairSkipped, which for each migration with creates at or below the file user_version runs it again inside BEGIN IMMEDIATE only when missingObjectsOf finds a declared table or index missing, returns it with repaired naming the missing objects, never changes user_version, never runs a migration without creates again, and is never reached for a file newer than SCHEMA_VERSION; and does every migration with creates run only CREATE ... IF NOT EXISTS statements for exactly its declared objects; and does a new table, index or column come in its own migration rather than being appended to INBOX_TABLES or PLATFORM_TABLES, with typing created by migration 22 from TYPING_TABLES, engineState by migration 23 from ENGINE_STATE_TABLES, chatPipeline and pipelineHeads by migration 24 from PIPELINE_TABLES, and conventionCorpus by migration 25 from CONVENTION_CORPUS_TABLES?'),
     'REQ-STORAGE-20': noul('Do the X inbox sync, X notifications, X last call, Discord servers and threads and LinkedIn connects stores read and write engineState rows through python/logDb/engineStore.py, which merges the stored parts into the new state inside one BEGIN IMMEDIATE, upserts only changed parts and never deletes one, falling back to the old file only when log.db or engineState is missing; is the old file imported on first touch, recorded in imports with its modified time, kept on disk, and merged again when modified later; and do xInboxHandleOf, storedWaiting, xchatStoredMedia and readNotificationStore read through readEngineStore, which answers from the old file only while it is newer than its import?'),
+    'REQ-STORAGE-21': noul('Does the chat upsert in writeTypedRows and conversationSeen take kind, name and server id from the channel catalog through placedChat when it lists the conversation, never turn a server channel back into a dm or name it after a speaker, and does migration 28 run repairChatPlaces once over the rows stored before; and do the Discord inbox lines, log inbox waiting and log discord chats name the server, the #channel and the sender?'),
     unspecifiedBehavior: noul('Does the storage code order messages by text times, store the same message twice when it has a platform id, or hold the write lock for a whole backfill, by a route the specification does not describe?'),
   },
   assertions: {
@@ -274,6 +288,7 @@ export const storage = {
     'REQ-STORAGE-18': MET,
     'REQ-STORAGE-19': MET,
     'REQ-STORAGE-20': MET,
+    'REQ-STORAGE-21': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

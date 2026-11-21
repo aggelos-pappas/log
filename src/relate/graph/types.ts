@@ -1,4 +1,4 @@
-export const PROJECTOR_VERSION = 3
+export const PROJECTOR_VERSION = 4
 
 export const GRAPH_FILE_PREFIX = 'graph-'
 
@@ -30,6 +30,18 @@ export const NAME_MIN = 3
 
 export const NETWORK_LIMIT = { postChars: 280 }
 
+export const KNOWN_RING = 4
+
+export const KNOWN_REASON = 'known'
+
+export const IMPORTED_REASON = 'imported'
+
+export const APPLY_MAX_EVENTS = 20_000
+
+export const CHECKPOINT_ROWS = 20_000
+
+export const TXN_ROWS = 10_000
+
 export interface GraphPointer {
   file: string
   throughSeq: number
@@ -40,6 +52,13 @@ export interface GraphPointer {
   ms: number
   counts: GraphCounts
   networkCounts?: NetworkGraphCounts
+  mode?: 'full' | 'applied'
+  applied?: number
+  stages?: Record<string, number>
+  walRows?: number
+  interactionsThrough?: number
+  mergesThrough?: number
+  networkStamp?: string | null
 }
 
 export interface GraphCounts {
@@ -82,8 +101,18 @@ export interface IdentityRow {
   band?: string | null
   ring?: number | null
   degree?: number | null
-  score?: number | null
+  fit?: number | null
   themes?: string[]
+  ringReason?: string
+  ringSinceMs?: number | null
+  followsOwner?: boolean
+  placeholder?: boolean
+}
+
+export interface ProjectionScope {
+  rooms: ReadonlySet<string>
+  actors: ReadonlySet<string>
+  identities: ReadonlySet<string>
 }
 
 export interface RoomRow {
@@ -191,6 +220,7 @@ export interface NetworkProjection {
   runs: { leader: string; community: string }[]
   mentioned: { from: string; to: string; times: number; lastAtMs: number | null }[]
   follows: { identity: string; accountKey: string }[]
+  takeovers?: { identity: string; placeholder: string; leader?: string; moved?: boolean }[]
 }
 
 export interface NetworkGraphCounts {

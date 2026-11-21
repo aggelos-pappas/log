@@ -5,6 +5,8 @@ import type { NetworkCircleRow, NetworkCommunityRow, NetworkLeaderRow, NetworkDa
 
 type Raw = Record<string, unknown>
 
+export const RESEARCH_FIT_FIELD = 'goGetterScore'
+
 const lower = (handle: unknown): string => String(handle ?? '').replace(/^@/, '').trim().toLowerCase()
 
 const text = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v : null)
@@ -34,7 +36,7 @@ export function topThemesOf(themes: unknown, n: number = TOP_THEMES): string[] {
 }
 
 function blankPerson(handle: string): NetworkPersonRow {
-  return { handleLower: handle.toLowerCase(), handle, name: null, followers: null, degree: null, ring: null, band: null, bandProbabilities: null, score: null, components: null, themes: null, topThemes: '[]', workflowStage: null, passesGates: null, followsOwner: 0, company: null, rank: null, role: null, bio: null, tieStrength: null, lastPostText: null, lastPostAtMs: null }
+  return { handleLower: handle.toLowerCase(), handle, name: null, followers: null, degree: null, ring: null, band: null, bandProbabilities: null, fit: null, components: null, themes: null, topThemes: '[]', workflowStage: null, passesGates: null, followsOwner: 0, company: null, rank: null, role: null, bio: null, tieStrength: null, lastPostText: null, lastPostAtMs: null }
 }
 
 function personOf(row: Raw): NetworkPersonRow | null {
@@ -49,7 +51,7 @@ function personOf(row: Raw): NetworkPersonRow | null {
     ring: num(signals.proximityTier),
     band: text(row.band),
     bandProbabilities: json(row.bandProbabilities),
-    score: num(row.goGetterScore),
+    fit: num(row[RESEARCH_FIT_FIELD]),
     components: json(row.components),
     themes: json(row.themes),
     topThemes: JSON.stringify(topThemesOf(row.themes)),
