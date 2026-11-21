@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { callHost, readHostInfo } from './helpers'
+import { SPAWNS_PROCESS_MS } from '../../../../scripts/tests/timeouts.ts'
 
 const python = join(import.meta.dir, '..', '..', '..', '..', 'python')
 const engine = join(python, 'twitterApi', 'engine.py')
@@ -37,20 +38,20 @@ describe('one X session per account: every call goes through the same host', () 
     const answer = call('dm')
     expect(answer.code).toBe('notLive')
     expect((answer.xSession as { pid: number }).pid).toBe(hostInfo().pid)
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('the next call is answered by the same session, not a new one', () => {
     const first = hostInfo().pid
     const answer = call('dm')
     expect((answer.xSession as { pid: number; calls: number }).pid).toBe(first)
     expect((answer.xSession as { calls: number }).calls).toBeGreaterThanOrEqual(2)
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('a second session for the same account refuses to start', () => {
     const second = spawnSync(process.env.LOG_PYTHON || 'python', [host, account], { encoding: 'utf8', env, timeout: 30_000 })
     expect(second.status).toBe(1)
     expect(second.stdout).toContain('another X session already holds')
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('Bun reaches the same session directly over its port, with no Python started for the call', async () => {
     const info = readHostInfo(join(state, account, 'host.json'))

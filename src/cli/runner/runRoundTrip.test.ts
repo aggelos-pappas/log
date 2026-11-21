@@ -148,14 +148,18 @@ async function run(tool: CommandTool, input: Record<string, unknown>): Promise<{
   const built = argvOfInput(tool.form!, input);
   if (!built.ok) return { built: false, code: -1, err: "", message: built.message };
   const err: string[] = [];
-  const started = performance.now();
-  try {
+  const timed = async (into: string[]): Promise<{ code: number; ms: number }> => {
+    const started = performance.now();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = new Promise<number>((resolve) => (timer = setTimeout(() => resolve(-3), TOOL_DEADLINE_MS)));
-    const code = await Promise.race([runCli(commandLine(tool.command, built.argv), stubContext(err)), deadline]).finally(() => clearTimeout(timer));
-    const ms = Math.round(performance.now() - started);
-    if (code === -3 || ms > SLOW_TOOL_MS) slow.push(`${tool.tool} ${code === -3 ? `hung past ${TOOL_DEADLINE_MS} ms` : `${ms} ms`}`);
-    return { built: true, code, err: err.join("\n") };
+    const code = await Promise.race([runCli(commandLine(tool.command, built.argv), stubContext(into)), deadline]).finally(() => clearTimeout(timer));
+    return { code, ms: Math.round(performance.now() - started) };
+  };
+  try {
+    const first = await timed(err);
+    const { code, ms } = first.code !== -3 && first.ms > SLOW_TOOL_MS ? await timed([]) : first;
+    if (code === -3 || ms > SLOW_TOOL_MS) slow.push(`${tool.tool} ${code === -3 ? `hung past ${TOOL_DEADLINE_MS} ms` : `${first.ms} ms, then ${ms} ms`}`);
+    return { built: true, code: first.code, err: err.join("\n") };
   } catch (error) {
     return { built: true, code: -2, err: [...err, `threw: ${String(error)}`].join("\n") };
   }

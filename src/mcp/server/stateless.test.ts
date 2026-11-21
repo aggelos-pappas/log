@@ -6,6 +6,7 @@ import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { MCP_APP_MIME_TYPE, UI_EXTENSION_ID } from "../apps/browserView/index.ts";
 import { dualEraTransport, META_KEYS } from "../stateless/index.ts";
 import { createLogMcpServer, serveLogMcpHttp, statelessLogHandlers, statelessTools } from "./index.ts";
+import { LOADS_EVERY_TOOL_MS } from "../../../scripts/tests/timeouts.ts";
 
 const UI = { extensions: { [UI_EXTENSION_ID]: { mimeTypes: [MCP_APP_MIME_TYPE] } } };
 const meta = (capabilities: Record<string, unknown> = {}, name = "fakeHost") => ({ [META_KEYS.protocolVersion]: "2026-07-28", [META_KEYS.clientCapabilities]: capabilities, [META_KEYS.clientInfo]: { name, version: "1" } });
@@ -83,7 +84,7 @@ describe("the local log server speaks 2026-07-28 beside the older revisions", ()
     expect(tools.some((tool) => tool.name === "browserViewStream")).toBe(true);
     await client.close();
     await server.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 });
 
 describe("the local HTTP server answers 2026-07-28 requests without a session", () => {

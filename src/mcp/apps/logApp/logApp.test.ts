@@ -8,6 +8,7 @@ import { ViewerError } from "../../../browser/viewer/index.ts";
 import { appToolDeps, BROWSER_VIEW_URI } from "../browserView/index.ts";
 import { answerAppRequest, appCall, appCallRefusal, appResource, appResult, appUriOf, logAppDeps, warmApps } from "./index.ts";
 import type { LogAppDeps, LogAppTool } from "./index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../../scripts/tests/timeouts.ts";
 
 const TOOLS: LogAppTool[] = [
   { name: "browserView", annotations: { readOnlyHint: true }, _meta: { ui: { resourceUri: BROWSER_VIEW_URI } } },
@@ -160,7 +161,7 @@ describe("the plugin's warm app host", () => {
     expect(out.again.echo).toMatchObject({ name: "stopOnce" });
     expect(out.restarted).toBe(true);
     expect(out.bad).toEqual([400, { error: "logAppInvalid", message: "tool must be a log tool name" }]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("the warm route starts the child before any card asks, and a child that ends cleanly after a while is started again at once", () => {
     const root = join(scratch, "warmRoot");
@@ -193,5 +194,5 @@ describe("the plugin's warm app host", () => {
     const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, timeout: 60_000 });
     expect(run.stderr).toBe("");
     expect(JSON.parse(run.stdout.trim())).toEqual({ warmed: { ok: true }, restarted: true });
-  });
+  }, SPAWNS_PROCESS_MS);
 });

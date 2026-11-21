@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { INBOX_TABLES, MIGRATIONS, PLATFORM_TABLES, SCHEMA_VERSION, migrate, missingObjectsOf, schemaVersionOf } from './index'
 import { recordTyping, typingNow } from '../../inbox/typing/index'
+import { FRESH_DB_MS } from '../../../scripts/tests/timeouts.ts'
 
 const SHIPPED_LISTS: readonly { version: number; list: readonly string[]; objects: readonly string[] }[] = [
   { version: 1, list: INBOX_TABLES, objects: ['events', 'eventsByChat', 'cursors', 'owners', 'claims', 'chatGenerations', 'actions', 'actionsByChat', 'alerts', 'timings', 'eventTypes', 'searchIndex', 'positions', 'gaps', 'gapsOpen', 'embeddings', 'aiIndexes', 'media', 'mediaByStatus', 'people', 'spans', 'spansByTool', 'spansByCall'] },
@@ -51,7 +52,7 @@ describe('a database made before a table was added catches up', () => {
     const chat = { platform: 'discord', account: 'upgradeAccount', conversationId: 'c1' }
     recordTyping(chat, 'ada', now)
     expect(typingNow(chat, new Date(now.getTime() + 1_000))).toEqual(['ada'])
-  })
+  }, FRESH_DB_MS)
 
   test('a database already at the latest version that lost the typing table has it repaired', () => {
     const handle = databaseAt(SCHEMA_VERSION)
@@ -70,7 +71,7 @@ describe('a database made before a table was added catches up', () => {
       migrate(old)
       expect({ version, objects: objectsOf(old), columns: columnsOf(old) }).toEqual({ version, ...want })
     }
-  })
+  }, FRESH_DB_MS)
 
   test('a list an early migration runs keeps exactly the objects it shipped with, so a new one comes in a new migration', () => {
     const safe = /^\s*CREATE\s+(?:UNIQUE\s+)?(?:VIRTUAL\s+)?(?:TABLE|INDEX)\s+IF\s+NOT\s+EXISTS\s+(\w+)/i

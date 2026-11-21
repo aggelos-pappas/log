@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { migrate, missingObjectsOf, openDatabase } from '../schema/client'
 import { MIGRATIONS } from '../schema/helpers'
 import { assembleEngineStore, enginePartsOf, readEngineStore } from './index'
+import { FRESH_DB_MS, SPAWNS_PROCESS_MS } from '../../../scripts/tests/timeouts.ts'
 
 const python = join(import.meta.dir, '..', '..', '..', 'python')
 const dirs: string[] = []
@@ -57,7 +58,7 @@ describe('engine stores in log.db (issues #96, #97)', () => {
     } finally {
       handle.close()
     }
-  })
+  }, FRESH_DB_MS)
 
   test('a store is kept as one row per conversation and put back together the same', () => {
     const body = { version: 1, maxSequenceId: '9', xchat: { 'a:b': { messages: [{ event_id: '1' }] }, 'c:d': { messages: [] } }, legacy: { users: {} } }
@@ -134,7 +135,7 @@ print(json.dumps({"wait": engine.spacing_wait("xAccount", 1000.0, lambda a, b: 3
     expect(existsSync(join(dir, 'discord', 'discordAccount', 'threads.json'))).toBe(false)
     expect(existsSync(join(dir, 'discord', 'discordAccount', 'servers.json'))).toBe(false)
     expect(readEngineStore<{ rows: Record<string, { handle: string }> }>('xNotifications', 'xAccount', join(root, 'xAccount', 'notifications.json'), handle)?.rows['like:7:1'].handle).toBe('linus_k')
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('with no log.db yet the engine keeps writing its old file', () => {
     const dir = mkdtempSync(join(tmpdir(), 'engineStoreNoDb'))

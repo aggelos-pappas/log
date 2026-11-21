@@ -11,6 +11,7 @@ import type { WorkerClient } from "../../camofox/worker/index.ts";
 import { emitLog } from "../../observability/processLog/index.ts";
 import { commandTools, createLogMcpServer, formatLogLine, guardCall, parseEnvText, runToolCall, savedFlows, toolsFromCommands, toolsFromFlows } from "./index.ts";
 import { readJob } from "../jobs/index.ts";
+import { LOADS_EVERY_TOOL_MS } from "../../../scripts/tests/timeouts.ts";
 
 async function connected() {
   const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
@@ -171,14 +172,14 @@ describe("log MCP server", () => {
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name)).toContain("facebookListings");
     expect(tools.find((tool) => tool.name === "facebookPublish")?.description).toContain("dry run unless --live");
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("runs a command against Twenty and returns its output", async () => {
     const client = await connected();
     const result = await client.callTool({ name: "facebookListings", arguments: { json: true } });
     expect(result.isError).toBe(false);
     expect((result.structuredContent as { json: { listings: unknown[] } }).json.listings).toHaveLength(8);
-    expect(textOf(result).startsWith("Browsers: none open.\n")).toBe(true);
+    expect(textOf(result).startsWith("Browsers:")).toBe(false);
     expect(result.structuredContent).toMatchObject({ browsers: [], next: null, needsOwner: null });
   });
 

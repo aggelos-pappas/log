@@ -11,6 +11,7 @@ import { writeFileSync } from 'node:fs'
 import { buildGraph, edgePrior, graphDir, graphPriorFor, pointerOf, queryGraph, relateContext, verifyGraph, wantsRebuild, workspaceOf } from './index'
 import { mentionedTokens } from './helpers/index'
 import type { GraphPointer } from './index'
+import { FRESH_DB_MS } from '../../../scripts/tests/timeouts.ts'
 
 function demoDb(): string {
   const path = join(mkdtempSync(join(tmpdir(), 'relateGraph-')), 'log.db')
@@ -73,7 +74,7 @@ describe('the Relate graph projected from log.db', () => {
     expect(wantsRebuild(pointer, 0, DEMO_NOW + 61_000)).toBe(false)
     expect(wantsRebuild(null, 5, DEMO_NOW + 61_000)).toBe(true)
     expect(wantsRebuild(null, 0, DEMO_NOW + 61_000)).toBe(false)
-  })
+  }, FRESH_DB_MS)
 
   test("keeps one workspace's graph out of another's, and drops a graph built by another projector version", () => {
     const other = join(mkdtempSync(join(tmpdir(), 'relateGraph-')), 'log.db')
@@ -88,7 +89,7 @@ describe('the Relate graph projected from log.db', () => {
     const pointer = getState<GraphPointer>('relateGraph', workspaceOf(path), {}, handle)!.body
     putState('relateGraph', workspaceOf(path), { ...pointer, projectorVersion: 0 }, DEMO_NOW, handle)
     expect(pointerOf(path)).toBeNull()
-  })
+  }, FRESH_DB_MS)
 
   test('reads @handles and bare words, and leaves common words out', () => {
     expect(mentionedTokens('ask @Linus_K. about reply to ada_codes with them')).toEqual({ tagged: ['linus_k'], bare: ['ada_codes'] })
@@ -179,5 +180,5 @@ describe('rooms, servers, people and replies in the graph (#266)', () => {
     expect(answer.outcome).toBe('graphUnreadable')
     expect(answer.detail).toStartWith('graphUnreadable:')
     expect(graphPriorFor('@ada_codes', path)).toBeNull()
-  })
+  }, FRESH_DB_MS)
 })

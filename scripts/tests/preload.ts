@@ -9,6 +9,10 @@ if (!process.env.LOG_PYTHON && existsSync(envLocal)) {
 }
 
 const scratch = mkdtempSync(join(tmpdir(), 'logCliTestRuns'))
+process.env.TMPDIR = scratch
+process.env.TEMP = scratch
+process.env.TMP = scratch
+process.env.LOG_HOME = join(scratch, 'home')
 process.env.LOG_RUNS_DIR ??= join(scratch, 'runs')
 process.env.LOG_UNSAVED_DIR ??= join(scratch, 'runs', 'unsaved')
 process.env.LOG_CAPTURES_ROOT ??= scratch

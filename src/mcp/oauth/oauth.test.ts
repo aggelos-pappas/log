@@ -7,6 +7,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { serveLogMcpHttp } from "../server/index.ts";
 import { challengeOf, CLAUDE_CALLBACK, createOAuthServer, listClients, readStore, revokeClients } from "./index.ts";
+import { STARTS_SERVER_MS } from "../../../scripts/tests/timeouts.ts";
 
 const PUBLIC = "https://mcp.test";
 const TWENTY = "https://twenty.test";
@@ -107,7 +108,7 @@ describe("OAuth on the HTTP server, signed in through Twenty (Duet plan step 5)"
     expect(listClients(env.storePath).map((c) => c.clientId)).toContain(again.clientId);
     expect(revokeClients("all", env.storePath).length).toBe(2);
     expect(Object.keys(readStore(env.storePath).tokens)).toHaveLength(0);
-  });
+  }, STARTS_SERVER_MS);
 
   test("anyone but the owner is refused at Twenty's callback, and no code is issued", async () => {
     const env = setUp("someoneElse");
@@ -132,5 +133,5 @@ describe("OAuth on the HTTP server, signed in through Twenty (Duet plan step 5)"
     await client.connect(new StreamableHTTPClientTransport(new URL(env.mcp), { requestInit: { headers: { Authorization: "Bearer staticSecret" } } }));
     stops.push(() => void client.close());
     expect((await client.listTools()).tools.length).toBeGreaterThan(50);
-  });
+  }, STARTS_SERVER_MS);
 });

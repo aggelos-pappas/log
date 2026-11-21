@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { filesIn, marketplaceImports, REPO_ROOT } from "./index.ts";
+import { SCANS_REPO_MS } from "../../../scripts/tests/timeouts.ts";
 
 const file = (path: string, text: string) => ({ path, text });
 const importing = (spec: string) => `import { a } from "${spec}";`;
@@ -20,5 +21,5 @@ describe("marketplaceImports", () => {
 
   test("shared code no longer imports src/marketplace/", () => {
     expect(marketplaceImports(filesIn(REPO_ROOT, "src", [".ts", ".tsx", ".mjs", ".js"]))).toEqual([]);
-  });
+  }, SCANS_REPO_MS);
 });

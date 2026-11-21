@@ -10,6 +10,7 @@ import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { runCli } from "../runner/index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
 import { voiceNoteDeps } from "./index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const CHANNEL = "1434928149904228392";
 const originalRender = voiceNoteDeps.render;
@@ -258,5 +259,5 @@ print(json.dumps([
 ]))`);
     expect(got).toEqual(["voiceNoteInvalid", "voiceNoteInvalid", "voiceNoteInvalid", "voiceNoteInvalid", true, true, true]);
     rmSync(outside, { force: true });
-  });
+  }, SPAWNS_PROCESS_MS);
 });

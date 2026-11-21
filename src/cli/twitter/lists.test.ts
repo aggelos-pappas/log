@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const python = process.env.LOG_PYTHON || "python";
 const root = join(import.meta.dir, "..", "..", "..", "python");
@@ -47,7 +48,7 @@ fake.get_lists = types.MethodType(Client.get_lists, fake)
 found = asyncio.run(fake.get_lists(count=100))
 print(json.dumps([[f.id, f.owner_id] for f in found]))`);
     expect(got).toEqual([["2118253450186440992", "111"], ["900", "222"], ["901", "444"]]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("lists_of keeps only the lists the account owns", () => {
     const got = py(`import asyncio, types
@@ -58,5 +59,5 @@ fake = Fake()
 fake.get_lists = types.MethodType(Client.get_lists, fake)
 print(json.dumps(asyncio.run(engine.lists_of(fake))))`);
     expect(got).toEqual([{ id: "2118253450186440992", name: "Go-Getters", mode: "Private", memberCount: 0, description: "" }]);
-  });
+  }, SPAWNS_PROCESS_MS);
 });

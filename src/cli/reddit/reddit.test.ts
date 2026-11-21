@@ -8,6 +8,7 @@ import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { REDDIT_PLATFORM } from "../../reddit/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 function fixture() {
   const twenty = marketplaceFixture();
@@ -57,7 +58,7 @@ describe("log reddit session check", () => {
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "actionUnknown" });
     expect(readFileSync(join("vendor", "reverseChud", "src", "session.ts"), "utf8")).toContain('DEFAULT_REDDIT_BROWSER_PROFILE = "chrome_140"');
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("the engine refuses a post, reply or vote without live and who approved it, sending nothing (rule 8)", () => {
     const dir = mkdtempSync(join(tmpdir(), "redditEngine"));
@@ -70,7 +71,7 @@ describe("log reddit session check", () => {
       if (engine.error) return;
       expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code });
     }
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("a write is a dry run without --live, and --live needs --approvedBy", async () => {
     const dry = await run(["reddit", "vote", "--account", "redditOne", "--target", "t3_abc"]);

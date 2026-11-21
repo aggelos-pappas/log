@@ -6,6 +6,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { createLogMcpServer, serveLogMcpHttp, TOOL_RESULT_SCHEMA } from "./index.ts";
 import { reportOutputSchema } from "../apps/report/index.ts";
+import { LOADS_EVERY_TOOL_MS, STARTS_SERVER_MS } from "../../../scripts/tests/timeouts.ts";
 
 const stops: (() => void)[] = [];
 afterEach(() => stops.splice(0).forEach((stop) => stop()));
@@ -35,7 +36,7 @@ describe("the log MCP server over Streamable HTTP (remote)", () => {
     const structured = result.structuredContent as { exit: number; ok: boolean; json: unknown };
     expect(structured).toMatchObject({ exit: 0, ok: true });
     expect(Array.isArray(structured.json) || typeof structured.json === "object").toBe(true);
-  });
+  }, STARTS_SERVER_MS);
 
   test("without the token: 401, nothing runs", async () => {
     const served = serve("s3cret");
@@ -82,5 +83,5 @@ describe("what a client needs from the server (MCP client best practices)", () =
     expect(JSON.stringify(tools.find((t) => t.name === "report")?.outputSchema)).toBe(JSON.stringify(reportOutputSchema()));
     expect(client.getServerCapabilities()?.tools?.listChanged).toBe(true);
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 });

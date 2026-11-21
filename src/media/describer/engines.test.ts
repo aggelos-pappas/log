@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const python = process.env.LOG_PYTHON || "python";
 const root = join(import.meta.dir, "..", "..", "..", "python");
@@ -50,5 +51,5 @@ spec = {"stateRoot": ${JSON.stringify(state)}, "account": "acct"}
 out = engine.with_visuals(client, spec, "D1", "m1", [{"name": "meme.png", "type": "image/png", "url": "https://cdn/a"}, {"name": "doc.pdf", "url": "https://cdn/b"}])
 print(json.dumps({"fetched": client.fetched, "kept": [bool(a.get("path")) for a in out]}))`);
     expect(got).toEqual({ fetched: ["https://cdn/a"], kept: [true, false] });
-  });
+  }, SPAWNS_PROCESS_MS);
 });
