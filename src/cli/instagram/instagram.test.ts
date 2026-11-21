@@ -10,6 +10,7 @@ import { runCli } from "../runner/index.ts";
 import { inboxContext, takePending } from "../../inbox/watch/index.ts";
 import { instagramDmsDeps } from "./index.ts";
 import type { Conversation } from "../../search/conversations/index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 function fixture() {
   const twenty = marketplaceFixture();
@@ -58,7 +59,7 @@ describe("log instagram session check", () => {
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [INSTAGRAM_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "sessionDead", loginState: "loggedOut" });
-  });
+  }, SPAWNS_PROCESS_MS);
 });
 
 describe("log instagram dms", () => {
@@ -114,7 +115,7 @@ describe("log instagram dms", () => {
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [INSTAGRAM_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "threadNeeded" });
-  });
+  }, SPAWNS_PROCESS_MS);
 });
 
 describe("log instagram send", () => {
@@ -182,5 +183,5 @@ describe("log instagram watch", () => {
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [INSTAGRAM_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "nothingToSend" });
-  });
+  }, SPAWNS_PROCESS_MS);
 });

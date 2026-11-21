@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import type { PlatformEngineRun, PlatformEngineSpec } from "../../platformKit/session/index.ts";
 import { runCli } from "../runner/index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const CHANNEL = "1434928149904228392";
 const MESSAGE = "1566872902840619151";
@@ -104,5 +105,5 @@ print(json.dumps([r.unicode_of("joy"), r.unicode_of(":fire:"), r.unicode_of("ðŸ˜
 from slackApi import engine as slack
 print(json.dumps([asyncio.run(slack.react({"chat": "D1", "ts": "", "emoji": "joy"}, {}))["code"], asyncio.run(slack.react({"chat": "D1", "ts": "1.2", "emoji": "ðŸ¦„"}, {}))["code"], "react" in slack.WRITES]))`);
     expect(got).toEqual(["reactInvalid", "reactInvalid", true]);
-  });
+  }, SPAWNS_PROCESS_MS);
 });

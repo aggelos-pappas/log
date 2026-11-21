@@ -8,6 +8,7 @@ import { viewerDeps } from "../../../browser/viewer/index.ts";
 import { marketplaceFixture } from "../../../twenty/graphql/index.ts";
 import { createLogMcpServer, runToolCall } from "../../server/index.ts";
 import { MCP_APP_MIME_TYPE, UI_EXTENSION_ID } from "./index.ts";
+import { LOADS_EVERY_TOOL_MS } from "../../../../scripts/tests/timeouts.ts";
 
 const PASSWORD = "voxlSecretPassword42";
 const VOXL = `https://voxl.example.com:8443/?token=${PASSWORD}`;
@@ -92,7 +93,7 @@ describe("the voxl URL and its password never reach the model", () => {
     expect(JSON.stringify(stream.content)).not.toContain(PASSWORD);
     const stale = await client.callTool({ name: "browserViewStream", arguments: { account: ACCOUNT, generation: "c".repeat(32) } });
     expect((stale.structuredContent as { error: string }).error).toBe("browserGenerationChanged");
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("remote runtime over MCP, a client that declares no MCP Apps: the view still gets the descriptor through the app-only tool, never in text, and logCall can't reach it", async () => {
     process.env.LOG_BROWSER_VIEW_LOCATION = "remote";
@@ -104,7 +105,7 @@ describe("the voxl URL and its password never reach the model", () => {
     expect(JSON.stringify(stream.content)).not.toContain(PASSWORD);
     const called = await client.callTool({ name: "logCall", arguments: { id: "browserViewStream", inputs: { account: ACCOUNT, generation: GENERATION } } });
     expectNoSecret(modelSees(called));
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("remote runtime through the hosted bridge (runToolCall): browserView carries no descriptor", async () => {
     process.env.LOG_BROWSER_VIEW_LOCATION = "remote";

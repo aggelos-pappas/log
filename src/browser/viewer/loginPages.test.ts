@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PLATFORMS, PLATFORM_SITES } from "../../cli/runner/helpers/platforms.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const python = join(import.meta.dir, "..", "..", "..", "python");
 const fixtures = join(python, "fixtures", "loginPages");
@@ -43,10 +44,10 @@ describe("the viewer classifies each platform's sign-in pages from its own fixtu
       const login = fixture.pages.find((page) => page.name === "login");
       expect(login?.expect.state).toBe(`${fixture.platform}Login`);
     }
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("the Python hosts match PLATFORM_SITES", () => {
     const { hosts } = classified([]);
     for (const platform of PLATFORMS) expect(hosts[platform], platform).toEqual([...PLATFORM_SITES[platform].hosts]);
-  });
+  }, SPAWNS_PROCESS_MS);
 });

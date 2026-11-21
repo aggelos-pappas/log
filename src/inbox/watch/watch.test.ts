@@ -8,6 +8,7 @@ import type { InboxReader, InboxThread } from "./index.ts";
 import { db } from "../store/index.ts";
 import { writeEngineStore } from "../../storage/engineStore/index.ts";
 import { typeEvent } from "../../storage/platform/index.ts";
+import { FRESH_DB_MS } from "../../../scripts/tests/timeouts.ts";
 
 const thread = (id: string, who: string, at: string, fromMe: boolean, box = "inbox", text: string | null = "hey"): InboxThread => ({ conversationId: id, with: who, lastAt: at, lastFromMe: fromMe, lastText: text, box });
 
@@ -118,7 +119,7 @@ describe("inbox watch", () => {
     addPending([{ platform: "discord", account: "myDiscordName", conversationId: "7200000101", with: "Copper Kettle", text: "anyone shipping tonight?", at: "2026-10-28T08:48:50Z", box: "mention", seenAt: "2026-10-28T08:48:51Z", serverId: "7100000101" }]);
     const text = inboxContext(takePending())!;
     expect(text).toContain("Copper Kettle in Lantern Guild #buildNight on discord myDiscordName (mentioned you in a server channel)");
-  });
+  }, FRESH_DB_MS);
 
   test("a Slack message pushed by the workspace's websocket is told with the Slack steps", () => {
     addPending([{ platform: "slack", account: "slackAccount", conversationId: "D0EXAMPLE01", with: "Sam", text: "yo hows it going", at: "2026-11-03T07:00:00Z", box: "dm", seenAt: "2026-11-03T07:00:01Z", workspace: "acme" }]);

@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { SPAWNS_PROCESS_MS } from '../../../../scripts/tests/timeouts.ts'
 
 const python = join(import.meta.dir, '..', '..', '..', '..', 'python')
 
@@ -39,12 +40,12 @@ describe('an image someone sends in X Chat is saved the moment it arrives (rule 
     expect(existsSync(media.path!)).toBe(true)
     expect(readFileSync(media.path!, 'utf8')).toBe('picture bytes')
     expect(String(message.text)).toContain('image saved:')
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('a message with no picture fetches nothing', () => {
     const { lines } = watch("{'type': 'Message', 'conversation_id': '1:2', 'event_id': '9', 'sender_id': '2', 'time_ms': 1, 'text': 'yo'}")
     const message = lines.map((l) => l.liveEvent).find((l) => l.box === 'xchat')!
     expect(message.media).toBeUndefined()
     expect(message.text).toBe('yo')
-  })
+  }, SPAWNS_PROCESS_MS)
 })

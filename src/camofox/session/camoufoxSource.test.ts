@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const pythonDir = join(import.meta.dir, "..", "..", "..", "python");
 
@@ -67,7 +68,7 @@ print(json.dumps([seen, [(v.version.full_string, v.url) for v in vs], pkgman.req
     expect(out[0]).toEqual(["/api/v4/projects/daijro%2Fcamoufox/releases?per_page=100"]);
     expect(out[1]).toEqual([["159.0-beta.42", "https://gl.example/a.zip"]]);
     expect(out[3]).toBe(true);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("every launch goes through the source", () => {
     const { readFileSync } = require("node:fs");
@@ -100,7 +101,7 @@ out = proxyGate.locate_ip("203.0.113.9")
 print(json.dumps([out, len(calls), db.stat().st_mtime > time.time() - 60, "keeping the database" in lines[0]]))`);
     expect(out[0]).toEqual({ country: "IE", timezone: "Europe/Dublin", latitude: 53.3, longitude: -6.2 });
     expect(out.slice(1)).toEqual([2, true, true]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("no database at all, or an IP the database doesn't know, still fails loudly", () => {
     const out = py(`import tempfile
@@ -126,5 +127,5 @@ except UnknownIPLocation:
     res.append("unknown")
 print(json.dumps(res))`);
     expect(out).toEqual(["raised", "unknown"]);
-  });
+  }, SPAWNS_PROCESS_MS);
 });

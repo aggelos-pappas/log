@@ -8,6 +8,7 @@ import { bar, sparkline } from "./helpers/text.ts";
 import { checkReport, readReportResource, REPORT_URI, reportInputSchema, reportText, runReport } from "./index.ts";
 import type { ReportSpec } from "./index.ts";
 import type { SendersReport } from "../../../inbox/senders/index.ts";
+import { LOADS_EVERY_TOOL_MS } from "../../../../scripts/tests/timeouts.ts";
 
 const UI = { extensions: { [UI_EXTENSION_ID]: { mimeTypes: [MCP_APP_MIME_TYPE] } } };
 
@@ -156,7 +157,7 @@ describe("the view as an MCP App", () => {
     const ui = await connected(UI);
     expect((await ui.listTools()).tools.find((t) => t.name === "report")?._meta?.ui).toEqual({ resourceUri: REPORT_URI });
     expect((await ui.listResources()).resources.some((r) => r.uri === REPORT_URI && r.mimeType === MCP_APP_MIME_TYPE)).toBe(true);
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("the resource is one self-contained page: no outside scripts, styles or fonts", async () => {
     const content = (await readReportResource()).contents[0];

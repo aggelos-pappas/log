@@ -8,6 +8,7 @@ import { COMMANDS } from "../../cli/runner/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { isAppTool } from "../apps/index.ts";
 import { AGENTS_MD, AGENTS_URI, citedRules, COMMAND_RULES, createLogMcpServer, DEVELOPER_RULES, GUIDES_DIR, MAX_RESULT_CHARS, RULES_REVIEWED_THROUGH, SERVER_INSTRUCTIONS } from "./index.ts";
+import { LOADS_EVERY_TOOL_MS, SCANS_REPO_MS } from "../../../scripts/tests/timeouts.ts";
 
 const agents = readFileSync(AGENTS_MD, "utf8");
 const rules = [...agents.matchAll(/^(\d+)\. 20\d\d-\d\d-\d\d/gm)].map((m) => Number(m[1]));
@@ -58,7 +59,7 @@ describe("AGENTS.md in the MCP server", () => {
     }
     expect(tools.find((t) => t.name === "facebookJoinGroup")?.description).toContain("rules 8, 35, 25, 26, 29, 73, 30, 38, 39, 40, 41.");
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("AGENTS.md itself is the resource log://agents, read from the file", async () => {
     const client = await connected();
@@ -80,7 +81,7 @@ describe("watching a long call live over MCP (rule 26)", () => {
       expect(tools.find((t) => t.name === "facebookAccounts")?.description).not.toContain("Monitor");
       await client.close();
     }
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("for a client without a shell (a claude.ai connector), long tools say to read each result's progress and browsers instead", async () => {
     expect(SERVER_INSTRUCTIONS).toContain("A client without a shell");
@@ -93,7 +94,7 @@ describe("watching a long call live over MCP (rule 26)", () => {
       expect(description).toContain("`browsers`, `next`, `needsOwner`");
     }
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("like Paper's MCP: short instructions that say to load the core guide first, never cut by the client", () => {
     expect(SERVER_INSTRUCTIONS.length).toBeLessThan(2000);
@@ -116,7 +117,7 @@ describe("watching a long call live over MCP (rule 26)", () => {
     const missing = await client.callTool({ name: "getGuide", arguments: { topic: "nope" } });
     expect(missing.isError).toBe(true);
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("every tool declares Claude Code's result limit (anthropic/maxResultSizeChars), and every guide fits under it, so a guide or a big result arrives whole instead of as a file path", async () => {
     const client = await connected();
@@ -125,12 +126,12 @@ describe("watching a long call live over MCP (rule 26)", () => {
     expect(MAX_RESULT_CHARS).toBeLessThanOrEqual(500_000);
     for (const file of readdirSync(GUIDES_DIR).filter((f) => f.endsWith(".md"))) expect(readFileSync(join(GUIDES_DIR, file), "utf8").length).toBeLessThan(MAX_RESULT_CHARS);
     await client.close();
-  });
+  }, SCANS_REPO_MS);
 
   test("no tool description carries the engine's internals: they give the agent nothing to act on", async () => {
     const client = await connected();
     const { tools } = await client.listTools();
     for (const tool of tools) expect(tool.description ?? "").not.toContain("Engine: the direct-API engine");
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 });

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const pythonDir = join(import.meta.dir, "..", "..", "..", "python");
 
@@ -15,7 +16,7 @@ function py(code: string, hideMyuri = false): any {
 describe("Myuri drives log's human input", () => {
   test("Myuri is installed for log's Python", () => {
     expect(py(`from human import myuriInput as m\nprint(json.dumps(m.available()))`)).toBe(true);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("the same account gets the same hand, another account a different one", () => {
     const out = py(`from human import myuriInput as m
@@ -27,7 +28,7 @@ print(json.dumps([a == m.seed_for("C:/x/facebook/one/device.json"), p1 == p2, p1
     expect(out[2]).toBe(false);
     expect(out[3]).toBeGreaterThan(20);
     expect(out[4].slice(1)).toEqual([800, 450]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("a typed reply lands exactly, typos and all corrected", () => {
     const out = py(`from human import myuriInput as m
@@ -40,7 +41,7 @@ for seed in range(1, 40):
 print(json.dumps([all(r[0] for r in res), any(r[1] for r in res)]))`);
     expect(out[0]).toBe(true);
     expect(out[1]).toBe(true);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("passwords, codes and PINs are typed with no typos", () => {
     const out = py(`from human import myuriInput as m
@@ -51,7 +52,7 @@ for seed in range(1, 80):
         bad += any(k == "Backspace" for _a, kind, k in steps) or m.typed_text(steps) != t
 print(json.dumps(bad))`);
     expect(out).toBe(0);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("timing is human: keys are not on a fixed beat", () => {
     const out = py(`from human import myuriInput as m
@@ -61,7 +62,7 @@ gaps = [round(b - a) for a, b in zip(downs, downs[1:])]
 print(json.dumps([len(set(gaps)), min(gaps), max(gaps)]))`);
     expect(out[0]).toBeGreaterThan(10);
     expect(out[2]).toBeGreaterThan(out[1] * 2);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("scroll is notched mouse-wheel steps that add up to the distance", () => {
     const out = py(`from human import myuriInput as m
@@ -70,7 +71,7 @@ print(json.dumps([len(steps), sum(b for _t, kind, _a, b in steps if kind == "whe
     expect(out[0]).toBeGreaterThan(3);
     expect(Math.abs(out[1] - 900)).toBeLessThanOrEqual(100);
     expect(out[2].every((d: number) => d % 100 === 0)).toBe(true);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("typing plays every key through a page and releases anything held", () => {
     const out = py(`import asyncio
@@ -92,7 +93,7 @@ for kind, k in p.keyboard.events:
 print(json.dumps([m.typed_text([(0, kind, k) for kind, k in p.keyboard.events]), [k for k, n in held.items() if n > 0]]))`);
     expect(out[0]).toBe("Hi there");
     expect(out[1]).toEqual([]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("without Myuri log falls back to its own pacing and still types exactly", () => {
     const out = py(`from human import myuriInput as m
@@ -106,7 +107,7 @@ print(json.dumps([m.available(), m.typed_text(steps), m.path((0, 0), (5, 5), m.m
 from human.humanMouse import HumanMouse
 print(json.dumps([v.own_trajectory_humanize(), hasattr(HumanMouse, "_play"), hasattr(HumanMouse, "planned")]))`);
     expect(out).toEqual([0, true, true]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("a launch config with humanize 0 turns Camoufox humanize off, any other value turns it on", () => {
     const out = py(`from device import deviceProfile as d

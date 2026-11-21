@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { SPAWNS_PROCESS_MS } from '../../../../scripts/tests/timeouts.ts'
 
 const python = join(import.meta.dir, '..', '..', '..', '..', 'python')
 
@@ -28,16 +29,16 @@ function engine(script: string): unknown {
 describe('every X engine call on one account waits its turn, spaced like a person', () => {
   test('the first call on an account waits for nothing', () => {
     expect(engine("print(json.dumps(e.spacing_wait('acct')))")).toBe(0)
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('a call right after another waits out the drawn gap', () => {
     const wait = engine("e.mark_call('acct', now=1000.0)\nprint(json.dumps(e.spacing_wait('acct', now=1001.0, draw=lambda a, b: 7.0)))")
     expect(wait).toBe(6)
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('a call long after the last one waits for nothing', () => {
     expect(engine("e.mark_call('acct', now=1000.0)\nprint(json.dumps(e.spacing_wait('acct', now=1100.0, draw=lambda a, b: 7.0)))")).toBe(0)
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('the gap is drawn between 4 and 11 seconds', () => {
     const [spacing, readSpacing, inbox, dm] = engine("e.mark_call('acct', now=1000.0)\nprint(json.dumps([list(e.SPACING_SECONDS), list(e.READ_SPACING_SECONDS), e.spacing_wait('acct', now=1000.0, action='inbox'), e.spacing_wait('acct', now=1000.0, action='dm')]))") as [number[], number[], number, number]
@@ -45,7 +46,7 @@ describe('every X engine call on one account waits its turn, spaced like a perso
     expect(readSpacing).toEqual([0.8, 2.5])
     expect(inbox).toBeLessThanOrEqual(2.5)
     expect(dm).toBeGreaterThanOrEqual(4)
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('a second call on the same account waits until the first lets go', () => {
     const order = engine(`
@@ -77,7 +78,7 @@ async def both():
 asyncio.run(both())
 print(json.dumps(order))`)
     expect(order).toEqual(['first in', 'first out', 'second in', 'second out'])
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('a call that waits too long for the account is refused, not run', () => {
     const answer = engine(`
@@ -93,7 +94,7 @@ async def blocked():
             return 'accountBusy'
 print(json.dumps(asyncio.run(blocked())))`)
     expect(answer).toBe('accountBusy')
-  })
+  }, SPAWNS_PROCESS_MS)
 })
 
 describe('the transaction key is worked out once and kept, not by loading x.com before every call', () => {
@@ -105,7 +106,7 @@ e.keep_transaction(first, 'acct', now=1000.0)
 second = Client()
 print(json.dumps([e.restore_transaction(second, 'acct', now=2000.0), second.client_transaction.state() == STATE]))`)
     expect(restored).toEqual([true, true])
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('a key kept more than 3 hours ago is worked out again', () => {
     const restored = engine(`
@@ -114,9 +115,9 @@ first.client_transaction.restore(STATE)
 e.keep_transaction(first, 'acct', now=1000.0)
 print(json.dumps(e.restore_transaction(Client(), 'acct', now=1000.0 + 3 * 3600 + 1)))`)
     expect(restored).toBe(false)
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('an account with no kept key starts from the home page as before', () => {
     expect(engine("print(json.dumps(e.restore_transaction(Client(), 'acct')))")).toBe(false)
-  })
+  }, SPAWNS_PROCESS_MS)
 })

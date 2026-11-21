@@ -7,6 +7,7 @@ import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import type { PlatformEngineSpec } from "../../platformKit/session/index.ts";
 import { runCli } from "../runner/index.ts";
 import { searchDeps } from "./index.ts";
+import { FRESH_DB_MS } from "../../../scripts/tests/timeouts.ts";
 
 let dir = "";
 const kept = { ...process.env };
@@ -60,7 +61,7 @@ describe("log search index on Discord", () => {
     out.length = 0;
     expect(await runCli(["search", "inference saver setup", "--platform", "discord"], context as never)).toBe(0);
     expect(out.join("\n")).toContain("conversation 1000000000000000001");
-  });
+  }, FRESH_DB_MS);
 });
 
 describe("log search index when Discord refuses the read", () => {

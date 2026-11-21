@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { balanceLines } from '../../cli/balance/index.ts'
 import { balanceOf, checkBalances, isOutOfCredit, lastAnswers, needsMoney, noteProviderAnswer, tregBalance } from './index'
 import type { BalanceDeps, Provider, ProviderAnswer } from './index'
+import { FRESH_DB_MS } from '../../../scripts/tests/timeouts.ts'
 
 function deps(over: Partial<BalanceDeps> = {}, answers = new Map<Provider, ProviderAnswer>()): BalanceDeps {
   const fetcher = (async (url: string) => {
@@ -31,7 +32,7 @@ describe('provider balances (rule 164)', () => {
     const last = lastAnswers(file)
     expect(last.get('subq')?.ok).toBe(true)
     expect(last.get('inworld')?.outOfCredit).toBe(true)
-  })
+  }, FRESH_DB_MS)
 
   test('balance APIs are read, and an empty or low one needs money', async () => {
     const all = await checkBalances(undefined, deps())

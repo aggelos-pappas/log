@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { deviceSummary, hasStoredDevice, toDeviceProfile } from "./index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const pythonDir = join(import.meta.dir, "..", "..", "..", "python");
 
@@ -157,7 +158,7 @@ describe("python/browser/proxyGate.py (pure parts)", () => {
       [{ ip: WANT.exitIp, page: realm, worker: { error: "the worker did not answer in 5s" } }, "selfCheckFailed"],
     ];
     for (const [observed, code] of cases) expect((verdict(observed) as string[])[0]).toBe(code);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("callers can't add launch options, and can't ask for headless", () => {
     const out = py(`from browser import proxyGate as g

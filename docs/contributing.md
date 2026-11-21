@@ -3,8 +3,26 @@
 ## Changes
 
 - Work on a branch from `main`, one change per pull request.
-- Run `bun run check` before pushing: the commit and push hooks run the same gates (privacy, naming, specs, docs, typecheck, tests).
+- Run `bun run check` before pushing: the commit and push hooks run the same gates (privacy, naming, specs, docs, typecheck), with pre-push running only the affected tests (see [Tests](#tests)).
 - Title the pull request as a conventional commit (`feat: …`, `fix: …`, `docs: …`, `feat!: …` for a breaking change). release-please reads these titles from the merge commits to pick the next version and write the changelog.
+
+## Tests
+
+- `bun run test:full` (and `bun test`, which `bun run check` and CI run) is the whole suite: about 3,200 tests in 350 files, 4-5 minutes on a busy Windows box.
+- `bun run test:affected` runs only what a change can reach. It takes the files changed against `origin/main` (committed, uncommitted and untracked; `--base <ref>` or `LOG_TEST_BASE` picks another base, `--changed a.ts,b.py` names them), then runs: each changed file's own folder's tests; every test that imports it, directly or through other files (an import-graph walk over `src/`, `scripts/`, `bin/`, `python/` and `hermesPlugin/`, Python imports included); every test that spawns a changed Python file by path; and a small fixed smoke set (`SMOKE_TESTS` in `scripts/tests/affectedTests.ts`). The command registry (`src/cli/runner/index.ts`, any file importing 40 or more others) is a wall the walk doesn't cross, or every command change would reach half the suite. A change to `package.json`, `bun.lock`, `bunfig.toml`, `tsconfig.json`, `patches/`, `vendor/` or the test preload, or one that reaches 60% of the test files, runs the full suite. `--list` prints the selection without running it; `LOG_TEST_FULL=1` forces the full suite.
+- Pre-push runs `test:affected`; CI runs the full suite on every pull request, so a test the walk misses still fails before merge.
+- Every test run gets its own scratch folder from `scripts/tests/preload.ts`: `LOG_HOME`, `TMPDIR`/`TEMP`/`TMP` and the other `LOG_*` stores point inside it, so a test never reads or writes `~/.logCli` and two runs never share a file. A test that needs a folder makes it with `mkdtempSync(join(tmpdir(), ...))`; a server binds port 0. A test that sets a store variable (`LOG_DB`, `LOG_INBOX_STATE`) in a test puts it back in `afterEach`: bun runs many files in one process.
+- A test that does slow, real work names why with a budget from `scripts/tests/timeouts.ts` as its third argument, instead of bun's 5 s default: `FRESH_DB_MS` (it creates a log.db and runs every migration), `SPAWNS_PROCESS_MS` (it starts Python, a Bun child or a worker), `STARTS_SERVER_MS`, `SCANS_REPO_MS` (it reads every source file) and `LOADS_EVERY_TOOL_MS` (it builds every tool's schema). Under three parallel runs a test takes 3-4 times as long as alone, so a test over about 400 ms alone should carry one.
+
+## Several agents on one machine
+
+Each agent works in its own worktree and never in the live clone:
+
+1. `git fetch && git worktree add -b <branch> ../log-<name> origin/main`.
+2. Link the live clone's `node_modules` with a junction, never a copy or `bun install`: `New-Item -ItemType Junction -Path <worktree>\node_modules -Target <live clone>\node_modules` from PowerShell. Copy `.env.local`.
+3. Work and commit as usual; run `bun run test:affected` while working.
+4. Push. Pre-push runs every check and `test:affected`, never the full suite; push only once an affected run has passed for the tree you are pushing, and don't edit the worktree while its push runs (pre-push tests the working tree). CI's full run is the gate before merge.
+5. Remove the junction first (PowerShell `(Get-Item <worktree>\node_modules).Delete()`), check the live clone's `node_modules` is still whole, then `git worktree remove --force <worktree>`: removing the worktree with the junction still in it empties the live clone's `node_modules`.
 
 ## Releasing
 

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { db } from "../../inbox/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { toolDeps } from "./index.ts";
+import { FRESH_DB_MS } from "../../../scripts/tests/timeouts.ts";
 
 async function run(argv: string[]): Promise<{ code: number; out: string; err: string }> {
   const out: string[] = [];
@@ -33,5 +34,5 @@ describe("log tool health", () => {
     } finally {
       toolDeps.registered = before;
     }
-  });
+  }, FRESH_DB_MS);
 });

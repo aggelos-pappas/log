@@ -9,6 +9,7 @@ import { emitLog } from "../../observability/processLog/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { runToolCall } from "../server/index.ts";
 import { accountOfArgv, appendProgress, busyJob, finishJob, heldByOther, jobScope, jobView, PARENT_PID_ENV, readJob, requestCancel, startJob, statusOf } from "./index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const doctorReply = { ok: true, checks: { python: "3.12", facebookCamofoxClient: "/fcc", camoufoxBrowser: "/c.exe", camoufoxVersion: "1" } };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -43,7 +44,7 @@ describe("a long run outlasting its call becomes a job (Duet plan step 4)", () =
     const done = readJob(handle.job!.id)!;
     expect(done.result).toMatchObject({ exit: 0, ok: true });
     expect(done.text).toContain("Self-check passed");
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("a run that ends inside its wait comes back whole, with its job finished", async () => {
     const worker = (async () => doctorReply) as unknown as WorkerClient;
