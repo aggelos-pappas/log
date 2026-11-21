@@ -27,6 +27,7 @@ def browser_discord(token: str, identity: dict[str, Any], launched: dict[str, st
                 if exit_on_error:
                     raise SystemExit(f"Network error: {error}") from error
                 return None, None
+            self.last_answer = (answer.status_code, answer.content)
             return answer.content, answer.status_code
 
         def get_connection(self, host: Any, port: Any, timeout: Any = None) -> Any:

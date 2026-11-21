@@ -349,6 +349,15 @@ def typed(client: Any, channel: str, text: str, sleep: Any = time.sleep, heard: 
     return None
 
 
+def send_refusal(status: int, said: str) -> dict[str, Any]:
+    if "captcha" in said:
+        return {"ok": False, "code": "captchaRequired", "detail": f"Discord asked for a captcha before taking the message ({status}): the owner sends this one from the app; nothing retried (rule 94)", "loginState": "loggedIn", "httpStatus": status, "event": "throttled", "answer": said}
+    closed = next((c for c in ("50007", "50278") if f'"code": {c}' in said or f'"code":{c}' in said), None)
+    if closed:
+        return {"ok": False, "code": "dmClosed", "detail": f"Discord won't deliver a DM to this person ({status} {closed}: {said[:160]}): a friend request is the way in", "loginState": "loggedIn", "httpStatus": status, "answer": said}
+    return {**refusal_of(status, said.encode(), "the message"), "code": "rateLimited" if status == 429 else "sendRefused"}
+
+
 def send_of(token: str, channel: str, text: str, paths: list[str] | None = None, sleep: Any = time.sleep, heard: Any = None) -> dict[str, Any]:
     client, failed = open_client(token)
     if failed:
@@ -375,6 +384,10 @@ def send_of(token: str, channel: str, text: str, paths: list[str] | None = None,
             return refused
     sent = client.send_message(target, content, attachments=(files + documents) or None)
     if not sent:
+        status, body = getattr(client, "last_answer", None) or (None, None)
+        said = (body.decode("utf-8", "replace") if isinstance(body, bytes) else str(body or "")).strip()[:300]
+        if status and status >= 400:
+            return {**send_refusal(status, said), "channelId": target}
         return {"ok": False, "code": "sendFailed", "detail": f"Discord didn't take the message in channel {target}", "loginState": "loggedIn", "event": "dropped", "channelId": target}
     return {"ok": True, "loginState": "loggedIn", "event": "sent", "channelId": sent["channel_id"], "messageId": sent["id"], "timestamp": sent["timestamp"], "content": sent["content"]}
 

@@ -438,6 +438,24 @@
     ],
     "action": "Give the message ids from log discord read, separated by commas."
   },
+  "dmClosed": {
+    "layer": "runtime",
+    "meaning": "Discord won't deliver a DM to this person (its errors 50007 and 50278): they take DMs only from friends, or from people in a server they share with DMs on.",
+    "retryable": false,
+    "raisedIn": [
+      "python/discordApi"
+    ],
+    "action": "Send a friend request with log discord friend; the message waits until they accept."
+  },
+  "sendRefused": {
+    "layer": "runtime",
+    "meaning": "Discord refused the message with an error; its own answer is in the detail. Nothing was retried.",
+    "retryable": false,
+    "raisedIn": [
+      "python/discordApi"
+    ],
+    "action": "Read Discord's answer in the detail. Nothing more goes out on that account until the owner says so (rule 94)."
+  },
   "userInvalid": {
     "layer": "runtime",
     "meaning": "The --userId given to log discord send or log discord friend isn't a Discord user id, or a list of them separated by commas.",

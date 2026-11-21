@@ -652,6 +652,11 @@ export const discordFriendCommand: Command = {
   },
 };
 
+export function refusedWith(answers: PlatformAnswer[]): string {
+  const last = answers.at(-1);
+  return last && !last.ok ? `, then Discord answered ${last.code}${last.httpStatus ? ` ${last.httpStatus}` : ""}: ${String(last.detail ?? "").slice(0, 200)}` : "";
+}
+
 export const FILE_MAX_BYTES = 10 * 1024 * 1024;
 
 export function fileRoots(env: Record<string, string | undefined> = process.env): string[] {
@@ -836,7 +841,7 @@ export const discordSendCommand: Command = {
       });
       if (acted.held) {
         const ok = sending.sent.filter((a) => a.ok && a.event === "sent").length;
-        acted.held.done(sending.interrupted.length || sending.stillTyping ? "interrupted" : ok === plan.parts.length ? "sent" : "failed", `${ok} of ${plan.parts.length}${sending.fenced ? ", then the claim on this chat was lost, so the rest was held" : ""}: ${plan.parts.slice(0, ok).join(" / ").slice(0, 300)}`);
+        acted.held.done(sending.interrupted.length || sending.stillTyping ? "interrupted" : ok === plan.parts.length ? "sent" : "failed", `${ok} of ${plan.parts.length}${sending.fenced ? ", then the claim on this chat was lost, so the rest was held" : ""}${refusedWith(sending.sent)}: ${plan.parts.slice(0, ok).join(" / ").slice(0, 300)}`);
       }
       rethrowFailure(acted);
       if (!acted.held) return refuseGated("discord send", acted, "chatClaimedElsewhere");
