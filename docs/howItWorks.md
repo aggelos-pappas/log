@@ -102,3 +102,15 @@ Details: [Browsers](browsers.md) and
   on top of the scriptable commands.
 
 The rules behind all of this are in AGENTS.md.
+
+## Related
+
+How log works, page by page:
+
+- **Specs:** [Specs](specs/README.md)
+- **The ideas:** [The models log uses](models.md) · [The live inbox](liveInbox.md) · [Pipeline labels: who and where](pipelineLabels.md) · [Unify storage: what's wrong with how log stores data, and the schema it moves to](unifyStorage.md) · [Storage against the book: what Designing Data-Intensive Applications says about the unifyStorage work](storageAgainstTheBook.md) · [How log reads its data: where JSON fits, time series, locality, cache and atomicity](storageReadPath.md) · [Why tool calls are slow: process start-up, measured](hookStartup.md) · [Antigravity hooks](antigravityHooks.md) · [Tool call speed: what the owner and VIBE BOT worked out, and what to bring in](toolCallSpeed.md) · [Tool calls against the book: what the tail-latency literature says about log's own calls](toolCallsAgainstTheBook.md) · [Accounts and listings](accountsAndListings.md) · [The account lifecycle](lifecycle.md) · [Twenty: one home for many accounts](twenty.md) · [Signing in](signingIn.md) · [What works today](status.md)
+- **Browsers and proxies:** [Browsers](browsers.md) · [Browser setup](browserSetup.md) · [AdsPower](adsPower.md) · [Proxies](proxies.md) · [One browser identity](browserIdentity.md) · [Proxy providers](proxyVendors/README.md) · [curl_cffi vs httpcloak: SubQ matrix](httpClients/README.md)
+- **Facebook in depth:** [Listening to Facebook groups](groupListening.md) · [Reading a Facebook group's members](groupMembers.md) · [Reading a Facebook group's posts](groupRead.md) · [Buyer conversations](conversations.md) · [Voice notes](voiceNotes.md) · [The listing monitor](listingMonitor.md) · [Listing photos](listingMedia.md) · [From a recording to a reusable flow](recordToFlow.md) · [How a Marketplace listing gets posted](listingPublish/README.md)
+- **Working on log:** [Where the code lives](layout.md) · [Naming conventions](namingConventions.md) · [The context layer: hook conventions](contextLayer.md) · [Call timing](callTiming.md) · [Knowledge base](knowledgeBase.md) · [Relate graph: connected context for the agent](relateGraph.md) · [Running log on servers](deployment.md) · [X (Twitter) in log](twitterPlatform.md) · [OpenCode hooks](opencodeHooks.md) · [Contributing](contributing.md) · [REA and the Facebook web client](rea/README.md)
+
+Up: [log's README](../README.md) · Start here: [Install](install.md) · [Connect your agent](mcp.md) · [Trust](trust.md)

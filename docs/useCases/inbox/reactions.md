@@ -34,3 +34,8 @@ flowchart TD
 | 5 | Tell the owner what was reacted to | the reply to the owner | the message quoted with the emoji |
 
 On Discord the chat flag is `channel` and on Instagram `thread`. `remove` takes the account's own reaction off. A refusal stops it, and nothing is tried again until the owner says so (rule 94).
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

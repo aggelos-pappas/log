@@ -79,7 +79,7 @@ flowchart TD
 | 7 | Who: from the niche map first, the people in the owner's niche he hasn't talked to yet. Real roles only (founders, agency owners, operators, creators; never `bot_or_spam`), 1500 followers or fewer (bigger accounts aren't worth it yet), the closest first: they follow him, then one hop from his creators, then strong ties. Or another source the owner named (people who engaged with his post, a topic search) | the niche map, then [engagerDms.md](../log-twitter-engager-dms/SKILL.md) steps 2 to 4 | a short list, each with a user id and one recent post of theirs to open on |
 | 8 | Follow them first. Never send a cold message to someone the owner doesn't follow | `twitterFollow`, then `twitterFollowLive` { userId, approvedBy, confirmLive: true } | X's answer is `sent` (or already followed) |
 | 9 | Like the tweet the message is about, before the message | `twitterLike`, then `twitterLikeLive` { tweet, approvedBy, confirmLive: true } | X's answer is `sent` |
-| 10 | Then the message: their tweet forwarded first, then one informal line about it, the cold DM way in [engagerDms.md](../log-twitter-engager-dms/SKILL.md). The opener only, always relevant to them, never an ask (no pitch, no "you using `<tool>`"). Gated like every send, and sent the same way as step 6: two or more people through the account's one queue | `voice`, then `twitterDmLive`, or `twitterQueueAdd` and `twitterQueueRunLive` | X's answer is `sent` |
+| 10 | Then the message: their tweet forwarded first, then one informal line about it, the first-DM way in [engagerDms.md](../log-twitter-engager-dms/SKILL.md). The opener only, always relevant to them, never an ask (no pitch, no "you using `<tool>`"). Gated like every send, and sent the same way as step 6: two or more people through the account's one queue | `voice`, then `twitterDmLive`, or `twitterQueueAdd` and `twitterQueueRunLive` | X's answer is `sent` |
 | 11 | Then a brief voice note in the owner's cloned voice, a few minutes after the opener: one spoken question that goes a step further on what they posted, never the ask. Gate it as speech, then add it to the same queue once the openers have gone, so it lands after its own opener | `voice` { to, context, text, spoken: true }, then `twitterQueueAdd` { queue, targets, action: "voice", by } | X's answer is `sent` for the voice note |
 
 ## What to know
@@ -95,5 +95,12 @@ flowchart TD
 ## Next
 
 - [#38](https://github.com/matthewdonsemail-lab/log/issues/38) writes back to the niche map who the owner is now talking to, so it shows how much of the network is reached.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [All X use cases, and the parts they share](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/twitter/README.md)
+- [What log does on X](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/x.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)
 
 > Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

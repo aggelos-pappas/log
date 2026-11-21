@@ -1,6 +1,6 @@
 ---
 name: log-twitter-manager-maxxing
-description: "Manager maxxing: the managers of the biggest Kick streamers. A log play (docs/useCases/twitter/managerMaxxing.md): The owner's go-to-market, in his words (https://x.com/xAccount/status/2118285429674017268): \"find every single kick streamers managers on twitter, reply guy them for a few days then cold dm them to use log and show claviculars twitter\". The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck."
+description: "Manager maxxing: the managers of the biggest Kick streamers. A log play (docs/useCases/twitter/managerMaxxing.md): The owner's go-to-market, from his post (https://x.com/xAccount/status/2118285429674017268): find the manager of every Kick streamer on X, reply to their posts for a few days, then send each one a first DM about using log and showing Clavicular's X. The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck."
 when_to_use: "Use when the owner asks for this, in words like: \"manager maxxing\", \"find every kick streamer's manager on twitter\", \"reply guy the kick managers with memes\", \"the managers that engaged, send them their tweet, a message and a voice note\"."
 metadata:
   summary: "Manager maxxing: the managers of the biggest Kick streamers"
@@ -12,7 +12,7 @@ This is the log play `twitter/managerMaxxing`. Before anything else, call the lo
 
 Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
-The owner's go-to-market, in his words (https://x.com/xAccount/status/2118285429674017268): "find every single kick streamers managers on twitter, reply guy them for a few days then cold dm them to use log and show claviculars twitter". The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck.
+The owner's go-to-market, from his post (https://x.com/xAccount/status/2118285429674017268): find the manager of every Kick streamer on X, reply to their posts for a few days, then send each one a first DM about using log and showing Clavicular's X. The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck.
 
 The people this is for (the ICP) are the managers of Kick streamers, category by category, starting with the streamers with the most viewers. It runs on the network-maxing logic ([networkMaxing.md](../log-twitter-network-maxing/SKILL.md)): every touch is about them and what they're doing, and the ask comes only once they're talking.
 
@@ -61,7 +61,7 @@ flowchart TD
 ```mermaid
 flowchart TD
   s0["8. Who engaged back: liked or replied to a reply, followed the own…<br/><i>twitterNotifications, twitterFollows, twitterDms</i>"]
-  s1["9. To each one who engaged, the cold DM the network-maxing way: on…<br/><i>voice, twitterQueueBuild</i>"]
+  s1["9. To each one who engaged, the first DM, the network-maxing way:…<br/><i>voice, twitterQueueBuild</i>"]
   s2["10. Then a brief voice note in the owner's cloned voice, once the o…<br/><i>voice, twitterQueueAdd</i>"]
   s3["11. When they answer, the opening message: get to know them and the…<br/><i>twitterDms, voice, twitterDmLive</i>"]
   s0 --> s1
@@ -73,7 +73,7 @@ flowchart TD
 | # | Step | Tool | Done when |
 | --- | --- | --- | --- |
 | 8 | Who engaged back: liked or replied to a reply, followed the owner, or messaged him | `twitterNotifications` { account }, `twitterFollows`, `twitterDms` { account, with } | the managers who engaged |
-| 9 | To each one who engaged, the cold DM the network-maxing way: one of their own tweets forwarded first, then one line about it. The opener only, never the ask | `voice` { to, context, text }, then `twitterQueueBuild` { action: "dm" } | every opener passes |
+| 9 | To each one who engaged, the first DM, the network-maxing way: one of their own tweets forwarded first, then one line about it. The opener only, never the ask | `voice` { to, context, text }, then `twitterQueueBuild` { action: "dm" } | every opener passes |
 | 10 | Then a brief voice note in the owner's cloned voice, once the openers have gone: one spoken question that goes a step further on their tweet | `voice` { to, context, text, spoken: true }, then `twitterQueueAdd` { action: "voice" } | X's answer is `sent` for each voice note |
 | 11 | When they answer, the opening message: get to know them and the streamers they run, then, in the conversation, log: Clavicular's X as the example, Claude Code explaining sponsor deals with tracked links, more sign-ups, more affiliate money | `twitterDms` { account, with }, `voice`, `twitterDmLive` | the conversation is going |
 
@@ -90,5 +90,12 @@ flowchart TD
 
 - Steps 1 to 4 are read by hand from StreamerStats, the agencies' sites and treg for now; a command that builds `streamers.json` and `agencies.json` would make them repeatable.
 - StreamerStats shows only the top 75 without a login; a deeper ranking per category needs the owner signed in there.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [All X use cases, and the parts they share](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/twitter/README.md)
+- [What log does on X](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/x.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)
 
 > Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

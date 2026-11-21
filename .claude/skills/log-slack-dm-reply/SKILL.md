@@ -41,3 +41,9 @@ New messages arrive by themselves: the inbox hook keeps `log slack watch --inbox
 - **Read the chat before sending.** The voice gate inside `slackSendLive` reads the chat's context from the .db, not from Slack (rule 137). `slackRead` stores what it reads there as backfill, so step 3 is what gives the gate the chat's history. Once a thank-you was refused three times while the .db held only 2 of the other person's messages, and the gate read it as a cold first message with an ask in it. Backfilled history is never shown as new messages.
 - **Send by who it is with.** Give `chat` as the person (their name or handle), not only the D… id, so the gate matches the owner's history with them by name.
 - **Don't stack messages on a chat the owner already answered.** When the owner's own messages are the newest in the chat (the owner has already said thanks), a third message is refused as not the owner's voice, and it reads like it. Answer it with a reaction instead (`slackReactLive`, [inbox/reactions](../log-inbox-reactions/SKILL.md)), or leave it. A 🙏 on a contact's short thank-you went out this way.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [What log does on Slack](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/slack.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

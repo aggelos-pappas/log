@@ -37,3 +37,9 @@ flowchart TD
 - **One message per line.** A draft on several lines goes out one message per line, and the send stops the moment they write back (rule 90).
 - **X links embed as fixupx.** Share an X post on Discord as https://fixupx.com/<user>/status/<id>, never x.com: Discord only embeds the post and its video from fixupx. `discordSendLive` turns any x.com or twitter.com post link into fixupx.com itself (the owner, 2026-11-13).
 - **Name the chat.** A DM by the person, a group DM by its name or its members' names, never its id (rule 154).
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on Discord](../../platformGuides/discord.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

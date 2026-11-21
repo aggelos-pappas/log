@@ -65,3 +65,7 @@ Every HTTP mapping goes to the context layer service on `127.0.0.1:47317` (`LOG_
 - `clear` has no OpenCode event, so the SessionStart hook for it never fires.
 - OpenCode's `session.idle` is not sent for a session a client is not watching; the execution events cover it instead.
 - The transcript is written for one purpose: the play reminder. It holds only the session's log tool calls, not its whole conversation.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

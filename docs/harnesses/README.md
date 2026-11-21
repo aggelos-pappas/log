@@ -36,3 +36,8 @@ The table is `HARNESSES` in `src/agentHooks/harness/types.ts`; every hook file a
   - **Views:** they get the view as text.
   - **Sign-in:** happens in the window or the log console.
 - **Where there is no prompt hook,** the model routes each request with `getGuide({ ask })`. Both servers' instructions say to, and so does `getGuide`'s own description, so it works whether or not a host passes the instructions on.
+
+## Related
+
+- Up: [log's README](../../README.md)
+- [Install](../install.md) · [Add an account](../accounts.md) · [Connect your agent](../mcp.md) · [Trust](../trust.md)

@@ -30,3 +30,8 @@ Say: **"go on docs/useCases/inbox/labelQueue.md"**. The agent reads this page an
 | 3 | Optional: show what one SubQ pass over the unlabelled chats would cost; run it with apply only after the owner says yes to that cost | `inboxLabelTeach` { apply? } | the cost is shown, or SubQ's labels are stored |
 | 4 | Train the labeller on the owner's labels and SubQ's confident ones | `inboxLabelTrain` {} | a head is stored with its counts |
 | 5 | Tell the owner what changed: the who and where counts and anything that moved | `inboxLabels` {} | he sees the new counts |
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

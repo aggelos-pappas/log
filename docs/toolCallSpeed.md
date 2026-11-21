@@ -95,3 +95,7 @@ Built on what log already has: the context service (rule 159), the reload proxy 
 3. The probe harness, with cold and warm reported separately.
 4. Python hosts for Discord, Slack and Reddit.
 5. The self-check that raises a path over its target.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

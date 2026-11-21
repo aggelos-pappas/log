@@ -40,4 +40,10 @@ Say: **"go on docs/useCases/discord/memeReply.md for <chat>"**. The agent reads 
 - **A meme can joke about money; it never names a price**. On 2026-11-02 the owner asked the log group "how much shall i charge", and the answer sent was Floyd Mayweather's Cash Stacks, not a number.
 - **One meme, then wait.** The chat answers back; never send a run of memes (rule 94).
 
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [What log does on Discord](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/discord.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)
+
 > Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

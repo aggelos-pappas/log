@@ -24,3 +24,8 @@ Hermes (Nous Research) is an agent that runs on a server and answers through gat
   - **What's left:** guidance comes through the tool descriptions and `getGuide`.
   - **Skills:** the plugin's skills are named `log:<skill>` by Hermes. Whether Hermes loads them as Claude Code does isn't checked by running it.
 - **Approvals:** Hermes routes MCP form elicitation to its approval prompts, which show as buttons on Telegram and Slack. URL elicitation is declined as unsupported.
+
+## Related
+
+- Up: [Every agent app log works with](README.md)
+- [Connect your agent](../mcp.md) · [Install](../install.md) · [Use cases](../useCases/README.md)

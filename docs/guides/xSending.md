@@ -204,7 +204,7 @@ order:
 | 1 | Post day | One original post. The text carries it (a video open counts almost nothing). One best post per feed window, when the audience is online, never several in a row | the social posting playbook (section 2), sent by hand |
 | 2 | The first 2 hours | Answer every comment. Unanswered questions are the best openers. Replies between mutuals score highest | `docs/useCases/twitter/engagementReplies.md`: treg comments read, then a queue of replies |
 | 3 | About 1 hour after | Quote a matching trend, never before your own post | playbook "Riding a trend", `log twitter quote` |
-| 4 | The next days | DM the people who liked or reposted it, opening with one of their own tweets, then one informal line | `docs/useCases/twitter/engagerDms.md` (the cold DM way), queue `action: dm` |
+| 4 | The next days | DM the people who liked or reposted it, opening with one of their own tweets, then one informal line | `docs/useCases/twitter/engagerDms.md` (the first-DM way), queue `action: dm` |
 | 5 | Every day | Reply to people posting about your topic, one line about their post backed by your own fact, inside the account's 240 writes a day | `docs/useCases/twitter/topicReplies.md`, the queue's `limit` |
 | 6 | Always | Answer whoever writes back. Never send a cold template to someone you already talk to | `log twitter dms --account <a> [--with <handle>]`, `chat watch` (needs the X Chat PIN), rule 109 |
 | 7 | Weekly | Score the followers (treg profiles and their posts), and talk to the best ones by hand | `docs/useCases/twitter/followers.md`, treg `anyapi.x.user.profile` |
@@ -225,8 +225,8 @@ account posts about comes from its own plan:
 
 Where they disagree, the X discipline wins on X. The plan's comment
 prompts ("comment your AI stack") read as engagement bait there, so on X
-ask a real question in the post instead. A cold DM opens the cold DM way
-(their own tweet first). The plan's DM opener is for someone who has
+ask a real question in the post instead. A first DM opens on their own
+tweet. The plan's DM opener is for someone who has
 already commented.
 
 **Voice.** `log voice` gates drafts against the owner's own writing. Its guide

@@ -2,7 +2,7 @@
 
 [![Node.js](https://img.shields.io/badge/node.js-16+-green?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](./tests/)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/neilopet/mcpmon/tree/HEAD/tests)
 [![Code Style](https://img.shields.io/badge/code%20style-prettier-blue.svg)](https://prettier.io/)
 
 **Hot-reload monitor for MCP servers - like nodemon but for Model Context Protocol**
@@ -221,7 +221,7 @@ MCPMON_VERBOSE=1 mcpmon node server.js
 - **Server won't start?** Check the error messages for missing dependencies
 - **No hot reload?** Verify your server file is being detected in the logs
 - **Schema changes not visible?** Toggle your MCP server off/on in Claude Desktop settings
-- **Need help?** See our [Troubleshooting Guide](TROUBLESHOOTING.md)
+- **Need help?** See our [Troubleshooting Guide](https://github.com/neilopet/mcpmon/blob/HEAD/TROUBLESHOOTING.md)
 
 ## Development
 
@@ -233,7 +233,7 @@ npm test
 npm run dev
 ```
 
-See [Contributing Guide](CONTRIBUTING.md) for more details.
+See [Contributing Guide](https://github.com/neilopet/mcpmon/blob/HEAD/CONTRIBUTING.md) for more details.
 
 ## Installation
 
@@ -249,20 +249,20 @@ npx mcpmon node server.js
 
 ## Contributing
 
-We welcome contributions! See [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! See [Contributing Guide](https://github.com/neilopet/mcpmon/blob/HEAD/CONTRIBUTING.md) for details.
 
 ## Documentation
 
-- [API Documentation](docs/api.md) - Library usage and advanced features
-- [Architecture Guide](docs/architecture.md) - How mcpmon works internally
-- [Testing Guide](docs/testing.md) - Test architecture and patterns
-- [Troubleshooting Guide](TROUBLESHOOTING.md) - Common issues and solutions
-- [Contributing Guide](CONTRIBUTING.md) - How to contribute
-- [Changelog](CHANGELOG.md) - Version history and changes
+- [API Documentation](https://github.com/neilopet/mcpmon/blob/HEAD/docs/api.md) - Library usage and advanced features
+- [Architecture Guide](https://github.com/neilopet/mcpmon/blob/HEAD/docs/architecture.md) - How mcpmon works internally
+- [Testing Guide](https://github.com/neilopet/mcpmon/blob/HEAD/docs/testing.md) - Test architecture and patterns
+- [Troubleshooting Guide](https://github.com/neilopet/mcpmon/blob/HEAD/TROUBLESHOOTING.md) - Common issues and solutions
+- [Contributing Guide](https://github.com/neilopet/mcpmon/blob/HEAD/CONTRIBUTING.md) - How to contribute
+- [Changelog](https://github.com/neilopet/mcpmon/blob/HEAD/CHANGELOG.md) - Version history and changes
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](https://github.com/neilopet/mcpmon/blob/HEAD/LICENSE) file for details.
 
 ---
 

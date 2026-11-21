@@ -45,3 +45,7 @@ A list with fewer than two labels falls back to the defaults. Only `lead` and `c
 ## Speed
 
 `scripts/pipeline/benchLabeller.ts` runs on a copy of log.db (`LOG_DB=<copy>`) and prints p50 and p95 per new message, the first full labelling of a chat, and the model load times.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

@@ -21,7 +21,7 @@ flowchart TD
   s5["6. The outbound list: the region's go getters (gates passed; band…<br/><i>data/yc/goGetters.json</i>"]
   s6["7. One recent post of each person's own to open on: the index hold…<br/><i>the index (search_index.json, search_po…</i>"]
   s7["8. Whether they follow the owner and he follows them<br/><i>twitterFollows</i>"]
-  s8["9. Each opener the cold DM way (engagerDms.md): their tweet first,…<br/><i>the agent</i>"]
+  s8["9. Each opener the first-DM way (engagerDms.md): their tweet first…<br/><i>the agent</i>"]
   s9["10. Queue them as dms and check them: house style, and nobody he al…<br/><i>twitterQueueBuild, twitterQueueCheck</i>"]
   s10["11. Gate every opener with the voice gate (his writing across all h…<br/><i>voice</i>"]
   s11["12. Follow, like the post, then the opener, a few people a day, min…<br/><i>twitterFollowLive, twitterLikeLive</i>"]
@@ -49,7 +49,7 @@ flowchart TD
 | 6 | The outbound list: the region's go getters (gates passed; band member, collaborator, sponsor or affiliate) in ring 2 first, then ring 2 around them | `data/yc/goGetters.json` | the list, ranked |
 | 7 | One recent post of each person's own to open on: the index holds their posts, and one fresh search each confirms they posted this week. Nothing new: they wait | the index (`search_index.json`, `search_posts.jsonl`), treg's posts search | each with a user id and a post from the last few days |
 | 8 | Whether they follow the owner and he follows them | `twitterFollows` | the relationship, for the opener's wording |
-| 9 | Each opener the cold DM way ([engagerDms.md](engagerDms.md)): their tweet first, then one line about it, never an ask | the agent | one draft per person |
+| 9 | Each opener the first-DM way ([engagerDms.md](engagerDms.md)): their tweet first, then one line about it, never an ask | the agent | one draft per person |
 | 10 | Queue them as dms and check them: house style, and nobody he already talks to on X Chat | `twitterQueueBuild` { action: "dm" }, `twitterQueueCheck` | all pending, none dropped or failed |
 | 11 | Gate every opener with the voice gate (his writing across all his conversations), rewriting until it passes | `voice` { to, context, text } | every draft passes |
 | 12 | Follow, like the post, then the opener, a few people a day, minutes apart (rule 94) | `twitterFollowLive`, `twitterLikeLive`, the queue run | X's answer is `sent` for each |
@@ -59,3 +59,10 @@ flowchart TD
 - **The owner names the batches, the areas and the money.** Never add a world, a batch or a source he didn't say (rule 39).
 - **The page reads YC slowly,** about one page every 1.5 s, and keeps every page it read in `data/yc/pages`, so a rerun costs nothing.
 - **A dropped write is never retried through.** A 429 or a soft block stops the sends, and the next action waits for the owner (rule 94).
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [All X use cases, and the parts they share](README.md)
+- [What log does on X](../../platformGuides/x.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

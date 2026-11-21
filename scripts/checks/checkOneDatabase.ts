@@ -21,6 +21,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'scripts/checks/checkAgentHooks.ts': { writes: 1, kind: 'repo' },
   'scripts/checks/checkAgnostic.ts': { writes: 1, kind: 'repo' },
   'scripts/checks/checkAgentWording.ts': { writes: 1, kind: 'repo' },
+  'scripts/checks/checkDocLinks.ts': { writes: 1, kind: 'repo' },
   'scripts/checks/checkBrowserParity.ts': { writes: 1, kind: 'repo' },
   'scripts/checks/checkNoComments.ts': { writes: 1, kind: 'repo' },
   'scripts/checks/checkUseCases.ts': { writes: 1, kind: 'repo' },

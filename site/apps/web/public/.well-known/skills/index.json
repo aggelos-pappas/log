@@ -358,7 +358,7 @@
     },
     {
       "name": "log-twitter-manager-maxxing",
-      "description": "Manager maxxing: the managers of the biggest Kick streamers. A log play (docs/useCases/twitter/managerMaxxing.md): The owner's go-to-market, in his words (https://x.com/xAccount/status/2118285429674017268): \"find every single kick streamers managers on twitter, reply guy them for a few days then cold dm them to use log and show claviculars twitter\". The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck.",
+      "description": "Manager maxxing: the managers of the biggest Kick streamers. A log play (docs/useCases/twitter/managerMaxxing.md): The owner's go-to-market, from his post (https://x.com/xAccount/status/2118285429674017268): find the manager of every Kick streamer on X, reply to their posts for a few days, then send each one a first DM about using log and showing Clavicular's X. The pitch, once they're talking: if Claude Code explains the sponsor deals a streamer does, with tracked links, sign-up rates go up, which means more affiliate money. Letting AI use your social media increases your surface area of luck.",
       "files": [
         "SKILL.md"
       ],

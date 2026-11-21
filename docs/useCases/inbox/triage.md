@@ -60,3 +60,8 @@ flowchart TD
 
 - Handing the job over is [bossMaxxing.md](bossMaxxing.md), which carries the send, the monitor and the walk-through.
 - Working out what a person is worth to the owner in the first place is [collabMaxxing.md](../twitter/collabMaxxing.md).
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

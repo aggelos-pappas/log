@@ -39,3 +39,7 @@ See [httpClients](httpClients/README.md): a live test against the real Chrome on
 - curl_cffi 0.17 is needed for Windows Chrome targets. 0.16 targets all say macOS.
 - 152 is the newest Chrome both libraries ship.
 - httpcloak has no WebSocket client and no Python asyncio, which Discord, Slack and Facebook need.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

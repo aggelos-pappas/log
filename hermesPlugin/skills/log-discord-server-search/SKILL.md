@@ -39,3 +39,9 @@ Say: **"go on docs/useCases/discord/serverSearch.md for <server>, looking for <w
 - **The answer names where each hit is.** Read it there with `discordRead`, which names the channel or post it read.
 - **Voice notes and images:** a hit in a voice note shows as its attachment. Read that spot without `noMedia` to have it transcribed.
 - What each part of a server is: the `discordServers` skill in the discord guide.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [What log does on Discord](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/discord.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

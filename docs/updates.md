@@ -133,3 +133,9 @@ The workflow needs one repository secret, `NPM_TOKEN` (an npm automation token f
 ## Later: a compiled build and Velopack
 
 log installs as a Bun package plus uv-managed Python vendors, not as one executable, so Velopack doesn't fit yet. Once `bun build --compile` ships a single log executable with the Python runtime beside it, it can be packed with `vpk pack` and published through Velopack's GitHub Releases source, which brings a Windows installer, delta updates and an apply-on-restart. Until then updates go through npm and GitHub Releases as above.
+
+## Related
+
+- Up: [log's README](../README.md)
+- Start here, in order: [Install](install.md) · [Add an account](accounts.md) · [Connect your agent](mcp.md) · [What log does, and what it never does](trust.md)
+- Then: [Use cases, the plays step by step](useCases/README.md) · [Your agent app](harnesses/README.md) · [What you can do on each platform](platformGuides/x.md) · [Every command and tool](reference.md) · [How log works](howItWorks.md)

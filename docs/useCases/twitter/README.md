@@ -19,6 +19,7 @@ Everything log-cli does on X, one page per job. Each page can be run from a fres
 | [collabMaxxing.md](collabMaxxing.md) | turn open conversations and missed openings into collabs: scope it, position the open-source collab, then the small ask | dms, one by one or through the queue, once the voice gate passes |
 | [nicheMapRegion.md](nicheMapRegion.md) | add a new world to the niche map (the YC 2026 batches, say), run it through the pipeline, then open on the warmest of it | follows, likes and openers, a few a day, once the voice gate passes |
 | [managerMaxxing.md](managerMaxxing.md) | the managers of the biggest Kick streamers, category by category: find them on X, reply guy them with memes, then DM the ones who engaged their tweet, a line and a voice note | replies, then dms and voice notes, through the account's one queue |
+| [replyGuyFunnel.md](replyGuyFunnel.md) | reply to each new person's post with a meme, open a DM on that post, build on what they say, then the ask | replies, then dms, through the queue |
 
 DMs are their own pages. Recruiting is public replies only.
 
@@ -57,3 +58,8 @@ The queue hook puts every held item, send, refusal and stop in front of the agen
 - **Personal beats generic.** A line about the person's own post goes through; the same generic line with a link sent to strangers tends to come back as "no tweet created". Write each line for its post.
 - **No claims you can't back up,** and no pay figures in public replies.
 - **Log every send:** the reply url (`https://x.com/<account>/status/<id>`) or X's event, kept with the queue.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on X](../../platformGuides/x.md) · [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

@@ -47,3 +47,10 @@ flowchart TD
 - A drop or a 429 stops the rest: what went out stays out, nothing is resent, and the next send waits for the owner (rule 94).
 - An account has one queue and one run for everything it sends: follow-ups, reply-guy replies and answers go into the same one (rule 105). Never start a second queue or run beside it, and never send from a hand-run command or a loop (rules 105, 163). Each target carries its own `text`, and its dm items split one message per line the same way.
 - Every call goes through the account's one X session (rule 105); the answer's `xSession` names it.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [All X use cases, and the parts they share](README.md)
+- [What log does on X](../../platformGuides/x.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

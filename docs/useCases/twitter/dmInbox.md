@@ -63,3 +63,10 @@ Who wrote last is already in context at the start of a session: the SessionStart
 ## Next
 
 - [#34](https://github.com/matthewdonsemail-lab/log/issues/34) writes every conversation into Twenty, so each person's thread sits on their record.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [All X use cases, and the parts they share](README.md)
+- [What log does on X](../../platformGuides/x.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

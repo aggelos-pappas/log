@@ -9,3 +9,8 @@ How the owner asks for it: "what did he say", "find his messages", "everything t
 | # | Step | Tool | Done when |
 | --- | --- | --- | --- |
 | 1 | Someone's messages on every platform, found by name, newest first | `saidBy` { name, limit } | it answers what the one-off answered |
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

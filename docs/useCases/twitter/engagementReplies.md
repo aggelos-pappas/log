@@ -60,3 +60,10 @@ Where the comment was a question (for example "what does the first message actua
 - [#36](https://github.com/matthewdonsemail-lab/log/issues/36) expands spintax in the queue.
 
 Likers and reposters aren't in a comments read: they have their own page, [engagerDms.md](engagerDms.md).
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [All X use cases, and the parts they share](README.md)
+- [What log does on X](../../platformGuides/x.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

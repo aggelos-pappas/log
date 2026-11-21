@@ -23,3 +23,7 @@ The workflow needs the repository secret `NPM_TOKEN`: an npm automation token wi
 Installs hear about the release within a day through the update check; see [updates.md](updates.md).
 
 Every merge to `main` whose `check` passed is also published as a nightly (`.github/workflows/nightly.yml`, npm dist-tag `next`, a GitHub prerelease); nobody runs it by hand either.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

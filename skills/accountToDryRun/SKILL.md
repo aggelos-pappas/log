@@ -61,7 +61,7 @@ another method first), and trusts the device. This is the connect machine
 (`platformKit/connect/machine.ts`): each page is printed as its kind and
 state; nothing secret is. Every page takes the proven path: the
 cookie banner is accepted, "We suspect automated behaviour" dismissed, login
-captchas solved (CaptchaKraken, then 2Captcha). Only an identity, photo, video
+puzzles solved (CaptchaKraken, then 2Captcha). Only an identity, photo, video
 or SMS checkpoint is never clicked: it waits for the owner in the window. It reads for up to 600 s
 (`--wait <s>` to change it). Signed in: the session is saved to Twenty and
 the account set **ACTIVE**. It can also end `checkpointed` (status

@@ -227,3 +227,7 @@ the owner, 2026-11-08: the book (Kleppmann, *Designing Data-Intensive Applicatio
 9. The person model for #95 (item 15), then blobs and vectors (item 16).
 
 Each step is measured before and after with the benchmark from step 6 (built first if a step needs its numbers), and lands as its own commit naming #96 or #97.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

@@ -43,3 +43,9 @@ flowchart TD
 - **Send by the chat id.** A chat named in words makes the engine list every chat first, which is one more call, and the account's governor then waits a random gap before the send (about 30 s on 2026-11-02). With the id the send is one call.
 - **A meme can joke about money; it never names a price**. On 2026-11-02 the owner asked the log group "how much shall i charge", and the answer sent was Floyd Mayweather's Cash Stacks, not a number.
 - **One meme, then wait.** The chat answers back; never send a run of memes (rule 94).
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on Discord](../../platformGuides/discord.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

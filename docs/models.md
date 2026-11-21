@@ -72,3 +72,7 @@ The voice gate's embeddings are made once and kept in `log.db` by the text's has
 - **Small enough to run on any machine.** MiniLM and LFM2.5-VL run on a CPU, so reading, searching and describing never need the internet or a key.
 - **Text for every model.** Every picture, voice note and video becomes text when it arrives ([how it works](howItWorks.md)), so an agent whose model can't see images still knows what was sent.
 - **Hosted only where it pays.** The voice gate and transcripts are worth a hosted model, and each one's balance is in `log balance`.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

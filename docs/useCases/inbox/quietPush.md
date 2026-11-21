@@ -23,3 +23,8 @@ flowchart TD
 | --- | --- | --- | --- |
 | 1 | Quiet the push for the minutes the owner named, or 0 to end it now | `inboxQuiet` { minutes, by: "<owner>" } | the time it ends |
 | 2 | Tell the owner when it ends | the reply to the owner | the owner knows the push is quiet until then, and that nothing is lost |
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

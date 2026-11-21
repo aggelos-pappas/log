@@ -32,3 +32,8 @@ flowchart TD
 - **One version for everything.** Each release pins its models in `src/models/manifest`; `log update` and the install scripts fetch them, so this is for checking or for finishing a fetch that failed offline.
 - **No second download.** A matching copy in transformers.js's old cache inside `node_modules` is moved, not downloaded again. Everything lands in `~/.logCli/models`.
 - **About 530 MB in all**, most of it the image describer. Check free space first (`runsSpace`).
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

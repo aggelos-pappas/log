@@ -41,4 +41,9 @@ New messages arrive by themselves: the inbox hook keeps `log instagram watch --i
 - **A meme goes as the picture.** [Memelord](https://www.memelord.com/sign-up?ref=kfwut9wc) answers with a media URL; save it as a JPEG and send it as `photo`, never the link.
 - **Pick from the top of the taste ranking, with judgement.** A template built on a stereotype is skipped even when it ranks first.
 
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)
+
 > Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

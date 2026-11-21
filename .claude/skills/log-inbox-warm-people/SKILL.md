@@ -29,3 +29,8 @@ Say: **"go on docs/useCases/inbox/warmPeople.md"**. The agent reads this page an
 | 2 | Fix what the owner corrects: who, and where for a lead or client, or undo to go back | `inboxLabel` { platform, account, chat, who, where?, by: "<owner>", undo? } | the tool says the label is set |
 | 3 | For each readyToAsk lead, read the chat and draft one ask in his words, never to a friend, partner, bot or client | `voice` { to, with } | a gated draft per person |
 | 4 | Show the owner the people and the drafts, then send the ones he says yes to | the reply to the owner | he knows who is warm and what goes out |
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

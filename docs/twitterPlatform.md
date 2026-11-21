@@ -136,3 +136,7 @@ The warm-up, X listening (searching and reading posts), a browser path for X, an
 - **The name.** The platform word is `twitter` (matching Twenty's `TWITTER`).
 
 The rules behind this are in AGENTS.md.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

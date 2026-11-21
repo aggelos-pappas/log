@@ -27,3 +27,7 @@ shared workspace rather than local accounts.
   web app, for example a local one.
 
 The CLI never holds the OAuth client secret.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

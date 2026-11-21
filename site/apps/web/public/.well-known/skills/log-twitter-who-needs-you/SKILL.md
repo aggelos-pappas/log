@@ -42,4 +42,11 @@ Say: **"go on docs/useCases/twitter/whoNeedsYou.md"**, and which account. The ag
 - Reads go one person at a time. Never read the whole inbox in a loop of calls, and never in the same session as a bulk send (rule 94).
 - How likely money is gets said plainly, from what was said. Nothing is inferred that the person didn't say.
 
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [All X use cases, and the parts they share](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/twitter/README.md)
+- [What log does on X](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/x.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)
+
 > Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

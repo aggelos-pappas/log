@@ -29,3 +29,8 @@ flowchart TD
 - Matched rows are the ones to trust: raw rates mix who log writes to (cold openers) with who the owner talks to by hand (friends mid-chat).
 - A window counts a send only once it has passed, so the newest plays show n=0 at 7 days.
 - With `json` the answer carries `view`, a report spec of blocks for a card.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

@@ -50,3 +50,8 @@ flowchart TD
 - **Free first.** TinyFish search and fetch through treg cost nothing. Ranked keywords, profile lookups and deep research cost money: say the price and ask before running anything the owner didn't ask to pay for (rule 41).
 - **"Open source" on a competitor's page isn't always the whole thing.** Say exactly what each one is, as the owner knows it.
 - **On Windows the Parallel CLI can fail writing the report** (a charmap error). Read the finished run from Parallel's API instead and save it as UTF-8.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

@@ -31,3 +31,8 @@ flowchart TD
 | 4 | Tell the owner the count before and after, and carry on with what was blocked | the reply to the owner | the owner knows each account is back to 0 |
 
 `account: "all"` resets every account on that platform. A cooldown after a block is kept: a blocked account resumes only when the owner says so (rule 94), and the platform's own answer still decides (rule 73).
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

@@ -404,3 +404,7 @@ Errors are toasts. The console attaches to a browser that is already open (by
 verifying a session from the console are not ported yet.
 
 **In an MCP Apps host and in Hermes.** See [the live browser in the chat](mcp.md#the-live-browser-in-the-chat).
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

@@ -37,3 +37,8 @@ Say: **"go on docs/useCases/inbox/showMe.md"** and what to show. The agent reads
 - **The view never acts.** A button in it can only put a question into the chat or tell the agent what the person is pointing at. Every send still goes through its own tool, its dry run and `confirmLive` (rule 8).
 - **One call is the norm.** The data comes in the same call, so the view needs no fetching. `useTool` inside a view is for data that changes while it is open, and it only calls read tools.
 - **The starter view, and when to write your own.** With only data, the starter view shows the 30 days in four numbers (messages, the top 10's share, new this week, the busiest day), then the daily line, who messages most, and a table of people that opens a page for each. Write code when the question is narrower than that.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

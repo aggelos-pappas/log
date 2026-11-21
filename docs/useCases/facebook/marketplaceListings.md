@@ -91,7 +91,7 @@ flowchart TD
 - **One browser a day.** The host opens each account's browser once per local day and keeps it open; every action is a tab in it (rule 35). On top of that, an account's browser opens at most 8 times a day, 10 minutes apart (rule 35).
 - **The proxy first.** No browser opens without a proxy in the account's home country (rule 35).
 - **Local hours.** Nothing runs outside 08:00–22:00 in the account's home town unless the owner asks (rule 35).
-- **The same device every time.** Each account keeps one fingerprint (rule 35).
+- **The same device every time.** Each account keeps one browser identity, the same device profile every session (rule 35).
 - **Recorded.** Every step is recorded, and Facebook's own answers decide what happened, never the screen (rule 73).
 
 ## What log-cli does underneath
@@ -124,3 +124,9 @@ Not every account makes it. Some are lost before or after their first listing: a
 The pipeline doesn't care what the listing sells. Anything that wants a local profile in many towns uses the same parts: the proxy per town, the profile, the warm-up, the recorded publish flow, and the 12-minute check. A new kind of listing is a new copy set and photos (`skills/listingCopy`, `skills/listingCreative`), not new code.
 
 Sources here: `docs/lifecycle.md`, `docs/accountsAndListings.md`, `docs/proxies.md`, `docs/adsPower.md`, `skills/host/SKILL.md`. What each step must do: the specs for [proxies](../../specs/proxies.md), [the location](../../specs/marketplaceLocation.md), [copy versions](../../specs/marketplaceCopy.md), [the warm-up](../../specs/warmup.md) and [publish and check](../../specs/marketplacePublish.md).
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on Facebook](../../platformGuides/facebook.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

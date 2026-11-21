@@ -36,3 +36,8 @@ Say: **"go on docs/useCases/log/toolHealth.md"**. The agent reads this page and 
 - **Unused counts calls only.** The prompt router stores the play it matched, not the tools it listed, so how often a tool was offered and passed over is not known; the report says so rather than guessing.
 - **Failing** is more than 20% failed over at least 5 calls. A call's code comes from its root span (`attrs.code`); calls stored before codes were kept show as `uncoded`. Long-running watchers end when they are stopped, so their runs read as failed.
 - **Stale** compares each guide's last git commit with the last commit that added or removed a flag line in the module of each tool it names, and flags a call-shaped name (`` `name` { `` ) that no command or flow registers. Guides under `docs/guides` are generated: their fix is `bun run docs:build`.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

@@ -39,3 +39,9 @@ Say: **"go on docs/useCases/discord/forumPosts.md for <server>, looking for <wha
 - **Name every post.** `"<server> #<forum> > <post title>"`, never its id. `discordPosts` keeps each post's name, so `discordRead` finds it straight after.
 - **Nothing is sent from this page.** To answer one, follow [serverReply](../log-discord-server-reply/SKILL.md) with the post as the channel.
 - What each part of a server is: the `discordServers` skill in the discord guide.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [What log does on Discord](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/discord.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

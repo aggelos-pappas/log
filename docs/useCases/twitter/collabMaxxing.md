@@ -52,3 +52,10 @@ flowchart TD
 - **Missed openings are the cheapest wins.** Someone who explained their model, said they're hiring, or said "lets do it", and never got an answer. Find them in step 1 before reaching for new people.
 - Never ask the people the owner has ruled out for money (in the agent memory). Never send the same message twice: check the thread before a resend. Memes go as media, never as a raw link.
 - Every send counts against the account's writes for the day, each line one write. Space people out and never act in quick succession. Any refusal stops the run (rule 94).
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [All X use cases, and the parts they share](README.md)
+- [What log does on X](../../platformGuides/x.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)
