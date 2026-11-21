@@ -1,14 +1,21 @@
 import { join } from 'node:path'
-import { EMBED_DIMENSIONS, EMBED_MODEL } from '../types'
+import { EMBED_DIMENSIONS, EMBED_MODEL, EMBEDDER_UNAVAILABLE } from '../types'
 import type { Embedder } from '../types'
 
 type Worker = { send(texts: string[]): Promise<Float32Array[]>; stop(): void }
 
 function startWorker(model: string): Worker {
   const child = Bun.spawn([process.execPath, join(import.meta.dir, 'embedWorker.ts'), model], { stdin: 'pipe', stdout: 'pipe', stderr: 'pipe', windowsHide: true })
-  const waiting = new Map<number, (vectors: Float32Array[]) => void>()
+  const complaint = new Response(child.stderr).text().catch(() => '')
+  const waiting = new Map<number, { resolve: (vectors: Float32Array[]) => void; reject: (error: Error) => void }>()
   let ready: () => void = () => {}
-  const started = new Promise<void>((resolve) => (ready = resolve))
+  let failed: (error: Error) => void = () => {}
+  const started = new Promise<void>((resolve, reject) => {
+    ready = resolve
+    failed = reject
+  })
+  started.catch(() => {})
+  let stopped: Error | null = null
   let next = 0
   void (async () => {
     let buffer = ''
@@ -24,16 +31,23 @@ function startWorker(model: string): Worker {
         if (reply.id === undefined || !reply.data || !reply.width) continue
         const all = Float32Array.from(reply.data)
         const width = reply.width
-        waiting.get(reply.id)?.(Array.from({ length: all.length / width }, (_, i) => all.slice(i * width, (i + 1) * width)))
+        waiting.get(reply.id)?.resolve(Array.from({ length: all.length / width }, (_, i) => all.slice(i * width, (i + 1) * width)))
         waiting.delete(reply.id)
       }
     }
-  })()
+  })().catch(() => {}).finally(async () => {
+    const said = (await complaint).trim().split('\n').slice(-2).join(' | ')
+    stopped = Object.assign(new Error(`the embedding model ${model} stopped${said ? `: ${said}` : ''}`), { code: EMBEDDER_UNAVAILABLE })
+    failed(stopped)
+    for (const pending of waiting.values()) pending.reject(stopped)
+    waiting.clear()
+  })
   return {
     async send(texts) {
       await started
+      if (stopped) throw stopped
       const id = next++
-      const answer = new Promise<Float32Array[]>((resolve) => waiting.set(id, resolve))
+      const answer = new Promise<Float32Array[]>((resolve, reject) => waiting.set(id, { resolve, reject }))
       child.stdin.write(JSON.stringify({ id, texts }) + '\n')
       child.stdin.flush()
       return answer

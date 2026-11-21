@@ -122,6 +122,7 @@ function stubContext(err: string[]): Partial<CommandContext> {
     sleep: async () => {},
     cancelled: () => true,
     worker: fail as never,
+    embedder: fail as never,
     session: fail as never,
     connectSession: fail as never,
     profileSession: fail as never,

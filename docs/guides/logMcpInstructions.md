@@ -46,6 +46,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "linkedin/posts" })` | Posting on LinkedIn, liking or reposting, and taking a post down |
 | `getGuide({ useCase: "log/browserMove" })` | Moving accounts to another browser |
 | `getGuide({ useCase: "log/localModels" })` | Local models |
+| `getGuide({ useCase: "log/secretStore" })` | Secret store status |
 | `getGuide({ useCase: "log/toolFromOneOff" })` | Turning a hand-rolled one-off into a log tool |
 | `getGuide({ useCase: "log/toolHealth" })` | Tool health |
 | `getGuide({ useCase: "log/updateLog" })` | Update log |

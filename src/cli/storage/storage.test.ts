@@ -31,6 +31,6 @@ describe("log storage", () => {
   test("anything but verify or rebuild is refused with the usage", async () => {
     const out = await storageCommand.run(context().ctx, ["drop"]);
     expect(out.code).toBe(1);
-    expect(out.stderr).toContain("say verify or rebuild");
+    expect(out.stderr).toContain("say status, verify, rebuild or recovery set");
   });
 });

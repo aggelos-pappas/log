@@ -356,7 +356,7 @@ Answered:
 
 ## What it does
 
-Loads the account's shop wishlist and its prices.
+Reads the user's Shop wishlist, with its items, apps and prices.
 
 ## What our machine does with it
 

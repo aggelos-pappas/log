@@ -44,7 +44,7 @@ Answered:
 
 ## What it does
 
-Loads profile widget settings for developer apps.
+Reads the profile widget setups that developers offer for their apps.
 
 ## What our machine does with it
 

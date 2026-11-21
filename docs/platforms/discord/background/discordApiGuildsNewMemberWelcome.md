@@ -172,7 +172,7 @@ Answered:
 
 ## What it does
 
-Loads a server's welcome message and suggested channels for new members.
+Reads a server's new-member welcome: whether it is on, its welcome message and the resource channels it points at.
 
 ## What our machine does with it
 

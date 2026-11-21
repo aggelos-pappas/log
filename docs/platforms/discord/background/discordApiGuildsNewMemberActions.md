@@ -72,7 +72,7 @@ Answered:
 
 ## What it does
 
-Reads which onboarding steps the account has done in a server it recently joined.
+Reads which onboarding actions (the server's new-member to-do channels) the user has done in a server.
 
 ## What our machine does with it
 

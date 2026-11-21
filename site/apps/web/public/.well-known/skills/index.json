@@ -253,6 +253,14 @@
       "summary": "Local models"
     },
     {
+      "name": "log-log-secret-store",
+      "description": "Secret store status. A log play (docs/useCases/log/secretStore.md): Read whether log's account sessions, login secrets and provider keys are sealed in log.db, and which files still hold any in plain text. It reads only: nothing is sealed, moved or printed by value. Sealing itself needs no step; log does it the next time it uses each secret (docs/security/encryptedStore.md).",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Secret store status"
+    },
+    {
       "name": "log-log-tool-from-one-off",
       "description": "Turning a hand-rolled one-off into a log tool. A log play (docs/useCases/log/toolFromOneOff.md): When the agent reaches for a one-off to get or change data (a scratch script over log.db, a raw `sqlite3` query, a `curl` to a platform or a link, a `python -c` or `bun -e`), log has no tool for that job yet. The hook labels the call `readsData` or `actsOnData` with what it touched, counts it in log.db, and says so before or right after it runs. It never blocks: the agent may finish the one-off, then makes it a real command and MCP tool so it routes from then on. The owner isn't asked; the guide below is the whole procedure.",
       "files": [

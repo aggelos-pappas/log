@@ -298,7 +298,7 @@ Answered:
 
 ## What it does
 
-Loads store products and their prices for the shop.
+Reads storefront products by SKU, to draw items in Discord's store.
 
 ## What our machine does with it
 

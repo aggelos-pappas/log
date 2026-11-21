@@ -70,7 +70,7 @@ Answered:
 
 ## What it does
 
-Lists the app and game identities linked to the account.
+Lists the app identities linked to the user (accounts in apps and games that use Discord sign-in).
 
 ## What our machine does with it
 

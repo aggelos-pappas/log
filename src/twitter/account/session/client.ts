@@ -13,6 +13,7 @@ import { timedEngine } from '../../../observability/timing/index'
 import type { EngineTrace } from '../../../observability/timing/index'
 import type { TwitterEngineRun, TwitterEngineSpec, TwitterGate, TwitterSessionAnswer, XChatLiveEvent } from './types'
 import { callHost, readHostInfo } from './helpers'
+import { sessionHandoff } from '../../../storage/secrets/index'
 
 const ENGINE = join(import.meta.dir, '..', '..', '..', '..', 'python', 'twitterApi', 'engine.py')
 
@@ -82,20 +83,36 @@ interface PreparedCall {
   spec: Record<string, unknown>
   specPath: string
   refreshedPath: string
+  cookies: unknown
+}
+
+function cookiesHandoff(dir: string, account: TwitterAccount): Record<string, unknown> {
+  const sealed = sessionHandoff('twitter', account.accountName, { cookies: account.cookies ?? {} })
+  if (sealed) return { cookiesRef: sealed }
+  const cookiesPath = join(dir, 'cookies.json')
+  writeFileSync(cookiesPath, JSON.stringify(account.cookies ?? {}), { mode: 0o600 })
+  return { cookiesPath }
+}
+
+function hostSpecOf(prepared: PreparedCall): Record<string, unknown> {
+  if (!prepared.spec.cookiesRef) return prepared.spec
+  const cookiesPath = join(prepared.dir, 'cookies.json')
+  writeFileSync(cookiesPath, JSON.stringify(prepared.cookies ?? {}), { mode: 0o600 })
+  const { cookiesRef: _ref, ...rest } = prepared.spec
+  return { ...rest, cookiesPath }
 }
 
 function prepareCall(account: TwitterAccount, request: TwitterEngineSpec, trace: EngineTrace | null, route: { proxy: string | null }): PreparedCall {
   const dir = mkdtempSync(join(tmpdir(), 'twitterApi'))
-  const cookiesPath = join(dir, 'cookies.json')
   const refreshedPath = join(dir, 'refreshed.json')
-  writeFileSync(cookiesPath, JSON.stringify(account.cookies ?? {}), { mode: 0o600 })
+  const handoff = cookiesHandoff(dir, account)
   const { chatPin, ...rest } = request
   const pinPath = chatPin ? join(dir, 'chatPin.txt') : undefined
   if (pinPath) writeFileSync(pinPath, chatPin!, { mode: 0o600 })
-  const spec = { ...rest, account: account.accountName, route, writesPerDay: writesPerDayOf('twitter'), cookiesPath, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }
+  const spec = { ...rest, account: account.accountName, route, writesPerDay: writesPerDayOf('twitter'), ...handoff, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }
   const specPath = join(dir, 'spec.json')
   writeFileSync(specPath, JSON.stringify(spec), { mode: 0o600 })
-  return { dir, spec, specPath, refreshedPath }
+  return { dir, spec, specPath, refreshedPath, cookies: account.cookies ?? {} }
 }
 
 function refreshedOf(prepared: PreparedCall): Record<string, string> | null {
@@ -106,7 +123,7 @@ async function viaHost(account: TwitterAccount, prepared: PreparedCall, onLive?:
   if (process.env.LOG_TWITTER_HOST === 'inline') return null
   const info = readHostInfo(twitterHostFile(account.accountName))
   if (!info) return null
-  const called = await callHost(info, prepared.spec, onLive as ((event: unknown) => void) | undefined)
+  const called = await callHost(info, hostSpecOf(prepared), onLive as ((event: unknown) => void) | undefined)
   if (!called.reached) return null
   return { answer: called.answer as unknown as TwitterSessionAnswer, refreshed: refreshedOf(prepared) }
 }
@@ -153,14 +170,13 @@ export function runTwitterEngineLive(account: TwitterAccount, request: TwitterEn
 
 function spawnTwitterEngineLive(account: TwitterAccount, request: TwitterEngineSpec, onLive: (event: XChatLiveEvent) => void, trace: EngineTrace | null, route: { proxy: string | null }): Promise<TwitterEngineRun> {
   const dir = mkdtempSync(join(tmpdir(), 'twitterApi'))
-  const cookiesPath = join(dir, 'cookies.json')
   const refreshedPath = join(dir, 'refreshed.json')
-  writeFileSync(cookiesPath, JSON.stringify(account.cookies ?? {}), { mode: 0o600 })
+  const handoff = cookiesHandoff(dir, account)
   const { chatPin, ...rest } = request
   const pinPath = chatPin ? join(dir, 'chatPin.txt') : undefined
   if (pinPath) writeFileSync(pinPath, chatPin!, { mode: 0o600 })
   const spec = join(dir, 'spec.json')
-  writeFileSync(spec, JSON.stringify({ ...rest, account: account.accountName, route, writesPerDay: writesPerDayOf('twitter'), cookiesPath, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }), { mode: 0o600 })
+  writeFileSync(spec, JSON.stringify({ ...rest, account: account.accountName, route, writesPerDay: writesPerDayOf('twitter'), ...handoff, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }), { mode: 0o600 })
   return new Promise((resolve) => {
     const child = spawn(process.env.LOG_PYTHON || 'python', ['-u', ENGINE, spec], { windowsHide: true })
     let buffer = ''

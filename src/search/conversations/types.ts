@@ -103,3 +103,4 @@ export const MISSED_NO = 0.3
 export const SEARCH_DEPTH = 50
 export const EMBED_MODEL = 'Xenova/all-MiniLM-L6-v2'
 export const EMBED_DIMENSIONS = 384
+export const EMBEDDER_UNAVAILABLE = 'embedderUnavailable'

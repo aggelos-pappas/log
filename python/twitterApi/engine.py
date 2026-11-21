@@ -21,6 +21,7 @@ from platformKit import media as media_kit
 from platformKit import reactions
 from platformKit import timing
 from logHome import log_home
+import secretStore
 from identity import accountRoute as _route
 
 SECRET_KEYS = ("auth_token", "ct0", "twid", "kdt", "att", "password", "cookie")
@@ -1919,7 +1920,10 @@ async def run(spec: dict[str, Any]) -> dict[str, Any]:
         _route.arm("twitter", spec)
     except _route.RouteError as e:
         return {"ok": False, "code": e.code, "detail": e.detail}
-    cookies = normalize_cookies(json.loads(Path(spec["cookiesPath"]).read_text(encoding="utf-8")))
+    try:
+        cookies = normalize_cookies(secretStore.load_session(spec)[0])
+    except secretStore.SecretStoreError as e:
+        return {"ok": False, "code": e.code, "detail": str(e)}
     if not has_session(cookies):
         return {"ok": False, "code": "noSession", "detail": "the saved cookies have no auth_token + ct0", "loginState": "loggedOut"}
     refused = refusal_of(spec)
@@ -1987,7 +1991,7 @@ async def run_locked(spec: dict[str, Any], cookies: dict[str, str], action: str,
         keep_transaction(client, account)
         refreshed = client.get_cookies()
         if spec.get("refreshedPath") and refreshed:
-            Path(spec["refreshedPath"]).write_text(json.dumps({k: v for k, v in refreshed.items() if k != "__cf_bm"}), encoding="utf-8")
+            secretStore.write_private(spec["refreshedPath"], json.dumps({k: v for k, v in refreshed.items() if k != "__cf_bm"}))
     if forced_past:
         out["forcedPast"] = forced_past
     out["governor"] = governor.status()

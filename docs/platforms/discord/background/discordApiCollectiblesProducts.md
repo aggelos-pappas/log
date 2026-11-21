@@ -216,7 +216,7 @@ Answered:
 
 ## What it does
 
-Loads the shop's collectible items (avatar decorations, profile effects) and their styles.
+Reads a Shop collectible (avatar decoration or profile effect): its SKU, name, summary and colours, to draw it in the Shop and on profiles.
 
 ## What our machine does with it
 
