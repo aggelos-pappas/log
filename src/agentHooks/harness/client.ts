@@ -99,6 +99,7 @@ export function scratchHookEnv(dir: string, base: Record<string, string | undefi
   return {
     ...base,
     LOG_DB: join(dir, "log.db"),
+    LOG_GRAPH_OWNER: "off",
     LOG_INBOX_STATE: join(dir, "inbox"),
     LOG_HOOK_MEMORY: join(dir, "memory.json"),
     LOG_CONTEXT_LAYER: join(dir, "contextLayer"),
