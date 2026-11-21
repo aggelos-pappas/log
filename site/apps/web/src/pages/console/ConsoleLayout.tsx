@@ -3,7 +3,7 @@ import { autoUpdate, flip, FloatingFocusManager, FloatingPortal, offset, shift, 
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { cn } from '@listeningkit/ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRightFromBracket, faBolt, faChartColumn, faCoins, faGift, faHouse, faPlug } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRightFromBracket, faBolt, faChartColumn, faCoins, faGift, faHouse, faPlug, faReceipt } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import './console.css'
 
@@ -25,6 +25,7 @@ const NAV: { to: string; label: string; icon: IconDefinition }[] = [
   { to: '/console/connections', label: 'Connections', icon: faPlug },
   { to: '/console/usage', label: 'Usage', icon: faChartColumn },
   { to: '/console/events', label: 'Events', icon: faBolt },
+  { to: '/console/billing', label: 'Billing', icon: faReceipt },
 ]
 
 export function WorkspaceChip({ state, className }: { state: WorkspaceState; className?: string }) {
@@ -68,13 +69,14 @@ export function BalanceChip() {
   return (
     <div className="flex h-9 items-center gap-1.5 rounded-md bg-[#2A8CFF] px-2.5 py-1.5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_1px_2px_rgba(13,42,76,0.25)]">
       <FontAwesomeIcon icon={faCoins} className="size-3.5" />
-      <button
-        type="button"
+      <b className="text-xs font-bold tabular-nums">1000</b>
+      <Link
+        to="/console/billing"
         className="rounded-md bg-white/20 px-2 py-0.5 text-[11px] font-bold transition-colors hover:bg-white/30"
         title="Top up credits"
       >
         Top up
-      </button>
+      </Link>
     </div>
   )
 }
@@ -82,7 +84,7 @@ export function BalanceChip() {
 export function ReferralLink() {
   return (
     <Link
-      to="/console/subscription"
+      to="/console/billing"
       className="hidden h-9 items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200 hover:text-slate-900 sm:flex"
       title="Referral"
     >
@@ -106,7 +108,7 @@ export function AccountMenu() {
         <p className="truncate px-2 py-1 text-xs font-semibold text-slate-500">you@listeningkit.com</p>
         <div className="my-1 h-px bg-slate-200" />
         <Link to="/console/settings" className="block rounded-md px-2 py-1.5 font-semibold hover:bg-slate-50">Settings</Link>
-        <Link to="/console/subscription" className="block rounded-md px-2 py-1.5 font-semibold hover:bg-slate-50">Billing</Link>
+        <Link to="/console/billing" className="block rounded-md px-2 py-1.5 font-semibold hover:bg-slate-50">Billing</Link>
         <Link to="/console/connections" className="block rounded-md px-2 py-1.5 font-semibold hover:bg-slate-50">Connections</Link>
         <div className="my-1 h-px bg-slate-200" />
         <Link to="/sign-in" className="flex items-center gap-2 rounded-md px-2 py-1.5 font-semibold hover:bg-slate-50">
@@ -175,7 +177,7 @@ export function ConsoleLayout({ title, subtitle, children }: { title: string; su
                   className={cn(
                     'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors',
                     active === item.to
-                      ? 'bg-white/60 text-[#0D2A4C] shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_1px_2px_rgba(13,42,76,0.12)]'
+                      ? 'bg-[#2A8CFF] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_1px_2px_rgba(13,42,76,0.18)]'
                       : 'text-slate-700/85 hover:bg-white/30 hover:text-slate-900',
                   )}
                 >
@@ -202,7 +204,7 @@ export function ConsoleLayout({ title, subtitle, children }: { title: string; su
                 className={cn(
                   'shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-semibold transition-colors',
                   active === item.to
-                    ? 'bg-white/60 text-[#0D2A4C] shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_1px_2px_rgba(13,42,76,0.12)]'
+                    ? 'bg-[#2A8CFF] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_1px_2px_rgba(13,42,76,0.18)]'
                     : 'text-slate-700/85',
                 )}
               >

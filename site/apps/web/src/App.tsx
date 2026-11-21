@@ -15,6 +15,7 @@ import Dither from './components/Dither'
 import { AuthPage } from './pages/auth/AuthPage'
 import { ConnectionsPage } from './pages/console/ConnectionsPage'
 import { StartPage } from './pages/console/StartPage'
+import { BillingPage } from './pages/console/BillingPage'
 import { UsagePage } from './pages/console/UsagePage'
 import { EventsPage } from './pages/console/EventsPage'
 import { SettingsPage } from './pages/console/SettingsPage'
@@ -106,7 +107,8 @@ export function App() {
             <Route path="/console/usage" element={<UsagePage />} />
             <Route path="/console/events" element={<EventsPage />} />
             <Route path="/console/analytics" element={<ConsolePlaceholderPage title="Analytics" subtitle="Private metrics read from the live workspace, shown with their provenance and unavailable while it is offline." />} />
-            <Route path="/console/subscription" element={<ConsolePlaceholderPage title="Subscription" subtitle="Billing stays unconfigured until a real billing authority is implemented." />} />
+            <Route path="/console/billing" element={<BillingPage />} />
+            <Route path="/console/subscription" element={<Navigate to="/console/billing" replace />} />
             <Route path="/teams" element={<ConsolePlaceholderPage title="Teams" subtitle="Create a team, join one by invitation, or pick the team you are already in." />} />
             <Route path="/login" element={<Navigate to="/sign-in" replace />} />
             <Route path="/health" element={<HealthPage />} />

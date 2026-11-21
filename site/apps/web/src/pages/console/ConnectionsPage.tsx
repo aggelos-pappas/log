@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { loadConnections, saveConnectionKeys, checkConnection } from './connectionsData'
-import { useEffect, useState } from 'react'
+import { ImportConnectionDialog } from './ImportConnectionDialog'
+import { loadConnections, saveConnectionKeys, checkConnection, deleteConnection, importConnection } from './connectionsData'
+import { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiscord, faFacebook, faInstagram, faLinkedin, faRedditAlien, faSlack, faXTwitter } from '@fortawesome/free-brands-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faMagnifyingGlass, faPlug, faTableList, faGrip, faRotateRight } from '@fortawesome/free-solid-svg-icons'
+import { faMagnifyingGlass, faPlug, faTableList, faGrip, faRotateRight, faFileImport } from '@fortawesome/free-solid-svg-icons'
 import { ConsoleLayout, SectionHeading } from './ConsoleLayout'
 import { AddKeyDialog, type KeyProvider } from './AddKeyDialog'
 import { ConnectionList, type ConnectionItem } from './ConnectionList'
@@ -64,6 +65,87 @@ export function ConnectionsPage() {
   const now = Math.max(statusTime, Date.now())
   const nextCooldown = Math.min(...connected.map((account) => account.lastCheck?.launchOutcome).filter((outcome) => outcome?.phase === 'launchCooldown' && outcome.retryAt && Date.parse(outcome.retryAt) > now).map((outcome) => Date.parse(outcome!.retryAt!)))
   const refetchConnections = connections.refetch
+  const filePicker = useRef<HTMLInputElement>(null)
+  const [importOpen, setImportOpen] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const [dropNote, setDropNote] = useState('')
+  const [dropError, setDropError] = useState('')
+
+  function csvRows(text: string): Record<string, string>[] {
+    const lines: string[][] = []
+    let field = ''
+    let row: string[] = []
+    let quoted = false
+    for (let index = 0; index < text.length; index += 1) {
+      const char = text[index]
+      if (quoted) {
+        if (char === '"' && text[index + 1] === '"') { field += '"'; index += 1 }
+        else if (char === '"') quoted = false
+        else field += char
+        continue
+      }
+      if (char === '"') { quoted = true; continue }
+      if (char === ',' || char === ';' || char === '\t') { row.push(field); field = ''; continue }
+      if (char === '\n' || char === '\r') {
+        if (char === '\r' && text[index + 1] === '\n') index += 1
+        row.push(field); field = ''
+        if (row.some((value) => value.trim())) lines.push(row)
+        row = []
+        continue
+      }
+      field += char
+    }
+    row.push(field)
+    if (row.some((value) => value.trim())) lines.push(row)
+    if (lines.length < 2) return []
+    const headers = lines[0].map((header) => header.trim().toLowerCase().replace(/[^a-z]/g, ''))
+    return lines.slice(1).map((values) => Object.fromEntries(headers.map((header, index) => [header, (values[index] ?? '').trim()])) as Record<string, string>)
+  }
+
+  function accountFromRow(row: Record<string, unknown>) {
+    const rawPlatform = String(row.platform ?? row.platformname ?? '').toLowerCase()
+    const platform = rawPlatform === 'x' ? 'twitter' : rawPlatform
+    const name = String(row.accountName ?? row.account ?? row.name ?? row.handle ?? row.username ?? '').trim()
+    if (!['twitter', 'discord', 'slack', 'instagram', 'reddit', 'facebook', 'linkedin'].includes(platform)) return null
+    if (!/^@?[A-Za-z0-9._-]{1,64}$/.test(name)) return null
+    const rawHome = String(row.homeCountry ?? row.home ?? row.country ?? '').trim()
+    const home = /^[A-Za-z]{2}$/.test(rawHome) ? rawHome.toUpperCase() : undefined
+    const rawProxy = String(row.proxy ?? row.proxyurl ?? '').trim()
+    const proxy = rawProxy && rawProxy.length <= 300 ? rawProxy : undefined
+    return { platform, accountName: name, ...(home ? { homeCountry: home } : {}), ...(proxy ? { proxy } : {}) }
+  }
+
+  async function importDropped(file: File) {
+    setDropError('')
+    setDropNote('')
+    if (file.size > 2_000_000) { setDropError('That file is too large to import.'); return }
+    const text = await file.text()
+    let list: Record<string, unknown>[] = []
+    if (/^\s*[[{]/.test(text)) {
+      try {
+        const parsed: unknown = JSON.parse(text)
+        list = (Array.isArray(parsed) ? parsed : Array.isArray((parsed as { accounts?: unknown }).accounts) ? (parsed as { accounts: unknown[] }).accounts : []).filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object' && !Array.isArray(row))
+      } catch { setDropError('That file is not valid JSON.'); return }
+    } else {
+      list = csvRows(text)
+    }
+    const values = list.map(accountFromRow).filter((value): value is NonNullable<typeof value> => Boolean(value))
+    if (!values.length) { setDropError('No accounts were found. Check the platform and accountName columns.'); return }
+    let imported = 0
+    for (const value of values) {
+      try { await importConnection(value); imported += 1 } catch {}
+    }
+    await refetchConnections()
+    setDropNote(`${imported} of ${values.length} accounts imported.`)
+  }
+  async function removeAccount(accountId: string) {
+    try {
+      await deleteConnection(accountId)
+      await refetchConnections()
+    } catch (error) {
+      setCheckError(error instanceof Error && error.message === 'accountNotFound' ? 'That account is no longer in the local store.' : 'The account could not be removed.')
+    }
+  }
   useEffect(() => {
     if (!Number.isFinite(nextCooldown)) return
     const timer = window.setTimeout(() => { setStatusTime(Date.now()); void refetchConnections() }, Math.min(2147483647, Math.max(0, nextCooldown - Date.now()) + 100))
@@ -119,17 +201,25 @@ export function ConnectionsPage() {
   const label = 'Connected profiles'
 
   return <ConsoleLayout title="Connections" subtitle="Your own accounts and extension keys.">
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div
+      className="relative overflow-hidden rounded-xl border border-slate-200 bg-white"
+      onDragOver={(event) => { event.preventDefault(); setDragging(true) }}
+      onDragLeave={(event) => { if (event.currentTarget.contains(event.relatedTarget as Node)) return; setDragging(false) }}
+      onDrop={(event) => { event.preventDefault(); setDragging(false); const file = event.dataTransfer.files?.[0]; if (file) void importDropped(file) }}
+    >
       <div className="px-4 pt-4 sm:px-5"><SectionHeading title="Connected" count={connected.length} /></div>
       <div className="flex flex-wrap items-center gap-3 p-4 sm:px-5">
         <label className="relative min-w-0 basis-full sm:max-w-sm sm:flex-1"><span className="sr-only">Search {label.toLowerCase()}</span><FontAwesomeIcon icon={faMagnifyingGlass} className="pointer-events-none absolute left-3 top-3 size-3.5 text-slate-400" /><input value={query} onChange={(event) => { setQuery(event.target.value); setPage(0) }} placeholder="Search accounts, platforms or status" className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100" /></label>
         <div role="group" aria-label="Connected profile layout" className="inline-flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 sm:ml-auto">{(['table', 'cards'] as const).map((value) => <button key={value} type="button" aria-pressed={view === value} onClick={() => { setView(value); try { localStorage.setItem('logConsoleConnectionsView', value) } catch {} }} className={`inline-flex min-h-8 items-center gap-2 rounded-md px-3 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 ${view === value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}><FontAwesomeIcon icon={value === 'table' ? faTableList : faGrip} className="size-3.5" />{value === 'table' ? 'Table' : 'Cards'}</button>)}</div>
         <ConnectionPlatformFilter options={PLATFORMS.map((platform) => ({ value: platform.service, label: platform.label, icon: platform.icon, count: connected.filter((account) => (account.platform === 'twitter' ? 'x' : account.platform) === platform.service).length }))} selected={selectedPlatforms} onChange={(values) => { setSelectedPlatforms(values); setPage(0) }} />
-        <button type="button" onClick={() => connections.refetch()} disabled={connections.isFetching} className={actionClass}><FontAwesomeIcon icon={faRotateRight} className={`size-3.5 ${connections.isFetching ? 'animate-spin motion-reduce:animate-none' : ''}`} /><span>Refresh</span></button>
+        <button type="button" onClick={() => setImportOpen(true)} className={actionClass}><FontAwesomeIcon icon={faFileImport} className="size-3.5" /><span>Import</span></button>        <input ref={filePicker} type="file" accept="application/json,.json" className="sr-only" onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void importDropped(file) }} />        <button type="button" onClick={() => connections.refetch()} disabled={connections.isFetching} className={actionClass}><FontAwesomeIcon icon={faRotateRight} className={`size-3.5 ${connections.isFetching ? 'animate-spin motion-reduce:animate-none' : ''}`} /><span>Refresh</span></button>
       </div>
       {checkError ? <p role="status" className="mx-4 mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{checkError}</p> : null}
+      {dropError ? <p role="status" className="mx-4 mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{dropError}</p> : null}
+      {dropNote ? <p role="status" className="mx-4 mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{dropNote}</p> : null}
+      {dragging ? <div className="pointer-events-none absolute inset-2 z-20 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#2A8CFF] bg-[#EFF6FF]/90 text-center"><p className="text-base font-bold text-[#0D2A4C]">Drop the accounts file</p><p className="text-sm text-slate-600">A JSON export of accounts, one row each.</p></div> : null}
       {connections.isError ? <p role="status" className="mx-4 mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">Local connections could not be read. <button type="button" onClick={() => connections.refetch()} className="font-semibold underline">Try again</button></p> : null}
-      {connections.isLoading ? <p role="status" className="p-10 text-center text-sm text-slate-600">Loading local connections…</p> : rows.length ? <ConnectionList items={rows} view={view} label={label} /> : <p role="status" className="p-10 text-center text-sm text-slate-600">{query.trim() || selectedPlatforms.length ? 'No profiles match your filters.' : connections.isError ? 'Local connections are unavailable.' : 'No local accounts added yet.'}</p>}
+      {connections.isLoading ? <p role="status" className="p-10 text-center text-sm text-slate-600">Loading local connections…</p> : rows.length ? <ConnectionList items={rows} view={view} label={label} onDelete={(item) => { void removeAccount(item.id) }} /> : <p role="status" className="p-10 text-center text-sm text-slate-600">{query.trim() || selectedPlatforms.length ? 'No profiles match your filters.' : connections.isError ? 'Local connections are unavailable.' : 'No local accounts added yet.'}</p>}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-500 sm:px-5"><span aria-live="polite">{items.length ? currentPage * pageSize + 1 : 0}–{Math.min((currentPage + 1) * pageSize, items.length)} of {items.length}</span>{items.length > pageSize ? <div className="flex gap-2"><button type="button" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)} className={actionClass}>Previous</button><button type="button" disabled={(currentPage + 1) * pageSize >= items.length} onClick={() => setPage(currentPage + 1)} className={actionClass}>Next</button></div> : null}</div>
     </div>
     <section className="mt-8 overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -160,6 +250,7 @@ export function ConnectionsPage() {
     </section>
     {browserCheckAccount ? <BrowserCheckDialog key={browserCheckAccount.id} account={browserCheckAccount} onClose={() => { setBrowserCheckAccountId(null); void connections.refetch() }} onResolved={() => { setBrowserCheckAccountId(null); void connections.refetch() }} onConfigureProvider={() => { setBrowserCheckAccountId(null); setKeyDialog({ open: true, provider: EXTENSION_PROVIDERS.find((item) => item.key === 'adsPower')! }) }} /> : null}
     {signInPlatform ? <PlatformSignInDialog key={signInPlatform.service} platform={signInPlatform} onClose={() => setSignInPlatform(null)} /> : null}
+    <ImportConnectionDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={importDropped} />
     <AddKeyDialog open={keyDialog.open} provider={keyDialog.provider} providers={EXTENSION_PROVIDERS} credentials={connections.data?.extensions ?? []} onSave={running ? async (provider, values) => { queryClient.setQueryData(['consoleConnections'], await saveConnectionKeys(provider, values)) } : undefined} onClose={() => setKeyDialog({ open: false, provider: null })} />
   </ConsoleLayout>
 }

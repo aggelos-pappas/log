@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module'
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { IncomingMessage } from 'node:http'
 import type { Plugin } from 'vite'
@@ -45,10 +46,84 @@ function checkRows(): Map<string, { state: string; checkedAt: string; launchOutc
   finally { database?.close() }
 }
 
+function hiddenAccountsPath() {
+  return join(process.env.LOG_INBOX_STATE || join(homedir(), '.logCli'), 'consoleHiddenAccounts.json')
+}
+
+function hiddenAccounts(): string[] {
+  try {
+    const value = JSON.parse(readFileSync(hiddenAccountsPath(), 'utf8'))
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+  } catch { return [] }
+}
+
+function localAccountsFilePath() {
+  return process.env.LOG_LOCAL_ACCOUNTS || join(homedir(), '.logCli', 'localAccounts.json')
+}
+
+function platformStateRoot(platform: string) {
+  if (platform === 'facebook') return process.env.LOG_FBK_STATE || join(homedir(), '.logCli', 'fbk')
+  if (platform === 'twitter') return process.env.LOG_TWITTER_STATE || join(homedir(), '.logCli', 'twitter')
+  return join(process.env.LOG_PLATFORM_STATE || join(homedir(), '.logCli'), platform)
+}
+
+function deleteAccountStorage(platform: string, name: string) {
+  const target = name.replace(/^@/, '').toLowerCase()
+  const root = platformStateRoot(platform)
+  let removed = 0
+  if (existsSync(root)) {
+    for (const entry of readdirSync(root, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.isSymbolicLink()) continue
+      if (entry.name.toLowerCase() !== target) continue
+      rmSync(join(root, entry.name), { recursive: true, force: true })
+      removed += 1
+    }
+  }
+  const path = localAccountsFilePath()
+  if (existsSync(path)) {
+    const rows = JSON.parse(readFileSync(path, 'utf8'))
+    if (Array.isArray(rows)) {
+      const kept = rows.filter((row: Record<string, unknown>) => {
+        const rowPlatform = String(row?.platform ?? '').toLowerCase() === 'x' ? 'twitter' : String(row?.platform ?? '').toLowerCase()
+        const rowName = String(row?.accountName ?? row?.name ?? '').replace(/^@/, '').toLowerCase()
+        return !(rowPlatform === platform && rowName === target)
+      })
+      if (kept.length !== rows.length) {
+        writeFileSync(path, JSON.stringify(kept, null, 2), { mode: 0o600 })
+        removed += 1
+      }
+    }
+  }
+  return removed
+}
+
+function addLocalAccount(platform: string, name: string, homeCountry: string | null, proxy: string | null) {
+  const path = localAccountsFilePath()
+  const rows: Record<string, unknown>[] = existsSync(path) ? (() => { const value = JSON.parse(readFileSync(path, 'utf8')); return Array.isArray(value) ? value : [] })() : []
+  const clean = name.replace(/^@/, '')
+  const exists = rows.some((row) => {
+    const rowPlatform = String(row.platform ?? '').toLowerCase() === 'x' ? 'twitter' : String(row.platform ?? '').toLowerCase()
+    return rowPlatform === platform && String(row.accountName ?? row.name ?? '').replace(/^@/, '').toLowerCase() === clean.toLowerCase()
+  })
+  if (exists) return false
+  const id = `${platform}:${clean.toLowerCase()}`
+  rows.push({
+    id,
+    platform,
+    accountName: clean,
+    ...(homeCountry ? { homeCountry } : {}),
+    ...(proxy ? { proxy } : {}),
+  })
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, JSON.stringify(rows, null, 2), { mode: 0o600 })
+  return true
+}
+
 function snapshot(activeAccountId: string | null) {
   const value = readConsoleConnections()
+  const hidden = new Set(hiddenAccounts())
   const checks = checkRows()
-  return { ...value, accounts: value.accounts.map((account) => {
+  return { ...value, accounts: value.accounts.filter((account) => !hidden.has(account.id)).map((account) => {
     const held = checks.get(account.id)
     let outcome = held?.launchOutcome
     if (held && (!outcome || outcome.phase === 'launchUncertain' || outcome.reason.code === 'launchTooSoon')) {
@@ -82,7 +157,7 @@ export function consoleEvents(): Plugin {
       server.httpServer?.once('close', () => { void checker.close() })
       server.middlewares.use(async (request, response, next) => {
         const url = new URL(request.url ?? '/', 'http://localhost')
-        const paths = ['/api/console/events', '/api/console/usage', '/api/console/connections', '/api/console/credentials', '/api/console/credentials/read', '/api/console/connections/check', '/api/console/browser', '/api/console/browser/frame']
+        const paths = ['/api/console/events', '/api/console/usage', '/api/console/connections', '/api/console/connections/delete', '/api/console/connections/import', '/api/console/credentials', '/api/console/credentials/read', '/api/console/connections/check', '/api/console/browser', '/api/console/browser/frame']
         if (!paths.includes(url.pathname)) { next(); return }
         response.setHeader('Cache-Control', 'no-store')
         response.setHeader('Content-Type', 'application/json')
@@ -138,6 +213,25 @@ export function consoleEvents(): Plugin {
               const values = await validateProviderCredentials(body.provider, body.values)
               const result = saveProviderCredentials(body.provider, values)
               response.end(JSON.stringify({ ...result, connections: snapshot(checker.activeAccountId()) })); return
+            }
+            if (url.pathname === '/api/console/connections/delete') {
+              if (typeof body.accountId !== 'string') throw new Error('consoleInputInvalid')
+              const target = readConsoleConnections().accounts.find((item) => item.id === body.accountId)
+              if (!target) { response.statusCode = 404; response.end(JSON.stringify({ error: 'accountNotFound' })); return }
+              const removed = deleteAccountStorage(target.platform, target.name)
+              if (!removed) { response.statusCode = 409; response.end(JSON.stringify({ error: 'accountDeleteUnconfirmed' })); return }
+              response.end(JSON.stringify({ deleted: true, account: target.name, removed, connections: snapshot(checker.activeAccountId()) })); return
+            }
+            if (url.pathname === '/api/console/connections/import') {
+              const platform = typeof body.platform === 'string' ? body.platform.toLowerCase() : ''
+              const name = typeof body.accountName === 'string' ? body.accountName.trim() : ''
+              if (!['twitter', 'facebook', 'discord', 'slack', 'instagram', 'reddit', 'linkedin'].includes(platform)) throw new Error('consoleInputInvalid')
+              if (!/^@?[A-Za-z0-9._-]{1,64}$/.test(name)) throw new Error('consoleInputInvalid')
+              const home = typeof body.homeCountry === 'string' && /^[A-Za-z]{2}$/.test(body.homeCountry.trim()) ? body.homeCountry.trim().toUpperCase() : null
+              const proxy = typeof body.proxy === 'string' && body.proxy.trim() && body.proxy.length <= 300 ? body.proxy.trim() : null
+              const imported = addLocalAccount(platform, name, home, proxy)
+              if (!imported) { response.statusCode = 409; response.end(JSON.stringify({ error: 'accountAlreadyImported' })); return }
+              response.end(JSON.stringify({ imported: true, connections: snapshot(checker.activeAccountId()) })); return
             }
             const account = snapshot(checker.activeAccountId()).accounts.find((item) => item.id === body.accountId)
             if (!account) { response.statusCode = 404; response.end(JSON.stringify({ error: 'accountNotFound' })); return }

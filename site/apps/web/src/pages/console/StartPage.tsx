@@ -51,6 +51,7 @@ function CopyButton({ value, light = false }: { value: string; light?: boolean }
 }
 
 export function StartPage() {
+  const [buildTab, setBuildTab] = useState<'vendor' | 'platform'>('vendor')
   const [cardsReady, setCardsReady] = useState(false)
   const [agentPlatform, setAgentPlatform] = useState<AgentPlatform>('claudeCode')
   const [visiblePlays, setVisiblePlays] = useState<number[]>([])
@@ -173,11 +174,38 @@ export function StartPage() {
       <section className="mt-6 rounded-2xl border-2 border-slate-200 bg-white p-5">
         <div className="flex items-center gap-3">
           <span className="flex size-6 items-center justify-center rounded-full bg-[#0D2A4C] text-[11px] font-bold text-white">3</span>
-          <h2 className="text-base font-bold">Connect your accounts</h2>
+          <h2 className="text-base font-bold">Build on log</h2>
         </div>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Sign a platform in from Connections. The session stays in your workspace, and your agent uses that account from then on.
+          Optional, for two other kinds of user. Each is a skill file — paste the line into your coding agent, in your own repo, and it implements the rest.
         </p>
+        <div role="tablist" aria-label="Ways to build on log" className="mt-4 inline-flex gap-1 rounded-lg bg-slate-100 p-1">
+          {[{ key: 'vendor' as const, label: 'List as vendor' }, { key: 'platform' as const, label: 'Integrate into your platform' }].map((tab) => (
+            <button
+              key={tab.key}
+              role="tab"
+              type="button"
+              aria-selected={buildTab === tab.key}
+              onClick={() => setBuildTab(tab.key)}
+              className={`rounded-md px-3 py-1.5 text-sm font-semibold transition-colors ${buildTab === tab.key ? 'bg-[#0D2A4C] text-white' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-4 rounded-lg bg-slate-50 p-4">
+          <p className="text-sm leading-6 text-slate-600">
+            {buildTab === 'vendor'
+              ? 'Put your API in front of every log agent. Your agent reads the guide, writes the catalog entry for your endpoints and prices, and opens the PR.'
+              : 'Add log as an MCP server your users connect once. Your agent reads the guide, wires the discovery, consent and token flow, and opens the PR.'}
+          </p>
+          <div className="mt-3 flex items-center gap-3 rounded-md border border-slate-200 bg-white px-3 py-2">
+            <code className="min-w-0 flex-1 text-sm leading-6 text-slate-800">
+              {buildTab === 'vendor' ? 'Read https://log.listeningkit.com/mcp and add our API to the log catalog, then open a PR.' : 'Read https://log.listeningkit.com/mcp and add log as an MCP server in our platform.'}
+            </code>
+            <CopyButton value={buildTab === 'vendor' ? 'Read https://log.listeningkit.com/mcp and add our API to the log catalog, then open a PR.' : 'Read https://log.listeningkit.com/mcp and add log as an MCP server in our platform.'} />
+          </div>
+        </div>
       </section>
     </ConsoleLayout>
   )

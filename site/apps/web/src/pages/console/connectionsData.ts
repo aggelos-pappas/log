@@ -76,6 +76,22 @@ export async function checkConnection(accountId: string) {
 }
 
 
+export async function deleteConnection(accountId: string): Promise<LocalConnections> {
+  const response = await fetch('/api/console/connections/delete', { method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'content-type': 'application/json', 'x-log-console': '1' }, body: JSON.stringify({ accountId }) })
+  if (!response.ok) throw new Error(response.status === 404 ? 'accountNotFound' : 'accountDeleteFailed')
+  const body = record(await response.json())
+  if (body.deleted !== true) throw new Error('accountDeleteFailed')
+  return parseConnections(body.connections)
+}
+
+export async function importConnection(values: { platform: string; accountName: string; homeCountry?: string; proxy?: string }): Promise<LocalConnections> {
+  const response = await fetch('/api/console/connections/import', { method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: { 'content-type': 'application/json', 'x-log-console': '1' }, body: JSON.stringify(values) })
+  if (!response.ok) { const body = await response.json().catch(() => null); throw new Error(body?.error === 'accountAlreadyImported' ? 'accountAlreadyImported' : 'accountImportFailed') }
+  const body = record(await response.json())
+  if (body.imported !== true) throw new Error('accountImportFailed')
+  return parseConnections(body.connections)
+}
+
 export async function readConnectionKeys(provider: string, signal: AbortSignal): Promise<Record<string, string>> {
   const response = await fetch('/api/console/credentials/read', { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal, headers: { 'content-type': 'application/json', 'x-log-console': '1' }, body: JSON.stringify({ provider }) })
   if (!response.ok) throw new Error('credentialReadFailed')
