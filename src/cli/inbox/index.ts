@@ -1,7 +1,7 @@
 import { claimChat, liveClaims, readActions, releaseChat } from "../../inbox/claims/index.ts";
 import { behindOf, resumeGap } from "../../inbox/store/index.ts";
 import type { ActionRecord, ChatClaim } from "../../inbox/claims/index.ts";
-import { lastWordOf, waitingOf } from "../../inbox/lastWord/index.ts";
+import { channelWordsOf, lastWordOf, waitingOf } from "../../inbox/lastWord/index.ts";
 import { chatMessages } from "../../inbox/dbRead/index.ts";
 import type { LastWord } from "../../inbox/lastWord/index.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
@@ -267,7 +267,7 @@ export function waitingTotals(waiting: readonly LastWord[], followUps: readonly 
 }
 
 function wordLine(w: LastWord): string {
-  const who = w.kind === "group" ? `${w.with} (group)` : w.with;
+  const who = w.place ? `${w.with} in ${w.place}` : w.kind === "group" ? `${w.with} (group)` : w.with;
   const how = w.followUp ? `they reacted ${w.theyReacted ?? ""} to your last message`.trim() : w.youReactedOnly ? "waiting on you (you only reacted)" : "waiting on you";
   return `  ${w.platform} ${w.account} · ${who} · ${w.lastAt} · ${how}\n     ${w.followUp ? "them" : "they said"}: ${w.lastText.replace(/\s+/g, " ").slice(0, 160)}`;
 }
@@ -447,7 +447,8 @@ export const inboxCommand: Command = {
 ${INBOX_USAGE}` };
       const oldest = parsed.flags["oldest"] === true;
       const order = (list: LastWord[]) => (oldest ? [...list].reverse() : list).slice(0, limit);
-      const { waiting, followUps } = waitingOf(lastWordOf({ platform: platform || undefined, account: str("account") || undefined }));
+      const query = { platform: platform || undefined, account: str("account") || undefined };
+      const { waiting, followUps } = waitingOf([...lastWordOf(query), ...channelWordsOf(query)].sort((a, b) => Date.parse(b.lastAt) - Date.parse(a.lastAt)));
       const tail = numberOf(parsed, "tail");
       if (json) return { code: 0, stdout: JSON.stringify({ waiting: withTail(order(waiting), tail), followUps: withTail(order(followUps), tail), totals: waitingTotals(waiting, followUps) }, null, 2) };
       const counts = PLATFORMS.map((p) => [p, waiting.filter((w) => w.platform === p).length] as const).filter(([, n]) => n).map(([p, n]) => `${p} ${n}`).join(", ");

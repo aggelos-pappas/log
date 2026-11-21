@@ -1,6 +1,5 @@
 import type { Database } from 'bun:sqlite'
-import { assembleEngineStore } from '../../../storage/engineStore/index'
-import type { EngineStoreName } from '../../../storage/engineStore/index'
+import { channelNameOf, roomCatalog } from '../../../storage/platform/helpers/places'
 import { TOKEN_MIN } from '../types'
 import { networkProjectionOf } from './network'
 import type { AccountRow, EngagedRow, IdentityRow, LinkRow, MemberRow, PersonRow, PointedRow, PostRow, Projection, RoomRow, SaidRow, ServerRow } from '../types'
@@ -18,21 +17,6 @@ const isSelf = (userId: string): boolean => userId.startsWith('self:')
 
 const usable = (userId: string | null | undefined): userId is string => Boolean(userId) && !String(userId).startsWith('unknown:')
 
-const CATALOG_STORES: readonly { store: EngineStoreName; list: string }[] = [
-  { store: 'discordServers', list: 'channels' },
-  { store: 'discordThreads', list: 'threads' },
-]
-
-interface CatalogEntry {
-  id: string
-  kind: string | null
-  name: string | null
-  server: string | null
-  serverId: string | null
-}
-
-const text = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null)
-
 function readOnce<T>(handle: Database, work: () => T): T {
   if (handle.inTransaction) return work()
   handle.exec('BEGIN')
@@ -41,33 +25,6 @@ function readOnce<T>(handle: Database, work: () => T): T {
   } finally {
     handle.exec('COMMIT')
   }
-}
-
-export function roomCatalog(handle: Database): Map<string, CatalogEntry> {
-  const out = new Map<string, CatalogEntry>()
-  for (const { store, list } of CATALOG_STORES) {
-    const accounts = handle.prepare('SELECT DISTINCT account FROM engineState WHERE store = ?').all(store) as { account: string }[]
-    for (const { account } of accounts) {
-      const rows = handle.prepare('SELECT part, body FROM engineState WHERE store = ? AND account = ?').all(store, account) as { part: string; body: string }[]
-      const body = assembleEngineStore(store, rows)
-      const entries = Array.isArray(body?.[list]) ? (body![list] as Record<string, unknown>[]) : []
-      for (const e of entries) {
-        const id = text(e.id)
-        if (!id) continue
-        const entry: CatalogEntry = { id, kind: text(e.kind), name: text(e.name), server: text(e.server), serverId: text(e.serverId) }
-        out.set(`${account}:${id}`, entry)
-        if (!out.has(id)) out.set(id, entry)
-      }
-    }
-  }
-  return out
-}
-
-export function channelNameOf(entry: { name: string | null; server: string | null }): string | null {
-  let name = entry.name ?? ''
-  if (entry.server && name.startsWith(`${entry.server} `)) name = name.slice(entry.server.length + 1)
-  name = name.replace(/^#/, '').trim()
-  return name || null
 }
 
 export function projectionOf(handle: Database): Projection {

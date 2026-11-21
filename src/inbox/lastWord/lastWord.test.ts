@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import { storeRead } from '../catchUp/index'
-import { lastWordOf, lastWordOfMessages, personKeyOf, waitingOf, withoutMirrors } from './index'
+import { Database } from 'bun:sqlite'
+import { migrate } from '../../storage/schema'
+import { writeEngineStore } from '../../storage/engineStore'
+import { typeEvent } from '../../storage/platform'
+import { channelWordsOf, lastWordOf, lastWordOfMessages, personKeyOf, waitingOf, withoutMirrors } from './index'
 import type { LastWordMessage } from './index'
 
 const chat = { platform: 'twitter', account: 'me', kind: 'dm' as const, with: 'them', conversationIds: ['1-2'] }
@@ -60,5 +64,19 @@ describe('the .db answers who wrote last for every chat at once', () => {
     expect(words).toHaveLength(2)
     expect(words.find((w) => w.personKey === '11-22')).toMatchObject({ lastFromMe: true, waiting: false, conversationIds: expect.arrayContaining(['11-22', '22:11']) })
     expect(waitingOf(words).waiting.map((w) => w.personKey)).toEqual(['11-33'])
+  })
+})
+
+describe('a server channel the owner talks in is waiting under its server, #channel and sender, never as a dm', () => {
+  test('a channel first stored as a dm named after a speaker reads as the channel once the catalog knows it', () => {
+    const on = new Database(':memory:')
+    migrate(on)
+    const base = { platform: 'discord', account: 'acct', conversationId: '7200000201', box: 'dm', source: 'live' as const }
+    typeEvent(on, { ...base, eventId: 'a', type: 'message', with: 'Copper Kettle', text: 'who is around', payload: { id: '1', senderId: '9100000201' }, sourceAt: '2026-11-08T00:00:00Z', receivedAt: '2026-11-08T00:00:01Z' })
+    typeEvent(on, { ...base, eventId: 'b', type: 'ownMessage', with: 'me', text: 'me', payload: { id: '2' }, sourceAt: '2026-11-08T00:01:00Z', receivedAt: '2026-11-08T00:01:01Z' })
+    writeEngineStore('discordServers', 'acct', { savedAt: 1, from: 'gateway', channels: [{ id: '7200000201', kind: 'channel', name: 'Lantern Guild #buildNight', members: [], server: 'Lantern Guild', serverId: '7100000201' }] }, on, 1000)
+    typeEvent(on, { ...base, eventId: 'c', type: 'message', with: 'Brass Owl', text: 'ship it tonight?', payload: { id: '3', senderId: '9100000202' }, sourceAt: '2026-11-08T00:02:00Z', receivedAt: '2026-11-08T00:02:01Z' })
+    expect(lastWordOf({ platform: 'discord' }, on)).toEqual([])
+    expect(channelWordsOf({ platform: 'discord' }, on)).toMatchObject([{ kind: 'channel', with: 'Brass Owl', place: 'Lantern Guild #buildNight', waiting: true, lastText: 'ship it tonight?' }])
   })
 })

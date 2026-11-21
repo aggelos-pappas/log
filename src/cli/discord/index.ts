@@ -15,7 +15,8 @@ import { addPending, incomingSince, interruptedLines, watchLogMark } from "../..
 import { ownOrAttach } from "../../inbox/relay/index.ts";
 import { enqueueAttachments, mediaByPath, mediaLine } from "../../media/describer/index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
-import { latestSeq, recordPosition } from "../../inbox/store/index.ts";
+import { db, latestSeq, recordPosition } from "../../inbox/store/index.ts";
+import { channelSendersOf } from "../../storage/platform/index.ts";
 import { catchUpOneChat, discordCatchUp, storeRead, waitCaughtUp } from "../../inbox/catchUp/index.ts";
 import type { ReadMessage } from "../../inbox/catchUp/index.ts";
 import { guardSend } from "../../inbox/claims/index.ts";
@@ -132,6 +133,16 @@ export function narrowChats(chats: readonly DiscordChat[], kinds: readonly strin
   return name.trim() ? closestNamed(ofKind, name, (c) => [c.name, ...c.members]) : ofKind;
 }
 
+function withSenders(chats: DiscordChat[], account: string): (DiscordChat & { senders?: string[] })[] {
+  let senders: Map<string, string[]>;
+  try {
+    senders = channelSendersOf(db(), "discord", account);
+  } catch {
+    return chats;
+  }
+  return chats.map((c) => (c.members.length || !senders.get(c.id)?.length ? c : { ...c, senders: senders.get(c.id) }));
+}
+
 export const discordChatsCommand: Command = {
   usage: DISCORD_CHATS_USAGE,
   platform: "discord",
@@ -156,12 +167,12 @@ export const discordChatsCommand: Command = {
       context.err(`${account.accountName}: chats on the direct-API engine`);
       const run = context.directDiscord(account, { action: "chats" });
       const all = (run.answer.chats as DiscordChat[] | undefined) ?? [];
-      const chats = narrowChats(all, kinds, name);
+      const chats = withSenders(narrowChats(all, kinds, name), account.accountName);
       const narrowed = kinds.length > 0 || Boolean(name.trim());
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, ...run.answer, ...(run.answer.ok ? { chats, ...(narrowed ? { of: all.length } : {}) } : {}) }, null, 2) };
       if (!run.answer.ok) return { code, stdout: `log discord chats: ${account.accountName}: ${run.answer.code}: ${run.answer.detail ?? ""}` };
-      return { code, stdout: [`log discord chats: ${account.accountName} has ${narrowed ? `${chats.length} of ${all.length} chat(s) matching` : `${chats.length} chat(s)`}`, ...chats.map((c) => `  ${c.id}  ${c.kind.padEnd(5)}  ${c.name ?? "(no name)"}  (${c.members.join(", ")})`)].join("\n") };
+      return { code, stdout: [`log discord chats: ${account.accountName} has ${narrowed ? `${chats.length} of ${all.length} chat(s) matching` : `${chats.length} chat(s)`}`, ...chats.map((c) => `  ${c.id}  ${c.kind.padEnd(5)}  ${c.name ?? "(no name)"}  (${c.senders ? `last from ${c.senders.join(", ")}` : c.members.join(", ")})`)].join("\n") };
     } catch (error) {
       return refuseError("discord chats", error);
     }

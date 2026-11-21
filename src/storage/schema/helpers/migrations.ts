@@ -2,6 +2,7 @@ import type { Database } from 'bun:sqlite'
 import type { Migration } from '../types'
 import { INBOX_TABLES, TYPING_TABLES } from './inbox'
 import { PLATFORM_TABLES } from './platformTables'
+import { repairChatPlaces } from '../../platform/helpers/places'
 
 function hasColumn(handle: Database, table: string, column: string): boolean {
   return (handle.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).some((c) => c.name === column)
@@ -385,6 +386,13 @@ export const MIGRATIONS: readonly Migration[] = [
     creates: ['networkImports', 'networkPeople', 'networkPeopleByBand', 'networkLeaders', 'networkCommunities', 'networkRuns', 'networkCircles', 'networkCirclesByLeader', 'networkMentions'],
     apply(handle) {
       for (const statement of NETWORK_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 28,
+    name: 'chatPlaces',
+    apply(handle) {
+      repairChatPlaces(handle)
     },
   },
 ]

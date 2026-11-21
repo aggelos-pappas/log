@@ -5,6 +5,9 @@ import { join } from "node:path";
 import { addPending, claimPoll, claimWatcher, ensureLiveWatchers, hookReaderOf, inboxContext, localTime, newMessages, pollReaders, releasePoll, releaseWatcher, storedInboxContext, storedWaiting, takeAlerts, takePending, watchHolder } from "./index.ts";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import type { InboxReader, InboxThread } from "./index.ts";
+import { db } from "../store/index.ts";
+import { writeEngineStore } from "../../storage/engineStore/index.ts";
+import { typeEvent } from "../../storage/platform/index.ts";
 
 const thread = (id: string, who: string, at: string, fromMe: boolean, box = "inbox", text: string | null = "hey"): InboxThread => ({ conversationId: id, with: who, lastAt: at, lastFromMe: fromMe, lastText: text, box });
 
@@ -106,6 +109,15 @@ describe("inbox watch", () => {
     expect(text).toContain(">>> NEW DISCORD MESSAGE (1)");
     expect(text).toContain("VIBE BOT on discord myDiscordName (replied to you in a server channel)");
     expect(text).toContain("`discordSendLive` { account: \"myDiscordName\", channel: \"<channel>\"");
+  });
+
+  test("a Discord message in a server channel names the server, the #channel and who sent it, even when the chat was first stored as a dm named after them", () => {
+    const handle = db();
+    typeEvent(handle, { eventId: "lantern1", platform: "discord", account: "myDiscordName", conversationId: "7200000101", type: "message", with: "Copper Kettle", text: "first", box: "dm", payload: { id: "1", senderId: "9100000101" }, sourceAt: "2026-10-28T08:40:00Z", receivedAt: "2026-10-28T08:40:01Z", source: "live" });
+    writeEngineStore("discordServers", "myDiscordName", { savedAt: 1, from: "gateway", channels: [{ id: "7200000101", kind: "channel", name: "Lantern Guild #buildNight", members: [], server: "Lantern Guild", serverId: "7100000101" }] }, handle, Date.now());
+    addPending([{ platform: "discord", account: "myDiscordName", conversationId: "7200000101", with: "Copper Kettle", text: "anyone shipping tonight?", at: "2026-10-28T08:48:50Z", box: "mention", seenAt: "2026-10-28T08:48:51Z", serverId: "7100000101" }]);
+    const text = inboxContext(takePending())!;
+    expect(text).toContain("Copper Kettle in Lantern Guild #buildNight on discord myDiscordName (mentioned you in a server channel)");
   });
 
   test("a Slack message pushed by the workspace's websocket is told with the Slack steps", () => {

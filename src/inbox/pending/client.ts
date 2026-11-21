@@ -4,7 +4,7 @@ import { chatMessages } from '../dbRead/index'
 import { withoutIgnored } from '../ignore/index'
 import { heldText, judgeText, judgedMessages } from '../judge/index'
 import type { DbMessage } from '../dbRead/types'
-import { inboxContext, localTime, storedInboxContext, takeAlerts, takePending, twitterAccounts } from '../watch/index'
+import { inboxContext, localTime, placeLabel, storedInboxContext, takeAlerts, takePending, twitterAccounts } from '../watch/index'
 import type { InboxMessage } from '../watch/types'
 import { pipelineLine } from '../pipeline/client'
 import type { ChatRead, PendingRead, WhoLine } from './types'
@@ -60,7 +60,7 @@ export function againstTheDb(messages: readonly InboxMessage[], read: ChatRead =
     if (!live.length || !rows.length) continue
     const { with: who, platform, account, conversationId } = group[0]
     conversations.push([
-      `>>> THE CONVERSATION WITH ${who} NOW (${platform} ${account}, chat ${conversationId}), read from the .db as this turn starts, newest last. Answer this, not the single lines above: everything they sent since the owner last wrote is the context.`,
+      `>>> THE CONVERSATION WITH ${who}${placeLabel(group[0])} NOW (${platform} ${account}, chat ${conversationId}), read from the .db as this turn starts, newest last. Answer this, not the single lines above: everything they sent since the owner last wrote is the context.`,
       ...rows.map((r) => `  ${localTime(r.at)} ${r.fromMe ? 'the owner' : r.from}: ${rowText(r)}`),
       ...[whoLine(platform, account, conversationId)].filter((l): l is string => Boolean(l)),
     ].join('\n'))
