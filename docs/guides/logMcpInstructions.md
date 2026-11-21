@@ -17,6 +17,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | Use case | What it is |
 |---|---|
 | `getGuide({ useCase: "discord/channelReply" })` | Answering someone in a Discord DM or group DM |
+| `getGuide({ useCase: "discord/coldOutbound" })` | Messaging people from a Discord server you haven't talked to yet |
 | `getGuide({ useCase: "discord/forumPosts" })` | Going through a Discord forum for posts worth answering |
 | `getGuide({ useCase: "discord/groupChatRead" })` | Reading a Discord group chat without Twenty |
 | `getGuide({ useCase: "discord/memeReply" })` | Replying with a meme in a Discord chat |
@@ -107,7 +108,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `xInbox` | Reading an X account's DMs and X Chat as one inbox, synced by sequence id, and watching X Chat live |
 | `xSending` | Sending as an X account: original posts with a video or images, dms one message per line, replies, quotes, likes, deleting a post, follows, lists, queues and voice notes |
 | `xAccount` | An X account's session: saving and checking its cookies, who follows whom, its notifications (who liked, reposted, replied to, quoted or followed it), and reading one person's posts |
-| `discord` | A Discord account: its session, DMs and group DMs, servers with their channels, forums, posts and threads, server search, reading, the live gateway watch, sending and deleting its own messages |
+| `discord` | A Discord account: its session, DMs and group DMs, servers with their channels, forums, posts and threads, server search, reading, the live gateway watch, sending, messaging someone new, friend requests and deleting its own messages |
 | `reddit` | A Reddit account: its session, reading subreddits, the home feed and posts with their comments, and posting, commenting and voting |
 | `slack` | A Slack account: its session and workspaces, chats, reading, the live websocket watch and sending |
 | `linkedin` | A LinkedIn account: saving its cookies, checking its session, posting or deleting its own posts, inviting people LinkedIn suggests, liking and reposting posts, seeing how its own posts are doing, and reading and writing in its conversations |

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import random
 import re
@@ -26,7 +27,7 @@ from identity import accountRoute
 
 PLATFORM = "discord"
 LIBRARY = "vendor/endcord"
-WRITES: tuple[str, ...] = ("send", "delete", "react", "voice")
+WRITES: tuple[str, ...] = ("send", "delete", "react", "voice", "openDm", "friend")
 SEARCH_PAGE = 25
 
 
@@ -636,6 +637,61 @@ async def react(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]
     return await asyncio.to_thread(react_of, token, channel, message, emoji, spec.get("remove") is True)
 
 
+def context_header(location: str | None) -> dict[str, str]:
+    said = json.dumps({"location": location} if location else {}, separators=(",", ":"))
+    return {"Content-Type": "application/json", "X-Context-Properties": base64.b64encode(said.encode()).decode()}
+
+
+def open_dm_of(token: str, user: str) -> dict[str, Any]:
+    client, failed = open_client(token)
+    if failed:
+        return failed
+    data, status = client.request("POST", "/api/v9/users/@me/channels", json.dumps({"recipients": [user]}, separators=(",", ":")), context_header(None))
+    if not status:
+        return {"ok": False, "code": "platformError", "detail": f"Discord didn't answer opening a DM with {user}", "loginState": "unknown", "event": "dropped"}
+    if status != 200:
+        return refusal_of(status, data, f"opening a DM with {user}")
+    answer = json.loads(data)
+    recipients = answer.get("recipients") or []
+    who = recipients[0] if recipients else {}
+    return {"ok": True, "loginState": "loggedIn", "event": "opened", "channelId": str(answer.get("id")), "userId": user, "username": who.get("username"), "globalName": who.get("global_name")}
+
+
+async def open_dm(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:
+    token = cookies.get("token")
+    if not token:
+        return {"ok": False, "code": "noPlatformSession", "detail": "no Discord token saved for this account", "loginState": "unknown"}
+    user = str(spec.get("user") or "").strip()
+    if not user.isdigit():
+        return {"ok": False, "code": "userInvalid", "detail": "opening a DM needs a Discord user id"}
+    return await asyncio.to_thread(open_dm_of, token, user)
+
+
+def friend_of(token: str, user: str) -> dict[str, Any]:
+    client, failed = open_client(token)
+    if failed:
+        return failed
+    data, status = client.request("PUT", f"/api/v9/users/@me/relationships/{user}", "{}", context_header("User Profile"))
+    if not status:
+        return {"ok": False, "code": "platformError", "detail": f"Discord didn't answer the friend request to {user}", "loginState": "unknown", "event": "dropped"}
+    if status in (200, 204):
+        return {"ok": True, "loginState": "loggedIn", "event": "sent", "mode": "friend", "userId": user}
+    said = (data.decode("utf-8", "replace") if isinstance(data, bytes) else str(data or ""))
+    if "captcha" in said:
+        return {"ok": False, "code": "captchaRequired", "detail": f"Discord asked for a captcha before the friend request to {user}: the owner sends this one from the app; nothing retried (rule 94)", "loginState": "loggedIn", "httpStatus": status, "event": "throttled"}
+    return refusal_of(status, data, f"the friend request to {user}")
+
+
+async def friend(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:
+    token = cookies.get("token")
+    if not token:
+        return {"ok": False, "code": "noPlatformSession", "detail": "no Discord token saved for this account", "loginState": "unknown"}
+    user = str(spec.get("user") or "").strip()
+    if not user.isdigit():
+        return {"ok": False, "code": "userInvalid", "detail": "a friend request needs a Discord user id"}
+    return await asyncio.to_thread(friend_of, token, user)
+
+
 def voice_of(token: str, channel: str, path: Path, seconds: float, waveform: str) -> dict[str, Any]:
     from endcord.discord import generate_nonce
 
@@ -920,7 +976,7 @@ posts = with_token(lambda token, spec: posts_of(token, spec) if str(spec.get("ch
 search = with_token(lambda token, spec: search_of(token, spec) if str(spec.get("server") or "").isdigit() else {"ok": False, "code": "sendInvalid", "detail": "search needs a server id"})
 
 
-ACTIONS = {name: with_identity(action) for name, action in {"ping": ping, "chats": chats, "export": export, "read": read, "send": send, "delete": delete, "react": react, "voice": voice, "watch": watch, "voiceNotes": voice_notes, "servers": servers, "channels": channels, "posts": posts, "search": search}.items()}
+ACTIONS = {name: with_identity(action) for name, action in {"ping": ping, "chats": chats, "export": export, "read": read, "send": send, "delete": delete, "react": react, "openDm": open_dm, "friend": friend, "voice": voice, "watch": watch, "voiceNotes": voice_notes, "servers": servers, "channels": channels, "posts": posts, "search": search}.items()}
 
 
 if __name__ == "__main__":

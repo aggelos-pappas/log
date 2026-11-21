@@ -124,6 +124,7 @@ flowchart TB
     c_discordWatch["watch"]
     c_discordSend["send"]
     c_discordDelete["delete"]
+    c_discordFriend["friend"]
     c_discordReact["react"]
     c_discordVoice["voice"]
   end
@@ -401,6 +402,8 @@ flowchart TB
   mcp --> c_discordSend
   cli --> c_discordDelete
   mcp --> c_discordDelete
+  cli --> c_discordFriend
+  mcp --> c_discordFriend
   cli --> c_discordReact
   mcp --> c_discordReact
   cli --> c_discordVoice

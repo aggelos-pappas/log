@@ -21,6 +21,14 @@
       "summary": "Answering someone in a Discord DM or group DM"
     },
     {
+      "name": "log-discord-cold-outbound",
+      "description": "Messaging people from a Discord server you haven't talked to yet. A log play (docs/useCases/discord/coldOutbound.md): Start a conversation with someone the owner met in a server channel: someone who replied to him, argued with him or asked him something there. log opens the DM the way the app's Message button does and sends one message, gated like any other. When Discord won't let a stranger message them, log sends a friend request instead, and the message waits until they accept.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Messaging people from a Discord server you haven't talked to yet"
+    },
+    {
       "name": "log-discord-forum-posts",
       "description": "Going through a Discord forum for posts worth answering. A log play (docs/useCases/discord/forumPosts.md): Find a forum in a server, list its posts, read the ones that look right, and tell the owner which are worth answering and why: someone asking for help with something the owner has built or knows, a question nobody answered yet, a problem log solves. This page reads and sends nothing; answering one is [serverReply](serverReply.md).",
       "files": [

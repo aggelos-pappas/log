@@ -383,6 +383,20 @@ export const ERROR_CATALOG = {
     raisedIn: ['cli/discord'],
     action: 'Give the message ids from log discord read, separated by commas.'
   },
+  userInvalid: {
+    layer: 'runtime',
+    meaning: "The --userId given to log discord send or log discord friend isn't a Discord user id, or a list of them separated by commas.",
+    retryable: false,
+    raisedIn: ['cli/discord', 'python/discordApi'],
+    action: 'Give the user id from log discord read (its fromId), 15 to 22 digits.'
+  },
+  captchaRequired: {
+    layer: 'runtime',
+    meaning: 'Discord asked for a captcha before taking the friend request. Nothing was sent and nothing retried.',
+    retryable: false,
+    raisedIn: ['python/discordApi'],
+    action: "The owner sends that friend request from Discord's app, where he can solve the captcha (rule 94)."
+  },
   messageNotFound: {
     layer: 'runtime',
     meaning: 'Discord has no message with that id in that channel.',

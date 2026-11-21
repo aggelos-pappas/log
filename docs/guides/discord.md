@@ -1,6 +1,6 @@
 # discord
 
-A Discord account: its session, DMs and group DMs, servers with their channels, forums, posts and threads, server search, reading, the live gateway watch, sending and deleting its own messages.
+A Discord account: its session, DMs and group DMs, servers with their channels, forums, posts and threads, server search, reading, the live gateway watch, sending, messaging someone new, friend requests and deleting its own messages.
 
 Written by `bun run docs:build` from the code, the skills and AGENTS.md. Not edited by hand: change the command's usage, its skill or the rule, and rebuild.
 
@@ -11,6 +11,7 @@ When the owner asks for one of these, follow its page step by step.
 | Use case | What it is | How the owner asks for it |
 |---|---|---|
 | `getGuide({ useCase: "discord/channelReply" })` | Answering someone in a Discord DM or group DM | "reply to <someone> on discord", "reply to <someone> in <group>", "explain what I'm trying to do to <someone> in <group>", "answer the group" |
+| `getGuide({ useCase: "discord/coldOutbound" })` | Messaging people from a Discord server you haven't talked to yet | "dm the people who engaged with me in <channel>", "cold outbound the people from that channel", "add them as a friend if you can't message them" |
 | `getGuide({ useCase: "discord/forumPosts" })` | Going through a Discord forum for posts worth answering | "look at the <server> forum and find the one about <problem>", "go through the forum in <server> and tell me which posts to respond to", "list the posts in <server> #<forum>", "find posts in <server> asking for help with <thing>" |
 | `getGuide({ useCase: "discord/groupChatRead" })` | Reading a Discord group chat without Twenty | "read the <group> chat over the last <N> hours", "what did <someone> set up in <group>" |
 | `getGuide({ useCase: "discord/memeReply" })` | Replying with a meme in a Discord chat | "respond with memes in the <chat>", "drop a meme in <chat> about that", "read <chat> and meme it" |
@@ -36,10 +37,12 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `discordSearch` | Search a whole server for words | `log discord search --account <accountName> --server <server name> --query "<words>" [--channel "<server> #<channel>"] [--from <name>] [--limit <n>] [--json]` |
 | `discordRead` | One chat's messages by its name | `log discord read --account <accountName> --channel <channelId\|chat name> [--limit <n>] [--after <messageId>] [--noMedia] [--json]` |
 | `discordWatch` | Every Discord message as Discord pushes it, over the gateway, sending… | `log discord watch --account <accountName> [--channel <channelId\|chat name>] [--seconds <s>] [--inbox] [--json]` |
-| `discordSend` | Send one message on Discord, on the direct-API engine | `log discord send --account <accountName> --channel <channelId\|chat name> --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]` |
-| `discordSendLive` | Send one message on Discord, on the direct-API engine, live on Discord | `log discord send --account <accountName> --channel <channelId\|chat name> --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]` |
+| `discordSend` | Send one message on Discord, on the direct-API engine | `log discord send --account <accountName> (--channel <channelId\|chat name> \| --userId <id>) --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]` |
+| `discordSendLive` | Send one message on Discord, on the direct-API engine, live on Discord | `log discord send --account <accountName> (--channel <channelId\|chat name> \| --userId <id>) --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]` |
 | `discordDelete` | Delete the account's own Discord messages by id, on the direct-API… | `log discord delete --account <accountName> --channel <channelId\|chat name> --message <messageId>[,<messageId>...] [--approvedBy <who>] [--live] [--json]` |
 | `discordDeleteLive` | Delete the account's own Discord messages by id, on…, live on Discord | `log discord delete --account <accountName> --channel <channelId\|chat name> --message <messageId>[,<messageId>...] [--approvedBy <who>] [--live] [--json]` |
+| `discordFriend` | Send Discord friend requests by user id, on the direct-API engine | `log discord friend --account <accountName> --userId <userId>[,<userId>...] [--approvedBy <who>] [--live] [--json]` |
+| `discordFriendLive` | Send Discord friend requests by user id, on the…, live on Discord | `log discord friend --account <accountName> --userId <userId>[,<userId>...] [--approvedBy <who>] [--live] [--json]` |
 | `discordReact` | React to a Discord message with an emoji, on the direct-API engine | `log discord react --account <accountName> --channel <channel> --message <id> --emoji <emoji> [--remove] [--approvedBy <who>] [--live] [--json]` |
 | `discordReactLive` | React to a Discord message with an emoji, on the…, live on Discord | `log discord react --account <accountName> --channel <channel> --message <id> --emoji <emoji> [--remove] [--approvedBy <who>] [--live] [--json]` |
 | `discordVoice` | Send a voice note in the owner's cloned voice as Discord's own voice… | `log discord voice --account <accountName> --channel <channel> --text "<what the owner says>" [--provider inworld\|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |

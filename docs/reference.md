@@ -5,7 +5,7 @@ Generated from the code by `bun run docs:build`, so it always matches what `log`
 <!-- surface:start · written by `bun run docs:build` from the code. Not edited by hand. -->
 ## Commands, MCP tools and hooks
 
-log-cli is platform-agnostic: 8 platforms so far, Facebook (22 commands of its own), X (20 commands of its own), Reddit (5 commands of its own), Discord (13 commands of its own), LinkedIn (12 commands of its own), Slack (9 commands of its own), Instagram (6 commands of its own), TikTok (4 commands of its own), and a new one is made by `log new platform <name>` (rule 83). A command that acts on one platform names it first, `log <platform> <command> …` (`log facebook listings`, `log twitter session`, `log reddit session`, `log discord session`, `log linkedin session`, `log slack session`, `log instagram session`, `log tiktok session`), in every form; one that works on any platform takes none (the Platform column, rule 63).
+log-cli is platform-agnostic: 8 platforms so far, Facebook (22 commands of its own), X (20 commands of its own), Reddit (5 commands of its own), Discord (14 commands of its own), LinkedIn (12 commands of its own), Slack (9 commands of its own), Instagram (6 commands of its own), TikTok (4 commands of its own), and a new one is made by `log new platform <name>` (rule 83). A command that acts on one platform names it first, `log <platform> <command> …` (`log facebook listings`, `log twitter session`, `log reddit session`, `log discord session`, `log linkedin session`, `log slack session`, `log instagram session`, `log tiktok session`), in every form; one that works on any platform takes none (the Platform column, rule 63).
 Each command runs on the platform's direct API first where it has one, and on the account's browser otherwise (the Engine and Browser columns). log-cli is browser-agnostic too: each account's browser is a driver (AdsPower first, Camoufox kept, more browser providers to come), and every driver opens through the same gates.
 Every command is a CLI command (`log [<platform>] <command>`) and, unless it only works in a terminal, an MCP tool on the `log` server (Facebook's take the command's name, every other platform's start with the platform: `twitterReply`, `redditSessionCheck`).
 The same hooks fire whether it runs from a shell or over MCP, and both write the same live log, `~/.logCli/mcp/<day>.log`.
@@ -38,9 +38,9 @@ flowchart LR
   e_reverseChud --> api
   p_reddit -->|"browser: the any-platform commands"| b_reddit["Reddit's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_reddit --> drivers
-  p_discord["Discord (DISCORD): 13 commands of its own"]
+  p_discord["Discord (DISCORD): 14 commands of its own"]
   twenty --> p_discord
-  p_discord -->|"direct API: discord session, discord secrets, discord chats, discord servers, discord channels, discord posts, discord search, discord read, discord watch, discord send, discord delete, discord react, discord voice"| e_endcord["endcord (vendor/endcord): the saved session, a governor per account"]
+  p_discord -->|"direct API: discord session, discord secrets, discord chats, discord servers, discord channels, discord posts, discord search, discord read, discord watch, discord send, discord delete, discord friend, discord react, discord voice"| e_endcord["endcord (vendor/endcord): the saved session, a governor per account"]
   e_endcord --> api
   p_discord -->|"browser: the any-platform commands"| b_discord["Discord's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_discord --> drivers
@@ -114,14 +114,14 @@ Source: [`docs/diagrams/browsers.mmd`](diagrams/browsers.mmd).
 
 - **The account's browser, through the driver:** `facebook host`, `inspect`, `flow`, `<platform> warmup`, `facebook join`, `facebook read`, `facebook poll`, `facebook check`, `reddit read`, `discord read`, `slack read`. They run on whichever browser the account uses: whatever `socialAccounts.browserDriver` names (Camoufox, AdsPower, Brave), else AdsPower when it has a linked profile (`socialAccounts.adsPowerProfileId`), else `LOG_BROWSER_DRIVER`, else Camoufox.
 - **Camoufox only, not on the driver yet:** `facebook doctor`, `facebook connect`, `facebook profile`, `facebook scan`, `facebook status`, `facebook watch`, `facebook publish`, `facebook campaign`, `discord watch`, `linkedin connect`, `slack watch`, `instagram watch`. They launch Camoufox themselves (facebook-camofox-client's worker, or the publish, connect and profile sessions), so on an AdsPower account they don't open its AdsPower profile. Moving one onto the driver is moving it into `OPENER_ACTIONS` (`src/browser/run`).
-- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `version`, `update`, `models`, `relate`, `people`, `timing`, `tool`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`.
+- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `version`, `update`, `models`, `relate`, `people`, `timing`, `tool`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord friend`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`.
 - **No browser path at all:** X. Its accounts run on the direct API only (rule 80).
 
 Each browser's capabilities, built or not: [`docs/browsers.md`](browsers.md) (generated, `bun run check:browsers`). AdsPower's setup: [`docs/adsPower.md`](adsPower.md).
 
 ### Engines: the direct API first, the browser behind it
 
-A command on the direct-API engine calls the platform's internal API with the account's saved session, paced by its own governor, and opens no browser. Each platform has its own vendored client: Facebook through fbk (`vendor/fbk`), X through twikit (`vendor/twikit`), Reddit through reverseChud (`vendor/reverseChud`), Discord through endcord (`vendor/endcord`), LinkedIn through openLinkedinApi (`vendor/openLinkedinApi`), Slack through gabrielSlack (`vendor/gabrielSlack`), Instagram through instagrapi (`vendor/instagrapi`), TikTok through tiktokApi (curl_cffi, TikTok Studio calls) (`vendor/tiktokApi (curl_cffi, TikTok Studio calls)`). Every one reaches the network through one pinned browser-impersonating session: curl_cffi for the Python clients (`check:twikitTransport`), wreq-js for reverseChud (`check:reverseChudTransport`). Which engine runs each command is code (`DIRECT_ROUTES` and `commandEngine` in `src/directApi/engine`), and this section, the Engine column and every MCP tool's description are generated from it (8 clients, 70 commands).
+A command on the direct-API engine calls the platform's internal API with the account's saved session, paced by its own governor, and opens no browser. Each platform has its own vendored client: Facebook through fbk (`vendor/fbk`), X through twikit (`vendor/twikit`), Reddit through reverseChud (`vendor/reverseChud`), Discord through endcord (`vendor/endcord`), LinkedIn through openLinkedinApi (`vendor/openLinkedinApi`), Slack through gabrielSlack (`vendor/gabrielSlack`), Instagram through instagrapi (`vendor/instagrapi`), TikTok through tiktokApi (curl_cffi, TikTok Studio calls) (`vendor/tiktokApi (curl_cffi, TikTok Studio calls)`). Every one reaches the network through one pinned browser-impersonating session: curl_cffi for the Python clients (`check:twikitTransport`), wreq-js for reverseChud (`check:reverseChudTransport`). Which engine runs each command is code (`DIRECT_ROUTES` and `commandEngine` in `src/directApi/engine`), and this section, the Engine column and every MCP tool's description are generated from it (8 clients, 71 commands).
 
 **Facebook.** Facebook's own page decides, not accountStatus: loggedIn reads; checkpoint stops and deactivates the account; loggedOut or accountWarning hands over to the browser path. Each account has its own governor (gaps of 4 s or more, 120 an hour, 500 a day, 40 writes a day, a 15-minute pause on a soft block, 6 hours on a checkpoint) and its result is written to socialAccounts.sessionState.
 
@@ -171,6 +171,7 @@ A command on the direct-API engine calls the platform's internal API with the ac
 - `log discord watch`: the direct-API engine only (endcord, vendored in vendor/endcord, gateway.Gateway for the watch (Discord pushes each message over wss://gateway.discord.gg, nothing polled); no browser).
 - `log discord send`: the direct-API engine only (endcord, vendored in vendor/endcord, messages.send_message for the send --live; no browser).
 - `log discord delete`: the direct-API engine only (endcord, vendored in vendor/endcord, messages.delete_message for the delete --live (only the account own messages, each read first); no browser).
+- `log discord friend`: the direct-API engine only (endcord, vendored in vendor/endcord, relationships.request for the friend --live (a friend request by user id); no browser).
 - `log discord react`: the direct-API engine only (endcord, vendored in vendor/endcord, messages.send_reaction for the react --live (--remove takes it off); no browser).
 - `log discord voice`: the direct-API engine only (endcord, vendored in vendor/endcord, messages.send_voice_message for the voice --live (a voice note in the voice cloned from the owner, flags 8192); no browser).
 
@@ -226,9 +227,9 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 308 command tools + saved flows"]
+  mcp["MCP server log: 310 command tools + saved flows"]
   bin["bin/log.ts"]
-  runCli["runCli: 141 commands (COMMANDS)"]
+  runCli["runCli: 142 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
   engine{"commandEngine: DIRECT_ROUTES"}
   direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi, tiktokApi (curl_cffi, TikTok Studio calls) (vendor/), the account's saved session, a governor per account"]
@@ -389,8 +390,9 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log discord search`](#log-discord-search) | Search a whole Discord server (channels, forum posts and threads) with Discord's own search, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--server <server name>` `--query <text>` `[--channel <text>]` `[--from <name>]` `[--limit <integer 1..200>]` `[--json]` | direct API only | none | `discordSearch` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord read`](#log-discord-read) | Read a Discord chat or channel's latest messages, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--channel <channelId|chat name>` `[--limit <integer 1..1000>]` `[--after <messageId>]` `[--noMedia]` `[--json]` | direct API only | the account's | `discordRead` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | yes: watch it | 73, 94, 138, 30, 38, 39, 40, 41 |
 | [`log discord watch`](#log-discord-watch) | Watch the account's Discord messages as Discord pushes them over its gateway, nothing polled, sending nothing | `discord` first | `--account <accountName>` `[--channel <channelId|chat name>]` `[--seconds <number 0..>]` `[--inbox]` `[--json]` | direct API only | Camoufox only | `discordWatch` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | yes: watch it | 26, 73, 94, 138, 105, 30, 38, 39, 40, 41 |
-| [`log discord send`](#log-discord-send) | Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channelId|chat name>` `--text <text>` `[--approvedBy <who>]` `[--file <value,…>]` `[--brief]` `[--asOne]` `[--overGate]` `[--followUp]` `[--live]` `[--json]` | direct API only | none | `discordSend`, `discordSendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 90, 94, 105, 133, 134, 109, 137, 138, 30, 38, 39, 40, 41 |
+| [`log discord send`](#log-discord-send) | Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `[--channel <channelId|chat name>]` `[--userId <id>]` `--text <text>` `[--approvedBy <who>]` `[--file <value,…>]` `[--brief]` `[--asOne]` `[--overGate]` `[--followUp]` `[--live]` `[--json]` | direct API only | none | `discordSend`, `discordSendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 90, 94, 105, 133, 134, 109, 137, 138, 30, 38, 39, 40, 41 |
 | [`log discord delete`](#log-discord-delete) | Delete the account's own Discord messages by id, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channelId|chat name>` `--message <messageId,…>` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordDelete`, `discordDeleteLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
+| [`log discord friend`](#log-discord-friend) | Send Discord friend requests by user id, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--userId <userId,…>` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordFriend`, `discordFriendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord react`](#log-discord-react) | React to a Discord message with an emoji, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channel>` `--message <id>` `--emoji <emoji>` `[--remove]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordReact`, `discordReactLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 30, 38, 39, 40, 41 |
 | [`log discord voice`](#log-discord-voice) | Send a voice note in the owner's cloned voice as Discord's own voice note, from text; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channel>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordVoice`, `discordVoiceLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log linkedin session`](#log-linkedin-session) | Check that LinkedIn still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `linkedin` first | `--account <accountName>` `[--json]` | direct API only | none | `linkedinSessionCheck`, `linkedinSessionScripts` | PreToolUse, PostToolUse · PostToolUse | no | 73, 30, 38, 39, 40, 41 |
@@ -582,6 +584,7 @@ flowchart TB
     c_discordWatch["watch"]
     c_discordSend["send"]
     c_discordDelete["delete"]
+    c_discordFriend["friend"]
     c_discordReact["react"]
     c_discordVoice["voice"]
   end
@@ -859,6 +862,8 @@ flowchart TB
   mcp --> c_discordSend
   cli --> c_discordDelete
   mcp --> c_discordDelete
+  cli --> c_discordFriend
+  mcp --> c_discordFriend
   cli --> c_discordReact
   mcp --> c_discordReact
   cli --> c_discordVoice
@@ -2300,7 +2305,7 @@ Opens the account's Discord gateway on the direct-API engine (wss://gateway.disc
 Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live MCP tools: `discordSend`, `discordSendLive`, one per form, with named fields.
 
 ```text
-log discord send --account <accountName> --channel <channelId|chat name> --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]
+log discord send --account <accountName> (--channel <channelId|chat name> | --userId <id>) --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]
 Sends one message to a DM, a group DM (by its id or its name, from log discord chats) or a server channel (by its id), on the direct-API engine (no browser). Each message is typed first, as Discord's own app does: the typing signal (POST channels/<id>/typing, so the chat shows the account typing) goes out, then the account waits as long as the text takes to type, sending the signal again every 8 s, before the message. A typing signal Discord refuses or doesn't answer stops it before the message, nothing retried (rule 94).
 --brief says the message hands someone a task, not a casual reply: the gate reads it as a brief instead of the owner's chat voice (rule 162), asking SubQ whether it says clearly what to do, why, what done looks like and by when, kindly, and how to ask when stuck, with the attached files read beside it. The sameness, AI artifact and scrambler checks still run.
 --file attaches files (a guide, a spreadsheet) to the last message, uploaded through the account's own session: only files under OUTBOX or ~/.logCli, at most 10 MB each, refused before anything is sent otherwise (fileRefused).
@@ -2314,6 +2319,15 @@ Delete the account's own Discord messages by id, on the direct-API engine; a dry
 ```text
 log discord delete --account <accountName> --channel <channelId|chat name> --message <messageId>[,<messageId>...] [--approvedBy <who>] [--live] [--json]
 Deletes the account's own messages by id (from log discord read) in a DM, group DM or server channel, on the direct-API engine (no browser): a duplicate or a mistake. Each message is read first and only deleted when the account sent it; someone else's is refused with notOwnMessage. Without --live it is a dry run that reads each message and deletes nothing. --live deletes, only when the owner asked, and needs --approvedBy (rule 8). Discord's answer decides (204 is deleted). Each delete counts as a write, they go 4 s apart, and the first refusal stops the run with nothing retried (rule 94).
+```
+
+#### log discord friend
+
+Send Discord friend requests by user id, on the direct-API engine; a dry run unless --live MCP tools: `discordFriend`, `discordFriendLive`, one per form, with named fields.
+
+```text
+log discord friend --account <accountName> --userId <userId>[,<userId>...] [--approvedBy <who>] [--live] [--json]
+Friend requests by user id (fromId in log discord read), on the direct-API engine, as the app sends from a profile. A dry run unless --live, which needs --approvedBy (rule 8). Each is a write, 20 s apart; the first refusal stops the run (rule 94), a captcha comes back as captchaRequired.
 ```
 
 #### log discord react
