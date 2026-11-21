@@ -1,7 +1,7 @@
 ---
 name: log-network-relationship-machine
 description: "Relationship state machine. A log play (docs/useCases/network/relationshipMachine.md): Where you stand with someone, drawn as a state machine in the stately look: the states a relationship moves through (new, follows you, talks to your followers, engaged with you, you reached out, in conversation), the moves between them (follow, like their post, reply, DM, intro, they replied), each labelled with the log tool that makes it. The person's real history from log.db is the path taken, timestamped; where it stands now is highlighted, and the next move is the outgoing transition. The same machine shows the route to someone through the people you know, and your whole network with a count in each state."
-when_to_use: "Use when the owner asks for this, in words like: \"show me where I am with <person>\", \"how do I get to <person>\", \"show my network as a state machine\"."
+when_to_use: "Use when the owner asks for this, in words like: \"where am I with <person>\", \"how do I reach <person>\"."
 metadata:
   summary: "Relationship state machine"
 ---
@@ -14,7 +14,7 @@ Draft every message from that person's own thread and the owner's real replies (
 
 Where you stand with someone, drawn as a state machine in the stately look: the states a relationship moves through (new, follows you, talks to your followers, engaged with you, you reached out, in conversation), the moves between them (follow, like their post, reply, DM, intro, they replied), each labelled with the log tool that makes it. The person's real history from log.db is the path taken, timestamped; where it stands now is highlighted, and the next move is the outgoing transition. The same machine shows the route to someone through the people you know, and your whole network with a count in each state.
 
-How the owner asks for it: "show me where I am with <person>", "how do I get to <person>", "show my network as a state machine".
+How the owner asks for it: "where am I with <person>", "how do I reach <person>".
 
 ## Run it from a fresh context
 

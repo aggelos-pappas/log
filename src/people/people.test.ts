@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openDatabase } from '../storage/schema/index'
 import { derivedFingerprint, identityLearnedEvent, insertEventRow, rebuildDerived } from '../storage/platform/index'
-import { cardFor, cardsNamedIn, linkCandidates, linkIdentities, listPeople, markNotLinked, resolveWho, reviewBand, scoreLinks, suggestLinks, unlinkIdentity } from './index'
+import { cardFor, cardsNamedIn, linkCandidates, linkIdentities, linkReport, listPeople, markNotLinked, resolveWho, reviewBand, scoreLinks, suggestLinks, unlinkIdentity } from './index'
+import { clusterLines, suggestionLines } from '../cli/people/index.ts'
 import { FRESH_DB_MS } from '../../scripts/tests/timeouts.ts'
 
 const NOW = Date.parse('2026-11-17T12:00:00Z')
@@ -159,6 +160,65 @@ describe('suggestions: Fellegi-Sunter record linkage, no AI', () => {
     linkIdentities(on, ['discord:quill', 'twitter:quill_1'], 'yes', { now: new Date(NOW) })
     expect(suggestLinks(on).some((s) => s.a.handle === 'quill' || s.b.handle === 'quill')).toBe(false)
   })
+})
+
+describe('an X account known only from links someone shared', () => {
+  function withOttoline(): Database {
+    const on = world()
+    identity(on, 'discord', '9000000007', 'ottoline')
+    const dm = chat(on, 'discord', 'discordAccount', 'dmOttoline')
+    for (let n = 0; n < 5; n++) say(on, dm, 'discord', '9000000007', false, `my new post https://x.com/Ottoline/status/40${n} please repost`, 250 - n)
+    return on
+  }
+
+  test('suggest proposes the handle, link creates the handle-keyed identity from the message, and a learned id moves the link', () => {
+    const on = withOttoline()
+    const s = suggestLinks(on).find((x) => [x.a.handle, x.b.handle].includes('ottoline'))!
+    expect([s.a, s.b].map((i) => `${i.platform}:${i.userId}`).sort()).toEqual(['discord:9000000007', 'twitter:@ottoline'])
+    expect(on.prepare("SELECT COUNT(*) AS n FROM identities WHERE platform = 'twitter' AND userId = '@ottoline'").get()).toEqual({ n: 0 })
+    const result = linkIdentities(on, ['discord:9000000007', 'twitter:@ottoline'], 'the owner said yes', { now: new Date(NOW) })
+    expect(result.ok).toBe(true)
+    const newest = on.prepare("SELECT messageKey FROM messages WHERE senderUserId = '9000000007' ORDER BY seq DESC LIMIT 1").get() as { messageKey: string }
+    expect(result.seen.map((x) => [x.identity.userId, x.seenIn.messageKey])).toEqual([['@ottoline', newest.messageKey]])
+    expect(on.prepare("SELECT handle FROM identities WHERE platform = 'twitter' AND userId = '@ottoline'").get()).toEqual({ handle: 'ottoline' })
+    const event = on.prepare("SELECT payload FROM events WHERE type = 'identityLinked' AND payload LIKE '%@ottoline%'").get() as { payload: string }
+    expect(JSON.parse(event.payload).seenIn.messageKey).toBe(newest.messageKey)
+    insertEventRow(on, identityLearnedEvent('twitter', 'xAccount', '1000000007', 'Ottoline', null, at(1)), new Date(NOW + 1000))
+    const links = on.prepare("SELECT platform, userId, personId FROM identityLinks WHERE revokedAt IS NULL AND personId = ? ORDER BY platform").all(result.personId!)
+    expect(links).toEqual([{ platform: 'discord', userId: '9000000007', personId: result.personId }, { platform: 'twitter', userId: '1000000007', personId: result.personId }])
+  }, FRESH_DB_MS)
+
+  test('the handle-keyed identity a link creates comes back from a rebuild of the events', () => {
+    const on = withOttoline()
+    linkIdentities(on, ['discord:9000000007', 'twitter:@ottoline'], 'yes', { now: new Date(NOW) })
+    const before = derivedFingerprint(on)
+    rebuildDerived(on)
+    expect(on.prepare("SELECT handle FROM identities WHERE platform = 'twitter' AND userId = '@ottoline'").get()).toEqual({ handle: 'ottoline' })
+    expect(derivedFingerprint(on).identityLinks).toEqual(before.identityLinks)
+  }, FRESH_DB_MS)
+
+  test('a handle no message shares a link to is still refused', () => {
+    const result = linkIdentities(withOttoline(), ['discord:9000000007', 'twitter:@nobodyshared'], 'yes', { now: new Date(NOW) })
+    expect(result.ok).toBe(false)
+    expect(result.problem).toContain('knows no identity twitter:@nobodyshared')
+  }, FRESH_DB_MS)
+
+  test('every link command suggest prints is one link accepts', async () => {
+    const on = withOttoline()
+    identity(on, 'discord', '9000000008', 'quill_2')
+    linkIdentities(on, ['discord:fan', 'twitter:quill_1'], 'yes', { now: new Date(NOW) })
+    linkIdentities(on, ['discord:quill', 'twitter:rivet'], 'yes', { now: new Date(NOW) })
+    const report = await linkReport(on)
+    const commands = [...suggestionLines(report.suggestions), ...clusterLines(report.clusters)].flatMap((line) => [...line.matchAll(/→ log people link (.+?) --approvedBy/g)].map((m) => m[1].split(' ')))
+    expect(commands.length).toBeGreaterThan(2)
+    expect(commands.some((c) => c.includes('twitter:@ottoline'))).toBe(true)
+    for (const specs of commands) {
+      on.exec('BEGIN')
+      const result = linkIdentities(on, specs, 'yes', { now: new Date(NOW) })
+      on.exec('ROLLBACK')
+      expect([specs.join(' '), result.problem ?? 'ok']).toEqual([specs.join(' '), 'ok'])
+    }
+  }, FRESH_DB_MS)
 })
 
 describe('more comparisons, EM weights, vetoes and the merge re-check', () => {

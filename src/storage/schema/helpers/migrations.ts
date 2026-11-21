@@ -3,6 +3,8 @@ import type { Migration } from '../types'
 import { INBOX_TABLES, TYPING_TABLES } from './inbox'
 import { PLATFORM_TABLES } from './platformTables'
 import { repairChatPlaces } from '../../platform/helpers/places'
+import { repairChatGroups } from '../../platform/helpers/members'
+import { rebuildRingsIn, ringState } from '../../../relate/network/helpers/rings'
 
 function hasColumn(handle: Database, table: string, column: string): boolean {
   return (handle.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).some((c) => c.name === column)
@@ -416,6 +418,14 @@ export const MIGRATIONS: readonly Migration[] = [
     name: 'networkFit',
     apply(handle) {
       if (hasColumn(handle, 'networkPeople', 'score')) handle.exec('ALTER TABLE networkPeople RENAME COLUMN score TO fit')
+    },
+  },
+  {
+    version: 31,
+    name: 'chatGroups',
+    apply(handle) {
+      const moved = repairChatPlaces(handle) + repairChatGroups(handle)
+      if (moved && ringState(handle)) rebuildRingsIn(handle)
     },
   },
 ]

@@ -5,6 +5,7 @@ import { MACHINE_PLATFORMS, MACHINE_VIEWS, relateMachine } from "../../relate/ma
 import type { MachinePlatform, MachineView } from "../../relate/machine/index.ts";
 import { defaultDbPath, openDatabase } from "../../storage/schema/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
+import { PLATFORMS } from "../runner/helpers/platforms.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
 
 export const RELATE_USAGE = [
@@ -12,8 +13,9 @@ export const RELATE_USAGE = [
   "       log relate status [--json]",
   "       log relate verify [--json]",
   "       log relate ask \"<text>\" [--json]",
-  "       log relate query \"<cypher>\" [--json]",
-  "       log relate machine [--person|--to <h>] [--view <v>] [--platform <p>] [--json]",
+  "       log relate query \"<cypher>\" [--platform <p>] [--json]",
+  "       log relate machine [--person|--to <h>] [--platform <p>] [--json]",
+  "The graph is a projection: log.db's events stay the record, and a build can always be thrown away and redone (docs/relateGraph.md).",
 ].join("\n");
 
 export const RELATE_INPUT: CommandInput = {
@@ -34,7 +36,7 @@ export const RELATE_INPUT: CommandInput = {
         JSON_FLAG,
       ],
     },
-    { words: ["query"], summary: "Run a read-only Cypher query on the current Relate graph (at most 100 rows)", positionals: [{ name: "cypher", kind: "string", required: true, description: "The Cypher to run, e.g. MATCH (i:Identity)-[:ENGAGED]->(p:Post) RETURN i.handle, p.text LIMIT 5" }], flags: [JSON_FLAG] },
+    { words: ["query"], summary: "Run a read-only Cypher query on the current Relate graph (at most 100 rows)", positionals: [{ name: "cypher", kind: "string", required: true, description: "The Cypher to run, e.g. MATCH (i:Identity)-[:ENGAGED]->(p:Post) RETURN i.handle, p.text LIMIT 5" }], flags: [{ name: "platform", kind: "enum", values: PLATFORMS, description: "Sets $platform" }, JSON_FLAG] },
   ],
 };
 
@@ -49,7 +51,7 @@ export const relateCommand: Command = {
   effect: "read",
   input: RELATE_INPUT,
   summary: "The Relate graph of the owner's people, rooms and network, from log.db",
-  args: "build|status|verify|ask <text>|query <cypher>|machine [--json]",
+  args: "build|status|verify|ask <text>|query <cypher> [--platform <p>]|machine [--json]",
   run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(RELATE_INPUT));
     if (!parsed.ok) return refuseInput("relate", parsed.error, RELATE_USAGE);
@@ -90,7 +92,7 @@ export const relateCommand: Command = {
       return { code: 0, stdout: answer.text || "log relate ask: that text names nobody the graph knows." };
     }
     if (sub === "query" && rest.length === 1) {
-      const result = queryGraph(rest[0], {}, dbPath);
+      const result = queryGraph(rest[0], typeof parsed.flags["platform"] === "string" ? { platform: String(parsed.flags["platform"]) } : {}, dbPath);
       if (json) return { code: 0, stdout: JSON.stringify({ rows: result.rows, truncated: result.truncated, throughSeq: result.pointer.throughSeq }, null, 2) };
       return { code: 0, stdout: [...result.rows.map((r) => JSON.stringify(r)), result.truncated ? "(more rows: the first 100 are shown)" : `(${result.rows.length} rows, graph through event ${result.pointer.throughSeq})`].join("\n") };
     }

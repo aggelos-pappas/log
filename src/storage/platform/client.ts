@@ -2,10 +2,10 @@ import { Database } from 'bun:sqlite'
 import { timedSync } from '../../observability/timing/index'
 import { createHash } from 'node:crypto'
 import { gunzipSync, gzipSync } from 'node:zlib'
-import { chatIdOf, eventIdFrom, extenderOf, handleIdOf, isBareId, messageKeyOf, msOf, normalHandle, placedChat, platformMessageIdOf, profileFieldsOf, readConversations, serverKindsSql, writeConversation } from './helpers'
+import { chatIdOf, eventIdFrom, extenderOf, groupByMembers, handleIdOf, isBareId, messageKeyOf, msOf, normalHandle, placedChat, platformMessageIdOf, profileFieldsOf, readConversations, serverKindsSql, writeConversation } from './helpers'
 import type { StoredConversation } from './helpers'
 import { moveRings, rebuildRingsIn, ringState, ringsFromEvent } from '../../relate/network/helpers/rings'
-import { DERIVED_TABLES, EXTENDER_VERSION, MESSAGE_TYPES, RAW_BLOB_KINDS } from './types'
+import { DERIVED_TABLES, EXTENDER_VERSION, MESSAGE_TYPES, RAW_BLOB_KINDS, RING_MOVING_EVENTS } from './types'
 import type { BlobCodec, EventInput, EventInsert, ExtenderContext, IdentityProfileFields, IdentityProfileRow, InsertedEvent, TypedRows } from './types'
 
 export const PAYLOAD_INLINE_LIMIT = 20000
@@ -149,13 +149,16 @@ export function insertEventRow(handle: Database, input: EventInsert, now: Date =
   const rawHash = json.length > PAYLOAD_INLINE_LIMIT ? putBlob(handle, 'eventPayload', json, now) : null
   const result = handle.prepare('INSERT OR IGNORE INTO events (eventId, platform, account, conversationId, type, known, withWho, text, box, payload, sourceAt, receivedAt, appendedAt, ownerPid, source, sourceAtMs, receivedAtMs, messageKey, rawHash, ownerId, typedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(eventId, input.platform, input.account, input.conversationId, input.type, input.known === false ? 0 : 1, input.with, input.text, input.box, rawHash ? JSON.stringify({ storedIn: 'blobs', rawHash }) : json, input.sourceAt, input.receivedAt, now.toISOString(), process.pid, input.source, msOf(input.sourceAt), msOf(input.receivedAt), messageKey, rawHash, ownerId, now.getTime())
   if (!result.changes) return null
-  const rows = typeEvent(handle, { eventId, platform: input.platform, account: input.account, conversationId: input.conversationId, type: input.type, with: input.with, text: input.text, box: input.box, payload: input.payload, sourceAt: input.sourceAt, receivedAt: input.receivedAt, source: input.source, ownerId })
+  const event: EventInput = { eventId, platform: input.platform, account: input.account, conversationId: input.conversationId, type: input.type, with: input.with, text: input.text, box: input.box, payload: input.payload, sourceAt: input.sourceAt, receivedAt: input.receivedAt, source: input.source, ownerId }
+  const rows = typedRowsOf(event, contextOn(handle))
+  const regrouped = writeTypedRows(handle, event, rows)
   const seq = Number(result.lastInsertRowid)
   ringsFromEvent(handle, input.platform, rows, seq, msOf(input.receivedAt))
+  if ((regrouped || RING_MOVING_EVENTS.includes(input.type)) && ringState(handle)) rebuildRingsIn(handle)
   return { seq, eventId, messageKey }
 }
 
-function deriveInternal(handle: Database, event: EventInput): boolean {
+function deriveInternal(handle: Database, event: EventInput): boolean | 'regrouped' {
   if (event.type === 'attachmentsSeen') {
     const messageKey = String(event.payload.messageKey ?? '')
     const list = Array.isArray(event.payload.attachments) ? (event.payload.attachments as Record<string, unknown>[]) : []
@@ -202,6 +205,8 @@ function deriveInternal(handle: Database, event: EventInput): boolean {
     const platform = String(event.payload.platform ?? '')
     const userId = String(event.payload.userId ?? '')
     if (!personId || !platform || !userId) return true
+    const seenIn = event.payload.seenIn as { handle?: string | null; at?: string | null } | undefined
+    if (seenIn) handle.prepare('INSERT INTO identities (platform, userId, handle, displayName, firstSeenAt, lastSeenAt) VALUES (?, ?, ?, NULL, ?, ?) ON CONFLICT(platform, userId) DO NOTHING').run(platform, userId, seenIn.handle ?? null, seenIn.at ?? event.receivedAt, seenIn.at ?? event.receivedAt)
     handle.prepare('INSERT INTO persons (personId, name, createdAt, updatedAt) VALUES (?, NULL, ?, ?) ON CONFLICT(personId) DO NOTHING').run(personId, event.receivedAt, event.receivedAt)
     const active = handle.prepare('SELECT personId FROM identityLinks WHERE platform = ? AND userId = ? AND revokedAt IS NULL').get(platform, userId) as { personId: string } | null
     if (active) return true
@@ -235,13 +240,15 @@ function deriveInternal(handle: Database, event: EventInput): boolean {
       handle.prepare('INSERT INTO identities (platform, userId, handle, displayName, firstSeenAt, lastSeenAt) VALUES (?, ?, ?, NULL, ?, ?) ON CONFLICT(platform, userId) DO UPDATE SET handle = COALESCE(identities.handle, excluded.handle)').run(event.platform, userId, isBareId(label) ? null : label.replace(/^@/, ''), at, at)
       handle.prepare('INSERT INTO memberships (platform, roomId, userId, firstSeenAt, lastSeenAt, position) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(platform, roomId, userId) DO UPDATE SET position = excluded.position').run(event.platform, chatId, userId, at, at, position)
     })
-    return true
+    return groupByMembers(handle, event.platform, chatId) ? 'regrouped' : true
   }
   return false
 }
 
-export function writeTypedRows(handle: Database, event: EventInput, rows: TypedRows): void {
-  if (deriveInternal(handle, event)) return
+export function writeTypedRows(handle: Database, event: EventInput, rows: TypedRows): boolean {
+  const internal = deriveInternal(handle, event)
+  if (internal) return internal === 'regrouped'
+  let regrouped = false
   const at = event.sourceAt || event.receivedAt
   for (const identity of rows.identities) {
     handle.prepare('INSERT INTO identities (platform, userId, handle, displayName, firstSeenAt, lastSeenAt) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(platform, userId) DO UPDATE SET handle = COALESCE(excluded.handle, identities.handle), displayName = COALESCE(excluded.displayName, identities.displayName), firstSeenAt = MIN(identities.firstSeenAt, excluded.firstSeenAt), lastSeenAt = MAX(identities.lastSeenAt, excluded.lastSeenAt)').run(identity.platform, identity.userId, identity.handle, identity.displayName, at, at)
@@ -259,6 +266,7 @@ export function writeTypedRows(handle: Database, event: EventInput, rows: TypedR
       for (const a of rows.attachments) attach.run(m.messageKey, a.n, a.kind, a.name, a.contentType, a.url, a.durationMs, a.path, a.error)
       if (!m.fromOwner && !m.senderUserId.startsWith('unknown:')) {
         handle.prepare('INSERT INTO memberships (platform, roomId, userId, firstSeenAt, lastSeenAt) VALUES (?, ?, ?, ?, ?) ON CONFLICT(platform, roomId, userId) DO UPDATE SET firstSeenAt = MIN(memberships.firstSeenAt, excluded.firstSeenAt), lastSeenAt = MAX(memberships.lastSeenAt, excluded.lastSeenAt)').run(event.platform, m.chatId, m.senderUserId, at, at)
+        regrouped = groupByMembers(handle, event.platform, m.chatId)
       }
     }
   }
@@ -267,6 +275,7 @@ export function writeTypedRows(handle: Database, event: EventInput, rows: TypedR
     const i = rows.interaction
     handle.prepare('INSERT OR IGNORE INTO interactions (interactionKey, platform, account, kind, actorUserId, targetRef, targetText, text, at, atMs, rawHash, extenderVersion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)').run(i.interactionKey, event.platform, event.account, i.kind, i.actorUserId, i.targetRef, i.targetText, i.text, i.at, msOf(i.at) ?? msOf(event.receivedAt), EXTENDER_VERSION)
   }
+  return regrouped
 }
 
 export function typeEvent(handle: Database, event: EventInput): TypedRows {

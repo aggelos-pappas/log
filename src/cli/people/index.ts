@@ -8,8 +8,8 @@ import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuseInput } from "../ru
 import type { Command, CommandInput } from "../runner/types.ts";
 
 export const PEOPLE_USAGE = [
-  "Usage: log people [--json]",
-  "       log people show <who> [--json]                             (the person card: every platform, one-to-one chats and groups, who is waiting, the last lines across platforms)",
+  "Usage: log people [--json]                                        (everyone linked across platforms)",
+  "       log people show <who> [--json]                             (the person card: every platform, chats, who is waiting, last lines)",
   "       log people suggest [--limit <n>] [--check] [--json]        (probably one person across platforms, every factor; --check asks SubQ)",
   "       log people link <identity> <identity>... --approvedBy \"<the owner's words>\" [--name \"<name>\"] [--evidence \"<why>\"]   (one person across these identities, appended to log.db as events)",
   "       log people unlink <identity> --approvedBy \"<the owner's words>\"   (that identity is no longer part of its person; the link stays in the history)",
@@ -44,7 +44,7 @@ export function suggestionLines(list: readonly Suggestion[]): string[] {
 }
 
 export function clusterLines(list: readonly Cluster[]): string[] {
-  return list.map((c) => `  together (${c.identities.length} accounts, weakest pair ${c.weakestBits.toFixed(1)} bits): ${c.identities.map(label).join(", ")}\n     → log people link ${c.identities.map(ref).join(" ")} --approvedBy "…"`);
+  return list.map((c) => `  together (${c.identities.length} accounts, weakest pair ${c.weakestBits.toFixed(1)} bits): ${c.identities.map(label).join(", ")}\n     → ${c.personIds.length > 1 ? `already ${c.personIds.length} people (${c.personIds.join(", ")}); merging people isn't built, so link the unlinked ones to one of them` : `log people link ${c.identities.map(ref).join(" ")} --approvedBy "…"`}`);
 }
 
 export function recheckLines(list: readonly Recheck[]): string[] {
@@ -108,7 +108,8 @@ export const peopleCommand: Command = {
         const result = linkIdentities(handle, rest, approvedBy, { name: typeof parsed.flags["name"] === "string" ? (parsed.flags["name"] as string) : null, evidence: typeof parsed.flags["evidence"] === "string" ? (parsed.flags["evidence"] as string) : null });
         if (!result.ok) return refuseInput("people", result.problem ?? "not linked", PEOPLE_USAGE);
         if (json) return { code: 0, stdout: JSON.stringify(result, null, 2) };
-        return { code: 0, stdout: `log people link: ${result.personId} now has ${[...result.already, ...result.linked].map(label).join(", ")}${result.linked.length ? "" : " (nothing new: already linked)"}.` };
+        const seen = result.seen.map((s) => ` ${ref(s.identity)} was known only from a link in ${s.seenIn.messageKey}, so log.db now keeps it by handle until it learns its id.`).join("");
+        return { code: 0, stdout: `log people link: ${result.personId} now has ${[...result.already, ...result.linked].map(label).join(", ")}${result.linked.length ? "" : " (nothing new: already linked)"}.${seen}` };
       }
       if (sub === "unlink" && rest.length === 1) {
         const result = unlinkIdentity(handle, rest[0], approvedBy);

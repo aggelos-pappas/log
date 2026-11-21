@@ -329,7 +329,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log models`](#log-models) | Is each pinned local model here | any (none) | `[--approvedBy <who>]` `[--fetch]` `[--json]` | none | none | `models`, `modelsLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 167, 30, 38, 39, 40, 41 |
 | [`log relate`](#log-relate) | The Relate graph of the owner's people, rooms and network, from log.db | any (none) | `[--json]` `[--person <text>]` `[--to <h>]` `[--view <person|route|network>]` `[--platform <all|twitter|discord|instagram|slack|reddit|facebook|linkedin>]` | none | none | `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk`, `relateMachine`, `relateQuery` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
 | [`log people`](#log-people) | One person across platforms: link identities into a person, Fellegi-Sunter suggestions, the person card | any (none) | `[--json]` `[--limit <integer 1..200>]` `[--check]` `[--approvedBy <text>]` `[--name <text>]` `[--evidence <text>]` | none | none | `people`, `peopleShow`, `peopleSuggest`, `peopleLink`, `peopleUnlink`, `peopleDifferent` | PreToolUse, PostToolUse · PostToolUse | no | 30, 89, 134, 154, 163, 30, 38, 39, 40, 41 |
-| [`log network`](#log-network) | The owner's network in log.db, for the Relate graph | any (none) | `[--from <dir>]` `[--account <handle>]` `[--json]` | none | none | `networkImport`, `networkStatus` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
+| [`log network`](#log-network) | The owner's network in log.db | any (none) | `[--from <dir>]` `[--account <handle>]` `[--json]` `[--platform <facebook|twitter|reddit|discord|linkedin|slack|instagram|tiktok>]` | none | none | `networkImport`, `networkStatus` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
 | [`log timing`](#log-timing) | Where the time goes: p50, p95, p99 per tool and stage from log.db, one call as a waterfall, or landed to pushed per platform | any (none) | `[--tool <name>]` `[--hours <number>]` `[--stages <number>]` `[--top <number>]` `[--all]` `[--call <callId>]` `[--turns]` `[--landed]` `[--json]` | none | none | `timing` | PreToolUse, PostToolUse · PostToolUse | no | 26, 73, 165, 30, 38, 39, 40, 41 |
 | [`log tool`](#log-tool) | Turn a one-off into a log tool, and see which tools are used | any (none) | `[--summary <text>]` `[--acts]` `[--flags <a,b,…>]` `[--area <f>]` `[--asks <a,b,…>]` `[--guide <g>]` `[--apply]` `[--json]` `[--days <integer 1..90>]` | none | none | `toolScaffold`, `toolScaffoldLive`, `toolHealth` | PreToolUse, PostToolUse · PostToolUse | no | 30, 73, 163, 165, 30, 38, 39, 40, 41 |
 | [`log inbox`](#log-inbox) | Chat claims and their action log, who is waiting on a reply, what the watchers heard, quiet the push | any (none) | `[--platform <twitter|discord|slack|instagram>]` `[--account <a>]` `[--chat <conversationId|handle>]` `[--event <eventId>]` `[--json]` `--by <who>` `[--limit <integer 1..1000>]` `[--tail <integer 0..60>]` `[--oldest]` `--reader <name>` `--minutes <integer 0..720>` `[--server <id>]` `[--undo]` `[--label <warming|readyToAsk|askedWaiting|friend|client|cold|skip>]` `[--who <w>]` `[--where <s>]` `[--as <warming|readyToAsk|askedWaiting|friend|client|cold|skip>]` `[--apply]` `[--feelings]` | none | none | `inboxClaim`, `inboxRelease`, `inboxResume`, `inboxWaiting`, `inboxPending`, `inboxQuiet`, `inboxIgnore`, `inboxIgnored`, `inboxLabels`, `inboxLabel`, `inboxLabelQueue`, `inboxLabelTeach`, `inboxLabelTrain`, `inboxOutcomes`, `inboxClaims`, `inboxActions` | PreToolUse, PostToolUse · PostToolUse | no | 94, 105, 109, 133, 134, 138, 30, 38, 39, 40, 41 |
@@ -1617,8 +1617,9 @@ log relate build [--json]
 log relate status [--json]
 log relate verify [--json]
 log relate ask "<text>" [--json]
-log relate query "<cypher>" [--json]
-log relate machine [--person|--to <h>] [--view <v>] [--platform <p>] [--json]
+log relate query "<cypher>" [--platform <p>] [--json]
+log relate machine [--person|--to <h>] [--platform <p>] [--json]
+The graph is a projection: log.db's events stay the record, and a build can always be thrown away and redone (docs/relateGraph.md).
 ```
 
 #### log people
@@ -1626,8 +1627,8 @@ log relate machine [--person|--to <h>] [--view <v>] [--platform <p>] [--json]
 One person across platforms: link identities into a person, Fellegi-Sunter suggestions, the person card MCP tools: `people`, `peopleShow`, `peopleSuggest`, `peopleLink`, `peopleUnlink`, `peopleDifferent`, one per form, with named fields.
 
 ```text
-log people [--json]
-log people show <who> [--json]                             (the person card: every platform, one-to-one chats and groups, who is waiting, the last lines across platforms)
+log people [--json]                                        (everyone linked across platforms)
+log people show <who> [--json]                             (the person card: every platform, chats, who is waiting, last lines)
 log people suggest [--limit <n>] [--check] [--json]        (probably one person across platforms, every factor; --check asks SubQ)
 log people link <identity> <identity>... --approvedBy "<the owner's words>" [--name "<name>"] [--evidence "<why>"]   (one person across these identities, appended to log.db as events)
 log people unlink <identity> --approvedBy "<the owner's words>"   (that identity is no longer part of its person; the link stays in the history)
@@ -1637,11 +1638,11 @@ log people different <identity> <identity> --approvedBy "<the owner's words>"   
 
 #### log network
 
-The owner's network in log.db, for the Relate graph MCP tools: `networkImport`, `networkStatus`, one per form, with named fields.
+The owner's network in log.db MCP tools: `networkImport`, `networkStatus`, one per form, with named fields.
 
 ```text
 log network import [--from <dir>] [--account <handle>] [--json]
-log network status [--json]
+log network status [--platform <p>] [--json]
 <dir>: LOG_NETWORK_DIR by default. Then `log relate build`.
 ```
 

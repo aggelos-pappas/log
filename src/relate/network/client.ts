@@ -3,8 +3,10 @@ import { dirname, join, resolve } from 'node:path'
 import { logHome } from '../../config/logHome/index.ts'
 import { missingFiles, readNetworkDir } from './helpers/read'
 import { rebuildRingsIn, ringState } from './helpers/rings'
+import { blankCounts, countsOf, networkMapOf, peopleOf, platformRingsOf } from './helpers/people'
+import { suggestLinks } from '../../people/helpers/match'
 import { NETWORK_FORMAT, NETWORK_WRITE_BATCH, RINGS, X_PLATFORM } from './types'
-import type { ImportOutcome, NetworkCounts, NetworkData, NetworkImport, NetworkRings, RingCounts, RingState, StoredNetworkPerson } from './types'
+import type { ImportOutcome, NetworkAccount, NetworkCounts, NetworkData, NetworkImport, NetworkRings, RingState, StoredNetworkPerson, SuggestedMatch } from './types'
 
 export function networkDir(env: Record<string, string | undefined> = process.env): string {
   const dir = env.LOG_NETWORK_DIR?.trim()
@@ -90,52 +92,26 @@ export function ensureRings(handle: Database, now: Date = new Date()): RingState
   return ringState(handle) ?? rebuildRings(handle, now)
 }
 
-const blankCounts = (): RingCounts => ({ '1': 0, '2': 0, '3': 0, '4': 0 })
-
-const bump = (counts: RingCounts, ring: number): void => {
-  const key = String(Math.min(Math.max(ring, RINGS.engaged), RINGS.known)) as keyof RingCounts
-  counts[key] += 1
-}
-
-export function networkRings(handle: Database): NetworkRings {
+export function networkRings(handle: Database, options: { platform?: string | null } = {}): NetworkRings {
+  const platform = options.platform ?? null
   const state = ringState(handle)
   const latestSeq = (handle.query('SELECT COALESCE(MAX(seq), 0) AS seq FROM events').get() as { seq: number }).seq
-  const accounts = handle.query('SELECT platform, account, userId FROM accounts').all() as { platform: string; account: string; userId: string }[]
-  const ownerIds = new Set(accounts.map((a) => `${a.platform}:${a.userId}`))
-  const ownerHandles = new Set(accounts.map((a) => `${a.platform}:${a.account.replace(/^@/, '').toLowerCase()}`))
-  const ring = new Map<string, number>()
-  const byHandle = new Map<string, string>()
-  const usable = (userId: string) => !userId.startsWith('unknown:') && !userId.startsWith('self:')
-  for (const i of handle.query('SELECT platform, userId, handle FROM identities').all() as { platform: string; userId: string; handle: string | null }[]) {
-    const key = `${i.platform}:${i.userId}`
-    const lower = i.handle?.replace(/^@/, '').toLowerCase() ?? null
-    if (!usable(i.userId) || ownerIds.has(key) || (lower && ownerHandles.has(`${i.platform}:${lower}`))) continue
-    ring.set(key, RINGS.known)
-    if (i.platform === X_PLATFORM && lower && !byHandle.has(lower)) byHandle.set(lower, key)
+  const map = networkMapOf(handle)
+  const people = peopleOf(map, platform)
+  const byPlatform = platformRingsOf(map)
+  const identities = platform ? (byPlatform.find((p) => p.platform === platform)?.identities ?? 0) : map.identities.size
+  const linked = people.filter((p) => p.platforms.length > 1).sort((a, b) => a.ring - b.ring || (a.name ?? a.key).localeCompare(b.name ?? b.key))
+  const counts = platform ? (byPlatform.find((p) => p.platform === platform)?.counts ?? blankCounts()) : countsOf(people)
+  return { platform, counts, live: countsOf(people, true), people: people.length, identities, byPlatform, linked, imported: map.imported, merged: map.merged, state, latestSeq }
+}
+
+export function suggestedMatches(handle: Database, platform: string | null = null): SuggestedMatch[] {
+  const map = networkMapOf(handle)
+  const accountOf = (i: { platform: string; userId: string; handle: string | null }): NetworkAccount => {
+    const held = map.identities.get(`${i.platform}:${i.userId}`)
+    return { platform: i.platform, userId: i.userId, handle: i.handle ?? held?.handle ?? null, ring: held?.ring ?? RINGS.known, reason: held?.reason ?? 'known', via: held?.via ?? null }
   }
-  for (const a of handle.query('SELECT handle, userId FROM handleAliases WHERE platform = ?').all(X_PLATFORM) as { handle: string; userId: string }[]) {
-    const key = `${X_PLATFORM}:${a.userId}`
-    if (ring.has(key) && !byHandle.has(a.handle)) byHandle.set(a.handle, key)
-  }
-  for (const r of handle.query('SELECT platform, userId, ring FROM networkRings').all() as { platform: string; userId: string; ring: number }[]) {
-    const key = `${r.platform}:${r.userId}`
-    if (!ownerIds.has(key)) ring.set(key, Math.min(ring.get(key) ?? RINGS.known, r.ring))
-  }
-  const live = blankCounts()
-  for (const r of ring.values()) bump(live, r)
-  let imported = 0
-  let merged = 0
-  for (const p of handle.query('SELECT handleLower, ring FROM networkPeople').all() as { handleLower: string; ring: number | null }[]) {
-    const key = byHandle.get(p.handleLower)
-    if (key) {
-      merged += 1
-      ring.set(key, Math.min(ring.get(key)!, p.ring ?? RINGS.known))
-    } else {
-      imported += 1
-      ring.set(`${X_PLATFORM}:@${p.handleLower}`, p.ring ?? RINGS.known)
-    }
-  }
-  const counts = blankCounts()
-  for (const r of ring.values()) bump(counts, r)
-  return { counts, live, imported, merged, state, latestSeq }
+  return suggestLinks(handle)
+    .filter((s) => !platform || s.a.platform === platform || s.b.platform === platform)
+    .map((s) => ({ a: accountOf(s.a), b: accountOf(s.b), probability: s.probability, band: s.band }))
 }

@@ -18,6 +18,7 @@ const networkRead = 'src/relate/network/helpers/read.ts'
 const storeClient = 'src/storage/platform/client.ts'
 const networkCli = 'src/cli/network/index.ts'
 const graphNetwork = 'src/relate/graph/helpers/network.ts'
+const networkPeople = 'src/relate/network/helpers/people.ts'
 
 const anchors: RequirementAnchors = {
   'REQ-RELATE-01': [
@@ -121,12 +122,23 @@ const anchors: RequirementAnchors = {
     { kind: 'symbol', file: networkClient, name: 'networkRings' },
     { kind: 'symbol', file: networkCli, name: 'networkCommand' },
   ],
+  'REQ-RELATE-17': [
+    { kind: 'symbol', file: networkPeople, name: 'networkMapOf' },
+    { kind: 'symbol', file: networkPeople, name: 'peopleOf' },
+    { kind: 'symbol', file: networkPeople, name: 'platformRingsOf' },
+    { kind: 'symbol', file: networkClient, name: 'suggestedMatches' },
+    { kind: 'symbol', file: rings, name: 'linkedTo' },
+    { kind: 'symbol', file: graphNetwork, name: 'applyPersonRings' },
+    { kind: 'symbol', file: graphNetwork, name: 'WHO_TO_TALK_TO' },
+    { kind: 'uses', file: cli, name: 'PLATFORMS' },
+    { kind: 'uses', file: networkCli, name: 'suggestedMatches' },
+  ],
 }
 
 export const relateGraph = {
   description: "The Relate graph projected from log.db and the connected context its hook injects for the people a prompt names",
   specPath: 'docs/specs/relateGraph.md',
-  codePaths: [client, types, project, mentions, cli, answers, postInstallTypes, rings, networkClient, networkRead, networkCli, graphNetwork, storeClient],
+  codePaths: [client, types, project, mentions, cli, answers, postInstallTypes, rings, networkClient, networkRead, networkPeople, networkCli, graphNetwork, storeClient],
   anchors,
   rubrics: {
     'REQ-RELATE-01': noul('Does projectionOf run every read inside one read transaction (readOnce), take throughSeq as the highest events seq in that same transaction, and mark as owner the identities that are an account\'s own id, a self: id or an account\'s own handle?'),
@@ -142,9 +154,10 @@ export const relateGraph = {
     'REQ-RELATE-11': noul('Does every active identityLinks row become a LINKED_TO edge from its Identity to one Person node per personId?'),
     'REQ-RELATE-12': noul('Does SAID carry firstAtMs and lastAtMs, and do replies (replyToKey) and mentions (<@id> or @handle of a known identity or the owner) become REPLIED_TO and MENTIONED edges with room, times and first and last times, the owner side being the room\'s Account?'),
     'REQ-RELATE-13': noul('When the graph file cannot be opened read-only, does relateContext return the graphUnreadable outcome and graphPriorFor return null instead of throwing?'),
-    'REQ-RELATE-14': noul('Does ringsFromEvent, called by insertEventRow in the same transaction, put a like, reply, quote, repost, reaction or mention of the owner or a DM from them in ring 1, a follow in ring 3, a reply to or mention of a follower or ring-1 person in ring 2 (also when that person qualifies later), only ever move a person closer, need no imported data, and does rebuildRingsIn give the same rings from log.db?'),
+    'REQ-RELATE-14': noul('Does ringsFromEvent, called by insertEventRow in the same transaction, put a like, reply, quote, repost, reaction or mention of the owner or a one-to-one DM from them in ring 1, a follow in ring 3, a reply to or mention of a follower or ring-1 person in ring 2 (also when that person qualifies later), only ever move a person closer, need no imported data, and does rebuildRingsIn give the same rings from log.db?'),
     'REQ-RELATE-15': noul('Does applyGraphHere copy the current graph file, project only the rooms, actors and ring changes after throughSeq (plus rooms naming a new handle), write them into the copy, move the pointer with mode applied, checkpoint only past CHECKPOINT_ROWS, and fall back to a full build on no pointer, a merge, a new import or more than APPLY_MAX_EVENTS events?'),
     'REQ-RELATE-16': noul('Does log network status compute the rings once when missing and show the count per ring, the event they are live through against the latest event, and the import or that nothing was imported?'),
+    'REQ-RELATE-17': noul('Are rings counted per person: do identities the owner linked (active identityLinks) count once at their closest ring, listing every linked account with its ring, reason and via, while pairs suggestLinks only suggests stay separate people shown as suggested; does a reply to a person whose linked account is ring 1 or follows the owner put the replier in ring 2, with a link or unlink recomputing the rings; does log network status, with no platform, show the per-platform breakdown and the combined view, and with --platform only that platform\'s accounts and rings; and does WHO_TO_TALK_TO list a linked person once through Person ring, lead and accounts, leave out a person with a dm on any linked account, and honour $platform, which log relate query sets from --platform?'),
     unspecifiedBehavior: noul('Does the Relate graph or network code write to log.db anything other than its relateGraph pointer, its build claim, the network import and the ring tables, read a platform, or send anything off the machine?'),
   },
   assertions: {
@@ -164,6 +177,7 @@ export const relateGraph = {
     'REQ-RELATE-14': MET,
     'REQ-RELATE-15': MET,
     'REQ-RELATE-16': MET,
+    'REQ-RELATE-17': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }
