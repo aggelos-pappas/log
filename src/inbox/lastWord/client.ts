@@ -1,5 +1,6 @@
 import type { Database } from 'bun:sqlite'
 import { db, handleOfIdentity, isBareId, namedLabel, UNNAMED } from '../store/index'
+import { placeNameOf, serverKindsSql } from '../../storage/platform/index'
 import { MIN_MIRROR_CHARS, NOT_SAID, REACTION, RECENT_PER_CHAT } from './types'
 import type { LastWord, LastWordMessage, LastWordQuery, PersonChat } from './types'
 
@@ -28,7 +29,7 @@ export function withoutMirrors(messages: readonly LastWordMessage[]): LastWordMe
   })
 }
 
-export function lastWordOfMessages(chat: { platform: string; account: string; kind: 'dm' | 'group'; with: string; conversationIds: string[] }, messages: readonly LastWordMessage[]): LastWord | null {
+export function lastWordOfMessages(chat: { platform: string; account: string; kind: LastWord['kind']; with: string; conversationIds: string[]; place?: string }, messages: readonly LastWordMessage[]): LastWord | null {
   const kept = withoutMirrors(messages)
   const last = kept.filter(isSaid).at(-1)
   if (!last) return null
@@ -152,4 +153,38 @@ export function saidOnly(messages: readonly LastWordMessage[]): LastWordMessage[
 
 export function waitingOf(words: readonly LastWord[]): { waiting: LastWord[]; followUps: LastWord[] } {
   return { waiting: words.filter((w) => w.waiting), followUps: words.filter((w) => w.followUp) }
+}
+
+const channelSql = () => `
+SELECT c.platform, c.account, c.kind, c.name, c.conversationId, m.seq, m.sentAtMs AS ms, m.sentAt AS at, m.fromOwner, m.senderUserId,
+  COALESCE(i.handle, m.senderLabel) AS senderLabel, m.text,
+  (SELECT COUNT(*) FROM attachments a WHERE a.messageKey = m.messageKey) AS files
+FROM (
+  SELECT m.*, ROW_NUMBER() OVER (PARTITION BY m.chatId ORDER BY m.sentAtMs DESC, m.seq DESC) AS rn
+  FROM messages m JOIN chats c ON c.chatId = m.chatId
+  WHERE c.kind IN (${serverKindsSql()}) AND (?1 IS NULL OR c.platform = ?1) AND (?2 IS NULL OR c.account = ?2)
+) m
+JOIN chats c ON c.chatId = m.chatId
+LEFT JOIN identities i ON i.platform = m.senderPlatform AND i.userId = m.senderUserId
+WHERE m.rn <= ?3`
+
+export function channelWordsOf(query: LastWordQuery = {}, on: Database = db(), perChat: number = RECENT_PER_CHAT): LastWord[] {
+  const rows = on.prepare(channelSql()).all(query.platform ?? null, query.account ?? null, perChat) as Row[]
+  const chats = new Map<string, Row[]>()
+  for (const r of rows) {
+    const key = `${r.platform}\u0000${r.account}\u0000${r.conversationId}`
+    chats.set(key, [...(chats.get(key) ?? []), r])
+  }
+  const words: LastWord[] = []
+  for (const group of chats.values()) {
+    if (!group.some((r) => r.fromOwner === 1)) continue
+    const { platform, account, conversationId } = group[0]
+    const name = namerFor(platform, account, on, false)
+    const messages = group.map((r) => ({ conversationId: r.conversationId, seq: r.seq, ms: r.ms, at: r.at, fromOwner: r.fromOwner === 1, senderUserId: r.senderUserId, senderLabel: r.senderLabel, text: r.text ?? '', files: r.files }))
+    const theirs = saidOnly(messages).filter((m) => !m.fromOwner).at(-1)
+    const place = placeNameOf(on, platform, account, conversationId) ?? group[0].name ?? conversationId
+    const word = lastWordOfMessages({ platform, account, kind: 'channel', with: theirs ? name(theirs.senderLabel, theirs.senderUserId) : UNNAMED, conversationIds: [conversationId], place }, messages)
+    if (word) words.push(word)
+  }
+  return words.sort((a, b) => Date.parse(b.lastAt) - Date.parse(a.lastAt))
 }

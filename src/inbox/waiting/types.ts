@@ -6,7 +6,7 @@ export interface WaitingRow {
   who: string
   platform: string
   account: string
-  kind: 'dm' | 'group'
+  kind: 'dm' | 'group' | 'channel'
   said: string
   at: string
 }
