@@ -7,8 +7,8 @@
   <br><sub>Introducing log, in collaboration with Hermes Agent. <a href="https://x.com/i/status/2120938715820474690">Watch the launch video with sound on X →</a></sub>
 </p>
 
-<h3 align="center">One command for every social account you run.</h3>
-<p align="center"><b>Read and answer X, Discord, Slack, Instagram, Reddit, LinkedIn and Facebook<br>
+<h3 align="center">Your agent answers your DMs in your voice. Nothing sends until you approve it.</h3>
+<p align="center"><b>Read and reply to the people you already talk to on X, Discord, Slack, Instagram, Reddit, LinkedIn and Facebook<br>
 from your terminal, or from any agent: Claude Code, Codex, Cursor, Hermes, OpenCode, ChatGPT, Claude and Grok.</b><br>
 <a href="docs/useCases/README.md">See every play, step by step →</a></p>
 
@@ -23,6 +23,22 @@ from your terminal, or from any agent: Claude Code, Codex, Cursor, Hermes, OpenC
 curl -fsSL https://log.listeningkit.com/install.sh | sh
 claude mcp add log -- logMcp
 ```
+
+## You stay in control
+
+| Control | How it works |
+|---|---|
+| **You approve every send** | Replies are set to `ask` by default: the agent shows you the draft and waits for your yes. Every command that changes something is a dry run until `--live`. |
+| **Your voice, checked** | Each draft is scored against how you really write to that person before it can go out ([docs/voice](docs/voice)). |
+| **Hard daily limits** | Each account has its own read and write budget (500 reads and 240 writes a day on X), quiet hours, and pacing. A refusal from the platform stops the run and nothing is retried. |
+| **One session per account** | Your own accounts, signed in by you, one connection each, the way the platform's own app works. |
+| **Messages in are checked too** | Prompt injection, token stealers and encoded scripts are held before your agent reads them. |
+| **Everything is recorded** | Every read, draft, approval and send is written to a local database (`~/.logCli/log.db`) you can query. |
+| **Your data stays on your machine** | Sessions and messages live in `~/.logCli`, run locally. Sign-ins are typed into a masked prompt and never passed as flags. |
+
+**What log will not do:** send anything you didn't approve, collect or scrape other people's data, or run accounts that aren't yours. More: [docs/trust.md](docs/trust.md).
+
+**For reviewers:** every send command is a dry run by default. `log twitter dm --account <name> --userId <id> --text "hi"` prints what would be sent and stops; `log voice --to <handle> --text "<draft>"` shows the voice gate's score and its reasons. `bun test` runs the suite.
 
 <table>
 <tr>
@@ -98,7 +114,7 @@ log facebook join group --account <name> --group <url>
 
 <p align="center">📖 <a href="https://log.listeningkit.com/docs"><b>Full documentation →</b></a></p>
 
-log runs your social accounts from the command line, or from your AI agent. It reads DMs, group chats, replies and notifications, and it sends messages, replies, likes, follows, reactions and voice notes for you. It's one command, `log`, and one MCP server, `logMcp`, and it runs on your own machine with your own accounts. Nothing acts until you say so: every command that changes something is a dry run until you add `--live`. It's free and open source.
+log lets you, or your AI agent, read and reply to your own social accounts. It reads DMs, group chats, replies and notifications, drafts answers in your voice, and once you approve them sends messages, replies, likes, follows, reactions and voice notes. It's one command, `log`, and one MCP server, `logMcp`, and it runs on your own machine with your own accounts. Nothing acts until you say so: every command that changes something is a dry run until you add `--live`. It's free and open source.
 
 ## Quick start
 
@@ -118,9 +134,9 @@ Add the account once, sign it in, then check that the platform still accepts it:
 
 | Platform | How to sign in |
 |---|---|
-| X | `log twitter cookies save --account <handle>`: paste `auth_token`, `ct0` and `twid` from a cookie-export extension |
+| X | `log twitter cookies save --account <handle>`: paste your own session values (`auth_token`, `ct0`, `twid`) into the masked prompt |
 | LinkedIn | `log linkedin cookies save --account <publicId>`: paste `li_at` and `JSESSIONID` |
-| Slack | `log slack cookies save --account <name>`: paste the `d` cookie |
+| Slack | `log slack cookies save --account <name>`: paste your own `d` session value into the masked prompt |
 | Discord, Reddit, Instagram | `log localAccount add --platform <platform> --account <name>`, then `log inspect start --account <name>`, sign in by hand in the window that opens, and `log inspect do stop --account <name>` to save the session |
 | Facebook | `log localAccount add --platform facebook --account <name>`, then `log facebook connect --account <name>` |
 
@@ -145,7 +161,7 @@ Then ask in plain words: *"read my X DMs and tell me who's waiting on me"*. log'
 | [Discord](docs/platformGuides/discord.md) | DMs, groups and server channels, live; sends, reactions, voice notes, files | its own API client and the live gateway, no browser |
 | [Slack](docs/platformGuides/slack.md) | DMs and group DMs in every workspace, live; sends, reactions, voice notes | its own API client and the live socket, no browser |
 | [Instagram](docs/platforms/instagram/README.md) | DM threads, live; sends, photos, reactions, voice notes | its own API client and the realtime connection, no browser |
-| [Facebook](docs/platformGuides/facebook.md) | Marketplace listings, groups, warm-up | the account's own browser, opened once a day through a proxy in its home country |
+| [Facebook](docs/platformGuides/facebook.md) | Marketplace listings, groups, new-account setup | the account's own browser, opened once a day from the account's home country |
 | [Reddit](docs/platformGuides/reddit.md) | session check (new) | its own API client |
 | [LinkedIn](docs/platformGuides/linkedin.md) | session check (new) | its own API client |
 
@@ -158,7 +174,7 @@ Then ask in plain words: *"read my X DMs and tell me who's waiting on me"*. log'
 - **What actually gets replies.** `log inbox outcomes` compares the reply rate of messages log sent with yours, matched by person and stage, and shows which plays work ([#246](https://github.com/matthewdonsemail-lab/log/pull/246)).
 - **One session per account.** Each account keeps one connection open, the way the platform's own app does, never a new one per command.
 - **Live inbox.** New messages are pushed into your agent's context as they arrive, and two agents never answer the same chat.
-- **Kept human.** Every account has its own daily limits, pacing and local waking hours. A refusal from the platform stops the run, and nothing is retried.
+- **Daily limits.** Every account has its own daily limits, pacing and quiet hours. A refusal from the platform stops the run, and nothing is retried.
 - **A judge on every message in.** The voice gate checks what goes out; the judge checks what comes in. Token stealers, encoded scripts and prompt injection are held before your agent reads them, and a small local model marks what the rules miss ([#189](https://github.com/matthewdonsemail-lab/log/pull/189), [#190](https://github.com/matthewdonsemail-lab/log/pull/190)).
 - **Turn aware.** On Discord and Slack a multi-line reply waits while they are typing, and holds the rest if they write back or keep typing ([#199](https://github.com/matthewdonsemail-lab/log/pull/199), [#202](https://github.com/matthewdonsemail-lab/log/pull/202)).
 - **Search knows where it was said.** Every hit names a DM, a group or a server channel, and you can search only one of them ([#198](https://github.com/matthewdonsemail-lab/log/pull/198)).

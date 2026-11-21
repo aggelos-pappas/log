@@ -6,7 +6,7 @@
       "title": "Get started",
       "description": "Install log, add an account, connect your agent",
       "sections": [
-        { "title": "Start here", "pages": ["install.md", "accounts.md", "mcp.md"] },
+        { "title": "Start here", "pages": ["install.md", "accounts.md", "mcp.md", "trust.md"] },
         { "title": "Your agent app", "folder": "harnesses" },
         { "title": "Using log well", "pages": ["usingLog.md", "updates.md"] }
       ]
