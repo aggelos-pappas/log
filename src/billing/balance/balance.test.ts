@@ -3,7 +3,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { balanceLines } from '../../cli/balance/index.ts'
-import { balanceOf, checkBalances, isOutOfCredit, lastAnswers, needsMoney, noteProviderAnswer } from './index'
+import { balanceOf, checkBalances, isOutOfCredit, lastAnswers, needsMoney, noteProviderAnswer, tregBalance } from './index'
 import type { BalanceDeps, Provider, ProviderAnswer } from './index'
 
 function deps(over: Partial<BalanceDeps> = {}, answers = new Map<Provider, ProviderAnswer>()): BalanceDeps {
@@ -12,7 +12,7 @@ function deps(over: Partial<BalanceDeps> = {}, answers = new Map<Provider, Provi
     if (String(url).includes('fish')) return new Response(JSON.stringify({ credit: '0' }), { status: 200 })
     return new Response('{}', { status: 404 })
   }) as unknown as typeof fetch
-  return { key: () => 'k', fetcher, answers: () => answers, treg: () => '  Balance  $165.97   (165965536 micro-USD)', twoCaptcha: async () => 12.5, byteful: async () => ({ mbLeft: 40, creditUsd: 0 }), ...over }
+  return { key: () => 'k', fetcher, answers: () => answers, treg: async () => '  Balance  $165.97   (165965536 micro-USD)', twoCaptcha: async () => 12.5, byteful: async () => ({ mbLeft: 40, creditUsd: 0 }), ...over }
 }
 
 describe('provider balances (rule 164)', () => {
@@ -55,5 +55,14 @@ describe('provider balances (rule 164)', () => {
   test('no key is not set up, and nothing is called for it', async () => {
     const none = await balanceOf('jina', deps({ key: () => null }))
     expect(none.state).toBe('notSetUp')
+  })
+
+  test("treg's balance is read through the treg client, and a client without one reads nothing", async () => {
+    expect(await tregBalance({ balance: async () => ({ ok: true, code: 0, stdout: '  Balance  $3.00', stderr: '' }) })).toBe('  Balance  $3.00')
+    expect(await tregBalance({ balance: async () => ({ ok: false, code: 1, stdout: '', stderr: 'signed out' }) })).toBeNull()
+    expect(await tregBalance({})).toBeNull()
+    const read = await balanceOf('treg', deps({ treg: () => tregBalance({}) }))
+    expect(read.state).toBe('unknown')
+    expect(read.detail).toContain('treg balance gave no balance')
   })
 })

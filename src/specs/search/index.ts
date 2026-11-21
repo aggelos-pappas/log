@@ -8,6 +8,7 @@ const fuse = 'src/search/conversations/helpers/fuse.ts'
 const embed = 'src/search/conversations/helpers/embed.ts'
 const worker = 'src/search/conversations/helpers/embedWorker.ts'
 const cli = 'src/cli/search/index.ts'
+const inboxCli = 'src/cli/inbox/index.ts'
 const graph = 'src/relate/graph/client.ts'
 
 const anchors: RequirementAnchors = {
@@ -34,6 +35,9 @@ const anchors: RequirementAnchors = {
     { kind: 'string', file: worker, includes: '@huggingface/transformers' },
     { kind: 'string', file: worker, includes: 'feature-extraction' },
     { kind: 'string', file: worker, includes: 'mean' },
+    { kind: 'uses', file: embed, name: 'EMBEDDER_UNAVAILABLE' },
+    { kind: 'uses', file: inboxCli, name: 'pipelineOf' },
+    { kind: 'uses', file: inboxCli, name: 'refusedEmbedder' },
   ],
   'REQ-SEARCH-05': [
     { kind: 'symbol', file: client, name: 'saveConversations' },

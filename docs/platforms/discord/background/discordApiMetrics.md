@@ -10,10 +10,10 @@
 | Path | `discord.com/api/metrics` |
 | Sends | `metrics`, `client_info` |
 | Reads | — |
-| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:232 625075`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 559868`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 961943`, `runs/inspect/20261111T233723_discordAccount/script1280.js:1 anonymous` |
-| rea | `ev_f6daff8038b4f477b27b852e31fc1f2f76f7dd725b1883891e74b824ed6f0ac3` |
+| Called from | `runs/inspect/20261120T115645_<name:3>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:3>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:3>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:3>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 9 time(s) in 6 run(s).
+Seen 17 time(s) in 12 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -23,14 +23,17 @@ Seen 9 time(s) in 6 run(s).
 | inspect | step 28: press Enter | 1 | 204 | 373 ms | 29174 ms | — |
 | inspect | step 32: snapshot | 1 | 204 | 359 ms | 60949 ms | — |
 | inspect | step 3: snapshot | 1 | 204 | 301 ms | 13477 ms | — |
-| inspect | step 1: goto /login | 2 | 204 | 200–325 ms | 121304–1082791 ms | — |
-| inspect | step 6: wait 45s | 1 | 204 | 127 ms | 8832 ms | — |
+| inspect | step 1: goto /login | 5 | 204 | 325–2618 ms | 127935–1082791 ms | — |
+| inspect | step 2: viewerInput click | 1 | 204 | 389 ms | 481 ms | — |
+| inspect | step 3: viewerInput click | 2 | 204 | 326–368 ms | 60687–114894 ms | — |
+| inspect | step 1: goto /quest-home | 2 | 204 | 334–338 ms | 128675–129568 ms | — |
+| inspect | step 1: goto /channels/@me | 1 | 204 | 327 ms | 128536 ms | — |
 
-### What it sent and what came back (the newest 2 from our runs)
+### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261113T231616_discordAccount**, step 6: wait 45s: 204, 127 ms
+**runs/inspect/20261120T115645_<name:3>**, step 2: viewerInput click: 204, 389 ms
 
 Sent:
 
@@ -39,60 +42,6 @@ Sent:
   "metrics": [
     {
       "name": "<name:1>",
-      "type": "count",
-      "tags": [
-        "design_id:2",
-        "event_name:initial-load",
-        "captcha_service:hcaptcha",
-        "platform:web",
-        "release_channel:stable"
-      ]
-    },
-    {
-      "name": "<name:1>",
-      "type": "count",
-      "tags": [
-        "design_id:2",
-        "event_name:open",
-        "captcha_service:hcaptcha",
-        "platform:web",
-        "release_channel:stable"
-      ]
-    },
-    {
-      "name": "<name:1>",
-      "type": "count",
-      "tags": [
-        "design_id:2",
-        "event_name:verify",
-        "captcha_service:hcaptcha",
-        "platform:web",
-        "release_channel:stable"
-      ]
-    }
-  ],
-  "client_info": {
-    "built_at": "1794557937257",
-    "build_number": "672800"
-  }
-}
-```
-
-Answered:
-
-```json
-null
-```
-
-**runs/inspect/20261111T233723_discordAccount**, step 1: goto /login: 204, 200 ms
-
-Sent:
-
-```json
-{
-  "metrics": [
-    {
-      "name": "<name:2>",
       "type": "distribution",
       "tags": [
         "design_id:2",
@@ -103,32 +52,208 @@ Sent:
         "platform:web",
         "… 1 more"
       ],
-      "value": 820
+      "value": 4290
     },
     {
-      "name": "<name:3>",
+      "name": "<name:2>",
       "type": "count",
       "tags": [
         "design_id:2",
-        "reason:played",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
         "platform:web",
         "release_channel:stable"
       ]
     },
     {
-      "name": "<name:3>",
+      "name": "<name:2>",
       "type": "count",
       "tags": [
         "design_id:2",
-        "reason:played",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
         "platform:web",
         "release_channel:stable"
       ]
+    },
+    {
+      "name": "<name:2>",
+      "type": "count",
+      "tags": [
+        "design_id:2",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
+        "platform:web",
+        "release_channel:stable"
+      ]
+    },
+    {
+      "name": "<name:2>",
+      "type": "count",
+      "tags": [
+        "design_id:2",
+        "quest_content:QUEST_HOME_HERO",
+        "ad_creative_type:QUEST_HOME_HERO",
+        "platform:web",
+        "release_channel:stable"
+      ]
+    },
+    {
+      "name": "<name:2>",
+      "type": "count",
+      "tags": [
+        "design_id:2",
+        "quest_content:QUEST_HOME_HERO_SHELF",
+        "ad_creative_type:QUEST_HOME_HERO",
+        "platform:web",
+        "release_channel:stable"
+      ]
+    },
+    "… 1 more"
+  ],
+  "client_info": {
+    "built_at": "1795076375680",
+    "build_number": "677695"
+  }
+}
+```
+
+Answered:
+
+```json
+null
+```
+
+**runs/inspect/20261120T115645_<name:3>**, step 3: viewerInput click: 204, 326 ms
+
+Sent:
+
+```json
+{
+  "metrics": [
+    {
+      "name": "<name:1>",
+      "type": "distribution",
+      "tags": [
+        "design_id:2",
+        "viewed_user:other",
+        "result:success",
+        "catalog_state:non_empty",
+        "attempt:initial",
+        "platform:web",
+        "… 1 more"
+      ],
+      "value": 628
+    },
+    {
+      "name": "<name:1>",
+      "type": "distribution",
+      "tags": [
+        "design_id:2",
+        "viewed_user:other",
+        "result:success",
+        "catalog_state:non_empty",
+        "attempt:initial",
+        "platform:web",
+        "… 1 more"
+      ],
+      "value": 1998
     }
   ],
   "client_info": {
-    "built_at": "1794298758702",
-    "build_number": "670026"
+    "built_at": "1795076375680",
+    "build_number": "677695"
+  }
+}
+```
+
+Answered:
+
+```json
+null
+```
+
+**runs/inspect/20261120T111021_<name:3>**, step 1: goto /quest-home: 204, 334 ms
+
+Sent:
+
+```json
+{
+  "metrics": [
+    {
+      "name": "<name:1>",
+      "type": "distribution",
+      "tags": [
+        "design_id:2",
+        "viewed_user:self",
+        "result:success",
+        "catalog_state:non_empty",
+        "attempt:initial",
+        "platform:web",
+        "… 1 more"
+      ],
+      "value": 2537
+    },
+    {
+      "name": "<name:2>",
+      "type": "count",
+      "tags": [
+        "design_id:2",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
+        "platform:web",
+        "release_channel:stable"
+      ]
+    },
+    {
+      "name": "<name:2>",
+      "type": "count",
+      "tags": [
+        "design_id:2",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
+        "platform:web",
+        "release_channel:stable"
+      ]
+    },
+    {
+      "name": "<name:2>",
+      "type": "count",
+      "tags": [
+        "design_id:2",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
+        "platform:web",
+        "release_channel:stable"
+      ]
+    },
+    {
+      "name": "<name:2>",
+      "type": "count",
+      "tags": [
+        "design_id:2",
+        "quest_content:QUEST_HOME_HERO",
+        "ad_creative_type:QUEST_HOME_HERO",
+        "platform:web",
+        "release_channel:stable"
+      ]
+    },
+    {
+      "name": "<name:2>",
+      "type": "count",
+      "tags": [
+        "design_id:2",
+        "quest_content:QUEST_HOME_HERO_SHELF",
+        "ad_creative_type:QUEST_HOME_HERO",
+        "platform:web",
+        "release_channel:stable"
+      ]
+    },
+    "… 1 more"
+  ],
+  "client_info": {
+    "built_at": "1795076375680",
+    "build_number": "677695"
   }
 }
 ```
