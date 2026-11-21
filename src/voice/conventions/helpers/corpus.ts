@@ -90,15 +90,17 @@ function inWindow(ms: number, windows: readonly [number, number][]): boolean {
   return false
 }
 
-export function ownerMessages(handle: Database = db(), aiTexts: ReadonlySet<string> = new Set()): { messages: OwnerMessage[]; droppedAsSends: number } {
+export function ownerMessages(handle: Database = db(), aiTexts: ReadonlySet<string> = new Set()): { messages: OwnerMessage[]; droppedAsSends: number; sent: string[] } {
   const rows = handle.prepare("SELECT m.text AS text, m.sentAt AS at, m.sentAtMs AS ms, c.platform AS platform, c.conversationId AS conversationId, c.name AS name FROM messages m JOIN chats c USING (chatId) WHERE m.fromOwner = 1 AND m.text <> '' ORDER BY m.sentAt").all() as { text: string; at: string; ms: number | null; platform: string; conversationId: string; name: string | null }[]
   const windows = sendWindows(handle)
   const seen = new Set<string>()
+  const sent = new Set<string>()
   const messages: OwnerMessage[] = []
   let droppedAsSends = 0
   for (const row of rows) {
     if (!usableText(row.text)) continue
     const key = normalText(row.text)
+    sent.add(row.text.trim())
     const ms = row.ms ?? Date.parse(row.at)
     if (aiTexts.has(key) || (Number.isFinite(ms) && inWindow(ms, windows))) {
       droppedAsSends++
@@ -108,7 +110,7 @@ export function ownerMessages(handle: Database = db(), aiTexts: ReadonlySet<stri
     seen.add(key)
     messages.push({ text: row.text.trim(), at: row.at, chatKey: chatKeyOf(row.name ?? `${row.platform}:${row.conversationId}`), platform: row.platform })
   }
-  return { messages, droppedAsSends }
+  return { messages, droppedAsSends, sent: [...sent] }
 }
 
 interface ToolCall {

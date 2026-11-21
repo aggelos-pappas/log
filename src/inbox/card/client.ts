@@ -1,9 +1,9 @@
 import type { Database } from 'bun:sqlite'
 import { NOT_SAID, REACTION } from '../lastWord/types'
+import { personKeyOf, xPartiesOf } from '../../twitter/dm/person/client'
 import { ANSWER_OWED_MS, CARD_LAST, CARD_LINE_CHARS, CARD_OWNER_SAID, CARD_STARTED_WITH, CARD_WINDOW, OWN_CHAT_MESSAGES } from './types'
 import type { CardLine, CardWho, ConversationCard } from './types'
 
-const PAIR = /^(\d+)[-:](\d+)$/
 const BARE_ID = /^@?\d{6,}$/
 const ASKS = /\?|^(?:and |so |but |also )?(?:what|whats|how|hows|is|are|was|were|do|does|did|can|could|would|will|when|where|why|who|any|have|has)\b/i
 
@@ -23,13 +23,6 @@ interface MessageRow {
   files: string | null
 }
 
-const personKeyOf = (conversationId: string): string => {
-  const pair = conversationId.match(PAIR)
-  return pair ? [pair[1], pair[2]].sort().join('-') : conversationId
-}
-
-const partiesOf = (conversationId: string): string[] => conversationId.match(PAIR)?.slice(1) ?? []
-
 const said = (text: string): string => text.replace(/https?:\/\/\S+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase()
 
 const isSaid = (text: string, files: string | null): boolean => {
@@ -48,7 +41,7 @@ function chatsFor(on: Database, platform: string, account: string, who: CardWho)
   const handle = who.handle?.replace(/^@/, '').toLowerCase()
   if (handle) for (const row of on.prepare('SELECT userId FROM identities WHERE platform = ? AND lower(handle) = ?').all(platform, handle) as { userId: string }[]) userIds.add(row.userId)
   if (!userIds.size) return []
-  const byPair = chats.filter((c) => c.kind === 'dm' && partiesOf(c.conversationId).some((id) => userIds.has(id)))
+  const byPair = chats.filter((c) => c.kind === 'dm' && xPartiesOf(c.conversationId).some((id) => userIds.has(id)))
   if (byPair.length) return byPair
   const ids = [...userIds]
   const spoken = new Set((on.prepare(`SELECT DISTINCT m.chatId FROM messages m JOIN chats c ON c.chatId = m.chatId WHERE c.platform = ? AND c.account = ? AND c.kind = 'dm' AND m.senderUserId IN (${ids.map(() => '?').join(', ')})`).all(platform, account, ...ids) as { chatId: string }[]).map((r) => r.chatId))

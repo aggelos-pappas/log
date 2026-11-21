@@ -133,7 +133,12 @@ export async function readConventionsOf(loaded: LoadedConventions, texts: readon
   }))
 }
 
+export function ownedConventions(reading: ConventionsReading, owned: string): ConventionsReading {
+  return { ...reading, flagged: false, flags: [], hits: [], value: 1, owned }
+}
+
 export function conventionsLine(reading: ConventionsReading): string {
+  if (reading.owned) return `ai conventions: his own words, never an AI tell: he sent ${reading.owned}`
   const flags = reading.flags.map((f) => (f.kind === 'gram' ? `"${f.what}" (${f.why}${f.his ? `; he'd say: "${f.his.replace(/\n/g, ' / ').slice(0, 120)}"` : ''})` : f.kind === 'habit' ? `${f.what} (${f.why})` : `"${f.what}" (${f.why})`))
   const where = reading.band ? bandWords(reading.band) : 'empty'
   const verdict = reading.abstain ? `too short to tell (${reading.words} words), no verdict` : `${reading.probability!.toFixed(2)} model-written against his 95% line ${reading.threshold!.toFixed(2)} for ${where}`

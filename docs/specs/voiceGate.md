@@ -225,3 +225,15 @@ Checked by: code
 Every gate reads each draft (all options of one call together) with the frontier-conventions detector (`ensureConventions`, `readConventionsOf`, REQ-AITELLS-14 to 19) and its value is the not-an-AI-tell signal; a draft too short to tell leaves the signal out. It adds the MiniLM embedding and a few lookups per option, with no network call. When the detector is missing, or older than his voice index, the gate starts `log voice train` in the background once (`trainInBackground`, marked in `state` for `BUILD_GRACE_MS`, only with `OWNER_MIN_FOR_TRAINING` of his messages in log.db, off with `LOG_VOICE_TRAIN=off`) and goes on with the older detector or none, never waiting for it. A flagged reading is listed in the failed parts with the words and habits beside his phrasing, and each flag is a failing span in the fix for the best option. Every option the gate grades is kept in the corpus as an AI draft (`recordDrafts`).
 
 Checked by: code and SubQ
+
+### REQ-VOICE-35: The chat is found however its id is written, and a first message is only one with nothing between them
+
+X gives one conversation two ids: the old DM thread `a-b` and its X Chat thread `a:b`, and either pair order. Every place that parses or compares an X conversation id reads them as one (`personKeyOf`, `xPartiesOf`, `sameChatId` in `src/twitter/dm/person`): the conversation card, the chat context, the voice index's same-chat tier, the inbox watcher, the stored threads `twitterDms` lists and the send's chat lookup. `voice` resolves `--with` in any of those forms to the chat (`chatIdIn`, `resolveVoiceChat`); when `--with` is left out or names no chat it reads the chat from the `--to` handle. Only when log.db holds no messages between the owner and them (`cardOfHandle`, `messagesHere`) is the draft judged as a first message. On 2026-11-22 the gate called the owner's own reply in a 14-message chat a cold opener because `--with` carried the colon id the inbox printed.
+
+Checked by: code and SubQ
+
+### REQ-VOICE-36: His own sent words are never an AI tell
+
+A draft whose every line is a message the owner sent, or a near copy of one (`NEAR_OWN` character-trigram overlap, `ownersSentMatches` in `src/voice/owned`), is his: the not-an-AI-tell signal reads 1 and the line names what he sent (`ownedConventions`), and the draft is not kept as an AI draft. The nearest real reply compares each line with his messages in this chat first (`nearestHere`), then his writing everywhere. A held-out reply (`voice calibrate`) is left out of both. `voice train` leaves every corpus draft whose lines he sent off the model-written side (`ownMatchIn` against `ownerMessages().sent`). On 2026-11-22 the detector scored 0.00 on a two-line draft he had sent word for word the day before.
+
+Checked by: code and SubQ

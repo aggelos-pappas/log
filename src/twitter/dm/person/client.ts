@@ -5,10 +5,27 @@ import type { MirrorMessage } from './types'
 
 const URL = /https?:\/\/\S+/g
 
+const X_PAIR = /^(\d+)[-:](\d+)$/
+
+export function xPartiesOf(conversationId: string): string[] {
+  return conversationId.trim().match(X_PAIR)?.slice(1) ?? []
+}
+
 export function personKeyOf(conversationId: string): string {
-  const pair = conversationId.match(/^(\d+)[-:](\d+)$/)
-  if (!pair) return conversationId
-  return [pair[1], pair[2]].sort().join('-')
+  const parties = xPartiesOf(conversationId)
+  return parties.length ? [...parties].sort().join('-') : conversationId
+}
+
+export function isXConversationId(text: string): boolean {
+  return xPartiesOf(text).length === 2
+}
+
+export function sameXConversation(a: string, b: string): boolean {
+  return personKeyOf(a.trim()) === personKeyOf(b.trim())
+}
+
+export function sameChatId(platform: string | null | undefined, a: string, b: string): boolean {
+  return a === b || (platform === 'twitter' && sameXConversation(a, b))
 }
 
 const timeOf = (m: MirrorMessage): string | null => m.time ?? m.at ?? null

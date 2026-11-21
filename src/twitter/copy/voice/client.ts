@@ -36,14 +36,14 @@ export function outsideXVoice(draft: Pick<VoiceDraft, 'evidence'>): { where: str
   return { where: `${platform} ${draft.evidence?.kind ?? 'chat'}` }
 }
 
-export function alreadyTalkedIn(draft: Pick<VoiceDraft, 'evidence' | 'conversation' | 'ownerWroteHere'>): boolean {
-  if ((draft.ownerWroteHere ?? 0) > 0) return true
+export function alreadyTalkedIn(draft: Pick<VoiceDraft, 'evidence' | 'conversation' | 'ownerWroteHere' | 'messagesHere'>): boolean {
+  if ((draft.ownerWroteHere ?? 0) > 0 || (draft.messagesHere ?? 0) > 0) return true
   if ((draft.evidence?.recent?.length ?? 0) > 0) return true
   if ((draft.conversation ?? []).some((m) => m.from === 'the owner')) return true
   return (draft.evidence?.replies ?? []).some((r) => r.tier === 'sameChat' || r.tier === 'samePerson')
 }
 
-export function nothingWaiting(draft: Pick<VoiceDraft, 'evidence' | 'conversation' | 'context' | 'ownerWroteHere'>, now = Date.now()): boolean {
+export function nothingWaiting(draft: Pick<VoiceDraft, 'evidence' | 'conversation' | 'context' | 'ownerWroteHere' | 'messagesHere'>, now = Date.now()): boolean {
   if (!alreadyTalkedIn(draft)) return false
   const moments = [...(draft.conversation ?? [])].sort((a, b) => a.at.localeCompare(b.at))
   const last = moments.at(-1)
