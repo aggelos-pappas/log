@@ -35,7 +35,7 @@ claude mcp add log -- logMcp
 | **Messages in are checked too** | Prompt injection, token stealers and encoded scripts are held before your agent reads them. |
 | **Everything is recorded** | Every read, draft, approval and send is written to a local database (`~/.logCli/log.db`) you can query. |
 | **Your agent never sees your sign-ins** | You type them once in a terminal; agents are refused from those commands, no tool returns them, and log makes each request itself. |
-| **Your data stays on your machine** | Sessions and messages live in `~/.logCli`, run locally. |
+| **Your data stays on your machine** | Sessions and messages live in `~/.logCli`. Hosted services see only what their job needs, never a sign-in: [what leaves your machine](docs/trust.md#what-leaves-your-machine). |
 
 **What log will not do:** send anything you didn't approve, collect or sell other people's data, or run accounts that aren't yours. More: [docs/trust.md](docs/trust.md).
 
