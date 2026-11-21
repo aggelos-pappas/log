@@ -15,6 +15,7 @@ import { driverOrNull } from '../../browser/driver/index'
 import type { EngineTrace } from '../../observability/timing/index'
 import { ENGINE_CALL_MS, ENGINE_CATCH_UP_MS } from './types'
 import type { PlatformAnswer, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from './types'
+import { sessionHandoff } from '../../storage/secrets/index'
 
 export type PlatformAccount = FacebookAccount
 
@@ -115,14 +116,12 @@ function spawnPlatformEngine(shape: PlatformShape, account: PlatformAccount, req
   if (!routed.ok) return { answer: { ok: false, code: routed.code, detail: routed.detail }, refreshed: null }
   const dir = mkdtempSync(join(tmpdir(), `${shape.platform}Api`))
   try {
-    const cookiesPath = join(dir, 'cookies.json')
     const refreshedPath = join(dir, 'refreshed.json')
-    writeFileSync(cookiesPath, JSON.stringify(account.cookies ?? {}), { mode: 0o600 })
-    const storagePath = shape.sessionStorage ? join(dir, 'storage.json') : null
-    if (storagePath) writeFileSync(storagePath, JSON.stringify(sessionStorageOf(account.storageOrigins, shape.sessionStorage)), { mode: 0o600 })
+    const handoff = sessionFiles(shape, account, dir)
     const spec = join(dir, 'spec.json')
-    const body = { ...request, account: account.accountName, platform: shape.platform, route: routed.route, browserDriver: driverOrNull(account), stateRoot: platformStateRoot(shape.platform), writesPerDay: writesPerDayOf(shape.platform), cookiesPath, refreshedPath, ...(storagePath ? { storagePath } : {}), ...(trace ? { trace } : {}) }
-    const hosted = hostedRun(shape, account, request, body, refreshedPath)
+    const base = { ...request, account: account.accountName, platform: shape.platform, route: routed.route, browserDriver: driverOrNull(account), stateRoot: platformStateRoot(shape.platform), writesPerDay: writesPerDayOf(shape.platform) }
+    const body = { ...base, ...handoff.spec, refreshedPath, ...(trace ? { trace } : {}) }
+    const hosted = hostedRun(shape, account, request, () => ({ ...base, ...handoff.files(), refreshedPath, ...(trace ? { trace } : {}) }), refreshedPath)
     if (hosted) return hosted
     writeFileSync(spec, JSON.stringify(body), { mode: 0o600 })
     const limit = engineCallMs(request)
@@ -142,7 +141,23 @@ function spawnPlatformEngine(shape: PlatformShape, account: PlatformAccount, req
   }
 }
 
-function hostedRun(shape: PlatformShape, account: PlatformAccount, request: PlatformEngineSpec, body: Record<string, unknown>, refreshedPath: string): PlatformEngineRun | null {
+function sessionFiles(shape: PlatformShape, account: PlatformAccount, dir: string): { spec: Record<string, unknown>; files: () => Record<string, unknown> } {
+  const cookies = account.cookies ?? {}
+  const storage = shape.sessionStorage ? sessionStorageOf(account.storageOrigins, shape.sessionStorage) : null
+  const files = () => {
+    const cookiesPath = join(dir, 'cookies.json')
+    writeFileSync(cookiesPath, JSON.stringify(cookies), { mode: 0o600 })
+    const storagePath = storage ? join(dir, 'storage.json') : null
+    if (storagePath) writeFileSync(storagePath, JSON.stringify(storage), { mode: 0o600 })
+    return { cookiesPath, ...(storagePath ? { storagePath } : {}) }
+  }
+  const sealed = sessionHandoff(shape.platform, account.accountName, storage ? { cookies, storage } : { cookies })
+  if (sealed) return { spec: { cookiesRef: sealed }, files }
+  const written = files()
+  return { spec: written, files: () => written }
+}
+
+function hostedRun(shape: PlatformShape, account: PlatformAccount, request: PlatformEngineSpec, bodyOf: () => Record<string, unknown>, refreshedPath: string): PlatformEngineRun | null {
   if (!hostable(shape.platform, request, shape.engine)) return null
   const stateRoot = platformStateRoot(shape.platform)
   const host = readHostOf(shape.platform, stateRoot, account.accountName)
@@ -150,7 +165,7 @@ function hostedRun(shape: PlatformShape, account: PlatformAccount, request: Plat
     startReadHost(shape.platform, stateRoot, account.accountName)
     return null
   }
-  const answer = timedSync('host.roundTrip', () => askReadHost<PlatformAnswer>(host, body), { pid: host.pid })
+  const answer = timedSync('host.roundTrip', () => askReadHost<PlatformAnswer>(host, bodyOf()), { pid: host.pid })
   if (!answer) return null
   const refreshed = existsSync(refreshedPath) ? (JSON.parse(readFileSync(refreshedPath, 'utf8')) as Record<string, string>) : null
   return { answer, refreshed }
@@ -164,13 +179,10 @@ function spawnPlatformEngineLive(shape: PlatformShape, account: PlatformAccount,
   const routed = engineRoute(account)
   if (!routed.ok) return Promise.resolve({ answer: { ok: false, code: routed.code, detail: routed.detail }, refreshed: null })
   const dir = mkdtempSync(join(tmpdir(), `${shape.platform}Api`))
-  const cookiesPath = join(dir, 'cookies.json')
   const refreshedPath = join(dir, 'refreshed.json')
-  writeFileSync(cookiesPath, JSON.stringify(account.cookies ?? {}), { mode: 0o600 })
-  const storagePath = shape.sessionStorage ? join(dir, 'storage.json') : null
-  if (storagePath) writeFileSync(storagePath, JSON.stringify(sessionStorageOf(account.storageOrigins, shape.sessionStorage)), { mode: 0o600 })
+  const handoff = sessionFiles(shape, account, dir)
   const spec = join(dir, 'spec.json')
-  writeFileSync(spec, JSON.stringify({ ...request, account: account.accountName, platform: shape.platform, route: routed.route, browserDriver: driverOrNull(account), stateRoot: platformStateRoot(shape.platform), writesPerDay: writesPerDayOf(shape.platform), cookiesPath, refreshedPath, ...(storagePath ? { storagePath } : {}), ...(trace ? { trace } : {}) }), { mode: 0o600 })
+  writeFileSync(spec, JSON.stringify({ ...request, account: account.accountName, platform: shape.platform, route: routed.route, browserDriver: driverOrNull(account), stateRoot: platformStateRoot(shape.platform), writesPerDay: writesPerDayOf(shape.platform), ...handoff.spec, refreshedPath, ...(trace ? { trace } : {}) }), { mode: 0o600 })
   return new Promise((resolve) => {
     const child = spawn(process.env.LOG_PYTHON || 'python', ['-u', shape.engine, spec], { windowsHide: true })
     let buffer = ''

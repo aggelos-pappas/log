@@ -2493,6 +2493,20 @@ export const ERROR_CATALOG = {
     raisedIn: ['auth/credentials', 'console/credentials'],
     action: 'Check the settings file (LOG_USER_ENV) is writable, then save it again.'
   },
+  secretStoreLocked: {
+    layer: 'auth',
+    meaning: "log.db holds sealed secrets, but none of the store key's holders (OS keystore, LOG_STORE_PASSPHRASE) opened them on this machine.",
+    retryable: false,
+    raisedIn: ['storage/secrets'],
+    action: 'Run it as the user that sealed them, or set the LOG_STORE_PASSPHRASE used then; `log storage status` names the holders.'
+  },
+  secretTampered: {
+    layer: 'auth',
+    meaning: 'A sealed secret in log.db failed its AES-GCM check (changed, copied to another ref or corrupted), so it was not used.',
+    retryable: false,
+    raisedIn: ['storage/secrets'],
+    action: 'Save that secret again (its cookies save, credentials save or localAccount login); nothing was read from it.'
+  },
   browserProviderUnavailable: {
     layer: 'adsPower',
     meaning: "The browser provider's local API didn't answer at the address given. Nothing was saved.",

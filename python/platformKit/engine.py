@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
+import secretStore
 from identity import accountRoute
 from platformKit import timing
 
@@ -102,9 +103,13 @@ async def run(spec: dict[str, Any], actions: dict[str, Action], writes: tuple[st
         accountRoute.arm(spec.get("platform"), spec)
     except accountRoute.RouteError as e:
         return {"ok": False, "code": e.code, "detail": e.detail}
-    cookies = normalize_cookies(json.loads(Path(spec["cookiesPath"]).read_text(encoding="utf-8")))
-    if spec.get("storagePath"):
-        cookies.update({str(k): str(v) for k, v in json.loads(Path(spec["storagePath"]).read_text(encoding="utf-8")).items() if v})
+    try:
+        raw_cookies, storage = secretStore.load_session(spec)
+    except secretStore.SecretStoreError as e:
+        return {"ok": False, "code": e.code, "detail": str(e)}
+    cookies = normalize_cookies(raw_cookies)
+    if storage:
+        cookies.update({str(k): str(v) for k, v in storage.items() if v})
     governor = governor_for(spec["stateRoot"], spec["account"], spec.get("writesPerDay"), continues_send=action in writes and spec.get("continuesSend") is True, read=action not in writes)
     try:
         with timing.span("governor", write=action in writes):
@@ -120,7 +125,7 @@ async def run(spec: dict[str, Any], actions: dict[str, Action], writes: tuple[st
         out = {"ok": False, "code": type(e).__name__, "detail": redact(e, cookies)[:300]}
     refreshed = out.pop("refreshedCookies", None)
     if spec.get("refreshedPath") and refreshed:
-        Path(spec["refreshedPath"]).write_text(json.dumps(refreshed), encoding="utf-8")
+        secretStore.write_private(spec["refreshedPath"], json.dumps(refreshed))
     if out.get("event") in ("throttled", "dropped", "automated", "dailyLimit"):
         governor.observe_soft_block()
     out["governor"] = governor.status()

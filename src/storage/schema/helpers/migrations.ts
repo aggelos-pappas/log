@@ -113,6 +113,11 @@ export const ENGINE_STATE_TABLES: readonly string[] = [
   'CREATE TABLE IF NOT EXISTS engineState (platform TEXT NOT NULL, account TEXT NOT NULL, store TEXT NOT NULL, part TEXT NOT NULL, body TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (platform, account, store, part)) WITHOUT ROWID',
 ]
 
+export const SECRET_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS secrets (ref TEXT PRIMARY KEY, kind TEXT NOT NULL, keyId TEXT NOT NULL, alg TEXT NOT NULL, nonce BLOB NOT NULL, ciphertext BLOB NOT NULL, updatedAt TEXT NOT NULL) WITHOUT ROWID',
+  "CREATE TABLE IF NOT EXISTS secretKeys (keyId TEXT NOT NULL, method TEXT NOT NULL, wrapped BLOB, salt BLOB, params TEXT NOT NULL DEFAULT '{}', createdAt TEXT NOT NULL, PRIMARY KEY (keyId, method)) WITHOUT ROWID",
+]
+
 export const PIPELINE_TABLES: readonly string[] = [
   'CREATE TABLE IF NOT EXISTS chatPipeline (platform TEXT NOT NULL, account TEXT NOT NULL, person TEXT NOT NULL, lastSeq INTEGER NOT NULL, who TEXT NOT NULL, stage TEXT, confidence REAL NOT NULL, margin REAL NOT NULL, movedBySeq INTEGER, movedById TEXT, source TEXT NOT NULL, model TEXT NOT NULL, scores TEXT NOT NULL, features TEXT NOT NULL, emotions TEXT, vector BLOB, labelledAt TEXT NOT NULL, PRIMARY KEY (platform, account, person)) WITHOUT ROWID',
   'CREATE TABLE IF NOT EXISTS pipelineHeads (id INTEGER PRIMARY KEY AUTOINCREMENT, model TEXT NOT NULL, head TEXT NOT NULL, trainedAt TEXT NOT NULL)',
@@ -352,6 +357,14 @@ export const MIGRATIONS: readonly Migration[] = [
     creates: ['conventionCorpus', 'conventionCorpusBySide'],
     apply(handle) {
       for (const statement of CONVENTION_CORPUS_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 26,
+    name: 'secrets',
+    creates: ['secrets', 'secretKeys'],
+    apply(handle) {
+      for (const statement of SECRET_TABLES) handle.exec(statement)
     },
   },
 ]
