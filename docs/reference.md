@@ -385,14 +385,14 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log discord secrets`](#log-discord-secrets) | The Discord account's email, password and 2FA secret, asked in a Clack prompt and kept in Twenty for its sign-in, never printed | `discord` first | `--account <accountName>` `--show` | direct API only | none | terminal only: asks for a Discord account's email, password and 2FA secret in a Clack prompt (masked). Run `log discord secrets --account <a>` in a terminal. | PreToolUse, PostToolUse · n/a | no | 35, 94, 30, 38, 39, 40, 41 |
 | [`log discord chats`](#log-discord-chats) | The account's chats with their ids, on the direct-API engine; sends nothing | `discord` first | `--account <accountName>` `[--kind <kinds,…>]` `[--name <text>]` `[--json]` | direct API only | none | `discordChats` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord servers`](#log-discord-servers) | List the Discord servers the account is in, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `[--json]` | direct API only | none | `discordServers` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
-| [`log discord channels`](#log-discord-channels) | List one Discord server's channels by category and kind (text, forum, media, voice), on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--server <server name>` `[--json]` | direct API only | none | `discordChannels` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
+| [`log discord channels`](#log-discord-channels) | List one Discord server's channels by category and kind (text, forum, media, voice), on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--server <name>` `[--json]` | direct API only | none | `discordChannels` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord posts`](#log-discord-posts) | List the posts in a Discord forum (or a channel's threads) with each one's opening message, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--channel <text>` `[--limit <integer 1..200>]` `[--archived <true|false>]` `[--json]` | direct API only | none | `discordPosts` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
-| [`log discord search`](#log-discord-search) | Search a whole Discord server (channels, forum posts and threads) with Discord's own search, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--server <server name>` `--query <text>` `[--channel <text>]` `[--from <name>]` `[--limit <integer 1..200>]` `[--json]` | direct API only | none | `discordSearch` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
-| [`log discord read`](#log-discord-read) | Read a Discord chat or channel's latest messages, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--channel <channelId|chat name>` `[--limit <integer 1..1000>]` `[--after <messageId>]` `[--noMedia]` `[--json]` | direct API only | the account's | `discordRead` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | yes: watch it | 73, 94, 138, 30, 38, 39, 40, 41 |
-| [`log discord watch`](#log-discord-watch) | Watch the account's Discord messages as Discord pushes them over its gateway, nothing polled, sending nothing | `discord` first | `--account <accountName>` `[--channel <channelId|chat name>]` `[--seconds <number 0..>]` `[--inbox]` `[--json]` | direct API only | Camoufox only | `discordWatch` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | yes: watch it | 26, 73, 94, 138, 105, 30, 38, 39, 40, 41 |
-| [`log discord send`](#log-discord-send) | Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `[--channel <channelId|chat name>]` `[--userId <id>]` `--text <text>` `[--approvedBy <who>]` `[--file <value,…>]` `[--brief]` `[--asOne]` `[--overGate]` `[--followUp]` `[--live]` `[--json]` | direct API only | none | `discordSend`, `discordSendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 90, 94, 105, 133, 134, 109, 137, 138, 30, 38, 39, 40, 41 |
-| [`log discord delete`](#log-discord-delete) | Delete the account's own Discord messages by id, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channelId|chat name>` `--message <messageId,…>` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordDelete`, `discordDeleteLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
-| [`log discord friend`](#log-discord-friend) | Send Discord friend requests by user id, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--userId <userId,…>` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordFriend`, `discordFriendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
+| [`log discord search`](#log-discord-search) | Search a whole Discord server (channels, forum posts and threads) with Discord's own search, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--server <name>` `--query <text>` `[--channel <text>]` `[--from <name>]` `[--limit <integer 1..200>]` `[--json]` | direct API only | none | `discordSearch` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
+| [`log discord read`](#log-discord-read) | Read a Discord chat or channel's latest messages, on the direct-API engine, sending nothing | `discord` first | `--account <accountName>` `--channel <id|name>` `[--limit <integer 1..1000>]` `[--after <id>]` `[--noMedia]` `[--json]` | direct API only | the account's | `discordRead` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | yes: watch it | 73, 94, 138, 30, 38, 39, 40, 41 |
+| [`log discord watch`](#log-discord-watch) | Watch the account's Discord messages as Discord pushes them over its gateway, nothing polled, sending nothing | `discord` first | `--account <accountName>` `[--channel <id|name>]` `[--seconds <number 0..>]` `[--inbox]` `[--json]` | direct API only | Camoufox only | `discordWatch` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | yes: watch it | 26, 73, 94, 138, 105, 30, 38, 39, 40, 41 |
+| [`log discord send`](#log-discord-send) | Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `[--channel <id|name>]` `[--userId <id>]` `--text <text>` `[--approvedBy <who>]` `[--file <value,…>]` `[--brief]` `[--asOne]` `[--overGate]` `[--followUp]` `[--live]` `[--json]` | direct API only | none | `discordSend`, `discordSendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 90, 94, 105, 133, 134, 109, 137, 138, 30, 38, 39, 40, 41 |
+| [`log discord delete`](#log-discord-delete) | Delete the account's own Discord messages by id, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <id|name>` `--message <id,…>` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordDelete`, `discordDeleteLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
+| [`log discord friend`](#log-discord-friend) | Send Discord friend requests by user id; a dry run unless --live | `discord` first | `--account <accountName>` `--userId <id,…>` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordFriend`, `discordFriendLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
 | [`log discord react`](#log-discord-react) | React to a Discord message with an emoji, on the direct-API engine; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channel>` `--message <id>` `--emoji <emoji>` `[--remove]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordReact`, `discordReactLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 30, 38, 39, 40, 41 |
 | [`log discord voice`](#log-discord-voice) | Send a voice note in the owner's cloned voice as Discord's own voice note, from text; a dry run unless --live | `discord` first | `--account <accountName>` `--channel <channel>` `--text <text>` `[--provider <inworld|fishAudio>]` `[--ownersWords]` `[--translationOf <text>]` `[--language <code>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `discordVoice`, `discordVoiceLive` | PreToolUse, PostToolUse · PreToolUse, PostToolUse | no | 8, 73, 94, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log linkedin session`](#log-linkedin-session) | Check that LinkedIn still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `linkedin` first | `--account <accountName>` `[--json]` | direct API only | none | `linkedinSessionCheck`, `linkedinSessionScripts` | PreToolUse, PostToolUse · PostToolUse | no | 73, 30, 38, 39, 40, 41 |
@@ -2260,7 +2260,7 @@ Lists the Discord servers the account is in, by name, on the direct-API engine (
 List one Discord server's channels by category and kind (text, forum, media, voice), on the direct-API engine, sending nothing MCP tools: `discordChannels`, one per form, with named fields.
 
 ```text
-log discord channels --account <accountName> --server <server name> [--json]
+log discord channels --account <accountName> --server <name> [--json]
 Lists one server's channels by category, each with its kind (text, announcement, forum, media, voice, stage), its tags and when its last message came, on the direct-API engine (no browser). One request. Sends nothing. A text or announcement channel is read with log discord read and the channel "<server> #<channel>"; a forum or media channel holds posts, listed with log discord posts.
 ```
 
@@ -2278,7 +2278,7 @@ Lists the posts in a forum or media channel (or the threads under a text channel
 Search a whole Discord server (channels, forum posts and threads) with Discord's own search, on the direct-API engine, sending nothing MCP tools: `discordSearch`, one per form, with named fields.
 
 ```text
-log discord search --account <accountName> --server <server name> --query "<words>" [--channel "<server> #<channel>"] [--from <name>] [--limit <n>] [--json]
+log discord search --account <accountName> --server <name> --query "<words>" [--channel "<server> #<channel>"] [--from <name>] [--limit <n>] [--json]
 Searches a whole server with Discord's own search, every channel, forum post and thread at once, on the direct-API engine (no browser): each hit's time, channel or post, who wrote it and its text, newest first. 25 a request, at most 200. --channel keeps one channel, --from one person (by name, matched to who wrote in the hits). Sends nothing. The fast way to find an old conversation in a server: no channel has to be read back.
 ```
 
@@ -2287,7 +2287,7 @@ Searches a whole server with Discord's own search, every channel, forum post and
 Read a Discord chat or channel's latest messages, on the direct-API engine, sending nothing MCP tools: `discordRead`, one per form, with named fields.
 
 ```text
-log discord read --account <accountName> --channel <channelId|chat name> [--limit <n>] [--after <messageId>] [--noMedia] [--json]
+log discord read --account <accountName> --channel <id|name> [--limit <n>] [--after <id>] [--noMedia] [--json]
 Reads a DM, group DM, server channel or forum post's latest messages, oldest first, on the direct-API engine (no browser): who sent each, when, whether a bot, what it replies to, its text and embeds. A server channel is "<server> #<channel>" and a forum post "<server> #<forum> > <post title>" (from log discord posts), both read live from Discord. --after keeps only what came after that message (a bot's answer to ours). --noMedia reads text only, without saving images or transcribing voice notes, for a fast pass over a busy channel. Sends nothing.
 ```
 
@@ -2296,7 +2296,7 @@ Reads a DM, group DM, server channel or forum post's latest messages, oldest fir
 Watch the account's Discord messages as Discord pushes them over its gateway, nothing polled, sending nothing MCP tools: `discordWatch`, one per form, with named fields.
 
 ```text
-log discord watch --account <accountName> [--channel <channelId|chat name>] [--seconds <s>] [--inbox] [--json]
+log discord watch --account <accountName> [--channel <id|name>] [--seconds <s>] [--inbox] [--json]
 Opens the account's Discord gateway on the direct-API engine (wss://gateway.discord.gg, no browser) and prints every message the moment Discord pushes it, nothing polled. --channel keeps only one chat or channel; --seconds stops after that long (at least 5), otherwise it runs until stopped. --inbox hands each new DM, group message, mention of the account or reply to it from someone else to the inbox hook, which puts it in front of the agent with what to do next. Sends nothing.
 ```
 
@@ -2305,7 +2305,7 @@ Opens the account's Discord gateway on the direct-API engine (wss://gateway.disc
 Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live MCP tools: `discordSend`, `discordSendLive`, one per form, with named fields.
 
 ```text
-log discord send --account <accountName> (--channel <channelId|chat name> | --userId <id>) --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]
+log discord send --account <accountName> (--channel <id|name> | --userId <id>) --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]
 Sends one message to a DM, a group DM (by its id or its name, from log discord chats) or a server channel (by its id), on the direct-API engine (no browser). Each message is typed first, as Discord's own app does: the typing signal (POST channels/<id>/typing, so the chat shows the account typing) goes out, then the account waits as long as the text takes to type, sending the signal again every 8 s, before the message. A typing signal Discord refuses or doesn't answer stops it before the message, nothing retried (rule 94).
 --brief says the message hands someone a task, not a casual reply: the gate reads it as a brief instead of the owner's chat voice (rule 162), asking SubQ whether it says clearly what to do, why, what done looks like and by when, kindly, and how to ask when stuck, with the attached files read beside it. The sameness, AI artifact and scrambler checks still run.
 --file attaches files (a guide, a spreadsheet) to the last message, uploaded through the account's own session: only files under OUTBOX or ~/.logCli, at most 10 MB each, refused before anything is sent otherwise (fileRefused).
@@ -2317,17 +2317,17 @@ A draft written on several lines goes out one message per line, wherever it is s
 Delete the account's own Discord messages by id, on the direct-API engine; a dry run unless --live MCP tools: `discordDelete`, `discordDeleteLive`, one per form, with named fields.
 
 ```text
-log discord delete --account <accountName> --channel <channelId|chat name> --message <messageId>[,<messageId>...] [--approvedBy <who>] [--live] [--json]
+log discord delete --account <accountName> --channel <id|name> --message <id>[,<id>...] [--approvedBy <who>] [--live] [--json]
 Deletes the account's own messages by id (from log discord read) in a DM, group DM or server channel, on the direct-API engine (no browser): a duplicate or a mistake. Each message is read first and only deleted when the account sent it; someone else's is refused with notOwnMessage. Without --live it is a dry run that reads each message and deletes nothing. --live deletes, only when the owner asked, and needs --approvedBy (rule 8). Discord's answer decides (204 is deleted). Each delete counts as a write, they go 4 s apart, and the first refusal stops the run with nothing retried (rule 94).
 ```
 
 #### log discord friend
 
-Send Discord friend requests by user id, on the direct-API engine; a dry run unless --live MCP tools: `discordFriend`, `discordFriendLive`, one per form, with named fields.
+Send Discord friend requests by user id; a dry run unless --live MCP tools: `discordFriend`, `discordFriendLive`, one per form, with named fields.
 
 ```text
-log discord friend --account <accountName> --userId <userId>[,<userId>...] [--approvedBy <who>] [--live] [--json]
-Friend requests by user id (fromId in log discord read), on the direct-API engine, as the app sends from a profile. A dry run unless --live, which needs --approvedBy (rule 8). Each is a write, 20 s apart; the first refusal stops the run (rule 94), a captcha comes back as captchaRequired.
+log discord friend --account <accountName> --userId <id>[,<id>...] [--approvedBy <who>] [--live] [--json]
+Friend requests by user id (fromId in log discord read), on the direct-API engine. A dry run unless --live, which needs --approvedBy (rule 8). 20 s apart; the first refusal stops the run (rule 94); a captcha answers captchaRequired.
 ```
 
 #### log discord react

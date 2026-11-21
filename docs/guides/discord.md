@@ -1,6 +1,6 @@
 # discord
 
-A Discord account: its session, DMs and group DMs, servers with their channels, forums, posts and threads, server search, reading, the live gateway watch, sending, messaging someone new, friend requests and deleting its own messages.
+A Discord account: session, DMs, servers, forums, search, reading, watching, sending, friend requests and deleting.
 
 Written by `bun run docs:build` from the code, the skills and AGENTS.md. Not edited by hand: change the command's usage, its skill or the rule, and rebuild.
 
@@ -11,7 +11,7 @@ When the owner asks for one of these, follow its page step by step.
 | Use case | What it is | How the owner asks for it |
 |---|---|---|
 | `getGuide({ useCase: "discord/channelReply" })` | Answering someone in a Discord DM or group DM | "reply to <someone> on discord", "reply to <someone> in <group>", "explain what I'm trying to do to <someone> in <group>", "answer the group" |
-| `getGuide({ useCase: "discord/coldOutbound" })` | Messaging people from a Discord server you haven't talked to yet | "dm the people who engaged with me in <channel>", "cold outbound the people from that channel", "add them as a friend if you can't message them" |
+| `getGuide({ useCase: "discord/coldOutbound" })` | Cold DMs from a Discord channel | "cold dm the people from <channel>" |
 | `getGuide({ useCase: "discord/forumPosts" })` | Going through a Discord forum for posts worth answering | "look at the <server> forum and find the one about <problem>", "go through the forum in <server> and tell me which posts to respond to", "list the posts in <server> #<forum>", "find posts in <server> asking for help with <thing>" |
 | `getGuide({ useCase: "discord/groupChatRead" })` | Reading a Discord group chat without Twenty | "read the <group> chat over the last <N> hours", "what did <someone> set up in <group>" |
 | `getGuide({ useCase: "discord/memeReply" })` | Replying with a meme in a Discord chat | "respond with memes in the <chat>", "drop a meme in <chat> about that", "read <chat> and meme it" |
@@ -29,20 +29,20 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 
 | Tool | What it does | Usage |
 |---|---|---|
-| `discordSessionCheck` | Check that Discord still accepts one account's saved session, sending… | `log discord session check --account <accountName> [--json]` |
+| `discordSessionCheck` | Check Discord still accepts an account's saved session | `log discord session check --account <accountName> [--json]` |
 | `discordChats` | The account's chats with ids and members | `log discord chats --account <accountName> [--kind <kinds>] [--name <text>] [--json]` |
 | `discordServers` | The servers the account is in | `log discord servers --account <accountName> [--json]` |
-| `discordChannels` | One server's channels by category, each with its kind | `log discord channels --account <accountName> --server <server name> [--json]` |
+| `discordChannels` | One server's channels by category and kind | `log discord channels --account <accountName> --server <name> [--json]` |
 | `discordPosts` | A forum's posts | `log discord posts --account <accountName> --channel "<server> #<forum>" [--limit <n>] [--archived <true\|false>] [--json]` |
-| `discordSearch` | Search a whole server for words | `log discord search --account <accountName> --server <server name> --query "<words>" [--channel "<server> #<channel>"] [--from <name>] [--limit <n>] [--json]` |
-| `discordRead` | One chat's messages by its name | `log discord read --account <accountName> --channel <channelId\|chat name> [--limit <n>] [--after <messageId>] [--noMedia] [--json]` |
-| `discordWatch` | Every Discord message as Discord pushes it, over the gateway, sending… | `log discord watch --account <accountName> [--channel <channelId\|chat name>] [--seconds <s>] [--inbox] [--json]` |
-| `discordSend` | Send one message on Discord, on the direct-API engine | `log discord send --account <accountName> (--channel <channelId\|chat name> \| --userId <id>) --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]` |
-| `discordSendLive` | Send one message on Discord, on the direct-API engine, live on Discord | `log discord send --account <accountName> (--channel <channelId\|chat name> \| --userId <id>) --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]` |
-| `discordDelete` | Delete the account's own Discord messages by id, on the direct-API… | `log discord delete --account <accountName> --channel <channelId\|chat name> --message <messageId>[,<messageId>...] [--approvedBy <who>] [--live] [--json]` |
-| `discordDeleteLive` | Delete the account's own Discord messages by id, on…, live on Discord | `log discord delete --account <accountName> --channel <channelId\|chat name> --message <messageId>[,<messageId>...] [--approvedBy <who>] [--live] [--json]` |
-| `discordFriend` | Send Discord friend requests by user id, on the direct-API engine | `log discord friend --account <accountName> --userId <userId>[,<userId>...] [--approvedBy <who>] [--live] [--json]` |
-| `discordFriendLive` | Send Discord friend requests by user id, on the…, live on Discord | `log discord friend --account <accountName> --userId <userId>[,<userId>...] [--approvedBy <who>] [--live] [--json]` |
+| `discordSearch` | Search a whole server for words | `log discord search --account <accountName> --server <name> --query "<words>" [--channel "<server> #<channel>"] [--from <name>] [--limit <n>] [--json]` |
+| `discordRead` | One chat's messages by its name | `log discord read --account <accountName> --channel <id\|name> [--limit <n>] [--after <id>] [--noMedia] [--json]` |
+| `discordWatch` | Every Discord message as it lands, over the gateway | `log discord watch --account <accountName> [--channel <id\|name>] [--seconds <s>] [--inbox] [--json]` |
+| `discordSend` | Send one message on Discord | `log discord send --account <accountName> (--channel <id\|name> \| --userId <id>) --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]` |
+| `discordSendLive` | Send one message on Discord, live on Discord | `log discord send --account <accountName> (--channel <id\|name> \| --userId <id>) --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]` |
+| `discordDelete` | Delete the account's own Discord messages by id | `log discord delete --account <accountName> --channel <id\|name> --message <id>[,<id>...] [--approvedBy <who>] [--live] [--json]` |
+| `discordDeleteLive` | Delete the account's own Discord messages by id, live on Discord | `log discord delete --account <accountName> --channel <id\|name> --message <id>[,<id>...] [--approvedBy <who>] [--live] [--json]` |
+| `discordFriend` | Send Discord friend requests by user id | `log discord friend --account <accountName> --userId <id>[,<id>...] [--approvedBy <who>] [--live] [--json]` |
+| `discordFriendLive` | Send Discord friend requests by user id, live on Discord | `log discord friend --account <accountName> --userId <id>[,<id>...] [--approvedBy <who>] [--live] [--json]` |
 | `discordReact` | React to a Discord message with an emoji, on the direct-API engine | `log discord react --account <accountName> --channel <channel> --message <id> --emoji <emoji> [--remove] [--approvedBy <who>] [--live] [--json]` |
 | `discordReactLive` | React to a Discord message with an emoji, on the…, live on Discord | `log discord react --account <accountName> --channel <channel> --message <id> --emoji <emoji> [--remove] [--approvedBy <who>] [--live] [--json]` |
 | `discordVoice` | Send a voice note in the owner's cloned voice as Discord's own voice… | `log discord voice --account <accountName> --channel <channel> --text "<what the owner says>" [--provider inworld\|fishAudio] [--ownersWords] [--translationOf "<what it translates>" --language <code>] [--approvedBy <who>] [--live] [--json]` |
@@ -54,7 +54,7 @@ From `skills/discordServers/SKILL.md`.
 
 ## discordServers
 
-A Discord server is not a group DM. A group DM is a private chat of a few people, listed by `discordChats` and kept whole in log.db. A server is someone else's space: it holds channels of several kinds, some of which hold posts or threads, and log.db keeps only the mentions of the account and replies to it from it. So a server is always read live from Discord, through the tools below, each one a request or a few.
+A Discord server is not a group DM. A group DM is a private chat of a few people, listed by `discordChats` and kept whole in log.db. A server is someone else's space of channels, some holding posts or threads, and log.db keeps only what mentions or answers the account, so a server is read live, a request or a few per tool below.
 
 ### What a server holds
 
@@ -64,7 +64,7 @@ A Discord server is not a group DM. A group DM is a private chat of a few people
 | Category | A heading that groups channels; holds no messages | its name, shown above its channels | `discordChannels` | nothing to read |
 | Text channel | A room of messages in time order | `"<server> #<channel>"` | `discordChannels` (`text`) | `discordRead` |
 | Announcement channel | A text channel only some can post in, others follow it | `"<server> #<channel>"` | `discordChannels` (`announcement`) | `discordRead` |
-| Forum channel | Holds posts, never loose messages; each post is its own conversation with a title, tags and an opening message | `"<server> #<forum>"` | `discordChannels` (`forum`, with its tags) | `discordPosts` lists its posts |
+| Forum channel | Holds posts, never loose messages; each post is its own conversation | `"<server> #<forum>"` | `discordChannels` (`forum`, with its tags) | `discordPosts` lists its posts |
 | Media channel | A forum whose posts open with an image or video | `"<server> #<channel>"` | `discordChannels` (`media`) | `discordPosts` |
 | Post | One conversation inside a forum or media channel: a title, who opened it, tags, an opening message, then replies | `"<server> #<forum> > <post title>"` | `discordPosts` | `discordRead` |
 | Thread | A side conversation started from a message in a text channel | `"<server> #<channel> > <thread title>"` | `discordPosts` on the text channel | `discordRead` |
@@ -75,10 +75,10 @@ A Discord server is not a group DM. A group DM is a private chat of a few people
 ### Finding things fast
 
 - **Know what's there:** `discordServers`, then `discordChannels` { server } shows every channel by category and kind in one request.
-- **Find a conversation:** `discordSearch` { server, query } searches every channel, post and thread at once with Discord's own search, and names where each hit is. Add `channel` to keep one channel and `from` to keep one person. Never read a channel back hundreds of messages to look for something search can find.
+- **Find a conversation:** `discordSearch` { server, query } searches every channel, post and thread at once with Discord's own search, and names where each hit is. Add `channel` to keep one channel and `from` to keep one person. Never read hundreds of messages back for what search can find.
 - **Work a forum:** `discordPosts` { channel: "<server> #<forum>" } lists its posts newest activity first, with each one's title, author, tags, replies and opening message, so most posts are judged without opening them. Read the ones worth it with `discordRead` { channel: "<server> #<forum> > <post title>" }.
-- **Skim a busy channel:** `discordRead` with `noMedia` reads text only. Without it, every image is saved and every voice note transcribed first, which took most of a minute for 400 messages of "pennyserver #general".
-- **Never run a script over saved output.** Every answer above is plain text made for reading. When it isn't enough, the tool is missing a flag: add it to the tool, don't filter a dump.
+- **Skim a busy channel:** `discordRead` with `noMedia` reads text only. Without it, images are saved and voice notes transcribed first: most of a minute for 400 messages of "pennyserver #general".
+- **Never run a script over saved output.** When an answer isn't enough, the tool is missing a flag: add it, don't filter a dump.
 
 ### Hard boundaries
 

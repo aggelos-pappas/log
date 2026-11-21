@@ -156,8 +156,8 @@ describe("a play unlocks only the sends it covers", () => {
     expect(gate("discordSendLive", voice)).toStartWith("playNotCovering");
   });
 
-  test("the nine tools gated on main are never less gated: none runs with no play", () => {
-    expect(PLAY_GATED_ON_MAIN.size).toBe(9);
+  test("the ten tools gated on main are never less gated: none runs with no play", () => {
+    expect(PLAY_GATED_ON_MAIN.size).toBe(10);
     const required = playRequiredTools(COMMANDS, flows, pages);
     for (const tool of PLAY_GATED_ON_MAIN) {
       expect(required.has(tool)).toBe(true);

@@ -1,8 +1,8 @@
-# Messaging people from a Discord server you haven't talked to yet
+# Cold DMs from a Discord channel
 
 Start a conversation with someone the owner met in a server channel: someone who replied to him, argued with him or asked him something there. log opens the DM the way the app's Message button does and sends one message, gated like any other. When Discord won't let a stranger message them, log sends a friend request instead, and the message waits until they accept.
 
-How the owner asks for it: "dm the people who engaged with me in <channel>", "cold outbound the people from that channel", "add them as a friend if you can't message them"
+How the owner asks for it: "cold dm the people from <channel>"
 
 ## Run it from a fresh context
 
