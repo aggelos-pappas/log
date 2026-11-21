@@ -13,12 +13,12 @@ Say: **"go on docs/useCases/twitter/nicheMapRegion.md for <the world>, <the area
 <!-- stepsDiagram: written by `bun run docs:build` from the steps table below, not edited by hand -->
 ```mermaid
 flowchart TD
-  s0["1. The region's people from a free public source<br/><i>the niche map repo's 78_yc_batch.py (RE…</i>"]
+  s0["1. The region's people from a free public source<br/><i>the niche map repo's 78_yc_batch.py, YC…</i>"]
   s1["2. Keep only the owner's area: the companies whose one-liner, desc…<br/><i>a filter over the batch files (data/yc/…</i>"]
   s2["3. Mark who already engages with the owner (his notifications stor…<br/><i>the account's notifications.json and in…</i>"]
   s3["4. Say the price before the paid run, and run only to the budget t…<br/><i>GG_BUDGET</i>"]
   s4["5. The region through the niche map pipeline, with the region's ci…<br/><i>run_new_followers.sh with GG_CIRCLES_FI…</i>"]
-  s5["6. The outbound list: the region's go getters (gates passed; band…<br/><i>the query in network/whoToTalkTo.md, or…</i>"]
+  s5["6. The outbound list: the region's best fits (gates passed; band m…<br/><i>the query in network/whoToTalkTo.md</i>"]
   s6["7. One recent post of each person's own to open on: the index hold…<br/><i>the index (search_index.json, search_po…</i>"]
   s7["8. Whether they follow the owner and he follows them<br/><i>twitterFollows</i>"]
   s8["9. Each opener the first-DM way (engagerDms.md): their tweet first…<br/><i>the agent</i>"]
@@ -41,12 +41,12 @@ flowchart TD
 
 | # | Step | Tool | Done when |
 | --- | --- | --- | --- |
-| 1 | The region's people from a free public source. For YC: every company page of the batches the owner named (founders, their X handles, the company account, the group partner), pulled slowly. YC's team page gives the partners | the niche map repo's `78_yc_batch.py` (`REPOS/whop/research/nicheMap`), YC's public pages | `data/yc/companies.json`, `people.json`, `partners.json` |
+| 1 | The region's people from a free public source. For YC: every company page of the batches the owner named (founders, their X handles, the company account, the group partner), pulled slowly. YC's team page gives the partners | the niche map repo's `78_yc_batch.py`, YC's public pages | `data/yc/companies.json`, `people.json`, `partners.json` |
 | 2 | Keep only the owner's area: the companies whose one-liner, description or tags fit what he named (GTM tools, the agent-infrastructure world around a company like Boat). Hardware, biotech and the rest are out | a filter over the batch files (`data/yc/focus.json`), checked by hand | the region's people (`focusPeople.json`) and the circles to pull (`circles.json`) |
 | 3 | Mark who already engages with the owner (his notifications store) and who he already talks to (the inbox), so a warm person never gets a cold template | the account's `notifications.json` and `inboxSync.json` | each person's closeness and engagement |
 | 4 | Say the price before the paid run, and run only to the budget the owner set (rule 41). His new followers can go in the same run | the ledger (`data/run_ledger.json`), `GG_BUDGET` | the owner said yes to a number |
 | 5 | The region through the niche map pipeline, with the region's circles beside his followers: their three months of mentions, the new people's profiles, scores, own posts, closeness and bands | `run_new_followers.sh` with `GG_CIRCLES_FILE=data/yc/circles.json`. API-heavy pulls go to Boat sandboxes with the owner's [treg](https://treg.to/?ref=matthewdonse-aebsh) login when his machine is under load; the rest reads the cache locally | `data/final_scores.json` holds the region, with rings and bands; then steps 2 and 3 of [whoToTalkTo.md](../network/whoToTalkTo.md) put it in log.db and the Relate graph |
-| 6 | The outbound list: the region's go getters (gates passed; band member, collaborator, sponsor or affiliate) in ring 2 first, then ring 2 around them | the query in [network/whoToTalkTo.md](../network/whoToTalkTo.md), or `data/yc/goGetters.json` | the list, ranked |
+| 6 | The outbound list: the region's best fits (gates passed; band member, collaborator, sponsor or affiliate) in ring 2 first, then ring 2 around them | the query in [network/whoToTalkTo.md](../network/whoToTalkTo.md) | the list, ranked |
 | 7 | One recent post of each person's own to open on: the index holds their posts, and one fresh search each confirms they posted this week. Nothing new: they wait | the index (`search_index.json`, `search_posts.jsonl`), treg's posts search | each with a user id and a post from the last few days |
 | 8 | Whether they follow the owner and he follows them | `twitterFollows` | the relationship, for the opener's wording |
 | 9 | Each opener the first-DM way ([engagerDms.md](engagerDms.md)): their tweet first, then one line about it, never an ask | the agent | one draft per person |

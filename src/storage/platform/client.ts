@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto'
 import { gunzipSync, gzipSync } from 'node:zlib'
 import { chatIdOf, eventIdFrom, extenderOf, handleIdOf, isBareId, messageKeyOf, msOf, normalHandle, platformMessageIdOf, profileFieldsOf, readConversations, writeConversation } from './helpers'
 import type { StoredConversation } from './helpers'
+import { moveRings, rebuildRingsIn, ringState, ringsFromEvent } from '../../relate/network/helpers/rings'
 import { DERIVED_TABLES, EXTENDER_VERSION, MESSAGE_TYPES, RAW_BLOB_KINDS } from './types'
 import type { BlobCodec, EventInput, EventInsert, ExtenderContext, IdentityProfileFields, IdentityProfileRow, InsertedEvent, TypedRows } from './types'
 
@@ -84,6 +85,7 @@ export function rekeyIdentity(handle: Database, platform: string, fromId: string
   }
   handle.prepare('UPDATE OR IGNORE identityLinks SET userId = ? WHERE platform = ? AND lower(userId) = lower(?)').run(toId, platform, fromId)
   handle.prepare("UPDATE identityLinks SET revokedAt = ?, revokedBy = 'rekeyConflict' WHERE platform = ? AND lower(userId) = lower(?) AND revokedAt IS NULL").run(at, platform, fromId)
+  moveRings(handle, platform, fromId, toId)
   if (moved) handle.prepare('INSERT INTO identityMerges (platform, fromId, toId, at, reason) VALUES (?, ?, ?, ?, ?)').run(platform, fromId, toId, at, reason)
   return moved
 }
@@ -145,8 +147,10 @@ export function insertEventRow(handle: Database, input: EventInsert, now: Date =
   const rawHash = json.length > PAYLOAD_INLINE_LIMIT ? putBlob(handle, 'eventPayload', json, now) : null
   const result = handle.prepare('INSERT OR IGNORE INTO events (eventId, platform, account, conversationId, type, known, withWho, text, box, payload, sourceAt, receivedAt, appendedAt, ownerPid, source, sourceAtMs, receivedAtMs, messageKey, rawHash, ownerId, typedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(eventId, input.platform, input.account, input.conversationId, input.type, input.known === false ? 0 : 1, input.with, input.text, input.box, rawHash ? JSON.stringify({ storedIn: 'blobs', rawHash }) : json, input.sourceAt, input.receivedAt, now.toISOString(), process.pid, input.source, msOf(input.sourceAt), msOf(input.receivedAt), messageKey, rawHash, ownerId, now.getTime())
   if (!result.changes) return null
-  typeEvent(handle, { eventId, platform: input.platform, account: input.account, conversationId: input.conversationId, type: input.type, with: input.with, text: input.text, box: input.box, payload: input.payload, sourceAt: input.sourceAt, receivedAt: input.receivedAt, source: input.source, ownerId })
-  return { seq: Number(result.lastInsertRowid), eventId, messageKey }
+  const rows = typeEvent(handle, { eventId, platform: input.platform, account: input.account, conversationId: input.conversationId, type: input.type, with: input.with, text: input.text, box: input.box, payload: input.payload, sourceAt: input.sourceAt, receivedAt: input.receivedAt, source: input.source, ownerId })
+  const seq = Number(result.lastInsertRowid)
+  ringsFromEvent(handle, input.platform, rows, seq, msOf(input.receivedAt))
+  return { seq, eventId, messageKey }
 }
 
 function deriveInternal(handle: Database, event: EventInput): boolean {
@@ -310,6 +314,7 @@ export function rebuildDerived(handle: Database): { events: number; messages: nu
   try {
     for (const table of DERIVED_TABLES) handle.exec(`DELETE FROM ${table}`)
     const events = replayEvents(handle)
+    if (ringState(handle)) rebuildRingsIn(handle)
     handle.exec('COMMIT')
     return { events, ...countsOf(handle) }
   } catch (error) {

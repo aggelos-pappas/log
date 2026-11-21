@@ -16,7 +16,7 @@ Checked by: code and SubQ
 
 ### REQ-RELATE-02: Each build writes a new graph file and only then points at it
 
-A build runs in its own short-lived Bun process (`buildGraph` spawns `buildGraphHere`), so no long-lived process (the MCP server, the context service) keeps a writable handle that would make every read-only open fail. It writes a new single-file Relate store `graph-<throughSeq>-<ms>.rl` under a `relate` folder beside log.db, in one Relate transaction, checkpoints it, and only then stores its pointer (file, throughSeq, projector version, schema version, workspace, counts) in log.db's `state` table under `relateGraph`. A reader opens only the file the pointer names, read-only, so it never sees a half-written graph. Old files beyond the last three are removed when nothing in the process holds them. One build runs at a time per log.db (`relateGraphBuilding` claim).
+A build runs in its own short-lived Bun process (`buildGraph` spawns `buildGraphHere`), so no long-lived process (the MCP server, the context service) keeps a writable handle that would make every read-only open fail. It writes a new single-file Relate store `graph-<throughSeq>-<ms>.rl` under a `relate` folder beside log.db, in one Relate transaction, checkpoints it, and only then stores its pointer (file, throughSeq, projector version, schema version, workspace, counts) in log.db's `state` table under `relateGraph`. A reader opens only the file the pointer names, read-only, so it never sees a half-written graph. Old files beyond the last three are removed when nothing in the process holds them. One build or update runs at a time per log.db (`relateGraphBuilding` claim).
 
 Checked by: code and SubQ
 
@@ -48,7 +48,7 @@ Checked by: code and SubQ
 
 ### REQ-RELATE-07: The graph is built at install and kept current
 
-The after-install routine (`POST_INSTALL_STEPS`) builds the graph right after log.db's migrations, as a non-blocking step. After that, when the graph is behind log.db and was built more than a minute ago, the hook starts `log relate build` as a hidden detached process and answers from the current graph meanwhile. With no graph yet and events in log.db, the hook and `log relate status` start that build at once, so status is never empty for long on a machine with data. A build already running is not started twice.
+The after-install routine (`POST_INSTALL_STEPS`) builds the graph right after log.db's migrations, as a non-blocking step. After that, when the graph is behind log.db and was built more than a minute ago, the hook starts a hidden detached process that applies the new events in place (REQ-RELATE-15) and answers from the current graph meanwhile. With no graph yet and events in log.db, the hook and `log relate status` start that build at once, so status is never empty for long on a machine with data. A build already running is not started twice.
 
 Checked by: code and SubQ
 
@@ -89,5 +89,25 @@ Checked by: code and SubQ
 ### REQ-RELATE-13: A graph that can't be opened is a coded outcome
 
 When the current graph file can't be opened read-only, `relateContext` answers `graphUnreadable` with the reason, the search prior is skipped, and the hook adds nothing instead of failing with the engine's error.
+
+Checked by: code and SubQ
+
+## Your network
+
+### REQ-RELATE-14: Rings come from every stored event, live and free
+
+Every person other than the owner sits in one ring, kept in log.db's `networkRings` with its reason, since when, whether they follow the owner and, for ring 2, who put them there: 1 engaged with the owner (a like, reply, quote, repost, reaction or mention on any of the owner's accounts, a message that replies to or names the owner, or a DM from them), 2 replies to or names one of the owner's followers or a ring-1 person (`networkTalks`), 3 follows the owner, 4 known and none of these. `insertEventRow` applies each event inside the same transaction that stores it, never rescanning log.db, and a person moves only to a closer ring. A reply to someone who later becomes a follower or ring 1 moves the replier to ring 2 then. The first status, build or install computes the rings once from log.db (`networkRingState`); after that only events move them, and computing them again gives the same rings. They need no imported data, and an imported person with the same X handle takes the closer of the two rings. Nothing in them names one offer or marketplace; a research folder's own field names are read only in the import adapter, and its score is stored as `fit`.
+
+Checked by: code and SubQ
+
+### REQ-RELATE-15: New events are applied to the graph in place
+
+Between full builds, the update copies the current graph file, works out again from log.db only the rooms, engagement and people the events after the graph's `throughSeq` touched (plus the rooms naming a person whose handle is new, and the people whose ring moved), writes them into the copy in batches (rooms' edges replaced, people and posts merged, a new person who matches an imported placeholder taking over its edges), and then moves the pointer to the copy, which records `mode: 'applied'` and how many events it applied. It checkpoints only once about `CHECKPOINT_ROWS` rows have gone in since the last checkpoint. A full build happens instead when there is no graph, the projector version changed, identities were merged, the network import changed, more than `APPLY_MAX_EVENTS` events are new, or the owner runs `log relate build`. The applied graph equals a full build of the same log.db.
+
+Checked by: code and SubQ
+
+### REQ-RELATE-16: `log network status` shows the rings live
+
+`log network status` (MCP `networkStatus`) computes the rings once if they were never computed, then shows how many people sit in each ring (the owner's own accounts and an imported network merged by X handle), the event the rings are live through against log.db's latest event and its time, and the last import or that nothing was imported.
 
 Checked by: code and SubQ

@@ -19,7 +19,7 @@ export interface NetworkPersonRow {
   ring: number | null
   band: string | null
   bandProbabilities: string | null
-  score: number | null
+  fit: number | null
   components: string | null
   themes: string | null
   topThemes: string
@@ -113,4 +113,57 @@ export interface StoredNetworkPerson {
   bio: string | null
   followers: number | null
   tieStrength: number | null
+}
+
+export const RINGS = { engaged: 1, talksTo: 2, follows: 3, known: 4 } as const
+
+export const ENGAGE_KINDS: readonly string[] = ['like', 'reply', 'quote', 'mention', 'repost', 'retweet', 'reaction']
+
+export const FOLLOW_KINDS: readonly string[] = ['follow']
+
+export const TALKS_TO = 'talksTo'
+
+export interface RingRow {
+  platform: string
+  userId: string
+  ring: number
+  reason: string
+  sinceMs: number | null
+  follows: number
+  via: string | null
+  seq: number
+}
+
+export interface RingState {
+  throughSeq: number
+  lastAtMs: number | null
+  builtAt: string
+  builtMs: number
+}
+
+export interface MessageFacts {
+  platform: string
+  userId: string
+  atMs: number | null
+  chatKind: string | null
+  replyTo: { userId: string; fromOwner: boolean } | null
+  text: string
+}
+
+export interface InteractionFacts {
+  platform: string
+  userId: string
+  kind: string
+  atMs: number | null
+}
+
+export type RingCounts = Record<'1' | '2' | '3' | '4', number>
+
+export interface NetworkRings {
+  counts: RingCounts
+  live: RingCounts
+  imported: number
+  merged: number
+  state: RingState | null
+  latestSeq: number
 }
