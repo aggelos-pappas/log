@@ -290,6 +290,15 @@
     ],
     "action": "Let the named send or job finish (jobStatus, or the queue run), then run log update --apply again."
   },
+  "embedderUnavailable": {
+    "layer": "tool",
+    "meaning": "The local embedding model behind the inbox labeller could not run: its worker stopped or failed to load (often while its files download or after a cut-off download), so no chat was relabelled and nothing was trained.",
+    "retryable": true,
+    "raisedIn": [
+      "cli/inbox"
+    ],
+    "action": "Run log models --fetch to download the pinned model, then run the label tool again; the labels already stored are untouched."
+  },
   "modelFetchFailed": {
     "layer": "tool",
     "meaning": "log models --fetch could not download a local model at its pinned revision, or the download did not match the pinned hash; nothing half-written was kept.",
@@ -3223,6 +3232,33 @@
       "console/credentials"
     ],
     "action": "Check the settings file (LOG_USER_ENV) is writable, then save it again."
+  },
+  "secretStoreLocked": {
+    "layer": "auth",
+    "meaning": "log.db holds sealed secrets, but none of the store key's holders (OS keystore, LOG_STORE_PASSPHRASE) opened them on this machine.",
+    "retryable": false,
+    "raisedIn": [
+      "storage/secrets"
+    ],
+    "action": "On a new machine or after a reinstall, run `log storage recovery set` in a terminal with the recovery passphrase (or set LOG_STORE_RECOVERY); otherwise run it as the user that sealed them or with the LOG_STORE_PASSPHRASE used then. `log storage status` names the holders."
+  },
+  "secretStoreNoCipher": {
+    "layer": "auth",
+    "meaning": "The Python that runs the engines has no AES-GCM library (cryptography or pycryptodome), so it cannot open or seal secrets in log.db.",
+    "retryable": false,
+    "raisedIn": [
+      "storage/secrets"
+    ],
+    "action": "Install it into LOG_PYTHON (uv pip install --python <LOG_PYTHON> cryptography), or run `log update`, which installs it with the other Python vendors."
+  },
+  "secretTampered": {
+    "layer": "auth",
+    "meaning": "A sealed secret in log.db failed its AES-GCM check (changed, copied to another ref or corrupted), so it was not used.",
+    "retryable": false,
+    "raisedIn": [
+      "storage/secrets"
+    ],
+    "action": "Save that secret again (its cookies save, credentials save or localAccount login); nothing was read from it."
   },
   "browserProviderUnavailable": {
     "layer": "adsPower",

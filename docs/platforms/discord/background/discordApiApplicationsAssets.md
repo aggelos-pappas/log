@@ -57,7 +57,7 @@ Answered:
 
 ## What it does
 
-Loads the image assets (icons, artwork) for apps and games shown in the client.
+Fetches the icons and art for the apps and games shown in the client (activity cards, app launcher).
 
 ## What our machine does with it
 

@@ -11,7 +11,7 @@
 | Sends | — |
 | Reads | `page.id`, `page.name`, `page.url`, `page.time_zone`, `page.updated_at`, `incidents` |
 | Called from | `runs/inspect/20261120T115645_<name:2>/script0.js:23 statement` |
-| rea | `ev_16b9113f0e97eb010a288d934ce43e21da7176e04ecbb9d0fd90c00740e24cf8` |
+| rea | `ev_b4ef80010ed6f9a348297e0c2f9cc3f95410a8d88fb21298bad0d41ab4ccfa63` |
 
 Seen 2 time(s) in 2 run(s).
 
@@ -74,7 +74,7 @@ Answered:
 
 ## What it does
 
-Reads Discord's public status page for any incident still open, so the client can show an outage banner.
+Reads open incidents from Discord's status page (status.discord.com), so the client can show an outage notice.
 
 ## What our machine does with it
 

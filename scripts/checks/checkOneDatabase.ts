@@ -15,7 +15,7 @@ const WHY: Record<Kind, string> = {
 }
 
 const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
-  'src/auth/credentials/client.ts': { writes: 1, kind: 'session' },
+  'src/config/userEnv/index.ts': { writes: 1, kind: 'session' },
   'src/directApi/governor/client.ts': { writes: 1, kind: 'session' },
   'src/inbox/judgeModel/client.ts': { writes: 1, kind: 'session' },
   'scripts/checks/checkAgentHooks.ts': { writes: 1, kind: 'repo' },
@@ -67,7 +67,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'src/media/persona/client.ts': { writes: 3, kind: 'dataset' },
   'src/media/photo/client.ts': { writes: 1, kind: 'dataset' },
   'src/observability/liveLog/index.ts': { writes: 1, kind: 'log' },
-  'src/platformKit/session/client.ts': { writes: 6, kind: 'session' },
+  'src/platformKit/session/client.ts': { writes: 4, kind: 'session' },
   'src/release/apply/client.ts': { writes: 1, kind: 'session' },
   'src/release/check/client.ts': { writes: 1, kind: 'session' },
   'src/rea/capture/client.ts': { writes: 8, kind: 'capture' },
@@ -105,13 +105,13 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'python/instagramApi/host.py': { writes: 2, kind: 'session' },
   'python/judge/server.py': { writes: 1, kind: 'session' },
   'python/linkedinApi/share.py': { writes: 1, kind: 'capture' },
-  'python/platformKit/engine.py': { writes: 1, kind: 'session' },
   'python/platformKit/host.py': { writes: 1, kind: 'session' },
   'python/session/inspectSession.py': { writes: 12, kind: 'capture' },
   'python/session/profileSession.py': { writes: 1, kind: 'capture' },
   'python/session/publishSession.py': { writes: 2, kind: 'capture' },
   'python/slackApi/engine.py': { writes: 1, kind: 'media' },
-  'python/twitterApi/engine.py': { writes: 9, kind: 'capture' },
+  'python/secretStore/__init__.py': { writes: 1, kind: 'session' },
+  'python/twitterApi/engine.py': { writes: 8, kind: 'capture' },
   'python/twitterApi/host.py': { writes: 1, kind: 'session' },
   'python/logDb/engineStore.py': { writes: 1, kind: 'fallback' },
   'python/twitterApi/inboxSync.py': { writes: 1, kind: 'fallback' },

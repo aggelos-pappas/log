@@ -275,7 +275,7 @@ Answered:
 
 ## What it does
 
-Loads the featured profile widgets shown on profiles.
+Reads the featured app widgets offered for profiles.
 
 ## What our machine does with it
 

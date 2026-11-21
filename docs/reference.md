@@ -226,7 +226,7 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 308 command tools + saved flows"]
+  mcp["MCP server log: 309 command tools + saved flows"]
   bin["bin/log.ts"]
   runCli["runCli: 141 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
@@ -322,7 +322,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log capture`](#log-capture) | Read a run's raw HAR and scripts with offline rea (any platform or browser driver), settle a run's capture, or build every platform's client docs. No browser. | any (none) | `[--out <dir>]` `[--noRea]` `[--json]` | none | none | `captureHar`, `captureSettle`, `captureDocs` | PreToolUse, PostToolUse · PostToolUse | yes: watch it | 19, 26, 73, 30, 38, 39, 40, 41 |
 | [`log router`](#log-router) | The prompt router's meaning index | any (none) | `[--apply]` `[--json]` | none | none | `routerIndex` | PreToolUse, PostToolUse · PostToolUse | no | 26, 73, 30, 38, 39, 40, 41 |
 | [`log runs`](#log-runs) | Recorded runs, and pruning the ones rea settled and the request docs hold | any (none) | `[--json]` `[--before <date>]` `[--apply]` | none | none | `runsList`, `runsExchanges`, `runsPrune`, `runsPruneLive`, `runsSpace` | PreToolUse, PostToolUse · PostToolUse | no | 19, 25, 66, 73, 30, 38, 39, 40, 41 |
-| [`log storage`](#log-storage) | Check that log.db's typed tables are exactly what its events derive, and rebuild them from the events | any (none) | `[--json]` `[--apply]` | none | none | `storageVerify`, `storageRebuild`, `storageRebuildLive` | PreToolUse, PostToolUse · PostToolUse | no | 73, 134, 30, 38, 39, 40, 41 |
+| [`log storage`](#log-storage) | Check log.db's sealed secrets and typed tables, and rebuild the tables from events | any (none) | `[--json]` `[--apply]` | none | none | `storageStatus`, `storageVerify`, `storageRebuild`, `storageRebuildLive` | PreToolUse, PostToolUse · PostToolUse | no | 73, 134, 30, 38, 39, 40, 41 |
 | [`log version`](#log-version) | Which log runs here and the newest release | any (none) | `[--check]` `[--json]` | none | none | `version` | PreToolUse, PostToolUse · PostToolUse | no | 73, 167, 30, 38, 39, 40, 41 |
 | [`log update`](#log-update) | Update log to the newest release and resume what ran | any (none) | `[--to <v>]` `[--track <stable|nightly>]` `[--approvedBy <who>]` `[--apply]` `[--json]` | none | none | `updateLog`, `updateLogLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 167, 30, 38, 39, 40, 41 |
 | [`log models`](#log-models) | Is each pinned local model here | any (none) | `[--approvedBy <who>]` `[--fetch]` `[--json]` | none | none | `models`, `modelsLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 167, 30, 38, 39, 40, 41 |
@@ -1562,10 +1562,12 @@ log runs space   (the size of ~/.logCli/runs and the disk's free space, as the s
 
 #### log storage
 
-Check that log.db's typed tables are exactly what its events derive, and rebuild them from the events MCP tools: `storageVerify`, `storageRebuild`, `storageRebuildLive`, one per form, with named fields.
+Check log.db's sealed secrets and typed tables, and rebuild the tables from events MCP tools: `storageStatus`, `storageVerify`, `storageRebuild`, `storageRebuildLive`, one per form, with named fields.
 
 ```text
-log storage verify [--json]   (replays every event in ~/.logCli/log.db into a scratch copy and compares each typed table, row by row, with the live one; nothing is changed)
+log storage status [--json]   (sealed vs plain secrets; reads only)
+log storage recovery set   (terminal: the recovery passphrase that reopens sealed secrets on a new machine)
+log storage verify [--json]   (replays every event into a scratch copy and compares each typed table with the live one; changes nothing)
 log storage rebuild [--apply] [--json]   (clears the typed tables and replays every event into them in order, in one transaction; a verify unless --apply)
 The events are the record: every typed row is derived from them, so a rebuild loses nothing (docs/storageAgainstTheBook.md, item 2).
 ```

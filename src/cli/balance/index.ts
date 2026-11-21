@@ -1,4 +1,5 @@
-import { checkBalances, needsMoney, PROVIDER_INFO, PROVIDERS } from "../../billing/index.ts";
+import { balanceDeps, checkBalances, needsMoney, PROVIDER_INFO, PROVIDERS, tregBalance } from "../../billing/index.ts";
+import { tregDeps } from "../treg/index.ts";
 import type { Provider, ProviderBalance } from "../../billing/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
@@ -46,7 +47,7 @@ export const balanceCommand: Command = {
     if (!parsed.ok) return refuseInput("balance", parsed.error, BALANCE_USAGE);
     const only = typeof parsed.flags["provider"] === "string" ? [parsed.flags["provider"] as Provider] : [...PROVIDERS];
     context.err(`log balance: reading ${only.map((p) => PROVIDER_INFO[p].label).join(", ")}`);
-    const balances = await checkBalances(only);
+    const balances = await checkBalances(only, { ...balanceDeps, treg: () => tregBalance(tregDeps.client()) });
     if (parsed.flags["json"] === true) return { code: 0, stdout: JSON.stringify({ balances, needsMoney: needsMoney(balances).map((b) => b.provider) }, null, 2) };
     return { code: 0, stdout: ["log balance:", ...balanceLines(balances)].join("\n") };
   },

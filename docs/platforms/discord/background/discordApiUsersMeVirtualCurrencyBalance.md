@@ -60,7 +60,7 @@ Answered:
 
 ## What it does
 
-Reads the account's Discord Orbs balance for the shop.
+Reads the user's Discord Orbs balance (the virtual currency earned from quests), for the Shop and quest pages.
 
 ## What our machine does with it
 

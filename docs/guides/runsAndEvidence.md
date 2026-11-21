@@ -13,6 +13,7 @@ When the owner asks for one of these, follow its page step by step.
 | `getGuide({ useCase: "inbox/voiceNote" })` | Sending a voice note | "send <person> a voice note saying …", "voice note him that …", "send a vn to the group saying …" |
 | `getGuide({ useCase: "instagram/newPlatform" })` | Bringing a new platform up, then vendoring its client | "make a new platform via the MCP for <platform>", "open <platform> in AdsPower", "find me via the gh api the most likely to go into the vendor", "make it work" |
 | `getGuide({ useCase: "log/localModels" })` | Local models | "which models does log use", "fetch the models" |
+| `getGuide({ useCase: "log/secretStore" })` | Secret store status | "are my sessions encrypted", "show what is still plain" |
 | `getGuide({ useCase: "log/toolHealth" })` | Tool health | "tool health", "which guides went stale" |
 | `getGuide({ useCase: "log/updateLog" })` | Update log | "update log", "which version is this" |
 | `getGuide({ useCase: "twitter/dmInbox" })` | Reading the DM inbox: who is waiting on you | "who is waiting on me", "check my x dms", "go through my twitter inbox and tell me who needs a reply", "who am I waiting on in my dms". |
@@ -34,7 +35,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `runsPrune` | Delete each analysed run after taking out its steps' exchanges… | `log runs prune [--before <YYYY-MM-DD>] [--apply]   (deletes each analysed run, before the day when given, after taking out its exchanges; keeps findings.md, steps.jsonl, settle.json, each step's exchanges and readings, goalFindings and requests by domain; a dry run unless --apply)` |
 | `runsPruneLive` | Delete each analysed run after taking out its steps'…, live on the platform | `log runs prune [--before <YYYY-MM-DD>] [--apply]   (deletes each analysed run, before the day when given, after taking out its exchanges; keeps findings.md, steps.jsonl, settle.json, each step's exchanges and readings, goalFindings and requests by domain; a dry run unless --apply)` |
 | `runsSpace` | The size of the runs folder and the disk's free space | `log runs space   (the size of ~/.logCli/runs and the disk's free space, as the storage hook says them)` |
-| `storageVerify` | Replay every event into a scratch copy and compare each typed table… | `log storage verify [--json]   (replays every event in ~/.logCli/log.db into a scratch copy and compares each typed table, row by row, with the live one; nothing is changed)` |
+| `storageStatus` | Show sealed vs plain secrets, changing nothing | `log storage status [--json]   (sealed vs plain secrets; reads only)` |
+| `storageVerify` | Replay every event into a scratch copy and compare each typed table… | `log storage verify [--json]   (replays every event into a scratch copy and compares each typed table with the live one; changes nothing)` |
 | `storageRebuild` | Clear the typed tables and replay every event into them, in one… | `log storage rebuild [--apply] [--json]   (clears the typed tables and replays every event into them in order, in one transaction; a verify unless --apply)` |
 | `storageRebuildLive` | Clear the typed tables and replay every event into…, live on the platform | `log storage rebuild [--apply] [--json]   (clears the typed tables and replays every event into them in order, in one transaction; a verify unless --apply)` |
 | `version` | Installed version, commit, install kind and newest release | `log version [--check] [--json]` |

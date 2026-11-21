@@ -62,7 +62,7 @@ Answered:
 
 ## What it does
 
-Checks whether the account has new or unclaimed achievements, for the badge in the client.
+Asks whether the user has new or unclaimed achievements, to show the badge on the quests and achievements entry.
 
 ## What our machine does with it
 

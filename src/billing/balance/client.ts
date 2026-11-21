@@ -1,18 +1,19 @@
-import { spawnSync } from 'node:child_process'
 import { envValue } from '../../extensions/voiceClone/helpers/provider'
 import { bytefulCredentials, getCreditCents, getResidentialSummary } from '../../proxyVendor/byteful/index'
 import { getBalance, twoCaptchaCredentials } from '../../proxyVendor/twoCaptcha/index'
 import { assemblyAiKey } from '../../media/voiceNotes/client'
 import { subqKey } from '../../subq/decisions/client'
 import { lastAnswers } from './helpers/answers'
+import { createTregClient } from '../../extensions/treg/index'
 import { FISH_BALANCE_URL, JINA_BALANCE_URL, LOW_AT, PROVIDER_INFO, PROVIDERS } from './types'
 import type { BalanceState, Provider, ProviderAnswer, ProviderBalance } from './types'
+import type { TregClient } from '../../extensions/treg/index'
 
 export interface BalanceDeps {
   key: (provider: Provider) => string | null
-  fetcher: typeof fetch
+  fetcher: (url: string, init?: RequestInit) => Promise<Response>
   answers: () => Map<Provider, ProviderAnswer>
-  treg: () => string | null
+  treg: () => Promise<string | null>
   twoCaptcha: (key: string) => Promise<number>
   byteful: () => Promise<{ mbLeft: number; creditUsd: number } | null>
 }
@@ -37,14 +38,16 @@ export function keyOf(provider: Provider, env: Record<string, string | undefined
   return null
 }
 
+export async function tregBalance(client: Pick<TregClient, 'balance'>): Promise<string | null> {
+  const run = await client.balance?.()
+  return run?.ok ? run.stdout : null
+}
+
 export const balanceDeps: BalanceDeps = {
   key: (provider) => keyOf(provider),
-  fetcher: fetch,
+  fetcher: (input, init) => fetch(input, init),
   answers: () => lastAnswers(),
-  treg: () => {
-    const run = spawnSync('treg', ['balance'], { encoding: 'utf8', timeout: 30_000, shell: process.platform === 'win32', windowsHide: true })
-    return run.status === 0 ? run.stdout : null
-  },
+  treg: () => tregBalance(createTregClient()),
   twoCaptcha: async (key) => (await getBalance(key)).balance,
   byteful: async () => {
     const creds = bytefulCredentials(bytefulEnv(process.env))
@@ -85,7 +88,7 @@ async function amountOf(provider: Provider, key: string, deps: BalanceDeps): Pro
     return { amount: credit, shown: `$${credit.toFixed(2)} credit` }
   }
   if (provider === 'treg') {
-    const said = deps.treg()
+    const said = await deps.treg()
     const dollars = said ? /Balance\s+\$([\d,.]+)/.exec(said)?.[1] : undefined
     if (!dollars) throw new Error('treg balance gave no balance (is the treg CLI signed in?)')
     const amount = Number(dollars.replace(/,/g, ''))

@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process'
 import { timed } from '../../observability/timing/index'
 import { callArgs } from './helpers/index'
 import { db } from '../../inbox/store/index'
-import { TREG_HEDGE_DEFAULT_MS, TREG_HEDGE_MIN_MS, TREG_HEDGE_REFRESH_MS, TREG_HEDGE_SAMPLE, TREG_MAX_OUTPUT, TREG_PRICE_KEEP_MS, TREG_TIMEOUT_MS } from './types'
+import { TREG_BALANCE_TIMEOUT_MS, TREG_HEDGE_DEFAULT_MS, TREG_HEDGE_MIN_MS, TREG_HEDGE_REFRESH_MS, TREG_HEDGE_SAMPLE, TREG_MAX_OUTPUT, TREG_PRICE_KEEP_MS, TREG_TIMEOUT_MS } from './types'
 import type { TregClient, TregRun, TregRunner } from './types'
 
 export function tregBin(): string {
@@ -96,6 +96,7 @@ export function createTregClient(run: TregRunner = runTreg, hedgeMs: (name: stri
       return got
     },
     call: (input) => timedRun(run, 'treg.call', callArgs(input), { endpoint: input.id }),
+    balance: () => run(['balance'], TREG_BALANCE_TIMEOUT_MS),
     keptGet: (id) => {
       const kept = keptGets.get(id)
       return kept && Date.now() - kept.at < TREG_PRICE_KEEP_MS ? kept.run : null

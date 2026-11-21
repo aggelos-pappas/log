@@ -1,4 +1,5 @@
 export const TREG_TIMEOUT_MS = 180_000
+export const TREG_BALANCE_TIMEOUT_MS = 30_000
 export const TREG_MAX_OUTPUT = 200_000
 export const TREG_HEDGE_DEFAULT_MS = 10_000
 export const TREG_HEDGE_MIN_MS = 2_000
@@ -38,6 +39,7 @@ export interface TregClient {
   get: (id: string) => Promise<TregRun>
   call: (input: TregCallInput) => Promise<TregRun>
   keptGet?: (id: string) => TregRun | null
+  balance?: () => Promise<TregRun>
 }
 
 export interface TregTrim {

@@ -11,7 +11,7 @@
 | Sends | — |
 | Reads | `page.id`, `page.name`, `page.url`, `page.time_zone`, `page.updated_at`, `scheduled_maintenances` |
 | Called from | `runs/inspect/20261120T115645_<name:2>/script0.js:23 statement` |
-| rea | `ev_73918d318df4796007dfce246259a12512bbffb02c96b64e69d84aa0e33ffe43` |
+| rea | `ev_b4ef80010ed6f9a348297e0c2f9cc3f95410a8d88fb21298bad0d41ab4ccfa63` |
 
 Seen 2 time(s) in 2 run(s).
 
@@ -74,7 +74,7 @@ Answered:
 
 ## What it does
 
-Reads Discord's public status page for maintenance running now, so the client can show a banner.
+Reads maintenance in progress from Discord's status page (status.discord.com), so the client can show a maintenance notice.
 
 ## What our machine does with it
 

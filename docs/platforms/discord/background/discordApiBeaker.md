@@ -144,7 +144,7 @@ null
 
 ## What it does
 
-Sends client telemetry events to Discord.
+Discord's background telemetry beacon; it answers 204 with no body.
 
 ## What our machine does with it
 
