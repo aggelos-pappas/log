@@ -1,6 +1,6 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
-import { parseEnvFile, userEnvPath } from "../../config/userEnv/index.ts";
+import { existsSync, readFileSync } from "node:fs";
+import { envSecretRef, parseEnvFile, rewriteEnvFile, SEALED_KEYS, sealedNamesOf, userEnvPath } from "../../config/userEnv/index.ts";
+import { readSecret, sealVerified, secretStoreReady, warnPlainOnce } from "../../storage/secrets/index.ts";
 import { CREDENTIAL_PROVIDERS, credentialFields, DEFAULT_ADSPOWER_HOST } from "./types.ts";
 import type { CredentialProvider, CredentialSaveResult } from "./types.ts";
 
@@ -14,7 +14,14 @@ export function savedCredential(name: string, env: Env = process.env): string | 
   if (!env.LOG_USER_ENV && (env !== process.env || process.env.NODE_ENV === "test")) return null;
   const path = userEnvPath(env);
   if (!existsSync(path)) return null;
-  return parseEnvFile(readFileSync(path, "utf8"))[name]?.trim() || null;
+  const values = parseEnvFile(readFileSync(path, "utf8"));
+  if (values[name]?.trim()) return values[name].trim();
+  if (!sealedNamesOf(values).includes(name)) return null;
+  try {
+    return readSecret(envSecretRef(name), env)?.trim() || null;
+  } catch {
+    return null;
+  }
 }
 
 export function adsPowerHomesValue(value: string): string {
@@ -65,25 +72,20 @@ export function saveProviderCredentials(provider: CredentialProvider, values: Re
   const entries = Object.entries(values);
   if (!entries.length || entries.some(([name, value]) => !fields.some((field) => field.id === name) || cleanValue(value) !== value || !value)) throw new Error("credentialInputInvalid");
   const path = userEnvPath(env);
-  const existing = existsSync(path) ? readFileSync(path, "utf8") : "";
-  const previous = parseEnvFile(existing);
-  const changed = entries.filter(([name, value]) => previous[name] !== value);
+  const previous = existsSync(path) ? parseEnvFile(readFileSync(path, "utf8")) : {};
+  const changed = entries.filter(([name, value]) => (previous[name] ?? savedCredential(name, { ...env, LOG_USER_ENV: path })) !== value);
   if (!changed.length) return { saved: true, changed: false };
-  const update = new Map(changed);
-  const lines = existing.split(/\r?\n/).filter((line) => {
-    const match = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=/.exec(line);
-    return !match || !update.has(match[1]);
-  });
-  while (lines.at(-1) === "") lines.pop();
-  for (const [name, value] of update) lines.push(`${name}="${value}"`);
-  mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
-  const pending = `${path}.${process.pid}.pending`;
-  writeFileSync(pending, `${lines.join("\n")}\n`, { mode: 0o600 });
-  chmodSync(pending, 0o600);
-  renameSync(pending, path);
-  const verified = parseEnvFile(readFileSync(path, "utf8"));
-  for (const [name, value] of update) {
-    if (verified[name] !== value) throw new Error("credentialSaveUnconfirmed");
+  const secret = new Set(fields.filter((field) => field.secret).map((field) => field.id));
+  const sealing = changed.some(([name]) => secret.has(name)) && secretStoreReady(env);
+  if (!sealing && changed.some(([name]) => secret.has(name))) warnPlainOnce(path, env);
+  const sealed = sealing ? changed.filter(([name]) => secret.has(name)) : [];
+  for (const [name, value] of sealed) if (!sealVerified(envSecretRef(name), "apiKey", value, env)) throw new Error("credentialSaveUnconfirmed");
+  const plain = new Map(changed.filter(([name]) => !sealed.some(([held]) => held === name)));
+  const sealedNames = [...new Set([...sealedNamesOf(previous), ...sealed.map(([name]) => name)])].filter((name) => !plain.has(name)).sort();
+  if (sealedNames.length) plain.set(SEALED_KEYS, sealedNames.join(","));
+  rewriteEnvFile(path, plain, new Set(sealed.map(([name]) => name)));
+  for (const [name, value] of changed) {
+    if (savedCredential(name, { ...env, LOG_USER_ENV: path }) !== value) throw new Error("credentialSaveUnconfirmed");
     env[name] = value;
   }
   return { saved: true, changed: true };

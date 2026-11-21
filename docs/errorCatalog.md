@@ -367,6 +367,9 @@ stateDiagram-v2
 | `credentialRateLimited` | yes | `auth/credentials` | command exits | The provider answered 429 while log checked the key. Nothing was saved. | Save it again in a minute. |
 | `credentialValidationUnavailable` | yes | `auth/credentials` | command exits | The provider didn't answer the key check, or answered in a shape log doesn't know. Nothing was saved. | Check the network and the provider's status, then save it again. |
 | `credentialSaveUnconfirmed` | yes | `auth/credentials`, `console/credentials` | command exits | The key passed its check, but reading the settings file back did not show it saved. | Check the settings file (LOG_USER_ENV) is writable, then save it again. |
+| `secretStoreLocked` | no | `storage/secrets` | command exits | log.db holds sealed secrets, but none of the store key's holders (OS keystore, LOG_STORE_PASSPHRASE) opened them on this machine. | On a new machine or after a reinstall, run `log storage recovery set` in a terminal with the recovery passphrase (or set LOG_STORE_RECOVERY); otherwise run it as the user that sealed them or with the LOG_STORE_PASSPHRASE used then. `log storage status` names the holders. |
+| `secretStoreNoCipher` | no | `storage/secrets` | command exits | The Python that runs the engines has no AES-GCM library (cryptography or pycryptodome), so it cannot open or seal secrets in log.db. | Install it into LOG_PYTHON (uv pip install --python <LOG_PYTHON> cryptography), or run `log update`, which installs it with the other Python vendors. |
+| `secretTampered` | no | `storage/secrets` | command exits | A sealed secret in log.db failed its AES-GCM check (changed, copied to another ref or corrupted), so it was not used. | Save that secret again (its cookies save, credentials save or localAccount login); nothing was read from it. |
 
 ## profile
 
