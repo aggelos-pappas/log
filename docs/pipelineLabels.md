@@ -12,7 +12,7 @@ log gives every chat two fields. **Who** the person is to the owner: lead, clien
 |---|---|---|
 | A message lands | the inbox push labels the chats that moved since its last pass, before it hands the batch over (it waits at most 250 ms and never holds the push) | `scripts/hooks/push.ts`, `pushLabeller` |
 | The chat's meaning | the last 20 said lines, both sides, each marked `me:` or `them:`, embedded one by one with the shipped `Xenova/all-MiniLM-L6-v2` and averaged; a new message only adds its own line to the stored average | `labelChats` |
-| Their feeling | the top 3 emotions of their latest message, from `SamLowe/roberta-base-go_emotions-onnx` (int8, 125 MB, MIT, pinned in the models manifest and fetched on first use) | `localEmotions` |
+| Their feeling | the top 3 emotions of their latest message, from `SamLowe/roberta-base-go_emotions-onnx` (int8, MIT, pinned and fetched as the [local models page](models.md) says) | `localEmotions` |
 | The counting signals | back and forths, days quiet, an open ask, who wrote last, their share, never wrote back | `featuresOf` |
 | Bots | the name (MEE6, `*bot`, system handles), messages that share one template, long replies faster than a person types, notices nobody answers | `botSignal` |
 | Who and where | before any training: the nearest label, comparing the chat to each label's meaning and seed phrases; after training: the trained head | `guessOf` |

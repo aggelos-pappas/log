@@ -52,7 +52,7 @@ This is the separation security research recommends for agents: the model choose
 
 ## What leaves your machine
 
-Five models run locally with no key: meaning search, picture descriptions, the prompt-injection model, your AI-writing detector and your pipeline labeller. Four hosted services are used only when you add their key, and each gets only what its job needs:
+Five pinned models and two you train run locally with no key: the prompt-injection model, meaning search, message emotions, picture descriptions and mouse paths, plus your AI-writing detector and your pipeline labeller ([local models](models.md)). Four hosted services are used only when you add their key, and each gets only what its job needs:
 
 | Service | What it receives | When |
 |---|---|---|

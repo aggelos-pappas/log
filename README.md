@@ -442,45 +442,19 @@ A video with no sound, like motion graphics, says `no sound` and is told by what
 
 ### The models it uses
 
-Five models run on your own machine, with no key. Four are hosted, and each needs its key:
+Five pinned models and two you train run on your own machine, with no key. Four hosted services are used only when you add their key. Each pin, how `log models` checks it, how models download and update, what your machine needs and how to turn each one off: [local models](docs/models.md).
 
 | Model | Runs | What it does |
 |---|---|---|
-| all-MiniLM-L6-v2 (23 MB) | your machine | meaning search over every conversation, your voice index, matching what you typed to a play |
-| LFM2.5-VL-450M (352 MB) | your machine | describes every picture and video frame as text |
-| wolf-defender prompt injection small | your machine | the judge's model: flags prompt injection in what comes in |
-| Your AI-writing detector | your machine, trained by `log voice train` | the voice gate's AI reading: your messages against drafts frontier models wrote for your chats, a bar per message length |
-| Your pipeline labeller | your machine, trained by `log inbox label train` | who each person is and where they are in your sales cycle, on MiniLM's vectors |
-| SubQ `subq-snap-1.1` | hosted, `SUBQ_API_KEY` | the voice gate: does a draft sound like you; and the teacher for the labeller, asked when the local one is unsure |
-| Jina embeddings v5 and reranker v3.5 | hosted, `JINA_API_KEY` | ranking a chat's history for the gate (capped at 4 s, with a local fallback), and a meaning vector for each piece of media |
-| AssemblyAI | hosted, `ASSEMBLYAI_API_KEY` | what was said in a voice note or a video |
-| Inworld or Fish Audio | hosted, `INWORLD_API_KEY` or `FISH_API_KEY` | a voice note in your cloned voice, only when you ask |
+| wolf-defender prompt injection small | your machine, pinned | the judge's model: scores prompt injection in what comes in |
+| all-MiniLM-L6-v2 | your machine, pinned | meaning search, your voice index, matching what you typed to a play |
+| roberta-base-go_emotions | your machine, pinned | the emotions of each new message, for your pipeline labels |
+| LFM2.5-VL-450M | your machine, pinned | describes every picture and video frame as text |
+| myuri | your machine, pinned pip package | human mouse paths, typing and scrolling in the browsers |
+| your AI-writing detector and your pipeline labeller | your machine, trained on your data | the voice gate's AI reading; who each person is and where they are |
+| SubQ, Jina, AssemblyAI, Inworld or Fish Audio | hosted, each with its key | the voice gate, ranking chat history, transcripts, voice notes ([what each receives](docs/trust.md#what-leaves-your-machine)) |
 
-```mermaid
-flowchart LR
-  IN["A message arrives"] --> DB[("log.db")]
-  IN -->|picture or video| VL["LFM2.5-VL, your machine"] --> DB
-  IN -->|voice| AA["AssemblyAI"] --> DB
-  DB --> ML["MiniLM, your machine"] --> IDX["search and voice indexes"]
-  DB --> WD["the judge: wolf-defender, your machine"] --> READ["your agent reads it"]
-  READ & IDX --> DRAFT["your agent drafts"] --> GATE["voice gate: SubQ and Jina"] --> SEND["sent as you"]
-```
-
-**What your machine needs,** measured here on 2026-11-09 (16 threads, CPU only):
-- **A 64-bit machine.** There's no GPU: the local models run on the CPU.
-- **About 2 GB of free memory.** The picture model peaked at 1.25 GB and takes 6 to 7 s a picture. It stops itself past 4 GB.
-- **About 400 MB of disk** for MiniLM and the picture model, plus the judge's model, each downloaded the first time it's needed.
-- **ffmpeg on your PATH** for videos and voice notes.
-
-**Building the indexes** on a new machine, in this order:
-1. `log search index` reads every conversation once and builds the keyword and meaning indexes.
-2. `log voice index` builds your voice from what step 1 saved.
-3. `log voice train` trains your AI-writing detector.
-4. `log inbox label teach --apply`, then `log inbox label train`, labels your chats and trains the local labeller.
-
-After that, new messages are added as they arrive, and pictures are described as they land.
-
-Each model, its numbers and how each index works: [docs/models.md](docs/models.md).
+`log models` lists each pin with its size and says whether it is here and matches.
 
 ### Built on Designing Data-Intensive Applications
 
