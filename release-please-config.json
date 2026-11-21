@@ -12,6 +12,11 @@
           "type": "json",
           "path": "hermesPlugin/dashboard/manifest.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "yaml",
+          "path": "hermesPlugin/plugin.yaml",
+          "jsonpath": "$.version"
         }
       ]
     }
