@@ -36,7 +36,7 @@ const anchors: RequirementAnchors = {
     { kind: 'symbol', file: client, name: 'workspaceOf' },
     { kind: 'symbol', file: client, name: 'graphDir' },
     { kind: 'symbol', file: client, name: 'pointerOf' },
-    { kind: 'value', file: types, name: 'PROJECTOR_VERSION', equals: 1 },
+    { kind: 'value', file: types, name: 'PROJECTOR_VERSION', equals: 2 },
   ],
   'REQ-RELATE-05': [
     { kind: 'symbol', file: mentions, name: 'mentionedTokens' },

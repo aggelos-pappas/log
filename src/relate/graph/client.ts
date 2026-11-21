@@ -6,7 +6,7 @@ import { dirname, join, resolve } from 'node:path'
 import type { Connection, Database as GraphDatabase } from '@relate/relate'
 import { defaultDbPath, openDatabase } from '../../storage/schema/index'
 import { claimState, deleteState, getState, putState } from '../../storage/state/index'
-import { mentionedTokens, projectionOf } from './helpers/index'
+import { EMPTY_NETWORK, mentionedTokens, networkCountsIn, networkCountsOf, projectionOf, writeNetwork } from './helpers/index'
 import { BUILD_GRACE_MS, CONTEXT_CHARS, QUERY_ROWS, REFRESH_AFTER_MS, GRAPH_FILE_PREFIX, GRAPH_FILE_SUFFIX, KEPT_SNAPSHOTS, KEYED_LABELS, LISTED, MENTIONED_PEOPLE, PRIOR_FLOOR, PRIOR_KAPPA, PRIOR_WEIGHT_NEAR, PRIOR_WEIGHT_SPOKE, PROJECTOR_VERSION, WRITE_BATCH } from './types'
 import type { ConnectedContext, GraphCounts, GraphPointer, GraphVerify, PersonFound, Projection } from './types'
 
@@ -54,7 +54,11 @@ function batches<T>(rows: readonly T[]): T[][] {
 }
 
 function write(conn: Connection, cypher: string, rows: readonly object[]): void {
-  for (const batch of batches(rows)) conn.query(cypher, { rows: batch as never })
+  for (const batch of batches(rows)) {
+    conn.query(cypher, { rows: batch as never })
+    conn.commit()
+    conn.begin()
+  }
 }
 
 export function writeProjection(conn: Connection, projection: Projection, meta: { workspace: string; builtAt: string }): void {
@@ -72,10 +76,13 @@ export function writeProjection(conn: Connection, projection: Projection, meta: 
     write(conn, 'UNWIND $rows AS r MATCH (a:Account {key: r.accountKey}), (room:Room {key: r.room}) CREATE (a)-[:SAID {messages: r.messages, lastAtMs: r.lastAtMs}]->(room)', projection.said.filter((s) => s.fromOwner))
     write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (p:Post {key: r.post}) CREATE (i)-[:ENGAGED {kind: r.kind, times: r.times, lastAtMs: r.lastAtMs}]->(p)', projection.engaged.filter((e) => e.post))
     write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (a:Account {key: r.accountKey}) CREATE (i)-[:FOLLOWED {kind: r.kind, times: r.times, lastAtMs: r.lastAtMs}]->(a)', projection.engaged.filter((e) => !e.post))
+    writeNetwork(conn, projection.network ?? EMPTY_NETWORK)
     conn.query('CREATE (:Snapshot {key: $key, throughSeq: $throughSeq, schemaVersion: $schemaVersion, projectorVersion: $projectorVersion, workspace: $workspace, builtAt: $builtAt})', { key: 'snapshot', throughSeq: projection.throughSeq, schemaVersion: projection.schemaVersion, projectorVersion: PROJECTOR_VERSION, workspace: meta.workspace, builtAt: meta.builtAt })
     conn.commit()
   } catch (error) {
-    conn.rollback()
+    try {
+      conn.rollback()
+    } catch {}
     throw error
   }
 }
@@ -134,7 +141,7 @@ export function buildGraph(dbPath: string = defaultDbPath(), now: Date = new Dat
     const conn = db.connect()
     writeProjection(conn, projection, { workspace, builtAt: now.toISOString() })
     db.checkpoint()
-    const pointer: GraphPointer = { file, throughSeq: projection.throughSeq, projectorVersion: PROJECTOR_VERSION, schemaVersion: projection.schemaVersion, workspace, builtAt: now.toISOString(), ms: Math.round(performance.now() - started), counts: countsIn(conn) }
+    const pointer: GraphPointer = { file, throughSeq: projection.throughSeq, projectorVersion: PROJECTOR_VERSION, schemaVersion: projection.schemaVersion, workspace, builtAt: now.toISOString(), ms: Math.round(performance.now() - started), counts: countsIn(conn), networkCounts: networkCountsIn(conn) }
     putState('relateGraph', workspace, pointer, now.getTime(), handle)
     prune(dir, file)
     return pointer
@@ -152,8 +159,9 @@ export function verifyGraph(dbPath: string = defaultDbPath()): GraphVerify {
   if (!pointer) return { ok: false, pointer, expected, found: empty, differs: Object.keys(expected), behind: projection.throughSeq }
   const found = countsIn(graphConnection(pointer.file))
   const behind = projection.throughSeq - pointer.throughSeq
-  const differs = behind > 0 ? [] : (Object.keys(expected) as (keyof GraphCounts)[]).filter((k) => expected[k] !== found[k])
-  return { ok: behind === 0 && differs.length === 0, pointer, expected, found, differs, behind }
+  const network = { expected: networkCountsOf(projection.network ?? EMPTY_NETWORK), found: networkCountsIn(graphConnection(pointer.file)) }
+  const differs = behind > 0 ? [] : [...(Object.keys(expected) as (keyof GraphCounts)[]).filter((k) => expected[k] !== found[k]), ...(Object.keys(network.expected) as (keyof typeof network.expected)[]).filter((k) => network.expected[k] !== network.found[k])]
+  return { ok: behind === 0 && differs.length === 0, pointer, expected, found, differs, behind, network }
 }
 
 export function findPeople(conn: Connection, prompt: string): PersonFound[] {

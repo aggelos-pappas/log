@@ -285,6 +285,14 @@
       "summary": "Update log"
     },
     {
+      "name": "log-network-who-to-talk-to",
+      "description": "Who to talk to next. A log play (docs/useCases/network/whoToTalkTo.md): Your network is everyone around the communities and leaders in your space: each person's band (what they could be to you), their ring (how close they sit to you), and whose circles they are in. Once it is in log.db and the Relate graph, one query answers who to talk to next: the people one step from you, in the most leaders' circles, who could collaborate or join, and whom you haven't talked to yet. Each comes with why: the circles, who already connects you, and their last post. The ones you pick go to the first-DM steps of [networkMaxing.md](../twitter/networkMaxing.md).",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Who to talk to next"
+    },
+    {
       "name": "log-reddit-contributor-maxxing",
       "description": "Contributor maxxing: finding talented builders through what they share. A log play (docs/useCases/reddit/contributorMaxxing.md): Find talented people who are into the same things as the owner, through the GitHub repos they post on Reddit. Read a subreddit's last few days through the owner's Reddit account, keep the posts that link to GitHub, and rank them. It reads only. It posts, votes and messages nothing.",
       "files": [

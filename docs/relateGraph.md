@@ -31,6 +31,8 @@ answerEvent → relateAnswer → relateContext ──► current graph-<seq>.rl 
 | `Room` | `chatId` | `chats` (DM, group, channel) |
 | `Post` | `platform:account:targetRef` | `interactions.targetRef`, `targetText` |
 | `Snapshot` | `snapshot` | the event `seq`, schema and projector version it was built from |
+| `Leader` | `leader:handle` | `networkLeaders`: the leaders whose circles your network is drawn around |
+| `Community` | `community:id` | `networkCommunities`: the communities those leaders run |
 
 | Edge | Meaning | From |
 | --- | --- | --- |
@@ -40,8 +42,14 @@ answerEvent → relateAnswer → relateContext ──► current graph-<seq>.rl 
 | `(Identity)-[:ENGAGED {kind, times, lastAtMs}]->(Post)` | like, reply, repost, quote, mention | `interactions` |
 | `(Identity)-[:FOLLOWED]->(Account)` | a follow | `interactions` |
 | `(Account)-[:POSTED]->(Post)` | the owner's post | `interactions` |
+| `(Identity)-[:IN_CIRCLE_OF]->(Leader)` | they sit in that leader's circle | `networkCircles` |
+| `(Leader)-[:RUNS]->(Community)` | the leader runs it | `networkRuns` |
+| `(Identity)-[:MENTIONED {times, lastAtMs}]->(Identity)` | one mentioned the other in a post | `networkMentions` |
+| `(Identity)-[:FOLLOWS]->(Account)` | they follow the owner's X account | `networkPeople.followsOwner` |
 
 Message text stays in log.db. The graph holds counts and times, plus the post text people engaged with.
+
+**Your network.** `log network import [--from <dir>]` (MCP `networkImport`) reads your network into log.db's `network*` tables, replacing the last import, and `log network status` (`networkStatus`) shows what is there; the next `log relate build` projects it. It is imported from the niche map research files (`final_scores.json` and `nicheMap.json`, from `LOG_NETWORK_DIR`, else `LOG_NICHE_MAP`'s folder). A person in your network and a chat identity with the same X handle (any case) are one `Identity`, which then carries `band`, `ring` (also as `degree`: 1 engaged with you, 2 talks to your followers, 3 follows you, 4 new), `score`, `themes` (the top 3), `passesGates` and their last post. [network/whoToTalkTo.md](useCases/network/whoToTalkTo.md) ranks who to talk to with one query.
 
 ## The questions it answers
 

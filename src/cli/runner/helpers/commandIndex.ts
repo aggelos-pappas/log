@@ -51,6 +51,7 @@ export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "models", platform: "any", module: "src/cli/models/index.ts", exportName: "modelsCommand" },
   { name: "relate", platform: "any", module: "src/cli/relate/index.ts", exportName: "relateCommand" },
   { name: "people", platform: "any", module: "src/cli/people/index.ts", exportName: "peopleCommand" },
+  { name: "network", platform: "any", module: "src/cli/network/index.ts", exportName: "networkCommand" },
   { name: "timing", platform: "any", module: "src/cli/timing/index.ts", exportName: "timingCommand" },
   { name: "tool", platform: "any", module: "src/cli/tool/index.ts", exportName: "toolCommand" },
   { name: "inbox", platform: "any", module: "src/cli/inbox/index.ts", exportName: "inboxCommand" },

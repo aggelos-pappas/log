@@ -1,6 +1,6 @@
 # knowledgeAndSearch
 
-Finding context: the knowledge base, the conversation search (keyword and meaning at once), the Relate graph of who connects to whom, one person across platforms (people), and every voice note transcribed into it.
+Finding context: the knowledge base, search, the Relate graph (who connects to whom, your network), people across platforms, voice notes.
 
 Written by `bun run docs:build` from the code, the skills and AGENTS.md. Not edited by hand: change the command's usage, its skill or the rule, and rebuild.
 
@@ -15,6 +15,7 @@ When the owner asks for one of these, follow its page step by step.
 | `getGuide({ useCase: "inbox/saidBy" })` | Someone's messages on every platform, found by name, newest first | "what did he say", "find his messages", "everything they said" |
 | `getGuide({ useCase: "inbox/scopeAJob" })` | Scoping a job out of someone in a DM | "probe <person> so we can scope out what the task is", "scope it out with him", "find out what he actually wants done", "go through and then scope it out". |
 | `getGuide({ useCase: "log/toolFromOneOff" })` | Turning a hand-rolled one-off into a log tool | "turn that one-off into a tool", "make that script a log command", "stop hand-rolling that", "vendor that query into log" |
+| `getGuide({ useCase: "network/whoToTalkTo" })` | Who to talk to next | "who in my network should I talk to", "who's in my network", "who do I need to speak to". |
 | `getGuide({ useCase: "twitter/affiliateMarketing" })` | Affiliate marketing through your DMs | "answer the people asking about <tool> in my dms with my affiliate link", "turn the dms about <tool> into affiliate money", "follow up everyone who asked about the tool", "get me onto <company>'s affiliate program and book the call". |
 | `getGuide({ useCase: "twitter/collabMaxxing" })` | Collab maxxing: turn open conversations into collabs | "position a collab first then be like just a few quid so i can make a video about it", "start network maxxing and collab maxxing and trying to see what hes doing get him to reveal it all", "follow up on <someone> and the other people, small commitment from deals, not just new people but already open convos", "respond with the collabmaxxing", "selling the outcome", "let him name it", "check in with <someone> whats good there he is keen but isnt liquid", "just be nice to them there the poor people", "ask <someone> if i could become a contributor", "look on my twitter for missed opportunities". |
 | `getGuide({ useCase: "twitter/dmInbox" })` | Reading the DM inbox: who is waiting on you | "who is waiting on me", "check my x dms", "go through my twitter inbox and tell me who needs a reply", "who am I waiting on in my dms". |
@@ -28,17 +29,19 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | Tool | What it does | Usage |
 |---|---|---|
 | `routerIndex` | Is the prompt router's meaning index of plays, tools and skills… | `log router index [--apply] [--json]   (is the prompt router's meaning index current; --apply builds it)` |
-| `relateBuild` | Project log.db into a new Relate graph file and make it the current… | `log relate build [--json]            (projects log.db's people, rooms, posts and who said or engaged what into a new Relate graph file, then points at it)` |
-| `relateStatus` | Show the current Relate graph file, the event it was built through… | `log relate status [--json]           (which graph file is current, through which event, and how far behind log.db it is)` |
-| `relateVerify` | Compare every node and edge count in the Relate graph with what… | `log relate verify [--json]           (compares every node and edge count in the graph with what log.db derives now)` |
-| `relateAsk` | Show the connected context | `log relate ask "<text>" [--json]     (the connected context the hook injects for the people that text names, e.g. "@someone")` |
-| `relateQuery` | Run a read-only Cypher query on the current Relate graph | `log relate query "<cypher>" [--json] (a read-only Cypher query on the current graph, at most 100 rows)` |
+| `relateBuild` | Project log.db into a new Relate graph file and make it the current… | `log relate build [--json]` |
+| `relateStatus` | Show the current Relate graph file, the event it was built through… | `log relate status [--json]           (the current graph and how far behind log.db it is)` |
+| `relateVerify` | Compare every node and edge count in the Relate graph with what… | `log relate verify [--json]` |
+| `relateAsk` | Show the connected context | `log relate ask "<text>" [--json]     (the context the hook injects)` |
+| `relateQuery` | Run a read-only Cypher query on the current Relate graph | `log relate query "<cypher>" [--json] (read-only, at most 100 rows)` |
 | `people` | List everyone linked across platforms, with each person's identities | `log people [--json]                                        (everyone linked across platforms: each person and their identities)` |
 | `peopleShow` | The person card for someone across every platform | `log people show <who> [--json]                             (the person card: every platform, one-to-one chats and groups, who is waiting, the last lines across platforms)` |
 | `peopleSuggest` | Accounts on different platforms that are probably one person, with… | `log people suggest [--limit <n>] [--check] [--json]        (probably one person across platforms, every factor; --check asks SubQ)` |
 | `peopleLink` | Make these identities one person, after the owner says yes | `log people link <identity> <identity>... --approvedBy "<the owner's words>" [--name "<name>"] [--evidence "<why>"]   (one person across these identities, appended to log.db as events)` |
 | `peopleUnlink` | Take an identity out of its person, after the owner says so | `log people unlink <identity> --approvedBy "<the owner's words>"   (that identity is no longer part of its person; the link stays in the history)` |
 | `peopleDifferent` | Record that two identities are not the same person, after the owner… | `log people different <identity> <identity> --approvedBy "<the owner's words>"   (not the same person, so they are never suggested again)` |
+| `networkImport` | Read your network into log.db, replacing the last import | `log network import [--from <dir>] [--account <handle>] [--json]` |
+| `networkStatus` | What log.db holds of your network | `log network status [--json]` |
 | `mediaDescriber` | Run the one media describer on this machine | `log media describer [--json]` |
 | `mediaDescribe` | Queue one local image or video for the describer and wait for its… | `log media describe <path> [--wait <seconds>] [--json]` |
 | `mediaStatus` | The media queue | `log media status [--json]` |

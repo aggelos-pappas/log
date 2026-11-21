@@ -66,7 +66,7 @@ flowchart TD
 <!-- stepsDiagram: written by `bun run docs:build` from the steps table below, not edited by hand -->
 ```mermaid
 flowchart TD
-  s0["7. Who: from the niche map first, the people in the owner's niche…<br/><i>the niche map, then engagerDms.md steps…</i>"]
+  s0["7. Who: from the owner's network first (network/whoToTalkTo.md ran…<br/><i>the query in whoToTalkTo.md, then engag…</i>"]
   s1["8. Follow them first<br/><i>twitterFollow, twitterFollowLive</i>"]
   s2["9. Like the tweet the message is about, before the message<br/><i>twitterLike, twitterLikeLive</i>"]
   s3["10. Then the message: their tweet forwarded first, then one informa…<br/><i>voice, twitterDmLive, twitterQueueAdd, twitterQueueRunLive</i>"]
@@ -80,7 +80,7 @@ flowchart TD
 
 | # | Step | Tool | Done when |
 | --- | --- | --- | --- |
-| 7 | Who: from the niche map first, the people in the owner's niche he hasn't talked to yet. Real roles only (founders, agency owners, operators, creators; never `bot_or_spam`), 1500 followers or fewer (bigger accounts aren't worth it yet), the closest first: they follow him, then one hop from his creators, then strong ties. Or another source the owner named (people who engaged with his post, a topic search) | the niche map, then [engagerDms.md](engagerDms.md) steps 2 to 4 | a short list, each with a user id and one recent post of theirs to open on |
+| 7 | Who: from the owner's network first ([network/whoToTalkTo.md](../network/whoToTalkTo.md) ranks them from the Relate graph), the people he hasn't talked to yet. Real roles only (founders, agency owners, operators, creators; never `bot_or_spam`), 1500 followers or fewer (bigger accounts aren't worth it yet), the closest first: they follow him, then one hop from his creators, then strong ties. Or another source the owner named (people who engaged with his post, a topic search) | the query in [whoToTalkTo.md](../network/whoToTalkTo.md), then [engagerDms.md](engagerDms.md) steps 2 to 4 | a short list, each with a user id and one recent post of theirs to open on |
 | 8 | Follow them first. Never send a cold message to someone the owner doesn't follow | `twitterFollow`, then `twitterFollowLive` { userId, approvedBy, confirmLive: true } | X's answer is `sent` (or already followed) |
 | 9 | Like the tweet the message is about, before the message | `twitterLike`, then `twitterLikeLive` { tweet, approvedBy, confirmLive: true } | X's answer is `sent` |
 | 10 | Then the message: their tweet forwarded first, then one informal line about it, the first-DM way in [engagerDms.md](engagerDms.md). The opener only, always relevant to them, never an ask (no pitch, no "you using `<tool>`"). Gated like every send, and sent the same way as step 6: two or more people through the account's one queue | `voice`, then `twitterDmLive`, or `twitterQueueAdd` and `twitterQueueRunLive` | X's answer is `sent` |
@@ -88,7 +88,7 @@ flowchart TD
 
 ## What to know
 
-- **Where the niche map lives** is in the owner's notes and agent memory, not on this page. It is the source of new people, and every person brought into a conversation is that much more of it reached.
+- **The network lives in log.db** (see [whoToTalkTo.md](../network/whoToTalkTo.md)) and in the Relate graph. It is the source of new people, and every person brought into a conversation is that much more of it reached.
 - **Keep it about them.** After the opener, the next messages follow what they're doing: what they're working on, how they got there, what they're stuck on. The owner's work only comes up when they ask, or later in a real conversation.
 - Follow, like and message are each a write, and they all count against the account's writes for the day (each line of a message is one). Spend today's writes on the people who messaged first, then new people with what's left.
 - Never act on the account in quick succession: a few minutes between people, the follow, like and message to one new person spread out, never back to back. A drop or a 429 stops the run, and the next action waits for the owner (rule 94).

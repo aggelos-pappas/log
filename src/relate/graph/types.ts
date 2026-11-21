@@ -1,4 +1,4 @@
-export const PROJECTOR_VERSION = 1
+export const PROJECTOR_VERSION = 2
 
 export const GRAPH_FILE_PREFIX = 'graph-'
 
@@ -22,7 +22,9 @@ export const LISTED = 5
 
 export const TOKEN_MIN = 4
 
-export const KEYED_LABELS: readonly string[] = ['Account', 'Identity', 'Room', 'Post', 'Snapshot']
+export const KEYED_LABELS: readonly string[] = ['Account', 'Identity', 'Room', 'Post', 'Snapshot', 'Leader', 'Community']
+
+export const NETWORK_LIMIT = { postChars: 280 }
 
 export interface GraphPointer {
   file: string
@@ -33,6 +35,7 @@ export interface GraphPointer {
   builtAt: string
   ms: number
   counts: GraphCounts
+  networkCounts?: NetworkGraphCounts
 }
 
 export interface GraphCounts {
@@ -63,6 +66,12 @@ export interface IdentityRow {
   owner: boolean
   personId: string | null
   personNames: string[]
+  inNetwork?: boolean
+  band?: string | null
+  ring?: number | null
+  degree?: number | null
+  score?: number | null
+  themes?: string[]
 }
 
 export interface RoomRow {
@@ -120,6 +129,26 @@ export interface Projection {
   said: SaidRow[]
   posts: PostRow[]
   engaged: EngagedRow[]
+  network?: NetworkProjection
+}
+
+export interface NetworkProjection {
+  account: string | null
+  leaders: { key: string; handle: string; handleLower: string; name: string | null; followers: number | null; world: string | null; identity: string | null }[]
+  communities: { key: string; communityId: string; name: string | null; url: string | null; platform: string | null; topic: string | null }[]
+  inCircle: { identity: string; leader: string }[]
+  runs: { leader: string; community: string }[]
+  mentioned: { from: string; to: string; times: number; lastAtMs: number | null }[]
+  follows: { identity: string; accountKey: string }[]
+}
+
+export interface NetworkGraphCounts {
+  leaders: number
+  communities: number
+  inCircleOf: number
+  runs: number
+  mentioned: number
+  follows: number
 }
 
 export interface PersonFound {
@@ -148,6 +177,7 @@ export interface GraphVerify {
   found: GraphCounts
   differs: string[]
   behind: number
+  network?: { expected: NetworkGraphCounts; found: NetworkGraphCounts }
 }
 
 export const PRIOR_KAPPA = 0.5

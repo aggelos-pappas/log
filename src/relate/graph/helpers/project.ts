@@ -1,5 +1,6 @@
 import type { Database } from 'bun:sqlite'
 import { TOKEN_MIN } from '../types'
+import { networkProjectionOf } from './network'
 import type { AccountRow, EngagedRow, IdentityRow, MemberRow, PostRow, Projection, RoomRow, SaidRow } from '../types'
 
 const identityKeyOf = (platform: string, userId: string): string => `${platform}:${userId}`
@@ -110,6 +111,7 @@ export function projectionOf(handle: Database): Projection {
     }
     const ownerHandles = new Set(accounts.map((a) => `${a.platform}:${a.account.replace(/^@/, '').toLowerCase()}`))
     for (const row of identities.values()) if (row.handleLower && ownerHandles.has(`${row.platform}:${row.handleLower}`)) row.owner = true
-    return { throughSeq, schemaVersion, accounts, identities: [...identities.values()], rooms, members, said, posts: [...posts.values()], engaged }
+    const network = networkProjectionOf(handle, identities, accounts)
+    return { throughSeq, schemaVersion, accounts, identities: [...identities.values()], rooms, members, said, posts: [...posts.values()], engaged, network }
   })
 }

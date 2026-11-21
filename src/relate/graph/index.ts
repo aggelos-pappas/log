@@ -1,3 +1,3 @@
 export * from './client'
 export * from './types'
-export { mentionedTokens, projectionOf } from './helpers/index'
+export { WHO_TO_TALK_TO, mentionedTokens, projectionOf } from './helpers/index'
