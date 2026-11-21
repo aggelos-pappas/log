@@ -126,3 +126,7 @@ The book's rule is to measure at the caller, as a distribution, with its tail (c
 | All `PostToolUse` hooks for one tool call | ≤ 15 ms | ≤ 30 ms |
 | A prompt's hooks | ≤ 30 ms | ≤ 60 ms |
 | An engine call's overhead before its action (through a host) | ≤ 20 ms | ≤ 50 ms |
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

@@ -51,3 +51,7 @@ docs/platforms/<platform>/      every platform's internal requests, by domain, r
 ```
 
 For how files and folders are named, see [Naming conventions](namingConventions.md). Run `bun run check` for the naming gate, typecheck and tests.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

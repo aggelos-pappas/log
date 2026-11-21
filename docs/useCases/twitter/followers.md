@@ -37,3 +37,10 @@ Handles come from research or from the owner, never guessed (rule 53). The read 
 ## Reading the list
 
 `log twitter followers --account <a>` (MCP `twitterFollowers`) reads the account's full follower list on its own session, on the direct-API engine.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [All X use cases, and the parts they share](README.md)
+- [What log does on X](../../platformGuides/x.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

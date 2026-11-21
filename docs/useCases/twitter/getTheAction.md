@@ -66,3 +66,10 @@ flowchart TD
 - Use only facts from the thread. Never invent where a deal is up to.
 - The link goes in as a plain URL. Every line of a draft is one message (rule 90).
 - Everything is sent through the account's one X session (rule 105), and the answer's `xSession` names it.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [All X use cases, and the parts they share](README.md)
+- [What log does on X](../../platformGuides/x.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

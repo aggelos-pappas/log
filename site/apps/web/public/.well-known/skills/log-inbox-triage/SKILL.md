@@ -52,3 +52,8 @@ Say: **"go on docs/useCases/inbox/triage.md for <the person who needs it>"**. Th
 
 - Handing the job over is [bossMaxxing.md](../log-inbox-boss-maxxing/SKILL.md), which carries the send, the monitor and the walk-through.
 - Working out what a person is worth to the owner in the first place is [collabMaxxing.md](../log-twitter-collab-maxxing/SKILL.md).
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

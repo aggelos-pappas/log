@@ -48,3 +48,10 @@ For each post unrolled, and for `post` from what is kept, the answer says how ma
 ## What X shows
 
 X shows the likes on the account's own posts only, never on someone else's. Its notifications name a few of the people behind "and N others"; its post engagements screen shows the author every liker and reposter, and that screen's lists are what the unroll reads. A list gives people, not times, so a person only the list names has no `at`. The count X shows on a post can still sit above the total kept: X counts the account's own like, and people whose accounts are gone or hidden are not in the list.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [All X use cases, and the parts they share](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/twitter/README.md)
+- [What log does on X](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/x.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

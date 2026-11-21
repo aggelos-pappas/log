@@ -16,3 +16,8 @@
 - **Not verified in ChatGPT itself:**
   - log's view: inline script, the full-screen request and CSV download
   - the sign-in stream: voxl over its `connectDomains`
+
+## Related
+
+- Up: [Every agent app log works with](README.md)
+- [Connect your agent](../mcp.md) · [Install](../install.md) · [Use cases](../useCases/README.md)

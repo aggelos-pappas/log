@@ -13,3 +13,8 @@
   - log's view and sign-in in Cursor
   - which widget actions Cursor supports
   - whether a `beforeSubmitPrompt` hook can add context for the model, the way Claude Code's `UserPromptSubmit` can
+
+## Related
+
+- Up: [Every agent app log works with](README.md)
+- [Connect your agent](../mcp.md) · [Install](../install.md) · [Use cases](../useCases/README.md)

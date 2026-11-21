@@ -82,3 +82,7 @@ it.
   it is out of date.
 - Tests never call Twenty: they use `marketplaceFixture()`, an in-memory
   Twenty.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

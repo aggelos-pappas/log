@@ -42,3 +42,9 @@ Say: **"go on docs/useCases/linkedin/network.md"**, with who to invite or whose 
 - **One message per line.** A draft on several lines goes out as that many messages, each with LinkedIn's typing signal first; `asOne` sends it as one. The first line LinkedIn doesn't confirm stops the rest.
 - **Only existing conversations.** A first message to someone the account has never written to isn't built.
 - **Reading marks nothing seen.** The inbox and a conversation are read with the calls the web client makes to list and open them, and none of the calls that mark a conversation seen.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [What log does on LinkedIn](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/linkedin.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

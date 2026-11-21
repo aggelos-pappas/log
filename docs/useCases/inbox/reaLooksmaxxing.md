@@ -49,3 +49,8 @@ flowchart TD
 - **Sends follow the account's rules.** Reads first, every `…Live` tool needs `confirmLive: true`, one session per account, never in quick succession, and a 429 or any refusal stops the run (rules 8, 94, 105).
 - **Sell the outcome.** Step 7 of the video says to build the offer on people's insecurities and adds "we don't recommend it". The play doesn't either.
 - The video's beats, copy rules and render steps are in the `reaLooksmaxxing` skill (`skills/reaLooksmaxxing/SKILL.md`); the play everyone can install is `skills/published/reaLooksmaxxing/SKILL.md`.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

@@ -44,3 +44,9 @@ A busy group runs about 100 messages an hour, so a 5 hour window needs a limit n
 - **A message with no text is never answered blind.** An empty message with no attachment saved (a sticker, a call, an embed) is told to the owner as it is, and nothing is drafted until it can be placed.
 - **When the owner is live in the chat, leave it to him.** If his own message comes after theirs, he is already answering: release the claim and send nothing. A question only he can answer (when he's flying home, a date, a plan he hasn't said) waits for him, whoever is reading.
 - **Secrets posted in the chat** (keys, tokens) are never repeated in the summary; tell the owner to rotate them.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [What log does on Discord](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/discord.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

@@ -1,8 +1,8 @@
-# Cold DMs from a Discord channel
+# First DMs from a Discord channel
 
 Start a conversation with someone the owner met in a server channel: someone who replied to him, argued with him or asked him something there. log opens the DM the way the app's Message button does and sends one message, gated like any other. When Discord won't let a stranger message them, log sends a friend request instead, and the message waits until they accept.
 
-How the owner asks for it: "cold dm the people from <channel>"
+How the owner asks for it: "dm the people from <channel>"
 
 ## Run it from a fresh context
 
@@ -44,3 +44,10 @@ flowchart TD
 - **One person at a time, a minute or more apart.** Several DMs and friend requests to people who share one server, in a few minutes, is what Discord reads as spam. The friend requests go 20 s apart and the first refusal stops the run (rule 94).
 - **A message about what they said, never a pitch.** The opener answers their point in the channel; the project comes up only when it fits.
 - **A moderator who has warned the owner is left out.** They can remove him from the server.
+
+## Related
+
+- Up: [use cases](../README.md)
+- [Replying in a Discord server channel](serverReply.md)
+- [Answering someone in a Discord DM or group DM](channelReply.md)
+- [Finding a conversation in a Discord server](serverSearch.md)

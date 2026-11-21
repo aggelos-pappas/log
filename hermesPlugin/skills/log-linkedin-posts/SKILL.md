@@ -42,3 +42,9 @@ Say: **"go on docs/useCases/linkedin/posts.md with <the text or the post>"**. Th
 - **A like counts only when LinkedIn says so.** The answer must commit the post's reaction state; otherwise it is `likeUnconfirmed`.
 - **A repost counts only with LinkedIn's success toast.** The answer must commit it and show the success toast; otherwise it is `repostUnconfirmed`.
 - **Writes are few.** A LinkedIn account writes at most 10 times a day. Every write waits for the owner's yes.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [What log does on LinkedIn](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/linkedin.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

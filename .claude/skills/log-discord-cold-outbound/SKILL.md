@@ -1,12 +1,12 @@
 ---
 name: log-discord-cold-outbound
-description: "Cold DMs from a Discord channel. A log play (docs/useCases/discord/coldOutbound.md): Start a conversation with someone the owner met in a server channel: someone who replied to him, argued with him or asked him something there. log opens the DM the way the app's Message button does and sends one message, gated like any other. When Discord won't let a stranger message them, log sends a friend request instead, and the message waits until they accept."
-when_to_use: "Use when the owner asks for this, in words like: \"cold dm the people from <channel>\""
+description: "First DMs from a Discord channel. A log play (docs/useCases/discord/coldOutbound.md): Start a conversation with someone the owner met in a server channel: someone who replied to him, argued with him or asked him something there. log opens the DM the way the app's Message button does and sends one message, gated like any other. When Discord won't let a stranger message them, log sends a friend request instead, and the message waits until they accept."
+when_to_use: "Use when the owner asks for this, in words like: \"dm the people from <channel>\""
 metadata:
-  summary: "Cold DMs from a Discord channel"
+  summary: "First DMs from a Discord channel"
 ---
 
-# Cold DMs from a Discord channel
+# First DMs from a Discord channel
 
 This is the log play `discord/coldOutbound`. Before anything else, call the log MCP tool `getGuide({ useCase: "discord/coldOutbound" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
@@ -14,7 +14,7 @@ Draft every message from that person's own thread and the owner's real replies (
 
 Start a conversation with someone the owner met in a server channel: someone who replied to him, argued with him or asked him something there. log opens the DM the way the app's Message button does and sends one message, gated like any other. When Discord won't let a stranger message them, log sends a friend request instead, and the message waits until they accept.
 
-How the owner asks for it: "cold dm the people from <channel>"
+How the owner asks for it: "dm the people from <channel>"
 
 ## Run it from a fresh context
 
@@ -38,3 +38,10 @@ Say: **"go on docs/useCases/discord/coldOutbound.md for <channel>"**. The agent 
 - **One person at a time, a minute or more apart.** Several DMs and friend requests to people who share one server, in a few minutes, is what Discord reads as spam. The friend requests go 20 s apart and the first refusal stops the run (rule 94).
 - **A message about what they said, never a pitch.** The opener answers their point in the channel; the project comes up only when it fits.
 - **A moderator who has warned the owner is left out.** They can remove him from the server.
+
+## Related
+
+- Up: [use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Replying in a Discord server channel](../log-discord-server-reply/SKILL.md)
+- [Answering someone in a Discord DM or group DM](../log-discord-channel-reply/SKILL.md)
+- [Finding a conversation in a Discord server](../log-discord-server-search/SKILL.md)

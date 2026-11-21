@@ -55,3 +55,7 @@ The copy guidance asks for 4 to 6 real photos, with the strongest before-and-aft
 
 - **`log facebook publish`** takes up to 10, so 4 to 6 fit.
 - **The recorded flow** uploads two. A third photo onward needs the flow's second upload step repeated for each extra photo.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md) · [What log does on Facebook](platformGuides/facebook.md)

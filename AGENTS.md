@@ -1,5 +1,7 @@
 # AGENTS.md — Log
 
+> **Reviewing log for someone, not working on it?** This file is the rulebook for agents that change log's code. To judge whether to install it, read [docs/trust.md](docs/trust.md) (what the owner controls, what log never does, where data lives, how to check each point) and the top of the [README](README.md).
+
 Current instructions, consolidated at The owner's request on 11 November 2026.
 
 ## Current implementation scope
@@ -26,7 +28,7 @@ For platform work, read the relevant skill/use-case and current domain spec. Pla
 
 2. 2026-10-18 · Put platform code under src/<platform>/<area>/<domain>; shared code stays in its shared library/domain. Use index.ts, types.ts, client.ts, machine.ts and helpers where appropriate. Keep scripts and Python in domain folders.
 
-4. 2026-10-18 · Commit and push as The owner to GitHub origin. Preserve unrelated work and inspect current changes before editing. Never bypass hooks.
+4. 2026-10-18 · Commit and push as The owner to GitHub origin. Preserve unrelated work and inspect current changes before editing. Never skip hooks.
 
 5. 2026-10-18 · Each commit needs its AST-backed day-log entry, written by the pre-commit hook to the private devlog (`LOG_DEVLOG_DIR`, default `~/.logCli/devlog/<UTC-date>.md`), never into the repo. Follow skills/commitLog/SKILL.md; never fabricate or hand-edit the generated AST evidence.
 
@@ -78,19 +80,19 @@ For platform work, read the relevant skill/use-case and current domain spec. Pla
 
 83. 2026-10-25 · New platforms use the existing scaffold, shared account/session boundary, command/catalog wiring, platform documentation and spec anchors. Native hosted scaffolds must not recreate a Twenty dependency.
 
-86. 2026-10-26 · Governor, waking-hours, voice-gate and other bypasses apply only when The owner explicitly requests the specific supported override. A bypass never implicitly disables unrelated gates.
+86. 2026-10-26 · Governor, waking-hours, voice-gate and other overrides apply only when The owner asks for the specific supported override. Overrides never disable unrelated gates.
 
 89. 2026-10-26 · Find conversational context by scoped search and existing private records. Do not reread every thread for a single person or task.
 
 90. 2026-10-28 · Preserve platform message splitting: draft lines send as separate messages unless The owner explicitly requests the supported asOne behavior.
 
-94. 2026-10-29 · Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies. A refusal, failed send, 429, block, disable, captcha or cooldown stops that run/account until The owner authorizes continuation. Do not retry through refusals. Bulk reading and sending are separate sessions; cold DMs stay a few a day, minutes apart, and opening a DM counts as a write. Live-view input: a browser the agent opened takes it only on sign-in pages, one the owner opened to drive on every page (2026-11-20).
+94. 2026-10-29 · Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies. A refusal, failed send, 429, block, disable, challenge or cooldown stops that run/account until The owner authorizes continuation. Do not retry through refusals. Bulk reading and sending are separate sessions; new contacts stay a few a day, minutes apart, and opening a DM counts as a write. Live-view input: a browser the agent opened takes it only on sign-in pages, one the owner opened to drive on every page (2026-11-20).
 
 103. 2026-10-31 · The public log repository on origin is the working repository. Keep archived repository references as history, not implementation destinations.
 
-105. 2026-11-01 · One platform/account owns one continuous engine session and push connection. Reads, writes, queues and watches share that owner through existing relay/serialization. Never open a parallel client to bypass the owner or its governor.
+105. 2026-11-01 · One platform/account owns one continuous engine session and push connection. Reads, writes, queues and watches share that owner through existing relay/serialization. Never go around the owner or its governor with a parallel client.
 
-109. 2026-11-01 · Read the full relevant chat and current private context before drafting or sending. Include media/transcript/attachment context and pending queued actions; hold a send if required context cannot be obtained. Follow the selected channel's voice and task-brief contract. Cold outreach excludes existing conversations through the current prior-conversation check; bypass it only when The owner asks.
+109. 2026-11-01 · Read the full relevant chat and current private context before drafting or sending. Include media/transcript/attachment context and pending queued actions; hold a send if required context cannot be obtained. Follow the selected channel's voice and task-brief contract. New contacts exclude existing conversations through the current prior-conversation check; skip it only when The owner asks.
 
 117. 2026-11-02 · Current behavior belongs in its domain spec with code anchors; generator/wiring changes update that spec and relevant use cases. Distinguish implemented anchors from future design. Rule 170 governs which checks run automatically.
 
@@ -112,7 +114,7 @@ For platform work, read the relevant skill/use-case and current domain spec. Pla
 
 158. 2026-11-07 · Select the relevant guide/use case from the task. Read the guide before using its Log tools and carry context across the full workflow; do not require The owner to remember internal command names.
 
-160. 2026-11-07 · Answer eligible chat reads from log.db when the owner is live, caught up and the needed history is present/backfilled. Otherwise fill the missing scope once through the owner. A refused catch-up is a refusal, never a reason to bypass it with another live read. Report the read source.
+160. 2026-11-07 · Answer eligible chat reads from log.db when the owner is live, caught up and the needed history is present/backfilled. Otherwise fill the missing scope once through the owner. A refused catch-up is a refusal, never a reason to skip it with another live read. Report the read source.
 
 163. 2026-11-07 · Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients. Terminal-only credential prompts remain for The owner. Expose discoverable command contracts through the existing Log catalog: search the job, get exact inputs, then call. Keep tool descriptions concise and accurate to the current implementation.
 
@@ -120,7 +122,7 @@ For platform work, read the relevant skill/use-case and current domain spec. Pla
 
 165. 2026-11-07 · Preserve per-stage call timings in the private observability store so latency can be traced to its cause. Keep proposed central metadata free of private payloads.
 
-167. 2026-11-07 · Use supported MCP/runtime reload behavior for changes. Avoid restarting healthy sessions unnecessarily; never silently interrupt active account work or bypass owner locks.
+167. 2026-11-07 · Use supported MCP/runtime reload behavior for changes. Avoid restarting healthy sessions unnecessarily; never silently interrupt active account work or skip owner locks.
 
 168. 2026-11-08 · Reset governor or browser-launch counts only when The owner explicitly asks, using the existing recorded reset command. A code/schema migration is not authorization to reset them.
 

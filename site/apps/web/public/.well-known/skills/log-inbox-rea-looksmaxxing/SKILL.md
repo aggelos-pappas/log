@@ -42,4 +42,9 @@ Say: **"go on docs/useCases/inbox/reaLooksmaxxing.md for <creator> and <offer>"*
 - **Sell the outcome.** Step 7 of the video says to build the offer on people's insecurities and adds "we don't recommend it". The play doesn't either.
 - The video's beats, copy rules and render steps are in the `reaLooksmaxxing` skill (`skills/reaLooksmaxxing/SKILL.md`); the play everyone can install is `skills/published/reaLooksmaxxing/SKILL.md`.
 
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)
+
 > Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

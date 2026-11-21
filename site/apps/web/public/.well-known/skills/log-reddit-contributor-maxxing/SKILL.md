@@ -35,3 +35,9 @@ Say: **"go on docs/useCases/reddit/contributorMaxxing.md for r/<subreddit>"**. T
 
 - **r/gtmengineering is the GTM engineering subreddit** (found 2026-11-08 by TinyFish search). r/GTMbuilders ("GitHub commits over slide decks") sits next to it.
 - **Reddit's whoami can pass while its token step fails.** On 2026-11-08 `/api/me.json` answered for the account, then loading reddit.com gave no `token_v2`, then the engine's connection was reset twice while plain HTTPS to Reddit still worked. That is a refusal: stop, tell the owner, and don't read again until he says so.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [What log does on Reddit](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/reddit.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

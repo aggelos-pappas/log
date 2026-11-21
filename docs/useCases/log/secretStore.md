@@ -32,3 +32,10 @@ flowchart TD
 - **Nothing to run for the switch.** Each plain secret is sealed on its next read, read back, compared, and only then removed from the file.
 - **No key holder, no change.** Without an OS keystore or `LOG_STORE_PASSPHRASE`, files stay as they are and log warns once per file.
 - `secretStoreLocked` means log.db has sealed secrets that no holder here opens (a new PC, a reinstall, another user, a different passphrase). The owner runs `log storage recovery set` with his recovery passphrase, and log wraps the key again for this machine.
+
+## Related
+
+- Up: [use cases](../README.md)
+- How it is built and what it protects against: [encrypted account store](../../security/encryptedStore.md)
+- [What log does with your sign-ins](../../trust.md)
+- [Local models](localModels.md)

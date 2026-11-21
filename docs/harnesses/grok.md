@@ -10,3 +10,8 @@
   - **Sign-in:** happens in the log console.
 - **Guidance:** there are no prompt hooks and no confirmed instructions, so the model routes each request with `getGuide({ ask: "<the owner's words>" })`, as `getGuide`'s description says. Keep `getGuide` in `allowed_tools`. `server_description` is the one field the API offers for describing log to the model, and it should say the same.
 - **The Grok app:** whether grok.com takes custom MCP connectors isn't documented on xAI's page.
+
+## Related
+
+- Up: [Every agent app log works with](README.md)
+- [Connect your agent](../mcp.md) · [Install](../install.md) · [Use cases](../useCases/README.md)

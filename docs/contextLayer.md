@@ -48,3 +48,7 @@ flowchart LR
 ## What moves next
 
 On Claude Code this is done (issue #99): engines, inbox, queue, xLive, storage, pageState, knowledge and useCases all answer from the service, so a prompt or tool call costs one local http request. Measured on 2026-11-08: PostToolUse p50 8.0 ms, p99 12.2 ms, p99.9 14.3 ms (n=2000); UserPromptSubmit p50 9.6 ms, p99 15.0 ms, p99.9 17.4 ms (n=300). Before, four PostToolUse hooks through Git Bash took p50 472 ms and p99 1377 ms. A provider that reads the platform is changed to read the .db first (convention 6).
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

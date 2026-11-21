@@ -73,3 +73,8 @@ Only what the thread has not already answered. In practice, in this order:
 
 - Handing the scoped job to whoever builds it is [triage.md](../log-inbox-triage/SKILL.md).
 - Sending a brief rather than a reply is [bossMaxxing.md](../log-inbox-boss-maxxing/SKILL.md).
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

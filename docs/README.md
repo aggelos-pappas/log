@@ -14,6 +14,10 @@ Then read [Using log well](usingLog.md).
 
 [Use cases](useCases/README.md) are the jobs log is built for, step by step: replying to people on a topic, reading your DM inbox, listening to Facebook groups and more. Start here when you know what you want done.
 
+## Research and decisions
+
+Why log is built the way it is: every research note, test matrix and proposal is indexed in [research and decisions](decisions/README.md).
+
 ## Platforms
 
 What you can do on each platform:

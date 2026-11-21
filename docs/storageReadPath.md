@@ -177,3 +177,7 @@ Each is measured on the 500,000-message benchmark while owner processes write at
 4. `chatContext`, rebuilt in the event's transaction; reads in one snapshot; the `uptoSeq` check before a send.
 5. Time-series tables clustered by key and time, rollups written on insert, retention by range.
 6. `personContext` with #95.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

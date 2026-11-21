@@ -60,3 +60,10 @@ Say: **"go on docs/useCases/twitter/affiliateMarketing.md for `<tool>`, link `<a
 ## Next
 
 - [#35](https://github.com/matthewdonsemail-lab/log/issues/35) tracks which affiliate link went to whom and which turned into a signup, per person, in Twenty.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [All X use cases, and the parts they share](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/twitter/README.md)
+- [What log does on X](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/x.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

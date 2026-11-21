@@ -267,3 +267,7 @@ What the machine must do, requirement by requirement: [docs/specs/accountLifecyc
 - **banned** (final)
 - **lost** (final)
 - **stopped** (final)
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

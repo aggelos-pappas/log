@@ -77,3 +77,8 @@ Only what the thread has not already answered. In practice, in this order:
 
 - Handing the scoped job to whoever builds it is [triage.md](triage.md).
 - Sending a brief rather than a reply is [bossMaxxing.md](bossMaxxing.md).
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

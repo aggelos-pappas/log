@@ -45,3 +45,8 @@ Say: **"go on docs/useCases/instagram/newPlatform.md for <platform>"**. The agen
 - **The session reaches the account only when the browser closes.** `saveState` writes the browser's state to the run; `stop` saves it to the account.
 - **Search by the operations, not only by name.** Searching GitHub code for the recorded GraphQL operation names finds the clients that speak the same web API; a name search mostly finds mobile-API clients and bots.
 - **The client goes out like a browser.** Prefer the client's own curl_cffi transport, as X, LinkedIn and Slack do.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

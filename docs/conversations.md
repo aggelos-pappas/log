@@ -89,3 +89,7 @@ Each command is also an MCP tool (`facebookConversations`, and `facebookConversa
 - [#41](https://github.com/matthewdonsemail-lab/log/issues/41) reads the inbox from Facebook and replies to buyers. The scan is a browser launch like any other, with every launch gate, written from a `log inspect` recording of the Marketplace inbox first. A reply writes to Facebook, so it waits until the owner asks for it; its fields are in place already: `sentBy`, `aiStatus`, `aiOriginalText`, `autoReplied`, `aiTookOver`.
 
 The rules behind this are in AGENTS.md.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md) · [What log does on Facebook](platformGuides/facebook.md)

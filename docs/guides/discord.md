@@ -11,7 +11,7 @@ When the owner asks for one of these, follow its page step by step.
 | Use case | What it is | How the owner asks for it |
 |---|---|---|
 | `getGuide({ useCase: "discord/channelReply" })` | Answering someone in a Discord DM or group DM | "reply to <someone> on discord", "reply to <someone> in <group>", "explain what I'm trying to do to <someone> in <group>", "answer the group" |
-| `getGuide({ useCase: "discord/coldOutbound" })` | Cold DMs from a Discord channel | "cold dm the people from <channel>" |
+| `getGuide({ useCase: "discord/coldOutbound" })` | First DMs from a Discord channel | "dm the people from <channel>" |
 | `getGuide({ useCase: "discord/forumPosts" })` | Going through a Discord forum for posts worth answering | "look at the <server> forum and find the one about <problem>", "go through the forum in <server> and tell me which posts to respond to", "list the posts in <server> #<forum>", "find posts in <server> asking for help with <thing>" |
 | `getGuide({ useCase: "discord/groupChatRead" })` | Reading a Discord group chat without Twenty | "read the <group> chat over the last <N> hours", "what did <someone> set up in <group>" |
 | `getGuide({ useCase: "discord/memeReply" })` | Replying with a meme in a Discord chat | "respond with memes in the <chat>", "drop a meme in <chat> about that", "read <chat> and meme it" |

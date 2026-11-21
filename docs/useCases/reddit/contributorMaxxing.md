@@ -37,3 +37,9 @@ flowchart TD
 
 - **r/gtmengineering is the GTM engineering subreddit** (found 2026-11-08 by TinyFish search). r/GTMbuilders ("GitHub commits over slide decks") sits next to it.
 - **Reddit's whoami can pass while its token step fails.** On 2026-11-08 `/api/me.json` answered for the account, then loading reddit.com gave no `token_v2`, then the engine's connection was reset twice while plain HTTPS to Reddit still worked. That is a refusal: stop, tell the owner, and don't read again until he says so.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on Reddit](../../platformGuides/reddit.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

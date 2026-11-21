@@ -93,3 +93,7 @@ The client lives in `src/facebook/group/read/client.ts` (`readStateOf` before a 
 - A host running live with its groups.
 
 The rules behind this are in AGENTS.md.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md) · [What log does on Facebook](platformGuides/facebook.md)

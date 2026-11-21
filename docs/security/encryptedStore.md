@@ -58,3 +58,10 @@ log keeps every account session (cookies, the Discord token in storage origins, 
 | A wrong recovery passphrase | `secretStoreLocked`, nothing re-wrapped or changed |
 | Two processes making a key at once | Key creation runs in one `BEGIN IMMEDIATE` transaction; the second process uses the first one's key |
 | Values in logs or status output | Status prints counts and field names only; refusals name the ref, never the value |
+
+## Related
+
+- Up: [trust page](../trust.md)
+- Checking it on your machine: [encrypted account store use case](../useCases/log/secretStore.md)
+- The research and options scored: [encrypted store research](../decisions/encryptedStore/research.md)
+- [Adding your accounts](../accounts.md)

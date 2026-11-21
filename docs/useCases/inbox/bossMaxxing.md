@@ -63,3 +63,8 @@ flowchart TD
 - **The boss fixes it himself.** The owner's words: "the point of being a boss is that you are the one who is asked a question to solve something and you be a boss and do it yourself". Teammates often say things with no context and expect them to work. Don't hand them a list of steps to do. Find the cause through the tools and keys you hold (the repo, its `.env.local`, the servers over a private network, the hosting dashboard), fix it, check it works, then tell them it's done and what to do next. Tell them to leave it alone while you work on it.
 - **Over the gate, every time.** The owner's words: "go over the gate when your boss maxxing". Plain questions to a teammate can score low on the gate and hold them up. Every bossmaxxing send goes with `overGate: true`. The AI artifact check still runs.
 - **Know where the team's tools run.** Keep the map of the team's hosts, subdomains and which sign-in each tool uses in the private knowledge base, never in this page. Never point anyone at a retired host or an ended trial. Before changing a tool, check its repository's branch and uncommitted work, since a move may already be half done there.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

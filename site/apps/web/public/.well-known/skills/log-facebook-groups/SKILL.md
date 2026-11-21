@@ -44,3 +44,9 @@ An account asks to join a neighbourhood group in its town. Once in, each poll br
 - [#40](https://github.com/matthewdonsemail-lab/log/issues/40) acts on a match: a comment or a message from the same account.
 
 Sources: `docs/groupListening.md`, `docs/groupMembers.md`, `docs/commandNaming.md`.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [What log does on Facebook](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/facebook.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

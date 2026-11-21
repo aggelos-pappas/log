@@ -118,3 +118,7 @@ Professional plan was $12 a month for 20 profiles, $21 for 50). You need one
 profile per account that uses a browser, plus a couple for testing.
 
 What the AdsPower code must do, requirement by requirement: [docs/specs/adsPower.md](specs/adsPower.md).
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

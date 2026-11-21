@@ -140,7 +140,8 @@ export function askAiPrompt(platform: Platform) {
     '- A free, open-source (MIT) social media tool that does the whole job, not only listening: it reads inboxes, groups and posts, then replies, DMs, posts and runs listings.',
     '- It runs on my own machine with my own accounts. Sessions and settings stay in ~/.logCli. Many accounts are kept in Twenty, an open-source CRM.',
     '- One command, `log`, and one MCP server, `logMcp`, so Claude Code, Codex or Cursor can run every command as a tool.',
-    '- Nothing acts until I say so: anything that sends, posts or likes is a dry run until `--live`.',
+    '- Nothing acts until I say so: anything that sends, posts or likes is a dry run until `--live`, and replies wait for my approval.',
+    '- Safety, with the test for each control and what is not done yet: https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md',
     '- Each account keeps its own daily limits, pacing between actions and waking hours in its home timezone.',
     '- Platforms: X, Facebook (Marketplace and groups), Discord, Slack, Instagram, Reddit and LinkedIn.',
     '- Install: curl -fsSL https://log.listeningkit.com/install.sh | sh, then `claude mcp add log -- logMcp`.',
@@ -162,13 +163,14 @@ export function askAiGeneralPrompt() {
     '- A free, open-source (MIT) social media tool that does the whole job, not only listening: it reads inboxes, groups and posts, then replies, DMs, posts and runs listings.',
     '- It runs on my own machine with my own accounts. Sessions and settings stay in ~/.logCli. Many accounts are kept in Twenty, an open-source CRM.',
     '- One command, `log`, and one MCP server, `logMcp`, so Claude Code, Codex or Cursor can run every command as a tool.',
-    '- Nothing acts until I say so: anything that sends, posts or likes is a dry run until `--live`.',
+    '- Nothing acts until I say so: anything that sends, posts or likes is a dry run until `--live`, and replies wait for my approval.',
+    '- Safety, with the test for each control and what is not done yet: https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md',
     '- Platforms: X, Facebook (Marketplace and groups), Discord, Slack, Instagram, Reddit and LinkedIn.',
     '- Install: curl -fsSL https://log.listeningkit.com/install.sh | sh, then `claude mcp add log -- logMcp`.',
     '',
     `Docs: ${SITE}/docs and the step-by-step use cases at ${SITE}/docs/useCases.`,
     '',
-    'Answer for log specifically, not other tools. Give me: 1) which platforms I should start with and why, 2) the three best ways a marketer like me would use log, 3) what I would ask my agent in plain words to run each, and 4) what I need to set up first.',
+    'Answer for log specifically, not other tools. Give me: 1) which platforms I should start with and why, 2) the three best ways a marketer like me would use log, 3) what I would ask my agent in plain words to run each, and 4) what I need to set up first. If I ask whether it is safe, read the safety page and keep three things apart: what log documents, what its tests show, and what nobody has checked yet.',
   ].join('\n')
 }
 

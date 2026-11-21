@@ -59,3 +59,9 @@ Say: **"go on docs/useCases/discord/serverReply.md for <server> #<channel>"**. T
 - **X links embed as fixupx.** Share an X post on Discord as https://fixupx.com/<user>/status/<id>, never x.com: Discord only embeds the post and its video from fixupx. `discordSendLive` turns any x.com or twitter.com post link into fixupx.com itself (the owner, 2026-11-13).
 - **Name the channel, never its id.** The chat-names hook refuses an id: `"<server> #<channel>"`, or `"<server> #<forum> > <post title>"` for a forum post (rule 154).
 - **Forums and threads.** A forum holds posts, each its own conversation: answer inside the post, never in the forum. What each part of a server is: the `discordServers` skill in the discord guide; going through a forum for posts to answer: [forumPosts](../log-discord-forum-posts/SKILL.md).
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [What log does on Discord](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/discord.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

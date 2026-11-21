@@ -49,3 +49,10 @@ flowchart TD
 - "(could not decrypt)" means X Chat couldn't be opened for that message, not that the person said nothing. Never say "nobody replied" from it.
 - Reads go one person at a time. Never read the whole inbox in a loop of calls, and never in the same session as a bulk send (rule 94).
 - How likely money is gets said plainly, from what was said. Nothing is inferred that the person didn't say.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [All X use cases, and the parts they share](README.md)
+- [What log does on X](../../platformGuides/x.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

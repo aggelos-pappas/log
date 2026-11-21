@@ -27,7 +27,7 @@ X and LinkedIn accounts can skip this step: saving their cookies (below) adds th
 
 ## 2. Sign it in
 
-### X and LinkedIn: paste the cookies
+### X, LinkedIn and Slack: paste your session
 
 1. Open the site in a browser where the account is signed in.
 2. Export its cookies with a cookie-export browser extension.
@@ -36,9 +36,10 @@ X and LinkedIn accounts can skip this step: saving their cookies (below) adds th
 ```bash
 log twitter cookies save --account yourhandle
 log linkedin cookies save --account your-public-id
+log slack cookies save --account yourname
 ```
 
-X asks for `auth_token`, `ct0` and `twid`. LinkedIn asks for `li_at` and `JSESSIONID`, and `--account` is the part after `linkedin.com/in/`. log checks the cookies with the platform before it saves them. They're never shown or passed as flags.
+X asks for `auth_token`, `ct0` and `twid`. LinkedIn asks for `li_at` and `JSESSIONID`, and `--account` is the part after `linkedin.com/in/`. Slack asks for the `d` value. log checks the cookies with the platform before it saves them. They're never shown or passed as flags.
 
 ### Reddit and Discord: sign in once in the account's browser
 
@@ -71,3 +72,9 @@ Each platform has the same check: `log reddit session check`, `log discord sessi
 To keep many accounts in one shared place instead of a local file, use [Twenty](twenty.md). `log localAccount pull` copies the accounts Twenty has into your local file, cookies and login included, each keeping its Twenty id (`--platform` for one platform; an account already in the file is kept unless `--refresh`). A local account wins over a Twenty account of the same name, and `LOG_ACCOUNTS=local` in `~/.logCli/.env` leaves Twenty out of accounts entirely. `LOG_LOCAL_ACCOUNTS` moves the file. Listings, groups and conversations stay in Twenty. The details: [Local accounts](specs/localAccounts.md).
 
 Next: [connect your agent](mcp.md).
+
+## Related
+
+- Up: [log's README](../README.md)
+- Start here, in order: [Install](install.md) · [Add an account](accounts.md) · [Connect your agent](mcp.md) · [What log does, and what it never does](trust.md)
+- Then: [Use cases, the plays step by step](useCases/README.md) · [Your agent app](harnesses/README.md) · [What you can do on each platform](platformGuides/x.md) · [Every command and tool](reference.md) · [How log works](howItWorks.md)

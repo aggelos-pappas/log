@@ -315,3 +315,7 @@ Earlier checks of the proxy gate (2026-10-18):
   - a banned account's `scan` is refused with `accountNotUsable`.
 
 The rules behind this are in AGENTS.md.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

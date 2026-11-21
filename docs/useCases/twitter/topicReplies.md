@@ -54,3 +54,10 @@ flowchart TD
 ## Next
 
 - [#37](https://github.com/matthewdonsemail-lab/log/issues/37) spreads a long list over several days. Until then, the queue plans up to its limit and is planned again each day.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [All X use cases, and the parts they share](README.md)
+- [What log does on X](../../platformGuides/x.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

@@ -33,7 +33,7 @@ Say: **"go on docs/useCases/twitter/nicheMapRegion.md for <the world>, <the area
 | 6 | The outbound list: the region's go getters (gates passed; band member, collaborator, sponsor or affiliate) in ring 2 first, then ring 2 around them | `data/yc/goGetters.json` | the list, ranked |
 | 7 | One recent post of each person's own to open on: the index holds their posts, and one fresh search each confirms they posted this week. Nothing new: they wait | the index (`search_index.json`, `search_posts.jsonl`), treg's posts search | each with a user id and a post from the last few days |
 | 8 | Whether they follow the owner and he follows them | `twitterFollows` | the relationship, for the opener's wording |
-| 9 | Each opener the cold DM way ([engagerDms.md](../log-twitter-engager-dms/SKILL.md)): their tweet first, then one line about it, never an ask | the agent | one draft per person |
+| 9 | Each opener the first-DM way ([engagerDms.md](../log-twitter-engager-dms/SKILL.md)): their tweet first, then one line about it, never an ask | the agent | one draft per person |
 | 10 | Queue them as dms and check them: house style, and nobody he already talks to on X Chat | `twitterQueueBuild` { action: "dm" }, `twitterQueueCheck` | all pending, none dropped or failed |
 | 11 | Gate every opener with the voice gate (his writing across all his conversations), rewriting until it passes | `voice` { to, context, text } | every draft passes |
 | 12 | Follow, like the post, then the opener, a few people a day, minutes apart (rule 94) | `twitterFollowLive`, `twitterLikeLive`, the queue run | X's answer is `sent` for each |
@@ -43,5 +43,12 @@ Say: **"go on docs/useCases/twitter/nicheMapRegion.md for <the world>, <the area
 - **The owner names the batches, the areas and the money.** Never add a world, a batch or a source he didn't say (rule 39).
 - **The page reads YC slowly,** about one page every 1.5 s, and keeps every page it read in `data/yc/pages`, so a rerun costs nothing.
 - **A dropped write is never retried through.** A 429 or a soft block stops the sends, and the next action waits for the owner (rule 94).
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [All X use cases, and the parts they share](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/twitter/README.md)
+- [What log does on X](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/x.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)
 
 > Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

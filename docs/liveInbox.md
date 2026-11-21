@@ -75,3 +75,7 @@ The harness setting wins over the file. Turning off `allow_gateway_injection` in
 - **Jina's newer models:** `jina-embeddings-v5-omni` (text and media in one space) and `jina-reranker-v3.5`, to rank the conversation, media, replies and likes that go into the voice step. These are paid calls, so they wait for his yes.
 
 Specs: `docs/specs/agentHooks.md` (REQ-HOOKS-12 to 16). Code: `src/inbox/store`, `src/inbox/relay`, `src/inbox/watch`, `src/inbox/claims`.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

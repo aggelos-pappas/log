@@ -44,3 +44,9 @@ flowchart TD
 - [#40](https://github.com/matthewdonsemail-lab/log/issues/40) acts on a match: a comment or a message from the same account.
 
 Sources: `docs/groupListening.md`, `docs/groupMembers.md`, `docs/commandNaming.md`.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on Facebook](../../platformGuides/facebook.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

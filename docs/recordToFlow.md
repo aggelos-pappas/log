@@ -107,3 +107,7 @@ Every flow below is in `src/browser/flow/definitions/`, has its doc in `docs/pla
 | `~/.logCli/runs/{inspect,flow}/<time>_<account>/` | Recordings (local, never committed) |
 
 The rules behind this are in AGENTS.md.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md) · [What log does on Facebook](platformGuides/facebook.md)
