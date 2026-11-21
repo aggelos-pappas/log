@@ -25,6 +25,14 @@ Not a who-knows-who graph. A relationship drawn as a state machine: the states a
 | Person, route and network views | built |
 | `stateMachine` report block, text fallback | built |
 | `relateMachine` tool and `log relate machine` | built |
-| Screenshots of each view in light and dark from the demo world | taken |
+| Screenshots of each view in light and dark from the demo world | taken, below |
 | Upstream genui blocks (show_blocks) drawing the same block | not built |
 | Inter embedded as a font file | not built |
+
+## Screenshots (demo world, `src/relate/machine/fixtures/machineWorld.ts`)
+
+| View | Light | Dark |
+| --- | --- | --- |
+| One person's machine | [light](images/machine_person_light.png) | [dark](images/machine_person_dark.png) |
+| The route to someone | [light](images/machine_route_light.png) | [dark](images/machine_route_dark.png) |
+| The network by state | [light](images/machine_network_light.png) | [dark](images/machine_network_dark.png) |
