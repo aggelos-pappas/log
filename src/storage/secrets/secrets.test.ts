@@ -309,3 +309,100 @@ describe('Python opens what Bun sealed', () => {
     expect(JSON.parse(readSecret('session:twitter:back')!)).toEqual({ seen: COOKIE })
   })
 })
+
+const PYTHON_DIR = join(import.meta.dir, '..', '..', '..', 'python')
+const NO_CRYPTOGRAPHY = ['cryptography']
+const NO_CIPHER = ['cryptography', 'Crypto', 'Cryptodome']
+const CROSS_MS = 30_000
+
+function noKeystore(): void {
+  process.env.LOG_STORE_KEYSTORE = 'os'
+  secretStoreDeps.keystores = () => []
+}
+
+function inPython(lines: string[], env: Record<string, string | undefined>, blocked: string[] = []): { status: number | null; stdout: string; stderr: string } {
+  const script = ['import json, sys', `sys.path.insert(0, ${JSON.stringify(PYTHON_DIR)})`, ...blocked.map((name) => `sys.modules[${JSON.stringify(name)}] = None`), 'import secretStore', ...lines].join('\n')
+  const child: Record<string, string | undefined> = { ...process.env, LOG_STORE_KEYSTORE: 'none', ...env }
+  for (const [name, value] of Object.entries(child)) if (value === undefined) delete child[name]
+  const run = spawnSync(process.env.LOG_PYTHON!, ['-c', script], { encoding: 'utf8', env: child as NodeJS.ProcessEnv, windowsHide: true })
+  return { status: run.status, stdout: run.stdout.trim(), stderr: run.stderr }
+}
+
+function pythonOpens(ref: string, env: Record<string, string | undefined>, blocked: string[] = []): { status: number | null; stdout: string; stderr: string } {
+  return inPython([`print(secretStore.open_secret(${JSON.stringify(ref)}))`], env, blocked)
+}
+
+function pythonSeals(ref: string, value: string, env: Record<string, string | undefined>): { status: number | null; stdout: string; stderr: string } {
+  return inPython([`secretStore.put_secret(${JSON.stringify(ref)}, "apiKey", ${JSON.stringify(value)})`], env)
+}
+
+function pythonHas(module: string): boolean {
+  return inPython([`import importlib.util`, `sys.exit(0 if importlib.util.find_spec(${JSON.stringify(module)}) else 5)`], {}).status === 0
+}
+
+describe('a passphrase-wrapped key crosses between Bun and Python with no OS keystore', () => {
+  const PASS = 'correct horse battery staple'
+  const RECOVERY = 'Tr\u00e8s s\u00fbr recovery phrase'
+
+  test.skipIf(!process.env.LOG_PYTHON)('Bun wraps the key with LOG_STORE_PASSPHRASE and Python unwraps it', () => {
+    noKeystore()
+    openDatabase(process.env.LOG_DB!)
+    expect(putSecret('env:CROSS_KEY', 'apiKey', 'bunSealedForPython')).toBe(true)
+    const keyMethods = openDatabase(process.env.LOG_DB!).prepare('SELECT method FROM secretKeys').all() as { method: string }[]
+    expect(keyMethods.map((row) => row.method)).toEqual(['passphrase'])
+    const run = pythonOpens('env:CROSS_KEY', { LOG_STORE_PASSPHRASE: PASS, LOG_STORE_RECOVERY: undefined })
+    expect(run.stderr).toBe('')
+    expect(run.stdout).toBe('bunSealedForPython')
+    expect(pythonOpens('env:CROSS_KEY', { LOG_STORE_PASSPHRASE: 'not the passphrase', LOG_STORE_RECOVERY: undefined }).stderr).toContain('secretStore.SecretStoreError: none of the store key')
+  }, CROSS_MS)
+
+  test.skipIf(!process.env.LOG_PYTHON)('Bun wraps the key with the recovery passphrase and Python unwraps it', () => {
+    noKeystore()
+    delete process.env.LOG_STORE_PASSPHRASE
+    process.env.LOG_STORE_RECOVERY = RECOVERY
+    openDatabase(process.env.LOG_DB!)
+    expect(putSecret('env:CROSS_KEY', 'apiKey', 'bunRecoverySealed')).toBe(true)
+    const run = pythonOpens('env:CROSS_KEY', { LOG_STORE_PASSPHRASE: undefined, LOG_STORE_RECOVERY: RECOVERY.normalize('NFD') })
+    expect(run.stderr).toBe('')
+    expect(run.stdout).toBe('bunRecoverySealed')
+  }, CROSS_MS)
+
+  test.skipIf(!process.env.LOG_PYTHON)('Python wraps a new key with LOG_STORE_PASSPHRASE and Bun unwraps it', () => {
+    noKeystore()
+    openDatabase(process.env.LOG_DB!)
+    const run = pythonSeals('env:CROSS_KEY', 'pythonSealedForBun', { LOG_STORE_PASSPHRASE: PASS, LOG_STORE_RECOVERY: undefined })
+    expect(run.stderr).toBe('')
+    expect(readSecret('env:CROSS_KEY')).toBe('pythonSealedForBun')
+  }, CROSS_MS)
+
+  test.skipIf(!process.env.LOG_PYTHON)('Python wraps a new key with the recovery passphrase and Bun unwraps it', () => {
+    noKeystore()
+    delete process.env.LOG_STORE_PASSPHRASE
+    process.env.LOG_STORE_RECOVERY = RECOVERY
+    openDatabase(process.env.LOG_DB!)
+    const run = pythonSeals('env:CROSS_KEY', 'pythonRecoverySealed', { LOG_STORE_PASSPHRASE: undefined, LOG_STORE_RECOVERY: RECOVERY })
+    expect(run.stderr).toBe('')
+    expect(recoverySet()).toBe(true)
+    expect(readSecret('env:CROSS_KEY')).toBe('pythonRecoverySealed')
+  }, CROSS_MS)
+
+  test.skipIf(!process.env.LOG_PYTHON || !pythonHas('Crypto') && !pythonHas('Cryptodome'))('a Python with pycryptodome and no cryptography opens and seals the same way', () => {
+    noKeystore()
+    openDatabase(process.env.LOG_DB!)
+    expect(putSecret('env:CROSS_KEY', 'apiKey', 'readByPycryptodome')).toBe(true)
+    const env = { LOG_STORE_PASSPHRASE: PASS, LOG_STORE_RECOVERY: undefined }
+    const run = inPython(['print(secretStore.open_secret("env:CROSS_KEY"))', 'secretStore.put_secret("env:BACK_KEY", "apiKey", "sealedByPycryptodome")'], env, NO_CRYPTOGRAPHY)
+    expect(run.stderr).toBe('')
+    expect(run.stdout).toBe('readByPycryptodome')
+    expect(readSecret('env:BACK_KEY')).toBe('sealedByPycryptodome')
+  }, CROSS_MS)
+
+  test.skipIf(!process.env.LOG_PYTHON)('a Python with no AES-GCM library says so, never that the passphrase failed', () => {
+    noKeystore()
+    openDatabase(process.env.LOG_DB!)
+    expect(putSecret('env:CROSS_KEY', 'apiKey', 'neverOpened')).toBe(true)
+    const run = inPython(['try:', '    secretStore.open_secret("env:CROSS_KEY")', 'except secretStore.SecretStoreError as e:', '    print(e.code)'], { LOG_STORE_PASSPHRASE: PASS }, NO_CIPHER)
+    expect(run.stderr).toBe('')
+    expect(run.stdout).toBe('secretStoreNoCipher')
+  }, CROSS_MS)
+})

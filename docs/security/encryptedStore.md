@@ -16,7 +16,7 @@ log keeps every account session (cookies, the Discord token in storage origins, 
   - `log storage status` says whether a recovery passphrase is set and prints a `>>> NO RECOVERY PASSPHRASE` warning when it is not. log also warns when it makes a new key without one. If `LOG_STORE_RECOVERY` is set when the key is first made, that passphrase wraps it from the start.
   - Keep the recovery passphrase off the machine (a password manager, paper). Anyone who has it and a copy of log.db can open the secrets.
 - **Every secret is sealed with AES-256-GCM** into log.db's `secrets` table, with a fresh 96-bit nonce and the secret's ref (`account:…`, `session:<platform>:<account>`, `env:<NAME>`) as authenticated data, so a row copied to another ref fails its check.
-- **One module does it**: `src/storage/secrets` (Bun) and `python/secretStore` (Python, same format; it opens and seals rows with a key Bun made).
+- **One module does it**: `src/storage/secrets` (Bun) and `python/secretStore` (Python, same format: the same scrypt-wrapped key rows and AES-GCM layout, so a key either side wraps with `LOG_STORE_PASSPHRASE` or the recovery passphrase opens on the other, with or without an OS keystore; when log.db has no key yet, Python makes one wrapped by those passphrases). Python uses `cryptography` (installed with the Python vendors) or else pycryptodome; with neither it refuses with `secretStoreNoCipher`, never a misleading `secretStoreLocked`.
 - Keystore calls run with a 10 s timeout, so a keystore that does not answer (a stuck D-Bus) falls back to the passphrase or to the plain-file path instead of hanging.
 
 ## Sealed on access, never lost
