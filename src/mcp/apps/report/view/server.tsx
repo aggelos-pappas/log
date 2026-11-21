@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { transform } from "sucrase";
-import { machineCss } from "../../../../relate/machine/theme.ts";
+import { MACHINE_FONT, machineCss } from "../../../../relate/machine/theme.ts";
 import { KitProvider, setHost } from "./kit.tsx";
 import type { KitHost } from "./kit.tsx";
 import { VIEW_MODULES, viewFromModule } from "./run.ts";
@@ -13,6 +13,7 @@ export const VIEW_CODE_LIMIT = 60_000;
 const WIDGET_ENTRY = fileURLToPath(new URL("./widget.tsx", import.meta.url));
 const KIT_CSS = fileURLToPath(new URL("./kit.css", import.meta.url));
 const GEIST = fileURLToPath(new URL("../../../../../site/apps/web/public/fonts/geist-latin-wght-normal.woff2", import.meta.url));
+const INTER = fileURLToPath(new URL("../../../../../site/apps/web/public/fonts/inter-latin-wght-normal.woff2", import.meta.url));
 const STARTERS = new URL("./starters/", import.meta.url);
 
 export type Compiled = { ok: true; compiled: string } | { ok: false; error: string };
@@ -128,9 +129,13 @@ async function widgetScript(): Promise<string> {
   return output.outputs[0].text();
 }
 
+function faceOf(family: string, file: string): string {
+  if (!existsSync(file)) return "";
+  return `@font-face{font-family:"${family}";font-style:normal;font-weight:100 900;font-display:swap;src:url(data:font/woff2;base64,${readFileSync(file).toString("base64")}) format("woff2")}`;
+}
+
 function geistFace(): string {
-  if (!existsSync(GEIST)) return "";
-  return `@font-face{font-family:"Geist";font-style:normal;font-weight:100 900;font-display:swap;src:url(data:font/woff2;base64,${readFileSync(GEIST).toString("base64")}) format("woff2")}`;
+  return `${faceOf("Geist", GEIST)}${faceOf(MACHINE_FONT.face, INTER)}`;
 }
 
 export function viewPage(script: string, baked?: unknown): string {

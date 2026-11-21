@@ -34,7 +34,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `relateStatus` | The current Relate graph and how far behind log.db it is | `log relate status [--json]` |
 | `relateVerify` | Check every Relate graph count against log.db | `log relate verify [--json]` |
 | `relateAsk` | Show the connected context | `log relate ask "<text>" [--json]` |
-| `relateMachine` | Draw relationships as a state machine | `log relate machine [--person\|--to <handle>] [--view <view>] [--json]` |
+| `relateMachine` | A relationship state machine | `log relate machine [--person\|--to <h>] [--view <v>] [--platform <p>] [--json]` |
 | `relateQuery` | Run a read-only Cypher query on the current Relate graph | `log relate query "<cypher>" [--json]` |
 | `people` | List everyone linked across platforms, with each person's identities | `log people [--json]` |
 | `peopleShow` | The person card for someone across every platform | `log people show <who> [--json]                             (the person card: every platform, one-to-one chats and groups, who is waiting, the last lines across platforms)` |

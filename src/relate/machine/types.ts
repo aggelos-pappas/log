@@ -12,7 +12,15 @@ export const MACHINE_DIRECTIONS = ['right', 'down'] as const
 
 export type MachineDirection = (typeof MACHINE_DIRECTIONS)[number]
 
-export const MACHINE_LIMITS = { states: 16, transitions: 24, chips: 6, details: 12, label: 60, note: 200, event: 40, tool: 40 } as const
+export const MACHINE_LIMITS = { states: 16, transitions: 24, chips: 6, details: 12, label: 60, note: 200, event: 40, tool: 40, accounts: 12, platform: 20 } as const
+
+export const MACHINE_PLATFORMS = ['all', 'twitter', 'discord', 'instagram', 'slack', 'reddit', 'facebook', 'linkedin'] as const
+
+export type MachinePlatform = (typeof MACHINE_PLATFORMS)[number]
+
+export const PLATFORM_NAMES: Record<MachinePlatform, string> = { all: 'All', twitter: 'X', discord: 'Discord', instagram: 'Instagram', slack: 'Slack', reddit: 'Reddit', facebook: 'Facebook', linkedin: 'LinkedIn' }
+
+export const PLATFORM_MARKS: Record<string, string> = { twitter: 'X', discord: 'DC', instagram: 'IG', slack: 'SL', reddit: 'RD', facebook: 'FB', linkedin: 'IN' }
 
 export interface MachineDetail {
   label: string
@@ -47,6 +55,21 @@ export interface MachineTransition {
   next?: boolean
   dashed?: boolean
   note?: string
+  platform?: string
+}
+
+export interface MachineAccount {
+  platform: string
+  handle: string
+  link: 'linked' | 'suggested'
+}
+
+export interface MachinePlatformView {
+  platform: MachinePlatform
+  count: number
+  summary?: string
+  states: MachineState[]
+  transitions: MachineTransition[]
 }
 
 export interface StateMachineBlock {
@@ -57,6 +80,9 @@ export interface StateMachineBlock {
   summary?: string
   states: MachineState[]
   transitions: MachineTransition[]
+  platform?: MachinePlatform
+  accounts?: MachineAccount[]
+  platforms?: MachinePlatformView[]
 }
 
 export const STAGES = ['new', 'followsYou', 'nearYou', 'engaged', 'reachedOut', 'inConversation'] as const
@@ -131,13 +157,17 @@ export interface StageEvidence {
   theyWroteAt: number | null
   youWroteAt: number | null
   lastAt: number | null
+  from?: Partial<Record<EvidenceTime, string>>
 }
+
+export type EvidenceTime = 'followedAt' | 'nearAt' | 'engagedAt' | 'theyWroteAt' | 'youWroteAt'
 
 export interface StageStep {
   stage: Stage
   at: number | null
   event: string
   by: 'you' | 'them'
+  platform?: string
 }
 
 export interface PersonStanding {

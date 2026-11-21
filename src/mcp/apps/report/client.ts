@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import type { MachinePlatform } from "../../../relate/machine/types.ts";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
@@ -157,12 +158,14 @@ export async function runReport(input: unknown, ui: boolean, given: Partial<Repo
 }
 
 export async function runMachine(input: unknown, ui: boolean, host: ReportHost = {}): Promise<CallToolResult> {
-  const { relateMachine } = await import("../../../relate/machine/index.ts");
+  const { relateMachine, MACHINE_PLATFORMS } = await import("../../../relate/machine/index.ts");
   const ask = (input ?? {}) as Record<string, unknown>;
   const pick = (name: string) => (typeof ask[name] === "string" && (ask[name] as string).trim() ? (ask[name] as string) : undefined);
   const view = pick("view");
   if (view && !["person", "route", "network"].includes(view)) return refused("reportFieldInvalid", ["view: person, route or network"]);
-  const answer = relateMachine({ view: view as "person" | "route" | "network" | undefined, person: pick("person"), to: pick("to") });
+  const platform = pick("platform");
+  if (platform && !(MACHINE_PLATFORMS as readonly string[]).includes(platform)) return refused("reportFieldInvalid", [`platform: one of ${MACHINE_PLATFORMS.join(", ")}`]);
+  const answer = relateMachine({ view: view as "person" | "route" | "network" | undefined, person: pick("person"), to: pick("to"), platform: platform as MachinePlatform | undefined });
   if (!answer.ok) return { isError: true, content: [{ type: "text", text: `${answer.code}: ${answer.problem}` }], structuredContent: { error: answer.code, message: answer.problem } };
   const block = answer.block;
   return runReport({ title: block.title ?? "Relationship state machine", subtitle: `Relate graph through event ${answer.throughSeq}`, blocks: [block] }, ui, {}, host);

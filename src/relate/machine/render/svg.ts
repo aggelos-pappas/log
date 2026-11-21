@@ -1,4 +1,5 @@
 import { MACHINE_FONT, MACHINE_SIZE, machineCss } from '../theme'
+import { PLATFORM_MARKS } from '../types'
 import type { MachineDirection, MachineState, MachineTransition, StateMachineBlock } from '../types'
 import { layoutMachine } from './layout'
 import type { Box, MachineLayout, Point } from './layout'
@@ -32,6 +33,7 @@ interface NodeShape {
   titleIndent: number
   notes: string[]
   chipRows: { text: string; w: number; now: boolean }[][]
+  headerH: number
 }
 
 interface PillShape {
@@ -84,19 +86,20 @@ function chipsOf(state: MachineState): { text: string; now: boolean }[] {
 }
 
 function nodeShape(state: MachineState): NodeShape {
-  const titleIndent = state.final ? 18 : 0
+  const titleIndent = state.final ? S.finalSize + S.finalGap : 0
   const titleW = textWidth(state.label, F.title) + titleIndent
-  const inner = S.nodeMaxWidth - 2 * S.padX
+  const inset = S.border + S.padX
+  const inner = S.nodeMaxWidth - 2 * inset
   const chips = chipsOf(state).map((c) => ({ ...c, w: textWidth(c.text, F.chip) + 2 * S.chipPadX }))
   const chipsW = chips.reduce((s, c) => s + c.w + S.chipGap, 0) - S.chipGap
-  const notes = state.note ? wrapText(state.note, Math.max(inner, Math.min(inner, titleW)), F.body) : []
+  const notes = state.note ? wrapText(state.note, inner, F.body) : []
   const notesW = Math.max(0, ...notes.map((n) => textWidth(n, F.body)))
-  const w = Math.min(S.nodeMaxWidth, Math.max(S.nodeMinWidth, titleW + 2 * S.padX, notesW + 2 * S.padX, Math.min(chipsW, inner) + 2 * S.padX))
+  const w = Math.min(S.nodeMaxWidth, Math.max(S.nodeMinWidth, titleW + 2 * inset, notesW + 2 * inset, Math.min(chipsW, inner) + 2 * inset))
   const rows: { text: string; w: number; now: boolean }[][] = []
   let row: { text: string; w: number; now: boolean }[] = []
   let used = 0
   for (const c of chips) {
-    if (row.length && used + c.w > w - 2 * S.padX) {
+    if (row.length && used + c.w > w - 2 * inset) {
       rows.push(row)
       row = []
       used = 0
@@ -105,22 +108,26 @@ function nodeShape(state: MachineState): NodeShape {
     used += c.w + S.chipGap
   }
   if (row.length) rows.push(row)
-  const h = S.padY + F.title.line + (notes.length ? S.gapY + notes.length * F.body.line : 0) + (rows.length ? S.chipGap * 2 + rows.length * (S.chipHeight + S.chipGap) - S.chipGap : 0) + S.padY
-  return { state, w: Math.ceil(w / 2) * 2, h: Math.ceil(h / 2) * 2, titleIndent, notes, chipRows: rows }
+  const headerH = S.border + S.padY + F.title.line + (notes.length ? S.gapY + notes.length * F.body.line : 0) + S.padY
+  const chipsH = rows.length ? 2 * S.chipRowPad + rows.length * (S.chipHeight + S.chipGap) - S.chipGap : 0
+  return { state, w: Math.ceil(w), h: headerH + chipsH + S.border, titleIndent, notes, chipRows: rows, headerH }
 }
+
+const markWidth = (platform: string | undefined): number => (platform && PLATFORM_MARKS[platform] ? textWidth(PLATFORM_MARKS[platform], F.mark) + 2 * S.markPadX : 0)
 
 function pillShape(t: MachineTransition): PillShape {
   const event = `${t.event}${typeof t.count === 'number' && t.count > 0 ? ` ×${t.count.toLocaleString('en-US')}` : ''}`
-  const lines: TextRun[] = [{ text: event, cls: 'rmPillText', size: F.pill.size, width: textWidth(event, F.pill) }]
-  if (t.tool) lines.push({ text: t.tool, cls: 'rmPillTool', size: F.tool.size, width: textWidth(t.tool, F.tool) })
+  const mark = markWidth(t.platform)
+  const lines: TextRun[] = [{ text: event, cls: 'rmPillText', size: F.pill.size, width: textWidth(event, F.pill) + (mark ? mark + S.markGap : 0) }]
   const meta = [t.at ? shortDate(t.at) : '', t.note ?? ''].filter(Boolean).join(' · ')
-  if (meta) {
-    const clipped = wrapText(meta, S.pillMaxWidth - 2 * S.pillPadX, F.tool, 1)[0] ?? ''
+  if (t.tool) lines.push({ text: t.tool, cls: 'rmPillTool', size: F.tool.size, width: textWidth(t.tool, F.tool) })
+  else if (meta) {
+    const clipped = wrapText(meta, S.pillMaxWidth - 2 * (S.pillPadX + S.pillBorder), F.tool, 1)[0] ?? ''
     lines.push({ text: clipped, cls: 'rmPillMeta', size: F.tool.size, width: textWidth(clipped, F.tool) })
   }
-  const w = Math.min(S.pillMaxWidth, Math.max(...lines.map((l) => l.width)) + 2 * S.pillPadX)
-  const h = 2 * S.pillPadY + lines.reduce((s, l, i) => s + (i === 0 ? F.pill.line : F.tool.line), 0)
-  return { t, w: Math.ceil(w / 2) * 2, h: Math.ceil(h / 2) * 2, lines }
+  const w = Math.min(S.pillMaxWidth, Math.max(...lines.map((l) => l.width)) + 2 * (S.pillPadX + S.pillBorder))
+  const h = 2 * (S.pillPadY + S.pillBorder) + lines.reduce((s, _l, i) => s + (i === 0 ? F.pill.line : F.tool.line), 0)
+  return { t, w: Math.ceil(w), h, lines }
 }
 
 function roundedPath(points: Point[], r: number): string {
@@ -167,6 +174,17 @@ function chip(x: number, y: number, c: { text: string; w: number; now: boolean }
   return `<g class="rmChip${c.now ? ' rmChipNow' : ''}"><rect class="rmChipBox" x="${x}" y="${y}" width="${c.w}" height="${S.chipHeight}" rx="${S.chipRadius}"/><text class="rmChipText" x="${x + S.chipPadX}" y="${y + S.chipHeight - 5}">${escapeXml(c.text)}</text></g>`
 }
 
+function initialMarker(box: Box): string {
+  const size = S.initialSize
+  const mx = box.x - S.initialGap - size
+  const my = box.y
+  const r = size / S.initialDotRatio
+  const tip = { x: box.x - S.initialGap / 2, y: my + size - r }
+  const head = S.arrow * S.edge
+  const end = { x: tip.x - head / 2, y: tip.y }
+  return `<circle class="rmInitial" cx="${mx + r}" cy="${my + r}" r="${r}"/><path class="rmInitialPath" d="M${mx + r} ${my + r} Q${mx + r} ${tip.y} ${mx + r + size / 2} ${tip.y} L${end.x} ${end.y}"/>${arrowHead({ x: end.x - 1, y: tip.y }, tip, 'rmInitial')}`
+}
+
 function nodeSvg(shape: NodeShape, box: Box, near: boolean): string {
   const st = shape.state
   const parts: string[] = []
@@ -175,30 +193,32 @@ function nodeSvg(shape: NodeShape, box: Box, near: boolean): string {
   const cls = ['rmNode', `rmTone${tone[0].toUpperCase()}${tone.slice(1)}`, visited ? '' : 'rmUnvisited', st.current ? 'rmCurrent' : '', near ? 'rmNear' : ''].filter(Boolean).join(' ')
   parts.push(`<g class="${cls}" data-id="${escapeXml(st.id)}" tabindex="0" role="button" aria-label="${escapeXml(`${st.label}${st.current ? ', where it stands now' : ''}`)}">`)
   if (st.current) {
-    const o = S.ringGap + S.ring / 2
+    const o = S.border / 2 + S.ringGap + S.ring / 2
     parts.push(`<rect class="rmRing" x="${box.x - o}" y="${box.y - o}" width="${box.w + 2 * o}" height="${box.h + 2 * o}" rx="${S.radius + o}"/>`)
   }
-  if (st.initial) {
-    const dx = box.x - 14
-    const dy = box.y - 8
-    parts.push(`<circle class="rmInitial" cx="${dx}" cy="${dy}" r="${S.initialDot}"/><path class="rmInitialPath" d="M${dx} ${dy} V${box.y + 12} H${box.x - 8}"/>${arrowHead({ x: box.x - 12, y: box.y + 12 }, { x: box.x, y: box.y + 12 }, 'rmInitial')}`)
+  if (st.initial) parts.push(initialMarker(box))
+  const half = S.border / 2
+  parts.push(`<rect class="rmMask" x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="${S.radius}"/>`)
+  parts.push(`<rect class="rmNodeBox" x="${box.x + half}" y="${box.y + half}" width="${box.w - S.border}" height="${box.h - S.border}" rx="${S.radius - half}"/>`)
+  const x = box.x + S.border + S.padX
+  let top = box.y + S.border + S.padY
+  const baseline = (line: number, size: number) => top + (line + size * F.capRatio) / 2
+  if (st.final) {
+    const c = S.finalSize / 2
+    const cy = top + F.title.line / 2
+    parts.push(`<circle class="rmFinal" cx="${x + c}" cy="${cy}" r="${c - 1}"/><circle class="rmFinalDot" cx="${x + c}" cy="${cy}" r="${S.finalDot}"/>`)
   }
-  parts.push(`<rect class="rmNodeMask" x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="${S.radius}"/>`)
-  parts.push(`<rect class="rmNodeBox" x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="${S.radius}"/>`)
-  let y = box.y + S.padY + F.title.size - 1
-  const x = box.x + S.padX
-  if (st.final) parts.push(`<circle class="rmFinal" cx="${x + 6}" cy="${y - 5}" r="6"/><circle class="rmFinalDot" cx="${x + 6}" cy="${y - 5}" r="3"/>`)
-  parts.push(`<text class="rmTitle" x="${x + shape.titleIndent}" y="${y}">${escapeXml(st.label)}</text>`)
-  y += F.title.line - F.title.size + 1
+  parts.push(`<text class="rmTitle" x="${x + shape.titleIndent}" y="${Math.round(baseline(F.title.line, F.title.size) * 10) / 10}">${escapeXml(st.label)}</text>`)
+  top += F.title.line
   if (shape.notes.length) {
-    y += S.gapY
+    top += S.gapY
     for (const line of shape.notes) {
-      y += F.body.line
-      parts.push(`<text class="rmNote" x="${x}" y="${y - 4}">${escapeXml(line)}</text>`)
+      parts.push(`<text class="rmNote" x="${x}" y="${Math.round(baseline(F.body.line, F.body.size) * 10) / 10}">${escapeXml(line)}</text>`)
+      top += F.body.line
     }
   }
   if (shape.chipRows.length) {
-    y += S.chipGap * 2
+    let y = box.y + shape.headerH + S.chipRowPad
     for (const row of shape.chipRows) {
       let cx = x
       for (const c of row) {
@@ -218,19 +238,28 @@ function edgeSvg(pill: PillShape, points: Point[], label: Box, near: boolean): s
   const end = points[points.length - 1]
   const before = points[points.length - 2] ?? end
   const len = Math.hypot(end.x - before.x, end.y - before.y) || 1
-  const cut = Math.min(S.arrow * S.edge - 2, len)
+  const cut = Math.min((S.arrow * S.edge) / 2, len)
   const trimmed = [...points.slice(0, -1), { x: end.x - ((end.x - before.x) / len) * cut, y: end.y - ((end.y - before.y) / len) * cut }]
   const d = roundedPath(trimmed, S.corner)
   const cls = ['rmEdge', t.taken ? 'rmTaken' : '', t.next ? 'rmNext' : '', t.dashed ? 'rmDashed' : '', near ? 'rmNear' : ''].filter(Boolean).join(' ')
   const parts = [`<g class="${cls}" data-id="${escapeXml(t.id)}">`]
   parts.push(`<path class="rmEdgeHit" d="${d}"/><path class="rmEdgePath" d="${d}"/>${arrowHead(before, end, head)}`)
   const rx = Math.min(S.pillRadius, label.h / 2)
-  parts.push(`<rect class="rmPillBox" x="${label.x}" y="${label.y}" width="${label.w}" height="${label.h}" rx="${rx}"/>`)
-  let y = label.y + S.pillPadY
+  const half = S.pillBorder / 2
+  parts.push(`<rect class="rmMask" x="${label.x}" y="${label.y}" width="${label.w}" height="${label.h}" rx="${rx}"/>`)
+  parts.push(`<rect class="rmPillBox" x="${label.x + half}" y="${label.y + half}" width="${label.w - S.pillBorder}" height="${label.h - S.pillBorder}" rx="${rx - half}"/>`)
+  let top = label.y + S.pillBorder + S.pillPadY
+  const mid = label.x + label.w / 2
   pill.lines.forEach((line, i) => {
     const lh = i === 0 ? F.pill.line : F.tool.line
-    y += lh
-    parts.push(`<text class="${line.cls}" x="${label.x + label.w / 2}" y="${y - (lh - line.size) / 2 - 1}" text-anchor="middle">${escapeXml(line.text)}</text>`)
+    const y = Math.round((top + (lh + line.size * F.capRatio) / 2) * 10) / 10
+    const mark = i === 0 ? markWidth(t.platform) : 0
+    if (mark) {
+      const left = mid - line.width / 2
+      parts.push(`<g class="rmMark" data-platform="${escapeXml(t.platform!)}"><rect class="rmMarkBox" x="${left}" y="${top + (lh - S.markHeight) / 2}" width="${mark}" height="${S.markHeight}" rx="${S.markRadius}"/><text class="rmMarkText" x="${left + mark / 2}" y="${Math.round((top + (lh + F.mark.size * F.capRatio) / 2) * 10) / 10}" text-anchor="middle">${escapeXml(PLATFORM_MARKS[t.platform!])}</text></g>`)
+      parts.push(`<text class="${line.cls}" x="${left + mark + S.markGap}" y="${y}">${escapeXml(line.text)}</text>`)
+    } else parts.push(`<text class="${line.cls}" x="${mid}" y="${y}" text-anchor="middle">${escapeXml(line.text)}</text>`)
+    top += lh
   })
   parts.push('</g>')
   return parts.join('')
@@ -261,7 +290,7 @@ export function drawMachine(block: StateMachineBlock, options: MachineDrawOption
   const shapes = new Map(block.states.map((s) => [s.id, nodeShape(s)]))
   const pills = new Map(block.transitions.map((t) => [t.id, pillShape(t)]))
   const layout = layoutMachine(
-    block.states.map((s) => ({ id: s.id, w: shapes.get(s.id)!.w, h: shapes.get(s.id)!.h })),
+    block.states.map((s) => ({ id: s.id, w: shapes.get(s.id)!.w, h: shapes.get(s.id)!.h, initial: s.initial === true, final: s.final === true })),
     block.transitions.map((t) => ({ id: t.id, from: t.from, to: t.to, w: pills.get(t.id)!.w, h: pills.get(t.id)!.h })),
     direction,
     { nodeSep: S.nodeSep, dummySep: S.dummySep, rankGap: S.rankGap, laneGap: S.laneGap, laneStep: S.laneStep, margin: S.margin, port: S.port },
@@ -279,7 +308,7 @@ export function drawMachine(block: StateMachineBlock, options: MachineDrawOption
   const edges = order.map((t) => placedEdges[edgeIndex.get(t.id)!]).filter(Boolean)
   const nodes = block.states.map((s) => nodeSvg(shapes.get(s.id)!, layout.nodes.get(s.id)!, near.nodes.has(s.id)))
   const style = options.standalone ? `<style>${machineCss()}</style>` : ''
-  const rootClass = options.standalone ? 'rmSvg rmMachine' : 'rmSvg'
+  const rootClass = [options.standalone ? 'rmSvg rmMachine' : 'rmSvg', options.theme ?? ''].filter(Boolean).join(' ')
   const attrs = [`class="${rootClass}"`, `xmlns="http://www.w3.org/2000/svg"`, `viewBox="0 0 ${layout.width} ${layout.height}"`, `width="${layout.width}"`, `height="${layout.height}"`, `role="img"`, `aria-labelledby="${slug}Title ${slug}Desc"`, options.theme ? `data-theme="${options.theme}"` : '', options.standalone && options.selected ? `data-selected="${escapeXml(options.selected)}"` : ''].filter(Boolean).join(' ')
   const svg = `<svg ${attrs}>${head.join('')}${style}<g class="rmEdges">${edges.join('')}</g><g class="rmNodes">${nodes.join('')}</g></svg>`
   return { svg, width: layout.width, height: layout.height, layout }

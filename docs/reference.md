@@ -327,7 +327,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log version`](#log-version) | Which log runs here and the newest release | any (none) | `[--check]` `[--json]` | none | none | `version` | PreToolUse, PostToolUse · PostToolUse | no | 73, 167, 30, 38, 39, 40, 41 |
 | [`log update`](#log-update) | Update log to the newest release and resume what ran | any (none) | `[--to <v>]` `[--track <stable|nightly>]` `[--approvedBy <who>]` `[--apply]` `[--json]` | none | none | `updateLog`, `updateLogLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 167, 30, 38, 39, 40, 41 |
 | [`log models`](#log-models) | Is each pinned local model here | any (none) | `[--approvedBy <who>]` `[--fetch]` `[--json]` | none | none | `models`, `modelsLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 167, 30, 38, 39, 40, 41 |
-| [`log relate`](#log-relate) | The Relate graph of the owner's people, rooms and network, from log.db | any (none) | `[--json]` `[--person <text>]` `[--to <handle>]` `[--view <person|route|network>]` | none | none | `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk`, `relateMachine`, `relateQuery` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
+| [`log relate`](#log-relate) | The Relate graph of the owner's people, rooms and network, from log.db | any (none) | `[--json]` `[--person <text>]` `[--to <h>]` `[--view <person|route|network>]` `[--platform <all|twitter|discord|instagram|slack|reddit|facebook|linkedin>]` | none | none | `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk`, `relateMachine`, `relateQuery` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
 | [`log people`](#log-people) | One person across platforms: link identities into a person, Fellegi-Sunter suggestions, the person card | any (none) | `[--json]` `[--limit <integer 1..200>]` `[--check]` `[--approvedBy <text>]` `[--name <text>]` `[--evidence <text>]` | none | none | `people`, `peopleShow`, `peopleSuggest`, `peopleLink`, `peopleUnlink`, `peopleDifferent` | PreToolUse, PostToolUse · PostToolUse | no | 30, 89, 134, 154, 163, 30, 38, 39, 40, 41 |
 | [`log network`](#log-network) | The owner's network in log.db, for the Relate graph | any (none) | `[--from <dir>]` `[--account <handle>]` `[--json]` | none | none | `networkImport`, `networkStatus` | PreToolUse, PostToolUse · PostToolUse | no | 89, 134, 154, 163, 30, 38, 39, 40, 41 |
 | [`log timing`](#log-timing) | Where the time goes: p50, p95, p99 per tool and stage from log.db, one call as a waterfall, or landed to pushed per platform | any (none) | `[--tool <name>]` `[--hours <number>]` `[--stages <number>]` `[--top <number>]` `[--all]` `[--call <callId>]` `[--turns]` `[--landed]` `[--json]` | none | none | `timing` | PreToolUse, PostToolUse · PostToolUse | no | 26, 73, 165, 30, 38, 39, 40, 41 |
@@ -1618,7 +1618,7 @@ log relate status [--json]
 log relate verify [--json]
 log relate ask "<text>" [--json]
 log relate query "<cypher>" [--json]
-log relate machine [--person|--to <handle>] [--view <view>] [--json]
+log relate machine [--person|--to <h>] [--view <v>] [--platform <p>] [--json]
 ```
 
 #### log people

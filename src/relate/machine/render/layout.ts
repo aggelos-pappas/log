@@ -4,6 +4,8 @@ export interface LayoutNode {
   id: string
   w: number
   h: number
+  initial?: boolean
+  final?: boolean
 }
 
 export interface LayoutEdge {
@@ -97,6 +99,9 @@ function ranksOf(nodes: readonly LayoutNode[], edges: readonly LayoutEdge[]): { 
     }
     if (!moved) break
   }
+  for (const n of nodes) if (n.initial) rank.set(n.id, 0)
+  const last = Math.max(0, ...nodes.filter((n) => !n.final).map((n) => rank.get(n.id)! + 1), ...nodes.map((n) => rank.get(n.id)!))
+  for (const n of nodes) if (n.final && !n.initial) rank.set(n.id, last)
   return { rank, back }
 }
 
@@ -157,13 +162,11 @@ function fanned(count: number, index: number, span: number, port: number): numbe
 
 function snapPorts(node: Item, list: Chain[], toward: (c: Chain) => number, gaps: LayoutGaps): Map<string, number> {
   const out = new Map<string, number>()
-  const slot = (node.sc - 2 * gaps.port) / list.length
-  list.forEach((ch, i) => {
-    const low = node.c - node.sc / 2 + gaps.port + slot * i
-    const high = low + slot
-    const want = toward(ch)
-    out.set(ch.edge.id, want >= low + 4 && want <= high - 4 ? want : node.c + fanned(list.length, i, node.sc, gaps.port))
-  })
+  const low = node.c - node.sc / 2 + gaps.port
+  const high = node.c + node.sc / 2 - gaps.port
+  const wanted = list.map((ch) => Math.min(high, Math.max(low, toward(ch))))
+  const apart = wanted.every((w, i) => i === 0 || w - wanted[i - 1] >= gaps.port)
+  list.forEach((ch, i) => out.set(ch.edge.id, apart ? wanted[i] : node.c + fanned(list.length, i, node.sc, gaps.port)))
   return out
 }
 

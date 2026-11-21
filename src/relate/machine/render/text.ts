@@ -7,12 +7,17 @@ export function machineText(block: StateMachineBlock): string {
   const lines: string[] = []
   if (block.title) lines.push(`**${block.title}**`)
   if (block.summary) lines.push(block.summary)
+  const linked = (block.accounts ?? []).filter((a) => a.link === 'linked')
+  const suggested = (block.accounts ?? []).filter((a) => a.link === 'suggested')
+  if (linked.length) lines.push(`Accounts: ${linked.map((a) => `@${a.handle.replace(/^@/, '')} on ${a.platform}`).join(', ')}`)
+  if (suggested.length) lines.push(`Suggested link, not merged: ${suggested.map((a) => `@${a.handle.replace(/^@/, '')} on ${a.platform}`).join(', ')}`)
+  if (block.platforms?.length) lines.push(`Platforms: ${block.platforms.map((p) => `${p.platform}${p.platform === (block.platform ?? 'all') ? ' (shown)' : ''} ${p.count}`).join(' · ')}`)
   const states = block.states.map((s) => `${s.current ? '▶ ' : ''}${s.label}${typeof s.count === 'number' ? ` (${s.count})` : ''}${s.chips?.length ? ` [${s.chips.join(', ')}]` : ''}${s.visited === false ? '' : s.at ? ` since ${when(s.at)}` : ''}`)
   lines.push(`States: ${states.join(' · ')}`)
   const taken = block.transitions.filter((t) => t.taken && t.at).sort((a, b) => (a.at ?? 0) - (b.at ?? 0))
   if (taken.length) {
     lines.push('Path taken:')
-    taken.forEach((t, i) => lines.push(`${i + 1}. ${when(t.at)}: ${t.note ?? t.event}, ${label.get(t.from)} → ${label.get(t.to)} (the move: ${t.event}${t.tool ? ` · ${t.tool}` : ''})`))
+    taken.forEach((t, i) => lines.push(`${i + 1}. ${when(t.at)}: ${t.note ?? t.event}${t.platform && linked.length > 1 ? ` on ${t.platform}` : ''}, ${label.get(t.from)} → ${label.get(t.to)} (the move: ${t.event}${t.tool ? ` · ${t.tool}` : ''})`))
   }
   const counted = block.transitions.filter((t) => typeof t.count === 'number')
   if (counted.length) {

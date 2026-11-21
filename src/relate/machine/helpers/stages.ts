@@ -1,5 +1,5 @@
 import { MACHINE_BLOCK, MACHINE_EDGES, MACHINE_LIMITS, NETWORK_NAMES, PLATFORM_MOVES, RING_STAGE, STAGE_FACTS, STAGES, STUCK_AFTER_MS } from '../types'
-import type { MachineDetail, MachineEdgeSpec, MachineState, MachineTransition, Move, PersonStanding, RouteLink, Stage, StageEvidence, StageStep, StateMachineBlock } from '../types'
+import type { EvidenceTime, MachineAccount, MachineDetail, MachineEdgeSpec, MachineState, MachineTransition, Move, PersonStanding, RouteLink, Stage, StageEvidence, StageStep, StateMachineBlock } from '../types'
 
 const rankOf = (stage: Stage): number => STAGES.indexOf(stage)
 
@@ -12,17 +12,18 @@ export const whoOf = (e: Pick<StageEvidence, 'handle' | 'name' | 'key'>): string
 const isoDay = (ms: number | null): string => (ms ? new Date(ms).toISOString().slice(0, 10) : 'unknown')
 
 export function stepsOf(e: StageEvidence): StageStep[] {
+  const on = (field: EvidenceTime): string => e.from?.[field] ?? e.platform
   const steps: StageStep[] = []
-  if (e.follows) steps.push({ stage: 'followsYou', at: e.followedAt, event: 'they followed you', by: 'them' })
-  if (e.near.length) steps.push({ stage: 'nearYou', at: e.nearAt, event: `in ${e.near[0]}`, by: 'them' })
-  if (e.engagedAt !== null || e.engagedHow) steps.push({ stage: 'engaged', at: e.engagedAt, event: e.engagedHow ? `they ${e.engagedHow}` : 'they engaged', by: 'them' })
+  if (e.follows) steps.push({ stage: 'followsYou', at: e.followedAt, event: 'they followed you', by: 'them', platform: on('followedAt') })
+  if (e.near.length) steps.push({ stage: 'nearYou', at: e.nearAt, event: `in ${e.near[0]}`, by: 'them', platform: on('nearAt') })
+  if (e.engagedAt !== null || e.engagedHow) steps.push({ stage: 'engaged', at: e.engagedAt, event: e.engagedHow ? `they ${e.engagedHow}` : 'they engaged', by: 'them', platform: on('engagedAt') })
   const they = e.theyWroteAt
   const you = e.youWroteAt
-  if (they !== null && (you === null || they <= you)) steps.push({ stage: 'engaged', at: they, event: 'they DMed you', by: 'them' })
-  if (you !== null && (they === null || you < they)) steps.push({ stage: 'reachedOut', at: you, event: 'you DMed them', by: 'you' })
-  if (they !== null && you !== null) steps.push(they <= you ? { stage: 'inConversation', at: you, event: 'you answered', by: 'you' } : { stage: 'inConversation', at: they, event: 'they replied', by: 'them' })
+  if (they !== null && (you === null || they <= you)) steps.push({ stage: 'engaged', at: they, event: 'they DMed you', by: 'them', platform: on('theyWroteAt') })
+  if (you !== null && (they === null || you < they)) steps.push({ stage: 'reachedOut', at: you, event: 'you DMed them', by: 'you', platform: on('youWroteAt') })
+  if (they !== null && you !== null) steps.push(they <= you ? { stage: 'inConversation', at: you, event: 'you answered', by: 'you', platform: on('youWroteAt') } : { stage: 'inConversation', at: they, event: 'they replied', by: 'them', platform: on('theyWroteAt') })
   const ringStage = e.ring !== null ? RING_STAGE[e.ring] : undefined
-  if (ringStage && ringStage !== 'new' && !steps.some((s) => s.stage === ringStage)) steps.push({ stage: ringStage, at: null, event: `network map ring ${e.ring}`, by: 'them' })
+  if (ringStage && ringStage !== 'new' && !steps.some((s) => s.stage === ringStage)) steps.push({ stage: ringStage, at: null, event: `network map ring ${e.ring}`, by: 'them', platform: e.platform })
   return steps.sort((a, b) => (a.at ?? Number.MAX_SAFE_INTEGER) - (b.at ?? Number.MAX_SAFE_INTEGER) || rankOf(a.stage) - rankOf(b.stage))
 }
 
@@ -77,7 +78,7 @@ function stageState(stage: Stage, extra: Partial<MachineState> = {}): MachineSta
   return { id: stage, label: facts.label, note: facts.note, tone: facts.tone, ...(stage === 'new' ? { initial: true } : {}), ...(stage === 'inConversation' ? { final: true } : {}), ...extra }
 }
 
-export function personBlock(standing: PersonStanding, throughSeq: number | null): StateMachineBlock {
+export function personBlock(standing: PersonStanding, throughSeq: number | null, accounts: readonly MachineAccount[] = []): StateMachineBlock {
   const e = standing.evidence
   const platform = e.platform
   const { taken, reached, also } = pathOf(standing.steps)
@@ -85,8 +86,16 @@ export function personBlock(standing: PersonStanding, throughSeq: number | null)
   let extra = 0
   for (const t of taken) {
     const base = transitions.find((x) => x.from === t.from && x.to === t.to)
-    const mark = { taken: true, at: t.step.at, by: t.step.by, note: t.step.event }
-    if (base) Object.assign(base, mark)
+    const mark = { taken: true, at: t.step.at, by: t.step.by, note: t.step.event, ...(t.step.platform ? { platform: t.step.platform } : {}) }
+    const spec = MACHINE_EDGES.find((x) => x.from === t.from && x.to === t.to)
+    const stepTool = spec && t.step.platform ? toolFor(t.step.platform, spec.move) : undefined
+    if (base) {
+      Object.assign(base, mark)
+      if (t.step.platform && t.step.platform !== platform) {
+        if (stepTool) base.tool = stepTool
+        else delete base.tool
+      }
+    }
     else transitions.push({ id: `took${++extra}`, from: t.from, to: t.to, event: t.step.event, ...mark, note: undefined })
   }
   const next = nextOf(standing, platform)
@@ -106,6 +115,10 @@ export function personBlock(standing: PersonStanding, throughSeq: number | null)
     if (stage === 'nearYou' && e.near.length) out.push({ label: 'Shared', value: e.near.join(', ') })
     if (stage === standing.stage) {
       out.push({ label: 'Who', value: `${whoOf(e)} on ${platform}${e.name && e.handle && e.name !== e.handle ? ` (${e.name})` : ''}` })
+      const linked = accounts.filter((a) => a.link === 'linked')
+      const suggested = accounts.filter((a) => a.link === 'suggested')
+      if (linked.length > 1) out.push({ label: 'Linked accounts', value: clip(linked.map((a) => `@${a.handle} on ${a.platform}`).join(', '), MACHINE_LIMITS.note) })
+      if (suggested.length) out.push({ label: 'Suggested link', value: clip(suggested.map((a) => `@${a.handle} on ${a.platform}`).join(', '), MACHINE_LIMITS.note) })
       if (e.ring !== null) out.push({ label: 'Network ring', value: String(e.ring) })
       if (e.lastAt) out.push({ label: 'Last activity', value: isoDay(e.lastAt) })
     }
@@ -118,8 +131,11 @@ export function personBlock(standing: PersonStanding, throughSeq: number | null)
     return stageState(stage, { visited, ...(step?.at ? { at: step.at } : {}), ...(stage === standing.stage ? { current: true } : {}), ...(chips.length ? { chips } : {}), details: details(stage) })
   })
   const nextT = transitions.find((t) => t.next)
-  const summary = `${whoOf(e)} on ${platform} stands at "${STAGE_FACTS[standing.stage].label}"${standing.steps.length ? ` after ${standing.steps.length} step${standing.steps.length === 1 ? '' : 's'}` : ''}${nextT ? `; next: ${nextT.event}${nextT.tool ? ` (${nextT.tool})` : ''}` : ''}${throughSeq !== null ? `. Relate graph through event ${throughSeq}.` : '.'}`
-  return { type: MACHINE_BLOCK, title: `Where you are with ${whoOf(e)}`, view: 'person', summary, states, transitions: transitions.slice(0, MACHINE_LIMITS.transitions) }
+  const linkedCount = accounts.filter((a) => a.link === 'linked').length
+  const where = linkedCount > 1 ? `across ${linkedCount} linked accounts` : `on ${platform}`
+  const summary = `${whoOf(e)} ${where} stands at "${STAGE_FACTS[standing.stage].label}"${standing.steps.length ? ` after ${standing.steps.length} step${standing.steps.length === 1 ? '' : 's'}` : ''}${nextT ? `; next: ${nextT.event}${nextT.tool ? ` (${nextT.tool})` : ''}` : ''}${throughSeq !== null ? `. Relate graph through event ${throughSeq}.` : '.'}`
+  if (linkedCount < 2) for (const t of transitions) delete t.platform
+  return { type: MACHINE_BLOCK, title: `Where you are with ${whoOf(e)}`, view: 'person', summary, states, transitions: transitions.slice(0, MACHINE_LIMITS.transitions), ...(accounts.length ? { accounts: accounts.slice(0, MACHINE_LIMITS.accounts) } : {}) }
 }
 
 export function networkBlock(standings: readonly PersonStanding[], throughSeq: number | null, now: number = Date.now()): StateMachineBlock {

@@ -1,8 +1,8 @@
 import { join } from "node:path";
 import { buildGraph, pointerOf, eventsThrough, queryGraph, refreshGraph, relateContext, verifyGraph, graphDir } from "../../relate/graph/index.ts";
 import type { GraphCounts, NetworkGraphCounts } from "../../relate/graph/index.ts";
-import { MACHINE_VIEWS, relateMachine } from "../../relate/machine/index.ts";
-import type { MachineView } from "../../relate/machine/index.ts";
+import { MACHINE_PLATFORMS, MACHINE_VIEWS, relateMachine } from "../../relate/machine/index.ts";
+import type { MachinePlatform, MachineView } from "../../relate/machine/index.ts";
 import { defaultDbPath, openDatabase } from "../../storage/schema/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
@@ -13,7 +13,7 @@ export const RELATE_USAGE = [
   "       log relate verify [--json]",
   "       log relate ask \"<text>\" [--json]",
   "       log relate query \"<cypher>\" [--json]",
-  "       log relate machine [--person|--to <handle>] [--view <view>] [--json]",
+  "       log relate machine [--person|--to <h>] [--view <v>] [--platform <p>] [--json]",
 ].join("\n");
 
 export const RELATE_INPUT: CommandInput = {
@@ -24,12 +24,13 @@ export const RELATE_INPUT: CommandInput = {
     { words: ["ask"], summary: "Show the connected context (chats, engagement, shared groups, who could introduce, same orbit) for the people a text names", positionals: [{ name: "text", kind: "string", required: true, description: "A prompt or note naming people, e.g. \"reply to @someone\"" }], flags: [JSON_FLAG] },
     {
       words: ["machine"],
-      summary: "Draw relationships as a state machine: one person, the route to someone, or the network",
+      summary: "A relationship state machine: one person, the route to someone, or the network",
       positionals: [],
       flags: [
         { name: "person", kind: "string", description: "Who: where you stand and the next move" },
         { name: "to", kind: "string", description: "Who: the route to them through people you know" },
         { name: "view", kind: "enum", values: MACHINE_VIEWS, description: "person, route or network" },
+        { name: "platform", kind: "enum", values: MACHINE_PLATFORMS, description: "Only this platform's accounts: all, twitter, discord, instagram, slack, reddit, facebook or linkedin" },
         JSON_FLAG,
       ],
     },
@@ -94,7 +95,7 @@ export const relateCommand: Command = {
     }
     if (sub === "machine" && rest.length === 0) {
       const flag = (name: string) => (typeof parsed.flags[name] === "string" ? (parsed.flags[name] as string) : undefined);
-      const answer = relateMachine({ view: flag("view") as MachineView | undefined, person: flag("person"), to: flag("to") }, dbPath);
+      const answer = relateMachine({ view: flag("view") as MachineView | undefined, person: flag("person"), to: flag("to"), platform: flag("platform") as MachinePlatform | undefined }, dbPath);
       if (!answer.ok) return refuse("relate machine", answer.code, answer.problem);
       if (json) return { code: 0, stdout: JSON.stringify({ block: answer.block, text: answer.text, throughSeq: answer.throughSeq }, null, 2) };
       return { code: 0, stdout: answer.text };

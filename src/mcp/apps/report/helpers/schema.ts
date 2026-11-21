@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MACHINE_DIRECTIONS, MACHINE_LIMITS as M, MACHINE_TONES, MACHINE_VIEWS } from "../../../../relate/machine/types.ts";
+import { MACHINE_DIRECTIONS, MACHINE_LIMITS as M, MACHINE_PLATFORMS, MACHINE_TONES, MACHINE_VIEWS } from "../../../../relate/machine/types.ts";
 import { REPORT_BLOCK_TYPES, REPORT_LIMITS as L } from "../types.ts";
 import type { ReportCheck, ReportRefusal, ReportSpec } from "../types.ts";
 
@@ -83,6 +83,15 @@ const machineTransition = z.strictObject({
   next: z.boolean().optional(),
   dashed: z.boolean().optional(),
   note: line(M.note).optional(),
+  platform: line(M.platform).optional(),
+});
+const machineAccount = z.strictObject({ platform: line(M.platform), handle: line(M.label), link: z.enum(["linked", "suggested"]) });
+const machinePlatformView = z.strictObject({
+  platform: z.enum(MACHINE_PLATFORMS),
+  count: finite.min(0),
+  summary: line(L.text).optional(),
+  states: z.array(machineState).min(1).max(M.states),
+  transitions: z.array(machineTransition).max(M.transitions),
 });
 const stateMachine = z
   .strictObject({
@@ -93,6 +102,9 @@ const stateMachine = z
     summary: line(L.text).optional(),
     states: z.array(machineState).min(1).max(M.states),
     transitions: z.array(machineTransition).max(M.transitions),
+    platform: z.enum(MACHINE_PLATFORMS).optional(),
+    accounts: z.array(machineAccount).max(M.accounts).optional(),
+    platforms: z.array(machinePlatformView).max(MACHINE_PLATFORMS.length).optional(),
   })
   .superRefine((block, ctx) => {
     const ids = new Set(block.states.map((s) => s.id));

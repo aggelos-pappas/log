@@ -6,7 +6,7 @@ import { openDatabase } from '../../storage/schema/index'
 import { buildGraph } from '../graph/index'
 import { checkReport, reportText } from '../../mcp/apps/report/index'
 import { MACHINE_NOW, MACHINE_TARGET, seedMachineWorld } from './fixtures/machineWorld'
-import { drawMachine, MACHINE_PALETTE, machineCss, relateMachine, standingOf } from './index'
+import { drawMachine, machineText as machineTextOf, MACHINE_FONT, MACHINE_PALETTE, MACHINE_SIZE, machineCss, relateMachine, standingOf } from './index'
 import type { MachineAnswer, StageEvidence, StateMachineBlock } from './index'
 
 type XmlDoc = { getElementsByTagName: (n: string) => { length: number }; documentElement: { getAttribute: (n: string) => string | null; firstElementChild: { tagName: string } | null }; querySelectorAll: (s: string) => { length: number } }
@@ -133,6 +133,82 @@ describe('drawing the machine', () => {
     expect(css).toContain(`--rm-canvas:${MACHINE_PALETTE.dark.canvas}`)
     expect(css).toContain('@media (prefers-color-scheme: dark)')
     expect(css).toContain(':root[data-theme="dark"] .rmMachine')
+    expect(css).toContain('.dark .rmMachine')
+    expect(css).toContain('.rmMachine.rmMachine.light')
+    expect(drawMachine(blockOf(relateMachine({ person: 'ivy_ops' }, world, MACHINE_NOW)), { standalone: true, theme: 'dark' }).svg).toContain('class="rmSvg rmMachine dark"')
+  })
+
+  test('draws with the stately measurements: dim, hit path, rounded corners, dashed guards, initial marker and pills', () => {
+    const css = machineCss()
+    expect(MACHINE_SIZE).toMatchObject({ dim: 0.7, edgeHit: 20, corner: 10, initialSize: 20, initialGap: 4, border: 2, radius: 6, padX: 12, padY: 8, gapY: 2, pillRadius: 14, pillBorder: 2, pillPadX: 8, pillPadY: 4, nodeSep: 50, rankGap: 30, arrow: 5 })
+    expect(MACHINE_FONT.title).toMatchObject({ size: 20, line: 25, weight: 600 })
+    expect(MACHINE_FONT.body).toMatchObject({ size: 12, line: 16 })
+    expect(css).toContain('opacity:0.7')
+    expect(css).toContain('.rmEdgeHit{fill:none;stroke:transparent;stroke-width:20')
+    expect(css).toContain('.rmDashed .rmEdgePath{stroke-dasharray:5 5;stroke-dashoffset:2.5}')
+    const route = drawMachine(blockOf(relateMachine({ to: MACHINE_TARGET }, world, MACHINE_NOW)), { standalone: true })
+    expect(route.svg).toMatch(/class="rmEdgePath" d="[^"]*Q/)
+    const ivy = blockOf(relateMachine({ person: 'ivy_ops' }, world, MACHINE_NOW))
+    const drawn = drawMachine(ivy, { direction: 'right' })
+    const doc = parse(drawn.svg)
+    expect(doc.querySelectorAll('.rmNodeBox').length).toBe(ivy.states.length)
+    const first0 = ivy.states[0]
+    const box0 = drawn.layout.nodes.get(first0.id)!
+    if (!first0.chips?.length && !first0.current && !first0.at) expect(box0.h).toBe(2 * MACHINE_SIZE.border + 2 * MACHINE_SIZE.padY + MACHINE_FONT.title.line + MACHINE_SIZE.gapY + MACHINE_FONT.body.line)
+    const placed = ivy.states.map((st) => ({ st, box: drawn.layout.nodes.get(st.id)! }))
+    const first = Math.min(...placed.map((n) => n.box.x))
+    const last = Math.max(...placed.map((n) => n.box.x))
+    for (const n of placed) if (n.st.initial) expect(n.box.x).toBe(first)
+    for (const n of placed) if (n.st.final) expect(n.box.x).toBe(last)
+    const initial = placed.find((n) => n.st.initial)
+    if (initial) expect(drawn.svg).toContain(`<circle class="rmInitial" cx="${initial.box.x - MACHINE_SIZE.initialGap - MACHINE_SIZE.initialSize + MACHINE_SIZE.initialSize / MACHINE_SIZE.initialDotRatio}"`)
+  })
+})
+
+describe('one person across platforms, and the platform filter', () => {
+  const linkedWorld = (() => {
+    const path = join(mkdtempSync(join(tmpdir(), 'relateMachineLinked-')), 'log.db')
+    const db = openDatabase(path)
+    seedMachineWorld(db)
+    const at = new Date(MACHINE_NOW).toISOString()
+    db.prepare('INSERT INTO persons (personId, name, createdAt, updatedAt) VALUES (?, ?, ?, ?)').run('personGrace', 'Grace', at, at)
+    for (const [platform, userId] of [['twitter', '2000000002'], ['discord', '9000000002']]) db.prepare("INSERT INTO identityLinks (personId, platform, userId, evidence, linkedBy, linkedAt, linkedEventId) VALUES ('personGrace', ?, ?, NULL, 'owner', ?, ?)").run(platform, userId, at, `link${platform}`)
+    buildGraph(path, new Date(MACHINE_NOW))
+    return path
+  })()
+
+  test('computes a linked person from every linked account, tags each move with its platform and lists the accounts', () => {
+    const block = blockOf(relateMachine({ person: 'grace_ships' }, linkedWorld, MACHINE_NOW))
+    expect(block.accounts?.filter((a) => a.link === 'linked').map((a) => a.platform).sort()).toEqual(['discord', 'twitter'])
+    const taken = block.transitions.filter((t) => t.taken)
+    expect(taken.length).toBeGreaterThan(0)
+    for (const t of taken) expect(['twitter', 'discord']).toContain(t.platform ?? '')
+    expect(block.platforms?.map((p) => p.platform)).toEqual(['all', 'twitter', 'discord'])
+    expect(machineTextOf(block)).toMatch(/Accounts: @grace_ships on (twitter|discord), @grace_ships on (twitter|discord)/)
+    for (const t of taken) if (t.tool) expect(t.tool.startsWith(t.platform!)).toBe(true)
+    expect(drawMachine(block, {}).svg).toContain('class="rmMark"')
+  })
+
+  test('shows a same-handle account that nobody linked as a suggested link and never merges it', () => {
+    const block = blockOf(relateMachine({ person: 'grace_ships' }, world, MACHINE_NOW))
+    expect(block.accounts?.length).toBe(2)
+    const linked = block.accounts!.find((a) => a.link === 'linked')!
+    const suggested = block.accounts!.find((a) => a.link === 'suggested')!
+    expect(new Set([linked.platform, suggested.platform])).toEqual(new Set(['twitter', 'discord']))
+    expect(block.platforms).toBeUndefined()
+    expect(machineTextOf(block)).toContain(`Suggested link, not merged: @grace_ships on ${suggested.platform}`)
+  })
+
+  test('filters the network by platform and keeps a count per platform', () => {
+    const all = blockOf(relateMachine({ view: 'network' }, world, MACHINE_NOW))
+    const views = new Map((all.platforms ?? []).map((v) => [v.platform, v]))
+    expect([...views.keys()]).toEqual(['all', 'twitter', 'discord'])
+    const sum = (v: { states: { count?: number }[] }) => v.states.reduce((n, st) => n + (st.count ?? 0), 0)
+    expect(sum(views.get('twitter')!) + sum(views.get('discord')!)).toBe(views.get('twitter')!.count + views.get('discord')!.count)
+    const discord = blockOf(relateMachine({ view: 'network', platform: 'discord' }, world, MACHINE_NOW))
+    expect(discord.platform).toBe('discord')
+    expect(sum(discord)).toBe(views.get('discord')!.count)
+    expect(checkReport({ title: 'Network', blocks: [all] }).ok).toBe(true)
   })
 })
 

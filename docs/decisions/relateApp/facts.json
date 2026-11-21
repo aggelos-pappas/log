@@ -1,0 +1,1986 @@
+[
+ {
+  "section": "node",
+  "file": "2_1o-xvii-r5o.js",
+  "offset": 1579,
+  "linecol": [
+   1,
+   1579
+  ],
+  "evidence": "rea/flow.evidence.json",
+  "evidence_id": "ev_02ac1c0dde519f84dba58913bd4fcad86818b3734f222245861f043752b79cea",
+  "function": {
+   "node_id": "jsrg_node_f88b430c259ca63e7331102ec2c4f4a09f52f0569db380e3d38770be04423d61",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1202,
+    2702
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_3708b574c254511da70f68d6b353a0489100e47735a300d93653d9526303a68f",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    1577,
+    2700
+   ]
+  },
+  "statement": "State node base class: `relative border-(length:--viz-entity-border) rounded-(--viz-entity-radius) text-foreground overflow-hidden outline-none` (border width/radius come from CSS vars).",
+  "needle": "STATE_NODE_BASE_CLASS\",0,a"
+ },
+ {
+  "section": "node",
+  "file": "2_1o-xvii-r5o.js",
+  "offset": 1732,
+  "linecol": [
+   1,
+   1732
+  ],
+  "evidence": "rea/flow.evidence.json",
+  "evidence_id": "ev_02ac1c0dde519f84dba58913bd4fcad86818b3734f222245861f043752b79cea",
+  "function": {
+   "node_id": "jsrg_node_f88b430c259ca63e7331102ec2c4f4a09f52f0569db380e3d38770be04423d61",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1202,
+    2702
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_3708b574c254511da70f68d6b353a0489100e47735a300d93653d9526303a68f",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    1577,
+    2700
+   ]
+  },
+  "statement": "Header padding class `px-(--viz-entity-inset) py-(--viz-entity-header-y)`; header layout `flex items-center justify-start gap-2 whitespace-nowrap`; compact header padding `px-2.5 py-1.5` (STATE_NODE_HEADER_COMPACT_PADDING_CLASS).",
+  "needle": "STATE_NODE_HEADER_PADDING_CLASS\",0,i"
+ },
+ {
+  "section": "node",
+  "file": "2_1o-xvii-r5o.js",
+  "offset": 1853,
+  "linecol": [
+   1,
+   1853
+  ],
+  "evidence": "rea/flow.evidence.json",
+  "evidence_id": "ev_02ac1c0dde519f84dba58913bd4fcad86818b3734f222245861f043752b79cea",
+  "function": {
+   "node_id": "jsrg_node_f88b430c259ca63e7331102ec2c4f4a09f52f0569db380e3d38770be04423d61",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1202,
+    2702
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_3708b574c254511da70f68d6b353a0489100e47735a300d93653d9526303a68f",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    1577,
+    2700
+   ]
+  },
+  "statement": "Body/header background = `var(--entity-fill)` (getStateNodeBackground / getStateNodeBodyStyle / getStateNodeHeaderStyle); children area = `color-mix(in oklab, var(--entity-fill) 30%, transparent)` (getStateNodeChildrenStyle).",
+  "needle": "\"getStateNodeBodyStyle\",0,function"
+ },
+ {
+  "section": "node",
+  "file": "2_1o-xvii-r5o.js",
+  "offset": 1919,
+  "linecol": [
+   1,
+   1919
+  ],
+  "evidence": "rea/flow.evidence.json",
+  "evidence_id": "ev_02ac1c0dde519f84dba58913bd4fcad86818b3734f222245861f043752b79cea",
+  "function": {
+   "node_id": "jsrg_node_f88b430c259ca63e7331102ec2c4f4a09f52f0569db380e3d38770be04423d61",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1202,
+    2702
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_3708b574c254511da70f68d6b353a0489100e47735a300d93653d9526303a68f",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    1577,
+    2700
+   ]
+  },
+  "statement": "Border colour = `color-mix(in srgb, var(--entity-border) calc(var(--node-content-opacity,1)*100%), transparent)` (getStateNodeBorderStyle).",
+  "needle": "\"getStateNodeBorderStyle\",0,function"
+ },
+ {
+  "section": "node",
+  "file": "2_1o-xvii-r5o.js",
+  "offset": 2241,
+  "linecol": [
+   1,
+   2241
+  ],
+  "evidence": "rea/flow.evidence.json",
+  "evidence_id": "ev_02ac1c0dde519f84dba58913bd4fcad86818b3734f222245861f043752b79cea",
+  "function": {
+   "node_id": "jsrg_node_f88b430c259ca63e7331102ec2c4f4a09f52f0569db380e3d38770be04423d61",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1202,
+    2702
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_3708b574c254511da70f68d6b353a0489100e47735a300d93653d9526303a68f",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    1577,
+    2700
+   ]
+  },
+  "statement": "getStateNodeClasses: `border-dashed` when isDashed; selected adds `outline-2 outline-solid outline-(--viz-selection-color)`; connection target adds `outline-2 outline-(--viz-highlight-color)`.",
+  "needle": "\"getStateNodeClasses\",0,function"
+ },
+ {
+  "section": "node",
+  "file": "2_1o-xvii-r5o.js",
+  "offset": 1769,
+  "linecol": [
+   1,
+   1769
+  ],
+  "evidence": "rea/flow.evidence.json",
+  "evidence_id": "ev_02ac1c0dde519f84dba58913bd4fcad86818b3734f222245861f043752b79cea",
+  "function": {
+   "node_id": "jsrg_node_f88b430c259ca63e7331102ec2c4f4a09f52f0569db380e3d38770be04423d61",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1202,
+    2702
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_3708b574c254511da70f68d6b353a0489100e47735a300d93653d9526303a68f",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    1577,
+    2700
+   ]
+  },
+  "statement": "entityColorAttribute(color) returns the colour name or \"gray\" (drives `data-color` attribute -> CSS entity tokens).",
+  "needle": "\"entityColorAttribute\",0,function"
+ },
+ {
+  "section": "node",
+  "file": "2_1o-xvii-r5o.js",
+  "offset": 38560,
+  "linecol": [
+   1,
+   38560
+  ],
+  "evidence": "rea/flow.evidence.json",
+  "evidence_id": "ev_02ac1c0dde519f84dba58913bd4fcad86818b3734f222245861f043752b79cea",
+  "function": {
+   "node_id": "jsrg_node_38409fab50d1d18277e063bb3972525f66b675adb1c8ad0deff1fffbe378d3a8",
+   "kind": "function",
+   "label": null,
+   "range": [
+    38069,
+    38678
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_c62bc1f9028ece9c1a0c084e4e9fcc29fc071a403b3ac9bd4017757146017a02",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    38226,
+    38669
+   ]
+  },
+  "statement": "Typography classes: title `text-entity-title` (compact `text-entity-title-compact`), body `text-entity-body`, section heading `text-entity-section text-(--entity-ink-soft)`.",
+  "needle": "\"entityTitleClass\",0,\"text-entity-title\""
+ },
+ {
+  "section": "node",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1402527,
+  "linecol": [
+   103,
+   48761
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_e384a7467038f135e60982a004dd19959371bc24c1b222620f41032508a7f1a1",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1389956,
+    1413597
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_182f9dac6c590e44226ee517bbeb83b7eb6eac939dab9e48793aa32625d3ec0a",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    1402502,
+    1413257
+   ]
+  },
+  "statement": "State node DOM: outer `div[data-entity=node]` (w-max, aria-current when active) -> optional InitialEdgeViz marker -> `div[data-state-node-surface]` with `data-color` and getStateNodeClasses; parallel-region children are dashed (isDashed).",
+  "needle": "\"data-state-node-surface\":\"\""
+ },
+ {
+  "section": "node",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 615161,
+  "linecol": [
+   3,
+   18868
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_d646d5d6fc9a09cbf22c8b928ddd6c9566c216d5b55c8a454dd5727938040c5f",
+   "kind": "function",
+   "label": null,
+   "range": [
+    614466,
+    615528
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_8e93f36fc7d184a54c3fdd06cb67006ca4f63c92ec228e952ddf46bab8e3911e",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    615159,
+    615526
+   ]
+  },
+  "statement": "Initial-state marker: size 20, gap 4 px, placed `left` (or `top` when it would collide) outside the node (getNodeInitialStateMarkerPlacement).",
+  "needle": "INITIAL_STATE_MARKER_GAP\",0,4,\"INITIAL_STATE_MARKER_SIZE\",0,20"
+ },
+ {
+  "section": "node",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 629704,
+  "linecol": [
+   3,
+   33411
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_722ebde6045b8cf79da1677d5d0cc5ef16df43192e9f1663a1226f610c05d69c",
+   "kind": "function",
+   "label": null,
+   "range": [
+    629213,
+    643924
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_1cfee495ece126191970609a7da3f3bfceb14ac6d71d0e4b30ea024e747b9e30",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    629685,
+    630634
+   ]
+  },
+  "statement": "InitialEdgeViz draws an SVG: a filled circle r=size/5 plus a quadratic curve `M..Q..L` with strokeWidth 2, stroke `var(--viz-transition-color, var(--edge))`, ending in an ArrowMarker.",
+  "needle": "\"InitialEdgeViz\",0,function"
+ },
+ {
+  "section": "node",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1540583,
+  "linecol": [
+   103,
+   186817
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_8cec677d94ece057d162d706373b6be0982f475a99d3dea7a6f60e592ecef525",
+   "kind": "function",
+   "label": "eZ",
+   "range": [
+    1537708,
+    1543519
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_8cec677d94ece057d162d706373b6be0982f475a99d3dea7a6f60e592ecef525",
+   "kind": "function",
+   "label": "eZ",
+   "range": [
+    1537708,
+    1543519
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_7718c0d5bc53ecd81cf0f303e66459d2ff77493dad1e2e6add52d2ab875715fe",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    1540518,
+    1540665
+   ]
+  },
+  "statement": "Compound (group) node = `.stately-flow__node-<kind>` wrapper with two absolutely-positioned layers: header surface `rounded-t-md border-2 border-b-0` (height = measured content height) and child area `rounded-b-md border-2 bg-transparent` starting below it.",
+  "needle": "absolute inset-x-0 top-0 rounded-t-md border-2 border-b-0"
+ },
+ {
+  "section": "node",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1538318,
+  "linecol": [
+   103,
+   184552
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_8cec677d94ece057d162d706373b6be0982f475a99d3dea7a6f60e592ecef525",
+   "kind": "function",
+   "label": "eZ",
+   "range": [
+    1537708,
+    1543519
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_8cec677d94ece057d162d706373b6be0982f475a99d3dea7a6f60e592ecef525",
+   "kind": "function",
+   "label": "eZ",
+   "range": [
+    1537708,
+    1543519
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_8cec677d94ece057d162d706373b6be0982f475a99d3dea7a6f60e592ecef525",
+   "kind": "function",
+   "label": "eZ",
+   "range": [
+    1537708,
+    1543519
+   ]
+  },
+  "statement": "Children of a `parallel` parent are drawn with `border-dashed` (selector checks parent data.type === \"parallel\").",
+  "needle": "?.data.type===\"parallel\"}),S="
+ },
+ {
+  "section": "node",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1539999,
+  "linecol": [
+   103,
+   186233
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_8cec677d94ece057d162d706373b6be0982f475a99d3dea7a6f60e592ecef525",
+   "kind": "function",
+   "label": "eZ",
+   "range": [
+    1537708,
+    1543519
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_8cec677d94ece057d162d706373b6be0982f475a99d3dea7a6f60e592ecef525",
+   "kind": "function",
+   "label": "eZ",
+   "range": [
+    1537708,
+    1543519
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_a3012267e3f7f5ad2ce767bd2c30fe09106fc6e174a1d2bcdb839b7424b6b3ab",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    1539833,
+    1543518
+   ]
+  },
+  "statement": "Flow node wrapper attributes: data-flow-node-id, data-color, data-flow-node-kind (default \"state\"), data-flow-parent-id; class `stately-flow__node-${kind}` + `selected`/`dragging`.",
+  "needle": "\"data-flow-node-kind\":P"
+ },
+ {
+  "section": "edge",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 629649,
+  "linecol": [
+   3,
+   33356
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_d80c1911ecf7493881d1f9b74177c154963b9141c078ad03d593740a1f2adaca",
+   "kind": "function",
+   "label": "g",
+   "range": [
+    629421,
+    629680
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_d80c1911ecf7493881d1f9b74177c154963b9141c078ad03d593740a1f2adaca",
+   "kind": "function",
+   "label": "g",
+   "range": [
+    629421,
+    629680
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_dfb078c84c2017bb7be9ce18beb9d39f2a3c39337338a830e70ea06c9eae2578",
+   "kind": "expression",
+   "label": "argument 1",
+   "range": [
+    629648,
+    629677
+   ]
+  },
+  "statement": "ArrowMarker: `<marker viewBox=\"0 0 10 10\" markerWidth=size markerHeight=size refX=5 refY=5 markerUnits=\"strokeWidth\" orient=\"auto\">` with closed triangle `M0,0 L0,10 L10,5 z`; default size 5.",
+  "needle": "d:\"M0,0 L0,10 L10,5 z\""
+ },
+ {
+  "section": "edge",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 636936,
+  "linecol": [
+   3,
+   40643
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_b3d65eb6983b7ae36c9dd22080f8c8201f0c3d963e7aebed93b66683964ff32b",
+   "kind": "function",
+   "label": "A",
+   "range": [
+    633685,
+    641990
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_b3d65eb6983b7ae36c9dd22080f8c8201f0c3d963e7aebed93b66683964ff32b",
+   "kind": "function",
+   "label": "A",
+   "range": [
+    633685,
+    641990
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_491a8958e2daf3c97fc1bd57ea10f4181ff5a2880fcf5057b858b14c974e9f84",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    636879,
+    636960
+   ]
+  },
+  "statement": "Arrowhead path uses `fill: context-stroke`, so the head takes the edge stroke colour.",
+  "needle": "fill:\"context-stroke\"}})"
+ },
+ {
+  "section": "edge",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 630728,
+  "linecol": [
+   3,
+   34435
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_f7b1329c5eec5e63e6acf67c3d2afaf001fdef232b88021e89e9acd9b76ac239",
+   "kind": "function",
+   "label": "m",
+   "range": [
+    630660,
+    632448
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_f7b1329c5eec5e63e6acf67c3d2afaf001fdef232b88021e89e9acd9b76ac239",
+   "kind": "function",
+   "label": "m",
+   "range": [
+    630660,
+    632448
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_f7b1329c5eec5e63e6acf67c3d2afaf001fdef232b88021e89e9acd9b76ac239",
+   "kind": "function",
+   "label": "m",
+   "range": [
+    630660,
+    632448
+   ]
+  },
+  "statement": "Edge path component defaults: interactionWidth 20 (invisible hit path), overlapWidth 6 (halo stroke `var(--edge-halo)`), highlightWidth 8.",
+  "needle": "interactionWidth:r=20"
+ },
+ {
+  "section": "edge",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 50974,
+  "linecol": [
+   1,
+   50974
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_32b027b616516dda3ef86a3608d2eac21e5cb85e1af29db90936206e3a0e9dfa",
+   "kind": "function",
+   "label": null,
+   "range": [
+    50437,
+    52232
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_8bef5b3ee6fe8caa5a5942e34c9e9863597f87de6c0a464b72e8b39f1c7f0583",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    50973,
+    52230
+   ]
+  },
+  "statement": "EDGE_PATH_RADIUS = 10: orthogonal routes are rounded at corners (roundCorners(pathFromPoints(points),{radius:10})); fallback path is a 3-segment orthogonal `M x y L mid y L mid y2 L x2 y2`.",
+  "needle": "\"EDGE_PATH_RADIUS\",0,10"
+ },
+ {
+  "section": "edge",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 54476,
+  "linecol": [
+   1,
+   54476
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_dcaee2f99f8c96cd701f4f436d9ee252dab5fdec3507bc65f41df9782df1d0e0",
+   "kind": "function",
+   "label": null,
+   "range": [
+    53903,
+    54625
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_938953d2859f82b1ff1d26a1e04b70dc5e9da2bd123b04a0925a4859da45af91",
+   "kind": "return-site",
+   "label": "return",
+   "range": [
+    54469,
+    54624
+   ]
+  },
+  "statement": "ELK route -> SVG: ORTHOGONAL routes go through pathFromPoints + roundCorners(radius 10) + toSvgPath; other styles use cubic segments.",
+  "needle": "svgPath:\"ORTHOGONAL\"===e.style"
+ },
+ {
+  "section": "edge",
+  "file": "2-eybig0s36bz.js",
+  "offset": 236060,
+  "linecol": [
+   1,
+   236060
+  ],
+  "evidence": "rea/f_2-eybig0s36bz.evidence.json",
+  "evidence_id": "ev_fd165ebb0d325365a96c5a327d7be93c934393f1146aa136b02b348560ae8321",
+  "function": {
+   "node_id": "jsrg_node_b7e503287f84dae1bb944f781dbcfd7205e654447db32e0618c54ce048bc596c",
+   "kind": "function",
+   "label": null,
+   "range": [
+    235073,
+    237114
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_c6cd55569560a1a7eb79a147a2356819e1597ab7ff29103fbb70d4eb387f4b22",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    235925,
+    237112
+   ]
+  },
+  "statement": "getEdgeStroke(): `var(--entity-edge)`; hovered -> getEdgeHoverStroke() = `var(--entity-edge-hover)`.",
+  "needle": "\"getEdgeStroke\",0,function"
+ },
+ {
+  "section": "edge",
+  "file": "2-eybig0s36bz.js",
+  "offset": 235222,
+  "linecol": [
+   1,
+   235222
+  ],
+  "evidence": "rea/f_2-eybig0s36bz.evidence.json",
+  "evidence_id": "ev_fd165ebb0d325365a96c5a327d7be93c934393f1146aa136b02b348560ae8321",
+  "function": {
+   "node_id": "jsrg_node_b7e503287f84dae1bb944f781dbcfd7205e654447db32e0618c54ce048bc596c",
+   "kind": "function",
+   "label": null,
+   "range": [
+    235073,
+    237114
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_b7e503287f84dae1bb944f781dbcfd7205e654447db32e0618c54ce048bc596c",
+   "kind": "function",
+   "label": null,
+   "range": [
+    235073,
+    237114
+   ]
+  },
+  "statement": "getTransitionEdgeStrokeStyle: guarded transitions are dashed `5,5` (offset 2.5); architecture \"sends/event\" edges `2,4`.",
+  "needle": "strokeDasharray:\"5,5\",strokeDashoffset:\"2.5\""
+ },
+ {
+  "section": "edge",
+  "file": "2-eybig0s36bz.js",
+  "offset": 236268,
+  "linecol": [
+   1,
+   236268
+  ],
+  "evidence": "rea/f_2-eybig0s36bz.evidence.json",
+  "evidence_id": "ev_fd165ebb0d325365a96c5a327d7be93c934393f1146aa136b02b348560ae8321",
+  "function": {
+   "node_id": "jsrg_node_b7e503287f84dae1bb944f781dbcfd7205e654447db32e0618c54ce048bc596c",
+   "kind": "function",
+   "label": null,
+   "range": [
+    235073,
+    237114
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_c6cd55569560a1a7eb79a147a2356819e1597ab7ff29103fbb70d4eb387f4b22",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    235925,
+    237112
+   ]
+  },
+  "statement": "Hover/elevation: setEdgePathHover / setEdgePathElevated re-append the hovered SVG path last in its parent (paint on top) using an \"edge-paint-order\" comment anchor.",
+  "needle": "\"setEdgePathHover\",0,function"
+ },
+ {
+  "section": "edge",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1463576,
+  "linecol": [
+   103,
+   109810
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_64bd585b47883b39b0421f0bf6a8d282a3bb08e13ab503888db7609c188a6666",
+   "kind": "function",
+   "label": "ek",
+   "range": [
+    1457224,
+    1465164
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_64bd585b47883b39b0421f0bf6a8d282a3bb08e13ab503888db7609c188a6666",
+   "kind": "function",
+   "label": "ek",
+   "range": [
+    1457224,
+    1465164
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_9b4ff53d65911ba24a16d0f79908ff41827d3c2f2916453ed3e48d949c570627",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    1463380,
+    1463956
+   ]
+  },
+  "statement": "Edge label pill: `border-2 rounded-label px-2 py-1 w-max` (compact `border-2 px-2 py-1 w-max` + rounded-label/rounded-md; expanded `border-2 rounded-xl px-3 py-2 w-max`); background `var(--entity-label-fill)`, border colour getEdgeStroke(); dashed when q.",
+  "needle": "\"border-2 rounded-label px-2 py-1 w-max\""
+ },
+ {
+  "section": "edge",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1379220,
+  "linecol": [
+   103,
+   25454
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_e3b7b1ef2ceec60e95edee510ce901860d901518a94dd9a6634092d88c61af2a",
+   "kind": "function",
+   "label": "x",
+   "range": [
+    1377791,
+    1379764
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_e3b7b1ef2ceec60e95edee510ce901860d901518a94dd9a6634092d88c61af2a",
+   "kind": "function",
+   "label": "x",
+   "range": [
+    1377791,
+    1379764
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_ff390f008444d4ea3ca76e4d4998220940d9d2cc290ea4b7cb01970ef07b9947",
+   "kind": "expression",
+   "label": "spread:",
+   "range": [
+    1379214,
+    1379375
+   ]
+  },
+  "statement": "Selected label: outline 2px counter-scaled by zoom (`calc(2px / var(--zoom,1))`), offset 2px, colour `--viz-selection-color`.",
+  "needle": "outlineWidth:\"calc(2px / var(--zoom, 1))\""
+ },
+ {
+  "section": "edge",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 570009,
+  "linecol": [
+   1,
+   570009
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_5608569d9c7b7934a7eaec2740ecc3d4035b75c2281b27f1e353c3f5d903e8c5",
+   "kind": "function",
+   "label": "_",
+   "range": [
+    570009,
+    572241
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_5608569d9c7b7934a7eaec2740ecc3d4035b75c2281b27f1e353c3f5d903e8c5",
+   "kind": "function",
+   "label": "_",
+   "range": [
+    570009,
+    572241
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_5608569d9c7b7934a7eaec2740ecc3d4035b75c2281b27f1e353c3f5d903e8c5",
+   "kind": "function",
+   "label": "_",
+   "range": [
+    570009,
+    572241
+   ]
+  },
+  "statement": "Default label mode \"edge-label-grouped\": labels become layout nodes (transitionNodes) so the pill sits on the route; live routing forces `elk.edgeRouting: ORTHOGONAL`.",
+  "needle": "async function _(e,t,n,i={},r=\"edge-label-grouped\""
+ },
+ {
+  "section": "edge",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 575613,
+  "linecol": [
+   1,
+   575613
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_68946711c91b12134283e896292fe5d4407325d8ea3c0f0fe24ab90a1084ecba",
+   "kind": "function",
+   "label": "L",
+   "range": [
+    572241,
+    576423
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_68946711c91b12134283e896292fe5d4407325d8ea3c0f0fe24ab90a1084ecba",
+   "kind": "function",
+   "label": "L",
+   "range": [
+    572241,
+    576423
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_68946711c91b12134283e896292fe5d4407325d8ea3c0f0fe24ab90a1084ecba",
+   "kind": "function",
+   "label": "L",
+   "range": [
+    572241,
+    576423
+   ]
+  },
+  "statement": "Self-transitions: ELK graph option `org.statelyai.selfLoops: \"lanes\"` (and pele `selfLoops:\"lanes\"`), i.e. self loops routed in lanes beside the node.",
+  "needle": "\"org.statelyai.selfLoops\":\"lanes\""
+ },
+ {
+  "section": "edge",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1487389,
+  "linecol": [
+   103,
+   133623
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_64a443adb0901b3ede9096ecc2b79c43800e2663edeb537f673566d2db1aa3da",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1482903,
+    1488522
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_f997ebb1e9d78057d0245f64ef4bf524d57573057005dc4ea1b1cc5a14040db3",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    1487312,
+    1487413
+   ]
+  },
+  "statement": "Edge context menu has \"Make self-transition\" / \"Make targetless transition\" / \"Switch source and target\".",
+  "needle": "\"Make self-transition\""
+ },
+ {
+  "section": "layout",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 560890,
+  "linecol": [
+   1,
+   560890
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_355f0cacaea50df4485100a8a7f0558aecec6f07c8e3e8e4be043ca1a5a4b67f",
+   "kind": "function",
+   "label": null,
+   "range": [
+    559809,
+    563789
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_51136fd61b8717ff956d5a988a631243e3171bff4efb3076ad0dc7e9a98acd32",
+   "kind": "return-site",
+   "label": "return",
+   "range": [
+    560858,
+    563788
+   ]
+  },
+  "statement": "toElkGraph root options: `elk.algorithm: layered`, direction upper-cased (default DOWN), `elk.spacing.nodeNode` = nodeSpacing ?? 60, `elk.layered.spacing.nodeNodeBetweenLayers` = rankSpacing ?? 90; INCLUDE_CHILDREN when hierarchy edges exist.",
+  "needle": "\"elk.algorithm\":\"layered\",\"elk.direction\":oh(c),\"elk.spacing.nodeNode\":String(t.nodeSpacing??60)"
+ },
+ {
+  "section": "layout",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 562204,
+  "linecol": [
+   1,
+   562204
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_00f73c88b7bcc7c4ab7fe1a45ec7ae92af289192704c03ab25883f06513df6be",
+   "kind": "function",
+   "label": "e",
+   "range": [
+    561288,
+    563757
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_00f73c88b7bcc7c4ab7fe1a45ec7ae92af289192704c03ab25883f06513df6be",
+   "kind": "function",
+   "label": "e",
+   "range": [
+    561288,
+    563757
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_00f73c88b7bcc7c4ab7fe1a45ec7ae92af289192704c03ab25883f06513df6be",
+   "kind": "function",
+   "label": "e",
+   "range": [
+    561288,
+    563757
+   ]
+  },
+  "statement": "Group padding: content band (header) height is added to the padding side (`top` by default): `[top=header+max(pad,label),left,bottom,right]`; nodeSize constraints `NODE_LABELS PORTS MINIMUM_SIZE`; contentAlignment H_CENTER for top/bottom.",
+  "needle": "p[\"elk.padding\"]=(g=function(e,t,n=0)"
+ },
+ {
+  "section": "layout",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 582319,
+  "linecol": [
+   1,
+   582319
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_64ae329beac2a787ac67a8658614e94ac1b468e98711d75aa275d0cd3377d639",
+   "kind": "function",
+   "label": "H",
+   "range": [
+    582200,
+    586304
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_64ae329beac2a787ac67a8658614e94ac1b468e98711d75aa275d0cd3377d639",
+   "kind": "function",
+   "label": "H",
+   "range": [
+    582200,
+    586304
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_64ae329beac2a787ac67a8658614e94ac1b468e98711d75aa275d0cd3377d639",
+   "kind": "function",
+   "label": "H",
+   "range": [
+    582200,
+    586304
+   ]
+  },
+  "statement": "Live (stately router) ELK options: edgeNode 24, edgeNodeBetweenLayers 24, edgeEdge 48, favorStraightEdges true, bk.edgeStraightening IMPROVE_STRAIGHTNESS, feedbackEdges true, unnecessaryBendpoints true, hierarchyHandling INCLUDE_CHILDREN, components MODEL_ORDER + separateConnectedComponents false when an initial state exists.",
+  "needle": "h={...f.elkLayoutDefaults,\"elk.spacing.edgeNode\":24"
+ },
+ {
+  "section": "layout",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 581402,
+  "linecol": [
+   1,
+   581402
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_f0ed9e3b8aa3d433c8f92a5705a3a7fdfe33e63b94348fed72fd17ec3e8e261d",
+   "kind": "function",
+   "label": null,
+   "range": [
+    581175,
+    581451
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_fcf0f94e681dbfdec1ae5aab4d67094da840836c6e4efd2a3f0dcf421d63c256",
+   "kind": "function",
+   "label": "$",
+   "range": [
+    580089,
+    582200
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_a10d48bf084c5d630ff8977496527866b86e5993e699a6cf4a95fb99fc6b25f5",
+   "kind": "expression",
+   "label": "spread:",
+   "range": [
+    581373,
+    581449
+   ]
+  },
+  "statement": "Rank pinning: initial child -> `layering.layerConstraint: FIRST_SEPARATE`; final states (when eligible) -> `LAST`; edge labels inline (`edgeLabels.inline: true`).",
+  "needle": "\"layering.layerConstraint\":\"FIRST_SEPARATE\""
+ },
+ {
+  "section": "layout",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 50016,
+  "linecol": [
+   1,
+   50016
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_f0b886a66424bcd5f0fedb9d6c4d62b86403c601d991cf0d867b895225ee91cf",
+   "kind": "function",
+   "label": "facePeers",
+   "range": [
+    49698,
+    50205
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_f0b886a66424bcd5f0fedb9d6c4d62b86403c601d991cf0d867b895225ee91cf",
+   "kind": "function",
+   "label": "facePeers",
+   "range": [
+    49698,
+    50205
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_f0b886a66424bcd5f0fedb9d6c4d62b86403c601d991cf0d867b895225ee91cf",
+   "kind": "function",
+   "label": "facePeers",
+   "range": [
+    49698,
+    50205
+   ]
+  },
+  "statement": "Ports: side chosen from relative centre position (EAST/WEST/SOUTH/NORTH) and node gets `elk.portConstraints: FIXED_SIDE`.",
+  "needle": "r.layoutOptions={\"elk.port.side\""
+ },
+ {
+  "section": "layout",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 59162,
+  "linecol": [
+   1,
+   59162
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_58c3f563b377f899df3f7765fafc42cbfc666824a8326704c5c742872aafe096",
+   "kind": "function",
+   "label": null,
+   "range": [
+    57428,
+    60620
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_f70507652b7103a14eb9765cee1825b7bddf6cd7d6ec12088348f7cb4a9ab1c3",
+   "kind": "expression",
+   "label": "argument 1",
+   "range": [
+    58957,
+    59360
+   ]
+  },
+  "statement": "pele engine call maps spacing {node,layer,edge} from the ELK keys with peleLayoutDefaults fallback; unmeasured nodes default to 200x100.",
+  "needle": "layer:t[\"elk.layered.spacing.nodeNodeBetweenLayers\"]??g.peleLayoutDefaults"
+ },
+ {
+  "section": "layout",
+  "file": "2we_h-txzz_88.js",
+  "offset": 1972,
+  "linecol": [
+   1,
+   1972
+  ],
+  "evidence": "rea/theme.evidence.json",
+  "evidence_id": "ev_9d04958c3fc379127ba0bff26a1e2b63c08ba1db959f0b4d5f1baa928d216999",
+  "function": {
+   "node_id": "jsrg_node_7efab6c94500569b51e5d994055cfa03a622d0b2f5c59ee6ad5570d7b68c8afb",
+   "kind": "function",
+   "label": null,
+   "range": [
+    119,
+    22351
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_f819e0be099ae908ad410b47eb4a629177c5ca808f76b2e051a23e1118289647",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    171,
+    18456
+   ]
+  },
+  "statement": "ELK option schema defaults (zod, elkLayoutDefaults): nodeNode 50, edgeEdge 10, edgeNode 10, nodeNodeBetweenLayers 30, edgeNodeBetweenLayers 10, edgeRouting ORTHOGONAL, direction DOWN, cycleBreaking MODEL_ORDER, nodePlacement BRANDES_KOEPF, crossingMinimization LAYER_SWEEP, nodeSelfLoop 24, thoroughness 7, edgeLabels.inline true.",
+  "needle": "\"elk.spacing.nodeNode\":t.z"
+ },
+ {
+  "section": "layout",
+  "file": "2we_h-txzz_88.js",
+  "offset": 25266,
+  "linecol": [
+   1,
+   25266
+  ],
+  "evidence": "rea/theme.evidence.json",
+  "evidence_id": "ev_9d04958c3fc379127ba0bff26a1e2b63c08ba1db959f0b4d5f1baa928d216999",
+  "function": {
+   "node_id": "jsrg_node_bc0d54b6c22dda41ef6b2a587d0f6970127b1ceeecd915b3304d7f1c034906fa",
+   "kind": "function",
+   "label": null,
+   "range": [
+    22371,
+    45406
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_49133860278a401ed13faca96ea2f4be1c759e3d774e2ba17c2d1b2f2c571cb5",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    25265,
+    25424
+   ]
+  },
+  "statement": "defaultLayoutPreferences = {policy:\"auto\", overrides:{}}.",
+  "needle": "\"defaultLayoutPreferences\",0,{policy:\"auto\""
+ },
+ {
+  "section": "interact",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1774026,
+  "linecol": [
+   103,
+   420260
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_e46883b96d5c63545fa2b57ac38d8c73303394866939dc4292d0af57d4f30f6b",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1770703,
+    1808089
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_e46883b96d5c63545fa2b57ac38d8c73303394866939dc4292d0af57d4f30f6b",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1770703,
+    1808089
+   ]
+  },
+  "statement": "Viz viewport limits: minZoom 0.1, maxZoom 10.",
+  "needle": "e3={minZoom:.1,maxZoom:10}"
+ },
+ {
+  "section": "interact",
+  "file": "2-eybig0s36bz.js",
+  "offset": 129760,
+  "linecol": [
+   1,
+   129760
+  ],
+  "evidence": "rea/f_2-eybig0s36bz.evidence.json",
+  "evidence_id": "ev_fd165ebb0d325365a96c5a327d7be93c934393f1146aa136b02b348560ae8321",
+  "function": {
+   "node_id": "jsrg_node_de2db38a352de4d1d924af2b466cf7202cfd422b2488bd187c8225983bb3ccc0",
+   "kind": "function",
+   "label": null,
+   "range": [
+    129463,
+    174452
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_de2db38a352de4d1d924af2b466cf7202cfd422b2488bd187c8225983bb3ccc0",
+   "kind": "function",
+   "label": null,
+   "range": [
+    129463,
+    174452
+   ]
+  },
+  "statement": "Flow engine store defaults: minZoom 0.1, maxZoom 4, snapGrid [10,10] (snapToGrid off), dragThreshold 3, autoPanOnDrag true (threshold 40, speed 15), selectionMode \"partial\", colorMode \"system\".",
+  "needle": "minZoom:o.minZoom??.1,maxZoom:o.maxZoom??4"
+ },
+ {
+  "section": "interact",
+  "file": "2-eybig0s36bz.js",
+  "offset": 23480,
+  "linecol": [
+   1,
+   23480
+  ],
+  "evidence": "rea/f_2-eybig0s36bz.evidence.json",
+  "evidence_id": "ev_fd165ebb0d325365a96c5a327d7be93c934393f1146aa136b02b348560ae8321",
+  "function": {
+   "node_id": "jsrg_node_7d1f07c6985def66ce3834c494c587543a0ee19683cce9dcba60758bd72964c1",
+   "kind": "function",
+   "label": "N",
+   "range": [
+    23480,
+    23829
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_7d1f07c6985def66ce3834c494c587543a0ee19683cce9dcba60758bd72964c1",
+   "kind": "function",
+   "label": "N",
+   "range": [
+    23480,
+    23829
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_7d1f07c6985def66ce3834c494c587543a0ee19683cce9dcba60758bd72964c1",
+   "kind": "function",
+   "label": "N",
+   "range": [
+    23480,
+    23829
+   ]
+  },
+  "statement": "Engine fit-bounds: padding 0.1, minZoom 0.1, maxZoom 2 by default.",
+  "needle": "function N(e,t,n={}){let{padding:r=.1,minZoom:o=.1,maxZoom:a=2}"
+ },
+ {
+  "section": "interact",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1655371,
+  "linecol": [
+   103,
+   301605
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_38acaed634c20f1fa24f0d63cae7a8df606995777ad17010b57f04e3f2bbff44",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1655366,
+    1655401
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_4c0bb043d0434bc9fc664c0e52216dbf4c00eb53ecd68f07b4c1e38334f26684",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    1655371,
+    1655400
+   ]
+  },
+  "statement": "\"Fit to content\" command: fit({maxZoom:1, padding:0.1}).",
+  "needle": "P.fit({maxZoom:1,padding:.1})"
+ },
+ {
+  "section": "interact",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1684876,
+  "linecol": [
+   103,
+   331110
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_eaaddee6394b9102fc8acc178b89d1a7572c8e2258cc43655eb2082e065327f3",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1682703,
+    1703317
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_eaaddee6394b9102fc8acc178b89d1a7572c8e2258cc43655eb2082e065327f3",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1682703,
+    1703317
+   ]
+  },
+  "statement": "Zoom-to-selection options {maxZoom:2, padding:0.1}; arrow keys map to left/right/up/down navigation.",
+  "needle": "L={maxZoom:2,padding:.1}"
+ },
+ {
+  "section": "interact",
+  "file": "2-eybig0s36bz.js",
+  "offset": 107807,
+  "linecol": [
+   1,
+   107807
+  ],
+  "evidence": "rea/f_2-eybig0s36bz.evidence.json",
+  "evidence_id": "ev_fd165ebb0d325365a96c5a327d7be93c934393f1146aa136b02b348560ae8321",
+  "function": {
+   "node_id": "jsrg_node_56f6cd182f96c72635a491222f83ddfc7ded1d6193d959469aeb45d1b9c33229",
+   "kind": "function",
+   "label": "ne",
+   "range": [
+    107786,
+    108370
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_56f6cd182f96c72635a491222f83ddfc7ded1d6193d959469aeb45d1b9c33229",
+   "kind": "function",
+   "label": "ne",
+   "range": [
+    107786,
+    108370
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_1c0faa1f81d889b080a5c6f9b1f45a7892df485e11609b42b3e40031b9506a42",
+   "kind": "return-site",
+   "label": "return",
+   "range": [
+    107800,
+    108369
+   ]
+  },
+  "statement": "Wheel gesture: ctrl/meta+wheel zooms (zoom * 2^(-deltaY*0.002), x10 for pinch), plain wheel pans (panBy).",
+  "needle": "id:\"wheel\",priority:90"
+ },
+ {
+  "section": "interact",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 637747,
+  "linecol": [
+   3,
+   41454
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_b3d65eb6983b7ae36c9dd22080f8c8201f0c3d963e7aebed93b66683964ff32b",
+   "kind": "function",
+   "label": "A",
+   "range": [
+    633685,
+    641990
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_b3d65eb6983b7ae36c9dd22080f8c8201f0c3d963e7aebed93b66683964ff32b",
+   "kind": "function",
+   "label": "A",
+   "range": [
+    633685,
+    641990
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_b3d65eb6983b7ae36c9dd22080f8c8201f0c3d963e7aebed93b66683964ff32b",
+   "kind": "function",
+   "label": "A",
+   "range": [
+    633685,
+    641990
+   ]
+  },
+  "statement": "Edge dimming: opacity 1 when highlighted/selected/hovered-related, else UNSELECTED_OPACITY; temp edges 0.5; hovered/selected edges get zIndex 1000.",
+  "needle": "opacity:(Z??(K?1:ec?.5:ed??(Y||Q||en?1:f.UNSELECTED_OPACITY)))"
+ },
+ {
+  "section": "interact",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1400266,
+  "linecol": [
+   103,
+   46500
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_e384a7467038f135e60982a004dd19959371bc24c1b222620f41032508a7f1a1",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1389956,
+    1413597
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_e384a7467038f135e60982a004dd19959371bc24c1b222620f41032508a7f1a1",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1389956,
+    1413597
+   ]
+  },
+  "statement": "Node dimming: exporting 1, temp 0.5, sim-visited 0.8, highlighted/active 1, otherwise 1 if `canvas.dimUnselected` is off or node is relevant to the selection, else UNSELECTED_OPACITY; non-visited nodes in simulation 0.5.",
+  "needle": "tO=e7??(ty?1:tw?.5:te?.8:"
+ },
+ {
+  "section": "interact",
+  "file": "1n-x33n1t71nb.js",
+  "offset": 124500,
+  "linecol": [
+   1,
+   124500
+  ],
+  "evidence": "rea/flow.evidence.json",
+  "evidence_id": "ev_02ac1c0dde519f84dba58913bd4fcad86818b3734f222245861f043752b79cea",
+  "function": {
+   "node_id": "jsrg_node_4e030c461312aeb589ba4d928c116fd940b2023dab792a1df09e085a0d8ff1f0",
+   "kind": "function",
+   "label": null,
+   "range": [
+    124369,
+    141373
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_18e059a615f40764f3358d5594edb60dab2f2905db16bcf7a9dd0bc9d6562f06",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    124390,
+    125865
+   ]
+  },
+  "statement": "UNSELECTED_OPACITY exported from the shared utils module (value assigned `tf=.7` in the same module).",
+  "needle": "\"UNSELECTED_OPACITY\",()=>tf"
+ },
+ {
+  "section": "interact",
+  "file": "3186p7sycrje2.js",
+  "offset": 233521,
+  "linecol": [
+   8,
+   104946
+  ],
+  "evidence": "rea/flow.evidence.json",
+  "evidence_id": "ev_02ac1c0dde519f84dba58913bd4fcad86818b3734f222245861f043752b79cea",
+  "function": {
+   "node_id": "jsrg_node_56b19a0ff9befded20c6beb66713a77701b5510c9b61c27f343f9f6a99b81d81",
+   "kind": "function",
+   "label": "e8",
+   "range": [
+    232563,
+    234341
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_56b19a0ff9befded20c6beb66713a77701b5510c9b61c27f343f9f6a99b81d81",
+   "kind": "function",
+   "label": "e8",
+   "range": [
+    232563,
+    234341
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_d6afc772826b142bdfdd6104276628c4859a6d31b06a4fedb451965a97fcb169",
+   "kind": "expression",
+   "label": "?:",
+   "range": [
+    233471,
+    233659
+   ]
+  },
+  "statement": "Highlight outline: width `var(--viz-highlight-width)`, offset 2px, dashed/double/solid by state, colour mixed 50%/100%.",
+  "needle": "outlineWidth:\"var(--viz-highlight-width)\",outlineOffset:\"2px\""
+ },
+ {
+  "section": "interact",
+  "file": "3ipc7qgmu07wn.js",
+  "offset": 42686,
+  "linecol": [
+   1,
+   42686
+  ],
+  "evidence": "rea/f_3ipc7qgmu07wn.evidence.json",
+  "evidence_id": "ev_05010596dc86ce266ecd4fb6a4bcdae78cecd090418e67cb1498fef6b2cf41bd",
+  "function": {
+   "node_id": "jsrg_node_f170dff33162bd01d719ceb4fa4221d77247853e158ad046250cad63f08f487d",
+   "kind": "function",
+   "label": "l",
+   "range": [
+    42608,
+    42779
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_f170dff33162bd01d719ceb4fa4221d77247853e158ad046250cad63f08f487d",
+   "kind": "function",
+   "label": "l",
+   "range": [
+    42608,
+    42779
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_673450ccd4e9854ab0afbe83112aeb1f0c64e06c51ecc652783411f5b2a4bdf4",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    42686,
+    42722
+   ]
+  },
+  "statement": "Viewport writes `--flow-zoom` and `--flow-inverse-zoom` (1/zoom) on the viewport element so chrome can counter-scale.",
+  "needle": "e.style.setProperty(\"--flow-zoom\",n)"
+ },
+ {
+  "section": "theme",
+  "file": "2c_-zpm4z-m4f.js",
+  "offset": 20437,
+  "linecol": [
+   1,
+   20437
+  ],
+  "evidence": "rea/theme.evidence.json",
+  "evidence_id": "ev_9d04958c3fc379127ba0bff26a1e2b63c08ba1db959f0b4d5f1baa928d216999",
+  "function": {
+   "node_id": "jsrg_node_4e0e5ec3c18e69ef7d8cb1491d9688ffe531fe499cefa132783e496f55e6ef71",
+   "kind": "function",
+   "label": null,
+   "range": [
+    20388,
+    20515
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_17a8744364964a64b77a255b4e57d5ef30b0811d21f7a795db6f01f13bba9e2f",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    20437,
+    20474
+   ]
+  },
+  "statement": "Theme switch: resolved colour mode toggles `.dark` / `.light` classes on `document.documentElement`.",
+  "needle": "t.classList.toggle(\"dark\",\"dark\"===n)"
+ },
+ {
+  "section": "theme",
+  "file": "2c_-zpm4z-m4f.js",
+  "offset": 19744,
+  "linecol": [
+   1,
+   19744
+  ],
+  "evidence": "rea/theme.evidence.json",
+  "evidence_id": "ev_9d04958c3fc379127ba0bff26a1e2b63c08ba1db959f0b4d5f1baa928d216999",
+  "function": {
+   "node_id": "jsrg_node_56b466ae5aad4cff30b97ce62e61c414d58fe2f4d36431e5d2cb40dd168005d4",
+   "kind": "function",
+   "label": null,
+   "range": [
+    19740,
+    19801
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_0cd3297a392dd1187850b4761bf0d7f81fbb0afeafb1e69a3495cd207de6f312",
+   "kind": "function",
+   "label": "o",
+   "range": [
+    19702,
+    20065
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_cfb37afe0f619b25da49072fd791e2c3f4a1aac4863aa6108fde85f44c607c1c",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    19744,
+    19793
+   ]
+  },
+  "statement": "\"system\" mode follows `prefers-color-scheme: dark` with a change listener.",
+  "needle": "window.matchMedia(\"(prefers-color-scheme: dark)\")"
+ },
+ {
+  "section": "theme",
+  "file": "2z0aixa72nhem.js",
+  "offset": 9250,
+  "linecol": [
+   1,
+   9250
+  ],
+  "evidence": "rea/theme.evidence.json",
+  "evidence_id": "ev_9d04958c3fc379127ba0bff26a1e2b63c08ba1db959f0b4d5f1baa928d216999",
+  "function": {
+   "node_id": "jsrg_node_5da7616f04bcc33e9c8fac7f88a7426e17be239364a0ee87f6804e2cef91b63c",
+   "kind": "function",
+   "label": "t",
+   "range": [
+    8867,
+    9462
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_5da7616f04bcc33e9c8fac7f88a7426e17be239364a0ee87f6804e2cef91b63c",
+   "kind": "function",
+   "label": "t",
+   "range": [
+    8867,
+    9462
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_da5cb38fb8007ab683028802d381e70502370ad3f46b8a7052963a7a0aad8643",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    8887,
+    9460
+   ]
+  },
+  "statement": "URL/hash params read: `theme`, `colorMode`, `mode`, `expanded`, `simulation.openPanelOnStart`, `validation.showValidations`.",
+  "needle": "theme:e.get(\"theme\")||void 0,colorMode:e.get(\"colorMode\")"
+ },
+ {
+  "section": "theme",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1630463,
+  "linecol": [
+   103,
+   276697
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_f88582354b50c90b0a579d6cf8ade6219cc5354d3876f1884d6607c9be3fe105",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1622450,
+    1646014
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_72f25ce06caa6bdcbae68e2ae4e78361358674993a9861a49bb20a7853594cad",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    1630413,
+    1630831
+   ]
+  },
+  "statement": "Command palette \"Switch to dark/light mode\" updates settings.appearance.colorMode.",
+  "needle": "\"Switch to light mode\":\"Switch to dark mode\""
+ },
+ {
+  "section": "theme",
+  "file": "2we_h-txzz_88.js",
+  "offset": 30134,
+  "linecol": [
+   1,
+   30134
+  ],
+  "evidence": "rea/theme.evidence.json",
+  "evidence_id": "ev_9d04958c3fc379127ba0bff26a1e2b63c08ba1db959f0b4d5f1baa928d216999",
+  "function": {
+   "node_id": "jsrg_node_bc0d54b6c22dda41ef6b2a587d0f6970127b1ceeecd915b3304d7f1c034906fa",
+   "kind": "function",
+   "label": null,
+   "range": [
+    22371,
+    45406
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_bc0d54b6c22dda41ef6b2a587d0f6970127b1ceeecd915b3304d7f1c034906fa",
+   "kind": "function",
+   "label": null,
+   "range": [
+    22371,
+    45406
+   ]
+  },
+  "statement": "Settings schema: appearance.colorMode enum light|dark|system, default \"dark\" (the public viz embed passes theme=light|dark).",
+  "needle": "colorMode:{type:\"string\",enum:[\"light\",\"dark\",\"system\"],default:\"dark\""
+ },
+ {
+  "section": "license",
+  "file": "3ipc7qgmu07wn.js",
+  "offset": 5750,
+  "linecol": [
+   1,
+   5750
+  ],
+  "evidence": "rea/f_3ipc7qgmu07wn.evidence.json",
+  "evidence_id": "ev_05010596dc86ce266ecd4fb6a4bcdae78cecd090418e67cb1498fef6b2cf41bd",
+  "function": {
+   "node_id": "jsrg_node_5fbfc380aca1579218cb71315e316d3146f99cf2d40428cc431b1f3f9c055072",
+   "kind": "function",
+   "label": null,
+   "range": [
+    5718,
+    16616
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_90c3d5212d73a02fa6473457e9f7304187064457bbc56f5d5d5c14660c1dbf2e",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    5749,
+    16614
+   ]
+  },
+  "statement": "Bundled package.json: `@statelyai/editor` 0.55.19, private, **license UNLICENSED** (proprietary).",
+  "needle": "{\"name\":\"@statelyai/editor\",\"version\":\"0.55.19\",\"private\":true,\"license\":\"UNLICENSED\""
+ },
+ {
+  "section": "license",
+  "file": "3ipc7qgmu07wn.js",
+  "offset": 13691,
+  "linecol": [
+   1,
+   13691
+  ],
+  "evidence": "rea/f_3ipc7qgmu07wn.evidence.json",
+  "evidence_id": "ev_05010596dc86ce266ecd4fb6a4bcdae78cecd090418e67cb1498fef6b2cf41bd",
+  "function": {
+   "node_id": "jsrg_node_5fbfc380aca1579218cb71315e316d3146f99cf2d40428cc431b1f3f9c055072",
+   "kind": "function",
+   "label": null,
+   "range": [
+    5718,
+    16616
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_90c3d5212d73a02fa6473457e9f7304187064457bbc56f5d5d5c14660c1dbf2e",
+   "kind": "expression",
+   "label": "argument 0",
+   "range": [
+    5749,
+    16614
+   ]
+  },
+  "statement": "Deps: elkjs aliased to @statelyai/layout@0.6.1; @statelyai/layout 0.14.5; @statelyai/flow ^0.14.0; @statelyai/flow-react ^0.12.3; @statelyai/graph ^2.1.0; pele ^1.5.2; next-themes ^0.4.6; xstate 6.0.0-beta.4; react ^19.2.5; tailwindcss ^4.1.18; @fontsource-variable/inter ^5.2.8.",
+  "needle": "\"elkjs\":\"npm:@statelyai/layout@0.6.1\""
+ },
+ {
+  "section": "edge",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 631804,
+  "linecol": [
+   3,
+   35511
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_f7b1329c5eec5e63e6acf67c3d2afaf001fdef232b88021e89e9acd9b76ac239",
+   "kind": "function",
+   "label": "m",
+   "range": [
+    630660,
+    632448
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_f7b1329c5eec5e63e6acf67c3d2afaf001fdef232b88021e89e9acd9b76ac239",
+   "kind": "function",
+   "label": "m",
+   "range": [
+    630660,
+    632448
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_3c503afccea169ca956ee7653559b968262b9949666b9c90ab4134e4d79759e5",
+   "kind": "expression",
+   "label": "argument 1",
+   "range": [
+    631728,
+    632021
+   ]
+  },
+  "statement": "Edge stroke width defaults to 2; the selection path is max(4, width+2) with `vector-effect: non-scaling-stroke`; visible path class `stately-flow__edge-path`, hit path `stately-flow__edge-interaction` (transparent, linecap square).",
+  "needle": "strokeWidth:Math.max(4,Number(o?.style?.strokeWidth??o?.strokeWidth??v.style?.strokeWidth??2)+2)"
+ },
+ {
+  "section": "theme",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1803204,
+  "linecol": [
+   106,
+   1568
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_1873eafd8d649a6f0ff58a1cf1a32f3a12bedd747a174ebd0b07d773c55486ca",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1802752,
+    1804420
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_4dc58c680467a13720d0d410f29788fae20831318bae303e0265737891ab89ab",
+   "kind": "function",
+   "label": "te",
+   "range": [
+    1775754,
+    1806740
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_5f9c74dc2a3647df6b531349122515049cda13f5a5aba1a57be34a088d7f61f4",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    1802821,
+    1804419
+   ]
+  },
+  "statement": "Canvas grid: `LinesBackground` (class stately-flow__background) shown when `canvas.showGrid`; line colour light `color-mix(in srgb, var(--color-gray-100) 55%, var(--color-gray-50))`, dark `color-mix(in srgb, var(--color-gray-850) 55%, var(--color-gray-900))`.",
+  "needle": "background:tN?(0,t.jsx)(C.LinesBackground"
+ },
+ {
+  "section": "interact",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1640160,
+  "linecol": [
+   103,
+   286394
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_f88582354b50c90b0a579d6cf8ade6219cc5354d3876f1884d6607c9be3fe105",
+   "kind": "function",
+   "label": null,
+   "range": [
+    1622450,
+    1646014
+   ]
+  },
+  "named_function": null,
+  "innermost": {
+   "node_id": "jsrg_node_2c9c9e9aededb856fa2c22a96f396fc78198ea6ea3a9eb7e4aeac09043b2c025",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    1640151,
+    1640446
+   ]
+  },
+  "statement": "Command palette entries include toggle-grid (\"Hide grid\"/\"Show grid\"), toggle color mode, list/graph view, Go to state.",
+  "needle": "id:\"toggle-grid\",label:eA?\"Hide grid\":\"Show grid\""
+ },
+ {
+  "section": "node",
+  "file": "2jcmqco8wkwjd.js",
+  "offset": 1540789,
+  "linecol": [
+   103,
+   187023
+  ],
+  "evidence": "rea/viz.evidence.json",
+  "evidence_id": "ev_2813615599f4c3ba008a7728a8f2b614b8a039c3ba4afc845beb0f2565248b16",
+  "function": {
+   "node_id": "jsrg_node_8cec677d94ece057d162d706373b6be0982f475a99d3dea7a6f60e592ecef525",
+   "kind": "function",
+   "label": "eZ",
+   "range": [
+    1537708,
+    1543519
+   ]
+  },
+  "named_function": {
+   "node_id": "jsrg_node_8cec677d94ece057d162d706373b6be0982f475a99d3dea7a6f60e592ecef525",
+   "kind": "function",
+   "label": "eZ",
+   "range": [
+    1537708,
+    1543519
+   ]
+  },
+  "innermost": {
+   "node_id": "jsrg_node_fc5eda4a6ba9abadc99e10846965192961043e5cc4db355f29c0790ef88eb9f3",
+   "kind": "call-site",
+   "label": "call",
+   "range": [
+    1540751,
+    1541681
+   ]
+  },
+  "statement": "Group child area carries `data-flow-group-child-area` and drag-handle strips of height = connection-boundary width.",
+  "needle": "\"data-flow-group-child-area\":!0"
+ }
+]
