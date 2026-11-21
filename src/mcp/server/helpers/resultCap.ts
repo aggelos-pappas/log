@@ -68,6 +68,8 @@ function textHead(text: string, budget: number): string {
   return `${kept.join("\n")}\n… ${lines.length - kept.length} more line(s) left out`;
 }
 
+export const BROWSERS_HEAD = "Browsers: ";
+
 export function capLine(tool: string, bytes: number, flags: readonly string[]): string {
   const named = flags.length ? `${tool}'s flags: ${flags.map((f) => `--${f}`).join(", ")}` : `${tool}'s narrowing flags`;
   return `This answer was ${Math.round(bytes / 1000)} KB, over log's ${RESULT_CAP_BYTES / 1000} KB cap, so only its head and counts are here. Call it again narrowed with ${named}; never parse log output with a script.`;
@@ -83,8 +85,8 @@ export function capResult(tool: string, result: CallToolResult, flags: readonly 
   const json = structured && "json" in structured ? jsonHead(structured.json, HEAD_ROWS, Math.floor(cap * 0.35)) : undefined;
   const headText = json !== undefined ? JSON.stringify(json, null, 1) : textHead(String(structured?.stdout ?? texts[0]?.text ?? ""), Math.floor(cap * 0.35));
   const firstText = texts[0]?.text ?? "";
-  const lead = firstText.slice(0, firstText.indexOf("\n\n") + 1 || 0);
-  const content = [{ type: "text" as const, text: textHead(`${lead}\n${headText}`, Math.floor(cap * 0.4)) + `\n\n${note}` }, ...(result.content ?? []).filter((c) => c.type !== "text")];
+  const lead = firstText.startsWith(BROWSERS_HEAD) ? firstText.slice(0, firstText.indexOf("\n\n") + 1 || 0) : "";
+  const content = [{ type: "text" as const, text: textHead(lead ? `${lead}\n${headText}` : headText, Math.floor(cap * 0.4)) + `\n\n${note}` }, ...(result.content ?? []).filter((c) => c.type !== "text")];
   const shrunk = structured
     ? { ...structured, stdout: textHead(String(structured.stdout ?? ""), 2_000), ...(json !== undefined ? { json } : {}), log: [], progress: [] }
     : undefined;

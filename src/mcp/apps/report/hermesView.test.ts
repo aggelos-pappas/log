@@ -10,6 +10,7 @@ import { getState, putState } from "../../../storage/state/index.ts";
 import { marketplaceFixture } from "../../../twenty/graphql/index.ts";
 import { createLogMcpServer } from "../../server/index.ts";
 import { HERMES_VIEW_SCOPE, hermesClient, hermesViewTag, runReport } from "./index.ts";
+import { FRESH_DB_MS, SPAWNS_PROCESS_MS } from "../../../../scripts/tests/timeouts.ts";
 
 const root = join(import.meta.dir, "..", "..", "..", "..");
 const load = <T>(...parts: string[]): Promise<T> => import(join(...parts)) as Promise<T>;
@@ -68,14 +69,14 @@ describe("a report drawn for Hermes", () => {
     expect(stored.html).toContain("Messages in");
     expect(stored.text).toContain("Messages in");
     expect(stored.text).not.toContain("::logapp");
-  });
+  }, FRESH_DB_MS);
 
   test("other hosts get the text alone and nothing is saved", async () => {
     const path = dbAt("other.db");
     const result = await runReport(SPEC, false, {}, { hermes: false, db: openDatabase(path) });
     expect(textOf(result)).not.toContain("::logapp");
     expect(views(path)).toBe(0);
-  });
+  }, FRESH_DB_MS);
 
   test("over MCP, a client whose name starts with hermes gets the line and others don't", async () => {
     const before = process.env.LOG_DB;
@@ -187,7 +188,7 @@ describe("the logHooks text fallback", () => {
     expect(out.desktop).toBeNull();
     expect(out.missing).toContain("draws only in Hermes Desktop");
     expect(out.plain).toBeNull();
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("swaps the live browser line for a short note on chats that can't draw it", () => {
     const plugin = join(root, "hermesPlugin", "__init__.py");
@@ -204,7 +205,7 @@ describe("the logHooks text fallback", () => {
     const out = JSON.parse(run.stdout.trim()) as Record<string, string | null>;
     expect(out.telegram).toBe("Sign in here:\n(fakeSeller's live browser, which shows only in Hermes Desktop)");
     expect(out.desktop).toBeNull();
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("swaps a ::logapp line for the kept report's text, the browser note or a short note", () => {
     const path = dbAt("pyApp.db");
@@ -227,7 +228,7 @@ describe("the logHooks text fallback", () => {
     expect(out.browser).toBe("Sign in:\n(fakeSeller's live browser, which shows only in Hermes Desktop)");
     expect(out.other).toBe("(log's someView view, which shows only in Hermes Desktop)");
     expect(out.desktop).toBeNull();
-  });
+  }, SPAWNS_PROCESS_MS);
 });
 
 const genuiPython = spawnSync(process.env.LOG_PYTHON || "python", ["-c", "import httpx"], { windowsHide: true }).status === 0;

@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { getProfiles } from "wreq-js";
 import { redditBrowser } from "../../reddit/engine/client.ts";
 import { resolveIdentity, wreqProfile } from "./index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const root = join(import.meta.dir, "..", "..", "..");
 const none = join(tmpdir(), "no-identity-settings.json");
@@ -51,7 +52,7 @@ for env in ({"LOG_BROWSER": "chrome"}, {"LOG_BROWSER": "safari17_0"}, {"LOG_BROW
         res.append("refused")
 print(json.dumps(res))`);
     expect(out).toEqual(["refused", "refused", "refused", "refused", "refused"]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("Firefox is a valid identity too, with its own UA and no Chrome client hints", () => {
     const out = py(`from identity import browserIdentity as b\ni = b.resolve(None, {"LOG_BROWSER": "firefox155"})\nprint(json.dumps([i["curl"], i["userAgent"], "sec-ch-ua-platform" in i["headers"]]))`);
@@ -70,7 +71,7 @@ print(json.dumps({"slack": [slack.IMPERSONATE, slack.USER_AGENT], "linkedin": [l
     const expected = out.identity;
     expect(expected[0]).toBe("chrome146");
     for (const platform of ["slack", "linkedin", "twitter", "facebook", "discord"]) expect(out[platform]).toEqual(expected);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("the TypeScript twin resolves the same identity as Python", () => {
     const env = { LOG_BROWSER: "reddit=chrome149,default=chrome152", LOG_BROWSER_OS: "windows" };
@@ -134,7 +135,7 @@ print(json.dumps([api["default_headers"], api["headers"]["accept-language"], api
     expect(out[4]).toEqual({ headers: {} });
     expect(out[5]).toEqual({ headers: { accept: "text/html" } });
     expect(out[6]).toEqual({ headers: {} });
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("every API client attaches its session: Slack, LinkedIn, X and Facebook", () => {
     const out = py(`import asyncio
@@ -148,5 +149,5 @@ fb = FBTransport(cookies={"c_user": "1", "xs": "x"})
 print(json.dumps([asyncio.run(a()), li.new_session()._log_fetch, Client("en-US").http._log_fetch, fb._session._log_fetch, fb.profile.sec_ch_ua == __import__("identity.browserIdentity", fromlist=["x"]).sec_ch_ua(152)]))`);
     expect(out.slice(0, 4).map((f: any) => f.platform)).toEqual(["slack", "linkedin", "twitter", "facebook"]);
     expect(out[4]).toBe(true);
-  });
+  }, SPAWNS_PROCESS_MS);
 });

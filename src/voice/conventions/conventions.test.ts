@@ -110,6 +110,7 @@ describe('the frontier-conventions detector', () => {
     expect(messages.map((m) => m.text)).toEqual(['yo lad filmed it today'])
     expect(messages[0].chatKey).toBe('linus_k')
     expect(droppedAsSends).toBe(2)
+    expect(ownerMessages(handle).sent).toEqual(['yo lad filmed it today', 'sent by the agent here', 'drafted by the agent too'])
   })
 
   test("agent drafts are read from the agent's tool calls: options and texts of voice, and sends", () => {
@@ -158,6 +159,33 @@ describe('the frontier-conventions detector', () => {
     expect(result.report!.families.map((f) => f.family)).toEqual(['claude', 'gpt'])
     expect(result.report!.latency.options).toBeGreaterThan(0)
     expect(ownerSample(owner, new Set(['chat1']), 10).length).toBe(10)
+  })
+
+  test("his own sent messages never land on the model-written side, even when a gate or an agent recorded them as drafts", async () => {
+    saveCorpus([
+      { side: 'ai', family: 'agent', model: null, source: 'gate', chatKey: 'linus_k', momentKey: null, text: 'fml man the glazing with no offers is the worst part\nill send anything i see your way', at: null },
+      { side: 'ai', family: 'agent', model: null, source: 'agentSession', chatKey: 'linus_k', momentKey: null, text: "I'll send anything I see your way", at: null },
+    ])
+    const owner = Array.from({ length: 40 }, (_, i) => ({ text: `yo lad filmed number ${i} today`, at: new Date(Date.UTC(2026, 9, 1 + (i % 28))).toISOString(), chatKey: `chat${i % 6}`, platform: 'twitter' }))
+    const sent = [...owner.map((m) => m.text), 'fml man the glazing with no offers is the worst part', 'ill send anything i see your way']
+    const seen: TrainerInput[] = []
+    const lines: string[] = []
+    await trainConventions({
+      embedModel: 'hash',
+      embed: async (texts) => texts.map((t) => (t.includes('happy') ? [1, 0] : [0, 1])),
+      fit: async (input) => {
+        seen.push(input)
+        return { vocab: ['ha', 'yo'], idf: [1, 1], gramWeights: [3, -3], embedWeights: [1, -1], bias: 0, oof: input.labels.map((l, i) => (l ? 0.8 + (i % 10) / 100 : (i % 50) / 100)), folds: input.groups.map((g) => g % 5) }
+      },
+      agentDrafts: () => [],
+      owner: () => ({ messages: owner, droppedAsSends: 0, sent }),
+      rules: () => [],
+      log: (line) => lines.push(line),
+    })
+    const modelSide = seen[0].texts.filter((_, i) => seen[0].labels[i] === 1)
+    expect(modelSide.some((t) => /ill send anything/i.test(t))).toBe(false)
+    expect(modelSide.length).toBeGreaterThan(0)
+    expect(lines.some((l) => l.includes('2 drafts left off the model-written side'))).toBe(true)
   })
 
   test.skipIf(spawnSync(process.env.LOG_PYTHON || 'python', ['-c', 'import sklearn'], { windowsHide: true }).status !== 0)('the weights sklearn fits give the same probability when TypeScript applies them', async () => {

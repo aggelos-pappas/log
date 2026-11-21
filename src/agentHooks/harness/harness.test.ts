@@ -8,6 +8,7 @@ import { antigravityHooks, cursorHooks, HERMES_PLUGIN_DIR, hermesPluginYaml, hoo
 import { SETUP_HARNESSES } from "../../cli/launch/helpers/setup.ts";
 import { clipContext, contextOutput, harnessOf, harnessTable, hookHostOf, hostBody, positionalOf, scratchHookEnv, watcherLogsIn } from "./client.ts";
 import { HARNESS_CAPABILITIES, HARNESS_IDS, HARNESSES, HOOK_HOSTS } from "./types.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const root = join(import.meta.dir, "..", "..", "..");
 const HERMES_HOME_WITH_LOG = mkdtempSync(join(tmpdir(), "harnessContract-hermesHome-"));
@@ -173,7 +174,7 @@ describe("the native Hermes plugin's pre_llm_call", () => {
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("holds what the push hears during a turn, hands it to the next tool result, and one turn for the rest", () => {
     const plugin = join(root, HERMES_PLUGIN_DIR, "__init__.py");
@@ -250,7 +251,7 @@ describe("the native Hermes plugin's pre_llm_call", () => {
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("adds what landed while a log tool ran to its result, and leaves other tools alone", () => {
     const scratch = mkdtempSync(join(tmpdir(), "harnessContract-pyHermesLive-"));
@@ -282,7 +283,7 @@ describe("the native Hermes plugin's pre_llm_call", () => {
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("pre_tool_call refuses a script that greps or parses log output and names the flag; post_llm_call sends Stop with the turn's tool calls", () => {
     const scratch = mkdtempSync(join(tmpdir(), "harnessContract-pyTools-"));
@@ -318,7 +319,7 @@ describe("the native Hermes plugin's pre_llm_call", () => {
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("asks the warm context service over localhost first and starts no process; a closed port falls back to the event script", async () => {
     const scratch = mkdtempSync(join(tmpdir(), "harnessContract-pyService-"));
@@ -392,7 +393,7 @@ describe("the native Hermes plugin installed on its own, with no log launch --se
     } finally {
       rmSync(scratch, { recursive: true, force: true });
     }
-  });
+  }, SPAWNS_PROCESS_MS);
 });
 
 describe("the one Hermes plugin carries what the portable half used to", () => {

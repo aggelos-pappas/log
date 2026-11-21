@@ -1,12 +1,14 @@
+import { RESEARCH_FIT_FIELD } from '../helpers/read'
+
 const at = (day: number): string => `2026-11-${String(day).padStart(2, '0')}T10:00:00+00:00`
 
-const scored = (handle: string, ring: number, band: string, score: number, circles: string[], followsMe = false) => ({
+const scored = (handle: string, ring: number, band: string, fit: number, circles: string[], followsMe = false) => ({
   handle,
   name: handle,
   followers: 100 * ring,
   degree: 1,
-  goGetterScore: score,
-  components: { themeMatch: score },
+  [RESEARCH_FIT_FIELD]: fit,
+  components: { themeMatch: fit },
   band,
   bandProbabilities: { [band]: 0.7 },
   workflowStage: 'building',
@@ -28,8 +30,8 @@ export const NETWORK_FIXTURE = {
     schemaVersion: '1.0.0',
     generatedAt: '2026-11-10T00:00:00+00:00',
     communities: [
-      { id: 'commGraph', name: 'Graph Guild', url: 'https://example.com/graph', platform: 'whop', classification: { niche: { value: 'graphs' } } },
-      { id: 'commLoop', name: 'Loop Lab', url: 'https://example.com/loop', platform: 'skool', classification: { niche: { value: 'agents' } } },
+      { id: 'commGraph', name: 'Graph Guild', url: 'https://example.com/graph', platform: 'forum', classification: { niche: { value: 'graphs' } } },
+      { id: 'commLoop', name: 'Loop Lab', url: 'https://example.com/loop', platform: 'chat', classification: { niche: { value: 'agents' } } },
     ],
     creators: [
       { communityId: 'commGraph', communityName: 'Graph Guild', name: 'Chart Lead', x: { handle: 'chart_lead', name: 'Chart Lead', followers: 5000 } },

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const python = join(import.meta.dir, "..", "..", "..", "python");
 const pyFiles = (readdirSync(python, { recursive: true }) as string[]).filter((f) => f.endsWith(".py"));
@@ -44,7 +45,7 @@ describe("Camoufox always launches visible", () => {
       const text = readFileSync(join(python, name), "utf8");
       expect(/headless\s*=\s*True|get\("headless"/.test(text), name).toBe(false);
     }
-  });
+  }, SPAWNS_PROCESS_MS);
 });
 
 describe("no browser without the account's proxy (rule 12)", () => {
@@ -109,5 +110,5 @@ describe("an attached browser's own exit is checked when the proxy hands it anot
     expect(detail).toContain("the gate checked 198.51.100.20");
     expect(pinned).toBe("198.51.100.20");
     expect(run('{"country": "MX", "timezone": "America/New_York"}')[1]).toBe("198.51.100.20");
-  });
+  }, SPAWNS_PROCESS_MS);
 });

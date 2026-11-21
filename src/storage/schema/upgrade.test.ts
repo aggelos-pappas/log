@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { INBOX_TABLES, MIGRATIONS, PLATFORM_TABLES, SCHEMA_VERSION, migrate, missingObjectsOf, schemaVersionOf } from './index'
 import { recordTyping, typingNow } from '../../inbox/typing/index'
+import { FRESH_DB_MS } from '../../../scripts/tests/timeouts.ts'
 
 const SHIPPED_LISTS: readonly { version: number; list: readonly string[]; objects: readonly string[] }[] = [
   { version: 1, list: INBOX_TABLES, objects: ['events', 'eventsByChat', 'cursors', 'owners', 'claims', 'chatGenerations', 'actions', 'actionsByChat', 'alerts', 'timings', 'eventTypes', 'searchIndex', 'positions', 'gaps', 'gapsOpen', 'embeddings', 'aiIndexes', 'media', 'mediaByStatus', 'people', 'spans', 'spansByTool', 'spansByCall'] },
@@ -43,7 +44,7 @@ describe('a database made before a table was added catches up', () => {
     old.exec('DROP TABLE IF EXISTS typing')
     expect(() => old.prepare('SELECT userId FROM typing').all()).toThrow('no such table: typing')
     const now = new Date('2026-11-20T00:00:00Z')
-    expect(migrate(old, now)).toEqual([{ version: 22, name: 'typing', appliedAt: now.toISOString() }, { version: 23, name: 'engineStores', appliedAt: now.toISOString() }, { version: 24, name: 'pipeline', appliedAt: now.toISOString() }, { version: 25, name: 'conventionCorpus', appliedAt: now.toISOString() }, { version: 26, name: 'secrets', appliedAt: now.toISOString() }, { version: 27, name: 'network', appliedAt: now.toISOString() }])
+    expect(migrate(old, now)).toEqual([{ version: 22, name: 'typing', appliedAt: now.toISOString() }, { version: 23, name: 'engineStores', appliedAt: now.toISOString() }, { version: 24, name: 'pipeline', appliedAt: now.toISOString() }, { version: 25, name: 'conventionCorpus', appliedAt: now.toISOString() }, { version: 26, name: 'secrets', appliedAt: now.toISOString() }, { version: 27, name: 'network', appliedAt: now.toISOString() }, { version: 28, name: 'chatPlaces', appliedAt: now.toISOString() }, { version: 29, name: 'networkRings', appliedAt: now.toISOString() }, { version: 30, name: 'networkFit', appliedAt: now.toISOString() }])
     expect(schemaVersionOf(old)).toBe(SCHEMA_VERSION)
     expect(missingObjectsOf(old, ['typing'])).toEqual([])
     old.close()
@@ -51,6 +52,18 @@ describe('a database made before a table was added catches up', () => {
     const chat = { platform: 'discord', account: 'upgradeAccount', conversationId: 'c1' }
     recordTyping(chat, 'ada', now)
     expect(typingNow(chat, new Date(now.getTime() + 1_000))).toEqual(['ada'])
+  }, FRESH_DB_MS)
+
+  test('a database at 27 whose network people carry the old score column keeps them, renamed to fit, and gains the ring tables', () => {
+    const old = databaseAt(26)
+    old.exec('CREATE TABLE networkPeople (handleLower TEXT PRIMARY KEY, handle TEXT NOT NULL, ring INTEGER, band TEXT, score REAL, followsOwner INTEGER NOT NULL DEFAULT 0) WITHOUT ROWID')
+    old.prepare("INSERT INTO networkPeople (handleLower, handle, score) VALUES ('ada_codes', 'ada_codes', 0.9)").run()
+    for (const migration of MIGRATIONS.filter((m) => m.version === 27)) migration.apply(old)
+    old.exec('PRAGMA user_version = 27')
+    const now = new Date('2026-11-21T00:00:00Z')
+    expect(migrate(old, now)).toEqual([{ version: 28, name: 'chatPlaces', appliedAt: now.toISOString() }, { version: 29, name: 'networkRings', appliedAt: now.toISOString() }, { version: 30, name: 'networkFit', appliedAt: now.toISOString() }])
+    expect(old.prepare("SELECT fit FROM networkPeople WHERE handleLower = 'ada_codes'").get()).toEqual({ fit: 0.9 })
+    expect(missingObjectsOf(old, ['networkRings', 'networkTalks', 'networkRingState'])).toEqual([])
   })
 
   test('a database already at the latest version that lost the typing table has it repaired', () => {
@@ -70,7 +83,7 @@ describe('a database made before a table was added catches up', () => {
       migrate(old)
       expect({ version, objects: objectsOf(old), columns: columnsOf(old) }).toEqual({ version, ...want })
     }
-  })
+  }, FRESH_DB_MS)
 
   test('a list an early migration runs keeps exactly the objects it shipped with, so a new one comes in a new migration', () => {
     const safe = /^\s*CREATE\s+(?:UNIQUE\s+)?(?:VIRTUAL\s+)?(?:TABLE|INDEX)\s+IF\s+NOT\s+EXISTS\s+(\w+)/i

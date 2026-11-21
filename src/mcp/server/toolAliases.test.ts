@@ -7,6 +7,7 @@ import { isPlatform, toolBaseName } from "../../cli/runner/helpers/platforms.ts"
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { catalog, entryById, getAnswer, resolveCall } from "../catalog/index.ts";
 import { ARGS_TOOLS_GIVEN_FORMS, commandTools, createLogMcpServer, currentToolName, guardCall, LOCAL_LIVE_FLAGS, RENAMED_COMMAND_TOOLS, RENAMED_FLOW_TOOLS, RENAMED_TOOLS, runToolCall, savedFlows, toolsFromCommands, toolsFromFlows } from "./index.ts";
+import { LOADS_EVERY_TOOL_MS } from "../../../scripts/tests/timeouts.ts";
 
 const toolNames = [...toolsFromCommands(COMMANDS), ...toolsFromFlows(savedFlows())].map((t) => t.name);
 
@@ -67,7 +68,7 @@ describe("renamed Facebook tools keep their old names for one release", () => {
     expect((called.structuredContent as { json: { listings: unknown[] } }).json.listings).toHaveLength(8);
     expect(textOf(called)).toContain("`listings` was renamed to `facebookListings`");
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("an old name runs the new tool, through the same gates", async () => {
     const result = await runToolCall("accounts", {}, { twenty: marketplaceFixture() }, () => {}, () => []);

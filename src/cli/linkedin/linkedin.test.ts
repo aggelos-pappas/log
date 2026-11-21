@@ -8,6 +8,7 @@ import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { LINKEDIN_PLATFORM } from "../../linkedin/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
 import { writesPerDayOf } from "../../directApi/engine/index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 function fixture() {
   const twenty = marketplaceFixture();
@@ -56,13 +57,13 @@ describe("log linkedin session check", () => {
     if (probe.error) return;
     const identity = spawnSync(process.env.LOG_PYTHON || "python", ["-c", "import sys; sys.path[:0]=['python']; from identity import browserIdentity as b; print(b.curl_target('linkedin'), b.user_agent('linkedin'))"], { encoding: "utf8" }).stdout.trim();
     expect(probe.stdout.trim()).toBe(`curl_cffi.requests.session ${identity}`);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("with the saved browser, every call carries its user agent, client hints and Voyager's own headers", () => {
     const probe = spawnSync(process.env.LOG_PYTHON || "python", ["-c", "import sys,json; sys.path[:0]=['python','vendor/openLinkedinApi']; from linkedinApi.engine import session_of; h=session_of({'li_at':'x','JSESSIONID':'ajax:1','bcookie':'b'},{'userAgent':'UA Windows','secChUaPlatform':'\"Windows\"'}).client.session.headers; print(json.dumps([h.get('user-agent'),h.get('sec-ch-ua-platform'),h.get('accept'),h.get('csrf-token')]))"], { encoding: "utf8" });
     if (probe.error) return;
     expect(JSON.parse(probe.stdout.trim())).toEqual(["UA Windows", '"Windows"', "application/vnd.linkedin.normalized+json+2.1", "ajax:1"]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("the engine never sends a session without its browser's identity (bcookie, bscookie, user agent): LinkedIn would end it", () => {
     const dir = mkdtempSync(join(tmpdir(), "linkedinEngine"));
@@ -75,7 +76,7 @@ describe("log linkedin session check", () => {
     const answer = JSON.parse(engine.stdout.trim().split(/\r?\n/).pop()!);
     expect(answer).toMatchObject({ ok: false, code: "browserIdentityMissing" });
     expect(answer.detail).toContain("bcookie, bscookie, the browser's user agent");
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("the engine refuses cookies without li_at and JSESSIONID before calling LinkedIn", () => {
     const dir = mkdtempSync(join(tmpdir(), "linkedinEngine"));
@@ -86,5 +87,5 @@ describe("log linkedin session check", () => {
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [LINKEDIN_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split(/\r?\n/).pop()!)).toMatchObject({ ok: false, code: "sessionDead", loginState: "loggedOut" });
-  });
+  }, SPAWNS_PROCESS_MS);
 });

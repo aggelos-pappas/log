@@ -21,7 +21,8 @@ export interface LastWordMessage {
 export interface LastWord {
   platform: string
   account: string
-  kind: 'dm' | 'group'
+  kind: 'dm' | 'group' | 'channel'
+  place?: string
   personKey: string
   conversationIds: string[]
   with: string

@@ -43,7 +43,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `peopleUnlink` | Take an identity out of its person, after the owner says so | `log people unlink <identity> --approvedBy "<the owner's words>"   (that identity is no longer part of its person; the link stays in the history)` |
 | `peopleDifferent` | Record that two identities are not the same person, after the owner… | `log people different <identity> <identity> --approvedBy "<the owner's words>"   (not the same person, so they are never suggested again)` |
 | `networkImport` | Read your network into log.db, replacing the last import | `log network import [--from <dir>] [--account <handle>] [--json]` |
-| `networkStatus` | What log.db holds of your network | `log network status [--json]` |
+| `networkStatus` | Your network's rings, live | `log network status [--json]` |
 | `mediaDescriber` | Run the one media describer on this machine | `log media describer [--json]` |
 | `mediaDescribe` | Queue one local image or video for the describer and wait for its… | `log media describe <path> [--wait <seconds>] [--json]` |
 | `mediaStatus` | The media queue | `log media status [--json]` |

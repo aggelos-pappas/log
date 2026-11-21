@@ -2,6 +2,7 @@ import type { Database } from 'bun:sqlite'
 import type { Migration } from '../types'
 import { INBOX_TABLES, TYPING_TABLES } from './inbox'
 import { PLATFORM_TABLES } from './platformTables'
+import { repairChatPlaces } from '../../platform/helpers/places'
 
 function hasColumn(handle: Database, table: string, column: string): boolean {
   return (handle.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).some((c) => c.name === column)
@@ -130,7 +131,7 @@ export const CONVENTION_CORPUS_TABLES: readonly string[] = [
 
 export const NETWORK_TABLES: readonly string[] = [
   'CREATE TABLE IF NOT EXISTS networkImports (id INTEGER PRIMARY KEY CHECK (id = 1), formatVersion INTEGER NOT NULL, mapVersion TEXT, generatedAt TEXT, source TEXT NOT NULL, account TEXT, counts TEXT NOT NULL, ms INTEGER NOT NULL, importedAt TEXT NOT NULL)',
-  'CREATE TABLE IF NOT EXISTS networkPeople (handleLower TEXT PRIMARY KEY, handle TEXT NOT NULL, name TEXT, followers INTEGER, degree INTEGER, ring INTEGER, band TEXT, bandProbabilities TEXT, score REAL, components TEXT, themes TEXT, topThemes TEXT, workflowStage TEXT, passesGates INTEGER, followsOwner INTEGER NOT NULL DEFAULT 0, company TEXT, rank INTEGER, role TEXT, bio TEXT, tieStrength REAL, lastPostText TEXT, lastPostAtMs INTEGER) WITHOUT ROWID',
+  'CREATE TABLE IF NOT EXISTS networkPeople (handleLower TEXT PRIMARY KEY, handle TEXT NOT NULL, name TEXT, followers INTEGER, degree INTEGER, ring INTEGER, band TEXT, bandProbabilities TEXT, fit REAL, components TEXT, themes TEXT, topThemes TEXT, workflowStage TEXT, passesGates INTEGER, followsOwner INTEGER NOT NULL DEFAULT 0, company TEXT, rank INTEGER, role TEXT, bio TEXT, tieStrength REAL, lastPostText TEXT, lastPostAtMs INTEGER) WITHOUT ROWID',
   'CREATE INDEX IF NOT EXISTS networkPeopleByBand ON networkPeople (band, ring)',
   'CREATE TABLE IF NOT EXISTS networkLeaders (handleLower TEXT PRIMARY KEY, handle TEXT NOT NULL, name TEXT, followers INTEGER, world TEXT) WITHOUT ROWID',
   'CREATE TABLE IF NOT EXISTS networkCommunities (communityId TEXT PRIMARY KEY, name TEXT, url TEXT, platform TEXT, topic TEXT) WITHOUT ROWID',
@@ -138,6 +139,14 @@ export const NETWORK_TABLES: readonly string[] = [
   'CREATE TABLE IF NOT EXISTS networkCircles (personLower TEXT NOT NULL, leaderLower TEXT NOT NULL, PRIMARY KEY (personLower, leaderLower)) WITHOUT ROWID',
   'CREATE INDEX IF NOT EXISTS networkCirclesByLeader ON networkCircles (leaderLower)',
   'CREATE TABLE IF NOT EXISTS networkMentions (fromLower TEXT NOT NULL, toLower TEXT NOT NULL, times INTEGER NOT NULL, lastAtMs INTEGER, PRIMARY KEY (fromLower, toLower)) WITHOUT ROWID',
+]
+
+export const NETWORK_RING_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS networkRings (platform TEXT NOT NULL, userId TEXT NOT NULL, ring INTEGER NOT NULL, reason TEXT NOT NULL, sinceMs INTEGER, follows INTEGER NOT NULL DEFAULT 0, via TEXT, seq INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (platform, userId)) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS networkRingsBySeq ON networkRings (seq)',
+  'CREATE TABLE IF NOT EXISTS networkTalks (platform TEXT NOT NULL, fromId TEXT NOT NULL, toId TEXT NOT NULL, times INTEGER NOT NULL, firstAtMs INTEGER, PRIMARY KEY (platform, fromId, toId)) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS networkTalksByTo ON networkTalks (platform, toId)',
+  'CREATE TABLE IF NOT EXISTS networkRingState (id INTEGER PRIMARY KEY CHECK (id = 1), throughSeq INTEGER NOT NULL, lastAtMs INTEGER, builtAt TEXT NOT NULL, builtMs INTEGER NOT NULL)',
 ]
 
 export const MIN_READER_VERSION = 1
@@ -385,6 +394,28 @@ export const MIGRATIONS: readonly Migration[] = [
     creates: ['networkImports', 'networkPeople', 'networkPeopleByBand', 'networkLeaders', 'networkCommunities', 'networkRuns', 'networkCircles', 'networkCirclesByLeader', 'networkMentions'],
     apply(handle) {
       for (const statement of NETWORK_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 28,
+    name: 'chatPlaces',
+    apply(handle) {
+      repairChatPlaces(handle)
+    },
+  },
+  {
+    version: 29,
+    name: 'networkRings',
+    creates: ['networkRings', 'networkRingsBySeq', 'networkTalks', 'networkTalksByTo', 'networkRingState'],
+    apply(handle) {
+      for (const statement of NETWORK_RING_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 30,
+    name: 'networkFit',
+    apply(handle) {
+      if (hasColumn(handle, 'networkPeople', 'score')) handle.exec('ALTER TABLE networkPeople RENAME COLUMN score TO fit')
     },
   },
 ]

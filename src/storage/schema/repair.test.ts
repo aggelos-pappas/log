@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { MIGRATIONS, SCHEMA_VERSION, SchemaTooNewError, migrate, missingObjectsOf, schemaVersionOf } from './index'
 import type { Migration } from './types'
+import { FRESH_DB_MS } from '../../../scripts/tests/timeouts.ts'
 
 const SAFE_STATEMENT = /^\s*CREATE\s+(UNIQUE\s+)?(TABLE|INDEX|VIRTUAL\s+TABLE)\s+IF\s+NOT\s+EXISTS\s+(\w+)/i
 
@@ -55,7 +56,7 @@ describe('the migration list', () => {
       for (const statement of statements) expect({ migration: migration.name, statement, safe: SAFE_STATEMENT.test(statement) }).toEqual({ migration: migration.name, statement, safe: true })
       expect(statements.map((s) => SAFE_STATEMENT.exec(s)?.[3]).sort()).toEqual([...(migration.creates ?? [])].sort())
     }
-  })
+  }, FRESH_DB_MS)
 
   test('no later migration alters or drops an object a re-runnable migration creates', () => {
     const handle = new Database(':memory:')
@@ -91,14 +92,14 @@ describe('a create-only migration skipped by another branch is repaired', () => 
     const before = objectsOf(handle)
     expect(missingObjectsOf(handle, ['identityProfiles', 'identityProfilesByFetchedAt'])).toEqual(['identityProfiles', 'identityProfilesByFetchedAt'])
     const now = new Date('2026-11-14T00:00:00Z')
-    expect(migrate(handle, now)).toEqual([{ version: 20, name: 'conversationCards', appliedAt: now.toISOString() }, { version: 21, name: 'people', appliedAt: now.toISOString() }, { version: 22, name: 'typing', appliedAt: now.toISOString() }, { version: 23, name: 'engineStores', appliedAt: now.toISOString() }, { version: 24, name: 'pipeline', appliedAt: now.toISOString() }, { version: 25, name: 'conventionCorpus', appliedAt: now.toISOString() }, { version: 26, name: 'secrets', appliedAt: now.toISOString() }, { version: 27, name: 'network', appliedAt: now.toISOString() }, { version: 19, name: 'identityProfiles', appliedAt: now.toISOString(), repaired: ['identityProfiles', 'identityProfilesByFetchedAt'] }])
+    expect(migrate(handle, now)).toEqual([{ version: 20, name: 'conversationCards', appliedAt: now.toISOString() }, { version: 21, name: 'people', appliedAt: now.toISOString() }, { version: 22, name: 'typing', appliedAt: now.toISOString() }, { version: 23, name: 'engineStores', appliedAt: now.toISOString() }, { version: 24, name: 'pipeline', appliedAt: now.toISOString() }, { version: 25, name: 'conventionCorpus', appliedAt: now.toISOString() }, { version: 26, name: 'secrets', appliedAt: now.toISOString() }, { version: 27, name: 'network', appliedAt: now.toISOString() }, { version: 28, name: 'chatPlaces', appliedAt: now.toISOString() }, { version: 29, name: 'networkRings', appliedAt: now.toISOString() }, { version: 30, name: 'networkFit', appliedAt: now.toISOString() }, { version: 19, name: 'identityProfiles', appliedAt: now.toISOString(), repaired: ['identityProfiles', 'identityProfilesByFetchedAt'] }])
     expect(schemaVersionOf(handle)).toBe(SCHEMA_VERSION)
     expect(objectsOf(handle)).toEqual([...before.filter((name) => name !== 'sqlite_autoindex_conversationCards_1'), 'identityProfiles', 'identityProfilesByFetchedAt', 'conversationCardsByAccount'].sort())
     expect(rowCount(handle, 'conversationCards')).toBe(0)
     expect(rowCount(handle, 'state')).toBe(1)
     handle.prepare("INSERT INTO identityProfiles (platform, userId, fetchedAt) VALUES ('discord', 'u1', 'now')").run()
     expect(migrate(handle)).toEqual([])
-  })
+  }, FRESH_DB_MS)
 
   test('a fresh database migrates to the latest version with no repairs', () => {
     const handle = new Database(':memory:')
@@ -123,7 +124,7 @@ describe('a create-only migration skipped by another branch is repaired', () => 
     expect(migrate(readable)).toEqual([])
     expect(missingObjectsOf(readable, ['identityProfiles'])).toEqual(['identityProfiles'])
     expect(schemaVersionOf(readable)).toBe(SCHEMA_VERSION + 1)
-  })
+  }, FRESH_DB_MS)
 
   test('a migration not marked safe to re-run is never run again, even when its objects are missing', () => {
     const handle = new Database(':memory:')

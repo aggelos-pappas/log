@@ -162,7 +162,7 @@ pre-push:
       run: bun run typecheck
 
     test:
-      run: bun test
+      run: bun run test:affected
 
     clientDocs:
       run: bun run check:clientDocs

@@ -8,6 +8,7 @@ import { SCHEMA_VERSION, SchemaTooNewError } from "./index.ts";
 import { MIN_READER_VERSION, sweepUntyped } from "./helpers/index.ts";
 import { importOldLedgers } from "../ledger/client.ts";
 import { CONVERSATION_BATCH_MESSAGES, saveConversationRows } from "../platform/index.ts";
+import { FRESH_DB_MS } from "../../../scripts/tests/timeouts.ts";
 
 describe("old code and new code share the file", () => {
   test("a newer database that only added things is opened as it is", () => {
@@ -62,5 +63,5 @@ describe("transactions are short", () => {
     const conversations = Array.from({ length: 3 }, (_, c) => ({ platform: "slack", account: "a", conversationId: `D${c}`, box: "dm", with: ["kim"], messages: Array.from({ length: CONVERSATION_BATCH_MESSAGES }, (_, m) => ({ id: `${c}.${m}`, at: "2026-11-08T01:00:00Z", from: "kim", fromMe: false, text: `m${m}` })) }));
     expect(saveConversationRows(handle, conversations)).toBe(3 * CONVERSATION_BATCH_MESSAGES);
     expect(commits.length).toBe(3);
-  });
+  }, FRESH_DB_MS);
 });

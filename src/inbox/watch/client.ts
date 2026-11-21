@@ -4,7 +4,7 @@ import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync
 import { hostname } from 'node:os'
 import { dirname, join } from 'node:path'
 import { twitterStateRoot } from '../../directApi/engine/index'
-import { personKeyOf } from '../../twitter/dm/person/index'
+import { personKeyOf, sameChatId } from '../../twitter/dm/person/index'
 import { SHARED_SESSION } from '../../agentHooks/sessionOffsets/index'
 import { mediaLine, mediaOf } from '../../media/describer/index'
 import { addAlertRow, appendEvent, db, dropFence, holdFence, eventIdOf, eventsAfter, immediate, importPendingFile, retirePendingFile, lastEventAt, latestSeq, markStage, namedLabel, openGap, readCursor, UNNAMED, writeCursor } from '../store/index'
@@ -14,6 +14,7 @@ import { POLL_LOCK_SECONDS, POLL_MAX_SECONDS, POLL_MIN_SECONDS } from './types'
 import type { InboxMessage, InboxReader, InboxThread, PollPlan, SeenThreads } from './types'
 import { logHome } from '../../config/logHome/index'
 import { readEngineStore } from '../../storage/engineStore/index'
+import { placeNameOf } from '../../storage/platform/index'
 import { getState, putState } from '../../storage/state/index'
 
 export function inboxRoot(): string {
@@ -78,7 +79,7 @@ export function addPending(messages: readonly InboxMessage[]): void {
 }
 
 export function incomingSince(platform: string, account: string, inChat: string | ((conversationId: string) => boolean), since: string): InboxMessage[] {
-  const matches = typeof inChat === 'string' ? (id: string) => id === inChat : inChat
+  const matches = typeof inChat === 'string' ? (id: string) => sameChatId(platform, id, inChat) : inChat
   const rows = db().prepare(`SELECT * FROM events WHERE platform = ? AND account = ? AND type = 'message' AND receivedAt > ? ORDER BY seq`).all(platform, account, since) as StoredEvent[]
   return rows.filter((row) => matches(row.conversationId)).map(messageOf)
 }
@@ -430,8 +431,17 @@ export function sendRule(platform: string): string {
   return replyMode(platform) === 'auto' ? AUTO_RULE : askRule(platform)
 }
 
+export function placeLabel(m: Pick<InboxMessage, 'platform' | 'account' | 'conversationId'>): string {
+  try {
+    const place = placeNameOf(db(), m.platform, m.account, m.conversationId)
+    return place ? ` in ${place}` : ''
+  } catch {
+    return ''
+  }
+}
+
 function discordContext(messages: readonly InboxMessage[]): string {
-  const lines = messages.map((m) => `  ${m.with} on discord ${m.account} (${m.box === 'dm' ? 'DM or group' : m.box === 'mention' ? 'mentioned you in a server channel' : m.box === 'talk' ? 'in a server channel conversation with you' : 'replied to you in a server channel'}) at ${localTime(m.at)}: "${m.text.replace(/\s+/g, ' ').slice(0, 240)}" (channel ${m.conversationId})`)
+  const lines = messages.map((m) => `  ${m.with}${placeLabel(m)} on discord ${m.account} (${m.box === 'dm' ? 'DM or group' : m.box === 'mention' ? 'mentioned you in a server channel' : m.box === 'talk' ? 'in a server channel conversation with you' : 'replied to you in a server channel'}) at ${localTime(m.at)}: "${m.text.replace(/\s+/g, ' ').slice(0, 240)}" (channel ${m.conversationId})`)
   const { account } = messages[0]
   return [
     `>>> NEW DISCORD MESSAGE${messages.length === 1 ? '' : 'S'} (${messages.length}): pushed by Discord's gateway the moment it landed. Tell the owner now, with what they said and what the conversation is about. Then, for each one:`,

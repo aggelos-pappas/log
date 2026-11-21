@@ -14,6 +14,7 @@ import { aiIndexOf } from '../../inbox/store/index'
 import { openDatabase } from '../../storage/schema/client'
 import { loadDenylist } from '../../privacy/scan/client.ts';
 import { ownerNameIn } from '../../surface/scorecard/helpers/measure.ts';
+import { LOADS_EVERY_TOOL_MS } from '../../../scripts/tests/timeouts.ts';
 
 const noNames = () => ''
 
@@ -64,7 +65,7 @@ describe('one router for the ask path and the prompt hook', () => {
         if (play && isPlatformFolder(play)) expect(folderOf(play)).toBe(platform)
       }
     }
-  })
+  }, LOADS_EVERY_TOOL_MS)
 })
 
 describe('the scoring', () => {
@@ -307,7 +308,7 @@ describe('the meaning router', () => {
     expect(skillAsks.filter((g) => g.skills!.includes(chosen(g)[0] ?? '')).length).toBe(8)
     expect(skillAsks.filter((g) => chosen(g).some((s) => g.skills!.includes(s))).length).toBe(9)
     for (const g of routerGolden.filter((g) => !g.expect.length && !g.skills?.length)) expect(routerSection(g.prompt, useCases, recorded(g.prompt), { facts, skills }).text).toBe('')
-  })
+  }, LOADS_EVERY_TOOL_MS)
 
   test('the hook injects the fused section inside the budget and records it as the router span, falling back to words when the service sent no meaning', async () => {
     const prompt = 'send grace_ships a voice note on discord'

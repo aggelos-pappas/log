@@ -46,7 +46,7 @@ function network(on: Database): void {
     { handle: 'rio_far', ring: 4, follows: 0, circles: [] as string[] },
   ]
   for (const p of people) {
-    on.prepare("INSERT INTO networkPeople (handleLower, handle, name, followers, degree, ring, band, score, topThemes, passesGates, followsOwner) VALUES (?, ?, ?, 120, ?, ?, 'collaborator', 0.8, '[\"graphs\"]', 1, ?)").run(p.handle, p.handle, p.handle, p.ring, p.ring, p.follows)
+    on.prepare("INSERT INTO networkPeople (handleLower, handle, name, followers, degree, ring, band, fit, topThemes, passesGates, followsOwner) VALUES (?, ?, ?, 120, ?, ?, 'collaborator', 0.8, '[\"graphs\"]', 1, ?)").run(p.handle, p.handle, p.handle, p.ring, p.ring, p.follows)
     for (const c of p.circles) on.prepare('INSERT INTO networkCircles (personLower, leaderLower) VALUES (?, ?)').run(p.handle, c)
   }
   for (const [handle, name] of [['chart_lead', 'Chart Lead'], ['loop_lead', 'Loop Lead']]) on.prepare('INSERT INTO networkLeaders (handleLower, handle, name, followers, world) VALUES (?, ?, ?, 4000, NULL)').run(handle, handle, name)

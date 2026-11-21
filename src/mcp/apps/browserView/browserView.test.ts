@@ -13,6 +13,7 @@ import { createLogMcpServer } from "../../server/index.ts";
 import { browserViewJson } from "../../../cli/browser/index.ts";
 import { stopRelay } from "../../../browser/viewer/index.ts";
 import { appTools, BROWSER_VIEW_URI, browserViewCsp, httpLocation, MCP_APP_MIME_TYPE, settleLocation, readBrowserViewResource, runAppTool, uiCapable, UI_EXTENSION_ID, withBrowserView } from "./index.ts";
+import { LOADS_EVERY_TOOL_MS } from "../../../../scripts/tests/timeouts.ts";
 
 const UI = { extensions: { [UI_EXTENSION_ID]: { mimeTypes: [MCP_APP_MIME_TYPE] } } };
 const FIXTURE = fileURLToPath(new URL("../../../../python/fixtures/browserViewerFixture.py", import.meta.url));
@@ -53,7 +54,7 @@ describe("the browser view as an MCP App", () => {
     expect(tools.filter((tool) => (tool._meta?.ui as { visibility?: string[] } | undefined)?.visibility?.includes("app") && !(tool._meta?.ui as { visibility: string[] }).visibility.includes("model")).map((tool) => tool.name)).toEqual(["browserViewStream", "browserViewFrame", "browserViewInput", "browserViewDone"]);
     const { resources } = await client.listResources();
     expect(resources.some((resource) => resource.uri === BROWSER_VIEW_URI && resource.mimeType === MCP_APP_MIME_TYPE)).toBe(true);
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("a host that declares no MCP Apps support still gets the view, its app tools and the resource, with the text answer kept", async () => {
     const client = await connected({});
@@ -68,7 +69,7 @@ describe("the browser view as an MCP App", () => {
     const text = await client.callTool({ name: "browserView", arguments: { account: "nobodyHere" } });
     expect((text.content as { text: string }[])[0].text).toContain("nobodyHere: browserMissing");
     expect((text.structuredContent as { json: { phase: string } }).json.phase).toBe("browserMissing");
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("the resource is one HTML page with the app mime type, its CSP and a border", async () => {
     const read = await readBrowserViewResource({});

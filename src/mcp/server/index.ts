@@ -22,7 +22,7 @@ import { accountOfArgv, appendProgress, busyJob, cancelRequested, DEFAULT_WAIT_M
 import type { JobRecord } from "../jobs/index.ts";
 import { oauthFromEnv } from "../oauth/index.ts";
 import type { OAuthServer } from "../oauth/index.ts";
-import { activePlay, capResult, currentToolName, narrowingFlags, FLOW_LIVE_TOOL, forgetPlayScope, gatedToolOf, guideAnswer, handleOf, PLAY_HANDLE_FIELD, playMeta, playRefusal, actingAsOwnerTools, capabilityPlayGateMode, folderOfPlay, namedByPlay, platformOfTool, playGateMode, stepToolsOf, playScope, processPlayScope, renamedTool, touchPlay, withoutHandle, withPlayFooter, withRenamedNote } from "./helpers/index.ts";
+import { activePlay, BROWSERS_HEAD, capResult, currentToolName, narrowingFlags, FLOW_LIVE_TOOL, forgetPlayScope, gatedToolOf, guideAnswer, handleOf, PLAY_HANDLE_FIELD, playMeta, playRefusal, actingAsOwnerTools, capabilityPlayGateMode, folderOfPlay, namedByPlay, platformOfTool, playGateMode, stepToolsOf, playScope, processPlayScope, renamedTool, touchPlay, withoutHandle, withPlayFooter, withRenamedNote } from "./helpers/index.ts";
 import type { PlayScope } from "./helpers/index.ts";
 import { isPlatform } from "../../cli/runner/helpers/index.ts";
 import { capabilityDeps } from "../../cli/capabilities/index.ts";
@@ -60,9 +60,8 @@ function safeViews(read: ReadBrowsers): BrowserView[] {
 }
 
 export function browserLines(views: BrowserView[]): string[] {
-  const where = views.length
-    ? `Browsers: ${views.map((v) => `${v.account} on ${v.url || "a page"} (step ${v.step})${v.state ? `, page state ${v.state.id}: ${v.state.what}` : v.failed ? ", its last step failed" : ", no known blocking state"}`).join("; ")}.`
-    : "Browsers: none open.";
+  if (!views.length) return [];
+  const where = `${BROWSERS_HEAD}${views.map((v) => `${v.account} on ${v.url || "a page"} (step ${v.step})${v.state ? `, page state ${v.state.id}: ${v.state.what}` : v.failed ? ", its last step failed" : ", no known blocking state"}`).join("; ")}.`;
   const owner = views.find((v) => v.needsOwner)?.needsOwner;
   const next = views.find((v) => v.next)?.next;
   return [where, ...(owner ? [`Needs the owner: ${owner}`] : []), ...(next ? [`Next: call \`${next.tool}\` ${JSON.stringify(next.input)} (rule 79: a known state is resolved, never a reason to stop).`] : [])];
@@ -70,8 +69,9 @@ export function browserLines(views: BrowserView[]): string[] {
 
 function withBrowsers(base: Omit<ToolResult, "browsers" | "next" | "needsOwner">, body: string, isError: boolean, read: ReadBrowsers, images: readonly ToolImage[] = []): CallToolResult {
   const views = safeViews(read);
+  const head = browserLines(views);
   const result: ToolResult = { ...base, browsers: views, next: views.find((v) => v.next)?.next ?? null, needsOwner: views.find((v) => v.needsOwner)?.needsOwner ?? null };
-  return { isError, content: [{ type: "text", text: [...browserLines(views), "", body].join("\n") }, ...images.map((image) => ({ type: "image" as const, data: image.data, mimeType: image.mimeType }))], structuredContent: result as unknown as Record<string, unknown> };
+  return { isError, content: [{ type: "text", text: head.length ? [...head, "", body].join("\n") : body }, ...images.map((image) => ({ type: "image" as const, data: image.data, mimeType: image.mimeType }))], structuredContent: result as unknown as Record<string, unknown> };
 }
 
 const NO_IDENTITY: ResultIdentity = { platform: null, capability: null };

@@ -156,3 +156,9 @@ The Python engines kept their per-account stores as whole JSON files rewritten o
 The old file is the backfill: the first read or write of a store imports it, recorded in `imports` as `engineState:<platform>:<account>:<store>` with the file's modified time, and the file is kept. A file modified after that time (an engine still on the old code) is merged in again by the next Python read or write, and until then `readEngineStore` answers from the file. When log.db or `engineState` is not there yet, the engine reads and writes its old file as before.
 
 Checked by: code and SubQ
+
+### REQ-STORAGE-21: A chat's kind and name come from the best source that knows them
+
+A Discord server channel could be stored first as a `dm` named after whoever spoke, and the chat upsert never changed `kind` or `name` once the row existed. The upsert in `writeTypedRows` and `conversationSeen` (`src/storage/platform/client.ts`) now runs each chat through `placedChat` (`src/storage/platform/helpers/places.ts`): when the account's channel catalog (`discordServers`, `discordThreads` in `engineState`, read by `roomCatalog` and cached until `engineState` changes) lists the conversation, its kind is a server kind, its name is the channel's name (`channelNameOf`) and its server id the catalog's. A channel, thread or guild id means a server kind, never a dm, and a later dm-looking event never turns a server channel back into a dm or names it after a speaker (`PLACE_UPDATE`). Migration 28 (`chatPlaces`) runs `repairChatPlaces` once, correcting rows stored before. The inbox's Discord lines and the conversation block name the server, the #channel and the sender (`placeLabel`, `placeNameOf`), `log inbox waiting` lists server channels the owner talks in under them (`channelWordsOf`), and `log discord chats` shows who last spoke in each channel (`channelSendersOf`).
+
+Checked by: code and tests

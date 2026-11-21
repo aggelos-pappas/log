@@ -1,6 +1,7 @@
 import { partiesOf } from '../claims/index'
 import { mediaLine, mediaOf } from '../../media/describer/index'
 import { chatEvents } from '../store/index'
+import { sameChatId } from '../../twitter/dm/person/client'
 import type { StoredEvent } from '../store/index'
 import type { ChatContext, ContextMessage, Who } from './types'
 
@@ -15,7 +16,7 @@ function payloadOf(row: StoredEvent): Record<string, unknown> {
 function isTheirs(platform: string, row: StoredEvent, payload: Record<string, unknown>, who: Who): boolean {
   const handle = who.handle?.replace(/^@/, '').toLowerCase() ?? null
   if (row.type === 'notification') return (!!who.userId && String(payload.userId ?? '') === who.userId) || (!!handle && String(payload.handle ?? row.withWho).toLowerCase() === handle)
-  if (who.conversationId && row.conversationId === who.conversationId) return true
+  if (who.conversationId && sameChatId(platform, row.conversationId, who.conversationId)) return true
   if (who.userId && partiesOf(platform, row.conversationId).includes(who.userId)) return true
   if (row.type === 'ownMessage' && (who.userId || partiesOf(platform, row.conversationId).length !== 2)) return false
   return !!handle && row.withWho.replace(/^@/, '').toLowerCase() === handle

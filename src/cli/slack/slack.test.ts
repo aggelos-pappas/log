@@ -13,6 +13,7 @@ import { withD } from "./helpers/index.ts";
 import { liveLogVerdict } from "../../agentHooks/liveLog/index.ts";
 import { chatEvents } from "../../inbox/store/index.ts";
 import { takePending } from "../../inbox/watch/index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 function fixture() {
   const twenty = marketplaceFixture();
@@ -62,7 +63,7 @@ describe("log slack session check", () => {
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [SLACK_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error || !engine.stdout.trim()) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "sessionDead", loginState: "loggedOut" });
-  });
+  }, SPAWNS_PROCESS_MS);
 });
 
 const CHATS: PlatformEngineRun = { answer: { ok: true, loginState: "loggedIn", chats: [{ id: "D0EXAMPLE01", kind: "dm", name: null, members: ["Sam"] }, { id: "D0OTHER123", kind: "dm", name: null, members: ["Bethany"] }] }, refreshed: null };

@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
-import { importNetwork, missingFiles, networkDir, networkImported } from "../../relate/network/index.ts";
-import type { NetworkImport } from "../../relate/network/index.ts";
+import { ensureRings, importNetwork, missingFiles, networkDir, networkImported, networkRings } from "../../relate/network/index.ts";
+import type { NetworkImport, NetworkRings } from "../../relate/network/index.ts";
 import { defaultDbPath, openDatabase } from "../../storage/schema/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
@@ -14,11 +14,13 @@ export const NETWORK_USAGE = [
 export const NETWORK_INPUT: CommandInput = {
   forms: [
     { words: ["import"], effect: "write", summary: "Read your network into log.db, replacing the last import", positionals: [], flags: [{ name: "from", kind: "string", description: "The data folder" }, { name: "account", kind: "string", description: "The owner's account" }, JSON_FLAG] },
-    { words: ["status"], summary: "What log.db holds of your network", positionals: [], flags: [JSON_FLAG] },
+    { words: ["status"], summary: "Your network's rings, live", positionals: [], flags: [JSON_FLAG] },
   ],
 };
 
 const countsLine = (s: NetworkImport): string => `${s.counts.people} people, ${s.counts.leaders} leaders, ${s.counts.communities} communities, ${s.counts.runs} runs, ${s.counts.circles} circle memberships, ${s.counts.mentions} mention pairs, ${s.counts.follows} follow ${s.account ? `@${s.account}` : "nobody (no X account)"}`;
+
+const ringsLine = (r: NetworkRings): string => `ring 1: ${r.counts["1"]} engaged with you, ring 2: ${r.counts["2"]} talk to them or your followers, ring 3: ${r.counts["3"]} follow you, ring 4: ${r.counts["4"]} known`;
 
 export const networkCommand: Command = {
   usage: NETWORK_USAGE,
@@ -46,10 +48,12 @@ export const networkCommand: Command = {
       return { code: 0, stdout: `log network import: ${countsLine(outcome.summary)}, in ${outcome.summary.ms} ms (map ${outcome.summary.mapVersion ?? "?"} of ${outcome.summary.generatedAt ?? "?"}).\n  \`log relate build\` puts it in the graph.` };
     }
     if (sub === "status") {
+      ensureRings(handle);
+      const rings = networkRings(handle);
       const summary = networkImported(handle);
-      if (json) return { code: 0, stdout: JSON.stringify({ imported: Boolean(summary), ...(summary ?? {}) }, null, 2) };
-      if (!summary) return { code: 0, stdout: "log network status: nothing imported yet. `log network import` reads it in." };
-      return { code: 0, stdout: `log network status: ${countsLine(summary)}\n  imported ${summary.importedAt} from ${summary.source} (map ${summary.mapVersion ?? "?"} of ${summary.generatedAt ?? "?"})` };
+      if (json) return { code: 0, stdout: JSON.stringify({ rings, imported: Boolean(summary), ...(summary ?? {}) }, null, 2) };
+      const imported = summary ? `  imported: ${countsLine(summary)}, ${summary.importedAt} from ${summary.source}; ${rings.merged} matched your chats by handle` : "  nothing imported: these rings come from your own accounts. `log network import` adds a research folder.";
+      return { code: 0, stdout: [`log network status: ${ringsLine(rings)}`, `  live through event ${rings.state?.throughSeq ?? 0} (log.db at ${rings.latestSeq})${rings.state?.lastAtMs ? `, last at ${new Date(rings.state.lastAtMs).toISOString()}` : ""}`, imported].join("\n") };
     }
     return refuseInput("network", "say import or status", NETWORK_USAGE);
   },
