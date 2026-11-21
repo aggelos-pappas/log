@@ -5,6 +5,9 @@ import { join } from 'node:path'
 import { openDatabase } from '../../storage/schema/index'
 import { getState, putState } from '../../storage/state/index'
 import { DEMO_NOW, seedDemoWorld } from './fixtures/demoWorld'
+import { BUILD_WEEK, CONNECTED_NOW, CONNECTED_OWNER, MAKER_SERVER, seedConnectedWorld } from './fixtures/connectedWorld'
+import { spawnSync } from 'node:child_process'
+import { writeFileSync } from 'node:fs'
 import { buildGraph, edgePrior, graphDir, graphPriorFor, pointerOf, queryGraph, relateContext, verifyGraph, wantsRebuild, workspaceOf } from './index'
 import { mentionedTokens } from './helpers/index'
 import type { GraphPointer } from './index'
@@ -26,7 +29,7 @@ describe('the Relate graph projected from log.db', () => {
     const result = verifyGraph(built.path)
     expect(result.differs).toEqual([])
     expect(result.ok).toBe(true)
-    expect(built.pointer.counts).toEqual({ accounts: 2, identities: 9, rooms: 7, posts: 2, memberOf: 11, said: 15, engaged: 8 })
+    expect(built.pointer.counts).toEqual({ accounts: 2, identities: 9, rooms: 7, posts: 2, memberOf: 11, said: 15, engaged: 8, servers: 0, inServer: 0, persons: 0, linkedTo: 0, repliedTo: 0, mentioned: 0 })
     expect(built.pointer.file.startsWith(graphDir(built.path))).toBe(true)
   })
 
@@ -58,7 +61,7 @@ describe('the Relate graph projected from log.db', () => {
     expect(result.rows).toEqual([{ kind: 'like' }, { kind: 'repost' }])
   })
 
-  test('marks itself behind when log.db moves on, and only asks for a rebuild of a graph that exists once it is a minute old', () => {
+  test('marks itself behind when log.db moves on, asks for a rebuild of a graph once it is a minute old, and for a first graph at once', () => {
     const path = demoDb()
     const pointer = buildGraph(path, new Date(DEMO_NOW))
     openDatabase(path).prepare("INSERT INTO events (eventId, platform, account, conversationId, type, receivedAt, appendedAt) VALUES ('demo:new', 'twitter', 'builderOwner', 'x', 'message', ?, ?)").run(new Date(DEMO_NOW).toISOString(), new Date(DEMO_NOW).toISOString())
@@ -68,7 +71,8 @@ describe('the Relate graph projected from log.db', () => {
     expect(wantsRebuild(pointer, 1, DEMO_NOW + 10_000)).toBe(false)
     expect(wantsRebuild(pointer, 1, DEMO_NOW + 61_000)).toBe(true)
     expect(wantsRebuild(pointer, 0, DEMO_NOW + 61_000)).toBe(false)
-    expect(wantsRebuild(null, 5, DEMO_NOW + 61_000)).toBe(false)
+    expect(wantsRebuild(null, 5, DEMO_NOW + 61_000)).toBe(true)
+    expect(wantsRebuild(null, 0, DEMO_NOW + 61_000)).toBe(false)
   })
 
   test("keeps one workspace's graph out of another's, and drops a graph built by another projector version", () => {
@@ -110,5 +114,70 @@ describe('the graph prior for search (BayesRAG, appendix A.2.2)', () => {
     expect(edgePrior(1)).toBeLessThan(edgePrior(3))
     expect(edgePrior(6) - edgePrior(3)).toBeLessThan(edgePrior(3) - edgePrior(0))
     expect(edgePrior(100)).toBeLessThanOrEqual(1)
+  })
+})
+
+const connected = (() => {
+  const path = join(mkdtempSync(join(tmpdir(), 'relateConnected-')), 'log.db')
+  seedConnectedWorld(openDatabase(path))
+  return { path, pointer: buildGraph(path, new Date(CONNECTED_NOW)) }
+})()
+
+const ask = (cypher: string) => queryGraph(cypher, {}, connected.path).rows
+
+describe('rooms, servers, people and replies in the graph (#266)', () => {
+  test('a server channel stored as a DM named after a speaker is a channel with its own name, under its Server', () => {
+    const room = `discord:${CONNECTED_OWNER.account}:${BUILD_WEEK}`
+    expect(ask(`MATCH (r:Room {key: '${room}'})-[:IN_SERVER]->(s:Server) RETURN r.kind AS kind, r.name AS name, r.server AS server, s.name AS serverName, s.serverId AS serverId`)).toEqual([{ kind: 'channel', name: 'buildWeek', server: MAKER_SERVER.name, serverName: MAKER_SERVER.name, serverId: MAKER_SERVER.id }])
+    expect(ask("MATCH (r:Room {conversationId: 'chanUnlisted'}) RETURN r.kind AS kind, r.name AS name")).toEqual([{ kind: 'channel', name: null }])
+    expect(ask("MATCH (r:Room {conversationId: 'dmOak'}) RETURN r.kind AS kind, r.name AS name")).toEqual([{ kind: 'dm', name: 'Oak Bench' }])
+    expect(ask(`MATCH (i:Identity)-[:SAID]->(:Room)-[:IN_SERVER]->(:Server {serverId: '${MAKER_SERVER.id}'}) RETURN DISTINCT i.handle AS handle ORDER BY handle`).map((r) => r.handle)).toEqual(['oak_bench', 'pine_cart', 'quill_maker'])
+    expect(connected.pointer.counts).toMatchObject({ servers: 2, inServer: 3, persons: 1, linkedTo: 2 })
+  })
+
+  test('identities the owner linked share one Person, and the context merges them', () => {
+    expect(ask("MATCH (i:Identity)-[:LINKED_TO]->(p:Person) RETURN p.name AS person, i.platform AS platform ORDER BY platform")).toEqual([{ person: 'Quill Maker', platform: 'discord' }, { person: 'Quill Maker', platform: 'twitter' }])
+    expect(relateContext('reply to @quillmaker', connected.path, CONNECTED_NOW).text).toContain('[one person across 2 identities, linked by the owner]')
+  })
+
+  test('ask finds people by display name, the way saidBy does, and by handle', () => {
+    const answer = relateContext('@Quill Maker and Oak Bench', connected.path, CONNECTED_NOW)
+    expect(answer.people).toBe(2)
+    expect(answer.text).toContain('@quill_maker')
+    expect(answer.text).toContain('@oak_bench')
+    expect(relateContext('what did Pine Cart want', connected.path, CONNECTED_NOW).text).toContain('@pine_cart')
+    expect(relateContext('the pine cart', connected.path, CONNECTED_NOW).outcome).toBe('answered')
+    expect(relateContext('fix the oak table', connected.path, CONNECTED_NOW).outcome).toBe('none')
+  })
+
+  test('SAID keeps first and last times, and replies and mentions point at the owner or the person', () => {
+    const room = `discord:${CONNECTED_OWNER.account}:${BUILD_WEEK}`
+    expect(ask(`MATCH (i:Identity {handle: 'quill_maker'})-[s:SAID]->(:Room {key: '${room}'}) RETURN s.messages AS messages, s.firstAtMs AS firstAtMs, s.lastAtMs AS lastAtMs`)).toEqual([{ messages: 2, firstAtMs: CONNECTED_NOW - 55 * 60_000, lastAtMs: CONNECTED_NOW - 20 * 60_000 }])
+    expect(ask(`MATCH (i:Identity)-[r:REPLIED_TO {room: '${room}'}]->(a:Account) WHERE r.lastAtMs > ${CONNECTED_NOW - 3_600_000} RETURN i.handle AS handle, a.account AS account`)).toEqual([{ handle: 'quill_maker', account: CONNECTED_OWNER.account }])
+    expect(ask('MATCH (i:Identity)-[r:REPLIED_TO]->(j:Identity) RETURN i.handle AS from, j.handle AS to')).toEqual([{ from: 'quill_maker', to: 'oak_bench' }])
+    expect(ask('MATCH (i:Identity)-[r:MENTIONED]->(a:Account) RETURN i.handle AS from, a.account AS to')).toEqual([{ from: 'oak_bench', to: CONNECTED_OWNER.account }])
+    expect(ask('MATCH (i:Identity)-[r:MENTIONED]->(j:Identity) RETURN i.handle AS from, j.handle AS to')).toEqual([{ from: 'pine_cart', to: 'quill_maker' }])
+    expect(relateContext('@oak_bench', connected.path, CONNECTED_NOW).text).toContain('replied to or mentioned the owner: 1x in "Maker Guild #buildWeek" (last 40 min ago)')
+  })
+
+  test('a build leaves no writable handle behind, so another process can read the graph at once', () => {
+    const script = `const { Database } = require('@relate/relate'); const db = Database.open(process.argv[1], { readOnly: true }); process.stdout.write(String(db.connect().query('MATCH (s:Server) RETURN count(s) AS n').rows[0].n))`
+    const read = spawnSync(process.execPath, ['-e', script, connected.pointer.file], { encoding: 'utf8', cwd: join(import.meta.dir, '..', '..', '..') })
+    expect(read.stderr).toBe('')
+    expect(read.stdout).toBe('2')
+  })
+
+  test('a graph file that cannot be opened is a coded outcome, never a thrown hook error', () => {
+    const path = demoDb()
+    buildGraph(path, new Date(DEMO_NOW))
+    const handle = openDatabase(path)
+    const pointer = getState<GraphPointer>('relateGraph', workspaceOf(path), {}, handle)!.body
+    const broken = join(graphDir(path), 'graph-broken.rl')
+    writeFileSync(broken, 'not a graph')
+    putState('relateGraph', workspaceOf(path), { ...pointer, file: broken }, DEMO_NOW, handle)
+    const answer = relateContext('@ada_codes', path, DEMO_NOW)
+    expect(answer.outcome).toBe('graphUnreadable')
+    expect(answer.detail).toStartWith('graphUnreadable:')
+    expect(graphPriorFor('@ada_codes', path)).toBeNull()
   })
 })

@@ -11,6 +11,7 @@ const answers = 'src/agentHooks/answers/client.ts'
 const registry = 'src/agentHooks/registry/index.ts'
 const searched = 'src/relate/search/client.ts'
 const searchedTypes = 'src/relate/search/types.ts'
+const postInstallTypes = 'src/release/postInstall/types.ts'
 
 const anchors: RequirementAnchors = {
   'REQ-RELATE-01': [
@@ -21,6 +22,7 @@ const anchors: RequirementAnchors = {
   ],
   'REQ-RELATE-02': [
     { kind: 'symbol', file: client, name: 'buildGraph' },
+    { kind: 'symbol', file: client, name: 'buildGraphHere' },
     { kind: 'symbol', file: client, name: 'writeProjection' },
     { kind: 'symbol', file: client, name: 'prune' },
     { kind: 'value', file: types, name: 'KEPT_SNAPSHOTS', equals: 3 },
@@ -36,7 +38,7 @@ const anchors: RequirementAnchors = {
     { kind: 'symbol', file: client, name: 'workspaceOf' },
     { kind: 'symbol', file: client, name: 'graphDir' },
     { kind: 'symbol', file: client, name: 'pointerOf' },
-    { kind: 'value', file: types, name: 'PROJECTOR_VERSION', equals: 1 },
+    { kind: 'value', file: types, name: 'PROJECTOR_VERSION', equals: 2 },
   ],
   'REQ-RELATE-05': [
     { kind: 'symbol', file: mentions, name: 'mentionedTokens' },
@@ -56,6 +58,7 @@ const anchors: RequirementAnchors = {
     { kind: 'symbol', file: client, name: 'wantsRebuild' },
     { kind: 'value', file: types, name: 'REFRESH_AFTER_MS', equals: 60000 },
     { kind: 'uses', file: client, name: 'windowsHide' },
+    { kind: 'string', file: postInstallTypes, includes: 'relateGraph' },
   ],
   'REQ-RELATE-08': [
     { kind: 'symbol', file: client, name: 'queryGraph' },
@@ -71,23 +74,45 @@ const anchors: RequirementAnchors = {
     { kind: 'value', file: searchedTypes, name: 'SEARCH_CHARS', equals: 1500 },
     { kind: 'uses', file: answers, name: 'connectedSearch' },
   ],
+  'REQ-RELATE-10': [
+    { kind: 'symbol', file: project, name: 'roomCatalog' },
+    { kind: 'symbol', file: project, name: 'channelNameOf' },
+    { kind: 'string', file: client, includes: 'IN_SERVER' },
+  ],
+  'REQ-RELATE-11': [
+    { kind: 'string', file: client, includes: 'LINKED_TO' },
+    { kind: 'string', file: project, includes: 'FROM identityLinks' },
+  ],
+  'REQ-RELATE-12': [
+    { kind: 'string', file: client, includes: 'REPLIED_TO' },
+    { kind: 'string', file: client, includes: 'MENTIONED' },
+    { kind: 'symbol', file: mentions, name: 'pointedAt' },
+  ],
+  'REQ-RELATE-13': [
+    { kind: 'symbol', file: client, name: 'GraphUnreadable' },
+    { kind: 'string', file: client, includes: 'graphUnreadable' },
+  ],
 }
 
 export const relateGraph = {
   description: "The Relate graph projected from log.db and the connected context its hook injects for the people a prompt names",
   specPath: 'docs/specs/relateGraph.md',
-  codePaths: [client, types, project, mentions, cli, answers],
+  codePaths: [client, types, project, mentions, cli, answers, postInstallTypes],
   anchors,
   rubrics: {
     'REQ-RELATE-01': noul('Does projectionOf run every read inside one read transaction (readOnce), take throughSeq as the highest events seq in that same transaction, and mark as owner the identities that are an account\'s own id, a self: id or an account\'s own handle?'),
-    'REQ-RELATE-02': noul('Does buildGraph write a new graph-<throughSeq>-<ms>.rl file in one Relate transaction and checkpoint it before putState stores the relateGraph pointer, take the relateGraphBuilding claim first and release it after, and does prune keep the newest KEPT_SNAPSHOTS files and every file this process holds open?'),
+    'REQ-RELATE-02': noul('Does buildGraph run the build in a separate short-lived process (buildGraphHere), and does that build write a new graph-<throughSeq>-<ms>.rl file in one Relate transaction and checkpoint it before putState stores the relateGraph pointer, take the relateGraphBuilding claim first and release it after, and does prune keep the newest KEPT_SNAPSHOTS files and every file this process holds open?'),
     'REQ-RELATE-03': noul('Does verifyGraph compare every count of expectedCounts(projectionOf) with countsIn of the current graph, and report a graph behind log.db as behind instead of comparing it?'),
     'REQ-RELATE-04': noul('Does pointerOf return null when the stored pointer\'s workspace differs from workspaceOf(dbPath), its projector version differs from PROJECTOR_VERSION, or its file does not exist?'),
-    'REQ-RELATE-05': noul('Does relateAnswer return nothing for an empty prompt or one starting with <, and does findPeople skip owner identities, merge identities of one platform with the same handle into one person, and keep at most MENTIONED_PEOPLE people?'),
+    'REQ-RELATE-05': noul('Does relateAnswer return nothing for an empty prompt or one starting with <, and does findPeople match handles, aliases and display or sender names (multi-word anywhere, one-word only capitalised or tagged), skip owner identities, merge identities of one platform with the same handle into one person, and keep at most MENTIONED_PEOPLE people?'),
     'REQ-RELATE-06': noul('Does renderContext say, for each person, the talks, engagement, groups, introducers and same-orbit people from connectedContext, name throughSeq and how far behind log.db the graph is, and cut the text to CONTEXT_CHARS?'),
-    'REQ-RELATE-07': noul('Does refreshGraph start log relate build as a detached hidden process only when a graph already exists and wantsRebuild says so (behind and built at least REFRESH_AFTER_MS ago), never when there is no pointer, and no build claim is fresh?'),
+    'REQ-RELATE-07': noul('Does the after-install routine build the graph after migrations, and does refreshGraph start log relate build as a detached hidden process when wantsRebuild says so (no graph yet and events exist, or behind and built at least REFRESH_AFTER_MS ago) and no build claim is fresh?'),
     'REQ-RELATE-08': noul('Does queryGraph run the statement on the current graph and return at most QUERY_ROWS rows with whether more were cut?'),
     'REQ-RELATE-09': noul('When the prompt names someone the graph knows, does relateAnswer also run connectedSearch (keyword, meaning and relationship fused) and add up to SEARCHED_HITS hits with likelihood at least MIN_LIKELIHOOD that a text retriever found, under FROM THE CONVERSATIONS within SEARCH_CHARS, running nothing when no one is named, the index or graph is missing, and dropping a search past SEARCH_BUDGET_MS?'),
+    'REQ-RELATE-10': noul('Does projectionOf take a Discord room\'s kind and name from the channel catalog, make an unlisted Discord room with a serverId a channel without a speaker\'s name, and give every room with a server an IN_SERVER edge to one Server node?'),
+    'REQ-RELATE-11': noul('Does every active identityLinks row become a LINKED_TO edge from its Identity to one Person node per personId?'),
+    'REQ-RELATE-12': noul('Does SAID carry firstAtMs and lastAtMs, and do replies (replyToKey) and mentions (<@id> or @handle of a known identity or the owner) become REPLIED_TO and MENTIONED edges with room, times and first and last times, the owner side being the room\'s Account?'),
+    'REQ-RELATE-13': noul('When the graph file cannot be opened read-only, does relateContext return the graphUnreadable outcome and graphPriorFor return null instead of throwing?'),
     unspecifiedBehavior: noul('Does the Relate graph code write to log.db anything other than its relateGraph pointer and its build claim, read a platform, or send anything off the machine?'),
   },
   assertions: {
@@ -100,6 +125,10 @@ export const relateGraph = {
     'REQ-RELATE-07': MET,
     'REQ-RELATE-08': MET,
     'REQ-RELATE-09': MET,
+    'REQ-RELATE-10': MET,
+    'REQ-RELATE-11': MET,
+    'REQ-RELATE-12': MET,
+    'REQ-RELATE-13': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

@@ -1,7 +1,7 @@
 import type { ModelFetch } from '../../models/store/index'
 import type { HarnessRefresh } from '../harnesses/index'
 
-export const POST_INSTALL_STEPS = ['vendors', 'migrations', 'skills', 'models', 'harnesses'] as const
+export const POST_INSTALL_STEPS = ['vendors', 'migrations', 'relateGraph', 'skills', 'models', 'harnesses'] as const
 
 export type PostInstallStep = (typeof POST_INSTALL_STEPS)[number]
 
@@ -29,6 +29,7 @@ export interface PostInstallReport {
 export interface PostInstallDeps {
   vendors(root: string): StepResult
   migrations(root: string): StepResult
+  relateGraph(root: string): StepResult
   skills(root: string): StepResult
   models(root: string): Promise<ModelFetch[]>
   harnesses(root: string): HarnessRefresh[]

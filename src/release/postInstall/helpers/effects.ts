@@ -122,6 +122,11 @@ function migrations(root: string): StepResult {
   return runStep(process.execPath, ['-e', "const { openDatabase } = await import('./src/storage/schema/index.ts'); openDatabase().close()"], root, 120_000)
 }
 
+function relateGraph(root: string): StepResult {
+  const done = runStep(process.execPath, [join(root, 'bin', 'log.ts'), 'relate', 'build', '--json'], root, 300_000)
+  return done.ok ? { ok: true, detail: 'built' } : done
+}
+
 function skills(root: string): StepResult {
   const script = join(root, 'scripts', 'docs', 'syncSiteSkills.mjs')
   if (!existsSync(script)) return { ok: true, detail: 'no skills build in this install' }
@@ -133,6 +138,7 @@ export function livePostInstallDeps(log: (line: string) => void = () => {}): Pos
   return {
     vendors,
     migrations,
+    relateGraph,
     skills,
     models: () => fetchModels(LOCAL_MODELS, liveModelsDeps(log)),
     harnesses: (root) => refreshHarnesses(root),
