@@ -18,6 +18,8 @@ export type StateScope =
   | 'watcherEnd'
   | 'watcherHold'
   | 'turnStart'
+  | 'inboxLabels'
+  | 'inboxDebrief'
 
 export interface StateRow<T> {
   body: T
