@@ -60,7 +60,7 @@ Checked by: code and SubQ
 
 ### REQ-RUNS-09: The docs gate refuses undocumented or unread requests
 
-lefthook's pre-push runs the docs gate (`check:clientDocs`). It refuses a listed doc that is missing, a doc rea has not read, a doc whose reasoning is not written, a doc not in `operations.json`, a Facebook request named in the code with no doc, and a run recorded after the docs were built.
+lefthook's pre-push runs the docs gate (`check:clientDocs`). It refuses a listed doc that is missing, a doc rea has not read, a doc whose reasoning is not written, a doc not in `operations.json`, a Facebook request named in the code with no doc, and an `operations.json` that carries `builtAt`. It never reads the runs on this machine: when the docs were last built is kept in log.db (`log capture docs` records it), and `log runs` says which runs are not in the docs yet.
 
 Checked by: code and SubQ
 

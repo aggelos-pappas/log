@@ -72,7 +72,7 @@ describe('the network in the Relate graph', () => {
   })()
 
   test('adds leaders, communities and their edges, and verify agrees with log.db', () => {
-    expect(pointer.networkCounts).toEqual({ leaders: 4, communities: 3, inCircleOf: 13, runs: 4, mentioned: 2, follows: 1 })
+    expect(pointer.networkCounts).toEqual({ leaders: 4, communities: 3, inCircleOf: 13, runs: 4, networkMentioned: 2, follows: 1 })
     expect(pointer.counts.identities).toBe(13)
     const result = verifyGraph(dbPath)
     expect(result.differs).toEqual([])

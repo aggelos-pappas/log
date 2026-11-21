@@ -98,5 +98,5 @@ export function seedDemoWorld(on: Database): void {
   engage(on, x, 'like', '2000000005', 'postGraphs', graphs, hoursAgo(9))
   engage(on, x, 'like', '2000000004', 'postGraphs', graphs, hoursAgo(7))
 
-  on.prepare("INSERT INTO events (eventId, platform, account, conversationId, type, receivedAt, appendedAt) VALUES ('demo:last', 'twitter', ?, ?, 'message', ?, ?)").run(x, `${DEMO_OWNER.xUserId}-2000000001`, iso(hoursAgo(5)), iso(hoursAgo(5)))
+  on.prepare("INSERT INTO events (eventId, platform, account, conversationId, type, receivedAt, appendedAt, typedAt) VALUES ('demo:last', 'twitter', ?, ?, 'message', ?, ?, ?)").run(x, `${DEMO_OWNER.xUserId}-2000000001`, iso(hoursAgo(5)), iso(hoursAgo(5)), hoursAgo(5))
 }

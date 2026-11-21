@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 56 domains, 654 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 56 domains, 658 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -653,9 +653,13 @@ log keeps a Relate (Neo4j's embedded graph database) projection of log.db: the o
 - **REQ-RELATE-04** A graph belongs to one log.db
 - **REQ-RELATE-05** The hook names only people the prompt names
 - **REQ-RELATE-06** The context is what the graph connects, as facts
-- **REQ-RELATE-07** A graph behind log.db is rebuilt in the background
+- **REQ-RELATE-07** The graph is built at install and kept current
 - **REQ-RELATE-08** Agents can read the graph with Cypher
 - **REQ-RELATE-09** The hook adds what was said, found by all three retrievers together
+- **REQ-RELATE-10** Discord rooms carry their kind, their own name and their server
+- **REQ-RELATE-11** Person links are projected, so linked identities share one person
+- **REQ-RELATE-12** SAID keeps first and last times, and replies and mentions are edges
+- **REQ-RELATE-13** A graph that can't be opened is a coded outcome
 
 ## [People across platforms](./people.md)
 

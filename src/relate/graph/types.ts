@@ -1,4 +1,4 @@
-export const PROJECTOR_VERSION = 2
+export const PROJECTOR_VERSION = 3
 
 export const GRAPH_FILE_PREFIX = 'graph-'
 
@@ -22,7 +22,11 @@ export const LISTED = 5
 
 export const TOKEN_MIN = 4
 
-export const KEYED_LABELS: readonly string[] = ['Account', 'Identity', 'Room', 'Post', 'Snapshot', 'Leader', 'Community']
+export const KEYED_LABELS: readonly string[] = ['Account', 'Identity', 'Room', 'Post', 'Server', 'Person', 'Snapshot', 'Leader', 'Community']
+
+export const BUILD_CHILD_MS = 300_000
+
+export const NAME_MIN = 3
 
 export const NETWORK_LIMIT = { postChars: 280 }
 
@@ -46,6 +50,12 @@ export interface GraphCounts {
   memberOf: number
   said: number
   engaged: number
+  servers: number
+  inServer: number
+  persons: number
+  linkedTo: number
+  repliedTo: number
+  mentioned: number
 }
 
 export interface AccountRow {
@@ -62,6 +72,8 @@ export interface IdentityRow {
   handle: string | null
   handleLower: string | null
   name: string | null
+  nameLower: string | null
+  labels: string[]
   aliases: string[]
   owner: boolean
   personId: string | null
@@ -82,6 +94,39 @@ export interface RoomRow {
   conversationId: string
   kind: string
   name: string | null
+  server: string | null
+  serverKey: string | null
+  lastAtMs: number | null
+}
+
+export interface ServerRow {
+  key: string
+  platform: string
+  serverId: string
+  name: string | null
+}
+
+export interface PersonRow {
+  key: string
+  personId: string
+  name: string | null
+}
+
+export interface LinkRow {
+  identity: string
+  person: string
+  linkedBy: string | null
+  linkedAt: string | null
+}
+
+export interface PointedRow {
+  from: string
+  fromOwner: boolean
+  to: string
+  toOwner: boolean
+  room: string
+  times: number
+  firstAtMs: number | null
   lastAtMs: number | null
 }
 
@@ -96,6 +141,7 @@ export interface SaidRow {
   identity: string
   room: string
   messages: number
+  firstAtMs: number | null
   lastAtMs: number | null
   fromOwner: boolean
   accountKey: string
@@ -129,6 +175,11 @@ export interface Projection {
   said: SaidRow[]
   posts: PostRow[]
   engaged: EngagedRow[]
+  servers: ServerRow[]
+  persons: PersonRow[]
+  links: LinkRow[]
+  replies: PointedRow[]
+  mentions: PointedRow[]
   network?: NetworkProjection
 }
 
@@ -147,7 +198,7 @@ export interface NetworkGraphCounts {
   communities: number
   inCircleOf: number
   runs: number
-  mentioned: number
+  networkMentioned: number
   follows: number
 }
 
@@ -164,7 +215,8 @@ export interface ConnectedContext {
   person: PersonFound
   talks: { account: string; kind: string; threads: number; theirs: number; ours: number; lastAtMs: number | null }[]
   engaged: { account: string; kind: string; times: number; post: string | null; lastAtMs: number | null }[]
-  sharedRooms: { account: string; room: string; members: number }[]
+  sharedRooms: { account: string; room: string; server: string | null; members: number }[]
+  replied: { room: string; server: string | null; times: number; lastAtMs: number | null }[]
   introducers: { handle: string; rooms: number; lastDmAtMs: number | null }[]
   sameOrbit: { handle: string; posts: number }[]
   otherAccounts: string[]

@@ -35,7 +35,7 @@ export function networkProjectionOf(handle: Database, identities: Map<string, Id
     let key = byHandle.get(p.handleLower)
     if (!key) {
       key = `${X}:@${p.handleLower}`
-      identities.set(key, { key, platform: X, userId: `@${p.handleLower}`, handle: p.handle, handleLower: p.handleLower, name: p.name, aliases: [], owner: false, personId: null, personNames: [] })
+      identities.set(key, { key, platform: X, userId: `@${p.handleLower}`, handle: p.handle, handleLower: null, name: p.name, nameLower: null, labels: [], aliases: [], owner: false, personId: null, personNames: [] })
       byHandle.set(p.handleLower, key)
     }
     const row = identities.get(key)!
@@ -74,12 +74,12 @@ export function writeNetwork(conn: Connection, network: NetworkProjection): void
   write(conn, 'UNWIND $rows AS r CREATE (n:Community) SET n = r', network.communities)
   write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (l:Leader {key: r.leader}) CREATE (i)-[:IN_CIRCLE_OF]->(l)', network.inCircle)
   write(conn, 'UNWIND $rows AS r MATCH (l:Leader {key: r.leader}), (c:Community {key: r.community}) CREATE (l)-[:RUNS]->(c)', network.runs)
-  write(conn, 'UNWIND $rows AS r MATCH (a:Identity {key: r.from}), (b:Identity {key: r.to}) CREATE (a)-[:MENTIONED {times: r.times, lastAtMs: r.lastAtMs}]->(b)', network.mentioned)
+  write(conn, "UNWIND $rows AS r MATCH (a:Identity {key: r.from}), (b:Identity {key: r.to}) CREATE (a)-[:MENTIONED {source: 'network', times: r.times, lastAtMs: r.lastAtMs}]->(b)", network.mentioned)
   write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (a:Account {key: r.accountKey}) CREATE (i)-[:FOLLOWS]->(a)', network.follows)
 }
 
 export function networkCountsOf(network: NetworkProjection): NetworkGraphCounts {
-  return { leaders: network.leaders.length, communities: network.communities.length, inCircleOf: network.inCircle.length, runs: network.runs.length, mentioned: network.mentioned.length, follows: network.follows.length }
+  return { leaders: network.leaders.length, communities: network.communities.length, inCircleOf: network.inCircle.length, runs: network.runs.length, networkMentioned: network.mentioned.length, follows: network.follows.length }
 }
 
 export function networkCountsIn(conn: Connection): NetworkGraphCounts {
@@ -89,7 +89,7 @@ export function networkCountsIn(conn: Connection): NetworkGraphCounts {
     communities: one('MATCH (n:Community) RETURN count(n) AS n'),
     inCircleOf: one('MATCH ()-[r:IN_CIRCLE_OF]->() RETURN count(r) AS n'),
     runs: one('MATCH ()-[r:RUNS]->() RETURN count(r) AS n'),
-    mentioned: one('MATCH ()-[r:MENTIONED]->() RETURN count(r) AS n'),
+    networkMentioned: one("MATCH ()-[r:MENTIONED {source: 'network'}]->() RETURN count(r) AS n"),
     follows: one('MATCH ()-[r:FOLLOWS]->() RETURN count(r) AS n'),
   }
 }

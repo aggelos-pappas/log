@@ -19,7 +19,8 @@ function table(entries: RunEntry[]): string {
   const lines = entries.map((e) => `${mb(e.bytes).padStart(8)}  settled ${yn(e.settled).padEnd(3)}  docs ${yn(e.documented).padEnd(3)}  ${`${e.action}/${e.run}`.padEnd(48)}  ${e.keep ? `kept: ${e.keep}` : "may go"}`);
   const total = entries.reduce((n, e) => n + e.bytes, 0);
   const free = entries.filter((e) => !e.keep).reduce((n, e) => n + e.bytes, 0);
-  return [...lines, `${entries.length} runs, ${gb(total)}; ${entries.filter((e) => !e.keep).length} may go (${gb(free)}).`].join("\n");
+  const undocumented = entries.filter((e) => e.documented === false).length;
+  return [...lines, `${entries.length} runs, ${gb(total)}; ${entries.filter((e) => !e.keep).length} may go (${gb(free)}).`, ...(undocumented ? [`${undocumented} run(s) not in the request docs yet: log capture docs`] : [])].join("\n");
 }
 
 export const RUNS_INPUT: CommandInput = {
