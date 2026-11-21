@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { InspectSessionConfig } from "../../browser/inspect/index.ts";
+import { logHome } from "../../config/logHome/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { runCli } from "../runner/index.ts";
 
@@ -176,7 +177,7 @@ describe("log inspect start --detach (how an MCP agent opens the account's brows
       return { exited: () => 1 };
     };
     try {
-      const logPath = join(homedir(), ".logCli", "runs", "inspect", "galwayOne.start.log");
+      const logPath = join(logHome(), "runs", "inspect", "galwayOne.start.log");
       mkdirSync(dirname(logPath), { recursive: true });
       appendFileSync(logPath, "AdsPower profile k1 stopped\nInspect session for galwayOne ended (exit 0).\n");
       const err: string[] = [];

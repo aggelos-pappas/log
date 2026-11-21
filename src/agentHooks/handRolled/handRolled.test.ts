@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openDatabase } from '../../storage/schema/index'
 import { classifyCall, handRolledAdvice, handRolledText, listHandRolled, normaliseCall, recordHandRolled } from './index'
+import { SPAWNS_PROCESS_MS } from '../../../scripts/tests/timeouts.ts'
 
 const REPO = join(import.meta.dir, '..', '..', '..')
 const SCRATCH = 'C:/Users/someone/AppData/Local/hermes/cache/scratch'
@@ -197,5 +198,5 @@ describe('the advice and the record', () => {
     const quietRun = run([], { tool_name: 'Bash', tool_input: { command: 'git status' } })
     expect(quietRun.status).toBe(0)
     expect(quietRun.stdout).toBe('')
-  })
+  }, SPAWNS_PROCESS_MS)
 })

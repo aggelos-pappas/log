@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { COMMANDS } from "../../cli/runner/index.ts";
 import golden from "./fixtures/golden.json";
 import { capabilityOfEntry, catalog, searchCatalog } from "./index.ts";
+import { LOADS_EVERY_TOOL_MS } from "../../../scripts/tests/timeouts.ts";
 
 const entries = catalog(COMMANDS);
 
@@ -23,7 +24,7 @@ describe("logSearch golden set", () => {
       const result = searchCatalog(terminal, entry.summary, 3);
       expect(result.verdict).not.toBe("strong");
     }
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("a who question puts reads before writes, and a platform word or synonym keeps other platforms out", () => {
     const who = searchCatalog(entries, "who liked my post on x", 8);

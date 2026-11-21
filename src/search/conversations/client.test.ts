@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { benchmark, buildIndex, chunksOf, hashEmbedder, loadConversations, openIndex, percentiles, reciprocalRankFusion, saveConversations, search, updateIndex, withSiblingNames } from './index'
 import type { Conversation } from './index'
+import { FRESH_DB_MS } from '../../../scripts/tests/timeouts.ts'
 
 const dir = mkdtempSync(join(tmpdir(), 'convSearch'))
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
@@ -45,7 +46,7 @@ describe('conversation search', () => {
   test('saves and loads conversations', () => {
     expect(saveConversations(corpus, join(dir, 'raw'))).toBe(3)
     expect(loadConversations(join(dir, 'raw')).map((c) => c.conversationId).sort()).toEqual(['a', 'b', 'c'])
-  })
+  }, FRESH_DB_MS)
 
   test('hybrid search finds by keyword and filters by person', async () => {
     const embedder = hashEmbedder()

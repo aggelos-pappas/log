@@ -10,6 +10,7 @@ import type { PlatformEngineSpec } from "../../platformKit/session/index.ts";
 import { runCli } from "../runner/index.ts";
 import { searchDeps } from "../search/index.ts";
 import { transcribeDeps } from "./index.ts";
+import { FRESH_DB_MS } from "../../../scripts/tests/timeouts.ts";
 
 let dir = "";
 const kept = { ...process.env };
@@ -113,12 +114,12 @@ describe("log transcribe", () => {
     const again = await run(["transcribe", "--platform", "twitter"]);
     expect(again.out).toContain("0 voice note(s) transcribed");
     expect(said).toHaveLength(2);
-  });
+  }, FRESH_DB_MS);
 
   test("a Discord refusal stops the search and keeps what was found", async () => {
     seed();
     transcribeDeps.client = () => fakeClient([]);
     const r = await run(["transcribe", "--platform", "discord", "--noIndex"], () => ({ answer: { ok: false, code: "rateLimited", detail: "Discord answered 429", notes: [], problems: [] }, refreshed: null }));
     expect(r.out).toContain("discord discordOne: stopped: rateLimited");
-  });
+  }, FRESH_DB_MS);
 });

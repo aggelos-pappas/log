@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const root = join(import.meta.dir, "..", "..", "..");
 const none = join(tmpdir(), "no-identity-settings.json");
@@ -66,7 +67,7 @@ print(json.dumps({"before": [b.family_of(chrome), b.problems(chrome, "camoufox")
     expect(out).toMatchObject({ driver: "camoufox", source: "superProperties", ua: true, tls: "firefox", hints: [], problems: [] });
     expect(out.props).toEqual([true, 677000, "inst", "L", false, true]);
     expect(out.carried).toEqual([99, { ver: 31 }]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("a Camoufox account with only a Chrome recording is refused rather than sent as Chrome", () => {
     const d = dir("chromeOnly");
@@ -75,7 +76,7 @@ chrome_har(runs, 60)
 b.load(state, "acct", Path(runs), driver="adsPower")
 print(json.dumps([b.load(state, "acct", Path(runs), driver="camoufox"), b.load(state, "acct", Path(runs), driver="brave")["headers"]["user-agent"] == CHROME]))`);
     expect(out).toEqual([null, true]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("Firefox REST calls go out in real Camoufox 156's fetch() order, with its Priority and TE and no Chrome client hints", () => {
     const d = dir("order");
@@ -88,7 +89,7 @@ print(json.dumps([b.wire_order("firefox", get).split(","), b.wire_order("firefox
     expect(out[0]).toEqual(REAL_FIREFOX_GET);
     expect(out[1]).toEqual(REAL_FIREFOX_POST);
     expect(out.slice(2)).toEqual(["u=4", "trailers", false, "L"]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("a Chrome-family session keeps Chrome's fetch order and Priority", () => {
     const d = dir("chrome");
@@ -98,14 +99,14 @@ made = b.load(state, "acct", Path(runs), driver="brave")
 get = b.rest_headers(made, "tok", L)
 print(json.dumps([b.impersonate_of(made)[:6], get.get("Priority"), "Te" in get, b.wire_order("chrome", get).split(",")[:3], b.problems(made, "brave")]))`);
     expect(out).toEqual(["chrome", "u=1, i", false, ["content-length", "sec-ch-ua-platform", "authorization"], []]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("a desktop-app identity is never accepted", () => {
     const out = py(`made = {"headers": {"user-agent": DESKTOP, "x-super-properties": sp(DESKTOP, 1, "Discord Client", "stable")}, "identify": {"properties": {"browser_user_agent": DESKTOP, "client_build_number": 1}}}
 print(json.dumps(b.problems(made, "camoufox")))`);
     expect(out.join(" ")).toContain("not a web browser");
     expect(out.join(" ")).toContain("not the web client");
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("the TLS target follows the recorded browser: the newest curl_cffi target at or below its version, in its own family", () => {
     const out = py(`from identity import browserIdentity as i
@@ -113,7 +114,7 @@ have = {"chrome150", "chrome152", "chrome152_macos", "firefox147", "firefox155"}
 mac = CHROME.replace("Windows NT 10.0; Win64; x64", "Macintosh; Intel Mac OS X 10_15_7")
 print(json.dumps([i.curl_target_for(FIREFOX, have), i.curl_target_for(CHROME, have), i.curl_target_for(mac, have), i.curl_target_for(DESKTOP, have), i.curl_target_for(FIREFOX.replace("156", "140"), have)]))`);
     expect(out).toEqual(["firefox155", "chrome152", "chrome152_macos", null, "firefox147"]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("the engine refuses to talk to Discord as anything but the session's own browser", () => {
     const d = dir("engine");
@@ -130,5 +131,5 @@ Path(state, "acct", b.FILE).write_text(json.dumps({**json.loads(Path(state, "acc
 bad = asyncio.run(engine.ACTIONS["ping"](spec, {}))
 print(json.dumps([stale["code"], ok["code"], bad["code"]]))`);
     expect(out).toEqual(["templateStale", "noPlatformSession", "identityMismatch"]);
-  });
+  }, SPAWNS_PROCESS_MS);
 });

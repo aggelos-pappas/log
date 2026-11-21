@@ -479,6 +479,7 @@ SPILL_PATH = re.compile(r"[A-Za-z]:[\/][^\s'\"]*spillover[\/][\w.-]+|/[^\s'\"]*s
 LOG_PIPE = re.compile(r"(?:^|[;&|(\s])log\s+([a-z][a-zA-Z]*)\s+([a-z][a-zA-Z]*)?[^\n|]*\|\s*(?:grep|rg|findstr|python\d?|py|jq|awk|sed|Select-String|ConvertFrom-Json)\b")
 LOG_ARGV = re.compile(r"\[\s*['\"]log['\"]\s*,\s*['\"]([a-z][a-zA-Z]*)['\"](?:\s*,\s*['\"]([a-z][a-zA-Z]*)['\"])?")
 LOG_RESULT_HEAD = "Browsers:"
+LOG_RESULT_EXIT = re.compile(r"(?m)^exit -?\d+[ \t]*$")
 NARROWING = {
     "discordChats": "--kind dm,group, --name <text>",
     "inboxWaiting": "--tail <n>, --platform <p>, --limit <n>",
@@ -494,8 +495,9 @@ def spilled_log_result(text):
     for path in SPILL_PATH.findall(text):
         try:
             with open(path, encoding="utf-8", errors="replace") as handle:
-                if handle.read(len(LOG_RESULT_HEAD)) == LOG_RESULT_HEAD:
-                    return True
+                body = handle.read()
+            if body.startswith(LOG_RESULT_HEAD) or LOG_RESULT_EXIT.search(body):
+                return True
         except OSError:
             continue
     return False

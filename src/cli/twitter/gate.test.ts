@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -6,10 +6,17 @@ import { appendEvent } from "../../inbox/store/index.ts";
 import { chatIdFor, momentAnswered, failedParts, rankedContext, voiceDeps } from "./helpers/voice.ts";
 import type { GateReading } from "./helpers/voice.ts";
 import { RANKED_POOL } from "../../twitter/copy/voice/index.ts";
+import { FRESH_DB_MS } from "../../../scripts/tests/timeouts.ts";
 
 const passing: GateReading = { to: "@x", voice: 0.95, inContext: 0.9, answerRequired: true, friendLike: 0.9, openerOnly: 1, toThem: null, buildsOn: null, neverSays: [], watermark: { level: "clean", findings: [] } as unknown as GateReading["watermark"], pass: true, model: "m", notHere: [], scrambler: { ran: true, suspicious: 0, hits: [] } as unknown as GateReading["scrambler"], ranked: [] };
 
 describe("the voice gate inside every send (rule 137)", () => {
+  const inboxBefore = process.env.LOG_INBOX_STATE;
+  afterEach(() => {
+    if (inboxBefore === undefined) delete process.env.LOG_INBOX_STATE;
+    else process.env.LOG_INBOX_STATE = inboxBefore;
+  });
+
   test("a pass names nothing, and a fail names only what failed", () => {
     expect(failedParts(passing)).toEqual([]);
     const failing = { ...passing, voice: 0.4, neverSays: ["spot on"], pass: false };
@@ -37,7 +44,7 @@ describe("the voice gate inside every send (rule 137)", () => {
     } finally {
       voiceDeps.aiEmbedder = before;
     }
-  });
+  }, FRESH_DB_MS);
 
   test("a long chat embeds only its newest lines, so a send never embeds a whole history", async () => {
     process.env.LOG_INBOX_STATE = mkdtempSync(join(tmpdir(), "gate"));
@@ -51,7 +58,7 @@ describe("the voice gate inside every send (rule 137)", () => {
     } finally {
       voiceDeps.aiEmbedder = before;
     }
-  });
+  }, FRESH_DB_MS);
 
   test("a Jina call that never answers falls back to the local embedder within the bound, so the send never waits on it", async () => {
     process.env.LOG_INBOX_STATE = mkdtempSync(join(tmpdir(), "gate"));
@@ -71,7 +78,7 @@ describe("the voice gate inside every send (rule 137)", () => {
       voiceDeps.embedder = saved.local;
       voiceDeps.jinaMs = saved.ms;
     }
-  });
+  }, FRESH_DB_MS);
 });
 
 describe("the gate inside a send finds the chat's real replies by what the send knows", () => {

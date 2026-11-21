@@ -4,6 +4,7 @@ import { playReminder, sessionPlayOf } from './session/index'
 import { serviceHookCommand, sharedEmbed } from './service/index'
 import { correctTypos, editDistance, windowsOf } from '../useCases/router/helpers/index'
 import { isPrompt, playMatchText } from '../useCases/router/index'
+import { LOADS_EVERY_TOOL_MS } from '../../scripts/tests/timeouts.ts'
 
 const use = (name: string, input: Record<string, unknown> = {}) => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: `mcp__log__${name}`, input }] } })
 
@@ -75,7 +76,7 @@ describe('the play comes back after compaction', () => {
     const nothing = await hookAnswer({ hook_event_name: 'UserPromptSubmit', prompt: 'refactor the parser' }, async () => null, useCases)
     expect(nothing.outcome).toBe('wordsOnly none')
     expect(hookOutput(nothing)).toBe('')
-  })
+  }, LOADS_EVERY_TOOL_MS)
 
   test('a person the prompt names is resolved next to the play, even when no play matches', async () => {
     const names = (prompt: string) => (prompt.includes('grase') ? '"grase" is probably grace_ships: discord dm 1 on account discordAccount' : '')

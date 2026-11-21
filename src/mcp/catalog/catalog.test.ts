@@ -7,6 +7,7 @@ import { guardCall } from "../server/helpers/guardCall.ts";
 import { commandTools } from "../server/helpers/toolsFromCommands.ts";
 import { createLogMcpServer } from "../server/index.ts";
 import { catalog, didYouMean, exampleInputs, getAnswer, resolveCall, searchAnswer, searchCatalog } from "./index.ts";
+import { LOADS_EVERY_TOOL_MS } from "../../../scripts/tests/timeouts.ts";
 
 const entries = catalog(COMMANDS);
 const callable = entries.filter((e) => !e.terminalOnly);
@@ -139,7 +140,7 @@ describe("the three tools over MCP", () => {
     const { tools } = await client.listTools();
     expect(tools.slice(0, 4).map((t) => t.name)).toEqual(["getGuide", "logSearch", "logGet", "logCall"]);
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("search, get and call run end to end, and call goes through the command tool's own guard", async () => {
     const client = await connected();

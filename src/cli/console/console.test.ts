@@ -9,6 +9,7 @@ import { COMMANDS } from "../runner/index.ts";
 import type { CommandContext } from "../runner/types.ts";
 import { launchDeps, runLaunch } from "../launch/index.ts";
 import { consoleCommand, consoleDeps, runConsole } from "./index.ts";
+import { SCANS_REPO_MS } from "../../../scripts/tests/timeouts.ts";
 
 const KEYS = ["LOG_INBOX_STATE", "LOG_DB", "LOG_LOCAL_ACCOUNTS", "LOG_RUNS_DIR", "LOG_USER_ENV", "LOG_PLATFORM_STATE", "LOG_TWITTER_STATE", "LOG_FBK_STATE", "LOG_MCP_STAMP_FILE", "LOG_MCP_RELOAD_FILE"] as const;
 const before: Record<string, string | undefined> = {};
@@ -175,7 +176,7 @@ describe("console parity check", () => {
 
   test("passes on the repo as it is", () => {
     expect(consoleParityProblems({ read })).toEqual([]);
-  });
+  }, SCANS_REPO_MS);
 
   test("fails when a web page has no clack screen", () => {
     const layout = "site/apps/web/src/pages/console/ConsoleLayout.tsx";

@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { openDatabase } from '../storage/schema/index'
 import { derivedFingerprint, identityLearnedEvent, insertEventRow, rebuildDerived } from '../storage/platform/index'
 import { cardFor, cardsNamedIn, linkCandidates, linkIdentities, listPeople, markNotLinked, resolveWho, reviewBand, scoreLinks, suggestLinks, unlinkIdentity } from './index'
+import { FRESH_DB_MS } from '../../scripts/tests/timeouts.ts'
 
 const NOW = Date.parse('2026-11-17T12:00:00Z')
 const at = (hoursAgo: number): string => new Date(NOW - hoursAgo * 3_600_000).toISOString()
@@ -79,7 +80,7 @@ describe('one person across platforms: the record', () => {
       expect(who.ok && who.identities.length).toBe(2)
     }
     expect(listPeople(on).map((p) => p.name)).toEqual(['Quill Writer'])
-  })
+  }, FRESH_DB_MS)
 
   test('an identity already in one person is never silently moved into another', () => {
     const on = world()
@@ -88,7 +89,7 @@ describe('one person across platforms: the record', () => {
     const clash = linkIdentities(on, ['discord:quill', 'twitter:rivet'], 'yes', { now: new Date(NOW) })
     expect(clash.ok).toBe(false)
     expect(clash.problem).toContain('2 different people')
-  })
+  }, FRESH_DB_MS)
 
   test('an unlink is a new event: the identity leaves the person and the old link stays in the history', () => {
     const on = world()
@@ -97,7 +98,7 @@ describe('one person across platforms: the record', () => {
     expect((on.prepare('SELECT COUNT(*) AS n FROM identityLinks').get() as { n: number }).n).toBe(2)
     const who = resolveWho(on, 'discord:quill')
     expect(who.ok && who.identities.map((i) => i.platform)).toEqual(['discord'])
-  })
+  }, FRESH_DB_MS)
 
   test('a rebuild from the events gives exactly the same people and links', () => {
     const on = freshDb()
@@ -203,7 +204,7 @@ describe('more comparisons, EM weights, vetoes and the merge re-check', () => {
     expect(report.suggestions.map(pair)).not.toContain('rivet~rivet')
     expect(report.suggestions.map(pair)).not.toContain('quill9~quill_1')
     expect(report.vetoed.find((s) => pair(s) === 'quill9~quill_1')?.veto).toContain('talk in the same chat')
-  })
+  }, FRESH_DB_MS)
 
   test('links already made are checked again against the evidence', () => {
     const on = world()
@@ -211,7 +212,7 @@ describe('more comparisons, EM weights, vetoes and the merge re-check', () => {
     const recheck = scoreLinks(linkCandidates(on)).rechecks
     expect(recheck.map((r) => `${r.a.handle}~${r.b.handle}`)).toContain('fan~rivet')
     expect(recheck[0].matchWeight).toBeLessThan(0)
-  })
+  }, FRESH_DB_MS)
 
   test('the review band goes to SubQ in two steps when the first answer is unsure, and nothing is linked', async () => {
     const on = world()
@@ -224,7 +225,7 @@ describe('more comparisons, EM weights, vetoes and the merge re-check', () => {
     expect(checked.checked).toBe(review.length)
     expect(review[0].review).toMatchObject({ choice: 'same', steps: 2 })
     expect((on.prepare('SELECT COUNT(*) AS n FROM identityLinks').get() as { n: number }).n).toBe(0)
-  })
+  }, FRESH_DB_MS)
 })
 
 describe('the person card', () => {
@@ -244,7 +245,7 @@ describe('the person card', () => {
     expect(card!.text).toContain('>>> PERSON: Quill Writer')
     expect(card!.text).toContain('[twitter]')
     expect(card!.text).toContain('[discord]')
-  })
+  }, FRESH_DB_MS)
 
   test('a prompt naming the person by handle on either platform, or by name, brings their card', () => {
     const on = world()
@@ -253,5 +254,5 @@ describe('the person card', () => {
     expect(cardsNamedIn(on, 'how is my relationship with quill', NOW).length).toBe(1)
     expect(cardsNamedIn(on, 'what did writer say', NOW).length).toBe(1)
     expect(cardsNamedIn(on, 'fix the failing build', NOW).length).toBe(0)
-  })
+  }, FRESH_DB_MS)
 })

@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { identityGateProblems, repoTexts } from "./checkIdentityGate";
+import { SCANS_REPO_MS } from "../tests/timeouts.ts";
 
 describe("check:identityGate refuses a new way out without the account's route (issue 47)", () => {
   test("the repo as it is has none", () => {
     expect(identityGateProblems(repoTexts())).toEqual([]);
-  });
+  }, SCANS_REPO_MS);
 
   test("a new engine fetching a media link with urllib is refused", () => {
     const problems = identityGateProblems({ "python/fakeApi/engine.py": ["from platformKit import engine as kit", "import urllib.request", "def main():", "    return kit.main({})"].join("\n") });
