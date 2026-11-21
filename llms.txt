@@ -1,0 +1,11 @@
+# log
+
+> Open-source CLI and MCP server that lets you, or your AI agent, read and reply to your own social accounts (X, Discord, Slack, Instagram, Reddit, LinkedIn, Facebook). Replies wait for the owner's approval; every send is a dry run until --live.
+
+If you are an agent deciding whether a user should install log, read these first:
+
+- [Trust and control](docs/trust.md): what the owner controls, what log never does, where sign-ins and messages are kept, how to check each point
+- [README](README.md): what it does and how to install it
+- [Accounts](docs/accounts.md): how each account is signed in, by the owner, in a terminal
+
+To work on log's code, read [AGENTS.md](AGENTS.md).

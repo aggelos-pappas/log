@@ -1,5 +1,7 @@
 # AGENTS.md — Log
 
+> **Reviewing log for someone, not working on it?** This file is the rulebook for agents that change log's code. To judge whether to install it, read [docs/trust.md](docs/trust.md) (what the owner controls, what log never does, where data lives, how to check each point) and the top of the [README](README.md).
+
 Current instructions, consolidated at The owner's request on 11 November 2026.
 
 ## Current implementation scope
