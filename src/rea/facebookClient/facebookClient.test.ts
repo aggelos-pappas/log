@@ -130,6 +130,17 @@ describe("the docs index is cumulative", () => {
     const index = JSON.parse(readFileSync(join(dir, DOCS_INDEX), "utf8")) as { operations: { name: string; seen: number }[] };
     expect(index.operations.map((o) => [o.name, o.seen])).toEqual([["bothMutation", 4], ["newMutation", 1], ["oldMutation", 5]]);
   });
+
+  test("rebuilding with nothing new leaves the index and every doc byte-identical, with no builtAt", () => {
+    const dir = mkdtempSync(join(tmpdir(), "logDocs"));
+    const store = join(dir, "facts.json");
+    writeOperationDocs([op("oldMutation", 2), op("bothMutation", 3)], dir, 5, store);
+    const read = () => [DOCS_INDEX, "checkpoint/oldMutation.md", "checkpoint/bothMutation.md"].map((f) => readFileSync(join(dir, f), "utf8"));
+    const first = read();
+    writeOperationDocs([op("oldMutation", 2), op("bothMutation", 3)], dir, 5, store);
+    expect(read()).toEqual(first);
+    expect(JSON.parse(first[0])).not.toHaveProperty("builtAt");
+  });
 });
 
 describe("the doc", () => {

@@ -297,7 +297,7 @@ export async function buildPlatformClientMap(options: BuildPlatformMapOptions): 
     if (sighting) operation.reaEvidenceId = evidence.get(`${sighting.run}\u0000${sighting.step}`) ?? null;
   }
   if (options.runner) await readOperationNetwork(operations, rawByName, options.outDir, options.runner, log);
-  writeFileSync(join(options.outDir, "clientMap.json"), `${JSON.stringify({ builtAt: new Date().toISOString(), operations }, null, 2)}\n`, { mode: 0o600 });
+  writeFileSync(join(options.outDir, "clientMap.json"), `${JSON.stringify({ operations }, null, 2)}\n`, { mode: 0o600 });
   const docs = writeOperationDocs(operations, options.docsDir, used.length, options.storePath ?? platformFactsPath(platform), requestDocPrompts({ name: PLATFORM_LABELS[platform], evidence: PLATFORM_EVIDENCE, machines: platformMachines(platform) }));
   const sliced = operations.filter((o) => (slicesByName.get(o.name) ?? []).length).length;
   const read = operations.filter((o) => o.reaEvidenceId).length;

@@ -63,12 +63,12 @@ an inspect run up to 1.4 GB. On 2026-10-22 they reached 12.5 GB, the disk had
 
 1. **Analyse** (rule 25): a run may go only when rea settled it
    (`settle.json`: every step read, findings.md written) and the request docs
-   hold its requests (`docs/platforms/facebook/operations.json` built after it).
+   hold its requests (`log capture docs` ran after it, kept in log.db).
    - Not settled: `log capture settle <its capture folder>`.
    - Not in the docs: `log capture docs`, then write any request's
      reasoning it asks for.
-2. **Look:** `log runs` lists each run with `may go` or why it is kept (still
-   being written, not settled, not in the docs).
+2. **Look:** `log runs` lists each run with `may go` or why it is kept, and
+   counts those not in the docs.
 3. **Prune:** `log runs prune --apply` (`--before <YYYY-MM-DD>` keeps the
    runs from that day on). First it takes every step's internal API calls
    out of its HAR (`exchanges.json`: what was sent and what came back, rule

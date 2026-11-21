@@ -1,4 +1,4 @@
-export type EngineStoreName = 'xInbox' | 'xNotifications' | 'xLastCall' | 'discordServers' | 'discordThreads' | 'linkedinConnects'
+export type EngineStoreName = 'xInbox' | 'xNotifications' | 'xLastCall' | 'discordServers' | 'discordThreads' | 'linkedinConnects' | 'clientDocs'
 
 export interface EngineStoreSpec {
   platform: string
@@ -13,6 +13,7 @@ export const ENGINE_STORES: Record<EngineStoreName, EngineStoreSpec> = {
   discordServers: { platform: 'discord', file: 'servers.json', splits: [] },
   discordThreads: { platform: 'discord', file: 'threads.json', splits: [] },
   linkedinConnects: { platform: 'linkedin', file: 'connects.json', splits: [] },
+  clientDocs: { platform: 'log', file: 'clientDocs.json', splits: ['builtAt'] },
 }
 
 export const ENGINE_HEAD_PART = 'head'

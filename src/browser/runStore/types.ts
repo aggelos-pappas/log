@@ -36,3 +36,5 @@ export interface Backfill {
   written: number
   failed: string[]
 }
+
+export const DOCS_BUILT_ACCOUNT = 'local'

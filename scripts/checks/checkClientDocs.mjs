@@ -1,5 +1,4 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,6 +13,7 @@ if (!existsSync(indexPath)) {
 }
 const index = JSON.parse(readFileSync(indexPath, 'utf8'));
 const listed = new Set(index.operations.map((o) => o.doc));
+if ('builtAt' in index) problems.push('operations.json: carries builtAt; when the docs were built is kept in log.db, not in the repo');
 
 for (const operation of index.operations) {
   const path = join(docsDir, operation.doc);
@@ -36,7 +36,9 @@ for (const platform of readdirSync(platformsDir)) {
   const platformIndex = join(platformsDir, platform, 'operations.json');
   if (platform === 'facebook' || !existsSync(platformIndex)) continue;
   const platformDocs = join(platformsDir, platform);
-  const platformOps = JSON.parse(readFileSync(platformIndex, 'utf8')).operations;
+  const platformIndexBody = JSON.parse(readFileSync(platformIndex, 'utf8'));
+  if ('builtAt' in platformIndexBody) problems.push(`${platform}/operations.json: carries builtAt; when the docs were built is kept in log.db, not in the repo`);
+  const platformOps = platformIndexBody.operations;
   const platformListed = new Set(platformOps.map((o) => o.doc));
   for (const operation of platformOps) {
     const path = join(platformDocs, operation.doc);
@@ -59,22 +61,6 @@ if (existsSync(flowsDir)) {
     if (!existsSync(join(root, 'docs', 'platforms', platform, 'flows', `${name}.md`))) problems.push(`flow ${name}: no docs/platforms/${platform}/flows/${name}.md (run \`log flow docs ${name}\`)`);
   }
 }
-
-const captures = process.env.LOG_CAPTURES_ROOT || join(homedir(), '.logCli');
-const builtAt = Date.parse(index.builtAt);
-const newer = [];
-const walk = (dir, depth) => {
-  let names;
-  try {
-    names = readdirSync(dir);
-  } catch {
-    return;
-  }
-  if (names.includes('session.har') && statSync(join(dir, 'session.har')).mtimeMs > builtAt) newer.push(relative(captures, dir));
-  if (depth > 0) for (const name of names) if (statSync(join(dir, name), { throwIfNoEntry: false })?.isDirectory()) walk(join(dir, name), depth - 1);
-};
-for (const top of ['runs', 'publish']) walk(join(captures, top), 6);
-if (newer.length) problems.push(`${newer.length} run(s) recorded after the docs were built (${newer.slice(0, 3).join(', ')}${newer.length > 3 ? ', …' : ''}): run \`log capture docs\``);
 
 const documented = new Set(index.operations.map((o) => o.name));
 const named = new Map();

@@ -276,7 +276,7 @@ export function writeOperationDocs(operations: ClientOperation[], docsDir: strin
   }));
   const seenNow = new Set(current.map((e) => e.name));
   const kept = previous.filter((e) => !seenNow.has(e.name) && existsSync(join(docsDir, e.doc)));
-  const index = { builtAt: new Date().toISOString(), runs, operations: [...current, ...kept].sort((x, y) => x.name.localeCompare(y.name)) };
+  const index = { runs, operations: [...current, ...kept].sort((x, y) => x.name.localeCompare(y.name)) };
   writeFileSync(join(docsDir, DOCS_INDEX), `${JSON.stringify(index, null, 2)}\n`);
   mkdirSync(dirname(storePath), { recursive: true });
   writeFileSync(storePath, `${JSON.stringify(store)}\n`);
@@ -315,7 +315,7 @@ export async function buildClientMap(options: BuildClientMapOptions): Promise<st
   mkdirSync(options.outDir, { recursive: true });
   if (options.runner) await readSlices(operations, modules, options.outDir, options.runner, log, options.concurrency);
   else log("rea: not run (--noRea)");
-  writeFileSync(join(options.outDir, "clientMap.json"), `${JSON.stringify({ builtAt: new Date().toISOString(), operations }, null, 2)}\n`, { mode: 0o600 });
+  writeFileSync(join(options.outDir, "clientMap.json"), `${JSON.stringify({ operations }, null, 2)}\n`, { mode: 0o600 });
   const docs = writeOperationDocs(operations, options.docsDir, captures.length, clientFactsPath(), requestDocPrompts({ name: "Facebook", evidence: "its definition", machines: platformMachines("facebook") }));
   const unread = operations.filter((o) => !o.reaEvidenceId).length;
   return `Facebook client map: ${operations.length} requests from ${captures.length} runs, ${operations.length - unread} read by rea. Docs: ${options.docsDir} (${docs.toWrite} still need their reasoning written).`;
