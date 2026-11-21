@@ -1,15 +1,16 @@
 import type { Database as SqlDatabase } from 'bun:sqlite'
 import { createHash } from 'node:crypto'
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { Connection, Database as GraphDatabase } from '@relate/relate'
 import { defaultDbPath, openDatabase } from '../../storage/schema/index'
 import { claimState, deleteState, getState, putState } from '../../storage/state/index'
-import { EMPTY_NETWORK, mentionedTokens, networkCountsIn, networkCountsOf, paddedPrompt, projectionOf, writeNetwork } from './helpers/index'
-import { BUILD_CHILD_MS, BUILD_GRACE_MS, CONTEXT_CHARS, QUERY_ROWS, REFRESH_AFTER_MS, GRAPH_FILE_PREFIX, GRAPH_FILE_SUFFIX, KEPT_SNAPSHOTS, KEYED_LABELS, LISTED, MENTIONED_PEOPLE, PRIOR_FLOOR, PRIOR_KAPPA, PRIOR_WEIGHT_NEAR, PRIOR_WEIGHT_SPOKE, PROJECTOR_VERSION, WRITE_BATCH } from './types'
-import type { ConnectedContext, GraphCounts, GraphPointer, GraphVerify, PersonFound, Projection } from './types'
+import { ensureRings } from '../network/client'
+import { EMPTY_NETWORK, mentionedTokens, networkCountsIn, networkCountsOf, paddedPrompt, pointedAt, projectionOf, writeNetwork } from './helpers/index'
+import { APPLY_MAX_EVENTS, BUILD_CHILD_MS, CHECKPOINT_ROWS, TXN_ROWS, BUILD_GRACE_MS, CONTEXT_CHARS, QUERY_ROWS, REFRESH_AFTER_MS, GRAPH_FILE_PREFIX, GRAPH_FILE_SUFFIX, KEPT_SNAPSHOTS, KEYED_LABELS, LISTED, MENTIONED_PEOPLE, PRIOR_FLOOR, PRIOR_KAPPA, PRIOR_WEIGHT_NEAR, PRIOR_WEIGHT_SPOKE, PROJECTOR_VERSION, WRITE_BATCH } from './types'
+import type { ConnectedContext, GraphCounts, GraphPointer, GraphVerify, PersonFound, Projection, ProjectionScope } from './types'
 
 type Relate = typeof import('@relate/relate')
 
@@ -70,6 +71,40 @@ function write(conn: Connection, cypher: string, rows: readonly object[]): void 
   }
 }
 
+function batchWriter(conn: Connection): (cypher: string, rows: readonly object[]) => void {
+  let pending = 0
+  return (cypher, rows) => {
+    for (const batch of batches(rows)) {
+      conn.query(cypher, { rows: batch as never })
+      pending += batch.length
+      if (pending < TXN_ROWS) continue
+      conn.commit()
+      conn.begin()
+      pending = 0
+    }
+  }
+}
+
+export function writeEdges(conn: Connection, projection: Projection, merge = false, put: (cypher: string, rows: readonly object[]) => void = (cypher, rows) => write(conn, cypher, rows)): void {
+  put('UNWIND $rows AS r MATCH (room:Room {key: r.key}), (s:Server {key: r.serverKey}) CREATE (room)-[:IN_SERVER]->(s)', projection.rooms.filter((r) => r.serverKey))
+  put('UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (p:Person {key: r.person}) CREATE (i)-[:LINKED_TO {linkedBy: r.linkedBy, linkedAt: r.linkedAt}]->(p)', projection.links)
+  put('UNWIND $rows AS r MATCH (a:Account {key: r.accountKey}), (room:Room {key: r.key}) CREATE (a)-[:HAS_ROOM]->(room)', projection.rooms)
+  put(`UNWIND $rows AS r MATCH (a:Account {key: r.accountKey}), (p:Post {key: r.key}) ${merge ? 'MERGE' : 'CREATE'} (a)-[:POSTED]->(p)`, projection.posts)
+  put('UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (room:Room {key: r.room}) CREATE (i)-[:MEMBER_OF {firstSeenAt: r.firstSeenAt, lastSeenAt: r.lastSeenAt}]->(room)', projection.members)
+  put('UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (room:Room {key: r.room}) CREATE (i)-[:SAID {messages: r.messages, firstAtMs: r.firstAtMs, lastAtMs: r.lastAtMs}]->(room)', projection.said.filter((s) => !s.fromOwner))
+  put('UNWIND $rows AS r MATCH (a:Account {key: r.accountKey}), (room:Room {key: r.room}) CREATE (a)-[:SAID {messages: r.messages, firstAtMs: r.firstAtMs, lastAtMs: r.lastAtMs}]->(room)', projection.said.filter((s) => s.fromOwner))
+  for (const [rel, rows] of [['REPLIED_TO', projection.replies], ['MENTIONED', projection.mentions]] as const) {
+    for (const fromOwner of [false, true]) {
+      for (const toOwner of [false, true]) {
+        if (fromOwner && toOwner) continue
+        put(`UNWIND $rows AS r MATCH (a:${fromOwner ? 'Account' : 'Identity'} {key: r.from}), (b:${toOwner ? 'Account' : 'Identity'} {key: r.to}) CREATE (a)-[:${rel} {room: r.room, times: r.times, firstAtMs: r.firstAtMs, lastAtMs: r.lastAtMs}]->(b)`, rows.filter((x) => x.fromOwner === fromOwner && x.toOwner === toOwner))
+      }
+    }
+  }
+  put('UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (p:Post {key: r.post}) CREATE (i)-[:ENGAGED {kind: r.kind, times: r.times, lastAtMs: r.lastAtMs}]->(p)', projection.engaged.filter((e) => e.post))
+  put('UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (a:Account {key: r.accountKey}) CREATE (i)-[:FOLLOWED {kind: r.kind, times: r.times, lastAtMs: r.lastAtMs}]->(a)', projection.engaged.filter((e) => !e.post))
+}
+
 export function writeProjection(conn: Connection, projection: Projection, meta: { workspace: string; builtAt: string }): void {
   for (const label of KEYED_LABELS) conn.query(`CREATE CONSTRAINT ${label.toLowerCase()}Key IF NOT EXISTS FOR (n:${label}) REQUIRE n.key IS UNIQUE`)
   conn.begin()
@@ -80,25 +115,52 @@ export function writeProjection(conn: Connection, projection: Projection, meta: 
     write(conn, 'UNWIND $rows AS r CREATE (n:Post) SET n = r', projection.posts)
     write(conn, 'UNWIND $rows AS r CREATE (n:Server) SET n = r', projection.servers)
     write(conn, 'UNWIND $rows AS r CREATE (n:Person) SET n = r', projection.persons)
-    write(conn, 'UNWIND $rows AS r MATCH (room:Room {key: r.key}), (s:Server {key: r.serverKey}) CREATE (room)-[:IN_SERVER]->(s)', projection.rooms.filter((r) => r.serverKey))
-    write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (p:Person {key: r.person}) CREATE (i)-[:LINKED_TO {linkedBy: r.linkedBy, linkedAt: r.linkedAt}]->(p)', projection.links)
-    write(conn, 'UNWIND $rows AS r MATCH (a:Account {key: r.accountKey}), (room:Room {key: r.key}) CREATE (a)-[:HAS_ROOM]->(room)', projection.rooms)
-    write(conn, 'UNWIND $rows AS r MATCH (a:Account {key: r.accountKey}), (p:Post {key: r.key}) CREATE (a)-[:POSTED]->(p)', projection.posts)
-    write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (room:Room {key: r.room}) CREATE (i)-[:MEMBER_OF {firstSeenAt: r.firstSeenAt, lastSeenAt: r.lastSeenAt}]->(room)', projection.members)
-    write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (room:Room {key: r.room}) CREATE (i)-[:SAID {messages: r.messages, firstAtMs: r.firstAtMs, lastAtMs: r.lastAtMs}]->(room)', projection.said.filter((s) => !s.fromOwner))
-    write(conn, 'UNWIND $rows AS r MATCH (a:Account {key: r.accountKey}), (room:Room {key: r.room}) CREATE (a)-[:SAID {messages: r.messages, firstAtMs: r.firstAtMs, lastAtMs: r.lastAtMs}]->(room)', projection.said.filter((s) => s.fromOwner))
-    for (const [rel, rows] of [['REPLIED_TO', projection.replies], ['MENTIONED', projection.mentions]] as const) {
-      for (const fromOwner of [false, true]) {
-        for (const toOwner of [false, true]) {
-          if (fromOwner && toOwner) continue
-          write(conn, `UNWIND $rows AS r MATCH (a:${fromOwner ? 'Account' : 'Identity'} {key: r.from}), (b:${toOwner ? 'Account' : 'Identity'} {key: r.to}) CREATE (a)-[:${rel} {room: r.room, times: r.times, firstAtMs: r.firstAtMs, lastAtMs: r.lastAtMs}]->(b)`, rows.filter((x) => x.fromOwner === fromOwner && x.toOwner === toOwner))
-        }
-      }
-    }
-    write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (p:Post {key: r.post}) CREATE (i)-[:ENGAGED {kind: r.kind, times: r.times, lastAtMs: r.lastAtMs}]->(p)', projection.engaged.filter((e) => e.post))
-    write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (a:Account {key: r.accountKey}) CREATE (i)-[:FOLLOWED {kind: r.kind, times: r.times, lastAtMs: r.lastAtMs}]->(a)', projection.engaged.filter((e) => !e.post))
+    writeEdges(conn, projection)
     writeNetwork(conn, projection.network ?? EMPTY_NETWORK)
     conn.query('CREATE (:Snapshot {key: $key, throughSeq: $throughSeq, schemaVersion: $schemaVersion, projectorVersion: $projectorVersion, workspace: $workspace, builtAt: $builtAt})', { key: 'snapshot', throughSeq: projection.throughSeq, schemaVersion: projection.schemaVersion, projectorVersion: PROJECTOR_VERSION, workspace: meta.workspace, builtAt: meta.builtAt })
+    conn.commit()
+  } catch (error) {
+    try {
+      conn.rollback()
+    } catch {}
+    throw error
+  }
+}
+
+export function applyProjection(conn: Connection, delta: Projection, builtAt: string): void {
+  const rooms = delta.rooms.map((r) => r.key)
+  const actors = [...new Set(delta.engaged.map((e) => e.identity))]
+  conn.begin()
+  const put = batchWriter(conn)
+  try {
+    put('UNWIND $rows AS r MERGE (n:Account {key: r.key}) SET n = r', delta.accounts)
+    put('UNWIND $rows AS r MERGE (n:Server {key: r.key}) SET n = r', delta.servers)
+    put('UNWIND $rows AS r MERGE (n:Identity {key: r.key}) SET n = r', delta.identities)
+    put('UNWIND $rows AS r MERGE (n:Room {key: r.key}) SET n = r', delta.rooms)
+    put('UNWIND $rows AS r MERGE (n:Post {key: r.key}) SET n = r', delta.posts)
+    if (rooms.length) {
+      conn.query('UNWIND $rooms AS k MATCH (room:Room {key: k})<-[:SAID]-(a) MATCH (a)-[e:REPLIED_TO|MENTIONED]->() WHERE e.room = k DELETE e', { rooms })
+      conn.query('UNWIND $rooms AS k MATCH (room:Room {key: k})<-[e:HAS_ROOM|MEMBER_OF|SAID]-() DELETE e', { rooms })
+      conn.query('UNWIND $rooms AS k MATCH (room:Room {key: k})-[e:IN_SERVER]->() DELETE e', { rooms })
+    }
+    if (actors.length) conn.query('UNWIND $actors AS k MATCH (i:Identity {key: k})-[e:ENGAGED|FOLLOWED]->() DELETE e', { actors })
+    conn.query('MATCH (p:Person) DETACH DELETE p')
+    put('UNWIND $rows AS r CREATE (n:Person) SET n = r', delta.persons)
+    const takeovers = delta.network?.takeovers ?? []
+    if (takeovers.length) {
+      const moved = takeovers.filter((t) => t.moved)
+      const pair = 'UNWIND $rows AS r MATCH (o:Identity {key: r.placeholder}) MATCH (n:Identity {key: r.identity})'
+      put(`${pair} MATCH (o)-[e:IN_CIRCLE_OF]->(l:Leader) CREATE (n)-[:IN_CIRCLE_OF]->(l) DELETE e`, moved)
+      put(`${pair} MATCH (o)-[e:FOLLOWS]->(a:Account) CREATE (n)-[:FOLLOWS]->(a) DELETE e`, moved)
+      put('UNWIND $rows AS r MATCH (o:Identity {key: r.placeholder}) DETACH DELETE o', moved)
+      put('UNWIND $rows AS r MATCH (l:Leader {handleLower: r.handleLower}) SET l.identity = r.identity', takeovers.filter((t) => t.leader).map((t) => ({ identity: t.identity, handleLower: t.leader! })))
+      const keys = takeovers.map((t) => t.identity)
+      conn.query("UNWIND $keys AS k MATCH (i:Identity {key: k})-[e:MENTIONED {source: 'network'}]->() DELETE e", { keys })
+      conn.query("UNWIND $keys AS k MATCH ()-[e:MENTIONED {source: 'network'}]->(i:Identity {key: k}) DELETE e", { keys })
+      put("UNWIND $rows AS r MATCH (a:Identity {key: r.from}), (b:Identity {key: r.to}) CREATE (a)-[:MENTIONED {source: 'network', times: r.times, lastAtMs: r.lastAtMs}]->(b)", delta.network?.mentioned ?? [])
+    }
+    writeEdges(conn, delta, true, put)
+    conn.query('MATCH (s:Snapshot {key: $key}) SET s.throughSeq = $throughSeq, s.builtAt = $builtAt', { key: 'snapshot', throughSeq: delta.throughSeq, builtAt })
     conn.commit()
   } catch (error) {
     try {
@@ -159,13 +221,54 @@ function prune(dir: string, keep: string): string[] {
   return removed
 }
 
-export function buildGraph(dbPath: string = defaultDbPath(), now: Date = new Date()): GraphPointer {
+function spawnHere(fn: 'buildGraphHere' | 'applyGraphHere', dbPath: string, now: Date): GraphPointer {
   const entry = pathToFileURL(join(import.meta.dir, 'index.ts')).href
-  const script = `const m = await import(${JSON.stringify(entry)}); process.stdout.write(JSON.stringify(m.buildGraphHere(process.argv[1], new Date(Number(process.argv[2])))))`
+  const script = `const m = await import(${JSON.stringify(entry)}); process.stdout.write(JSON.stringify(m.${fn}(process.argv[1], new Date(Number(process.argv[2])))))`
   const done = spawnSync(process.execPath, ['-e', script, resolve(dbPath), String(now.getTime())], { encoding: 'utf8', windowsHide: true, timeout: BUILD_CHILD_MS, env: process.env })
   if (done.error) throw done.error
   if (done.status !== 0) throw new Error((done.stderr || done.stdout || `the graph build exited ${done.status}`).trim().split('\n').filter(Boolean).slice(-3).join(' | '))
   return JSON.parse(done.stdout.trim().split('\n').pop() ?? '') as GraphPointer
+}
+
+export function buildGraph(dbPath: string = defaultDbPath(), now: Date = new Date()): GraphPointer {
+  return spawnHere('buildGraphHere', dbPath, now)
+}
+
+export function applyGraph(dbPath: string = defaultDbPath(), now: Date = new Date()): GraphPointer {
+  return spawnHere('applyGraphHere', dbPath, now)
+}
+
+interface Stamps {
+  interactionsThrough: number
+  mergesThrough: number
+  networkStamp: string | null
+}
+
+function stampsOf(handle: SqlDatabase): Stamps {
+  const one = (sql: string) => (handle.prepare(sql).get() as { n: number | string | null } | null)?.n ?? null
+  return { interactionsThrough: Number(one('SELECT COALESCE(MAX(seq), 0) AS n FROM interactions')), mergesThrough: Number(one('SELECT COALESCE(MAX(seq), 0) AS n FROM identityMerges')), networkStamp: (one('SELECT importedAt AS n FROM networkImports WHERE id = 1') as string | null) ?? null }
+}
+
+function newFileOf(dir: string, throughSeq: number, now: Date): string {
+  return join(dir, `${GRAPH_FILE_PREFIX}${String(throughSeq).padStart(12, '0')}-${now.getTime()}${GRAPH_FILE_SUFFIX}`)
+}
+
+function buildIn(handle: SqlDatabase, dbPath: string, workspace: string, now: Date): GraphPointer {
+  const started = performance.now()
+  ensureRings(handle, now)
+  const stamps = stampsOf(handle)
+  const projection = projectionOf(handle)
+  const dir = graphDir(dbPath)
+  mkdirSync(dir, { recursive: true })
+  const file = newFileOf(dir, projection.throughSeq, now)
+  const db = relateLib().Database.open(file)
+  const conn = db.connect()
+  writeProjection(conn, projection, { workspace, builtAt: now.toISOString() })
+  db.checkpoint()
+  const pointer: GraphPointer = { file, throughSeq: projection.throughSeq, projectorVersion: PROJECTOR_VERSION, schemaVersion: projection.schemaVersion, workspace, builtAt: now.toISOString(), ms: Math.round(performance.now() - started), counts: countsIn(conn), networkCounts: networkCountsIn(conn), mode: 'full', applied: 0, walRows: 0, ...stamps }
+  putState('relateGraph', workspace, pointer, now.getTime(), handle)
+  prune(dir, file)
+  return pointer
 }
 
 export function buildGraphHere(dbPath: string = defaultDbPath(), now: Date = new Date()): GraphPointer {
@@ -173,19 +276,122 @@ export function buildGraphHere(dbPath: string = defaultDbPath(), now: Date = new
   const workspace = workspaceOf(dbPath)
   if (!claimState('relateGraphBuilding', workspace, { pid: process.pid }, BUILD_GRACE_MS, now.getTime(), handle)) throw new Error('another process is building the Relate graph for this log.db right now')
   try {
+    return buildIn(handle, dbPath, workspace, now)
+  } finally {
+    deleteState('relateGraphBuilding', workspace, handle)
+  }
+}
+
+export function deltaScopeOf(handle: SqlDatabase, pointer: GraphPointer): ProjectionScope {
+  const after = pointer.throughSeq
+  const rooms = handle.prepare('SELECT c.chatId AS id FROM events e JOIN chats c ON c.platform = e.platform AND c.account = e.account AND c.conversationId = e.conversationId WHERE e.seq > ?1 UNION SELECT m.chatId AS id FROM events e JOIN messages m ON m.messageKey = e.messageKey WHERE e.seq > ?1 AND e.messageKey IS NOT NULL').all(after) as { id: string }[]
+  const actors = handle.prepare("SELECT DISTINCT platform || ':' || actorUserId AS id FROM interactions WHERE seq > ?").all(pointer.interactionsThrough ?? 0) as { id: string }[]
+  const ringed = handle.prepare("SELECT platform || ':' || userId AS id FROM networkRings WHERE seq > ?").all(after) as { id: string }[]
+  return { rooms: new Set(rooms.map((r) => r.id)), actors: new Set(actors.map((r) => r.id)), identities: new Set(ringed.map((r) => r.id)) }
+}
+
+interface Renamed {
+  handles: Set<string>
+  ids: Set<string>
+  keys: Set<string>
+  same: Set<string>
+  placeholders: Set<string>
+}
+
+const canonical = (v: unknown): string => JSON.stringify(Object.entries((v ?? {}) as Record<string, unknown>).filter(([, x]) => x !== null && x !== undefined).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+
+function renamedIn(conn: Connection, delta: Projection): Renamed {
+  const held = new Map(conn.query('UNWIND $keys AS k MATCH (i:Identity {key: k}) RETURN i.key AS key, properties(i) AS props', { keys: delta.identities.map((i) => i.key) }).rows.map((r) => [String(r.key), r.props as Record<string, unknown>]))
+  const renamed: Renamed = { handles: new Set(), ids: new Set(), keys: new Set(), same: new Set(), placeholders: new Set() }
+  for (const row of delta.identities) {
+    const before = held.get(row.key)
+    if (!before) {
+      renamed.ids.add(row.key)
+      renamed.keys.add(row.key)
+    } else if (canonical(before) === canonical(row)) renamed.same.add(row.key)
+    const had = new Set([before?.handleLower, ...((before?.aliases as string[] | null) ?? [])].filter(Boolean) as string[])
+    for (const h of [row.handleLower, ...row.aliases]) {
+      if (!h || had.has(h)) continue
+      renamed.handles.add(`${row.platform}:${h}`)
+      renamed.keys.add(row.key)
+    }
+  }
+  const asked = (delta.network?.takeovers ?? []).filter((t) => renamed.keys.has(t.identity)).map((t) => t.placeholder)
+  if (asked.length) for (const r of conn.query('UNWIND $keys AS k MATCH (o:Identity {key: k}) RETURN o.key AS key, o.placeholder AS placeholder', { keys: asked }).rows) if (r.placeholder === true) renamed.placeholders.add(String(r.key))
+  return renamed
+}
+
+function rowsOf(delta: Projection): number {
+  return delta.accounts.length + delta.identities.length + delta.rooms.length + delta.posts.length + delta.servers.length + delta.persons.length + delta.members.length + delta.said.length + delta.engaged.length + delta.replies.length + delta.mentions.length + delta.links.length + (delta.network?.mentioned.length ?? 0) + 4 * (delta.network?.takeovers?.length ?? 0)
+}
+
+function onlyChanged(delta: Projection, renamed: Renamed): Projection {
+  const identities = delta.identities.filter((i) => !renamed.same.has(i.key))
+  if (!delta.network) return { ...delta, identities }
+  const takeovers = (delta.network.takeovers ?? []).filter((t) => renamed.keys.has(t.identity)).map((t) => ({ ...t, moved: renamed.placeholders.has(t.placeholder) }))
+  const keys = new Set(takeovers.map((t) => t.identity))
+  return { ...delta, identities, network: { ...delta.network, takeovers, mentioned: delta.network.mentioned.filter((m) => keys.has(m.from) || keys.has(m.to)) } }
+}
+
+function roomsNaming(handle: SqlDatabase, named: { handles: Set<string>; ids: Set<string> }): string[] {
+  if (!named.handles.size && !named.ids.size) return []
+  const rows = handle.prepare("SELECT m.chatId, m.senderPlatform AS platform, m.text FROM messages m WHERE m.text LIKE '%@%'").all() as { chatId: string; platform: string; text: string }[]
+  const out = new Set<string>()
+  for (const r of rows) {
+    const { ids, handles } = pointedAt(r.text)
+    if (handles.some((h) => named.handles.has(`${r.platform}:${h}`)) || ids.some((id) => named.ids.has(`${r.platform}:${id}`))) out.add(r.chatId)
+  }
+  return [...out]
+}
+
+export function applyGraphHere(dbPath: string = defaultDbPath(), now: Date = new Date()): GraphPointer {
+  const handle = openDatabase(dbPath)
+  const workspace = workspaceOf(dbPath)
+  if (!claimState('relateGraphBuilding', workspace, { pid: process.pid }, BUILD_GRACE_MS, now.getTime(), handle)) throw new Error('another process is building the Relate graph for this log.db right now')
+  try {
+    const pointer = pointerOf(dbPath, handle)
+    const latest = eventsThrough(handle)
+    if (pointer && latest <= pointer.throughSeq) return pointer
+    const stamps = stampsOf(handle)
+    const full = !pointer || pointer.interactionsThrough === undefined || pointer.mergesThrough !== stamps.mergesThrough || (pointer.networkStamp ?? null) !== stamps.networkStamp || latest - pointer.throughSeq > APPLY_MAX_EVENTS
+    if (full) return buildIn(handle, dbPath, workspace, now)
     const started = performance.now()
-    const projection = projectionOf(handle)
-    const dir = graphDir(dbPath)
-    mkdirSync(dir, { recursive: true })
-    const file = join(dir, `${GRAPH_FILE_PREFIX}${String(projection.throughSeq).padStart(12, '0')}-${now.getTime()}${GRAPH_FILE_SUFFIX}`)
+    const stages: Record<string, number> = {}
+    let mark = started
+    const stage = (name: string) => {
+      const at = performance.now()
+      stages[name] = Math.round(at - mark)
+      mark = at
+    }
+    ensureRings(handle, now)
+    const scope = deltaScopeOf(handle, pointer)
+    let delta = projectionOf(handle, scope)
+    stage('project')
+    const file = newFileOf(graphDir(dbPath), delta.throughSeq, now)
+    copyFileSync(pointer.file, file)
+    stage('copy')
     const db = relateLib().Database.open(file)
     const conn = db.connect()
-    writeProjection(conn, projection, { workspace, builtAt: now.toISOString() })
-    db.checkpoint()
-    const pointer: GraphPointer = { file, throughSeq: projection.throughSeq, projectorVersion: PROJECTOR_VERSION, schemaVersion: projection.schemaVersion, workspace, builtAt: now.toISOString(), ms: Math.round(performance.now() - started), counts: countsIn(conn), networkCounts: networkCountsIn(conn) }
-    putState('relateGraph', workspace, pointer, now.getTime(), handle)
-    prune(dir, file)
-    return pointer
+    conn.query('MATCH (s:Snapshot) RETURN s.key AS key')
+    stage('open')
+    const renamed = renamedIn(conn, delta)
+    const more = roomsNaming(handle, renamed).filter((r) => !scope.rooms.has(r))
+    if (more.length) delta = projectionOf(handle, { ...scope, rooms: new Set([...scope.rooms, ...more]) })
+    stage('renamed')
+    const applied = onlyChanged(delta, renamed)
+    applyProjection(conn, applied, now.toISOString())
+    stage('write')
+    const walRows = (pointer.walRows ?? 0) + rowsOf(applied)
+    const checkpointed = walRows > CHECKPOINT_ROWS
+    if (checkpointed) db.checkpoint()
+    stage('checkpoint')
+    const counts = countsIn(conn)
+    const networkCounts = networkCountsIn(conn)
+    stage('counts')
+    const next: GraphPointer = { ...pointer, file, throughSeq: delta.throughSeq, builtAt: now.toISOString(), ms: Math.round(performance.now() - started), counts, networkCounts, mode: 'applied', applied: latest - pointer.throughSeq, stages, walRows: checkpointed ? 0 : walRows, ...stamps }
+    putState('relateGraph', workspace, next, now.getTime(), handle)
+    prune(graphDir(dbPath), file)
+    return next
   } finally {
     deleteState('relateGraphBuilding', workspace, handle)
   }
@@ -378,7 +584,9 @@ export function refreshGraph(repo: string, dbPath: string = defaultDbPath(), now
   if (!wantsRebuild(pointer, behind, now)) return false
   const building = getState<{ pid: number }>('relateGraphBuilding', workspaceOf(dbPath), {}, handle)
   if (building && now - building.updatedAt < BUILD_GRACE_MS) return false
-  const child = spawn('bun', [join(repo, 'bin', 'log.ts'), 'relate', 'build'], { cwd: repo, detached: true, stdio: 'ignore', windowsHide: true, env: { ...process.env, LOG_DB: resolve(dbPath) } })
+  const entry = pathToFileURL(join(repo, 'src', 'relate', 'graph', 'index.ts')).href
+  const script = `const m = await import(${JSON.stringify(entry)}); m.applyGraphHere(process.argv[1])`
+  const child = spawn('bun', ['-e', script, resolve(dbPath)], { cwd: repo, detached: true, stdio: 'ignore', windowsHide: true, env: { ...process.env, LOG_DB: resolve(dbPath) } })
   child.unref()
   return true
 }

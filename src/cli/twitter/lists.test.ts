@@ -16,7 +16,7 @@ const LISTS_PAGE = `def a_list(list_id, name, owner):
 
 page = {"data": {"viewer": {"list_management_timeline": {"timeline": {"instructions": [{"type": "TimelineAddEntries", "entries": [
     {"entryId": "ownedSubscribedListModule0", "content": {"items": [
-        {"entryId": "a", "item": {"itemContent": {"itemType": "TimelineTwitterList", "list": a_list("2118253450186440992", "Go-Getters", "111")}}},
+        {"entryId": "a", "item": {"itemContent": {"itemType": "TimelineTwitterList", "list": a_list("2118253450186440992", "Close Circle", "111")}}},
         {"entryId": "b", "item": {"itemContent": {"itemType": "TimelineTwitterList", "list": a_list("900", "Someone Else's", "222")}}},
     ]}},
     {"entryId": "listToFollowModule1", "content": {"items": [
@@ -57,6 +57,6 @@ ${LISTS_PAGE}
 fake = Fake()
 fake.get_lists = types.MethodType(Client.get_lists, fake)
 print(json.dumps(asyncio.run(engine.lists_of(fake))))`);
-    expect(got).toEqual([{ id: "2118253450186440992", name: "Go-Getters", mode: "Private", memberCount: 0, description: "" }]);
+    expect(got).toEqual([{ id: "2118253450186440992", name: "Close Circle", mode: "Private", memberCount: 0, description: "" }]);
   });
 });
