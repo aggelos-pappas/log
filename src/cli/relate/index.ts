@@ -1,26 +1,41 @@
 import { join } from "node:path";
 import { buildGraph, pointerOf, eventsThrough, queryGraph, refreshGraph, relateContext, verifyGraph, graphDir } from "../../relate/graph/index.ts";
 import type { GraphCounts, NetworkGraphCounts } from "../../relate/graph/index.ts";
+import { MACHINE_PLATFORMS, MACHINE_VIEWS, relateMachine } from "../../relate/machine/index.ts";
+import type { MachinePlatform, MachineView } from "../../relate/machine/index.ts";
 import { defaultDbPath, openDatabase } from "../../storage/schema/index.ts";
-import { JSON_FLAG, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
+import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
 import { PLATFORMS } from "../runner/helpers/platforms.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
 
 export const RELATE_USAGE = [
   "Usage: log relate build [--json]",
-  "       log relate status [--json]           (the graph and how far behind log.db it is)",
+  "       log relate status [--json]",
   "       log relate verify [--json]",
-  "       log relate ask \"<text>\" [--json]     (the context the hook injects)",
-  "       log relate query \"<cypher>\" [--platform <p>] [--json] (read-only, at most 100 rows)",
+  "       log relate ask \"<text>\" [--json]",
+  "       log relate query \"<cypher>\" [--platform <p>] [--json]",
+  "       log relate machine [--person|--to <h>] [--platform <p>] [--json]",
   "The graph is a projection: log.db's events stay the record, and a build can always be thrown away and redone (docs/relateGraph.md).",
 ].join("\n");
 
 export const RELATE_INPUT: CommandInput = {
   forms: [
-    { words: ["build"], effect: "write", summary: "Project log.db into a new Relate graph file and make it the current one (local only, nothing is sent)", positionals: [], flags: [JSON_FLAG] },
-    { words: ["status"], summary: "Show the current Relate graph file, the event it was built through and how far behind log.db it is", positionals: [], flags: [JSON_FLAG] },
-    { words: ["verify"], summary: "Compare every node and edge count in the Relate graph with what log.db derives now", positionals: [], flags: [JSON_FLAG] },
+    { words: ["build"], effect: "write", summary: "Project log.db into a new Relate graph and make it current (local only)", positionals: [], flags: [JSON_FLAG] },
+    { words: ["status"], summary: "The current Relate graph and how far behind log.db it is", positionals: [], flags: [JSON_FLAG] },
+    { words: ["verify"], summary: "Check every Relate graph count against log.db", positionals: [], flags: [JSON_FLAG] },
     { words: ["ask"], summary: "Show the connected context (chats, engagement, shared groups, who could introduce, same orbit) for the people a text names", positionals: [{ name: "text", kind: "string", required: true, description: "A prompt or note naming people, e.g. \"reply to @someone\"" }], flags: [JSON_FLAG] },
+    {
+      words: ["machine"],
+      summary: "A relationship state machine: one person, the route to someone, or the network",
+      positionals: [],
+      flags: [
+        { name: "person", kind: "string", description: "Who: where you stand and the next move" },
+        { name: "to", kind: "string", description: "Who: the route to them through people you know" },
+        { name: "view", kind: "enum", values: MACHINE_VIEWS, description: "person, route or network" },
+        { name: "platform", kind: "enum", values: MACHINE_PLATFORMS, description: "Only this platform's accounts: all, twitter, discord, instagram, slack, reddit, facebook or linkedin" },
+        JSON_FLAG,
+      ],
+    },
     { words: ["query"], summary: "Run a read-only Cypher query on the current Relate graph (at most 100 rows)", positionals: [{ name: "cypher", kind: "string", required: true, description: "The Cypher to run, e.g. MATCH (i:Identity)-[:ENGAGED]->(p:Post) RETURN i.handle, p.text LIMIT 5" }], flags: [{ name: "platform", kind: "enum", values: PLATFORMS, description: "Sets $platform" }, JSON_FLAG] },
   ],
 };
@@ -35,8 +50,8 @@ export const relateCommand: Command = {
   name: "relate",
   effect: "read",
   input: RELATE_INPUT,
-  summary: "A Relate graph of who talks, engages and shares rooms with the owner, and your network, from log.db",
-  args: "build|status|verify|ask <text>|query <cypher> [--platform <p>] [--json]",
+  summary: "The Relate graph of the owner's people, rooms and network, from log.db",
+  args: "build|status|verify|ask <text>|query <cypher> [--platform <p>]|machine [--json]",
   run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(RELATE_INPUT));
     if (!parsed.ok) return refuseInput("relate", parsed.error, RELATE_USAGE);
@@ -81,6 +96,13 @@ export const relateCommand: Command = {
       if (json) return { code: 0, stdout: JSON.stringify({ rows: result.rows, truncated: result.truncated, throughSeq: result.pointer.throughSeq }, null, 2) };
       return { code: 0, stdout: [...result.rows.map((r) => JSON.stringify(r)), result.truncated ? "(more rows: the first 100 are shown)" : `(${result.rows.length} rows, graph through event ${result.pointer.throughSeq})`].join("\n") };
     }
-    return refuseInput("relate", 'say build, status, verify, ask "<text>" or query "<cypher>"', RELATE_USAGE);
+    if (sub === "machine" && rest.length === 0) {
+      const flag = (name: string) => (typeof parsed.flags[name] === "string" ? (parsed.flags[name] as string) : undefined);
+      const answer = relateMachine({ view: flag("view") as MachineView | undefined, person: flag("person"), to: flag("to"), platform: flag("platform") as MachinePlatform | undefined }, dbPath);
+      if (!answer.ok) return refuse("relate machine", answer.code, answer.problem);
+      if (json) return { code: 0, stdout: JSON.stringify({ block: answer.block, text: answer.text, throughSeq: answer.throughSeq }, null, 2) };
+      return { code: 0, stdout: answer.text };
+    }
+    return refuseInput("relate", 'say build, status, verify, ask "<text>", query "<cypher>" or machine', RELATE_USAGE);
   },
 };

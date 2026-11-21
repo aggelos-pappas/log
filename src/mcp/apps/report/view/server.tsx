@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { transform } from "sucrase";
+import { MACHINE_FONT, machineCss } from "../../../../relate/machine/theme.ts";
 import { KitProvider, setHost } from "./kit.tsx";
 import type { KitHost } from "./kit.tsx";
 import { VIEW_MODULES, viewFromModule } from "./run.ts";
@@ -12,6 +13,7 @@ export const VIEW_CODE_LIMIT = 60_000;
 const WIDGET_ENTRY = fileURLToPath(new URL("./widget.tsx", import.meta.url));
 const KIT_CSS = fileURLToPath(new URL("./kit.css", import.meta.url));
 const GEIST = fileURLToPath(new URL("../../../../../site/apps/web/public/fonts/geist-latin-wght-normal.woff2", import.meta.url));
+const SATOSHI = new URL("../../../../../site/apps/web/public/fonts/satoshi-webfont/", import.meta.url);
 const STARTERS = new URL("./starters/", import.meta.url);
 
 export type Compiled = { ok: true; compiled: string } | { ok: false; error: string };
@@ -116,7 +118,7 @@ export function scopeKitCss(css: string, scope = ".logview"): string {
 const HERMES_FRAME = ".logview { display: block; margin: 8px 0; border-radius: 16px; overflow: hidden; max-width: 1100px; line-height: 1.45; } .logview .sb-page { padding: 20px 22px 24px; } .logview button { font: inherit; }";
 
 export function hermesKitCss(): string {
-  return `${geistFace()}${scopeKitCss(readFileSync(KIT_CSS, "utf8"))}${HERMES_FRAME}`;
+  return `${geistFace()}${scopeKitCss(readFileSync(KIT_CSS, "utf8"))}${scopeKitCss(machineCss())}${HERMES_FRAME}`;
 }
 
 let built: Promise<string> | null = null;
@@ -127,9 +129,14 @@ async function widgetScript(): Promise<string> {
   return output.outputs[0].text();
 }
 
+function faceOf(family: string, file: string, weight: string, format: "woff" | "woff2"): string {
+  if (!existsSync(file)) return "";
+  return `@font-face{font-family:"${family}";font-style:normal;font-weight:${weight};font-display:swap;src:url(data:font/${format};base64,${readFileSync(file).toString("base64")}) format("${format}")}`;
+}
+
 function geistFace(): string {
-  if (!existsSync(GEIST)) return "";
-  return `@font-face{font-family:"Geist";font-style:normal;font-weight:100 900;font-display:swap;src:url(data:font/woff2;base64,${readFileSync(GEIST).toString("base64")}) format("woff2")}`;
+  const machine = MACHINE_FONT.files.map(({ file, weight }) => faceOf(MACHINE_FONT.face, fileURLToPath(new URL(file, SATOSHI)), String(weight), "woff"));
+  return `${faceOf("Geist", GEIST, "100 900", "woff2")}${machine.join("")}`;
 }
 
 export function viewPage(script: string, baked?: unknown): string {

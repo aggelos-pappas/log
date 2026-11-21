@@ -285,6 +285,14 @@
       "summary": "Update log"
     },
     {
+      "name": "log-network-relationship-machine",
+      "description": "Relationship state machine. A log play (docs/useCases/network/relationshipMachine.md): Where you stand with someone, drawn as a state machine in the stately look: the states a relationship moves through (new, follows you, talks to your followers, engaged with you, you reached out, in conversation), the moves between them (follow, like their post, reply, DM, intro, they replied), each labelled with the log tool that makes it. The person's real history from log.db is the path taken, timestamped; where it stands now is highlighted, and the next move is the outgoing transition. The same machine shows the route to someone through the people you know, and your whole network with a count in each state.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Relationship state machine"
+    },
+    {
       "name": "log-network-who-to-talk-to",
       "description": "Who to talk to next. A log play (docs/useCases/network/whoToTalkTo.md): Your network is everyone around your own accounts, each in a ring kept live from what the watchers store: 1 engaged with you (a one-to-one chat counts, a group doesn't), 2 talks to your followers or ring-1 people, 3 follows you, 4 known. Rings are per person: accounts the owner linked (`log people link`) count once, at their closest ring, with every account and the platform each tie came from. Ask for one platform alone or all of them. It needs no research files. An imported research folder adds each person's band (what they could be to you), fit and the leaders whose circles they are in. One query answers who to talk to next: the people one step from you whom you haven't talked to yet, ring 2 first. Each comes with why: their ring and its reason, the circles, who already connects you, and their last post. The ones y",
       "files": [
