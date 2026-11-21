@@ -70,6 +70,7 @@ export const machineState = z.strictObject({
   initial: z.boolean().optional(),
   final: z.boolean().optional(),
   details: z.array(z.strictObject({ label: line(), value: line(M.note) })).max(M.details).optional(),
+  platform: line(M.platform).optional(),
 });
 export const machineTransition = z.strictObject({
   id: line(M.id),
