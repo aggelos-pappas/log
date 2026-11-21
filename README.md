@@ -130,17 +130,9 @@ This installs the `log` and `logMcp` commands, and Python with everything the pl
 
 ### Connect your accounts
 
-Add the account once, sign it in, then check that the platform still accepts it:
+Sign each of your own accounts in once. X, LinkedIn and Slack take your existing session, typed into a masked prompt; Discord, Reddit and Instagram open a window where you sign in by hand; Facebook has its own connect step. Every step, per platform: [docs/accounts.md](docs/accounts.md).
 
-| Platform | How to sign in |
-|---|---|
-| X | `log twitter cookies save --account <handle>`: paste your own session values (`auth_token`, `ct0`, `twid`) into the masked prompt |
-| LinkedIn | `log linkedin cookies save --account <publicId>`: paste `li_at` and `JSESSIONID` |
-| Slack | `log slack cookies save --account <name>`: paste your own `d` session value into the masked prompt |
-| Discord, Reddit, Instagram | `log localAccount add --platform <platform> --account <name>`, then `log inspect start --account <name>`, sign in by hand in the window that opens, and `log inspect do stop --account <name>` to save the session |
-| Facebook | `log localAccount add --platform facebook --account <name>`, then `log facebook connect --account <name>` |
-
-Then check it with `log <platform> session check --account <name>`, which sends nothing. The answer is `loggedIn`, `loggedOut` or `restricted`. Cookies are always typed into a masked prompt and never passed as flags. More: [docs/accounts.md](docs/accounts.md).
+Then check it with `log <platform> session check --account <name>`, which sends nothing. The answer is `loggedIn`, `loggedOut` or `restricted`.
 
 ### Connect your agent
 

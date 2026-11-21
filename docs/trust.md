@@ -41,6 +41,10 @@ The hosted MCP server (`https://mcp.listeningkit.com/mcp`) is optional and uses 
 
 log uses each platform's own web or app interface with your own signed-in session, one connection per account, at a human pace. It does not create accounts, buy accounts or post from accounts you don't own. The platform pages under [platformGuides](platformGuides) list what each one reads and sends.
 
+## Platform rules
+
+Each platform has its own terms for automated use. log keeps to a human pace, one session per account and daily limits, and stops the moment a platform refuses, but it can't promise a platform will allow every use. You decide what to run on your accounts and stay responsible for it.
+
 ## Reporting a problem
 
 Open an issue at https://github.com/matthewdonsemail-lab/log/issues. Security problems: mark the issue as security, or contact the maintainer on X at @matthewsoldit.

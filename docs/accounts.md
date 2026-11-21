@@ -27,7 +27,7 @@ X and LinkedIn accounts can skip this step: saving their cookies (below) adds th
 
 ## 2. Sign it in
 
-### X and LinkedIn: paste the cookies
+### X, LinkedIn and Slack: paste your session
 
 1. Open the site in a browser where the account is signed in.
 2. Export its cookies with a cookie-export browser extension.
@@ -36,9 +36,10 @@ X and LinkedIn accounts can skip this step: saving their cookies (below) adds th
 ```bash
 log twitter cookies save --account yourhandle
 log linkedin cookies save --account your-public-id
+log slack cookies save --account yourname
 ```
 
-X asks for `auth_token`, `ct0` and `twid`. LinkedIn asks for `li_at` and `JSESSIONID`, and `--account` is the part after `linkedin.com/in/`. log checks the cookies with the platform before it saves them. They're never shown or passed as flags.
+X asks for `auth_token`, `ct0` and `twid`. LinkedIn asks for `li_at` and `JSESSIONID`, and `--account` is the part after `linkedin.com/in/`. Slack asks for the `d` value. log checks the cookies with the platform before it saves them. They're never shown or passed as flags.
 
 ### Reddit and Discord: sign in once in the account's browser
 
