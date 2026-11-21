@@ -1,13 +1,14 @@
 import type { Database as SqlDatabase } from 'bun:sqlite'
 import { createHash } from 'node:crypto'
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import type { Connection, Database as GraphDatabase } from '@relate/relate'
 import { defaultDbPath, openDatabase } from '../../storage/schema/index'
 import { claimState, deleteState, getState, putState } from '../../storage/state/index'
-import { mentionedTokens, projectionOf } from './helpers/index'
-import { BUILD_GRACE_MS, CONTEXT_CHARS, QUERY_ROWS, REFRESH_AFTER_MS, GRAPH_FILE_PREFIX, GRAPH_FILE_SUFFIX, KEPT_SNAPSHOTS, KEYED_LABELS, LISTED, MENTIONED_PEOPLE, PRIOR_FLOOR, PRIOR_KAPPA, PRIOR_WEIGHT_NEAR, PRIOR_WEIGHT_SPOKE, PROJECTOR_VERSION, WRITE_BATCH } from './types'
+import { mentionedTokens, paddedPrompt, projectionOf } from './helpers/index'
+import { BUILD_CHILD_MS, BUILD_GRACE_MS, CONTEXT_CHARS, QUERY_ROWS, REFRESH_AFTER_MS, GRAPH_FILE_PREFIX, GRAPH_FILE_SUFFIX, KEPT_SNAPSHOTS, KEYED_LABELS, LISTED, MENTIONED_PEOPLE, PRIOR_FLOOR, PRIOR_KAPPA, PRIOR_WEIGHT_NEAR, PRIOR_WEIGHT_SPOKE, PROJECTOR_VERSION, WRITE_BATCH } from './types'
 import type { ConnectedContext, GraphCounts, GraphPointer, GraphVerify, PersonFound, Projection } from './types'
 
 type Relate = typeof import('@relate/relate')
@@ -39,12 +40,20 @@ export function eventsThrough(handle: SqlDatabase): number {
   return (handle.prepare('SELECT COALESCE(MAX(seq), 0) AS seq FROM events').get() as { seq: number }).seq
 }
 
+export class GraphUnreadable extends Error {
+  readonly code = 'graphUnreadable'
+}
+
 export function graphConnection(file: string): Connection {
   const held = opened.get(file)
   if (held) return held.connect()
-  const db = relateLib().Database.open(file, { readOnly: true })
-  opened.set(file, db)
-  return db.connect()
+  try {
+    const db = relateLib().Database.open(file, { readOnly: true })
+    opened.set(file, db)
+    return db.connect()
+  } catch (error) {
+    throw new GraphUnreadable(`graphUnreadable: the Relate graph ${file} can't be opened read-only (${error instanceof Error ? error.message : String(error)}); a process may still hold it open for writing`)
+  }
 }
 
 function batches<T>(rows: readonly T[]): T[][] {
@@ -65,11 +74,23 @@ export function writeProjection(conn: Connection, projection: Projection, meta: 
     write(conn, 'UNWIND $rows AS r CREATE (n:Identity) SET n = r', projection.identities)
     write(conn, 'UNWIND $rows AS r CREATE (n:Room) SET n = r', projection.rooms)
     write(conn, 'UNWIND $rows AS r CREATE (n:Post) SET n = r', projection.posts)
+    write(conn, 'UNWIND $rows AS r CREATE (n:Server) SET n = r', projection.servers)
+    write(conn, 'UNWIND $rows AS r CREATE (n:Person) SET n = r', projection.persons)
+    write(conn, 'UNWIND $rows AS r MATCH (room:Room {key: r.key}), (s:Server {key: r.serverKey}) CREATE (room)-[:IN_SERVER]->(s)', projection.rooms.filter((r) => r.serverKey))
+    write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (p:Person {key: r.person}) CREATE (i)-[:LINKED_TO {linkedBy: r.linkedBy, linkedAt: r.linkedAt}]->(p)', projection.links)
     write(conn, 'UNWIND $rows AS r MATCH (a:Account {key: r.accountKey}), (room:Room {key: r.key}) CREATE (a)-[:HAS_ROOM]->(room)', projection.rooms)
     write(conn, 'UNWIND $rows AS r MATCH (a:Account {key: r.accountKey}), (p:Post {key: r.key}) CREATE (a)-[:POSTED]->(p)', projection.posts)
     write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (room:Room {key: r.room}) CREATE (i)-[:MEMBER_OF {firstSeenAt: r.firstSeenAt, lastSeenAt: r.lastSeenAt}]->(room)', projection.members)
-    write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (room:Room {key: r.room}) CREATE (i)-[:SAID {messages: r.messages, lastAtMs: r.lastAtMs}]->(room)', projection.said.filter((s) => !s.fromOwner))
-    write(conn, 'UNWIND $rows AS r MATCH (a:Account {key: r.accountKey}), (room:Room {key: r.room}) CREATE (a)-[:SAID {messages: r.messages, lastAtMs: r.lastAtMs}]->(room)', projection.said.filter((s) => s.fromOwner))
+    write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (room:Room {key: r.room}) CREATE (i)-[:SAID {messages: r.messages, firstAtMs: r.firstAtMs, lastAtMs: r.lastAtMs}]->(room)', projection.said.filter((s) => !s.fromOwner))
+    write(conn, 'UNWIND $rows AS r MATCH (a:Account {key: r.accountKey}), (room:Room {key: r.room}) CREATE (a)-[:SAID {messages: r.messages, firstAtMs: r.firstAtMs, lastAtMs: r.lastAtMs}]->(room)', projection.said.filter((s) => s.fromOwner))
+    for (const [rel, rows] of [['REPLIED_TO', projection.replies], ['MENTIONED', projection.mentions]] as const) {
+      for (const fromOwner of [false, true]) {
+        for (const toOwner of [false, true]) {
+          if (fromOwner && toOwner) continue
+          write(conn, `UNWIND $rows AS r MATCH (a:${fromOwner ? 'Account' : 'Identity'} {key: r.from}), (b:${toOwner ? 'Account' : 'Identity'} {key: r.to}) CREATE (a)-[:${rel} {room: r.room, times: r.times, firstAtMs: r.firstAtMs, lastAtMs: r.lastAtMs}]->(b)`, rows.filter((x) => x.fromOwner === fromOwner && x.toOwner === toOwner))
+        }
+      }
+    }
     write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (p:Post {key: r.post}) CREATE (i)-[:ENGAGED {kind: r.kind, times: r.times, lastAtMs: r.lastAtMs}]->(p)', projection.engaged.filter((e) => e.post))
     write(conn, 'UNWIND $rows AS r MATCH (i:Identity {key: r.identity}), (a:Account {key: r.accountKey}) CREATE (i)-[:FOLLOWED {kind: r.kind, times: r.times, lastAtMs: r.lastAtMs}]->(a)', projection.engaged.filter((e) => !e.post))
     conn.query('CREATE (:Snapshot {key: $key, throughSeq: $throughSeq, schemaVersion: $schemaVersion, projectorVersion: $projectorVersion, workspace: $workspace, builtAt: $builtAt})', { key: 'snapshot', throughSeq: projection.throughSeq, schemaVersion: projection.schemaVersion, projectorVersion: PROJECTOR_VERSION, workspace: meta.workspace, builtAt: meta.builtAt })
@@ -89,6 +110,12 @@ export function expectedCounts(projection: Projection): GraphCounts {
     memberOf: projection.members.length,
     said: projection.said.length,
     engaged: projection.engaged.length,
+    servers: projection.servers.length,
+    inServer: projection.rooms.filter((r) => r.serverKey).length,
+    persons: projection.persons.length,
+    linkedTo: projection.links.length,
+    repliedTo: projection.replies.length,
+    mentioned: projection.mentions.length,
   }
 }
 
@@ -102,6 +129,12 @@ export function countsIn(conn: Connection): GraphCounts {
     memberOf: one('MATCH ()-[r:MEMBER_OF]->() RETURN count(r) AS n'),
     said: one('MATCH ()-[r:SAID]->() RETURN count(r) AS n'),
     engaged: one('MATCH ()-[r:ENGAGED|FOLLOWED]->() RETURN count(r) AS n'),
+    servers: one('MATCH (n:Server) RETURN count(n) AS n'),
+    inServer: one('MATCH ()-[r:IN_SERVER]->() RETURN count(r) AS n'),
+    persons: one('MATCH (n:Person) RETURN count(n) AS n'),
+    linkedTo: one('MATCH ()-[r:LINKED_TO]->() RETURN count(r) AS n'),
+    repliedTo: one('MATCH ()-[r:REPLIED_TO]->() RETURN count(r) AS n'),
+    mentioned: one('MATCH ()-[r:MENTIONED]->() RETURN count(r) AS n'),
   }
 }
 
@@ -120,6 +153,15 @@ function prune(dir: string, keep: string): string[] {
 }
 
 export function buildGraph(dbPath: string = defaultDbPath(), now: Date = new Date()): GraphPointer {
+  const entry = pathToFileURL(join(import.meta.dir, 'index.ts')).href
+  const script = `const m = await import(${JSON.stringify(entry)}); process.stdout.write(JSON.stringify(m.buildGraphHere(process.argv[1], new Date(Number(process.argv[2])))))`
+  const done = spawnSync(process.execPath, ['-e', script, resolve(dbPath), String(now.getTime())], { encoding: 'utf8', windowsHide: true, timeout: BUILD_CHILD_MS, env: process.env })
+  if (done.error) throw done.error
+  if (done.status !== 0) throw new Error((done.stderr || done.stdout || `the graph build exited ${done.status}`).trim().split('\n').filter(Boolean).slice(-3).join(' | '))
+  return JSON.parse(done.stdout.trim().split('\n').pop() ?? '') as GraphPointer
+}
+
+export function buildGraphHere(dbPath: string = defaultDbPath(), now: Date = new Date()): GraphPointer {
   const handle = openDatabase(dbPath)
   const workspace = workspaceOf(dbPath)
   if (!claimState('relateGraphBuilding', workspace, { pid: process.pid }, BUILD_GRACE_MS, now.getTime(), handle)) throw new Error('another process is building the Relate graph for this log.db right now')
@@ -130,7 +172,6 @@ export function buildGraph(dbPath: string = defaultDbPath(), now: Date = new Dat
     mkdirSync(dir, { recursive: true })
     const file = join(dir, `${GRAPH_FILE_PREFIX}${String(projection.throughSeq).padStart(12, '0')}-${now.getTime()}${GRAPH_FILE_SUFFIX}`)
     const db = relateLib().Database.open(file)
-    opened.set(file, db)
     const conn = db.connect()
     writeProjection(conn, projection, { workspace, builtAt: now.toISOString() })
     db.checkpoint()
@@ -148,7 +189,7 @@ export function verifyGraph(dbPath: string = defaultDbPath()): GraphVerify {
   const pointer = pointerOf(dbPath, handle)
   const projection = projectionOf(handle)
   const expected = expectedCounts(projection)
-  const empty: GraphCounts = { accounts: 0, identities: 0, rooms: 0, posts: 0, memberOf: 0, said: 0, engaged: 0 }
+  const empty = Object.fromEntries(Object.keys(expected).map((k) => [k, 0])) as unknown as GraphCounts
   if (!pointer) return { ok: false, pointer, expected, found: empty, differs: Object.keys(expected), behind: projection.throughSeq }
   const found = countsIn(graphConnection(pointer.file))
   const behind = projection.throughSeq - pointer.throughSeq
@@ -156,10 +197,13 @@ export function verifyGraph(dbPath: string = defaultDbPath()): GraphVerify {
   return { ok: behind === 0 && differs.length === 0, pointer, expected, found, differs, behind }
 }
 
+const capitalsOf = (prompt: string): string => ` ${(prompt.match(/(?<![\p{L}\p{N}_])\p{Lu}[\p{L}\p{N}_.]{2,}/gu) ?? []).map((w) => w.toLowerCase()).join(' ')} `
+
 export function findPeople(conn: Connection, prompt: string): PersonFound[] {
   const { tagged, bare } = mentionedTokens(prompt)
-  if (!tagged.length && !bare.length) return []
-  const rows = conn.query('MATCH (i:Identity) WHERE (NOT i.owner OR i.personId IS NOT NULL) AND (i.handleLower IN $tagged OR i.handleLower IN $bare OR any(a IN coalesce(i.aliases, []) WHERE a IN $tagged OR a IN $bare) OR any(n IN coalesce(i.personNames, []) WHERE n IN $tagged OR n IN $bare)) OPTIONAL MATCH (i)-[e]-() WITH i, count(e) AS degree RETURN i.key AS key, i.platform AS platform, i.handle AS handle, coalesce(i.handleLower, head(i.aliases)) AS handleLower, i.name AS name, i.personId AS personId, degree, (i.handleLower IN $tagged OR any(a IN coalesce(i.aliases, []) WHERE a IN $tagged)) AS tagged ORDER BY tagged DESC, degree DESC', { tagged, bare }).rows
+  const padded = paddedPrompt(prompt)
+  if (!tagged.length && !bare.length && !padded.trim()) return []
+  const rows = conn.query("MATCH (i:Identity) WHERE (NOT i.owner OR i.personId IS NOT NULL) AND (i.handleLower IN $tagged OR i.handleLower IN $bare OR any(a IN coalesce(i.aliases, []) WHERE a IN $tagged OR a IN $bare) OR any(n IN coalesce(i.personNames, []) WHERE n IN $tagged OR n IN $bare) OR any(n IN coalesce(i.labels, []) WHERE (n CONTAINS ' ' AND $padded CONTAINS (' ' + n + ' ')) OR (NOT n CONTAINS ' ' AND $capitals CONTAINS (' ' + n + ' ')))) OPTIONAL MATCH (i)-[e]-() WITH i, count(e) AS degree RETURN i.key AS key, i.platform AS platform, i.handle AS handle, coalesce(i.handleLower, head(i.aliases)) AS handleLower, i.name AS name, i.personId AS personId, degree, (i.handleLower IN $tagged OR any(a IN coalesce(i.aliases, []) WHERE a IN $tagged) OR any(n IN coalesce(i.labels, []) WHERE size(n) > 0 AND $taggedText CONTAINS (' @' + n + ' '))) AS tagged ORDER BY tagged DESC, degree DESC", { tagged, bare, padded, capitals: capitalsOf(prompt), taggedText: ` ${prompt.toLowerCase().replace(/\s+/g, ' ')} ` }).rows
   const people = new Map<string, PersonFound>()
   for (const r of rows) {
     const group = r.personId ? `person:${r.personId}` : `${r.platform}:${r.handleLower ?? r.key}`
@@ -191,7 +235,8 @@ export function connectedContext(conn: Connection, person: PersonFound): Connect
   const talks = conn.query('MATCH (p:Identity)-[:MEMBER_OF|SAID]->(r:Room)<-[:HAS_ROOM]-(a:Account) WHERE p.key IN $keys WITH DISTINCT r, a OPTIONAL MATCH (s:Identity)-[said:SAID]->(r) WHERE s.key IN $keys OPTIONAL MATCH (a)-[o:SAID]->(r) WITH a, r, sum(coalesce(said.messages, 0)) AS theirs, max(coalesce(o.messages, 0)) AS ours RETURN a.account AS account, r.kind AS kind, count(r) AS threads, max(theirs) AS theirs, max(ours) AS ours, max(r.lastAtMs) AS lastAtMs ORDER BY lastAtMs DESC LIMIT $limit', { keys, limit: LISTED }).rows
   const engagedPosts = conn.query('MATCH (p:Identity)-[e:ENGAGED]->(post:Post) WHERE p.key IN $keys RETURN post.account AS account, e.kind AS kind, e.times AS times, post.text AS post, e.lastAtMs AS lastAtMs ORDER BY lastAtMs DESC LIMIT $limit', { keys, limit: LISTED }).rows
   const followed = conn.query('MATCH (p:Identity)-[f:FOLLOWED]->(a:Account) WHERE p.key IN $keys RETURN a.account AS account, f.kind AS kind, f.times AS times, f.lastAtMs AS lastAtMs ORDER BY lastAtMs DESC LIMIT $limit', { keys, limit: LISTED }).rows
-  const shared = conn.query("MATCH (p:Identity)-[:MEMBER_OF]->(r:Room) WHERE p.key IN $keys AND r.kind <> 'dm' WITH DISTINCT r OPTIONAL MATCH (r)<-[:MEMBER_OF]-(x:Identity) RETURN r.account AS account, coalesce(r.name, r.conversationId) AS room, count(DISTINCT x) AS members ORDER BY members DESC LIMIT $limit", { keys, limit: LISTED }).rows
+  const shared = conn.query("MATCH (p:Identity)-[:MEMBER_OF]->(r:Room) WHERE p.key IN $keys AND r.kind <> 'dm' WITH DISTINCT r OPTIONAL MATCH (r)<-[:MEMBER_OF]-(x:Identity) RETURN r.account AS account, coalesce(r.name, r.conversationId) AS room, r.server AS server, count(DISTINCT x) AS members ORDER BY members DESC LIMIT $limit", { keys, limit: LISTED }).rows
+  const replied = conn.query('MATCH (p:Identity)-[x:REPLIED_TO|MENTIONED]->(:Account) WHERE p.key IN $keys MATCH (r:Room {key: x.room}) RETURN coalesce(r.name, r.conversationId) AS room, r.server AS server, sum(x.times) AS times, max(x.lastAtMs) AS lastAtMs ORDER BY lastAtMs DESC LIMIT $limit', { keys, limit: LISTED }).rows
   const introducers = conn.query("MATCH (p:Identity)-[:MEMBER_OF]->(r:Room)<-[:MEMBER_OF]-(m:Identity) WHERE p.key IN $keys AND r.kind <> 'dm' AND NOT m.key IN $keys AND NOT m.owner WITH m, count(DISTINCT r) AS rooms MATCH (m)-[:MEMBER_OF|SAID]->(d:Room {kind: 'dm'}) RETURN coalesce(m.handle, m.userId) AS handle, rooms, max(d.lastAtMs) AS lastDmAtMs ORDER BY rooms DESC, lastDmAtMs DESC LIMIT $limit", { keys, limit: LISTED }).rows
   const orbit = conn.query('MATCH (p:Identity)-[:ENGAGED]->(post:Post)<-[:ENGAGED]-(o:Identity) WHERE p.key IN $keys AND NOT o.key IN $keys AND NOT o.owner RETURN coalesce(o.handle, o.userId) AS handle, count(DISTINCT post) AS posts ORDER BY posts DESC, handle LIMIT $limit', { keys, limit: LISTED }).rows
   const talked = talks.map((r) => ({ account: String(r.account), kind: String(r.kind), threads: Number(r.threads), theirs: Number(r.theirs), ours: Number(r.ours), lastAtMs: num(r.lastAtMs) }))
@@ -203,7 +248,8 @@ export function connectedContext(conn: Connection, person: PersonFound): Connect
     person,
     talks: talked,
     engaged,
-    sharedRooms: shared.map((r) => ({ account: String(r.account), room: String(r.room), members: Number(r.members) })),
+    sharedRooms: shared.map((r) => ({ account: String(r.account), room: String(r.room), server: (r.server as string | null) ?? null, members: Number(r.members) })),
+    replied: replied.map((r) => ({ room: String(r.room), server: (r.server as string | null) ?? null, times: Number(r.times), lastAtMs: num(r.lastAtMs) })),
     introducers: introducers.map((r) => ({ handle: String(r.handle), rooms: Number(r.rooms), lastDmAtMs: num(r.lastDmAtMs) })),
     sameOrbit: orbit.map((r) => ({ handle: String(r.handle), posts: Number(r.posts) })),
     otherAccounts: [...new Set([...talked.map((t) => t.account), ...engaged.map((e) => e.account)])],
@@ -229,7 +275,13 @@ export function graphPriorFor(prompt: string, dbPath: string = defaultDbPath()):
   const handle = openDatabase(dbPath)
   const pointer = pointerOf(dbPath, handle)
   if (!pointer) return null
-  const conn = graphConnection(pointer.file)
+  let conn: Connection
+  try {
+    conn = graphConnection(pointer.file)
+  } catch (error) {
+    if (error instanceof GraphUnreadable) return null
+    throw error
+  }
   const people = findPeople(conn, prompt)
   if (!people.length) return null
   const links = roomLinks(conn, people)
@@ -250,6 +302,8 @@ const clip = (text: string | null, n = 60): string => {
   return flat.length > n ? `${flat.slice(0, n)}…` : flat
 }
 
+const roomLabel = (r: { room: string; server: string | null }): string => (r.server ? `${r.server} #${r.room}` : r.room)
+
 export function renderContext(contexts: readonly ConnectedContext[], pointer: GraphPointer, behind: number, now: number = Date.now()): string {
   if (!contexts.length) return ''
   const blocks = contexts.map((c) => {
@@ -258,7 +312,8 @@ export function renderContext(contexts: readonly ConnectedContext[], pointer: Gr
     if (c.talks.length) lines.push(`  talks: ${c.talks.map((t) => `${t.kind}${t.threads > 1 ? ` (${t.threads} threads)` : ''} on ${t.account}, they said ${t.theirs}, the owner said ${t.ours}, last ${ago(t.lastAtMs, now)}`).join('; ')}`)
     else lines.push('  talks: no chat with any of the owner\'s accounts in log.db')
     if (c.engaged.length) lines.push(`  engaged the owner: ${c.engaged.map((e) => `${e.kind}${e.times > 1 ? ` x${e.times}` : ''}${e.post ? ` "${clip(e.post, 50)}"` : ''} (${e.account}, ${ago(e.lastAtMs, now)})`).join('; ')}`)
-    if (c.sharedRooms.length) lines.push(`  in groups: ${c.sharedRooms.map((r) => `"${clip(r.room, 30)}" on ${r.account} (${r.members} members)`).join('; ')}`)
+    if (c.replied.length) lines.push(`  replied to or mentioned the owner: ${c.replied.map((r) => `${r.times}x in "${clip(roomLabel(r), 40)}" (last ${ago(r.lastAtMs, now)})`).join('; ')}`)
+    if (c.sharedRooms.length) lines.push(`  in groups: ${c.sharedRooms.map((r) => `"${clip(roomLabel(r), 40)}" on ${r.account} (${r.members} members)`).join('; ')}`)
     if (c.introducers.length) lines.push(`  who could introduce: ${c.introducers.map((i) => `@${i.handle} (${i.rooms} shared group${i.rooms > 1 ? 's' : ''}, the owner's DM last ${ago(i.lastDmAtMs, now)})`).join('; ')}`)
     if (c.sameOrbit.length) lines.push(`  same orbit (engaged the same posts): ${c.sameOrbit.map((o) => `@${o.handle} (${o.posts})`).join(', ')}`)
     return lines.join('\n')
@@ -273,7 +328,8 @@ export interface RelateAnswer {
   text: string
   people: number
   behind: number
-  outcome: 'noGraph' | 'none' | 'answered'
+  outcome: 'noGraph' | 'none' | 'answered' | 'graphUnreadable'
+  detail?: string
 }
 
 export function relateContext(prompt: string, dbPath: string = defaultDbPath(), now: number = Date.now()): RelateAnswer {
@@ -281,7 +337,13 @@ export function relateContext(prompt: string, dbPath: string = defaultDbPath(), 
   const handle = openDatabase(dbPath)
   const pointer = pointerOf(dbPath, handle)
   if (!pointer) return { text: '', people: 0, behind: 0, outcome: 'noGraph' }
-  const conn = graphConnection(pointer.file)
+  let conn: Connection
+  try {
+    conn = graphConnection(pointer.file)
+  } catch (error) {
+    if (error instanceof GraphUnreadable) return { text: '', people: 0, behind: 0, outcome: 'graphUnreadable', detail: error.message }
+    throw error
+  }
   const people = findPeople(conn, prompt)
   if (!people.length) return { text: '', people: 0, behind: 0, outcome: 'none' }
   const behind = Math.max(0, eventsThrough(handle) - pointer.throughSeq)
@@ -297,15 +359,14 @@ export function queryGraph(cypher: string, params: Record<string, string> = {}, 
 }
 
 export function wantsRebuild(pointer: GraphPointer | null, behind: number, now: number = Date.now()): boolean {
-  if (!pointer) return false
+  if (!pointer) return behind > 0
   return behind > 0 && now - Date.parse(pointer.builtAt) >= REFRESH_AFTER_MS
 }
 
 export function refreshGraph(repo: string, dbPath: string = defaultDbPath(), now: number = Date.now()): boolean {
   const handle = openDatabase(dbPath)
   const pointer = pointerOf(dbPath, handle)
-  if (!pointer) return false
-  const behind = eventsThrough(handle) - pointer.throughSeq
+  const behind = eventsThrough(handle) - (pointer?.throughSeq ?? 0)
   if (!wantsRebuild(pointer, behind, now)) return false
   const building = getState<{ pid: number }>('relateGraphBuilding', workspaceOf(dbPath), {}, handle)
   if (building && now - building.updatedAt < BUILD_GRACE_MS) return false

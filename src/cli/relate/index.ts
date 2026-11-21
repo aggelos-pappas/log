@@ -1,4 +1,5 @@
-import { buildGraph, pointerOf, eventsThrough, queryGraph, relateContext, verifyGraph, graphDir } from "../../relate/graph/index.ts";
+import { join } from "node:path";
+import { buildGraph, pointerOf, eventsThrough, queryGraph, refreshGraph, relateContext, verifyGraph, graphDir } from "../../relate/graph/index.ts";
 import type { GraphCounts } from "../../relate/graph/index.ts";
 import { defaultDbPath, openDatabase } from "../../storage/schema/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
@@ -23,7 +24,9 @@ export const RELATE_INPUT: CommandInput = {
   ],
 };
 
-const countsLine = (c: GraphCounts): string => `${c.accounts} accounts, ${c.identities} people, ${c.rooms} rooms, ${c.posts} posts, ${c.memberOf} memberships, ${c.said} said, ${c.engaged} engaged`;
+const countsLine = (c: GraphCounts): string => `${c.accounts} accounts, ${c.identities} people, ${c.rooms} rooms, ${c.servers} servers, ${c.posts} posts, ${c.persons} linked persons, ${c.memberOf} memberships, ${c.said} said, ${c.repliedTo} replied, ${c.mentioned} mentioned, ${c.engaged} engaged`;
+
+const REPO = join(import.meta.dir, "..", "..", "..");
 
 export const relateCommand: Command = {
   usage: RELATE_USAGE,
@@ -49,7 +52,9 @@ export const relateCommand: Command = {
       const handle = openDatabase(dbPath);
       const pointer = pointerOf(dbPath, handle);
       const through = eventsThrough(handle);
-      if (json) return { code: 0, stdout: JSON.stringify({ pointer, eventsThrough: through, behind: pointer ? through - pointer.throughSeq : null }, null, 2) };
+      const building = pointer ? false : refreshGraph(REPO, dbPath);
+      if (json) return { code: 0, stdout: JSON.stringify({ pointer, eventsThrough: through, behind: pointer ? through - pointer.throughSeq : null, building }, null, 2) };
+      if (!pointer && building) return { code: 1, stdout: `log relate status: no graph for this log.db yet, so a build of its ${through} events has started in the background; ask again in a few seconds.` };
       if (!pointer) return { code: 1, stdout: "log relate status: no graph for this log.db yet. `log relate build` makes one." };
       return { code: 0, stdout: `log relate status: ${pointer.file}\n  built ${pointer.builtAt} through event ${pointer.throughSeq} (log.db is at ${through}, ${through - pointer.throughSeq} behind)\n  ${countsLine(pointer.counts)}` };
     }
@@ -65,6 +70,7 @@ export const relateCommand: Command = {
       const answer = relateContext(rest[0], dbPath);
       if (json) return { code: 0, stdout: JSON.stringify(answer, null, 2) };
       if (answer.outcome === "noGraph") return { code: 1, stdout: "log relate ask: no graph for this log.db yet. `log relate build` makes one." };
+      if (answer.outcome === "graphUnreadable") return { code: 1, stdout: `log relate ask: ${answer.detail ?? "graphUnreadable"}. \`log relate build\` writes a fresh one.` };
       return { code: 0, stdout: answer.text || "log relate ask: that text names nobody the graph knows." };
     }
     if (sub === "query" && rest.length === 1) {

@@ -17,6 +17,7 @@ function fakeDeps(calls: string[], options: { vendors?: boolean; modelReady?: bo
   return {
     vendors: () => (calls.push('vendors'), options.vendors === false ? { ok: false, detail: 'uv exited 2' } : { ok: true }),
     migrations: () => (calls.push('migrations'), { ok: true }),
+    relateGraph: () => (calls.push('relateGraph'), { ok: true }),
     skills: () => (calls.push('skills'), { ok: true }),
     models: async () => (calls.push('models'), [{ ...MODEL, ready: options.modelReady !== false, action: options.modelReady === false ? 'failed' : 'downloaded' }]),
     harnesses: () => (calls.push('harnesses'), [{ id: 'hermes', label: 'Hermes', present: true, ok: true, refreshed: 'plugin rewritten', reloaded: 'plugin reloaded' }]),
@@ -25,19 +26,19 @@ function fakeDeps(calls: string[], options: { vendors?: boolean; modelReady?: bo
 }
 
 describe('the after-install routine install and update share', () => {
-  test('runs vendors, migrations, skills, models and harnesses in that order', async () => {
+  test('runs vendors, migrations, the Relate graph build, skills, models and harnesses in that order', async () => {
     const calls: string[] = []
     const report = await runPostInstall('/fake/log', stepsWithout([]), fakeDeps(calls), '0.2.2')
-    expect(calls).toEqual(['vendors', 'migrations', 'skills', 'models', 'harnesses'])
+    expect(calls).toEqual(['vendors', 'migrations', 'relateGraph', 'skills', 'models', 'harnesses'])
     expect(report.ok).toBe(true)
     expect(report.models.map((m) => m.action)).toEqual(['downloaded'])
-    expect(postInstallText(report)).toBe(['log 0.2.2: after-install done', '  vendors: ok, done', '  migrations: ok, done', '  skills: ok, done', '  models: ok, all 1 on the pinned revision', '  harnesses: ok, Hermes plugin rewritten'].join('\n'))
+    expect(postInstallText(report)).toBe(['log 0.2.2: after-install done', '  vendors: ok, done', '  migrations: ok, done', '  relateGraph: ok, done', '  skills: ok, done', '  models: ok, all 1 on the pinned revision', '  harnesses: ok, Hermes plugin rewritten'].join('\n'))
   })
 
   test('log update skips the harnesses here, since it refreshes them after restarting what ran', async () => {
     const calls: string[] = []
     await runPostInstall('/fake/log', stepsWithout(['harnesses']), fakeDeps(calls), '0.2.2')
-    expect(calls).toEqual(['vendors', 'migrations', 'skills', 'models'])
+    expect(calls).toEqual(['vendors', 'migrations', 'relateGraph', 'skills', 'models'])
   })
 
   test('a failed vendor step fails the routine; a model that could not be fetched is reported, not fatal', async () => {

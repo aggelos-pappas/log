@@ -19,7 +19,7 @@ answerEvent → relateAnswer → relateContext ──► current graph-<seq>.rl 
 ## How it uses Relate
 
 - **Mode: single file.** Each build writes a new `graph-<throughSeq>-<ms>.rl` beside log.db (`~/.logCli/relate/`), and log.db's `state` table points at the current one. A single file is one immutable snapshot: it is written whole, checkpointed, and only then pointed at, so a reader never sees half a graph. It can be copied, inspected with the `relate` CLI, or thrown away.
-- **Why not one long-lived store:** Relate is single-process with one writer, and on Windows a second process can't open a store another process is writing. log has many processes (the MCP server, the context service, every hook, the account owners), so the writer is a short-lived build process and everyone else opens finished snapshots read-only.
+- **Why not one long-lived store:** Relate is single-process with one writer, and on Windows a second process can't open a store another process is writing. log has many processes (the MCP server, the context service, every hook, the account owners), so the writer is a short-lived build process and everyone else opens finished snapshots read-only. Even a finished file can't be opened read-only while any process still holds it writable (the engine answers `internal error`), so `buildGraph` always writes in its own child process, which exits and lets go. A file that still can't be opened is a coded `graphUnreadable` outcome, never a hook error.
 - **Embedded:** `@relate/relate` runs in the same Bun process as the hook through its C ABI (koffi). No server. Per Relate's ADR-0079, only the CLI binary sends anonymous usage metrics; the embedded library never phones home.
 
 ## What the graph models
@@ -28,7 +28,9 @@ answerEvent → relateAnswer → relateContext ──► current graph-<seq>.rl 
 | --- | --- | --- |
 | `Account` | `platform:account` | `accounts`, `chats` |
 | `Identity` | `platform:userId` | `identities`, `handleAliases` (handle, name and aliases copied for lookup; `owner` marks the owner's own ids) |
-| `Room` | `chatId` | `chats` (DM, group, channel) |
+| `Room` | `chatId` | `chats` (DM, group, channel), with the channel's own name and server from the Discord channel catalog (`engineState`) |
+| `Server` | `platform:server:<id>` | `chats.serverId`, named from the catalog |
+| `Person` | `person:<personId>` | `persons`, `identityLinks` (from `log people link`) |
 | `Post` | `platform:account:targetRef` | `interactions.targetRef`, `targetText` |
 | `Snapshot` | `snapshot` | the event `seq`, schema and projector version it was built from |
 
@@ -36,7 +38,11 @@ answerEvent → relateAnswer → relateContext ──► current graph-<seq>.rl 
 | --- | --- | --- |
 | `(Account)-[:HAS_ROOM]->(Room)` | the account sees this chat | `chats` |
 | `(Identity)-[:MEMBER_OF]->(Room)` | they are in it | `memberships` |
-| `(Identity\|Account)-[:SAID {messages, lastAtMs}]->(Room)` | how much each side said there | `messages`, counted |
+| `(Identity\|Account)-[:SAID {messages, firstAtMs, lastAtMs}]->(Room)` | how much each side said there, and when | `messages`, counted |
+| `(Identity\|Account)-[:REPLIED_TO {room, times, firstAtMs, lastAtMs}]->(Identity\|Account)` | who replied to whom, the owner's side being the room's account | `messages.replyToKey` |
+| `(Identity\|Account)-[:MENTIONED {room, times, firstAtMs, lastAtMs}]->(Identity\|Account)` | who named whom (`<@id>`, `@handle`) | `messages.text` |
+| `(Room)-[:IN_SERVER]->(Server)` | the channel's server | `chats.serverId` |
+| `(Identity)-[:LINKED_TO {linkedBy, linkedAt}]->(Person)` | identities the owner linked as one person | `identityLinks` |
 | `(Identity)-[:ENGAGED {kind, times, lastAtMs}]->(Post)` | like, reply, repost, quote, mention | `interactions` |
 | `(Identity)-[:FOLLOWED]->(Account)` | a follow | `interactions` |
 | `(Account)-[:POSTED]->(Post)` | the owner's post | `interactions` |
@@ -45,15 +51,16 @@ Message text stays in log.db. The graph holds counts and times, plus the post te
 
 ## The questions it answers
 
-For each person a prompt names (`@handle`, or a known handle without the @), from their node outwards:
+For each person a prompt names (`@handle`, a known handle without the @, or a display name the way `saidBy` matches one, e.g. `@Max Current` or `Design bakery`), from their node outwards:
 
 1. **Talks:** which of the owner's accounts chat with them and how much each side said.
 2. **Engaged the owner:** what they liked, replied to, reposted or followed, and when.
-3. **In groups:** the groups and channels they are in.
-4. **Who could introduce:** people in those groups whom the owner already has a DM with (2 hops: person → room → member → DM room).
-5. **Same orbit:** others who engaged the same posts (person → post → person).
+3. **Replied to or mentioned the owner:** where, how often and when last.
+4. **In groups:** the groups and channels they are in, as `Server #channel`.
+5. **Who could introduce:** people in those groups whom the owner already has a DM with (2 hops: person → room → member → DM room).
+6. **Same orbit:** others who engaged the same posts (person → post → person).
 
-Identities on one platform with the same handle are merged (a handle seen before its numeric id was known). Nobody named means no context: silence beats a guess.
+Identities on one platform with the same handle are merged (a handle seen before its numeric id was known), and identities linked to one `Person` are one person across platforms. Nobody named means no context: silence beats a guess.
 
 ## Setup and run
 
@@ -66,7 +73,14 @@ log relate ask "intro me to @someone"
 log relate query "MATCH (i:Identity)-[e:ENGAGED]->(p:Post) RETURN i.handle, e.kind, p.text LIMIT 5"
 ```
 
-Over MCP these are `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk` and `relateQuery`. Run `log relate build` once; after that the hook keeps it fresh: it answers from the current graph and starts a rebuild in the background when log.db has moved on (at most once a minute). With no graph built, the hook says nothing and builds nothing.
+Over MCP these are `relateBuild`, `relateStatus`, `relateVerify`, `relateAsk` and `relateQuery`. Install and `log update` build it once (the `relateGraph` after-install step, right after migrations). After that the hook keeps it fresh: it answers from the current graph and starts a rebuild in the background when log.db has moved on (at most once a minute; a build of the real log.db takes about 2 s). With no graph yet, the hook and `log relate status` start the first build at once.
+
+One query answers "who replied to the owner in a channel after a date":
+
+```bash
+log relate query "MATCH (i:Identity)-[r:REPLIED_TO]->(:Account) WHERE r.room ENDS WITH ':<channelId>' AND r.lastAtMs > <ms> RETURN coalesce(i.name, i.handle) AS who, r.times AS times"
+log relate query "MATCH (i:Identity)-[:SAID]->(:Room)-[:IN_SERVER]->(s:Server {name: 'Some Server'}) RETURN DISTINCT i.handle"
+```
 
 To try it without any accounts, the demo store is in this repo:
 
@@ -90,6 +104,7 @@ relate --read-only -d docs/relate/demoGraph.rl "MATCH (p:Identity {handleLower:'
 | Half-written reads | New file per build, pointer moved only after the commit and checkpoint. |
 | Retried or concurrent builds | One build per log.db at a time (`relateGraphBuilding` claim); every build starts from an empty file, so a retry can't double edges. |
 | Re-keyed identities | Rebuilt whole, never patched, so a merged handle can't leave a stale node. |
+| A writer that never lets go | Each build runs in its own child process, so a long-lived MCP server or context service never keeps a writable handle that blocks every reader. |
 | Schema change | The pointer carries the projector version; a graph from other code is ignored and rebuilt. |
 | Another workspace's data | The graph folder sits beside its own log.db and the pointer carries that log.db's workspace key. |
 | Drift | `log relate verify` compares every count with log.db. |
