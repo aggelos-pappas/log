@@ -27,6 +27,14 @@ export function linksIn(text: string): IdentityRef[] {
   return out
 }
 
+export function sharedLinkTo(handle: Database, ref: IdentityRef): MessageSource | null {
+  const word = ref.userId.replace(/^@/, '')
+  if (!word) return null
+  const rows = handle.prepare('SELECT messageKey, chatId, sentAt, text FROM messages WHERE fromOwner = 0 AND senderPlatform != ? AND text LIKE ? ORDER BY seq DESC').all(ref.platform, `%${word}%`) as { messageKey: string; chatId: string; sentAt: string | null; text: string }[]
+  const found = rows.find((m) => !RECOMMENDS.test(m.text) && linksIn(m.text).some((r) => keyOf(r).toLowerCase() === keyOf(ref).toLowerCase()))
+  return found ? { messageKey: found.messageKey, chatId: found.chatId, at: found.sentAt, text: found.text.replace(/\s+/g, ' ').slice(0, 160) } : null
+}
+
 export const loose = (handle: string | null): string => (handle ?? '').toLowerCase().replace(/^@/, '').replace(/[0-9_.\-]/g, '')
 
 interface Row {
@@ -472,7 +480,7 @@ function allowed(ctx: LinkContext, first: string, second: string): boolean {
   const a = ctx.byKey.get(first)
   const b = ctx.byKey.get(second)
   if (!a || !b || a.platform === b.platform || isBot(a) || isBot(b) || ctx.refused.has(pairIdOf(first, second))) return false
-  if (ctx.linked.get(first) && ctx.linked.get(first) === ctx.linked.get(second)) return false
+  if (ctx.linked.get(first) && ctx.linked.get(second)) return false
   const sameLoose = loose(a.handle).length >= HANDLE_MIN && loose(a.handle) === loose(b.handle)
   return !((ctx.runBy.has(first) || ctx.runBy.has(second)) && !sameLoose)
 }

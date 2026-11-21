@@ -36,6 +36,14 @@ export interface IdentityRef {
   userId: string
 }
 
+export interface IdentitySeenIn {
+  handle: string | null
+  messageKey: string
+  chatId: string
+  at: string | null
+  text: string
+}
+
 function peopleEvent(type: string, personId: string, key: readonly string[], payload: Record<string, unknown>, at: string, source: string): EventInsert {
   return { eventId: derivedEventId(type, [...key, at]), platform: PEOPLE_PLATFORM, account: PEOPLE_ACCOUNT, conversationId: personId, type, with: '', text: '', box: '', payload, sourceAt: '', receivedAt: at, source, known: true }
 }
@@ -44,8 +52,8 @@ export function personNamedEvent(personId: string, name: string | null, by: stri
   return peopleEvent('personNamed', personId, [personId, name ?? ''], { personId, name, by }, at, 'owner')
 }
 
-export function identityLinkedEvent(personId: string, identity: IdentityRef, by: string, evidence: string | null, at: string): EventInsert {
-  return peopleEvent('identityLinked', personId, [personId, identity.platform, identity.userId], { personId, platform: identity.platform, userId: identity.userId, by, evidence }, at, 'owner')
+export function identityLinkedEvent(personId: string, identity: IdentityRef, by: string, evidence: string | null, at: string, seenIn: IdentitySeenIn | null = null): EventInsert {
+  return peopleEvent('identityLinked', personId, [personId, identity.platform, identity.userId], { personId, platform: identity.platform, userId: identity.userId, by, evidence, ...(seenIn ? { seenIn } : {}) }, at, 'owner')
 }
 
 export function identityUnlinkedEvent(personId: string, identity: IdentityRef, by: string, at: string): EventInsert {

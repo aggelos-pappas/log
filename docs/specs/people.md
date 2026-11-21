@@ -24,6 +24,8 @@ Checked by: code and SubQ
 
 When `identityLearned` re-keys a handle-keyed identity (`@name`) to its id, `rekeyIdentity` moves its links with it in the same transaction. If the id was already linked too, the handle's link is revoked (`rekeyConflict`), never merged silently.
 
+An identity log.db knows only because someone shared a link to it (`x.com/<handle>/status/…`, the side `log people suggest` builds from `sharesOwnPosts`) has no `identities` row. `log people link` accepts it when `sharedLinkTo` finds a message, not the owner's and not a recommendation, whose links (`linksIn`) name it: the `identityLinked` event carries `seenIn` (the handle, and the `messageKey`, chat, time and text of the newest such message), and its projection creates the handle-keyed identity (`twitter:@handle`) before the link, so a rebuild gives it back and a later `identityLearned` moves the link to the id. With no such message, link still refuses.
+
 Checked by: code and SubQ
 
 ## Suggestions
@@ -50,7 +52,10 @@ These are never suggested:
 - links in messages recommending someone else ("check out his", "this dude");
 - a pair involving an account log runs, unless the handles match;
 - a pair the owner marked `different`;
-- a pair already linked to one person.
+- a pair already linked to one person;
+- a pair whose sides already belong to two different people, which `log people link` refuses until merging people is built (a group of accounts spanning two people shows no link command either).
+
+Every link command `log people suggest` prints is one `log people link` accepts.
 
 A handle-keyed identity whose handle already has an id on that platform is the same identity waiting to be re-keyed, so it is not compared separately. Nothing is linked without the owner: every write needs `--approvedBy` with his words.
 

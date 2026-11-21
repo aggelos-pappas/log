@@ -229,6 +229,14 @@ export const storage = {
       { kind: 'uses', file: MIGRATIONS, name: 'repairChatGroups' },
       { kind: 'string', file: MIGRATIONS, includes: 'chatGroups' },
     ],
+    'REQ-STORAGE-23': [
+      { kind: 'symbol', file: SCHEMA, name: 'dbOverride' },
+      { kind: 'symbol', file: SCHEMA, name: 'writesSinceOpen' },
+      { kind: 'uses', file: 'src/cli/runner/client.ts', name: 'dbOverride' },
+      { kind: 'uses', file: 'src/cli/runner/client.ts', name: 'writesSinceOpen' },
+      { kind: 'string', file: 'src/cli/runner/client.ts', includes: 'LOG_DB is set; not your usual log.db' },
+      { kind: 'uses', file: 'src/mcp/server/index.ts', name: 'wroteTo' },
+    ],
     'REQ-STORAGE-18': [
       { kind: 'symbol', file: MIGRATIONS, name: 'IDENTITY_PROFILE_TABLES' },
       { kind: 'string', file: PLATFORM_TYPES, includes: 'identityProfiles' },
@@ -275,6 +283,7 @@ export const storage = {
     'REQ-STORAGE-20': noul('Do the X inbox sync, X notifications, X last call, Discord servers and threads and LinkedIn connects stores read and write engineState rows through python/logDb/engineStore.py, which merges the stored parts into the new state inside one BEGIN IMMEDIATE, upserts only changed parts and never deletes one, falling back to the old file only when log.db or engineState is missing; is the old file imported on first touch, recorded in imports with its modified time, kept on disk, and merged again when modified later; and do xInboxHandleOf, storedWaiting, xchatStoredMedia and readNotificationStore read through readEngineStore, which answers from the old file only while it is newer than its import?'),
     'REQ-STORAGE-21': noul('Does the chat upsert in writeTypedRows and conversationSeen take kind, name and server id from the channel catalog through placedChat when it lists the conversation, never turn a server channel back into a dm or name it after a speaker, and does migration 28 run repairChatPlaces once over the rows stored before; and do the Discord inbox lines, log inbox waiting and log discord chats name the server, the #channel and the sender?'),
     'REQ-STORAGE-22': noul('For a platform whose extender guesses dm (kindFromMembers: Discord, Instagram, Reddit, Facebook, LinkedIn and the default), do writeTypedRows and conversationSeen turn a dm chat into a group once it has GROUP_OTHERS or more members besides the owner, never touching X or Slack, whose conversation ids say the kind; does insertEventRow then recompute the rings so its members are not ring 1 for it; and does migration 31 run repairChatPlaces and repairChatGroups over the rows stored before and recompute the rings when any moved?'),
+    'REQ-STORAGE-23': noul('Does runOne, for every CLI and MCP command, compare writesSinceOpen on the database dbOverride names (LOG_DB when it is not logHome()/log.db) before and after the command, and when it wrote put "writing to <path> (LOG_DB is set; not your usual log.db)" on stderr, db: <path> in a JSON object result and db in the MCP tool result, adding nothing with the usual database?'),
     unspecifiedBehavior: noul('Does the storage code order messages by text times, store the same message twice when it has a platform id, or hold the write lock for a whole backfill, by a route the specification does not describe?'),
   },
   assertions: {
@@ -300,6 +309,7 @@ export const storage = {
     'REQ-STORAGE-20': MET,
     'REQ-STORAGE-21': MET,
     'REQ-STORAGE-22': MET,
+    'REQ-STORAGE-23': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

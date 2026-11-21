@@ -1,7 +1,7 @@
 import { Database } from 'bun:sqlite'
 import type { Statement } from 'bun:sqlite'
 import { mkdirSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { MIGRATIONS, runBackfill, SCHEMA_VERSION } from './helpers'
 import { SchemaTooNewError } from './types'
 import type { AppliedMigration } from './types'
@@ -79,6 +79,23 @@ export function defaultDbPath(env: Record<string, string | undefined> = process.
 
 const handles = new Map<string, Database>()
 
+const changesAtOpen = new Map<string, number>()
+
+const totalChangesOf = (handle: Database): number => (handle.prepare('SELECT total_changes() AS n').get() as { n: number }).n
+
+export function usualDbPath(): string {
+  return join(logHome(), 'log.db')
+}
+
+export function dbOverride(env: Record<string, string | undefined> = process.env): string | null {
+  return env.LOG_DB && resolve(env.LOG_DB) !== resolve(usualDbPath()) ? env.LOG_DB : null
+}
+
+export function writesSinceOpen(path: string): number {
+  const held = handles.get(path)
+  return held ? totalChangesOf(held) - (changesAtOpen.get(path) ?? 0) : 0
+}
+
 export function openDatabase(path: string = defaultDbPath()): Database {
   const held = handles.get(path)
   if (held) return held
@@ -90,6 +107,7 @@ export function openDatabase(path: string = defaultDbPath()): Database {
   migrate(handle)
   runBackfill(handle)
   handles.set(path, handle)
+  changesAtOpen.set(path, totalChangesOf(handle))
   return handle
 }
 

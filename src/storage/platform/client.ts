@@ -205,6 +205,8 @@ function deriveInternal(handle: Database, event: EventInput): boolean | 'regroup
     const platform = String(event.payload.platform ?? '')
     const userId = String(event.payload.userId ?? '')
     if (!personId || !platform || !userId) return true
+    const seenIn = event.payload.seenIn as { handle?: string | null; at?: string | null } | undefined
+    if (seenIn) handle.prepare('INSERT INTO identities (platform, userId, handle, displayName, firstSeenAt, lastSeenAt) VALUES (?, ?, ?, NULL, ?, ?) ON CONFLICT(platform, userId) DO NOTHING').run(platform, userId, seenIn.handle ?? null, seenIn.at ?? event.receivedAt, seenIn.at ?? event.receivedAt)
     handle.prepare('INSERT INTO persons (personId, name, createdAt, updatedAt) VALUES (?, NULL, ?, ?) ON CONFLICT(personId) DO NOTHING').run(personId, event.receivedAt, event.receivedAt)
     const active = handle.prepare('SELECT personId FROM identityLinks WHERE platform = ? AND userId = ? AND revokedAt IS NULL').get(platform, userId) as { personId: string } | null
     if (active) return true
