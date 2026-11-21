@@ -2,16 +2,21 @@ import { MACHINE_TONES } from './types'
 import type { MachineTone } from './types'
 
 export const MACHINE_FONT = {
-  face: 'Inter Variable',
-  sans: '"Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+  face: 'Satoshi',
+  files: [
+    { file: 'Satoshi-Regular.woff', weight: 400 },
+    { file: 'Satoshi-Medium.woff', weight: 500 },
+    { file: 'Satoshi-Bold.woff', weight: 700 },
+  ],
+  sans: '"Satoshi", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
   mono: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
-  capRatio: 0.727,
-  title: { size: 20, line: 25, weight: 600, tracking: '-0.2px', charWidth: 0.6 },
-  body: { size: 12, line: 16, weight: 400, charWidth: 0.53 },
-  chip: { size: 11, line: 16, weight: 500, charWidth: 0.55 },
-  pill: { size: 12, line: 16, weight: 500, charWidth: 0.56 },
+  capRatio: 0.72,
+  title: { size: 20, line: 25, weight: 600, tracking: '-0.2px', charWidth: 0.59 },
+  body: { size: 12, line: 16, weight: 400, charWidth: 0.49 },
+  chip: { size: 11, line: 16, weight: 500, charWidth: 0.52 },
+  pill: { size: 12, line: 16, weight: 500, charWidth: 0.53 },
   tool: { size: 12, line: 16, weight: 400, charWidth: 0.6 },
-  mark: { size: 9, line: 14, weight: 700, charWidth: 0.62 },
+  mark: { size: 9, line: 14, weight: 700, charWidth: 0.6 },
 }
 
 export const MACHINE_SIZE = {

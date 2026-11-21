@@ -13,7 +13,7 @@ export const VIEW_CODE_LIMIT = 60_000;
 const WIDGET_ENTRY = fileURLToPath(new URL("./widget.tsx", import.meta.url));
 const KIT_CSS = fileURLToPath(new URL("./kit.css", import.meta.url));
 const GEIST = fileURLToPath(new URL("../../../../../site/apps/web/public/fonts/geist-latin-wght-normal.woff2", import.meta.url));
-const INTER = fileURLToPath(new URL("../../../../../site/apps/web/public/fonts/inter-latin-wght-normal.woff2", import.meta.url));
+const SATOSHI = new URL("../../../../../site/apps/web/public/fonts/satoshi-webfont/", import.meta.url);
 const STARTERS = new URL("./starters/", import.meta.url);
 
 export type Compiled = { ok: true; compiled: string } | { ok: false; error: string };
@@ -129,13 +129,14 @@ async function widgetScript(): Promise<string> {
   return output.outputs[0].text();
 }
 
-function faceOf(family: string, file: string): string {
+function faceOf(family: string, file: string, weight: string, format: "woff" | "woff2"): string {
   if (!existsSync(file)) return "";
-  return `@font-face{font-family:"${family}";font-style:normal;font-weight:100 900;font-display:swap;src:url(data:font/woff2;base64,${readFileSync(file).toString("base64")}) format("woff2")}`;
+  return `@font-face{font-family:"${family}";font-style:normal;font-weight:${weight};font-display:swap;src:url(data:font/${format};base64,${readFileSync(file).toString("base64")}) format("${format}")}`;
 }
 
 function geistFace(): string {
-  return `${faceOf("Geist", GEIST)}${faceOf(MACHINE_FONT.face, INTER)}`;
+  const machine = MACHINE_FONT.files.map(({ file, weight }) => faceOf(MACHINE_FONT.face, fileURLToPath(new URL(file, SATOSHI)), String(weight), "woff"));
+  return `${faceOf("Geist", GEIST, "100 900", "woff2")}${machine.join("")}`;
 }
 
 export function viewPage(script: string, baked?: unknown): string {
