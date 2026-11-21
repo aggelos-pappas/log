@@ -95,3 +95,10 @@ The same steps can run on a schedule with nobody watching: search, skip anyone s
 ## Next
 
 - [#39](https://github.com/matthewdonsemail-lab/log/issues/39) tracks who answered a recruiting reply. Until then, applicants show up wherever the job page stores them.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [All X use cases, and the parts they share](README.md)
+- [What log does on X](../../platformGuides/x.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

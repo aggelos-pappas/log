@@ -50,3 +50,9 @@ flowchart TD
 - **One message per line.** A draft on several lines goes out as that many messages, each with LinkedIn's typing signal first; `asOne` sends it as one. The first line LinkedIn doesn't confirm stops the rest.
 - **Only existing conversations.** A first message to someone the account has never written to isn't built.
 - **Reading marks nothing seen.** The inbox and a conversation are read with the calls the web client makes to list and open them, and none of the calls that mark a conversation seen.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on LinkedIn](../../platformGuides/linkedin.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

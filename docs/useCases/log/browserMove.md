@@ -31,5 +31,10 @@ flowchart TD
 
 - **The platform decides.** A move reports moved only on the platform's own signed-in answer; anything else is rolled back.
 - **AdsPower not needed.** When its API is down, refuses the key or the plan lapsed, the session already saved for the account carries.
-- **Fingerprint stays behind.** Cookies and localStorage move; proxy and locale are account fields; AdsPower's fingerprint does not carry.
+- **The device profile stays behind.** Cookies and localStorage move; proxy and locale are account fields; AdsPower's device profile (the browser identity it presents) does not carry.
 - **Nothing is sent.** A move changes settings and runs the read-only session checks only.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

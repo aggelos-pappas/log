@@ -422,3 +422,7 @@ flowchart LR
 
 - **Encryption at rest.** Principle 5 is about outside parties reading the data. One file with the right permissions is a big step up from thousands of loose files. Whether `log.db` should also be encrypted is the owner's call.
 - **Retention.** How long raw captures (HAR, exchanges) stay in `blobs` once a run is analysed. Rule 66 prunes them from disk today.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

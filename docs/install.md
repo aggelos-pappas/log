@@ -20,7 +20,7 @@ The installer is safe to run again. It:
 - installs the `log` and `logMcp` commands at one release: `LOG_VERSION` if you set it (`LOG_VERSION=0.2.1`), else the newest GitHub Release, else npm's `latest`; with `LOG_TRACK=nightly` it installs npm's `next` (the newest merge to `main`) and saves the track, so `log update` keeps following nightlies
 - installs its own Python 3.12 in `~/.logCli/python`, for the platform engines
 - writes your settings to `~/.logCli/.env`, with your accounts kept locally on your machine
-- runs the same after-install routine `log update` runs (`scripts/update/postInstall.ts`): the Python engines, log.db's migrations, the skills, every agent harness's plugin on this machine (the Hermes plugin and its Desktop plugin, OpenCode) and the local models this release pins, each at its exact revision (about 530 MB; `LOG_MODELS=off` skips them, `log models --fetch` gets them later)
+- runs the same after-install routine `log update` runs (`scripts/update/postInstall.ts`): the Python engines, log.db's migrations, the skills, every agent harness's plugin on this machine (the Hermes plugin and its Desktop plugin, OpenCode) and the local models this release pins, each at its exact revision ([local models](models.md) lists them and their sizes; `LOG_MODELS=off` skips them, `log models --fetch` gets them later)
 - ends with `installed log X.Y.Z`
 
 Check it worked:
@@ -97,3 +97,9 @@ log --help
 ```
 
 Claude Code and Codex opened in the checkout pick up `.mcp.json`, which runs the MCP server from the source. Encrypted X Chat also needs its wheel from `vendor/chatXdk`.
+
+## Related
+
+- Up: [log's README](../README.md)
+- Start here, in order: [Install](install.md) · [Add an account](accounts.md) · [Connect your agent](mcp.md) · [What log does, and what it never does](trust.md)
+- Then: [Use cases, the plays step by step](useCases/README.md) · [Your agent app](harnesses/README.md) · [What you can do on each platform](platformGuides/x.md) · [Every command and tool](reference.md) · [How log works](howItWorks.md)

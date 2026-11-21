@@ -39,3 +39,9 @@ flowchart TD
 - **The answer names where each hit is.** Read it there with `discordRead`, which names the channel or post it read.
 - **Voice notes and images:** a hit in a voice note shows as its attachment. Read that spot without `noMedia` to have it transcribed.
 - What each part of a server is: the `discordServers` skill in the discord guide.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on Discord](../../platformGuides/discord.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

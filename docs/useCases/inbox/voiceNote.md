@@ -46,3 +46,8 @@ On Discord the chat flag is `channel`, on Instagram `with`. If there is no clone
 - Explain log only with what the owner has said about it: you plug Claude into your socials, it reads everything, you tell it to go find people and it messages them for you.
 
 The first send after a restart can wait up to a minute while the account catches up from its gap.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

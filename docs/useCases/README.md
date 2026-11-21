@@ -37,6 +37,26 @@ What log-cli is built to do, one page each, by platform. Each page gives the ide
 | Every platform | [Signing an account in: checking it, then the live browser](inbox/signIn.md) | checks the session through the platform's answer and, when it needs a person, opens the account's own browser, streamed live into the chat (MCP Apps hosts, Hermes Desktop) on your machine or a remote runtime |
 | Instagram | [Bringing a new platform up, then vendoring its client](instagram/newPlatform.md) | makes the platform, opens it in the account's browser to sign in, reads its client's calls with rea, then vendors the GitHub client that speaks them |
 | log itself | [Turning a hand-rolled one-off into a log tool](log/toolFromOneOff.md) | the hook labels a one-off data read or action and advises, never blocks; `toolScaffold` writes it as a command and MCP tool with its use case, reloaded and compared with the one-off before the commit |
+| X | [Manager maxxing: the managers of the biggest Kick streamers](twitter/managerMaxxing.md) | the managers of the biggest Kick streamers: found on X, replied to for a few days, then a first DM to the ones who engaged |
+| Discord | [Answering someone in a Discord DM or group DM](discord/channelReply.md) | answers what someone said to the account in a Discord DM or group DM, gated and sent after the owner's yes |
+| Discord | [Replying in a Discord server channel](discord/serverReply.md) | answers a mention, a reply or a question in a channel of a server the owner is part of |
+| Discord | [Finding a conversation in a Discord server](discord/serverSearch.md) | finds what someone said in a server with Discord's own search, then reads around it, sends nothing |
+| Discord | [Going through a Discord forum for posts worth answering](discord/forumPosts.md) | lists a server forum's posts and says which are worth answering and why, sends nothing |
+| Reddit | [Contributor maxxing: finding talented builders through what they share](reddit/contributorMaxxing.md) | finds builders through the GitHub repos they post in a subreddit, ranked, reads only |
+| TikTok | [Posting a video on TikTok, and deleting it](tiktok/post.md) | posts one video with a caption, or deletes one of the account's posts, on the direct-API engine |
+| Every chat | [Triage: scoping someone's job and handing it to whoever does it](inbox/triage.md) | reads what someone needs built, gets the scope out of them and hands it to whoever does it |
+| Every chat | [Scoping a job out of someone in a DM](inbox/scopeAJob.md) | gets the scope of a job out of someone in a DM |
+| Every chat | [Working the warm people in your dms](inbox/warmPeople.md) | works the people already in the owner's DMs, by who they are and where they are |
+| Every chat | [Someone's messages on every platform, found by name, newest first](inbox/saidBy.md) | someone's messages on every platform, found by name, newest first |
+| Every chat | [Teaching log who your people are](inbox/labelQueue.md) | asks the owner about the chats the local labeller is least sure of, then trains on the answers |
+| Every chat | [Do people answer what log sends?](inbox/outcomes.md) | compares how people answer what log sent with what the owner typed himself, reads only |
+| Every chat | [Ignoring a server or a chat](inbox/ignoreServer.md) | stops the live push alerting on a server or chat; its messages are still stored |
+| Every chat | [Quieting the live push](inbox/quietPush.md) | quiets the live push for as many minutes as the owner says |
+| Every platform | [Resetting an account's governor count](inbox/governorReset.md) | puts an account's daily governor count back to 0 when the owner says so, kept as a log.db ledger row |
+| log itself | [Moving accounts to another browser](log/browserMove.md) | moves accounts to another browser with their signed-in session, done when the platform says signed in |
+| log itself | [Local models](log/localModels.md) | shows which local models this release pins and fetches the missing ones after the owner's yes |
+| log itself | [Tool health](log/toolHealth.md) | how log's own tools are doing from the calls log.db stores, with a fix for each flag, reads only |
+| log itself | [Update log](log/updateLog.md) | updates log to the newest release after the owner's yes and picks up where it left off |
 
 ## The parts every use case is built from
 
@@ -59,3 +79,9 @@ The owner's own words or an anecdote that only makes sense to the team.
 ```
 
 `bun run skills:build` (`scripts/docs/syncSiteSkills.mjs`) drops every private block before it writes `site/apps/web/public/.well-known/skills/` and `.claude/skills/`, and the site docs sync drops them from the docs site. A marker left open fails the build. The skill sync then runs the privacy scan (`src/privacy/scan`) on what it writes and fails on a hit (in pre-commit, `--staged` scans only the skills whose source page is staged; pre-push scans them all). The source page is still in this public repo, so a private block is for context that is fine to be public but not useful on the site: real people's names, handles, DMs and money never go in a tracked file at all, private block or not. Use an anonymised example instead (rule 178). `bun run check:privacy` catches secrets, private hosts, emails, phones and the terms in your private denylist (`~/.logCli/privacy/denylist.txt`, or `LOG_PRIVACY_DENYLIST`).
+
+## Related
+
+- Up: [log's README](../../README.md)
+- Start here: [Install](../install.md) · [Add an account](../accounts.md) · [Connect your agent](../mcp.md) · [What log does, and what it never does](../trust.md)
+- [What log does on each platform](../platformGuides/x.md) · [Every command and tool](../reference.md)

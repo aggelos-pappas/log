@@ -58,3 +58,7 @@ These keep their own spelling:
 - HTTP header names (`set-cookie`, `proxy-authorization`, `content-type`) and rea-agents commands (`inspect-web-network-capture`, `analyze-javascript-application`).
 - Third-party ids: Unsplash photo ids (`photo-1558...`), the UUID template.
 - Account issues (`session_expired`), which are snake_case from log's shared account-issue vocabulary. They aren't kebab-case.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

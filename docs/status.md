@@ -192,3 +192,7 @@ The same five steps every time. Nothing is coded before step 2.
   can't be read again with rea.
 - **Missing unit tests:** `src/cli/host/helpers/hostActors.ts` and
   `src/warmup/viewer` have none.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

@@ -41,3 +41,9 @@ flowchart TD
 - **Name every post.** `"<server> #<forum> > <post title>"`, never its id. `discordPosts` keeps each post's name, so `discordRead` finds it straight after.
 - **Nothing is sent from this page.** To answer one, follow [serverReply](serverReply.md) with the post as the channel.
 - What each part of a server is: the `discordServers` skill in the discord guide.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on Discord](../../platformGuides/discord.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

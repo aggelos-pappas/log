@@ -1,4 +1,4 @@
-![reloaderoo](banner.png)
+![reloaderoo](https://github.com/cameroncooke/reloaderoo/blob/HEAD/banner.png)
 
 [![npm version](https://badge.fury.io/js/reloaderoo.svg)](https://badge.fury.io/js/reloaderoo)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -483,7 +483,7 @@ reloaderoo info --verbose
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
+We welcome contributions! Please see [CONTRIBUTING.md](https://github.com/cameroncooke/reloaderoo/blob/HEAD/docs/CONTRIBUTING.md) for guidelines.
 
 ### **Development Setup**
 ```bash
@@ -503,11 +503,11 @@ npm run test:e2e      # End-to-end tests only
 npm run test:coverage # Test coverage report
 ```
 
-**Testing Guidelines:** See [docs/TESTING_GUIDELINES.md](docs/TESTING_GUIDELINES.md) for comprehensive testing standards and best practices.
+**Testing Guidelines:** See [docs/TESTING_GUIDELINES.md](https://github.com/cameroncooke/reloaderoo/blob/HEAD/docs/TESTING_GUIDELINES.md) for comprehensive testing standards and best practices.
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](https://github.com/cameroncooke/reloaderoo/blob/HEAD/LICENSE) file for details.
 
 ## 🔗 Related Projects
 

@@ -55,3 +55,8 @@ flowchart TD
 - **A scratch script over log.db is the usual one.** Finding a person's messages across platforms by name was a `bun` script with `bun:sqlite`, `messages JOIN chats` and `senderLabel LIKE`; it became `saidBy`.
 - **Hermes has no hook that can advise before a tool runs.** Its `pre_tool_call` can only block, ask the owner or rewrite the arguments, so on Hermes the advice comes with the call's result (`transform_tool_result`); Claude Code, Codex, OpenCode and Antigravity get it before the call.
 - **Name it by the job, not the query.** The name and summary are the tool's description, so the router models find it by what the owner asks for.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

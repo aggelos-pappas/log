@@ -129,3 +129,7 @@ Every refusal and every run is written to the listing row (`lastRunAt`,
 explains any code.
 
 The rules behind this are in AGENTS.md.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

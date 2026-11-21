@@ -7,3 +7,8 @@
 - **Guidance:**
   - **Prompt router:** yes. Codex has hooks, in `hooks.json` or a `[hooks]` table in `config.toml`. ([Codex hooks](https://developers.openai.com/codex/hooks)) log installs its hooks for Codex too (`HookHost` includes `codex`): its `UserPromptSubmit` hook calls the context layer service for the route (REQ-MCP-17).
   - **Server instructions:** used. OpenAI says Codex uses them alongside tool metadata. ([OpenAI: build an MCP server](https://developers.openai.com/plugins/build/mcp-server))
+
+## Related
+
+- Up: [Every agent app log works with](README.md)
+- [Connect your agent](../mcp.md) · [Install](../install.md) · [Use cases](../useCases/README.md)

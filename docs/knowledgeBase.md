@@ -61,3 +61,7 @@ Nothing secret is written. Every article goes through `scrubSecrets` first. Thes
 
 - Twenty allows 100 API requests a minute. New articles go in batches of 60; a 429 answer waits a minute and retries.
 - Redis holds only the index. If `kb-redis` is lost, `log kb sync` rebuilds it from Twenty.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

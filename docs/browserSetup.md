@@ -113,3 +113,7 @@ A new browser is one more driver:
 
 `bun run check:browsers` and `bun run check:consoleParity` (pre-commit) refuse
 one that is missing a piece.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

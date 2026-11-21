@@ -11,7 +11,7 @@ seyedehsanhadi/sloptrim	427	2026-11-10	Apache-2.0	Python	A local detector for AI
 prose in files saved through supported file-edit tools, and asks for the flagged
 spans to be fixed. Plain text is accepted up to 512 KB, supported archives up to 4 MB.**
 Python standard library only, no network, no model. Prose only, never code.
-[Install](#install) &middot; [What it does](#what-it-does) &middot; [Measured](#measured) &middot; [Limits](#what-it-cannot-do) &middot; [Patterns](references/patterns.md) &middot; [Ethics](ETHICS.md)
+[Install](#install) &middot; [What it does](#what-it-does) &middot; [Measured](#measured) &middot; [Limits](#what-it-cannot-do) &middot; [Patterns](https://github.com/seyedehsanhadi/sloptrim/blob/HEAD/references/patterns.md) &middot; [Ethics](https://github.com/seyedehsanhadi/sloptrim/blob/HEAD/ETHICS.md)
 </div>
 > [!IMPORTANT]
 > **This is a command-line tool and an agent plugin. There is no website and no hosted version.**
@@ -20,7 +20,7 @@ Python standard library only, no network, no model. Prose only, never code.
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/demo-dark.svg">
 </picture>
-<div align="center"><sub>A recorded session, not a mock-up. <a href="record/session_capture.py">record/session_capture.py</a> fires the real hooks with the payloads Claude Code sends and writes <a href="record/session.json">record/session.json</a>; <a href="re
+<div align="center"><sub>A recorded session, not a mock-up. <a href="https://github.com/seyedehsanhadi/sloptrim/blob/HEAD/record/session_capture.py">record/session_capture.py</a> fires the real hooks with the payloads Claude Code sends and writes <a href="https://github.com/seyedehsanhadi/sloptrim/blob/HEAD/record/session.json">record/session.json</a>; <a href="re
 ---
 ## Install
 Paste into Claude Code, Codex, Cursor, or any coding agent:
@@ -69,7 +69,7 @@ pablocaeg/sloptotal	132	2026-11-03	MIT	Python	Open-source AI text detector and C
 </p>
 <p align="center">
 </p>
-<p align="center"><b>English</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ru.md">Русский</a> · <a href="README.es.md">Español</a></p>
+<p align="center"><b>English</b> · <a href="https://github.com/pablocaeg/sloptotal/blob/HEAD/README.zh-CN.md">简体中文</a> · <a href="https://github.com/pablocaeg/sloptotal/blob/HEAD/README.ru.md">Русский</a> · <a href="https://github.com/pablocaeg/sloptotal/blob/HEAD/README.es.md">Español</a></p>
 # SlopTotal
 **VirusTotal for AI-generated text.** Paste text, drop in a PDF or Word file, or
 give it a URL. Twenty-three independent AI detectors (neural classifiers,
@@ -99,12 +99,12 @@ it publishes how accurate that is, failures included.
   reports deleted after 30 days.
 - **CPU-only is fine.** Auto-detects your hardware; a GPU is optional. Loaded
   models need about 8.3 GB of RAM (an estimate; see
-  [docs/MODELS.md](docs/MODELS.md)).
+  [docs/MODELS.md](https://github.com/pablocaeg/sloptotal/blob/HEAD/docs/MODELS.md)).
 - **JSON API and a [Chrome extension](https://github.com/pablocaeg/sloptotal-extension)**
   that marks AI-looking results in Google Search and LinkedIn.
 ## Measured accuracy
 Most detectors publish an accuracy figure without saying what it was measured
-on. SlopTotal is measured on [SlopBench](tests/eval/slopbench/): 1,626 human
+on. SlopTotal is measured on [SlopBench](https://github.com/pablocaeg/sloptotal/tree/HEAD/tests/eval/slopbench): 1,626 human
 texts, every one written before ChatGPT, and 1,626 AI texts on the same topics
 and at the same lengths from 14 current models, across 15 kinds of writing
 (news, Wikipedia, arXiv, Stack Exchange, Reddit, reviews, student essays,
@@ -206,7 +206,7 @@ git clone https://github.com/FeedHive/ai-slop-detector.git
 cp -r ai-slop-detector/skills/ai-slop-detector ~/.claude/skills/
 ```
 **ChatGPT, Claude and other chat apps.** Paste this README into the chat and ask it to avoid every pattern in what it writes next. To check a draft, paste the README and the draft and ask for every pattern it finds, with the line it found it in.
-**Your own tools.** [`patterns.json`](patterns.json) has the full list as structured data. Edit it and run `node scripts/build.mjs` to regenerate this README and the skill.
+**Your own tools.** [`patterns.json`](https://github.com/FeedHive/ai-slop-detector/blob/HEAD/patterns.json) has the full list as structured data. Edit it and run `node scripts/build.mjs` to regenerate this README and the skill.
 ## Categories
 | Category | Patterns |
 |---|---|
@@ -614,7 +614,7 @@ We host a collection of pre-generated responses using prompts from UltraChat dat
 | :-- | :--: | :--: | :--: | :--: |
 | links |[download](https://drive.google.com/file/d/1b37J7btQ1jFhs0bwfUPpXRzxp5Yxm_eS/view?usp=sharing) | [download](https://drive.google.com/file/d/1o3TTBxOBaytFKyGf6D7T5b8iCH-0kwLu/view?usp=share_link) | [download](https://drive.google.com/file/d/1py9tJBpZaZ
 ## Setup
-Installation instructions can be found in [INSTALL.md](INSTALL.md).
+Installation instructions can be found in [INSTALL.md](https://github.com/locuslab/llm-idiosyncrasies/blob/HEAD/INSTALL.md).
 ## Evaluation
 We give an e
 
@@ -807,7 +807,7 @@ aplaceforallmystuff/the-antislop	38	2026-10-15	MIT	Shell	A Claude Code skill tha
 
 # The Antislop
 *Detect and fix AI-generated writing patterns (slop).*
-![The Antislop](docs/images/architecture-diagram.png)
+![The Antislop](https://github.com/aplaceforallmystuff/the-antislop/blob/HEAD/docs/images/architecture-diagram.png)
 A Claude Code skill that detects and **fixes** AI-generated writing patterns. More comprehensive than detection alone — it actually rewrites the problems.
 ## Why
 AI-generated text has tells. Wikipedia's [Signs of AI Writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) documents 24 patterns. But detection alone isn't enough. You need a tool that:

@@ -46,3 +46,8 @@ New messages arrive by themselves: the inbox hook keeps `log instagram watch --i
 - **Never the browser.** On 2026-11-04 a meme went out through the account's [AdsPower](https://www.adspower.com/share/pD25Iu) browser and the owner said that is not the way: read, send and watch are the engine's.
 - **A meme goes as the picture.** [Memelord](https://www.memelord.com/sign-up?ref=kfwut9wc) answers with a media URL; save it as a JPEG and send it as `photo`, never the link.
 - **Pick from the top of the taste ranking, with judgement.** A template built on a stereotype is skipped even when it ranks first.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

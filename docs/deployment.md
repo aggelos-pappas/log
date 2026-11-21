@@ -109,3 +109,7 @@ LOG_MCP_PUBLIC_URL=https://<public host>  TWENTY_BASIC_USER=…  TWENTY_BASIC_PA
 4. **HAR and step recording** on the attached browser context. The run folders live on the browser server; whether they're copied to a development machine for rea is up to you.
 5. **One host per account** as a systemd service on the browser server, picking its driver from `socialAccounts.browserDriver`.
 6. **The proxy session handling** you choose, (a) or (b) above.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

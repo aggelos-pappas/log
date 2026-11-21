@@ -12,7 +12,7 @@ Ask Hermes things like:
 - "Read my thread with @someone and draft an answer the way I'd write it."
 - "Follow up with everyone who opened my DM but didn't reply."
 
-Hermes reads freely. Every send, reply or post asks you first.
+Hermes reads freely. Every send, reply or post asks you first. Each draft is checked against how you write, every account has daily limits, and everything stays on your machine: [what you control and what log will never do](../docs/trust.md).
 
 ![Hermes asks who is waiting for a reply, and log finds the X conversations waiting on you](docs/screenshots/xInbox.jpg)
 

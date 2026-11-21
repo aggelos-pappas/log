@@ -32,3 +32,7 @@ The adapter script `scripts/hooks/antigravity.ts` bridges Antigravity's JSON hoo
 
 - **Workspace:** `.agents/hooks.json` in the workspace root.
 - **Global:** `~/.gemini/config/hooks.json`.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

@@ -43,4 +43,9 @@ Say: **"go on docs/useCases/web/competitorTraffic.md for <tool>"**. The agent re
 - **"Open source" on a competitor's page isn't always the whole thing.** Say exactly what each one is, as the owner knows it.
 - **On Windows the Parallel CLI can fail writing the report** (a charmap error). Read the finished run from Parallel's API instead and save it as UTF-8.
 
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)
+
 > Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

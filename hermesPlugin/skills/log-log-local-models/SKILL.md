@@ -33,4 +33,9 @@ Say: **"go on docs/useCases/log/localModels.md"**. The agent reads this page and
 
 - **One version for everything.** Each release pins its models in `src/models/manifest`; `log update` and the install scripts fetch them, so this is for checking or for finishing a fetch that failed offline.
 - **No second download.** A matching copy in transformers.js's old cache inside `node_modules` is moved, not downloaded again. Everything lands in `~/.logCli/models`.
-- **About 530 MB in all**, most of it the image describer. Check free space first (`runsSpace`).
+- **Check free space first** (`runsSpace`): most of the download is the image describer. Each model's size is on the [local models page](https://github.com/matthewdonsemail-lab/log/blob/main/docs/models.md).
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

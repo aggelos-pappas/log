@@ -50,3 +50,9 @@ flowchart TD
 - **A like counts only when LinkedIn says so.** The answer must commit the post's reaction state; otherwise it is `likeUnconfirmed`.
 - **A repost counts only with LinkedIn's success toast.** The answer must commit it and show the success toast; otherwise it is `repostUnconfirmed`.
 - **Writes are few.** A LinkedIn account writes at most 10 times a day. Every write waits for the owner's yes.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on LinkedIn](../../platformGuides/linkedin.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

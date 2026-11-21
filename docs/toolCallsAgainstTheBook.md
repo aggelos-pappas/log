@@ -135,3 +135,7 @@ These are about the agent loop rather than log's own calls, so nothing here buil
 - Copy the Hermes plugin change into the installed plugin and restart Hermes (the installed plugin carries other sessions' work, so it was not overwritten).
 - Cache Discord's token check in the read host (`python/discordApi/engine.py`).
 - Move the inbox read off the hook service's event loop.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

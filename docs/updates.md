@@ -62,7 +62,7 @@ In `~/.logCli/settings.json` (or `LOG_SETTINGS`), under `update`; the environmen
 6. **Rolls back** on any failure in steps 4-5: the previous version is installed again (`bun add -g …@<previous>`, or `git reset --keep <commit>` in a clone) and the refusal is `updateFailed`, naming the step.
 7. **Resumes** what `resume.json` lists (the service, `watchers start` for each watcher, `inspect start --detach` for each browser).
 8. **Refreshes every agent harness** that is on this machine, with the new version's own code (`scripts/update/harnesses.ts`, `refreshHarnesses`): see the table below. Each harness's result goes into `resume.json` (`harnesses`) and the answer.
-9. **Answers** `updated 0.2.1 -> 0.2.2, resumed: service, 3 watchers, 1 browser; harnesses: Hermes plugin rewritten, Desktop plugin copied, Claude Code .claude/settings.json came with the new version; models: all 4 on the pinned revision`. The models go into `resume.json` (`models`) too. The next prompt's context gets the updated line once, so the agent carries on with the task it had.
+9. **Answers** `updated 0.2.1 -> 0.2.2, resumed: service, 3 watchers, 1 browser; harnesses: Hermes plugin rewritten, Desktop plugin copied, Claude Code .claude/settings.json came with the new version; models: all 5 on the pinned revision`. The models go into `resume.json` (`models`) too. The next prompt's context gets the updated line once, so the agent carries on with the task it had.
 
 ## Every harness
 
@@ -95,18 +95,7 @@ A release is one version for every piece. Nothing a release runs is picked by "n
 | Local models | `src/models/manifest` (`LOCAL_MODELS`): each model's id and exact revision (a Hugging Face commit, or a pip version), its files with size and hash | the after-install routine fetches each model at its pinned revision into `~/.logCli/models` and checks every hash | the new version's routine fetches what changed; the loaders ask for that revision | `log models`, `log version --json` (`models`) |
 | README Releases table | `CHANGELOG.md` sections plus their `Models:` line, written from the manifest | | the release PR gets it from `.github/workflows/release.yml` | `bun run check:docs` |
 
-The pinned models today:
-
-| Model | Revision | Size | Loaded by |
-| --- | --- | --- | --- |
-| `patronus-studio/wolf-defender-prompt-injection-small` | `2484cc9a13550aa4f2c29b577ff3ef331dc6ba07` | 142 MB (int8 ONNX + tokenizer) | the judge server, `python/judge/server.py` (huggingface_hub, `revision=`) |
-| `Xenova/all-MiniLM-L6-v2` | `751bff37182d3f1213fa05d7196b954e230abad9` | 24 MB (q8 ONNX + tokenizer) | the embed worker: the warm context service, search and the router (transformers.js, `revision`) |
-| `onnx-community/LFM2.5-VL-450M-ONNX` | `24e63007ff1aaafbde27c89eb01a0513f4f61482` | 368 MB (q4 ONNX + processor) | the media describer (transformers.js, `revision`) |
-| `myuri` | `5.0.0` | a pip package | every browser session in `LOG_PYTHON` (`python/human`) |
-
-Where the files live: the judge in `~/.logCli/models/wolfDefenderSmall` (`LOG_JUDGE_MODEL` moves it), the transformers.js models in `~/.logCli/models/hf/<id>/<revision>/` (outside the package, so an update keeps them and a new pin lands beside the old). `log models --fetch`, and each loader before its first load, moves a matching copy from transformers.js's old cache inside `node_modules` instead of downloading it again. `HF_ENDPOINT` points the downloads at a mirror; `LOG_MODELS=off` makes the after-install routine skip models (`log models --fetch` gets them later).
-
-To move a model to a new revision: change its `revision`, files, sizes and hashes in `src/models/manifest` (read them from `https://huggingface.co/api/models/<id>/revision/<sha>?blobs=true`), keep `MODEL_REVISION` in `python/judge/server.py` equal for the judge, run its tests, and the next release's `Models:` line and README row say `changed`.
+The pinned models, where their files live, how each one is fetched and verified, and how to move one to a new revision are on the [local models page](models.md).
 
 ## Tracks: stable and nightly
 
@@ -133,3 +122,9 @@ The workflow needs one repository secret, `NPM_TOKEN` (an npm automation token f
 ## Later: a compiled build and Velopack
 
 log installs as a Bun package plus uv-managed Python vendors, not as one executable, so Velopack doesn't fit yet. Once `bun build --compile` ships a single log executable with the Python runtime beside it, it can be packed with `vpk pack` and published through Velopack's GitHub Releases source, which brings a Windows installer, delta updates and an apply-on-restart. Until then updates go through npm and GitHub Releases as above.
+
+## Related
+
+- Up: [log's README](../README.md)
+- Start here, in order: [Install](install.md) · [Add an account](accounts.md) · [Connect your agent](mcp.md) · [What log does, and what it never does](trust.md)
+- Then: [Use cases, the plays step by step](useCases/README.md) · [Your agent app](harnesses/README.md) · [What you can do on each platform](platformGuides/x.md) · [Every command and tool](reference.md) · [How log works](howItWorks.md)

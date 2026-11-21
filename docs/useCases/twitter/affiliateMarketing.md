@@ -70,3 +70,10 @@ flowchart TD
 ## Next
 
 - [#35](https://github.com/matthewdonsemail-lab/log/issues/35) tracks which affiliate link went to whom and which turned into a signup, per person, in Twenty.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [All X use cases, and the parts they share](README.md)
+- [What log does on X](../../platformGuides/x.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

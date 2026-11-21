@@ -95,3 +95,7 @@ relate --read-only -d docs/relate/demoGraph.rl "MATCH (p:Identity {handleLower:'
 | Drift | `log relate verify` compares every count with log.db. |
 
 What each part must do is in the spec, [Relate graph](specs/relateGraph.md).
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

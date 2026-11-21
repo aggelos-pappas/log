@@ -35,3 +35,8 @@ Say: **"go on docs/useCases/log/updateLog.md"**. The agent reads this page and r
 - **Ask first.** With `update.auto` at its default `ask`, the prompt hook says a release is out once per session; the agent asks, and runs `updateLogLive` only after the owner's yes.
 - **Busy refuses.** A running job or a queue mid-send holds the update; after about 30 s it refuses with `updateBusy` and nothing is stopped.
 - **A failed install or verify rolls back** to the version that ran and restarts what ran (`updateFailed` names the step). `~/.logCli/resume.json` keeps what was running and how far it got. More in docs/updates.md.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)

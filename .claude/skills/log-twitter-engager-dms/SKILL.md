@@ -32,10 +32,10 @@ Say: **"go on docs/useCases/twitter/engagerDms.md for <post url>, pitching <what
 | 2 | Score them: their bio matches who you want, they reposted (a bonus) or engaged with more than one post, and a sensible follower count. Few followers and no bio is a bot | treg's X profile read | a ranked list |
 | 3 | The owner checks the top of the list: drop the team, people they don't want to contact, and friends (friends get a personal note, not a template) | a table | the owner's corrections applied |
 | 4 | Check for an existing thread with each person, and DMs already waiting | `twitterDms` { account, limit: 200 } | no one gets a cold template where a chat already exists |
-| 5 | Write each DM the cold DM way below: their own tweet forwarded first, then one informal line | house style | passes `twitterQueueCheck` |
+| 5 | Write each DM the first-DM way below: their own tweet forwarded first, then one informal line | house style | passes `twitterQueueCheck` |
 | 6 | Queue as dms: targets are `{handle, user_id, text}`, `action: "dm"`. Approve, plan, run live | README queue steps, `twitterQueueBuild` { action: "dm" }, `twitterQueueRunLive` | `finished` |
 
-## How a cold DM opens
+## How a first DM opens
 
 The first message is the opener and nothing else: always relevant to them, never an ask. No pitch, no "you using `<tool>` yet", no call, no link to the owner's own stuff. Going in for the kill on a first message is what a template does. The ask comes later, once they've answered and there's a conversation. `voice` fails a first message with an ask in it (`opener only`).
 
@@ -58,5 +58,12 @@ Never: "saw you're `<bio thing>`", their name, made-up camaraderie, or "thanks f
 
 - A DM only lands if the person accepts DMs from accounts they don't follow. X answers otherwise, and the queue logs it and moves on.
 - Some chats live in X's encrypted Chat. `twitterDms` reads them once the account's X Chat PIN is saved, and step 4 must include them: a person you already talk to in X Chat never gets a cold template. A send still goes out as an old-style DM, which shows in their X Chat too.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [All X use cases, and the parts they share](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/twitter/README.md)
+- [What log does on X](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/x.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)
 
 > Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

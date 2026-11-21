@@ -42,3 +42,8 @@ The full steps: [Adding an account](../accounts.md).
 - [How Slack is built](../platforms/slack/README.md): the client, what log calls and what Slack's own web client calls.
 - [Reference](../reference.md): every command, flag and MCP tool.
 - Agent guide: [Slack](../guides/slack.md).
+
+## Related
+
+- Up: [log's README](../../README.md)
+- [Use cases, the plays step by step](../useCases/README.md) · [Add an account](../accounts.md) · [Connect your agent](../mcp.md) · [Trust](../trust.md)

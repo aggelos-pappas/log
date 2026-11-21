@@ -69,3 +69,7 @@ log transcribe file ~/Downloads/note.m4a
 ```
 
 The run ends by updating the search index with the conversations that changed (`--noIndex` skips it). Code: `src/media/voiceNotes`, `src/cli/transcribe`. Spec: [docs/specs/voiceNotes.md](./specs/voiceNotes.md).
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md) · [What log does on Facebook](platformGuides/facebook.md)

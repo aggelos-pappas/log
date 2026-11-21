@@ -24,3 +24,8 @@ Claude has two harnesses that work differently with log: the Claude app (web, de
 - **Guidance:**
   - **Prompt router:** yes. log installs Claude Code hooks (`src/agentHooks/registry`): its `UserPromptSubmit` hook routes each prompt to a use case, and `SessionStart` restores the session's play.
   - **Server instructions:** Claude Code reads them. (This repo's own sessions show them as the log MCP's server instructions.)
+
+## Related
+
+- Up: [Every agent app log works with](README.md)
+- [Connect your agent](../mcp.md) · [Install](../install.md) · [Use cases](../useCases/README.md)

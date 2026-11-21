@@ -205,8 +205,8 @@ launch gap only (rule 30).
 
 ### Two-step when Facebook asks for a passkey
 
-Some accounts land on "Use face scan, fingerprint or screen lock to confirm
-it's you" (`twoStepPasskey`) instead of the code box. The host presses "Try
+Some accounts land on `Use face scan, fingerprint or screen lock to confirm it's you`
+(`twoStepPasskey`) instead of the code box. The host presses "Try
 another way", waits for `TwoStepVerificationChallengePickerDialogQuery`, and
 goes on only when its answer lists `TOTP` not disabled (`authAppOffered`; else
 `twoStepNoAuthApp`, for the owner). On the picker (`twoStepMethodPicker`) it chooses
