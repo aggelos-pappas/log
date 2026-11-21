@@ -10,20 +10,22 @@
 | Path | `discord.com/api/collectibles-shop` |
 | Sends | — |
 | Reads | `shop_blocks`, `categories` |
-| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:232 625075`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 559868`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 961943`, `runs/inspect/20261111T233723_discordAccount/script1280.js:1 anonymous` |
-| rea | `ev_f6daff8038b4f477b27b852e31fc1f2f76f7dd725b1883891e74b824ed6f0ac3` |
+| Called from | `runs/inspect/20261120T115645_<name:3>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:3>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:3>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:3>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 1 time(s) in 1 run(s).
+Seen 3 time(s) in 3 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 1: goto /login | 1 | 200 | 366 ms | 140846 ms | — |
+| inspect | step 4: viewerInput click | 1 | 200 | 1127 ms | 1191 ms | — |
+| inspect | step 1: goto /channels/@me | 1 | 200 | 671 ms | 1812261 ms | — |
 
-### What it sent and what came back (the newest 1 from our runs)
+### What it sent and what came back (the newest 2 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261109T194954_discordAccount**, step 1: goto /login: 200, 366 ms
+**runs/inspect/20261120T111021_<name:3>**, step 4: viewerInput click: 200, 1127 ms
 
 Sent:
 
@@ -47,81 +49,323 @@ Answered:
   "shop_blocks": [
     {
       "type": 0,
-      "category_sku_id": "1561844530079076372",
+      "category_sku_id": "1476284050405855372",
       "name": "<name:1>",
-      "category_store_listing_id": "1561844530079076372",
-      "unpublished_at": null,
+      "category_store_listing_id": "1476284050405855372",
+      "unpublished_at": "2027-03-18T19:00:00+00:00",
       "summary": " ",
-      "ranked_sku_ids": "(7 items)",
-      "hero_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/d63405075797f3e1f084e70b88953a224d6aa6af3ea73575e53efc188ea1efd8",
-      "hero_banner_animated_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/29c4e43d614a20c9e1d6d72277dfcc0f3cbc9c10ced8d786457183a337296a74",
-      "hero_logo_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/750892abe34672461d1a61bebc6d7f1dc363c7db2a94c8f551a2bd1a0096efeb",
-      "mobile_hero_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/aff01e8d059e104414c48089773ef7d35e96a320d0eca4160f884409a290ce33",
-      "banner_display_config": "(4 fields)",
-      "logo_display_config": "(4 fields)"
+      "ranked_sku_ids": [
+        "1476292494755889153",
+        "1476293022873555056",
+        "1476284432401825912",
+        "1476286115227893903",
+        "1476286348318216293",
+        "1476286544359981149",
+        "… 13 more"
+      ],
+      "hero_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/af8b29eaf45e392bd0d3318224f208fa93bdd84daf289621bde357ee0a85ae11",
+      "hero_logo_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/4a11df3d5f005ef7f49e11fb345e0ab4e0b5bbde0682add310f040707c2a5e26",
+      "mobile_hero_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/8c32fbb52034c5e20cd1d3558f441619ba0945d889523fcdf933e677c9e25705",
+      "banner_display_config": {
+        "desktop_max_height": null,
+        "mobile_max_height": null,
+        "responsive": true,
+        "background_style": "linear-gradient(180deg, #141516 0%, #373737 100%)"
+      }
     },
     {
       "type": 1,
-      "subblocks": "(2 items)"
+      "subblocks": [
+        "(8 fields)",
+        "(8 fields)"
+      ]
     },
     {
       "type": 4,
       "name": "<name:2>",
-      "ranked_sku_ids": "(7 items)",
-      "category_sku_id": "1436367669111554119",
+      "ranked_sku_ids": [
+        "1243618816639107223",
+        "1228246010116050965",
+        "1228251144065777765",
+        "1228251351415263242",
+        "1228251846032756796",
+        "1228252042791878707",
+        "… 4 more"
+      ],
+      "category_sku_id": "1228243842684162121",
       "show_button": true,
-      "button_text": "Shop All Call of Duty: Black Ops 7"
+      "button_text": "Shop All Lofi Vibes"
     },
     {
       "type": 2,
-      "ranked_sku_ids": "(7 items)",
-      "sorted_sku_ids": "(2 fields)"
+      "ranked_sku_ids": [
+        "1564422928026828911",
+        "1516561824114409572",
+        "1516560337070198894",
+        "1481392199261487187",
+        "1516560866609467452",
+        "1511102779819687956",
+        "… 83 more"
+      ],
+      "sorted_sku_ids": {
+        "recommended": "(7 items)",
+        "popular": "(7 items)"
+      }
     }
   ],
   "categories": [
     {
-      "sku_id": "1561844530079076372",
+      "sku_id": "1476284050405855372",
       "name": "<name:1>",
       "summary": " ",
-      "store_listing_id": "1561844530079076372",
-      "styles": "(3 fields)",
-      "hero_ranking": "(7 items)",
-      "products": "(7 items)",
-      "hero_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/d63405075797f3e1f084e70b88953a224d6aa6af3ea73575e53efc188ea1efd8",
-      "hero_banner_animated_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/29c4e43d614a20c9e1d6d72277dfcc0f3cbc9c10ced8d786457183a337296a74",
-      "hero_logo_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/750892abe34672461d1a61bebc6d7f1dc363c7db2a94c8f551a2bd1a0096efeb",
-      "catalog_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/da83e9d917153cc481a4f38d2709b4e6ef3db8b9a2f8267868fb4224e794c5a4",
-      "catalog_banner_animated_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/3cb55d712a427fe84648fc4b6c7592dc9d0aaa11c3728725d965fa56c1eab5c6",
-      "featured_block_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/05027edd97dd1f4b73b66720f22dbfe2c1ea803d21e7c0e5732a0f7bd015f485",
-      "logo_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/750892abe34672461d1a61bebc6d7f1dc363c7db2a94c8f551a2bd1a0096efeb",
-      "pdp_bg_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/42962fbd16721a3330f3dd51e662b9eb53cea34b9610dd18beec114a61046d86",
-      "mobile_hero_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/aff01e8d059e104414c48089773ef7d35e96a320d0eca4160f884409a290ce33",
-      "mobile_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/46f9296bab68efece768cdb398f69ff2c448e31a95d105ab454e401b2e65238a",
-      "mobile_bg_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/91704abc4a6ca391e9e8029b013905c7f7a388be4a47b6bab0a18e847746c1c6",
-      "hero_banner_display_config": "(4 fields)",
-      "hero_logo_display_config": "(4 fields)"
+      "store_listing_id": "1476284050405855372",
+      "unpublished_at": "2027-03-18T19:00:00+00:00",
+      "styles": {
+        "background_colors": "(2 items)",
+        "button_colors": "(2 items)",
+        "confetti_colors": "(5 items)"
+      },
+      "hero_ranking": [
+        "1476292494755889153",
+        "1476293022873555056",
+        "1476284432401825912",
+        "1476286115227893903",
+        "1476286348318216293",
+        "1476286544359981149",
+        "… 13 more"
+      ],
+      "products": [
+        "(15 fields)",
+        "(15 fields)",
+        "(15 fields)",
+        "(15 fields)",
+        "(14 fields)",
+        "(14 fields)",
+        "… 13 more"
+      ],
+      "hero_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/af8b29eaf45e392bd0d3318224f208fa93bdd84daf289621bde357ee0a85ae11",
+      "hero_logo_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/4a11df3d5f005ef7f49e11fb345e0ab4e0b5bbde0682add310f040707c2a5e26",
+      "catalog_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/b32b9fa04f0a45005de019ebd88b9c1d3d676ba35a111eff459697cf2cf6ed41",
+      "featured_block_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/dbe8c4b24bc1ec393bf2bde2fc79550b15fd0824ae487215b2d82b16da58bb97",
+      "logo_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/50855c850a1e1991b02490148cac13d2dd5da98c5e8bd9c0cd9ff7515a721fbd",
+      "pdp_bg_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/2f0bae1bdf2a6d906daac07802f750e80fc528b44e4375326a02a3a47b366a6b",
+      "mobile_hero_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/8c32fbb52034c5e20cd1d3558f441619ba0945d889523fcdf933e677c9e25705",
+      "mobile_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/baaf9e71531f84b8763a3102ce40008d6813b1a6314c3baad8ff3e8a62c7773d",
+      "mobile_bg_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/b97b4712deba2ec8ec14a773e42d434e1fd36a9cdc6171dcbbbac214ab215992",
+      "hero_banner_display_config": {
+        "desktop_max_height": null,
+        "mobile_max_height": null,
+        "responsive": true,
+        "background_style": "linear-gradient(180deg, #141516 0%, #373737 100%)"
+      }
     },
     {
-      "sku_id": "1436367669111554119",
+      "sku_id": "1228243842684162121",
       "name": "<name:2>",
       "summary": " ",
-      "store_listing_id": "1436367669111554119",
-      "unpublished_at": "2026-11-14T07:59:59+00:00",
-      "styles": "(3 fields)",
-      "hero_ranking": "(7 items)",
-      "products": "(7 items)",
-      "hero_banner_url": "https://cdn.discordapp.com/assets/content/a5e0c5670339be4d8354b8c9ba92c7f90b6659f2afe4acc9a87a111f95f59380",
-      "hero_banner_animated_url": "https://cdn.discordapp.com/assets/content/1cf8c2ae80947f41247c98fccf56072c7d4f4259d4050c1f0bcd2e24411a9509",
-      "hero_logo_url": "https://cdn.discordapp.com/assets/content/f6c12eac86b81185281a0c0bcd759c8ef357f8bc664decf6845fc3f1c5c0a487",
-      "catalog_banner_url": "https://cdn.discordapp.com/assets/content/66f6b8a8522fd0987a879afa8d09d6987e148264ed6158b665cb26ec2bc6df1e",
-      "catalog_banner_animated_url": "https://cdn.discordapp.com/assets/content/88759a77371c656a10b3ec6e631af413377115cdf241a5cf5ab97155e8194948",
-      "featured_block_url": "https://cdn.discordapp.com/assets/content/3beea1bbce3fd90f0020cb001b22f89b64e1f059d149e7c958e088e8d5603f94",
-      "logo_url": "https://cdn.discordapp.com/assets/content/f6c12eac86b81185281a0c0bcd759c8ef357f8bc664decf6845fc3f1c5c0a487",
-      "pdp_bg_url": "https://cdn.discordapp.com/assets/content/aa10be5f1ee5cffe1c6f405c4786427d02bb029d910462514bbdc1f66c198235",
-      "mobile_hero_url": "https://cdn.discordapp.com/assets/content/7ed0022905f68f7e870d93824ce47f4e831a55b5157a60abdfde79e9db9540f1",
-      "mobile_banner_url": "https://cdn.discordapp.com/assets/content/59aad8fc9488d802c1ba999df7f9d91f0333d958179d040a0d955183fe65a493",
-      "mobile_bg_url": "https://cdn.discordapp.com/assets/content/4c3194aa86c0c15de9533cae169720d2c9548900737b39ffc612561d3ad82728",
-      "hero_banner_display_config": "(4 fields)"
+      "store_listing_id": "1228243842684162121",
+      "styles": {
+        "background_colors": "(2 items)",
+        "button_colors": "(2 items)",
+        "confetti_colors": "(6 items)"
+      },
+      "hero_ranking": [
+        "1243618816639107223",
+        "1228246010116050965",
+        "1228251144065777765",
+        "1228251351415263242",
+        "1228251846032756796",
+        "1228252042791878707",
+        "… 4 more"
+      ],
+      "products": [
+        "(14 fields)",
+        "(13 fields)",
+        "(13 fields)",
+        "(13 fields)",
+        "(13 fields)",
+        "(13 fields)",
+        "… 4 more"
+      ],
+      "catalog_banner_url": "https://cdn.discordapp.com/assets/content/f00e0478024c1c7ce2eeca569e9226b953baa4d9569342f797193f47424967f1",
+      "featured_block_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/d403032d2a69fe831dadf83e070419ee6e9b475c241a200b4a6f390eda5e6c69",
+      "logo_url": "https://cdn.discordapp.com/assets/content/b00d36785e0b463c9d99179fda1a1349833831c9814210583fcbb83dbed7595c",
+      "pdp_bg_url": "https://cdn.discordapp.com/assets/content/68edc586aa7f6eb100c20b5f735092383b5a68a25bfc61810024f89c61d71c6e",
+      "mobile_banner_url": "https://cdn.discordapp.com/assets/content/de7ac96104bd3e0ac59d71bd841911f8b48a8842511c9b4e80bec46dc118096b",
+      "mobile_bg_url": "https://cdn.discordapp.com/assets/content/f7bd27a122b4dcef48622316d2ecbf1c3454fc07c67bffd9d8a26e8bd388401a"
+    }
+  ]
+}
+```
+
+**runs/inspect/20261120T091412_<name:3>**, step 1: goto /channels/@me: 200, 671 ms
+
+Sent:
+
+```json
+{
+  "query": {
+    "tab": "home",
+    "include_bundles": "true",
+    "include_dynamic_blocks": "true",
+    "variants_return_style": "2",
+    "skip_num_categories": "0"
+  },
+  "body": null
+}
+```
+
+Answered:
+
+```json
+{
+  "shop_blocks": [
+    {
+      "type": 0,
+      "category_sku_id": "1476284050405855372",
+      "name": "<name:1>",
+      "category_store_listing_id": "1476284050405855372",
+      "unpublished_at": "2027-03-18T19:00:00+00:00",
+      "summary": " ",
+      "ranked_sku_ids": [
+        "1476292494755889153",
+        "1476293022873555056",
+        "1476284432401825912",
+        "1476286115227893903",
+        "1476286348318216293",
+        "1476286544359981149",
+        "… 13 more"
+      ],
+      "hero_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/af8b29eaf45e392bd0d3318224f208fa93bdd84daf289621bde357ee0a85ae11",
+      "hero_logo_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/4a11df3d5f005ef7f49e11fb345e0ab4e0b5bbde0682add310f040707c2a5e26",
+      "mobile_hero_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/8c32fbb52034c5e20cd1d3558f441619ba0945d889523fcdf933e677c9e25705",
+      "banner_display_config": {
+        "desktop_max_height": null,
+        "mobile_max_height": null,
+        "responsive": true,
+        "background_style": "linear-gradient(180deg, #141516 0%, #373737 100%)"
+      }
+    },
+    {
+      "type": 1,
+      "subblocks": [
+        "(8 fields)",
+        "(8 fields)"
+      ]
+    },
+    {
+      "type": 4,
+      "name": "<name:2>",
+      "ranked_sku_ids": [
+        "1243618816639107223",
+        "1228246010116050965",
+        "1228251144065777765",
+        "1228251351415263242",
+        "1228251846032756796",
+        "1228252042791878707",
+        "… 4 more"
+      ],
+      "category_sku_id": "1228243842684162121",
+      "show_button": true,
+      "button_text": "Shop All Lofi Vibes"
+    },
+    {
+      "type": 2,
+      "ranked_sku_ids": [
+        "1564422928026828911",
+        "1516561824114409572",
+        "1516560337070198894",
+        "1481392199261487187",
+        "1516560866609467452",
+        "1511102779819687956",
+        "… 83 more"
+      ],
+      "sorted_sku_ids": {
+        "recommended": "(7 items)",
+        "popular": "(7 items)"
+      }
+    }
+  ],
+  "categories": [
+    {
+      "sku_id": "1476284050405855372",
+      "name": "<name:1>",
+      "summary": " ",
+      "store_listing_id": "1476284050405855372",
+      "unpublished_at": "2027-03-18T19:00:00+00:00",
+      "styles": {
+        "background_colors": "(2 items)",
+        "button_colors": "(2 items)",
+        "confetti_colors": "(5 items)"
+      },
+      "hero_ranking": [
+        "1476292494755889153",
+        "1476293022873555056",
+        "1476284432401825912",
+        "1476286115227893903",
+        "1476286348318216293",
+        "1476286544359981149",
+        "… 13 more"
+      ],
+      "products": [
+        "(15 fields)",
+        "(15 fields)",
+        "(15 fields)",
+        "(15 fields)",
+        "(14 fields)",
+        "(14 fields)",
+        "… 13 more"
+      ],
+      "hero_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/af8b29eaf45e392bd0d3318224f208fa93bdd84daf289621bde357ee0a85ae11",
+      "hero_logo_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/4a11df3d5f005ef7f49e11fb345e0ab4e0b5bbde0682add310f040707c2a5e26",
+      "catalog_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/b32b9fa04f0a45005de019ebd88b9c1d3d676ba35a111eff459697cf2cf6ed41",
+      "featured_block_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/dbe8c4b24bc1ec393bf2bde2fc79550b15fd0824ae487215b2d82b16da58bb97",
+      "logo_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/50855c850a1e1991b02490148cac13d2dd5da98c5e8bd9c0cd9ff7515a721fbd",
+      "pdp_bg_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/2f0bae1bdf2a6d906daac07802f750e80fc528b44e4375326a02a3a47b366a6b",
+      "mobile_hero_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/8c32fbb52034c5e20cd1d3558f441619ba0945d889523fcdf933e677c9e25705",
+      "mobile_banner_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/baaf9e71531f84b8763a3102ce40008d6813b1a6314c3baad8ff3e8a62c7773d",
+      "mobile_bg_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/b97b4712deba2ec8ec14a773e42d434e1fd36a9cdc6171dcbbbac214ab215992",
+      "hero_banner_display_config": {
+        "desktop_max_height": null,
+        "mobile_max_height": null,
+        "responsive": true,
+        "background_style": "linear-gradient(180deg, #141516 0%, #373737 100%)"
+      }
+    },
+    {
+      "sku_id": "1228243842684162121",
+      "name": "<name:2>",
+      "summary": " ",
+      "store_listing_id": "1228243842684162121",
+      "styles": {
+        "background_colors": "(2 items)",
+        "button_colors": "(2 items)",
+        "confetti_colors": "(6 items)"
+      },
+      "hero_ranking": [
+        "1243618816639107223",
+        "1228246010116050965",
+        "1228251144065777765",
+        "1228251351415263242",
+        "1228251846032756796",
+        "1228252042791878707",
+        "… 4 more"
+      ],
+      "products": [
+        "(14 fields)",
+        "(13 fields)",
+        "(13 fields)",
+        "(13 fields)",
+        "(13 fields)",
+        "(13 fields)",
+        "… 4 more"
+      ],
+      "catalog_banner_url": "https://cdn.discordapp.com/assets/content/f00e0478024c1c7ce2eeca569e9226b953baa4d9569342f797193f47424967f1",
+      "featured_block_url": "https://cdn.discordapp.com/media/v1/collectibles-shop/d403032d2a69fe831dadf83e070419ee6e9b475c241a200b4a6f390eda5e6c69",
+      "logo_url": "https://cdn.discordapp.com/assets/content/b00d36785e0b463c9d99179fda1a1349833831c9814210583fcbb83dbed7595c",
+      "pdp_bg_url": "https://cdn.discordapp.com/assets/content/68edc586aa7f6eb100c20b5f735092383b5a68a25bfc61810024f89c61d71c6e",
+      "mobile_banner_url": "https://cdn.discordapp.com/assets/content/de7ac96104bd3e0ac59d71bd841911f8b48a8842511c9b4e80bec46dc118096b",
+      "mobile_bg_url": "https://cdn.discordapp.com/assets/content/f7bd27a122b4dcef48622316d2ecbf1c3454fc07c67bffd9d8a26e8bd388401a"
     }
   ]
 }

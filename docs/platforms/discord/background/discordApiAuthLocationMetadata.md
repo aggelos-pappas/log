@@ -10,22 +10,22 @@
 | Path | `discord.com/api/auth/location-metadata` |
 | Sends | — |
 | Reads | `consent_required`, `country_code`, `minimum_age`, `promotional_email_opt_in.required`, `promotional_email_opt_in.pre_checked` |
-| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:232 625075`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 559868`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 961943`, `runs/inspect/20261111T233723_discordAccount/script1280.js:1 anonymous` |
-| rea | `ev_f6daff8038b4f477b27b852e31fc1f2f76f7dd725b1883891e74b824ed6f0ac3` |
+| Called from | `runs/inspect/20261120T115645_<name:1>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:1>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 12 time(s) in 12 run(s).
+Seen 10 time(s) in 10 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 3: goto /login | 1 | 200 | 321 ms | 5482 ms | — |
-| inspect | step 1: goto /login | 9 | 200 | 147–1094 ms | 1050–7476 ms | — |
-| inspect | step 1: goto /channels/@me | 2 | 200 | 212–688 ms | 1973–10902 ms | — |
+| inspect | step 1: goto /login | 8 | 200 | 302–1094 ms | 4449–25795 ms | — |
+| inspect | step 1: goto /channels/@me | 1 | 200 | 688 ms | 10902 ms | — |
 
-### What it sent and what came back (the newest 2 from our runs)
+### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261114T184328_discordAccount**, step 1: goto /login: 200, 157 ms
+**runs/inspect/20261120T115645_<name:1>**, step 1: goto /login: 200, 351 ms
 
 Sent:
 
@@ -38,8 +38,8 @@ Answered:
 ```json
 {
   "consent_required": false,
-  "country_code": "CA",
-  "minimum_age": 13,
+  "country_code": "VN",
+  "minimum_age": 15,
   "promotional_email_opt_in": {
     "required": true,
     "pre_checked": false
@@ -47,7 +47,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261109T193411_discordAccount**, step 1: goto /channels/@me: 200, 212 ms
+**runs/inspect/20261030T222341_<name:1>**, step 1: goto /channels/@me: 200, 688 ms
 
 Sent:
 
@@ -60,8 +60,30 @@ Answered:
 ```json
 {
   "consent_required": false,
-  "country_code": "CA",
-  "minimum_age": 13,
+  "country_code": "VN",
+  "minimum_age": null,
+  "promotional_email_opt_in": {
+    "required": true,
+    "pre_checked": false
+  }
+}
+```
+
+**runs/inspect/20261028T062914_<name:1>**, step 3: goto /login: 200, 321 ms
+
+Sent:
+
+```json
+null
+```
+
+Answered:
+
+```json
+{
+  "consent_required": false,
+  "country_code": "VN",
+  "minimum_age": null,
   "promotional_email_opt_in": {
     "required": true,
     "pre_checked": false

@@ -10,10 +10,10 @@
 | Path | `discord.com/api/content-inventory/users/@me` |
 | Sends | — |
 | Reads | `request_id`, `entries`, `unranked_game_entries`, `entries_hash`, `expired_at`, `refresh_stale_inbox_after_ms`, `refresh_token`, `wait_ms_until_next_fetch` |
-| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:232 625075`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 559868`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 961943`, `runs/inspect/20261111T233723_discordAccount/script1280.js:1 anonymous` |
-| rea | `ev_f6daff8038b4f477b27b852e31fc1f2f76f7dd725b1883891e74b824ed6f0ac3` |
+| Called from | `runs/inspect/20261120T115645_<name:1>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:1>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 15 time(s) in 13 run(s).
+Seen 18 time(s) in 14 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -21,17 +21,16 @@ Seen 15 time(s) in 13 run(s).
 | inspect | step 5: click e40 | 1 | 200 | 1160 ms | 12933 ms | — |
 | inspect | step 9: goto /channels/@me | 1 | 200 | 861 ms | 10108 ms | — |
 | inspect | step 25: goto /channels/@me | 1 | 200 | 2270 ms | 8798 ms | — |
-| inspect | step 1: goto /login | 7 | 200 | 551–9445 ms | 18512–1052610 ms | — |
+| inspect | step 1: goto /login | 9 | 200 | 970–9445 ms | 18512–1052610 ms | — |
 | inspect | step 2: snapshot | 1 | 200 | 902 ms | 51784 ms | — |
-| inspect | step 6: wait 45s | 1 | 200 | 1053 ms | 25504 ms | — |
-| inspect | step 1: goto /channels/@me | 1 | 200 | 538 ms | 4503 ms | — |
-| inspect | step 9: wait 45s | 1 | 200 | 377 ms | 16561 ms | — |
+| inspect | step 1: goto /quest-home | 2 | 200 | 1360–1625 ms | 17517–31086 ms | — |
+| inspect | step 1: goto /channels/@me | 2 | 200 | 1225–2982 ms | 15774–773840 ms | — |
 
 ### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261114T184328_discordAccount**, step 9: wait 45s: 200, 377 ms
+**runs/inspect/20261120T115645_<name:1>**, step 1: goto /login: 200, 1366 ms
 
 Sent:
 
@@ -49,7 +48,7 @@ Answered:
 
 ```json
 {
-  "request_id": "0c132422c4d344c3bb868f5f46c24bb9",
+  "request_id": "c919deb327ad4f36a77f76e06428a828",
   "entries": [
     {
       "content": {
@@ -57,11 +56,11 @@ Answered:
         "author_id": "<userId:1>",
         "author_type": 1,
         "content_type": 1,
-        "traits": "(2 items)",
+        "traits": "(1 items)",
         "extra": "(4 fields)",
         "participants": "(1 items)",
-        "ended_at": "2026-11-08T08:30:20.580000+00:00",
-        "started_at": "2026-11-08T06:54:05.580000+00:00",
+        "ended_at": "2026-11-18T15:49:53.460000+00:00",
+        "started_at": "2026-11-18T15:44:53.460000+00:00",
         "signature": "(3 fields)"
       },
       "rank": 1
@@ -71,388 +70,178 @@ Answered:
         "id": "<id:2>",
         "author_id": "<userId:2>",
         "author_type": 1,
-        "content_type": 1,
-        "traits": "(3 items)",
-        "extra": "(4 fields)",
+        "content_type": 6,
+        "traits": "(4 items)",
+        "extra": "(3 fields)",
+        "original_id": "1573145974451216424",
         "participants": "(1 items)",
-        "ended_at": "2026-10-31T12:24:10.220000+00:00",
-        "started_at": "2026-10-31T11:05:39.220000+00:00",
         "signature": "(3 fields)"
       },
-      "rank": 2
+      "rank": 4
     },
     {
       "content": {
         "id": "<id:3>",
         "author_id": "<userId:3>",
         "author_type": 1,
-        "content_type": 8,
-        "traits": "(2 items)",
-        "extra": "(3 fields)",
-        "participants": "(1 items)",
-        "signature": "(3 fields)"
-      },
-      "rank": 3
-    },
-    {
-      "content": {
-        "id": "<id:4>",
-        "author_id": "<userId:2>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(4 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-10-31T14:22:01.943000+00:00",
-        "started_at": "2026-10-31T12:35:07.943000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 4
-    },
-    {
-      "content": {
-        "id": "<id:5>",
-        "author_id": "<userId:3>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(2 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-11-07T07:42:08.031000+00:00",
-        "started_at": "2026-11-07T06:19:09.031000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 5
-    },
-    {
-      "content": {
-        "id": "<id:6>",
-        "author_id": "<userId:3>",
-        "author_type": 1,
         "content_type": 1,
         "traits": "(3 items)",
         "extra": "(4 fields)",
         "participants": "(1 items)",
-        "ended_at": "2026-11-07T09:18:01.832000+00:00",
-        "started_at": "2026-11-07T07:51:18.832000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 6
-    },
-    "… 3 more"
-  ],
-  "unranked_game_entries": [
-    {
-      "content": {
-        "id": "<id:1>",
-        "author_id": "<userId:1>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(2 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-11-08T08:30:20.580000+00:00",
-        "started_at": "2026-11-08T06:54:05.580000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 1
-    },
-    {
-      "content": {
-        "id": "<id:2>",
-        "author_id": "<userId:2>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(3 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-10-31T12:24:10.220000+00:00",
-        "started_at": "2026-10-31T11:05:39.220000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 2
-    },
-    {
-      "content": {
-        "id": "<id:4>",
-        "author_id": "<userId:2>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(4 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-10-31T14:22:01.943000+00:00",
-        "started_at": "2026-10-31T12:35:07.943000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 4
-    },
-    {
-      "content": {
-        "id": "<id:5>",
-        "author_id": "<userId:3>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(2 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-11-07T07:42:08.031000+00:00",
-        "started_at": "2026-11-07T06:19:09.031000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 5
-    },
-    {
-      "content": {
-        "id": "<id:6>",
-        "author_id": "<userId:3>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(3 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-11-07T09:18:01.832000+00:00",
-        "started_at": "2026-11-07T07:51:18.832000+00:00",
+        "ended_at": "2026-11-20T06:07:17.855000+00:00",
+        "started_at": "2026-11-20T05:57:36.855000+00:00",
         "signature": "(3 fields)"
       },
       "rank": 6
     },
     {
       "content": {
-        "id": "<id:7>",
-        "author_id": "<userId:2>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(2 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-11-11T11:00:13.618000+00:00",
-        "started_at": "2026-11-11T10:43:27.618000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 7
-    },
-    "… 2 more"
-  ],
-  "entries_hash": 0,
-  "expired_at": "2026-11-14T19:01:58.863000+00:00",
-  "refresh_stale_inbox_after_ms": 30000,
-  "refresh_token": "<token>",
-  "wait_ms_until_next_fetch": 826707
-}
-```
-
-**runs/inspect/20261113T231616_discordAccount**, step 6: wait 45s: 200, 1053 ms
-
-Sent:
-
-```json
-{
-  "query": {
-    "for_game_profile": "false",
-    "feature": "inbox"
-  },
-  "body": null
-}
-```
-
-Answered:
-
-```json
-{
-  "request_id": "afad2a0a7d06461b94e57973662bacf9",
-  "entries": [
-    {
-      "content": {
-        "id": "<id:8>",
+        "id": "<id:4>",
         "author_id": "<userId:4>",
         "author_type": 1,
         "content_type": 6,
         "traits": "(4 items)",
         "extra": "(3 fields)",
-        "original_id": "1569813070342135889",
+        "original_id": "1572675589758914640",
         "participants": "(1 items)",
-        "signature": "(3 fields)"
-      },
-      "rank": 1
-    },
-    {
-      "content": {
-        "id": "<id:2>",
-        "author_id": "<userId:2>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(3 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-10-31T12:24:10.220000+00:00",
-        "started_at": "2026-10-31T11:05:39.220000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 2
-    },
-    {
-      "content": {
-        "id": "<id:3>",
-        "author_id": "<userId:3>",
-        "author_type": 1,
-        "content_type": 8,
-        "traits": "(2 items)",
-        "extra": "(3 fields)",
-        "participants": "(1 items)",
-        "signature": "(3 fields)"
-      },
-      "rank": 3
-    },
-    {
-      "content": {
-        "id": "<id:1>",
-        "author_id": "<userId:1>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(2 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-11-08T08:30:20.580000+00:00",
-        "started_at": "2026-11-08T06:54:05.580000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 4
-    },
-    {
-      "content": {
-        "id": "<id:4>",
-        "author_id": "<userId:2>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(4 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-10-31T14:22:01.943000+00:00",
-        "started_at": "2026-10-31T12:35:07.943000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 5
-    },
-    {
-      "content": {
-        "id": "<id:5>",
-        "author_id": "<userId:3>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(2 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-11-07T07:42:08.031000+00:00",
-        "started_at": "2026-11-07T06:19:09.031000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 6
-    },
-    "… 4 more"
-  ],
-  "unranked_game_entries": [
-    {
-      "content": {
-        "id": "<id:2>",
-        "author_id": "<userId:2>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(3 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-10-31T12:24:10.220000+00:00",
-        "started_at": "2026-10-31T11:05:39.220000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 2
-    },
-    {
-      "content": {
-        "id": "<id:1>",
-        "author_id": "<userId:1>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(2 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-11-08T08:30:20.580000+00:00",
-        "started_at": "2026-11-08T06:54:05.580000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 4
-    },
-    {
-      "content": {
-        "id": "<id:4>",
-        "author_id": "<userId:2>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(4 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-10-31T14:22:01.943000+00:00",
-        "started_at": "2026-10-31T12:35:07.943000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 5
-    },
-    {
-      "content": {
-        "id": "<id:5>",
-        "author_id": "<userId:3>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(2 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-11-07T07:42:08.031000+00:00",
-        "started_at": "2026-11-07T06:19:09.031000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 6
-    },
-    {
-      "content": {
-        "id": "<id:6>",
-        "author_id": "<userId:3>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(3 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-11-07T09:18:01.832000+00:00",
-        "started_at": "2026-11-07T07:51:18.832000+00:00",
         "signature": "(3 fields)"
       },
       "rank": 7
     },
     {
       "content": {
-        "id": "<id:7>",
-        "author_id": "<userId:2>",
+        "id": "<id:5>",
+        "author_id": "<userId:1>",
         "author_type": 1,
         "content_type": 1,
         "traits": "(2 items)",
         "extra": "(4 fields)",
         "participants": "(1 items)",
-        "ended_at": "2026-11-11T11:00:13.618000+00:00",
-        "started_at": "2026-11-11T10:43:27.618000+00:00",
+        "ended_at": "2026-11-18T21:51:01.969000+00:00",
+        "started_at": "2026-11-18T21:10:29.969000+00:00",
         "signature": "(3 fields)"
       },
       "rank": 8
     },
-    "… 2 more"
+    {
+      "content": {
+        "id": "<id:6>",
+        "author_id": "<userId:5>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(3 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-16T16:39:58.127000+00:00",
+        "started_at": "2026-11-16T16:39:49.127000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 9
+    },
+    "… 29 more"
+  ],
+  "unranked_game_entries": [
+    {
+      "content": {
+        "id": "<id:1>",
+        "author_id": "<userId:1>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(1 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T15:49:53.460000+00:00",
+        "started_at": "2026-11-18T15:44:53.460000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 1
+    },
+    {
+      "content": {
+        "id": "<id:3>",
+        "author_id": "<userId:3>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(3 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-20T06:07:17.855000+00:00",
+        "started_at": "2026-11-20T05:57:36.855000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 6
+    },
+    {
+      "content": {
+        "id": "<id:5>",
+        "author_id": "<userId:1>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(2 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T21:51:01.969000+00:00",
+        "started_at": "2026-11-18T21:10:29.969000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 8
+    },
+    {
+      "content": {
+        "id": "<id:6>",
+        "author_id": "<userId:5>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(3 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-16T16:39:58.127000+00:00",
+        "started_at": "2026-11-16T16:39:49.127000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 9
+    },
+    {
+      "content": {
+        "id": "<id:7>",
+        "author_id": "<userId:1>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(2 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T20:59:29.119000+00:00",
+        "started_at": "2026-11-18T20:37:26.119000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 13
+    },
+    {
+      "content": {
+        "id": "<id:8>",
+        "author_id": "<userId:6>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(2 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T22:48:18.361000+00:00",
+        "started_at": "2026-11-18T22:27:15.361000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 15
+    },
+    "… 23 more"
   ],
   "entries_hash": 0,
-  "expired_at": "2026-11-13T23:31:58.863000+00:00",
+  "expired_at": "2026-11-20T12:07:11.648000+00:00",
   "refresh_stale_inbox_after_ms": 30000,
   "refresh_token": "<token>",
-  "wait_ms_until_next_fetch": 824349
+  "wait_ms_until_next_fetch": 580635
 }
 ```
 
-**runs/inspect/20261111T233723_discordAccount**, step 1: goto /login: 200, 873 ms
+**runs/inspect/20261120T111021_<name:1>**, step 1: goto /quest-home: 200, 1625 ms
 
 Sent:
 
@@ -470,96 +259,97 @@ Answered:
 
 ```json
 {
-  "request_id": "04e7fb546c2041019944537f5187ff30",
+  "request_id": "04f03f01840c4202bb504e7283d2deec",
   "entries": [
-    {
-      "content": {
-        "id": "<id:9>",
-        "author_id": "<userId:4>",
-        "author_type": 1,
-        "content_type": 6,
-        "traits": "(4 items)",
-        "extra": "(3 fields)",
-        "original_id": "1569813070342135889",
-        "participants": "(1 items)",
-        "signature": "(3 fields)"
-      },
-      "rank": 1
-    },
-    {
-      "content": {
-        "id": "<id:10>",
-        "author_id": "<userId:3>",
-        "author_type": 1,
-        "content_type": 8,
-        "traits": "(2 items)",
-        "extra": "(3 fields)",
-        "participants": "(1 items)",
-        "signature": "(3 fields)"
-      },
-      "rank": 2
-    },
     {
       "content": {
         "id": "<id:1>",
         "author_id": "<userId:1>",
         "author_type": 1,
         "content_type": 1,
-        "traits": "(2 items)",
+        "traits": "(1 items)",
         "extra": "(4 fields)",
         "participants": "(1 items)",
-        "ended_at": "2026-11-08T08:30:20.580000+00:00",
-        "started_at": "2026-11-08T06:54:05.580000+00:00",
+        "ended_at": "2026-11-18T15:49:53.460000+00:00",
+        "started_at": "2026-11-18T15:44:53.460000+00:00",
         "signature": "(3 fields)"
       },
-      "rank": 3
+      "rank": 1
     },
     {
       "content": {
         "id": "<id:2>",
         "author_id": "<userId:2>",
         "author_type": 1,
-        "content_type": 1,
-        "traits": "(3 items)",
-        "extra": "(4 fields)",
+        "content_type": 6,
+        "traits": "(4 items)",
+        "extra": "(3 fields)",
+        "original_id": "1573145974451216424",
         "participants": "(1 items)",
-        "ended_at": "2026-10-31T12:24:10.220000+00:00",
-        "started_at": "2026-10-31T11:05:39.220000+00:00",
         "signature": "(3 fields)"
       },
       "rank": 4
     },
     {
       "content": {
-        "id": "<id:4>",
-        "author_id": "<userId:2>",
+        "id": "<id:3>",
+        "author_id": "<userId:3>",
         "author_type": 1,
         "content_type": 1,
-        "traits": "(4 items)",
+        "traits": "(3 items)",
         "extra": "(4 fields)",
         "participants": "(1 items)",
-        "ended_at": "2026-10-31T14:22:01.943000+00:00",
-        "started_at": "2026-10-31T12:35:07.943000+00:00",
+        "ended_at": "2026-11-20T06:07:17.855000+00:00",
+        "started_at": "2026-11-20T05:57:36.855000+00:00",
         "signature": "(3 fields)"
       },
-      "rank": 5
+      "rank": 6
+    },
+    {
+      "content": {
+        "id": "<id:4>",
+        "author_id": "<userId:4>",
+        "author_type": 1,
+        "content_type": 6,
+        "traits": "(4 items)",
+        "extra": "(3 fields)",
+        "original_id": "1572675589758914640",
+        "participants": "(1 items)",
+        "signature": "(3 fields)"
+      },
+      "rank": 7
     },
     {
       "content": {
         "id": "<id:5>",
-        "author_id": "<userId:3>",
+        "author_id": "<userId:1>",
         "author_type": 1,
         "content_type": 1,
         "traits": "(2 items)",
         "extra": "(4 fields)",
         "participants": "(1 items)",
-        "ended_at": "2026-11-07T07:42:08.031000+00:00",
-        "started_at": "2026-11-07T06:19:09.031000+00:00",
+        "ended_at": "2026-11-18T21:51:01.969000+00:00",
+        "started_at": "2026-11-18T21:10:29.969000+00:00",
         "signature": "(3 fields)"
       },
-      "rank": 6
+      "rank": 8
     },
-    "… 3 more"
+    {
+      "content": {
+        "id": "<id:6>",
+        "author_id": "<userId:5>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(3 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-16T16:39:58.127000+00:00",
+        "started_at": "2026-11-16T16:39:49.127000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 9
+    },
+    "… 28 more"
   ],
   "unranked_game_entries": [
     {
@@ -568,97 +358,308 @@ Answered:
         "author_id": "<userId:1>",
         "author_type": 1,
         "content_type": 1,
-        "traits": "(2 items)",
+        "traits": "(1 items)",
         "extra": "(4 fields)",
         "participants": "(1 items)",
-        "ended_at": "2026-11-08T08:30:20.580000+00:00",
-        "started_at": "2026-11-08T06:54:05.580000+00:00",
+        "ended_at": "2026-11-18T15:49:53.460000+00:00",
+        "started_at": "2026-11-18T15:44:53.460000+00:00",
         "signature": "(3 fields)"
       },
-      "rank": 3
+      "rank": 1
     },
     {
       "content": {
-        "id": "<id:2>",
-        "author_id": "<userId:2>",
+        "id": "<id:3>",
+        "author_id": "<userId:3>",
         "author_type": 1,
         "content_type": 1,
         "traits": "(3 items)",
         "extra": "(4 fields)",
         "participants": "(1 items)",
-        "ended_at": "2026-10-31T12:24:10.220000+00:00",
-        "started_at": "2026-10-31T11:05:39.220000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 4
-    },
-    {
-      "content": {
-        "id": "<id:4>",
-        "author_id": "<userId:2>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(4 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-10-31T14:22:01.943000+00:00",
-        "started_at": "2026-10-31T12:35:07.943000+00:00",
-        "signature": "(3 fields)"
-      },
-      "rank": 5
-    },
-    {
-      "content": {
-        "id": "<id:5>",
-        "author_id": "<userId:3>",
-        "author_type": 1,
-        "content_type": 1,
-        "traits": "(2 items)",
-        "extra": "(4 fields)",
-        "participants": "(1 items)",
-        "ended_at": "2026-11-07T07:42:08.031000+00:00",
-        "started_at": "2026-11-07T06:19:09.031000+00:00",
+        "ended_at": "2026-11-20T06:07:17.855000+00:00",
+        "started_at": "2026-11-20T05:57:36.855000+00:00",
         "signature": "(3 fields)"
       },
       "rank": 6
     },
     {
       "content": {
+        "id": "<id:5>",
+        "author_id": "<userId:1>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(2 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T21:51:01.969000+00:00",
+        "started_at": "2026-11-18T21:10:29.969000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 8
+    },
+    {
+      "content": {
         "id": "<id:6>",
+        "author_id": "<userId:5>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(3 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-16T16:39:58.127000+00:00",
+        "started_at": "2026-11-16T16:39:49.127000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 9
+    },
+    {
+      "content": {
+        "id": "<id:7>",
+        "author_id": "<userId:1>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(2 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T20:59:29.119000+00:00",
+        "started_at": "2026-11-18T20:37:26.119000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 13
+    },
+    {
+      "content": {
+        "id": "<id:8>",
+        "author_id": "<userId:6>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(2 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T22:48:18.361000+00:00",
+        "started_at": "2026-11-18T22:27:15.361000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 15
+    },
+    "… 23 more"
+  ],
+  "entries_hash": 0,
+  "expired_at": "2026-11-20T11:17:11.648000+00:00",
+  "refresh_stale_inbox_after_ms": 30000,
+  "refresh_token": "<token>",
+  "wait_ms_until_next_fetch": 368061
+}
+```
+
+**runs/inspect/20261120T091412_<name:1>**, step 1: goto /channels/@me: 200, 1225 ms
+
+Sent:
+
+```json
+{
+  "query": {
+    "for_game_profile": "false",
+    "feature": "inbox"
+  },
+  "body": null
+}
+```
+
+Answered:
+
+```json
+{
+  "request_id": "600701fa8b4c4eb58e5d59495e8795b0",
+  "entries": [
+    {
+      "content": {
+        "id": "<id:1>",
+        "author_id": "<userId:1>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(1 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T15:49:53.460000+00:00",
+        "started_at": "2026-11-18T15:44:53.460000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 1
+    },
+    {
+      "content": {
+        "id": "<id:2>",
+        "author_id": "<userId:2>",
+        "author_type": 1,
+        "content_type": 6,
+        "traits": "(4 items)",
+        "extra": "(3 fields)",
+        "original_id": "1573145974451216424",
+        "participants": "(1 items)",
+        "signature": "(3 fields)"
+      },
+      "rank": 4
+    },
+    {
+      "content": {
+        "id": "<id:3>",
         "author_id": "<userId:3>",
         "author_type": 1,
         "content_type": 1,
         "traits": "(3 items)",
         "extra": "(4 fields)",
         "participants": "(1 items)",
-        "ended_at": "2026-11-07T09:18:01.832000+00:00",
-        "started_at": "2026-11-07T07:51:18.832000+00:00",
+        "ended_at": "2026-11-20T06:07:17.855000+00:00",
+        "started_at": "2026-11-20T05:57:36.855000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 6
+    },
+    {
+      "content": {
+        "id": "<id:4>",
+        "author_id": "<userId:4>",
+        "author_type": 1,
+        "content_type": 6,
+        "traits": "(4 items)",
+        "extra": "(3 fields)",
+        "original_id": "1572675589758914640",
+        "participants": "(1 items)",
         "signature": "(3 fields)"
       },
       "rank": 7
     },
     {
       "content": {
-        "id": "<id:7>",
-        "author_id": "<userId:2>",
+        "id": "<id:5>",
+        "author_id": "<userId:1>",
         "author_type": 1,
         "content_type": 1,
         "traits": "(2 items)",
         "extra": "(4 fields)",
         "participants": "(1 items)",
-        "ended_at": "2026-11-11T11:00:13.618000+00:00",
-        "started_at": "2026-11-11T10:43:27.618000+00:00",
+        "ended_at": "2026-11-18T21:51:01.969000+00:00",
+        "started_at": "2026-11-18T21:10:29.969000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 8
+    },
+    {
+      "content": {
+        "id": "<id:6>",
+        "author_id": "<userId:5>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(3 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-16T16:39:58.127000+00:00",
+        "started_at": "2026-11-16T16:39:49.127000+00:00",
         "signature": "(3 fields)"
       },
       "rank": 9
     },
-    "… 1 more"
+    "… 27 more"
+  ],
+  "unranked_game_entries": [
+    {
+      "content": {
+        "id": "<id:1>",
+        "author_id": "<userId:1>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(1 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T15:49:53.460000+00:00",
+        "started_at": "2026-11-18T15:44:53.460000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 1
+    },
+    {
+      "content": {
+        "id": "<id:3>",
+        "author_id": "<userId:3>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(3 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-20T06:07:17.855000+00:00",
+        "started_at": "2026-11-20T05:57:36.855000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 6
+    },
+    {
+      "content": {
+        "id": "<id:5>",
+        "author_id": "<userId:1>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(2 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T21:51:01.969000+00:00",
+        "started_at": "2026-11-18T21:10:29.969000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 8
+    },
+    {
+      "content": {
+        "id": "<id:6>",
+        "author_id": "<userId:5>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(3 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-16T16:39:58.127000+00:00",
+        "started_at": "2026-11-16T16:39:49.127000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 9
+    },
+    {
+      "content": {
+        "id": "<id:7>",
+        "author_id": "<userId:1>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(2 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T20:59:29.119000+00:00",
+        "started_at": "2026-11-18T20:37:26.119000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 13
+    },
+    {
+      "content": {
+        "id": "<id:8>",
+        "author_id": "<userId:6>",
+        "author_type": 1,
+        "content_type": 1,
+        "traits": "(2 items)",
+        "extra": "(4 fields)",
+        "participants": "(1 items)",
+        "ended_at": "2026-11-18T22:48:18.361000+00:00",
+        "started_at": "2026-11-18T22:27:15.361000+00:00",
+        "signature": "(3 fields)"
+      },
+      "rank": 15
+    },
+    "… 23 more"
   ],
   "entries_hash": 0,
-  "expired_at": "2026-11-11T23:51:58.863000+00:00",
+  "expired_at": "2026-11-20T09:27:11.648000+00:00",
   "refresh_stale_inbox_after_ms": 30000,
   "refresh_token": "<token>",
-  "wait_ms_until_next_fetch": 861778
+  "wait_ms_until_next_fetch": 754096
 }
 ```
 

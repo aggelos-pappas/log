@@ -10,25 +10,27 @@
 | Path | `discord.com/assets` |
 | Sends | — |
 | Reads | — |
-| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:232 625075`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 559868`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 961943`, `runs/inspect/20261111T233723_discordAccount/script1280.js:1 anonymous` |
-| rea | `ev_f6daff8038b4f477b27b852e31fc1f2f76f7dd725b1883891e74b824ed6f0ac3` |
+| Called from | `runs/inspect/20261120T115645_<name:1>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:1>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 18 time(s) in 5 run(s).
+Seen 38 time(s) in 11 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
-| inspect | step 1: goto /login | 6 | 200 | 115–648 ms | 1026–56165 ms | — |
+| inspect | step 1: goto /login | 17 | 200 | 132–525 ms | 1338–56390 ms | — |
 | inspect | step 5: click e40 | 2 | 200 | 773–976 ms | 13016–13576 ms | — |
 | inspect | step 9: goto /channels/@me | 2 | 200 | 592–644 ms | 10190–10249 ms | — |
 | inspect | step 28: press Enter | 6 | 200 | 68–181 ms | 2847–3229 ms | — |
 | inspect | step 2: snapshot | 1 | 200 | 437 ms | 51841 ms | — |
 | inspect | Stopping after 1 step(s). | 1 | 200 | 309 ms | 5727 ms | — |
+| inspect | step 1: goto /quest-home | 6 | 200 | 123–765 ms | 10833–36433 ms | — |
+| inspect | step 1: goto /channels/@me | 3 | 200 | 102–322 ms | 9246–31651 ms | — |
 
-### What it sent and what came back (the newest 1 from our runs)
+### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261111T233723_discordAccount**, step 1: goto /login: 200, 648 ms
+**runs/inspect/20261120T115645_<name:1>**, step 1: goto /login: 200, 524 ms
 
 Sent:
 
@@ -39,7 +41,35 @@ null
 Answered:
 
 ```json
+"AGFzbQEAAAABpwRQYAJ/fwBgAn9/AX9gAX8AYAN/f38AYAN/f38Bf2ABfwF/YAR/f39/AGABbwF/YAR/f39/AX9gAW8Bb2AFf39/f38AYAZ/f39/f38AYAABf2AEf39+fwBgAABgAm9vAW9gAAFvYAV/f39/fwF/YAJ/fwF+YAV/f39+fwBgAn9vAGACb28AYAN/fn8AYAJ/fwFvYAACf39gAm9vAX9gAm9/AGABbwBgA29vbwFvYAN/f38Bb2AHf39/f39/fwBgBH9+f38AYAJ/bwFvYAADf39/YAJvfwFvYAZ/f39/f38Bf2ACf34AYAF/AW9gAX4Bb2AFb39/f38AYANvf38Bb2AEf39/fgBgB39/f39/f38Bf2ADf39+AGALf39/f39/f39/… (1604240 chars)"
+```
+
+**runs/inspect/20261120T111021_<name:1>**, step 1: goto /quest-home: 200, 171 ms
+
+Sent:
+
+```json
 null
+```
+
+Answered:
+
+```json
+"AGFzbQEAAAABpwRQYAJ/fwBgAn9/AX9gAX8AYAN/f38AYAN/f38Bf2ABfwF/YAR/f39/AGABbwF/YAR/f39/AX9gAW8Bb2AFf39/f38AYAZ/f39/f38AYAABf2AEf39+fwBgAABgAm9vAW9gAAFvYAV/f39/fwF/YAJ/fwF+YAV/f39+fwBgAn9vAGACb28AYAN/fn8AYAJ/fwFvYAACf39gAm9vAX9gAm9/AGABbwBgA29vbwFvYAN/f38Bb2AHf39/f39/fwBgBH9+f38AYAJ/bwFvYAADf39/YAJvfwFvYAZ/f39/f38Bf2ACf34AYAF/AW9gAX4Bb2AFb39/f38AYANvf38Bb2AEf39/fgBgB39/f39/f38Bf2ADf39+AGALf39/f39/f39/… (1604240 chars)"
+```
+
+**runs/inspect/20261120T091412_<name:1>**, step 1: goto /channels/@me: 200, 102 ms
+
+Sent:
+
+```json
+null
+```
+
+Answered:
+
+```json
+"AGFzbQEAAAABpwRQYAJ/fwBgAn9/AX9gAX8AYAN/f38AYAN/f38Bf2ABfwF/YAR/f39/AGABbwF/YAR/f39/AX9gAW8Bb2AFf39/f38AYAZ/f39/f38AYAABf2AEf39+fwBgAABgAm9vAW9gAAFvYAV/f39/fwF/YAJ/fwF+YAV/f39+fwBgAn9vAGACb28AYAN/fn8AYAJ/fwFvYAACf39gAm9vAX9gAm9/AGABbwBgA29vbwFvYAN/f38Bb2AHf39/f39/fwBgBH9+f38AYAJ/bwFvYAADf39/YAJvfwFvYAZ/f39/f38Bf2ACf34AYAF/AW9gAX4Bb2AFb39/f38AYANvf38Bb2AEf39/fgBgB39/f39/f38Bf2ADf39+AGALf39/f39/f39/… (1604240 chars)"
 ```
 
 <!-- facts:end -->
