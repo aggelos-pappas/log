@@ -40,6 +40,7 @@ What log-cli is built to do, one page each, by platform. Each page gives the ide
 | X | [Manager maxxing: the managers of the biggest Kick streamers](twitter/managerMaxxing.md) | the managers of the biggest Kick streamers: found on X, replied to for a few days, then a first DM to the ones who engaged |
 | Discord | [Answering someone in a Discord DM or group DM](discord/channelReply.md) | answers what someone said to the account in a Discord DM or group DM, gated and sent after the owner's yes |
 | Discord | [Replying in a Discord server channel](discord/serverReply.md) | answers a mention, a reply or a question in a channel of a server the owner is part of |
+| Discord | [First DMs from a Discord channel](discord/coldOutbound.md) | messages the people who talked to the owner in a channel, one gated DM each, and sends a friend request when Discord won't open the DM |
 | Discord | [Finding a conversation in a Discord server](discord/serverSearch.md) | finds what someone said in a server with Discord's own search, then reads around it, sends nothing |
 | Discord | [Going through a Discord forum for posts worth answering](discord/forumPosts.md) | lists a server forum's posts and says which are worth answering and why, sends nothing |
 | Reddit | [Contributor maxxing: finding talented builders through what they share](reddit/contributorMaxxing.md) | finds builders through the GitHub repos they post in a subreddit, ranked, reads only |
@@ -54,6 +55,7 @@ What log-cli is built to do, one page each, by platform. Each page gives the ide
 | Every chat | [Quieting the live push](inbox/quietPush.md) | quiets the live push for as many minutes as the owner says |
 | Every platform | [Resetting an account's governor count](inbox/governorReset.md) | puts an account's daily governor count back to 0 when the owner says so, kept as a log.db ledger row |
 | log itself | [Moving accounts to another browser](log/browserMove.md) | moves accounts to another browser with their signed-in session, done when the platform says signed in |
+| log itself | [Encrypted account store](log/secretStore.md) | shows what is sealed and what is still plain, and tells the owner when no recovery passphrase is set |
 | log itself | [Local models](log/localModels.md) | shows which local models this release pins and fetches the missing ones after the owner's yes |
 | log itself | [Tool health](log/toolHealth.md) | how log's own tools are doing from the calls log.db stores, with a fix for each flag, reads only |
 | log itself | [Update log](log/updateLog.md) | updates log to the newest release after the owner's yes and picks up where it left off |

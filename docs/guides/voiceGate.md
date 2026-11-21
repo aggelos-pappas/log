@@ -1,8 +1,8 @@
 # voiceGate
 
-The voice gate every send as the owner passes on every platform: a draft checked against the owner's own writing before it goes out, and the voice and AI-tells indexes behind it.
+The voice gate on every send as the owner: the draft checked against his writing, and its indexes.
 
-Load next, when the work needs it: getGuide({ topic: "inbox" }) (Every platform's chats as one inbox: listing, reading and watching them, sending, reacting and voice notes, who waits on a reply, claiming a chat before acting in it, and every action's log).
+Load next, when the work needs it: getGuide({ topic: "inbox" }) (All chats as one inbox: listing, reading, watching, sending, reacting, voice notes, who waits on a reply, claiming a chat, and every action's log).
 
 Written by `bun run docs:build` from the code, the skills and AGENTS.md. Not edited by hand: change the command's usage, its skill or the rule, and rebuild.
 
@@ -13,6 +13,7 @@ When the owner asks for one of these, follow its page step by step.
 | Use case | What it is | How the owner asks for it |
 |---|---|---|
 | `getGuide({ useCase: "discord/channelReply" })` | Answering someone in a Discord DM or group DM | "reply to <someone> on discord", "reply to <someone> in <group>", "explain what I'm trying to do to <someone> in <group>", "answer the group" |
+| `getGuide({ useCase: "discord/coldOutbound" })` | First DMs from a Discord channel | "dm the people from <channel>" |
 | `getGuide({ useCase: "discord/memeReply" })` | Replying with a meme in a Discord chat | "respond with memes in the <chat>", "drop a meme in <chat> about that", "read <chat> and meme it" |
 | `getGuide({ useCase: "discord/serverReply" })` | Replying in a Discord server channel | "reply to <someone> in <server>", "answer him in the general", "message the guy in <server> #<channel> who mentioned me", "reply in the <server> server", "find what <someone> said in <server> and answer it" |
 | `getGuide({ useCase: "inbox/reaLooksmaxxing" })` | /rea-looksmaxxing: moneymaxx like a creator | "/rea-looksmaxxing how clavicular gets paid", "moneymaxx like <creator>", "how does <creator> get paid" |

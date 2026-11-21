@@ -517,7 +517,7 @@ What's built, what's next and what's planned is kept in one pinned issue: **[Roa
 
 | Area | Built | Next |
 |---|---|---|
-| Security | the judge's rules and local model | judging images, a guard before tool calls, taint, a canary token, an attack-set benchmark, an encrypted account store |
+| Security | the judge's rules and local model | judging images, a guard before tool calls, taint, a canary token, an attack-set benchmark |
 | The record ([soron](docs/proposals/soron.md), [#197](https://github.com/matthewdonsemail-lab/log/issues/197)) | search by DM, group or channel | keeping edits and deletions, capturing the conversation around a personal mention (kept after a ban), judging each message the moment it arrives |
 | Turn awareness ([spec](https://github.com/matthewdonsemail-lab/log/blob/turnAware/docs/proposals/turnAware.md)) | typing on Discord and Slack | X Chat |
 | Tools | tool health | recording which tools the router offered, so unused tools can be told apart from unseen ones |

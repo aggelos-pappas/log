@@ -170,6 +170,7 @@ const SOURCE_COMMAND_RULES: Readonly<Record<string, number[]>> = {
   discordWatch: [13, 26, 63, 64, 73, 83, 94, 126, 131, 132],
   discordSend: [8, 13, 63, 64, 73, 83, 90, 91, 94, 122, 130, 133, 134, 135, 137, 138, 162],
   discordDelete: [8, 13, 63, 64, 73, 83, 94, 122],
+  discordFriend: [8, 13, 63, 64, 73, 83, 94, 122],
   discordReact: [8, 13, 63, 64, 73, 83, 94, 122, 133, 140],
   slackReact: [8, 13, 63, 64, 73, 83, 94, 125, 133, 140],
   instagramReact: [8, 13, 63, 64, 73, 83, 94, 128, 129, 133, 140],

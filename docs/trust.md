@@ -76,7 +76,7 @@ Each platform has its own terms for automated use. log keeps to a human pace, on
 Stated plainly so you can weigh it:
 
 - **No independent security audit yet.** The controls above are in the code with tests you can run; nobody outside the project has reviewed them.
-- **Sessions are stored as plain files** under `~/.logCli`, protected by your user account's file permissions. An encrypted account store is on the [roadmap](../README.md), with a guard before tool calls, a canary token and an attack-set benchmark for the injection judge.
+- **Sessions and keys are encrypted on your machine,** with the key held by Windows, the macOS Keychain or Linux's Secret Service, and a recovery passphrase for a new PC ([encrypted account store](security/encryptedStore.md)). It has been run on Windows; macOS and Linux are written and not yet tested. Browser profiles still rely on your file permissions and disk encryption. A guard before tool calls, a canary token and an attack-set benchmark for the injection judge are on the [roadmap](../README.md).
 - **Platforms differ.** X, Instagram, Discord and Slack read and send; LinkedIn, Reddit and Facebook cover fewer actions. The README's platform table lists each.
 
 ## Reporting a problem

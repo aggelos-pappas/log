@@ -17,6 +17,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | Use case | What it is |
 |---|---|
 | `getGuide({ useCase: "discord/channelReply" })` | Answering someone in a Discord DM or group DM |
+| `getGuide({ useCase: "discord/coldOutbound" })` | First DMs from a Discord channel |
 | `getGuide({ useCase: "discord/forumPosts" })` | Going through a Discord forum for posts worth answering |
 | `getGuide({ useCase: "discord/groupChatRead" })` | Reading a Discord group chat without Twenty |
 | `getGuide({ useCase: "discord/memeReply" })` | Replying with a meme in a Discord chat |
@@ -99,8 +100,8 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `accountBrowser` | An account's one browser on any platform: opening it through its gates, inspecting a page step by step, where every open browser is, the live view for signing in, AdsPower profiles and local accounts |
 | `sessions` | Whether each account's saved session still works, from the platform's own answer, with the next step to sign it back in; and log's own sign-in for a team (login, logout, whoami) |
 | `flows` | Recorded flows and the warm-up on any platform: a recording turned into steps that run in the account's open browser, each step checked against the call it must cause |
-| `inbox` | Every platform's chats as one inbox: listing, reading and watching them, sending, reacting and voice notes, who waits on a reply, claiming a chat before acting in it, and every action's log |
-| `voiceGate` | The voice gate every send as the owner passes on every platform: a draft checked against the owner's own writing before it goes out, and the voice and AI-tells indexes behind it |
+| `inbox` | All chats as one inbox: listing, reading, watching, sending, reacting, voice notes, who waits on a reply, claiming a chat, and every action's log |
+| `voiceGate` | The voice gate on every send as the owner: the draft checked against his writing, and its indexes |
 | `facebookBrowser` | A Facebook account's browser for its day: preflight, opening and signing in, the host and its lifecycle, the profile and Messenger PIN, its accounts and the account checks |
 | `facebookFlows` | Facebook's recorded flows and its warm-up, each a facebookFlow tool run as steps in the account's open browser |
 | `facebookMarketplace` | Marketplace listings from copy to publish, campaigns that fill and heal them, and the buyers' conversations |
@@ -108,7 +109,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `xInbox` | Reading an X account's DMs and X Chat as one inbox, synced by sequence id, and watching X Chat live |
 | `xSending` | Sending as an X account: original posts with a video or images, dms one message per line, replies, quotes, likes, deleting a post, follows, lists, queues and voice notes |
 | `xAccount` | An X account's session: saving and checking its cookies, who follows whom, its notifications (who liked, reposted, replied to, quoted or followed it), and reading one person's posts |
-| `discord` | A Discord account: its session, DMs and group DMs, servers with their channels, forums, posts and threads, server search, reading, the live gateway watch, sending and deleting its own messages |
+| `discord` | A Discord account: session, DMs, servers, forums, search, reading, watching, sending, friend requests and deleting |
 | `reddit` | A Reddit account: its session, reading subreddits, the home feed and posts with their comments, and posting, commenting and voting |
 | `slack` | A Slack account: its session and workspaces, chats, reading, the live websocket watch and sending |
 | `linkedin` | A LinkedIn account: saving its cookies, checking its session, posting or deleting its own posts, inviting people LinkedIn suggests, liking and reposting posts, seeing how its own posts are doing, and reading and writing in its conversations |

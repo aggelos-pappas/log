@@ -278,6 +278,58 @@ describe("log discord session check", () => {
     expect(code).toBe(0);
     expect(sent).toMatchObject([{ action: "chats" }, { action: "send", channel: "1000000000000000001" }]);
   });
+  test("send --userId opens the DM by the person's id first, then sends into it", async () => {
+    const sent: { action?: string; user?: string; channel?: string }[] = [];
+    const code = await runCli(["discord", "send", "--account", "discordOne", "--userId", "1000000000000000777", "--text", "yo", "--asOne", "--overGate", "--approvedBy", "the owner", "--live"], {
+      twenty: fixture(),
+      out: () => {},
+      err: () => {},
+      directDiscord: (_account, spec) => {
+        sent.push(spec as never);
+        if (spec.action === "openDm") return { answer: { ok: true, event: "opened", channelId: "1000000000000000888", userId: "1000000000000000777", username: "jon" }, refreshed: null };
+        if (spec.action === "read") return { answer: { ok: true, messages: [] }, refreshed: null };
+        return { answer: { ok: true, event: "sent", messageId: "1", channelId: String(spec.channel), timestamp: "t" }, refreshed: null };
+      },
+    });
+    expect(code).toBe(0);
+    expect(sent[0]).toMatchObject({ action: "openDm", user: "1000000000000000777" });
+    expect(sent.find((s) => s.action === "send")).toMatchObject({ channel: "1000000000000000888" });
+  });
+  test("send --userId without --live opens nothing; --channel and --userId together are refused", async () => {
+    const called: unknown[] = [];
+    const dry = await runCli(["discord", "send", "--account", "discordOne", "--userId", "1000000000000000777", "--text", "yo"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec); return { answer: { ok: true }, refreshed: null }; } });
+    expect(dry).toBe(0);
+    expect(called).toEqual([]);
+    const both = await runCli(["discord", "send", "--account", "discordOne", "--userId", "1000000000000000777", "--channel", "log", "--text", "yo"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec); return { answer: { ok: true }, refreshed: null }; } });
+    expect(both).toBe(1);
+    expect(called).toEqual([]);
+  });
+  test("friend without --live calls nothing, --live needs --approvedBy, and the first refusal stops the run", async () => {
+    const wait = discordDeps.wait;
+    discordDeps.wait = async () => {};
+    const called: { action?: string; user?: string }[] = [];
+    try {
+      const dry = await runCli(["discord", "friend", "--account", "discordOne", "--userId", "1000000000000000777"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec as never); return { answer: { ok: true }, refreshed: null }; } });
+      expect(dry).toBe(0);
+      expect(called).toEqual([]);
+      const unapproved = await runCli(["discord", "friend", "--account", "discordOne", "--userId", "1000000000000000777", "--live"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec as never); return { answer: { ok: true }, refreshed: null }; } });
+      expect(unapproved).toBe(1);
+      expect(called).toEqual([]);
+      const live = await runCli(["discord", "friend", "--account", "discordOne", "--userId", "1000000000000000777,1000000000000000778,1000000000000000779", "--approvedBy", "the owner", "--live"], {
+        twenty: fixture(),
+        out: () => {},
+        err: () => {},
+        directDiscord: (_a, spec) => {
+          called.push(spec as never);
+          return spec.user === "1000000000000000778" ? { answer: { ok: false, code: "captchaRequired", detail: "captcha" }, refreshed: null } : { answer: { ok: true, event: "sent", mode: "friend", userId: String(spec.user) }, refreshed: null };
+        },
+      });
+      expect(live).toBe(1);
+      expect(called.map((c) => c.user)).toEqual(["1000000000000000777", "1000000000000000778"]);
+    } finally {
+      discordDeps.wait = wait;
+    }
+  });
   test("every line after the first goes as a continuation, so the governor doesn't stack its own gap on the line gap", async () => {
     const wait = discordDeps.wait;
     discordDeps.wait = async () => {};

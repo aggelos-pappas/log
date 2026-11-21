@@ -114,6 +114,7 @@ export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "watch", platform: "discord", module: "src/cli/discord/index.ts", exportName: "discordWatchCommand", longRunning: true },
   { name: "send", platform: "discord", module: "src/cli/discord/index.ts", exportName: "discordSendCommand" },
   { name: "delete", platform: "discord", module: "src/cli/discord/index.ts", exportName: "discordDeleteCommand" },
+  { name: "friend", platform: "discord", module: "src/cli/discord/index.ts", exportName: "discordFriendCommand" },
   { name: "react", platform: "discord", module: "src/cli/react/index.ts", exportName: "discordReactCommand" },
   { name: "voice", platform: "discord", module: "src/cli/voiceNote/index.ts", exportName: "discordVoiceCommand" },
   { name: "session", platform: "linkedin", module: "src/cli/linkedin/index.ts", exportName: "linkedinSessionCommand" },
