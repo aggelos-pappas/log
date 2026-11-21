@@ -21,7 +21,7 @@ Answering the people you already talk to: who is waiting on a reply, what they s
 ## What log will not do
 
 - Send a message, reply, like or follow you didn't approve.
-- Collect, scrape or sell other people's data. It reads the conversations on your own accounts.
+- Collect or sell other people's data. It reads the conversations on your own accounts.
 - Run accounts that aren't yours, or sign in without you.
 - Retry after a platform says no. A refusal stops the run until you decide.
 - Send your sign-ins anywhere. When you run it locally they stay in `~/.logCli` on your machine.

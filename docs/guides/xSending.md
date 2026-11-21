@@ -283,7 +283,7 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 - **Rule 41.** Paid work must stay within the authorized task and spend.
 - **Rule 53.** Verify current external facts from sources.
 - **Rule 73.** For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence.
-- **Rule 86.** Governor, waking-hours, voice-gate and other bypasses apply only when The owner explicitly requests the specific supported override.
+- **Rule 86.** Governor, waking-hours, voice-gate and other overrides apply only when The owner asks for the specific supported override.
 - **Rule 89.** Find conversational context by scoped search and existing private records.
 - **Rule 94.** Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies.
 - **Rule 105.** One platform/account owns one continuous engine session and push connection.

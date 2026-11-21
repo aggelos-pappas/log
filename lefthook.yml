@@ -30,6 +30,9 @@ pre-commit:
     agnostic:
       run: bun run check:agnostic
 
+    agentWording:
+      run: bun run check:agentWording
+
     platformNeutral:
       run: bun run check:platformNeutral
 
@@ -106,6 +109,9 @@ pre-push:
 
     agnostic:
       run: bun run check:agnostic
+
+    agentWording:
+      run: bun run check:agentWording
 
     platformNeutral:
       run: bun run check:platformNeutral

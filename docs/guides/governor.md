@@ -54,7 +54,7 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 - **Rule 40.** Do not propose physical infrastructure unless The owner asks.
 - **Rule 41.** Paid work must stay within the authorized task and spend.
 - **Rule 73.** For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence.
-- **Rule 86.** Governor, waking-hours, voice-gate and other bypasses apply only when The owner explicitly requests the specific supported override.
+- **Rule 86.** Governor, waking-hours, voice-gate and other overrides apply only when The owner asks for the specific supported override.
 - **Rule 94.** Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies.
 - **Rule 105.** One platform/account owns one continuous engine session and push connection.
 - **Rule 163.** Agent Log actions go through Log MCP tools; never work around a stale or unavailable MCP with shell Log commands or scratch clients.
