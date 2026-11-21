@@ -165,7 +165,7 @@ export async function runMachine(input: unknown, ui: boolean, host: ReportHost =
   if (view && !["person", "route", "network"].includes(view)) return refused("reportFieldInvalid", ["view: person, route or network"]);
   const platform = pick("platform");
   if (platform && !(MACHINE_PLATFORMS as readonly string[]).includes(platform)) return refused("reportFieldInvalid", [`platform: one of ${MACHINE_PLATFORMS.join(", ")}`]);
-  const answer = relateMachine({ view: view as "person" | "route" | "network" | undefined, person: pick("person"), to: pick("to"), platform: platform as MachinePlatform | undefined });
+  const answer = await relateMachine({ view: view as "person" | "route" | "network" | undefined, person: pick("person"), to: pick("to"), platform: platform as MachinePlatform | undefined });
   if (!answer.ok) return { isError: true, content: [{ type: "text", text: `${answer.code}: ${answer.problem}` }], structuredContent: { error: answer.code, message: answer.problem } };
   const block = answer.block;
   return runReport({ title: block.title ?? "Relationship state machine", subtitle: `Relate graph through event ${answer.throughSeq}`, blocks: [block] }, ui, {}, host);

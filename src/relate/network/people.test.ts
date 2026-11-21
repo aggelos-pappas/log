@@ -124,15 +124,15 @@ describe('one person across platforms, and the network by platform', () => {
     expect(parsed.rings.linked).toEqual([])
   })
 
-  test('who to talk to lists a linked person once with their accounts, and a platform filter keeps only that platform', () => {
+  test('who to talk to lists a linked person once with their accounts, and a platform filter keeps only that platform', async () => {
     buildGraph(dbPath)
-    const rows = queryGraph(WHO_TO_TALK_TO, {}, dbPath).rows
+    const rows = (await queryGraph(WHO_TO_TALK_TO, {}, dbPath)).rows
     const maya = rows.filter((r) => r.who === 'maya_ml' || r.handle === 'maya_ml')
     expect(maya).toHaveLength(1)
     expect(maya[0]).toMatchObject({ ring: 3, tieFrom: 'twitter' })
     expect([...(maya[0]!.accounts as string[])].sort()).toEqual(['discord:maya_ml ring 4 (known)', 'twitter:maya_ml ring 3 (follow)'])
     expect(rows.some((r) => r.who === 'Grace')).toBe(false)
-    const discordOnly = queryGraph(WHO_TO_TALK_TO, { platform: 'discord' }, dbPath).rows
+    const discordOnly = (await queryGraph(WHO_TO_TALK_TO, { platform: 'discord' }, dbPath)).rows
     expect(discordOnly.length).toBeGreaterThan(0)
     expect(discordOnly.every((r) => r.platform === 'discord')).toBe(true)
     expect(discordOnly.map((r) => [r.handle, r.ring, r.why])).toEqual([['linus_k', 2, 'talksTo']])

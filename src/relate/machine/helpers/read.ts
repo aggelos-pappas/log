@@ -1,5 +1,5 @@
 import type { Database } from 'bun:sqlite'
-import type { Connection } from '@relate/relate'
+import type { Ask } from '../../graph/types'
 import type { StageEvidence } from '../types'
 
 type Row = Record<string, unknown>
@@ -41,12 +41,12 @@ function blank(r: Row): StageEvidence {
 
 const PAST: Record<string, string> = { like: 'liked your post', reply: 'replied to your post', repost: 'reposted you', retweet: 'reposted you', quote: 'quoted you', mention: 'mentioned you', reaction: 'reacted to you' }
 
-export function evidenceOf(conn: Connection, keys: readonly string[] | null, firsts: Map<string, { kind: string; at: number }[]> = new Map()): Map<string, StageEvidence> {
+export async function evidenceOf(ask: Ask, keys: readonly string[] | null, firsts: Map<string, { kind: string; at: number }[]> = new Map()): Promise<Map<string, StageEvidence>> {
   const params = { all: keys === null, keys: [...(keys ?? [])] }
   const out = new Map<string, StageEvidence>()
-  for (const r of conn.query(`MATCH (i:Identity) WHERE ${FILTER} RETURN i.key AS key, i.personId AS personId, i.platform AS platform, i.handle AS handle, i.name AS name, i.ring AS ring`, params).rows) out.set(String(r.key), blank(r))
+  for (const r of (await ask(`MATCH (i:Identity) WHERE ${FILTER} RETURN i.key AS key, i.personId AS personId, i.platform AS platform, i.handle AS handle, i.name AS name, i.ring AS ring`, params))) out.set(String(r.key), blank(r))
   const at = (key: unknown) => out.get(String(key))
-  for (const r of conn.query(`MATCH (i:Identity)-[f:FOLLOWED]->(:Account) WHERE ${FILTER} RETURN i.key AS key, f.kind AS kind, f.lastAtMs AS at`, params).rows) {
+  for (const r of (await ask(`MATCH (i:Identity)-[f:FOLLOWED]->(:Account) WHERE ${FILTER} RETURN i.key AS key, f.kind AS kind, f.lastAtMs AS at`, params))) {
     const e = at(r.key)
     if (!e) continue
     const when = num(r.at)
@@ -59,11 +59,11 @@ export function evidenceOf(conn: Connection, keys: readonly string[] | null, fir
     }
     e.lastAt = maxOf(e.lastAt, when)
   }
-  for (const r of conn.query(`MATCH (i:Identity)-[:FOLLOWS]->(:Account) WHERE ${FILTER} RETURN DISTINCT i.key AS key`, params).rows) {
+  for (const r of (await ask(`MATCH (i:Identity)-[:FOLLOWS]->(:Account) WHERE ${FILTER} RETURN DISTINCT i.key AS key`, params))) {
     const e = at(r.key)
     if (e) e.follows = true
   }
-  for (const r of conn.query(`MATCH (i:Identity)-[x:ENGAGED]->(:Post) WHERE ${FILTER} RETURN i.key AS key, x.kind AS kind, x.lastAtMs AS at ORDER BY at`, params).rows) {
+  for (const r of (await ask(`MATCH (i:Identity)-[x:ENGAGED]->(:Post) WHERE ${FILTER} RETURN i.key AS key, x.kind AS kind, x.lastAtMs AS at ORDER BY at`, params))) {
     const e = at(r.key)
     if (!e) continue
     const when = num(r.at)
@@ -73,7 +73,7 @@ export function evidenceOf(conn: Connection, keys: readonly string[] | null, fir
     }
     e.lastAt = maxOf(e.lastAt, when)
   }
-  for (const r of conn.query(`MATCH (i:Identity)-[x:REPLIED_TO|MENTIONED]->(:Account) WHERE ${FILTER} RETURN i.key AS key, min(x.firstAtMs) AS first, max(x.lastAtMs) AS last`, params).rows) {
+  for (const r of (await ask(`MATCH (i:Identity)-[x:REPLIED_TO|MENTIONED]->(:Account) WHERE ${FILTER} RETURN i.key AS key, min(x.firstAtMs) AS first, max(x.lastAtMs) AS last`, params))) {
     const e = at(r.key)
     if (!e) continue
     const first = num(r.first)
@@ -83,25 +83,25 @@ export function evidenceOf(conn: Connection, keys: readonly string[] | null, fir
     }
     e.lastAt = maxOf(e.lastAt, num(r.last))
   }
-  for (const r of conn.query(`MATCH (i:Identity)-[:SAID|MEMBER_OF]->(d:Room {kind: 'dm'}) WHERE ${FILTER} WITH DISTINCT i, d OPTIONAL MATCH (i)-[s:SAID]->(d) OPTIONAL MATCH (a:Account)-[o:SAID]->(d) RETURN i.key AS key, min(s.firstAtMs) AS theirs, min(o.firstAtMs) AS ours, max(d.lastAtMs) AS last`, params).rows) {
+  for (const r of (await ask(`MATCH (i:Identity)-[:SAID|MEMBER_OF]->(d:Room {kind: 'dm'}) WHERE ${FILTER} WITH DISTINCT i, d OPTIONAL MATCH (i)-[s:SAID]->(d) OPTIONAL MATCH (a:Account)-[o:SAID]->(d) RETURN i.key AS key, min(s.firstAtMs) AS theirs, min(o.firstAtMs) AS ours, max(d.lastAtMs) AS last`, params))) {
     const e = at(r.key)
     if (!e) continue
     e.theyWroteAt = minOf(e.theyWroteAt, num(r.theirs))
     e.youWroteAt = minOf(e.youWroteAt, num(r.ours))
     e.lastAt = maxOf(e.lastAt, num(r.last))
   }
-  for (const r of conn.query(`MATCH (i:Identity)-[m:MEMBER_OF]->(g:Room) WHERE ${FILTER} AND g.kind <> 'dm' RETURN i.key AS key, min(m.firstSeenAt) AS first, max(m.lastSeenAt) AS last, collect(DISTINCT coalesce(g.name, g.conversationId))[0..3] AS rooms`, params).rows) {
+  for (const r of (await ask(`MATCH (i:Identity)-[m:MEMBER_OF]->(g:Room) WHERE ${FILTER} AND g.kind <> 'dm' RETURN i.key AS key, min(m.firstSeenAt) AS first, max(m.lastSeenAt) AS last, collect(DISTINCT coalesce(g.name, g.conversationId))[0..3] AS rooms`, params))) {
     const e = at(r.key)
     if (!e) continue
     e.nearAt = minOf(e.nearAt, isoMs(r.first))
     e.near.push(...((r.rooms as string[] | null) ?? []).map(String))
     e.lastAt = maxOf(e.lastAt, isoMs(r.last))
   }
-  for (const r of conn.query(`MATCH (i:Identity)-[:IN_CIRCLE_OF]->(l:Leader)<-[:IN_CIRCLE_OF]-(c:Identity)-[:SAID]->(:Room {kind: 'dm'}) WHERE ${FILTER} AND c.key <> i.key RETURN i.key AS key, collect(DISTINCT l.handle)[0..2] AS leaders`, params).rows) {
+  for (const r of (await ask(`MATCH (i:Identity)-[:IN_CIRCLE_OF]->(l:Leader)<-[:IN_CIRCLE_OF]-(c:Identity)-[:SAID]->(:Room {kind: 'dm'}) WHERE ${FILTER} AND c.key <> i.key RETURN i.key AS key, collect(DISTINCT l.handle)[0..2] AS leaders`, params))) {
     const e = at(r.key)
     if (e) e.near.push(...((r.leaders as string[] | null) ?? []).map((h) => `the circle of @${h}`))
   }
-  for (const r of conn.query(`MATCH (i:Identity)-[:MENTIONED]-(c:Identity)-[:SAID]->(:Room {kind: 'dm'}) WHERE ${FILTER} AND c.key <> i.key RETURN i.key AS key, collect(DISTINCT c.handle)[0..2] AS people`, params).rows) {
+  for (const r of (await ask(`MATCH (i:Identity)-[:MENTIONED]-(c:Identity)-[:SAID]->(:Room {kind: 'dm'}) WHERE ${FILTER} AND c.key <> i.key RETURN i.key AS key, collect(DISTINCT c.handle)[0..2] AS people`, params))) {
     const e = at(r.key)
     if (e) e.near.push(...((r.people as string[] | null) ?? []).filter(Boolean).map((h) => `talks with @${h}`))
   }
@@ -128,7 +128,7 @@ export interface RouteCandidate {
   orbit: number
 }
 
-export function routeCandidates(conn: Connection, keys: readonly string[]): Map<string, RouteCandidate> {
+export async function routeCandidates(ask: Ask, keys: readonly string[]): Promise<Map<string, RouteCandidate>> {
   const out = new Map<string, RouteCandidate>()
   const known = "AND NOT c.owner AND ((c)-[:SAID]->(:Room {kind: 'dm'}) OR (c)-[:ENGAGED]->(:Post) OR (c)-[:FOLLOWED]->(:Account) OR (c)-[:REPLIED_TO|MENTIONED]->(:Account))"
   const get = (key: unknown): RouteCandidate => {
@@ -137,13 +137,13 @@ export function routeCandidates(conn: Connection, keys: readonly string[]): Map<
     out.set(k, held)
     return held
   }
-  for (const r of conn.query(`MATCH (t:Identity)-[:MEMBER_OF]->(g:Room)<-[:MEMBER_OF]-(c:Identity) WHERE t.key IN $keys AND g.kind <> 'dm' AND NOT c.key IN $keys ${known} RETURN c.key AS key, collect(DISTINCT coalesce(g.name, g.conversationId))[0..3] AS rooms`, { keys: [...keys] }).rows) get(r.key).rooms.push(...((r.rooms as string[]) ?? []))
-  for (const r of conn.query(`MATCH (t:Identity)-[:IN_CIRCLE_OF]->(l:Leader)<-[:IN_CIRCLE_OF]-(c:Identity) WHERE t.key IN $keys AND NOT c.key IN $keys ${known} RETURN c.key AS key, collect(DISTINCT l.handle)[0..3] AS leaders`, { keys: [...keys] }).rows) get(r.key).circles.push(...((r.leaders as string[]) ?? []))
-  for (const r of conn.query(`MATCH (t:Identity)-[m:MENTIONED]-(c:Identity) WHERE t.key IN $keys AND NOT c.key IN $keys ${known} RETURN c.key AS key, sum(coalesce(m.times, 1)) AS times`, { keys: [...keys] }).rows) get(r.key).mentions += Number(r.times ?? 0)
-  for (const r of conn.query(`MATCH (t:Identity)-[:ENGAGED]->(p:Post)<-[:ENGAGED]-(c:Identity) WHERE t.key IN $keys AND NOT c.key IN $keys ${known} RETURN c.key AS key, count(DISTINCT p) AS posts`, { keys: [...keys] }).rows) get(r.key).orbit += Number(r.posts ?? 0)
+  for (const r of (await ask(`MATCH (t:Identity)-[:MEMBER_OF]->(g:Room)<-[:MEMBER_OF]-(c:Identity) WHERE t.key IN $keys AND g.kind <> 'dm' AND NOT c.key IN $keys ${known} RETURN c.key AS key, collect(DISTINCT coalesce(g.name, g.conversationId))[0..3] AS rooms`, { keys: [...keys] }))) get(r.key).rooms.push(...((r.rooms as string[]) ?? []))
+  for (const r of (await ask(`MATCH (t:Identity)-[:IN_CIRCLE_OF]->(l:Leader)<-[:IN_CIRCLE_OF]-(c:Identity) WHERE t.key IN $keys AND NOT c.key IN $keys ${known} RETURN c.key AS key, collect(DISTINCT l.handle)[0..3] AS leaders`, { keys: [...keys] }))) get(r.key).circles.push(...((r.leaders as string[]) ?? []))
+  for (const r of (await ask(`MATCH (t:Identity)-[m:MENTIONED]-(c:Identity) WHERE t.key IN $keys AND NOT c.key IN $keys ${known} RETURN c.key AS key, sum(coalesce(m.times, 1)) AS times`, { keys: [...keys] }))) get(r.key).mentions += Number(r.times ?? 0)
+  for (const r of (await ask(`MATCH (t:Identity)-[:ENGAGED]->(p:Post)<-[:ENGAGED]-(c:Identity) WHERE t.key IN $keys AND NOT c.key IN $keys ${known} RETURN c.key AS key, count(DISTINCT p) AS posts`, { keys: [...keys] }))) get(r.key).orbit += Number(r.posts ?? 0)
   return out
 }
 
-export function ownerAccounts(conn: Connection): { platform: string; account: string }[] {
-  return conn.query('MATCH (a:Account) RETURN a.platform AS platform, a.account AS account ORDER BY platform, account').rows.map((r) => ({ platform: String(r.platform), account: String(r.account) }))
+export async function ownerAccounts(ask: Ask): Promise<{ platform: string; account: string }[]> {
+  return (await ask('MATCH (a:Account) RETURN a.platform AS platform, a.account AS account ORDER BY platform, account')).map((r) => ({ platform: String(r.platform), account: String(r.account) }))
 }

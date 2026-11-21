@@ -25,6 +25,7 @@ import type { OAuthServer } from "../oauth/index.ts";
 import { activePlay, BROWSERS_HEAD, capResult, currentToolName, narrowingFlags, FLOW_LIVE_TOOL, forgetPlayScope, gatedToolOf, guideAnswer, handleOf, PLAY_HANDLE_FIELD, playMeta, playRefusal, actingAsOwnerTools, capabilityPlayGateMode, folderOfPlay, namedByPlay, platformOfTool, playGateMode, stepToolsOf, playScope, processPlayScope, renamedTool, touchPlay, withoutHandle, withPlayFooter, withRenamedNote } from "./helpers/index.ts";
 import type { PlayScope } from "./helpers/index.ts";
 import { isPlatform } from "../../cli/runner/helpers/index.ts";
+import { ensureGraphOwner } from "../../relate/owner/index.ts";
 import { capabilityDeps } from "../../cli/capabilities/index.ts";
 import { loadConnectionsView } from "../../console/connections/index.ts";
 import { gateCall } from "../../platformKit/gates/index.ts";
@@ -486,6 +487,9 @@ export async function startLogMcpServer(root: string): Promise<void> {
   console.log = console.error;
   console.info = console.error;
   settleLocation("local");
+  try {
+    ensureGraphOwner(root);
+  } catch {}
   await createLogMcpServer().connect(dualEraTransport(new StdioServerTransport(), statelessLogHandlers()));
 }
 

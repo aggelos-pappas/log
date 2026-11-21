@@ -33,7 +33,7 @@ afterAll(() => {
 })
 
 describe('the network import', () => {
-  test('writes people, leaders, communities, circles and mentions into log.db, around the X account found in the circles', () => {
+  test('writes people, leaders, communities, circles and mentions into log.db, around the X account found in the circles', async () => {
     const outcome = importNetwork(openDatabase(dbPath), dir)
     if (!outcome.ok) throw new Error(outcome.problem)
     expect(outcome.summary.account).toBe('builderOwner')
@@ -44,25 +44,25 @@ describe('the network import', () => {
     expect(kai).toEqual({ lastPostText: 'my newest post about graphs' })
   })
 
-  test('reruns safely, replacing the last import rather than adding to it', () => {
+  test('reruns safely, replacing the last import rather than adding to it', async () => {
     const again = importNetwork(openDatabase(dbPath), dir)
     expect(again.ok && again.summary.counts.circles).toBe(13)
     expect((openDatabase(dbPath).prepare('SELECT COUNT(*) AS n FROM networkCircles').get() as { n: number }).n).toBe(13)
     expect(networkImported(openDatabase(dbPath))?.source).toBe(dir)
   })
 
-  test('refuses a folder without the two files and changes nothing', () => {
+  test('refuses a folder without the two files and changes nothing', async () => {
     const outcome = importNetwork(openDatabase(dbPath), join(root, 'nowhere'))
     expect(outcome.ok).toBe(false)
     expect(networkImported(openDatabase(dbPath))?.counts.people).toBe(7)
   })
 
-  test('finds its folder from LOG_NETWORK_DIR, then the old LOG_NICHE_MAP file', () => {
+  test('finds its folder from LOG_NETWORK_DIR, then the old LOG_NICHE_MAP file', async () => {
     expect(networkDir({ LOG_NETWORK_DIR: '/data/net', LOG_NICHE_MAP: '/old/nicheMap.json' })).toBe('/data/net')
     expect(networkDir({ LOG_NICHE_MAP: '/old/nicheMap.json' }).replace(/\\/g, '/')).toBe('/old')
   })
 
-  test('memeTaste reads its people from log.db once imported', () => {
+  test('memeTaste reads its people from log.db once imported', async () => {
     expect(storedNetworkPeople(openDatabase(dbPath)).map((p) => p.handle).sort()).toEqual(['bot_one', 'maya_ml'])
     expect(storedNetwork(dbPath)?.source).toBe(dir)
   })
@@ -74,35 +74,35 @@ describe('the network in the Relate graph', () => {
     return buildGraph(dbPath, new Date(DEMO_NOW))
   })()
 
-  test('adds leaders, communities and their edges, and verify agrees with log.db', () => {
+  test('adds leaders, communities and their edges, and verify agrees with log.db', async () => {
     expect(pointer.networkCounts).toEqual({ leaders: 4, communities: 3, inCircleOf: 13, runs: 4, networkMentioned: 2, follows: 1 })
     expect(pointer.counts.identities).toBe(13)
-    const result = verifyGraph(dbPath)
+    const result = await verifyGraph(dbPath)
     expect(result.differs).toEqual([])
     expect(result.ok).toBe(true)
   })
 
-  test('merges a network person with the chat identity of the same X handle', () => {
-    const rows = queryGraph("MATCH (i:Identity {handleLower: 'maya_ml'}) RETURN i.key AS key, i.band AS band, i.ring AS ring, i.themes AS themes", {}, dbPath).rows
+  test('merges a network person with the chat identity of the same X handle', async () => {
+    const rows = (await queryGraph("MATCH (i:Identity {handleLower: 'maya_ml'}) RETURN i.key AS key, i.band AS band, i.ring AS ring, i.themes AS themes", {}, dbPath)).rows
     expect(rows).toEqual([{ key: 'twitter:2000000005', band: 'member', ring: 1, themes: ['graphs', 'agents', 'outbound'] }])
-    expect(queryGraph("MATCH (i:Identity {handleLower: 'maya_ml'})-[:FOLLOWS]->(a:Account) RETURN a.account AS account", {}, dbPath).rows).toEqual([{ account: 'builderOwner' }])
-    expect(queryGraph("MATCH (l:Leader {handleLower: 'chart_lead'})-[:RUNS]->(c:Community) RETURN c.name AS name", {}, dbPath).rows).toEqual([{ name: 'Graph Guild' }])
+    expect((await queryGraph("MATCH (i:Identity {handleLower: 'maya_ml'})-[:FOLLOWS]->(a:Account) RETURN a.account AS account", {}, dbPath)).rows).toEqual([{ account: 'builderOwner' }])
+    expect((await queryGraph("MATCH (l:Leader {handleLower: 'chart_lead'})-[:RUNS]->(c:Community) RETURN c.name AS name", {}, dbPath)).rows).toEqual([{ name: 'Graph Guild' }])
   })
 
-  test('ranks who to talk to: ring 2 first, then rings 1, 3 and 4, most circles, collaborators and members only, nobody already talked to', () => {
-    const rows = queryGraph(WHO_TO_TALK_TO, {}, dbPath).rows
+  test('ranks who to talk to: ring 2 first, then rings 1, 3 and 4, most circles, collaborators and members only, nobody already talked to', async () => {
+    const rows = (await queryGraph(WHO_TO_TALK_TO, {}, dbPath)).rows
     expect(rows.map((r) => [r.handle, r.ring, r.why])).toEqual([['kai_new', 2, 'imported'], ['maya_ml', 1, 'repost'], ['linus_k', 1, 'like'], ['linus_k', 1, 'like'], ['rio_far', 4, 'known']])
     expect(rows[0]).toMatchObject({ band: 'collaborator', ring: 2, circles: 3, sameCircleTalksToYou: ['ada_codes'], mentionedBy: ['ada_codes'], lastPost: 'my newest post about graphs' })
   })
 
-  test('a user with no import still gets a ranked list, from their live rings alone', () => {
+  test('a user with no import still gets a ranked list, from their live rings alone', async () => {
     seedDemoWorld(openDatabase(plain))
     buildGraph(plain, new Date(DEMO_NOW))
-    const rows = queryGraph(WHO_TO_TALK_TO, {}, plain).rows
+    const rows = (await queryGraph(WHO_TO_TALK_TO, {}, plain)).rows
     expect(rows.map((r) => [r.handle, r.ring, r.why, r.band ?? null]).sort()).toEqual([['linus_k', 1, 'like', null], ['linus_k', 1, 'like', null], ['maya_ml', 1, 'repost', null]])
   })
 
-  test('the play runs the same Cypher the code tests', () => {
+  test('the play runs the same Cypher the code tests', async () => {
     expect(readFileSync(join(import.meta.dir, '..', '..', '..', 'docs', 'useCases', 'network', 'whoToTalkTo.md'), 'utf8')).toContain(WHO_TO_TALK_TO)
   })
 })

@@ -18,7 +18,6 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'src/config/userEnv/index.ts': { writes: 1, kind: 'session' },
   'src/directApi/governor/client.ts': { writes: 1, kind: 'session' },
   'src/inbox/judgeModel/client.ts': { writes: 1, kind: 'session' },
-  'src/relate/graph/client.ts': { writes: 1, kind: 'index' },
   'scripts/checks/checkAgentHooks.ts': { writes: 1, kind: 'repo' },
   'scripts/checks/checkAgnostic.ts': { writes: 1, kind: 'repo' },
   'scripts/checks/checkAgentWording.ts': { writes: 1, kind: 'repo' },

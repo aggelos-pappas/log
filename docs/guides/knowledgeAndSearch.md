@@ -30,12 +30,12 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | Tool | What it does | Usage |
 |---|---|---|
 | `routerIndex` | Is the prompt router's meaning index of plays, tools and skills… | `log router index [--apply] [--json]   (is the prompt router's meaning index current; --apply builds it)` |
-| `relateBuild` | Project log.db into a new Relate graph and make it current | `log relate build [--json]` |
-| `relateStatus` | The current Relate graph and how far behind log.db it is | `log relate status [--json]` |
+| `relateBuild` | Project log.db into a new current Relate graph | `log relate build [--json]` |
+| `relateStatus` | The Relate graph and how far behind log.db it is | `log relate status [--owner start\|stop] [--json]` |
 | `relateVerify` | Check every Relate graph count against log.db | `log relate verify [--json]` |
-| `relateAsk` | Show the connected context | `log relate ask "<text>" [--json]` |
-| `relateMachine` | A relationship state machine | `log relate machine [--person\|--to <h>] [--platform <p>] [--json]` |
-| `relateQuery` | Run a read-only Cypher query on the current Relate graph | `log relate query "<cypher>" [--platform <p>] [--json]` |
+| `relateAsk` | The connected context | `log relate ask "<text>" [--json]` |
+| `relateMachine` | A relationship state machine | `log relate machine [--person\|--to <h>] [--view <v>] [--platform <p>] [--json]` |
+| `relateQuery` | A read-only Cypher query on the Relate graph | `log relate query "<cypher>" [--platform <p>] [--json]` |
 | `people` | List everyone linked across platforms, with each person's identities | `log people [--json]                                        (everyone linked across platforms)` |
 | `peopleShow` | The person card for someone across every platform | `log people show <who> [--json]                             (the person card: every platform, chats, who is waiting, last lines)` |
 | `peopleSuggest` | Accounts on different platforms that are probably one person, with… | `log people suggest [--limit <n>] [--check] [--json]        (probably one person across platforms, every factor; --check asks SubQ)` |

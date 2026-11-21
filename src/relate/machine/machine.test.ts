@@ -29,8 +29,8 @@ function blockOf(answer: MachineAnswer): StateMachineBlock {
 const evidence = (over: Partial<StageEvidence>): StageEvidence => ({ key: 'twitter:1', personId: null, platform: 'twitter', handle: 'someone', name: null, ring: null, followedAt: null, follows: false, nearAt: null, near: [], engagedAt: null, engagedHow: null, theyWroteAt: null, youWroteAt: null, lastAt: null, ...over })
 
 describe('where a relationship stands, from the fixture events', () => {
-  test('walks one person through every state in the order the events happened, timestamped from log.db', () => {
-    const block = blockOf(relateMachine({ person: 'ivy_ops' }, world, MACHINE_NOW))
+  test('walks one person through every state in the order the events happened, timestamped from log.db', async () => {
+    const block = blockOf(await relateMachine({ person: 'ivy_ops' }, world, MACHINE_NOW))
     expect(block.view).toBe('person')
     expect(block.states.find((s) => s.current)?.id).toBe('inConversation')
     const taken = block.transitions.filter((t) => t.taken).sort((a, b) => (a.at ?? 0) - (b.at ?? 0))
@@ -44,34 +44,34 @@ describe('where a relationship stands, from the fixture events', () => {
     expect(block.transitions.some((t) => t.next)).toBe(false)
   })
 
-  test('puts someone you wrote to who never answered at "you reached out", with their reply as the next move', () => {
-    const block = blockOf(relateMachine({ person: '@nora_writes' }, world, MACHINE_NOW))
+  test('puts someone you wrote to who never answered at "you reached out", with their reply as the next move', async () => {
+    const block = blockOf(await relateMachine({ person: '@nora_writes' }, world, MACHINE_NOW))
     expect(block.states.find((s) => s.current)?.id).toBe('reachedOut')
     expect(block.transitions.find((t) => t.next)).toMatchObject({ id: 'theyReplied', tool: 'twitterDms', note: 'waiting on them' })
   })
 
-  test('names the owner\'s next move with its log tool: answer a DM left waiting, or DM someone who only engaged', () => {
-    expect(blockOf(relateMachine({ person: 'tom_builds' }, world, MACHINE_NOW)).transitions.find((t) => t.next)).toMatchObject({ id: 'answer', tool: 'twitterDm', from: 'engaged', to: 'inConversation' })
-    const linus = blockOf(relateMachine({ person: 'linus_k' }, world, MACHINE_NOW))
+  test('names the owner\'s next move with its log tool: answer a DM left waiting, or DM someone who only engaged', async () => {
+    expect(blockOf(await relateMachine({ person: 'tom_builds' }, world, MACHINE_NOW)).transitions.find((t) => t.next)).toMatchObject({ id: 'answer', tool: 'twitterDm', from: 'engaged', to: 'inConversation' })
+    const linus = blockOf(await relateMachine({ person: 'linus_k' }, world, MACHINE_NOW))
     expect(linus.states.find((s) => s.current)?.id).toBe('engaged')
     expect(linus.transitions.find((t) => t.next)).toMatchObject({ id: 'dm', tool: 'twitterDm' })
   })
 
-  test('reads the network map ring when log.db has no events for someone, and uses the platform for the tool', () => {
+  test('reads the network map ring when log.db has no events for someone, and uses the platform for the tool', async () => {
     expect(standingOf(evidence({ ring: 3 })).stage).toBe('followsYou')
     expect(standingOf(evidence({ ring: 2 })).stage).toBe('nearYou')
     expect(standingOf(evidence({})).stage).toBe('new')
     expect(standingOf(evidence({ theyWroteAt: 5, youWroteAt: 3 })).steps.map((s) => s.event)).toEqual(['you DMed them', 'they replied'])
   })
 
-  test('refuses with a code when nobody matches', () => {
-    expect(relateMachine({ person: 'nobody_here_at_all' }, world, MACHINE_NOW)).toMatchObject({ ok: false, code: 'relateMachineNobody' })
+  test('refuses with a code when nobody matches', async () => {
+    expect(await relateMachine({ person: 'nobody_here_at_all' }, world, MACHINE_NOW)).toMatchObject({ ok: false, code: 'relateMachineNobody' })
   })
 })
 
 describe('the route to someone through people the owner knows', () => {
-  test('goes through the connector the owner talks to who shares their circle and mentioned them, then the next one', () => {
-    const block = blockOf(relateMachine({ to: MACHINE_TARGET }, world, MACHINE_NOW))
+  test('goes through the connector the owner talks to who shares their circle and mentioned them, then the next one', async () => {
+    const block = blockOf(await relateMachine({ to: MACHINE_TARGET }, world, MACHINE_NOW))
     expect(block.view).toBe('route')
     expect(block.states.map((s) => s.label)).toEqual(['You', '@ada_codes', '@maya_ml', `@${MACHINE_TARGET}`])
     expect(block.states[0].current).toBe(true)
@@ -83,8 +83,8 @@ describe('the route to someone through people the owner knows', () => {
 })
 
 describe('the whole network as the machine', () => {
-  test('counts everyone once per state and flags the ones gone quiet', () => {
-    const block = blockOf(relateMachine({ view: 'network' }, world, MACHINE_NOW))
+  test('counts everyone once per state and flags the ones gone quiet', async () => {
+    const block = blockOf(await relateMachine({ view: 'network' }, world, MACHINE_NOW))
     const counts = Object.fromEntries(block.states.map((s) => [s.id, s.count]))
     expect(counts).toEqual({ new: 1, followsYou: 1, nearYou: 2, engaged: 4, reachedOut: 1, inConversation: 4 })
     expect(block.states.find((s) => s.id === 'reachedOut')?.chips).toEqual(['1 quiet 14d+', '@nora_writes'])
@@ -95,8 +95,8 @@ describe('the whole network as the machine', () => {
 describe('drawing the machine', () => {
   const parse = (svg: string) => new new JSDOM('').window.DOMParser().parseFromString(svg, 'image/svg+xml')
 
-  test('makes valid, accessible SVG in both themes with every state and transition drawn', () => {
-    const block = blockOf(relateMachine({ person: 'ivy_ops' }, world, MACHINE_NOW))
+  test('makes valid, accessible SVG in both themes with every state and transition drawn', async () => {
+    const block = blockOf(await relateMachine({ person: 'ivy_ops' }, world, MACHINE_NOW))
     for (const theme of ['light', 'dark'] as const) {
       for (const direction of ['right', 'down'] as const) {
         const drawn = drawMachine(block, { standalone: true, theme, direction })
@@ -114,8 +114,8 @@ describe('drawing the machine', () => {
     }
   })
 
-  test('keeps every transition orthogonal and every state box apart', () => {
-    const block = blockOf(relateMachine({ view: 'network' }, world, MACHINE_NOW))
+  test('keeps every transition orthogonal and every state box apart', async () => {
+    const block = blockOf(await relateMachine({ view: 'network' }, world, MACHINE_NOW))
     const { layout } = drawMachine(block, { direction: 'right' })
     for (const e of layout.edges) for (let i = 1; i < e.points.length; i++) expect(e.points[i].x === e.points[i - 1].x || e.points[i].y === e.points[i - 1].y).toBe(true)
     const boxes = [...layout.nodes.values()]
@@ -127,7 +127,7 @@ describe('drawing the machine', () => {
       }
   })
 
-  test('ships both palettes as CSS variables that follow the host theme', () => {
+  test('ships both palettes as CSS variables that follow the host theme', async () => {
     const css = machineCss()
     expect(css).toContain(`--rm-canvas:${MACHINE_PALETTE.light.canvas}`)
     expect(css).toContain(`--rm-canvas:${MACHINE_PALETTE.dark.canvas}`)
@@ -135,10 +135,10 @@ describe('drawing the machine', () => {
     expect(css).toContain(':root[data-theme="dark"] .rmMachine')
     expect(css).toContain('.dark .rmMachine')
     expect(css).toContain('.rmMachine.rmMachine.light')
-    expect(drawMachine(blockOf(relateMachine({ person: 'ivy_ops' }, world, MACHINE_NOW)), { standalone: true, theme: 'dark' }).svg).toContain('class="rmSvg rmMachine dark"')
+    expect(drawMachine(blockOf(await relateMachine({ person: 'ivy_ops' }, world, MACHINE_NOW)), { standalone: true, theme: 'dark' }).svg).toContain('class="rmSvg rmMachine dark"')
   })
 
-  test('draws with the stately measurements: dim, hit path, rounded corners, dashed guards, initial marker and pills', () => {
+  test('draws with the stately measurements: dim, hit path, rounded corners, dashed guards, initial marker and pills', async () => {
     const css = machineCss()
     expect(MACHINE_SIZE).toMatchObject({ dim: 0.7, edgeHit: 20, corner: 10, initialSize: 20, initialGap: 4, border: 2, radius: 6, padX: 12, padY: 8, gapY: 2, pillRadius: 14, pillBorder: 2, pillPadX: 8, pillPadY: 4, nodeSep: 50, rankGap: 30, arrow: 5 })
     expect(MACHINE_FONT.title).toMatchObject({ size: 20, line: 25, weight: 600 })
@@ -146,9 +146,9 @@ describe('drawing the machine', () => {
     expect(css).toContain('opacity:0.7')
     expect(css).toContain('.rmEdgeHit{fill:none;stroke:transparent;stroke-width:20')
     expect(css).toContain('.rmDashed .rmEdgePath{stroke-dasharray:5 5;stroke-dashoffset:2.5}')
-    const route = drawMachine(blockOf(relateMachine({ to: MACHINE_TARGET }, world, MACHINE_NOW)), { standalone: true })
+    const route = drawMachine(blockOf(await relateMachine({ to: MACHINE_TARGET }, world, MACHINE_NOW)), { standalone: true })
     expect(route.svg).toMatch(/class="rmEdgePath" d="[^"]*Q/)
-    const ivy = blockOf(relateMachine({ person: 'ivy_ops' }, world, MACHINE_NOW))
+    const ivy = blockOf(await relateMachine({ person: 'ivy_ops' }, world, MACHINE_NOW))
     const drawn = drawMachine(ivy, { direction: 'right' })
     const doc = parse(drawn.svg)
     expect(doc.querySelectorAll('.rmNodeBox').length).toBe(ivy.states.length)
@@ -177,8 +177,8 @@ describe('one person across platforms, and the platform filter', () => {
     return path
   })()
 
-  test('computes a linked person from every linked account, tags each move with its platform and lists the accounts', () => {
-    const block = blockOf(relateMachine({ person: 'grace_ships' }, linkedWorld, MACHINE_NOW))
+  test('computes a linked person from every linked account, tags each move with its platform and lists the accounts', async () => {
+    const block = blockOf(await relateMachine({ person: 'grace_ships' }, linkedWorld, MACHINE_NOW))
     expect(block.accounts?.filter((a) => a.link === 'linked').map((a) => a.platform).sort()).toEqual(['discord', 'twitter'])
     const taken = block.transitions.filter((t) => t.taken)
     expect(taken.length).toBeGreaterThan(0)
@@ -189,8 +189,8 @@ describe('one person across platforms, and the platform filter', () => {
     expect(drawMachine(block, {}).svg).toContain('class="rmMark"')
   })
 
-  test('shows a same-handle account that nobody linked as a suggested link and never merges it', () => {
-    const block = blockOf(relateMachine({ person: 'grace_ships' }, world, MACHINE_NOW))
+  test('shows a same-handle account that nobody linked as a suggested link and never merges it', async () => {
+    const block = blockOf(await relateMachine({ person: 'grace_ships' }, world, MACHINE_NOW))
     expect(block.accounts?.length).toBe(2)
     const linked = block.accounts!.find((a) => a.link === 'linked')!
     const suggested = block.accounts!.find((a) => a.link === 'suggested')!
@@ -199,13 +199,13 @@ describe('one person across platforms, and the platform filter', () => {
     expect(machineTextOf(block)).toContain(`Suggested link, not merged: @grace_ships on ${suggested.platform}`)
   })
 
-  test('filters the network by platform and keeps a count per platform', () => {
-    const all = blockOf(relateMachine({ view: 'network' }, world, MACHINE_NOW))
+  test('filters the network by platform and keeps a count per platform', async () => {
+    const all = blockOf(await relateMachine({ view: 'network' }, world, MACHINE_NOW))
     const views = new Map((all.platforms ?? []).map((v) => [v.platform, v]))
     expect([...views.keys()]).toEqual(['all', 'twitter', 'discord'])
     const sum = (v: { states: { count?: number }[] }) => v.states.reduce((n, st) => n + (st.count ?? 0), 0)
     expect(sum(views.get('twitter')!) + sum(views.get('discord')!)).toBe(views.get('twitter')!.count + views.get('discord')!.count)
-    const discord = blockOf(relateMachine({ view: 'network', platform: 'discord' }, world, MACHINE_NOW))
+    const discord = blockOf(await relateMachine({ view: 'network', platform: 'discord' }, world, MACHINE_NOW))
     expect(discord.platform).toBe('discord')
     expect(sum(discord)).toBe(views.get('discord')!.count)
     expect(checkReport({ title: 'Network', blocks: [all] }).ok).toBe(true)
@@ -213,8 +213,8 @@ describe('one person across platforms, and the platform filter', () => {
 })
 
 describe('the stateMachine block in a report', () => {
-  test('is accepted as a report block, refuses a transition to a state that is not there, and reads as text', () => {
-    const block = blockOf(relateMachine({ person: 'nora_writes' }, world, MACHINE_NOW))
+  test('is accepted as a report block, refuses a transition to a state that is not there, and reads as text', async () => {
+    const block = blockOf(await relateMachine({ person: 'nora_writes' }, world, MACHINE_NOW))
     const checked = checkReport({ title: 'Nora', blocks: [block] })
     expect(checked.ok).toBe(true)
     const broken = checkReport({ title: 'Nora', blocks: [{ ...block, transitions: [{ id: 'x', from: 'new', to: 'nowhere', event: 'go' }] }] })

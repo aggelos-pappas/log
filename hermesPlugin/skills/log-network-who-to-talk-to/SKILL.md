@@ -43,7 +43,8 @@ MATCH (i:Identity) WHERE NOT i.owner AND (i.inNetwork OR i.ring < 4) AND ($platf
 
 - **The graph after an import:** `relateBuild` {} projects log.db, your network included, into a new graph file, and `relateVerify` {} checks every count against log.db.
 
-- **Rings:** 1 engaged with you (like, reply, quote, repost, mention, a one-to-one DM from them), 2 replies to or names your followers or ring-1 people (a ring-1 person's linked account counts too), 3 follows you, 4 known. A chat with more than two members is a group, on every platform. They move as each event is stored, so the graph has them after its next update (at most a minute). Ring 2 comes first because one introduction reaches them.
+- **Rings:** 1 engaged with you (like, reply, quote, repost, mention, a one-to-one DM from them), 2 replies to or names your followers or ring-1 people (a ring-1 person's linked account counts too), 3 follows you, 4 known. A chat with more than two members is a group, on every platform. They move as each event is stored, so the graph has them within a second while the graph owner runs. Ring 2 comes first because one introduction reaches them.
+- **The graph owner keeps it current:** `relateStatus {}` says how far behind log.db the graph is; when its owner isn't running, `relateStatus { owner: start }` starts it, and `relateStatus { owner: stop }` stops it only when the owner asks.
 - **Bands:** `member` could buy, `collaborator` could make things with you; `sponsor`, `affiliate`, `amplifier`, `audience` and `skip` are left out of this query.
 - **Suggested, not linked:** pairs `networkStatus` lists as suggested are counted as separate people until the owner says yes to `peopleLink`; never treat them as one.
 - **Why, not just who:** never pitch from the band. The opener is about them and their last post, as in networkMaxing.
