@@ -2,13 +2,15 @@ import { Database } from 'bun:sqlite'
 import { timedSync } from '../../observability/timing/index'
 import { createHash } from 'node:crypto'
 import { gunzipSync, gzipSync } from 'node:zlib'
-import { chatIdOf, eventIdFrom, extenderOf, handleIdOf, isBareId, messageKeyOf, msOf, normalHandle, platformMessageIdOf, profileFieldsOf, readConversations, writeConversation } from './helpers'
+import { chatIdOf, eventIdFrom, extenderOf, handleIdOf, isBareId, messageKeyOf, msOf, normalHandle, placedChat, platformMessageIdOf, profileFieldsOf, readConversations, serverKindsSql, writeConversation } from './helpers'
 import type { StoredConversation } from './helpers'
 import { moveRings, rebuildRingsIn, ringState, ringsFromEvent } from '../../relate/network/helpers/rings'
 import { DERIVED_TABLES, EXTENDER_VERSION, MESSAGE_TYPES, RAW_BLOB_KINDS } from './types'
 import type { BlobCodec, EventInput, EventInsert, ExtenderContext, IdentityProfileFields, IdentityProfileRow, InsertedEvent, TypedRows } from './types'
 
 export const PAYLOAD_INLINE_LIMIT = 20000
+
+const PLACE_UPDATE = `kind = CASE WHEN excluded.kind IN (${serverKindsSql()}) AND chats.kind NOT IN (${serverKindsSql()}) THEN excluded.kind ELSE chats.kind END, name = CASE WHEN ?10 = 1 THEN excluded.name WHEN excluded.kind IN (${serverKindsSql()}) AND chats.kind NOT IN (${serverKindsSql()}) THEN excluded.name WHEN chats.kind IN (${serverKindsSql()}) AND excluded.kind NOT IN (${serverKindsSql()}) THEN chats.name ELSE COALESCE(chats.name, excluded.name) END, serverId = COALESCE(excluded.serverId, chats.serverId)`
 
 interface PairTally {
   seen: Set<string>
@@ -224,7 +226,8 @@ function deriveInternal(handle: Database, event: EventInput): boolean {
   if (event.type === 'conversationSeen') {
     const chatId = chatIdOf(event.platform, event.account, event.conversationId)
     const at = event.receivedAt
-    handle.prepare('INSERT INTO chats (chatId, platform, account, conversationId, kind, box, backfilledAt) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(chatId) DO UPDATE SET box = excluded.box, backfilledAt = COALESCE(chats.backfilledAt, excluded.backfilledAt)').run(chatId, event.platform, event.account, event.conversationId, event.box === 'group' ? 'group' : 'dm', event.box, at)
+    const placed = placedChat(handle, { chatId, platform: event.platform, account: event.account, conversationId: event.conversationId, kind: event.box === 'group' ? 'group' : 'dm', name: null, serverId: null })
+    handle.prepare(`INSERT INTO chats (chatId, platform, account, conversationId, kind, name, serverId, box, backfilledAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(chatId) DO UPDATE SET box = excluded.box, backfilledAt = COALESCE(chats.backfilledAt, excluded.backfilledAt), ${PLACE_UPDATE}`).run(chatId, event.platform, event.account, event.conversationId, placed.chat.kind, placed.chat.name, placed.chat.serverId, event.box, at, placed.known ? 1 : 0)
     const members = Array.isArray(event.payload.members) ? (event.payload.members as unknown[]).map(String) : []
     members.forEach((label, position) => {
       if (!label) return
@@ -244,8 +247,9 @@ export function writeTypedRows(handle: Database, event: EventInput, rows: TypedR
     handle.prepare('INSERT INTO identities (platform, userId, handle, displayName, firstSeenAt, lastSeenAt) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(platform, userId) DO UPDATE SET handle = COALESCE(excluded.handle, identities.handle), displayName = COALESCE(excluded.displayName, identities.displayName), firstSeenAt = MIN(identities.firstSeenAt, excluded.firstSeenAt), lastSeenAt = MAX(identities.lastSeenAt, excluded.lastSeenAt)').run(identity.platform, identity.userId, identity.handle, identity.displayName, at, at)
   }
   if (rows.chat) {
-    const c = rows.chat
-    handle.prepare('INSERT INTO chats (chatId, platform, account, conversationId, kind, name, serverId, lastMessageAt, lastMessageAtMs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(chatId) DO UPDATE SET name = COALESCE(chats.name, excluded.name), serverId = COALESCE(excluded.serverId, chats.serverId), lastMessageAt = MAX(COALESCE(chats.lastMessageAt, \'\'), COALESCE(excluded.lastMessageAt, \'\')), lastMessageAtMs = MAX(COALESCE(chats.lastMessageAtMs, 0), COALESCE(excluded.lastMessageAtMs, 0))').run(c.chatId, c.platform, c.account, c.conversationId, c.kind, c.name, c.serverId, rows.message ? at : null, rows.message ? rows.message.sentAtMs : null)
+    const placed = placedChat(handle, rows.chat)
+    const c = placed.chat
+    handle.prepare(`INSERT INTO chats (chatId, platform, account, conversationId, kind, name, serverId, lastMessageAt, lastMessageAtMs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(chatId) DO UPDATE SET ${PLACE_UPDATE}, lastMessageAt = MAX(COALESCE(chats.lastMessageAt, ''), COALESCE(excluded.lastMessageAt, '')), lastMessageAtMs = MAX(COALESCE(chats.lastMessageAtMs, 0), COALESCE(excluded.lastMessageAtMs, 0))`).run(c.chatId, c.platform, c.account, c.conversationId, c.kind, c.name, c.serverId, rows.message ? at : null, rows.message ? rows.message.sentAtMs : null, placed.known ? 1 : 0)
   }
   if (rows.message) {
     const m = rows.message

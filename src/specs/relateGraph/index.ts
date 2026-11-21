@@ -81,8 +81,8 @@ const anchors: RequirementAnchors = {
     { kind: 'uses', file: answers, name: 'connectedSearch' },
   ],
   'REQ-RELATE-10': [
-    { kind: 'symbol', file: project, name: 'roomCatalog' },
-    { kind: 'symbol', file: project, name: 'channelNameOf' },
+    { kind: 'uses', file: project, name: 'roomCatalog' },
+    { kind: 'uses', file: project, name: 'channelNameOf' },
     { kind: 'string', file: client, includes: 'IN_SERVER' },
   ],
   'REQ-RELATE-11': [
