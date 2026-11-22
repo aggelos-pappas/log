@@ -6,7 +6,7 @@ import { openDatabase } from '../../storage/schema/index'
 import { buildGraph } from '../graph/index'
 import { checkReport, reportText } from '../../mcp/apps/report/index'
 import { MACHINE_NOW, MACHINE_TARGET, seedMachineWorld } from './fixtures/machineWorld'
-import { DISCORD_CHANNELS, DISCORD_PEOPLE, DISCORD_SERVER, seedDiscordWorld } from './fixtures/discordWorld'
+import { DISCORD_CHANNELS, DISCORD_GROUP, DISCORD_PEOPLE, DISCORD_SERVER, seedDiscordWorld } from './fixtures/discordWorld'
 import { drawMachine, LADDERS, machineText as machineTextOf, MACHINE_FONT, MACHINE_PALETTE, MACHINE_SIZE, machineCss, relateMachine, standingOf } from './index'
 import type { MachineAnswer, StageEvidence, StateMachineBlock } from './index'
 
@@ -88,7 +88,9 @@ describe('the whole network as the machine', () => {
     const block = blockOf(await relateMachine({ view: 'network' }, world, MACHINE_NOW))
     const counts = Object.fromEntries(block.states.map((s) => [s.id, s.count]))
     expect(counts).toEqual({ new: 1, followsYou: 1, nearYou: 2, engaged: 4, reachedOut: 1, inConversation: 4 })
-    expect(block.states.find((s) => s.id === 'reachedOut')?.chips).toEqual(['1 quiet 14d+', '@nora_writes'])
+    expect(block.states.find((s) => s.id === 'reachedOut')?.chips).toEqual(['1 quiet 14d+'])
+    expect(block.states.find((s) => s.id === 'reachedOut')?.people?.map((p) => p.handle)).toEqual(['nora_writes'])
+    expect(block.states.find((s) => s.id === 'reachedOut')?.people?.[0].quiet).toBe(true)
     expect(block.transitions.find((t) => t.id === 'theyReplied')?.count).toBe(1)
   })
 })
@@ -327,6 +329,76 @@ describe('each platform has its own states and moves', () => {
     const block = blockOf(await relateMachine({ view: 'network', platform: 'discord' }, plain, MACHINE_NOW))
     expect(block.states.map((s) => s.id)).toEqual(discordIds)
     expect(block.states.find((s) => s.id === 'mentioned')?.count).toBeGreaterThan(0)
+  })
+
+  test('each cell shows the people standing there as avatar initials and handles, who matters most first, with their lasting facts and next move, and +N more for the rest', async () => {
+    const block = blockOf(await relateMachine({ view: 'network', platform: 'discord' }, plain, MACHINE_NOW))
+    const talking = block.states.find((s) => s.id === 'inConversation')!
+    const sky = talking.people!.find((x) => x.handle === p.regular.handle)!
+    expect(sky).toMatchObject({ initials: 'SD', platform: 'discord' })
+    expect(sky.facts?.map((f) => f.slot)).toEqual(expect.arrayContaining(['promisedByThem', 'job']))
+    expect(sky.facts?.find((f) => f.slot === 'promisedByThem')?.quote).toContain('teardown')
+    expect(sky.facts?.[0].at.slice(0, 4)).toBe(String(new Date(MACHINE_NOW).getUTCFullYear()))
+    expect(talking.people![0].handle).toBe(p.regular.handle)
+    const waiting = block.states.find((s) => s.id === 'dmOpened')!.people!.find((x) => x.handle === p.waiting.handle)!
+    expect(waiting).toMatchObject({ next: 'they replied', tool: 'discordRead' })
+    const check = checkReport({ title: 'Network', blocks: [block] })
+    expect(check.ok ? [] : check.issues).toEqual([])
+    const text = machineTextOf(block)
+    expect(text).toContain(`@${p.regular.handle} — promisedByThem: "send you the teardown by friday, promised"`)
+    expect(text).toContain('· next: they replied with discordRead')
+  })
+
+  test('a page of one state asks for the next people with state and cursor, and a quiet page asks for the ones gone quiet', async () => {
+    const full = blockOf(await relateMachine({ view: 'network', platform: 'discord' }, plain, MACHINE_NOW))
+    const mentioned = full.states.find((s) => s.id === 'mentioned')!
+    expect(mentioned.people!.length).toBeGreaterThan(1)
+    const first = blockOf(await relateMachine({ view: 'network', platform: 'discord', state: 'mentioned', limit: 1 }, plain, MACHINE_NOW))
+    expect(first.states.map((s) => s.id)).toEqual(['mentioned'])
+    expect(first.states[0].people).toHaveLength(1)
+    expect(first.states[0].peopleMore).toBe(mentioned.people!.length - 1)
+    const next = blockOf(await relateMachine({ view: 'network', platform: 'discord', state: 'mentioned', limit: 1, cursor: 1 }, plain, MACHINE_NOW))
+    expect(next.states[0].people![0].key).not.toBe(first.states[0].people![0].key)
+    for (const t of first.transitions) expect([t.from, t.to]).toContain('mentioned')
+    const quiet = blockOf(await relateMachine({ view: 'network', platform: 'discord', state: 'mentioned', quiet: true }, plain, MACHINE_NOW))
+    for (const person of quiet.states[0].people ?? []) expect(person.quiet).toBe(true)
+  })
+
+  test('bots and the platform account itself are not people in the network, and a human whose name holds the word after another stays', async () => {
+    const block = blockOf(await relateMachine({ view: 'network', platform: 'discord' }, plain, MACHINE_NOW))
+    const handles = block.states.flatMap((s) => s.people ?? []).map((x) => x.handle)
+    expect(handles).not.toContain(p.bot.handle)
+    expect(handles).not.toContain(p.system.handle)
+    expect(handles).toContain(p.human.handle)
+    const everyone = (openDatabase(plain).prepare("SELECT COUNT(*) AS n FROM identities WHERE platform = 'discord'").get() as { n: number }).n
+    expect(block.states.reduce((n, s) => n + (s.count ?? 0), 0)).toBe(everyone - 2)
+    expect(blockOf(await relateMachine({ person: `discord:${p.bot.handle}` }, plain, MACHINE_NOW)).states.find((s) => s.current)).toBeTruthy()
+  })
+
+  test('a group DM is its own room: it never stands anyone at "Same channel" and its name carries no hash', async () => {
+    const quiet = blockOf(await relateMachine({ person: `discord:${p.groupQuiet.handle}` }, plain, MACHINE_NOW))
+    expect(quiet.states.find((s) => s.current)?.id).toBe('new')
+    expect(quiet.transitions.some((t) => t.taken && t.id === 'write')).toBe(false)
+    const talker = blockOf(await relateMachine({ person: `discord:${p.groupTalker.handle}` }, plain, MACHINE_NOW))
+    expect(talker.states.find((s) => s.current)?.id).toBe('mentioned')
+    expect(machineTextOf(talker)).toContain(`in ${DISCORD_GROUP.name}`)
+    expect(machineTextOf(talker)).not.toContain(`#${DISCORD_GROUP.name}`)
+  })
+
+  test('the network counts each transition by who made it, so "they DMed you" agrees with the person view', async () => {
+    const theirs = blockOf(await relateMachine({ person: `discord:${p.firstDm.handle}` }, plain, MACHINE_NOW))
+    expect(theirs.states.find((s) => s.current)?.id).toBe('dmOpened')
+    expect(theirs.transitions.find((t) => t.taken && t.id === 'theyDmed')).toMatchObject({ from: 'new', to: 'dmOpened', note: 'they DMed you' })
+    expect(theirs.transitions.some((t) => t.taken && t.id === 'dmNew')).toBe(false)
+    const network = blockOf(await relateMachine({ view: 'network', platform: 'discord' }, plain, MACHINE_NOW))
+    expect(network.transitions.find((t) => t.id === 'theyDmed')?.count).toBeGreaterThan(0)
+    expect(network.transitions.find((t) => t.id === 'dmNew')?.count).toBe(1)
+    expect(network.transitions.find((t) => t.id === 'theyReplied')?.count).toBe(0)
+    const inConversation = blockOf(await relateMachine({ person: `discord:${p.regular.handle}` }, plain, MACHINE_NOW))
+    const into = inConversation.transitions.find((t) => t.taken && t.to === 'dmOpened')!
+    expect(into.event).toBe('they DMed you')
+    expect(into.by).toBe('them')
+    expect(network.transitions.find((t) => t.id === into.id)?.count).toBeGreaterThan(0)
   })
 
   test('a single person machine fits the width instead of one long row', async () => {

@@ -4,7 +4,7 @@ import { getState, putState } from '../../../storage/state/index'
 import { xPartiesOf } from '../../../twitter/dm/person/client'
 import { resolveWho } from '../../client'
 import { factsAbout, linkedPersonOf, overlapOf, recordFact } from '../client'
-import { DECIDE_BATCH, DECIDE_CONTEXT_LINES, DEFAULT_CHATS, EXTRACTED_BY_DECIDE, REPEAT_OVERLAP, STREAM_LINES, STREAM_OFFSET } from '../types'
+import { DECIDE_BATCH, DECIDE_CONTEXT_LINES, DECIDE_CHATS, DEFAULT_CHATS, EXTRACTED_BY_DECIDE, EXTRACTED_BY_SCREEN, REPEAT_OVERLAP, STREAM_LINES, STREAM_OFFSET } from '../types'
 import type { Candidate, ChatLine, Decision, ExtractReport, FactRow, ScreenMark, Screener, StreamReport, Subject } from '../types'
 import { decideBatch } from './decide'
 import { endpointsOf, isCandidate, screenLines } from './screen'
@@ -42,7 +42,7 @@ interface ChatRow {
   subject?: Subject
 }
 
-function subjectOf(handle: Database, chat: ChatRow): Subject | null {
+export function subjectOf(handle: Database, chat: ChatRow): Subject | null {
   const spoke = handle.prepare("SELECT senderUserId AS userId, COUNT(*) AS n FROM messages WHERE chatId = ? AND fromOwner = 0 AND senderUserId NOT LIKE 'unknown:%' GROUP BY senderUserId ORDER BY n DESC LIMIT 1").get(chat.chatId) as { userId: string } | null
   let userId = spoke?.userId ?? null
   if (!userId && chat.platform === 'twitter') {
@@ -307,6 +307,40 @@ export async function screenStream(handle: Database, screener: Screener, now: Da
     if (offsets.get(chatId) !== undefined) putState('factOffsets', chatId, { throughSeq: chatRows[chatRows.length - 1].seq }, now.getTime(), handle)
   }
   putState('factOffsets', STREAM_OFFSET, { throughSeq: through }, now.getTime(), handle)
+  return report
+}
+
+export interface DecideReport {
+  chats: number
+  queued: number
+  decided: number
+  added: number
+  calls: number
+  tokens: number
+  dropped: number
+}
+
+export async function decideQueued(handle: Database, decisions: DecisionsClient, options: { decideModel?: string; chats?: number; now?: Date; embed?: Embed; log?: (line: string) => void } = {}): Promise<DecideReport> {
+  const now = options.now ?? new Date()
+  const log = options.log ?? (() => undefined)
+  const limit = Math.max(1, options.chats ?? DECIDE_CHATS)
+  const rows = handle.prepare("SELECT DISTINCT f.chatId AS chatId, c.platform AS platform, c.account AS account, c.conversationId AS conversationId FROM factCandidates f JOIN chats c ON c.chatId = f.chatId WHERE f.decided IS NULL ORDER BY f.chatId LIMIT ?").all(limit) as ChatRow[]
+  const report: DecideReport = { chats: rows.length, queued: queuedCount(handle), decided: 0, added: 0, calls: 0, tokens: 0, dropped: 0 }
+  for (const row of rows) {
+    const subject = subjectOf(handle, row)
+    if (!subject) continue
+    const entry: ExtractReport['people'][number] = { subject, label: labelOf(subject), messages: 0, marked: 0, added: [], repeats: [], noop: 0 }
+    const fake: ExtractReport = { chats: 0, people: [], messages: 0, marked: 0, screenMs: [], screenModel: EXTRACTED_BY_SCREEN, decideModel: options.decideModel ?? null, decideCalls: 0, decideTokens: 0, dropped: 0, queued: 0 }
+    const before = queuedCount(handle)
+    await decideFor(handle, subject, [row.chatId], entry, fake, decisions, { screener: { model: EXTRACTED_BY_SCREEN, screen: async () => ({ marks: [], ms: 0 }) }, decisions, decideModel: options.decideModel, now, ...(options.embed ? { embed: options.embed } : {}) }, now)
+    report.decided += before - queuedCount(handle)
+    report.added += entry.added.length
+    report.calls += fake.decideCalls
+    report.tokens += fake.decideTokens
+    report.dropped += fake.dropped
+    if (entry.added.length) log(`facts: ${entry.label}: ${entry.added.length} new lasting fact(s) from the queued lines`)
+  }
+  report.queued = queuedCount(handle)
   return report
 }
 

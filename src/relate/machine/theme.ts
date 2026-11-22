@@ -21,6 +21,8 @@ export const MACHINE_FONT = {
   explain: { size: 12, line: 18, weight: 500, style: 'italic', charWidth: 0.52, lines: 3 },
   mark: { size: 11, line: 16, weight: 700, charWidth: 0.62 },
   chrome: { size: 13, line: 19.5, weight: 500, small: 12, smallLine: 18 },
+  person: { size: 11, line: 16, weight: 500, charWidth: 0.54 },
+  initials: { size: 8, line: 10, weight: 700, charWidth: 0.6 },
 }
 
 export const MACHINE_SIZE = {
@@ -99,6 +101,12 @@ export const MACHINE_SIZE = {
   narrow: 720,
   dim: 0.7,
   hover: 0.8,
+  personCol: 150,
+  personH: 22,
+  personDot: 16,
+  personGap: 6,
+  personPadX: 2,
+  peopleGap: 6,
 }
 
 export const MACHINE_EDGE_STYLE = { dash: '5 5', dashOffset: 2.5, nextDash: '5 5', drawMs: 900 }
@@ -276,6 +284,20 @@ export function machineCss(): string {
     `.rmChipText{fill:var(--rm-chip-fg);font-size:${f.chip.size}px;font-weight:${f.chip.weight}}`,
     `.rmChipNow .rmChipBox{fill:var(--rm-active);stroke:var(--rm-active)}`,
     `.rmChipNow .rmChipText{fill:var(--rm-on-primary)}`,
+    `.rmPerson{cursor:pointer}`,
+    `.rmPersonDot{fill:var(--rm-raised);stroke:var(--rm-border);stroke-width:1}`,
+    `.rmPersonInitials{fill:var(--rm-fg-muted);font-size:${f.initials.size}px;font-weight:${f.initials.weight}}`,
+    `.rmPersonName{fill:var(--rm-node-desc);font-size:${f.person.size}px;font-weight:${f.person.weight}}`,
+    `.rmPerson:hover .rmPersonName{fill:var(--rm-primary-text)}`,
+    `.rmPerson:focus{outline:none}`,
+    `.rmPerson:focus-visible .rmPersonDot{stroke:var(--rm-focus);stroke-width:2}`,
+    `.rmQuiet .rmPersonName{fill:var(--rm-node-meta)}`,
+    `.rmPersonFact{fill:var(--rm-primary)}`,
+    `.rmPersonSelBg{fill:var(--rm-selection-highlight)}`,
+    `.rmPersonSel .rmPersonDot{stroke:var(--rm-primary);stroke-width:2}`,
+    `.rmPersonSel .rmPersonName{fill:var(--rm-on-primary);font-weight:600}`,
+    `.rmPersonSel .rmPersonInitials{fill:var(--rm-on-primary)}`,
+    `.rmPeopleMore{fill:var(--rm-fg-muted);font-size:${f.person.size}px;font-style:italic}`,
     `.rmInitial{fill:var(--rm-initial)}`,
     `.rmInitialPath{fill:none;stroke:var(--rm-initial);stroke-width:${s.initialStroke};stroke-linecap:round}`,
     `.rmFinal{fill:none;stroke:var(--rm-node-name);stroke-width:1.5}`,

@@ -14,6 +14,15 @@ export function machineText(block: StateMachineBlock): string {
   if (block.platforms?.length) lines.push(`Platforms: ${block.platforms.map((p) => `${p.platform}${p.platform === (block.platform ?? 'all') ? ' (shown)' : ''} ${p.count}`).join(' · ')}`)
   const states = block.states.map((s) => `${s.current ? '▶ ' : ''}${s.label}${typeof s.count === 'number' ? ` (${s.count})` : ''}${s.chips?.length ? ` [${s.chips.join(', ')}]` : ''}${s.visited === false ? '' : s.at ? ` since ${when(s.at)}` : ''}`)
   lines.push(`States: ${states.join(' · ')}`)
+  for (const s of block.states.filter((x) => x.people?.length)) {
+    lines.push(`${s.label}:`)
+    for (const p of s.people ?? []) {
+      const fact = p.facts?.[0]
+      const why = fact ? `${fact.slot}: "${fact.text}" (${fact.at.slice(0, 10)})` : p.quiet ? 'gone quiet' : 'no lasting fact yet'
+      lines.push(`  @${p.handle.replace(/^@/, '')} — ${why}${p.next ? ` · next: ${p.next}${p.tool ? ` with ${p.tool}` : ''}` : ''}`)
+    }
+    if (s.peopleMore) lines.push(`  and ${s.peopleMore.toLocaleString('en-US')} more here`)
+  }
   for (const s of block.states.filter((x) => x.explain)) lines.push(`- ${s.label}: ${s.explain}`)
   const taken = block.transitions.filter((t) => t.taken && t.at).sort((a, b) => (a.at ?? 0) - (b.at ?? 0))
   if (taken.length) {

@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 57 domains, 680 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 57 domains, 683 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -673,6 +673,9 @@ log keeps a Relate (Neo4j's embedded graph database) projection of log.db: the o
 - **REQ-RELATE-21** A full rebuild runs on a snapshot outside the loop
 - **REQ-RELATE-22** Lag is visible
 - **REQ-RELATE-23** The relationship machine has each platform's own states and moves
+- **REQ-RELATE-24** The network's state cells hold the people in them
+- **REQ-RELATE-25** Bots and system accounts are not people
+- **REQ-RELATE-26** Counts agree with the person view, and a group chat is its own room
 
 ## [People across platforms](./people.md)
 

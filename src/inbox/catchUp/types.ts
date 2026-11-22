@@ -11,6 +11,7 @@ export interface ReadMessage {
   userId?: string | null
   senderId?: string | null
   fromMe?: boolean
+  bot?: boolean
   text?: string | null
   attachments?: MessageAttachment[]
 }

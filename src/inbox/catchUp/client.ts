@@ -1,5 +1,6 @@
 import type { PlatformAccount, PlatformEngineRun, PlatformEngineSpec } from '../../platformKit/session/index'
-import { addToPayload, adoptUnkeyed, afterGap, appendEvent, behindOf, eventIdOf, positionsOf, recordPosition } from '../store/index'
+import { addToPayload, adoptUnkeyed, afterGap, appendEvent, behindOf, db, eventIdOf, positionsOf, recordPosition } from '../store/index'
+import { markAutomatedIdentity } from '../../storage/platform/index'
 import { BACKFILL_SCOPE } from '../dbRead/types'
 import type { GapRow } from '../store/index'
 import { BEHIND_WAIT_MS, READ_GAP_MS } from './types'
@@ -16,6 +17,7 @@ export function storeRead(platform: string, account: string, chat: string, box: 
   if (m.text == null || !m.at) return false
   const id = m.id ?? m.ts ?? null
   const senderId = m.fromMe ? null : m.fromId ?? m.senderId ?? m.userId ?? null
+  if (m.bot === true && senderId) markAutomatedIdentity(db(), platform, String(senderId), now)
   const row = { platform, account, conversationId: chat, with: String(m.from ?? '?'), text: String(m.text), at: m.at, box, seenAt: now.toISOString(), ...(id ? { id: String(id) } : {}), ...(senderId ? { senderId: String(senderId) } : {}) }
   const attachments = m.attachments ? { attachments: m.attachments } : {}
   if (id && adoptUnkeyed({ platform, account, conversationId: chat, at: m.at, text: String(m.text), id: String(id) }, attachments)) return false

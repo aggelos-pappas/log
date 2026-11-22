@@ -56,6 +56,22 @@ const personList = z.strictObject({
 const callout = z.strictObject({ type: z.literal("callout"), tone: z.enum(["info", "success", "warning"]).optional(), title: line().optional(), text: line(L.text) });
 
 const ms = finite.min(0).nullable().optional();
+export const machinePersonFact = z.strictObject({ slot: line(40), text: line(M.quote), quote: line(M.quote), at: line(40) });
+export const machinePersonLane = z.strictObject({ platform: line(M.platform), state: line(M.label) });
+export const machinePerson = z.strictObject({
+  key: line(M.label),
+  handle: line(M.label),
+  name: line(M.label).optional(),
+  initials: line(4),
+  platform: line(M.platform),
+  at: ms,
+  quiet: z.boolean().optional(),
+  fit: finite.optional(),
+  next: line(M.event).optional(),
+  tool: line(M.tool).optional(),
+  lanes: z.array(machinePersonLane).max(M.lanes).optional(),
+  facts: z.array(machinePersonFact).max(M.personFacts).optional(),
+});
 export const machineState = z.strictObject({
   id: line(M.id),
   label: line(M.label),
@@ -71,6 +87,9 @@ export const machineState = z.strictObject({
   final: z.boolean().optional(),
   details: z.array(z.strictObject({ label: line(), value: line(M.note) })).max(M.details).optional(),
   platform: line(M.platform).optional(),
+  people: z.array(machinePerson).max(M.people).optional(),
+  peopleMore: finite.min(0).optional(),
+  quietCount: finite.min(0).optional(),
 });
 export const machineTransition = z.strictObject({
   id: line(M.id),

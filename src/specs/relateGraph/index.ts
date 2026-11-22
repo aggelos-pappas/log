@@ -28,6 +28,8 @@ const mcpServer = 'src/mcp/server/index.ts'
 const machine = 'src/relate/machine/client.ts'
 const machineTypes = 'src/relate/machine/types.ts'
 const machineStages = 'src/relate/machine/helpers/stages.ts'
+const machineCells = 'src/relate/machine/helpers/cells.ts'
+const machineBots = 'src/relate/machine/helpers/bots.ts'
 const machineDraw = 'src/relate/machine/render/svg.ts'
 
 const anchors: RequirementAnchors = {
@@ -189,12 +191,33 @@ const anchors: RequirementAnchors = {
     { kind: 'symbol', file: machineDraw, name: 'fitDirection' },
     { kind: 'uses', file: machine, name: 'joinedStanding' },
   ],
+  'REQ-RELATE-24': [
+    { kind: 'symbol', file: machineCells, name: 'cellsIn' },
+    { kind: 'symbol', file: machineCells, name: 'factsOf' },
+    { kind: 'symbol', file: machineCells, name: 'matterOf' },
+    { kind: 'symbol', file: machineStages, name: 'networkBlock' },
+    { kind: 'symbol', file: machineDraw, name: 'personSvg' },
+    { kind: 'value', file: machineTypes, name: 'MACHINE_PAGE', equals: 6 },
+    { kind: 'uses', file: machineDraw, name: 'personSvg' },
+  ],
+  'REQ-RELATE-25': [
+    { kind: 'symbol', file: machineBots, name: 'botKnowledge' },
+    { kind: 'symbol', file: machineBots, name: 'BOT_WORD' },
+    { kind: 'symbol', file: storeClient, name: 'markAutomatedIdentity' },
+    { kind: 'uses', file: machine, name: 'withoutBots' },
+  ],
+  'REQ-RELATE-26': [
+    { kind: 'symbol', file: machineTypes, name: 'theirOpenedDm' },
+    { kind: 'symbol', file: machineStages, name: 'roomLabel' },
+    { kind: 'symbol', file: machineStages, name: 'isChannel' },
+    { kind: 'uses', file: machineStages, name: 'isChannel' },
+  ],
 }
 
 export const relateGraph = {
   description: "The Relate graph projected from log.db and the connected context its hook injects for the people a prompt names",
   specPath: 'docs/specs/relateGraph.md',
-  codePaths: [client, types, project, mentions, cli, answers, postInstallTypes, rings, networkClient, networkRead, networkPeople, networkCli, graphNetwork, storeClient, store, owner, ownerTypes, fence, link, machine, machineTypes, machineStages, machineDraw],
+  codePaths: [client, types, project, mentions, cli, answers, postInstallTypes, rings, networkClient, networkRead, networkPeople, networkCli, graphNetwork, storeClient, store, owner, ownerTypes, fence, link, machine, machineTypes, machineStages, machineCells, machineBots, machineDraw],
   anchors,
   rubrics: {
     'REQ-RELATE-01': noul('Does projectionOf run every read inside one read transaction (readOnce), take throughSeq as the highest events seq in that same transaction, and mark as owner the identities that are an account\'s own id, a self: id or an account\'s own handle?'),
@@ -220,6 +243,9 @@ export const relateGraph = {
     'REQ-RELATE-21': noul('Does the owner run a full rebuild through buildFileAsync in a child process on one read snapshot while its loop keeps applying, then open the new file, catch up the events since its throughSeq, swap it in after reads on the old store finish, and move the pointer?'),
     'REQ-RELATE-22': noul('Do log relate status, log relate owner status and the hook context say how many events the graph is behind, from the owner offset against the highest events seq?'),
     'REQ-RELATE-23': noul('Do the relationship machine\'s states, moves and tools come only from LADDERS, one ladder per platform with no state its platform cannot reach (no follows on Discord, Instagram, Slack or Facebook), is each step read through SIGNAL_STEPS from log.db and the graph, does a linked person show one lane per platform joined on New and stand where joinedStanding finds them furthest along, is the next move an open edge with that platform\'s tool, and does drawMachine lay out top-down through fitDirection when the row is wider than fitWidth?'),
+    'REQ-RELATE-24': noul('Does the network view put the people standing in each state inside its cell as avatar initials and handles, ordered by matterOf (recent activity, fit, open promises from log.db), each with up to MACHINE_LIMITS.personFacts lasting facts carrying their slot, text, the quoted source message and date, their next move and tool and their per-platform lanes, does a cell show MACHINE_PAGE people with the rest behind peopleMore, quiet ones marked quietCount and the text fallback listing each state\'s top people with one fact each, and do the relateMachine tool and the CLI take state, cursor, quiet and limit so one state pages to the next people instead of the payload growing?'),
+    'REQ-RELATE-25': noul('Does botKnowledge read only log.db for who is automated or a system account (the pipeline verdict, a stored profile flag, a hand label, a name that says bot on a word boundary, the platform account itself), does the network view drop those people while the person view still answers for them, and does storeRead mark every sender the platform said was a bot through markAutomatedIdentity?'),
+    'REQ-RELATE-26': noul('Does every platform ladder carry an edge for a DM the other side opened from each state that can open one (theirOpenedDm), is a network transition counted under the edge the person view marks for the same step so the two agree, and is a group chat its own room kind that never stands anyone at Same channel and is named without a hash?'),
     unspecifiedBehavior: noul('Does the Relate graph or network code write to log.db anything other than its relateGraph pointer, its owners row, its relateOwnerStart claim, the network import and the ring tables, read a platform, or send anything off the machine?'),
   },
   assertions: {
@@ -246,6 +272,9 @@ export const relateGraph = {
     'REQ-RELATE-21': MET,
     'REQ-RELATE-22': MET,
     'REQ-RELATE-23': MET,
+    'REQ-RELATE-24': MET,
+    'REQ-RELATE-25': MET,
+    'REQ-RELATE-26': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

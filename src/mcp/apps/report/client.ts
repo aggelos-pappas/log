@@ -169,7 +169,8 @@ export async function runMachine(input: unknown, ui: boolean, host: ReportHost =
   if (platform && !(MACHINE_PLATFORMS as readonly string[]).includes(platform)) return refused("reportFieldInvalid", [`platform: one of ${MACHINE_PLATFORMS.join(", ")}`]);
   const form = pick("form");
   if (form && !(MACHINE_FORMS as readonly string[]).includes(form)) return refused("reportFieldInvalid", [`form: one of ${MACHINE_FORMS.join(", ")}`]);
-  const answer = await relateMachine({ view: view as "person" | "route" | "network" | undefined, person: pick("person"), to: pick("to"), platform: platform as MachinePlatform | undefined });
+  const count = (name: string) => (typeof ask[name] === "number" && Number.isFinite(ask[name] as number) && (ask[name] as number) >= 0 ? Math.floor(ask[name] as number) : undefined);
+  const answer = await relateMachine({ view: view as "person" | "route" | "network" | undefined, person: pick("person"), to: pick("to"), platform: platform as MachinePlatform | undefined, ...(pick("state") ? { state: pick("state") } : {}), ...(count("cursor") !== undefined ? { cursor: count("cursor")! } : {}), ...(ask.quiet === true ? { quiet: true } : {}), ...(count("limit") ? { limit: count("limit")! } : {}) });
   if (!answer.ok) return { isError: true, content: [{ type: "text", text: `${answer.code}: ${answer.problem}` }], structuredContent: { error: answer.code, message: answer.problem } };
   const block = answer.block;
   if (form === "genui") {

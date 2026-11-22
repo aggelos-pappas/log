@@ -11,12 +11,20 @@ export const DISCORD_SERVER = { id: '7100000301', name: 'Lantern Guild' }
 
 export const DISCORD_CHANNELS = { talk: { id: '7200000301', name: 'buildNight' }, quiet: { id: '7200000302', name: 'showcase' } }
 
+export const DISCORD_GROUP = { id: '7400000301', name: 'lantern circle' }
+
 export const DISCORD_PEOPLE = {
   regular: { userId: '9100000301', handle: 'skyline_dev', xUserId: '2000000301' },
   lurker: { userId: '9100000302', handle: 'quiet_owl' },
   replier: { userId: '9100000303', handle: 'reply_rex' },
   waiting: { userId: '9100000304', handle: 'cold_case' },
   introducer: { userId: '9100000305', handle: 'bridge_bea' },
+  firstDm: { userId: '9100000311', handle: 'dm_first' },
+  groupTalker: { userId: '9100000309', handle: 'circle_one' },
+  groupQuiet: { userId: '9100000310', handle: 'circle_two' },
+  bot: { userId: '9100000306', handle: 'melody' },
+  system: { userId: '9100000307', handle: 'Discord' },
+  human: { userId: '9100000308', handle: 'Botanist' },
 }
 
 let n = 0
@@ -27,10 +35,10 @@ function chat(on: Database, conversationId: string, kind: string, name: string |
   return chatId
 }
 
-function say(on: Database, chatId: string, userId: string, fromOwner: boolean, at: number, replyTo: string | null = null): string {
+function say(on: Database, chatId: string, userId: string, fromOwner: boolean, at: number, replyTo: string | null = null, text = ''): string {
   n += 1
   const key = `discordWorld:m${n}`
-  on.prepare("INSERT INTO messages (messageKey, chatId, senderPlatform, senderUserId, fromOwner, sentAt, sentAtMs, text, source, receivedAt, replyToKey) VALUES (?, ?, 'discord', ?, ?, ?, ?, ?, 'live', ?, ?)").run(key, chatId, userId, fromOwner ? 1 : 0, iso(at), at, `message ${n}`, iso(at), replyTo)
+  on.prepare("INSERT INTO messages (messageKey, chatId, senderPlatform, senderUserId, fromOwner, sentAt, sentAtMs, text, source, receivedAt, replyToKey) VALUES (?, ?, 'discord', ?, ?, ?, ?, ?, 'live', ?, ?)").run(key, chatId, userId, fromOwner ? 1 : 0, iso(at), at, text || `message ${n}`, iso(at), replyTo)
   if (!fromOwner) on.prepare("INSERT OR IGNORE INTO memberships (platform, roomId, userId, firstSeenAt, lastSeenAt) VALUES ('discord', ?, ?, ?, ?)").run(chatId, userId, iso(at), iso(at))
   return key
 }
@@ -65,6 +73,19 @@ export function seedDiscordWorld(on: Database, linkX = false): void {
   const bridgeDm = dm(on, '7300000303', p.introducer.handle, minutesAgo(600))
   say(on, bridgeDm, p.introducer.userId, false, minutesAgo(610))
   say(on, bridgeDm, owner, true, minutesAgo(600))
+  const firstDm = dm(on, '7300000311', p.firstDm.handle, minutesAgo(120))
+  say(on, firstDm, p.firstDm.userId, false, minutesAgo(120))
+  const group = chat(on, DISCORD_GROUP.id, 'group', DISCORD_GROUP.name, null, minutesAgo(110))
+  const ownerGroup = say(on, group, owner, true, minutesAgo(300))
+  say(on, group, p.groupTalker.userId, false, minutesAgo(110), ownerGroup)
+  say(on, group, p.groupQuiet.userId, false, minutesAgo(115))
+  on.prepare("INSERT INTO chatPipeline (platform, account, person, lastSeq, who, stage, confidence, margin, movedBySeq, movedById, source, model, scores, features, emotions, vector, labelledAt) VALUES ('discord', ?, ?, 0, 'bot', NULL, 0.99, 0.9, 0, NULL, 'bot', 'head', '{}', '{}', NULL, NULL, ?)").run(DEMO_OWNER.discordAccount, p.bot.userId, at)
+  const promise = say(on, regularDm, p.regular.userId, false, minutesAgo(20), null, 'send you the teardown by friday, promised')
+  const fact = (factId: string, slot: string, text: string, quote: string, key: string, validFrom: number) =>
+    on.prepare("INSERT INTO personFacts (factId, eventId, personId, platform, userId, slot, text, quote, sourceMessageKeys, validFrom, validTo, recordedAt, closedAt, supersededBy, confidence, extractedBy) VALUES (?, ?, NULL, 'discord', ?, ?, ?, ?, ?, ?, NULL, ?, NULL, NULL, 0.9, 'gliner2+subq')").run(factId, `event:${factId}`, p.regular.userId, slot, text, quote, JSON.stringify([key]), iso(validFrom), iso(MACHINE_NOW))
+  fact('factPromise', 'promisedByThem', 'send you the teardown by friday, promised', 'send you the teardown by friday, promised', promise, minutesAgo(20))
+  const jobLine = say(on, talk, p.regular.userId, false, minutesAgo(2500), null, 'i run the graph team at a small lab')
+  fact('factJob', 'job', 'runs the graph team at a small lab', 'i run the graph team at a small lab', jobLine, minutesAgo(2500))
   if (!linkX) return
   on.prepare("INSERT INTO identities (platform, userId, handle, displayName, firstSeenAt, lastSeenAt) VALUES ('twitter', ?, ?, NULL, ?, ?)").run(p.regular.xUserId, p.regular.handle, at, at)
   on.prepare("INSERT INTO interactions (interactionKey, platform, account, kind, actorUserId, targetRef, targetText, at, atMs) VALUES ('discordWorld:like', 'twitter', ?, 'like', ?, 'postLaunch', 'a launch post', ?, ?)").run(DEMO_OWNER.xAccount, p.regular.xUserId, iso(minutesAgo(9000)), minutesAgo(9000))

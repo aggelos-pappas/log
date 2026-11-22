@@ -1,6 +1,6 @@
 import { MACHINE_FONT, MACHINE_SIZE, machineCss } from '../theme'
 import { PLATFORM_MARKS } from '../types'
-import type { MachineDirection, MachineState, MachineTransition, StateMachineBlock } from '../types'
+import type { MachineDirection, MachinePerson, MachineState, MachineTransition, StateMachineBlock } from '../types'
 import { layoutMachine } from './layout'
 import type { Box, MachineLayout, Point } from './layout'
 
@@ -25,6 +25,13 @@ interface Chip {
   now: boolean
 }
 
+interface PersonShape {
+  person: MachinePerson
+  initials: string
+  name: string
+  w: number
+}
+
 interface NodeShape {
   state: MachineState
   w: number
@@ -33,6 +40,8 @@ interface NodeShape {
   notes: string[]
   chipRows: Chip[][]
   explains: string[]
+  people: PersonShape[][]
+  peopleMore: string
 }
 
 interface ActionShape {
@@ -100,6 +109,13 @@ const markWidth = (platform: string | undefined): number => (platform && PLATFOR
 
 const toneOf = (state: MachineState): string => state.tone ?? 'gray'
 
+function personShape(p: MachinePerson, columns: number, inner: number): PersonShape {
+  const room = Math.floor(inner / columns) - 2 * S.personPadX - S.personDot - S.personGap
+  const full = `@${p.handle.replace(/^@/, '')}`
+  const name = wrapText(full, Math.max(40, room), F.person, 1)[0] ?? full
+  return { person: p, initials: p.initials, name, w: Math.min(Math.floor(inner / columns), S.personCol) }
+}
+
 function nodeShape(state: MachineState): NodeShape {
   const dot = toneOf(state) === 'gray' ? 0 : S.toneDot + S.toneGap
   const mark = markWidth(state.platform)
@@ -110,7 +126,13 @@ function nodeShape(state: MachineState): NodeShape {
   const chipsW = chips.reduce((s, c) => s + c.w + S.chipGap, 0) - S.chipGap
   const notes = state.note ? wrapText(state.note, inner, F.body) : []
   const notesW = Math.max(0, ...notes.map((n) => textWidth(n, F.body)))
-  const plain = Math.min(S.nodeMaxWidth, Math.max(S.nodeMinWidth, titleW, notesW + 2 * S.bodyPadX, Math.min(chipsW, inner) + 2 * S.bodyPadX))
+  const listed = state.people ?? []
+  const columns = listed.length > 1 && inner >= 2 * S.personCol ? 2 : 1
+  const people: PersonShape[][] = []
+  for (let i = 0; i < listed.length; i += columns) people.push(listed.slice(i, i + columns).map((p) => personShape(p, columns, inner)))
+  const peopleW = people.length ? (columns === 2 ? 2 * S.personCol : Math.max(...people.flat().map((p) => S.personDot + S.personGap + textWidth(p.name, F.person) + 2 * S.personPadX))) : 0
+  const peopleMore = state.peopleMore ? `+${state.peopleMore.toLocaleString('en-US')} more` : ''
+  const plain = Math.min(S.nodeMaxWidth, Math.max(S.nodeMinWidth, titleW, notesW + 2 * S.bodyPadX, Math.min(chipsW, inner) + 2 * S.bodyPadX, peopleW + 2 * S.bodyPadX))
   const explains = state.explain ? wrapText(state.explain, Math.min(inner, Math.max(S.explainMinWidth, plain - 2 * S.bodyPadX)), F.explain, F.explain.lines) : []
   const explainW = Math.max(0, ...explains.map((n) => textWidth(n, F.explain)))
   const w = Math.min(S.nodeMaxWidth, Math.max(plain, explainW + 2 * S.bodyPadX))
@@ -128,10 +150,11 @@ function nodeShape(state: MachineState): NodeShape {
   }
   if (row.length) rows.push(row)
   const chipsH = rows.length ? rows.length * (S.chipHeight + S.chipGap) - S.chipGap : 0
-  const upper = notes.length * F.body.line + (notes.length && rows.length ? S.bodyGap : 0) + chipsH
+  const peopleH = people.length ? people.length * S.personH + (peopleMore ? S.personH : 0) + S.peopleGap : 0
+  const upper = notes.length * F.body.line + (notes.length && rows.length ? S.bodyGap : 0) + chipsH + peopleH
   const content = upper + (explains.length ? (upper ? 2 * S.explainGap + S.explainRule : 0) + explains.length * F.explain.line : 0)
   const bodyH = content ? Math.ceil(2 * S.bodyPadY + content + S.border) : 0
-  return { state, w: Math.ceil(w), h: S.headerH + bodyH, lead, notes, chipRows: rows, explains }
+  return { state, w: Math.ceil(w), h: S.headerH + bodyH, lead, notes, chipRows: rows, explains, people, peopleMore }
 }
 
 const pillInner = S.pillPadLeft + S.eventPad
@@ -183,6 +206,10 @@ function nearOf(block: StateMachineBlock, selected: string | null | undefined): 
   const nodes = new Set<string>()
   const edges = new Set<string>()
   if (!selected) return { nodes, edges }
+  if (selected.startsWith('person:')) {
+    for (const s of block.states) if ((s.people ?? []).some((p) => `person:${p.key}` === selected)) nodes.add(s.id)
+    return { nodes, edges }
+  }
   nodes.add(selected)
   for (const t of block.transitions) {
     if (t.id === selected || t.from === selected || t.to === selected) {
@@ -223,7 +250,7 @@ function boxPath(x: number, y: number, w: number, h: number, r: number, top: boo
   return `M${x + t} ${y} H${x + w - t} ${t ? `Q${x + w} ${y} ${x + w} ${y + t}` : ''} V${y + h - b} ${b ? `Q${x + w} ${y + h} ${x + w - b} ${y + h}` : ''} H${x + b} ${b ? `Q${x} ${y + h} ${x} ${y + h - b}` : ''} V${y + t} ${t ? `Q${x} ${y} ${x + t} ${y}` : ''} Z`.replace(/\s+/g, ' ')
 }
 
-function nodeSvg(shape: NodeShape, box: Box, near: boolean, slug: string): string {
+function nodeSvg(shape: NodeShape, box: Box, near: boolean, slug: string, selected: string | null = null): string {
   const st = shape.state
   const parts: string[] = []
   const tone = toneOf(st)
@@ -272,8 +299,25 @@ function nodeSvg(shape: NodeShape, box: Box, near: boolean, slug: string): strin
     }
     top = y - S.chipGap
   }
+  if (shape.people.length) {
+    let y = top + (shape.notes.length || shape.chipRows.length ? S.peopleGap : 0)
+    for (const row of shape.people) {
+      let px = bx
+      for (const p of row) {
+        parts.push(personSvg(p, px, y, box, selected === `person:${p.person.key}`))
+        px += Math.floor((box.w - 2 * S.bodyPadX) / row.length)
+      }
+      y += S.personH
+    }
+    top = y
+    if (shape.peopleMore) {
+      parts.push(`<text class="rmPeopleMore" x="${bx}" y="${baselineIn(top, S.personH, F.person.size)}">${escapeXml(shape.peopleMore)}</text>`)
+      top += S.personH
+    }
+    top -= S.peopleGap
+  }
   if (shape.explains.length) {
-    if (shape.notes.length || shape.chipRows.length) {
+    if (shape.notes.length || shape.chipRows.length || shape.people.length) {
       const ruleY = top + S.explainGap + S.explainRule / 2
       parts.push(`<path class="rmExplainRule" d="M${box.x + S.border} ${ruleY} H${box.x + box.w - S.border}"/>`)
       top += 2 * S.explainGap + S.explainRule
@@ -285,6 +329,19 @@ function nodeSvg(shape: NodeShape, box: Box, near: boolean, slug: string): strin
   }
   parts.push('</g>')
   return parts.join('')
+}
+
+function personSvg(p: PersonShape, x: number, y: number, box: Box, selected: boolean): string {
+  const person = p.person
+  const r = S.personDot / 2
+  const cx = x + S.personPadX + r
+  const cy = y + S.personH / 2
+  const nameX = x + S.personPadX + S.personDot + S.personGap
+  const label = `${person.handle}${person.name && person.name !== person.handle ? ` (${person.name})` : ''}${person.facts?.length ? `, ${person.facts[0].slot}` : ''}`
+  const tip = [`${label}`, ...(person.facts ?? []).map((f) => `${f.slot}: "${f.text}" (${f.at.slice(0, 10)})`), ...(person.next ? [`next: ${person.next}${person.tool ? ` with ${person.tool}` : ''}`] : [])].join(' · ')
+  const classes = ['rmPerson', person.quiet ? 'rmQuiet' : '', person.facts?.length ? 'rmHasFact' : '', selected ? 'rmPersonSel' : ''].filter(Boolean).join(' ')
+  const back = selected ? `<rect class="rmPersonSelBg" x="${x}" y="${y + 1}" width="${p.w - S.personPadX}" height="${S.personH - 2}" rx="${S.actionRadius}"/>` : ''
+  return `<g class="${classes}" data-id="person:${escapeXml(person.key)}" data-platform="${escapeXml(person.platform)}" tabindex="0" role="button" aria-label="${escapeXml(label)}"><title>${escapeXml(tip)}</title>${back}<circle class="rmPersonDot" cx="${cx}" cy="${cy}" r="${r}"/><text class="rmPersonInitials" x="${cx}" y="${round(cy + F.initials.size * 0.36)}" text-anchor="middle">${escapeXml(p.initials)}</text><text class="rmPersonName" x="${nameX}" y="${baselineIn(y, S.personH, F.person.size)}">${escapeXml(p.name)}</text>${person.facts?.length ? `<circle class="rmPersonFact" cx="${box.x + box.w - S.bodyPadX - 3}" cy="${cy}" r="2.5"/>` : ''}</g>`
 }
 
 function markSvg(platform: string, x: number, top: number, box: number, w: number): string {
@@ -404,7 +461,7 @@ export function drawMachine(block: StateMachineBlock, options: MachineDrawOption
   const order = [...block.transitions].sort((a, b) => Number(Boolean(a.taken) || Boolean(a.next)) - Number(Boolean(b.taken) || Boolean(b.next)))
   const edgeIndex = new Map(layout.edges.map((e, i) => [e.id, i]))
   const edges = order.map((t) => placedEdges[edgeIndex.get(t.id)!]).filter(Boolean)
-  const nodes = block.states.map((s) => nodeSvg(shapes.get(s.id)!, layout.nodes.get(s.id)!, near.nodes.has(s.id), slug))
+  const nodes = block.states.map((s) => nodeSvg(shapes.get(s.id)!, layout.nodes.get(s.id)!, near.nodes.has(s.id), slug, options.selected ?? null))
   const style = options.standalone ? `<style>${machineCss()}</style>` : ''
   const rootClass = [options.standalone ? 'rmSvg rmMachine' : 'rmSvg', options.theme ?? ''].filter(Boolean).join(' ')
   const attrs = [`class="${rootClass}"`, `xmlns="http://www.w3.org/2000/svg"`, `viewBox="0 0 ${layout.width} ${layout.height}"`, `width="${layout.width}"`, `height="${layout.height}"`, `role="img"`, `aria-labelledby="${slug}Title ${slug}Desc"`, options.theme ? `data-theme="${options.theme}"` : '', options.standalone && options.selected ? `data-selected="${escapeXml(options.selected)}"` : ''].filter(Boolean).join(' ')

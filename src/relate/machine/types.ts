@@ -16,7 +16,9 @@ export const MACHINE_DIRECTIONS = ['right', 'down'] as const
 
 export type MachineDirection = (typeof MACHINE_DIRECTIONS)[number]
 
-export const MACHINE_LIMITS = { states: 16, transitions: 24, chips: 6, details: 12, id: 40, label: 60, note: 200, explain: 400, event: 40, tool: 40, accounts: 12, platform: 20 } as const
+export const MACHINE_LIMITS = { states: 16, transitions: 24, chips: 6, details: 12, id: 40, label: 60, note: 200, explain: 400, event: 40, tool: 40, accounts: 12, platform: 20, people: 6, personFacts: 3, quote: 140, lanes: 4 } as const
+
+export const MACHINE_PAGE = 6
 
 export const MACHINE_PLATFORMS = ['all', 'twitter', 'discord', 'instagram', 'slack', 'reddit', 'facebook', 'linkedin'] as const
 
@@ -29,6 +31,33 @@ export const PLATFORM_MARKS: Record<string, string> = { twitter: 'X', discord: '
 export interface MachineDetail {
   label: string
   value: string
+}
+
+export interface MachinePersonFact {
+  slot: string
+  text: string
+  quote: string
+  at: string
+}
+
+export interface MachinePersonLane {
+  platform: string
+  state: string
+}
+
+export interface MachinePerson {
+  key: string
+  handle: string
+  name?: string
+  initials: string
+  platform: string
+  at?: number | null
+  quiet?: boolean
+  fit?: number
+  next?: string
+  tool?: string
+  lanes?: MachinePersonLane[]
+  facts?: MachinePersonFact[]
 }
 
 export interface MachineState {
@@ -46,6 +75,9 @@ export interface MachineState {
   final?: boolean
   details?: MachineDetail[]
   platform?: string
+  people?: MachinePerson[]
+  peopleMore?: number
+  quietCount?: number
 }
 
 export interface MachineTransition {
@@ -149,7 +181,7 @@ const DM_ENDS: readonly MachineEdgeSpec[] = [
   { id: 'theyReplied', from: 'dmOpened', to: 'inConversation', event: 'they replied', move: 'read', by: 'them', needs: ['youWrote'], unless: ['theyWrote'] },
 ]
 
-export const LADDERS: Record<MachinePlatform, Ladder> = {
+const RAW_LADDERS: Record<MachinePlatform, Ladder> = {
   all: {
     states: [
       NEW_STATE,
@@ -280,8 +312,21 @@ export const LADDERS: Record<MachinePlatform, Ladder> = {
   },
 }
 
-export const ladderOf = (platform: string): Ladder => LADDERS[platform as MachinePlatform] ?? LADDERS.all
+const DM_OPENED_STATE = 'dmOpened'
 
+const theirOpenedDm = (ladder: Ladder): Ladder => ({
+  ...ladder,
+  edges: [
+    ...ladder.edges,
+    ...ladder.edges
+      .filter((e) => e.by === 'you' && e.to === DM_OPENED_STATE && !ladder.edges.some((x) => x.from === e.from && x.to === e.to && x.by === 'them'))
+      .map((e) => ({ ...e, id: `${e.id}Theirs`, event: 'they DMed you', by: 'them' as const, move: 'read' as Move })),
+  ],
+})
+
+export const LADDERS: Record<MachinePlatform, Ladder> = Object.fromEntries(Object.entries(RAW_LADDERS).map(([platform, ladder]) => [platform, theirOpenedDm(ladder)])) as Record<MachinePlatform, Ladder>
+
+export const ladderOf = (platform: string): Ladder => LADDERS[platform as MachinePlatform] ?? LADDERS.all
 export const STAGE_FACTS: Record<Tier, { label: string; note: string; tone: MachineTone }> = Object.fromEntries(LADDERS.all.states.map((s) => [s.id, { label: s.label, note: s.note, tone: s.tone }])) as Record<Tier, { label: string; note: string; tone: MachineTone }>
 
 export const MACHINE_EDGES: readonly MachineEdgeSpec[] = LADDERS.all.edges
@@ -309,6 +354,7 @@ export interface StageEvidence {
   handle: string | null
   name: string | null
   ring: number | null
+  fit?: number | null
   followedAt: number | null
   follows: boolean
   nearAt: number | null
@@ -323,6 +369,7 @@ export interface StageEvidence {
   pointedAt?: number | null
   pointedBy?: 'you' | 'them'
   pointedIn?: string | null
+  pointedKind?: string | null
   introducers?: string[]
 }
 

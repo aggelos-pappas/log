@@ -37,7 +37,7 @@ export function firstInteractions(handle: Database | null): Map<string, { kind: 
 }
 
 function blank(r: Row): StageEvidence {
-  return { key: String(r.key), personId: (r.personId as string | null) ?? null, platform: String(r.platform), handle: (r.handle as string | null) ?? null, name: (r.name as string | null) ?? null, ring: num(r.ring), followedAt: null, follows: false, nearAt: null, near: [], engagedAt: null, engagedHow: null, theyWroteAt: null, youWroteAt: null, lastAt: null }
+  return { key: String(r.key), personId: (r.personId as string | null) ?? null, platform: String(r.platform), handle: (r.handle as string | null) ?? null, name: (r.name as string | null) ?? null, ring: num(r.ring), fit: num(r.fit), followedAt: null, follows: false, nearAt: null, near: [], engagedAt: null, engagedHow: null, theyWroteAt: null, youWroteAt: null, lastAt: null }
 }
 
 const PAST: Record<string, string> = { like: 'liked your post', reply: 'replied to your post', repost: 'reposted you', retweet: 'reposted you', quote: 'quoted you', mention: 'mentioned you', reaction: 'reacted to you' }
@@ -45,7 +45,7 @@ const PAST: Record<string, string> = { like: 'liked your post', reply: 'replied 
 export async function evidenceOf(ask: Ask, keys: readonly string[] | null, firsts: Map<string, { kind: string; at: number }[]> = new Map()): Promise<Map<string, StageEvidence>> {
   const params = { all: keys === null, keys: [...(keys ?? [])] }
   const out = new Map<string, StageEvidence>()
-  for (const r of (await ask(`MATCH (i:Identity) WHERE ${FILTER} RETURN i.key AS key, i.personId AS personId, i.platform AS platform, i.handle AS handle, i.name AS name, i.ring AS ring`, params))) out.set(String(r.key), blank(r))
+  for (const r of (await ask(`MATCH (i:Identity) WHERE ${FILTER} RETURN i.key AS key, i.personId AS personId, i.platform AS platform, i.handle AS handle, i.name AS name, i.ring AS ring, i.fit AS fit`, params))) out.set(String(r.key), blank(r))
   const at = (key: unknown) => out.get(String(key))
   for (const r of (await ask(`MATCH (i:Identity)-[f:FOLLOWED]->(:Account) WHERE ${FILTER} RETURN i.key AS key, f.kind AS kind, f.lastAtMs AS at`, params))) {
     const e = at(r.key)
@@ -105,13 +105,14 @@ export async function evidenceOf(ask: Ask, keys: readonly string[] | null, first
     e.rooms = [...(e.rooms ?? []), fact]
   }
   for (const [cypher, by] of [[`MATCH (i:Identity)-[x:REPLIED_TO|MENTIONED]->(:Account) WHERE ${FILTER}`, 'them'], [`MATCH (:Account)-[x:REPLIED_TO|MENTIONED]->(i:Identity) WHERE ${FILTER}`, 'you']] as const) {
-    for (const r of (await ask(`${cypher} MATCH (g:Room) WHERE g.key = x.room AND g.kind <> 'dm' RETURN i.key AS key, min(x.firstAtMs) AS first, collect(DISTINCT coalesce(g.name, g.conversationId))[0] AS room`, params))) {
+    for (const r of (await ask(`${cypher} MATCH (g:Room) WHERE g.key = x.room AND g.kind <> 'dm' RETURN i.key AS key, min(x.firstAtMs) AS first, collect(DISTINCT coalesce(g.name, g.conversationId))[0] AS room, collect(DISTINCT g.kind)[0] AS kind`, params))) {
       const e = at(r.key)
       const first = num(r.first)
       if (!e || first === null || (e.pointedAt != null && e.pointedAt <= first)) continue
       e.pointedAt = first
       e.pointedBy = by
       e.pointedIn = (r.room as string | null) ?? null
+      e.pointedKind = (r.kind as string | null) ?? null
     }
   }
   if (keys !== null) {
