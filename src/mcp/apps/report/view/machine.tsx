@@ -3,7 +3,7 @@ import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { drawMachine, fitDirection, shortDate } from "../../../../relate/machine/render/svg.ts";
 import { machineCss } from "../../../../relate/machine/theme.ts";
 import { MACHINE_PLATFORMS, PLATFORM_MARKS, PLATFORM_NAMES } from "../../../../relate/machine/types.ts";
-import type { MachineAccount, MachineDirection, MachinePlatform, MachineState, MachineTransition, StateMachineBlock } from "../../../../relate/machine/types.ts";
+import type { MachineAccount, MachineDirection, MachinePerson, MachinePersonFact, MachinePlatform, MachineState, MachineTransition, StateMachineBlock } from "../../../../relate/machine/types.ts";
 
 const MIN_SCALE = 0.72;
 
@@ -34,9 +34,52 @@ function Move({ t, names }: { t: MachineTransition; names: Map<string, string> }
   );
 }
 
+function Fact({ f }: { f: MachinePersonFact }) {
+  return (
+    <li data-slot={f.slot}>
+      <strong>{f.slot}</strong>
+      <span>{f.text}</span>
+      <small>“{f.quote}” · {f.at.slice(0, 10)}</small>
+    </li>
+  );
+}
+
+function PersonPanel({ person, state, machine }: { person: MachinePerson; state: MachineState | undefined; machine: StateMachineBlock }) {
+  return (
+    <aside className="rmPanel" aria-label="Person details">
+      <span className="rmPanelKind">Person</span>
+      <h3>@{person.handle.replace(/^@/, "")}</h3>
+      {person.name && person.name !== person.handle ? <Field label="Name">{person.name}</Field> : null}
+      <Field label="In this state">{`${state?.label ?? person.platform}${typeof state?.count === "number" ? ` (${state.count})` : ""}`}</Field>
+      {person.at ? <Field label="Last activity">{new Date(person.at).toISOString().slice(0, 10)}</Field> : null}
+      {person.lanes && person.lanes.length > 1 ? <Field label="Lanes">{person.lanes.map((l) => `${l.platform}: ${l.state}`).join(" · ")}</Field> : null}
+      {person.next ? <Field label="Next move">{`${person.next}${person.tool ? ` with ${person.tool}` : ""}`}</Field> : null}
+      {person.facts?.length ? (
+        <div className="rmField">
+          <label>Lasting facts</label>
+          <ul className="rmMoves rmFacts">
+            {person.facts.map((f, i) => (
+              <Fact key={i} f={f} />
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <Field label="Lasting facts">none recorded yet; log reads their chats for them once they talk</Field>
+      )}
+      {person.quiet ? <Field label="Quiet">nothing either way for 14 days or more</Field> : null}
+      {machine.summary && !state ? <Field label="Summary">{machine.summary}</Field> : null}
+    </aside>
+  );
+}
+
 function Panel({ machine, selected, names }: { machine: StateMachineBlock; selected: string | null; names: Map<string, string> }) {
   const state = machine.states.find((s) => s.id === selected) as MachineState | undefined;
   const edge = machine.transitions.find((t) => t.id === selected);
+  if (selected?.startsWith("person:")) {
+    const holder = machine.states.find((s) => (s.people ?? []).some((p) => `person:${p.key}` === selected));
+    const person = holder?.people?.find((p) => `person:${p.key}` === selected);
+    if (person) return <PersonPanel person={person} state={holder} machine={machine} />;
+  }
   if (edge)
     return (
       <aside className="rmPanel" aria-label="Transition details">

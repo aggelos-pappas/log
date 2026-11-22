@@ -93,7 +93,7 @@ export interface InteractionRow {
   at: string
 }
 
-export const IDENTITY_PROFILE_EXTRA_KEYS = ['pictureUrl', 'location', 'followingCount', 'postCount', 'canDm', 'protected', 'joinedAt', 'premium', 'headline'] as const
+export const IDENTITY_PROFILE_EXTRA_KEYS = ['pictureUrl', 'location', 'followingCount', 'postCount', 'canDm', 'protected', 'joinedAt', 'premium', 'headline', 'bot'] as const
 
 export type IdentityProfileExtraKey = (typeof IDENTITY_PROFILE_EXTRA_KEYS)[number]
 

@@ -6,7 +6,7 @@ import type { GraphCounts, NetworkGraphCounts } from "../../relate/graph/index.t
 import { MACHINE_FORMS, MACHINE_PLATFORMS, MACHINE_VIEWS, machineGenuiBlock, relateMachine } from "../../relate/machine/index.ts";
 import type { MachinePlatform, MachineView } from "../../relate/machine/index.ts";
 import { defaultDbPath, openDatabase } from "../../storage/schema/index.ts";
-import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
+import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
 import { PLATFORMS } from "../runner/helpers/platforms.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
 
@@ -16,7 +16,7 @@ export const RELATE_USAGE = [
   "       log relate verify [--json]",
   "       log relate ask \"<text>\" [--json]",
   "       log relate query \"<cypher>\" [--platform <p>] [--json]",
-  "       log relate machine [--person|--to <h>] [--view|--platform|--form <v>] [--json]",
+  "       log relate machine [--person|--to <h>] [--view|--platform|--form <v>] [--state <s>] [--cursor <n>] [--quiet] [--limit <n>] [--json]",
   "       log relate owner status|start|stop [--json]",
   "The graph is a projection of log.db; a build can be redone (docs/relateGraph.md).",
 ].join("\n");
@@ -36,6 +36,10 @@ export const RELATE_INPUT: CommandInput = {
         { name: "to", kind: "string", description: "Who: the route to them through people you know" },
         { name: "view", kind: "enum", values: MACHINE_VIEWS, description: "person, route or network" },
         { name: "platform", kind: "enum", values: MACHINE_PLATFORMS, description: "Only this platform's accounts" },
+        { name: "state", kind: "string", description: "Network view: only this state's cell, for the next page of people" },
+        { name: "cursor", kind: "integer", min: 0, description: "Network view: how many people of this state to skip, for the next page" },
+        { name: "quiet", kind: "boolean", description: "Network view: the ones gone quiet for 14 days or more" },
+        { name: "limit", kind: "integer", min: 1, max: 12, description: "Network view: how many people per cell, default 6" },
         { name: "form", kind: "enum", values: MACHINE_FORMS, description: "genui: the block to pass to show_blocks" },
         JSON_FLAG,
       ],
@@ -148,7 +152,7 @@ export const relateCommand: Command = {
     }
     if (sub === "machine" && rest.length === 0) {
       const flag = (name: string) => (typeof parsed.flags[name] === "string" ? (parsed.flags[name] as string) : undefined);
-      const answer = await relateMachine({ view: flag("view") as MachineView | undefined, person: flag("person"), to: flag("to"), platform: flag("platform") as MachinePlatform | undefined }, dbPath);
+      const answer = await relateMachine({ view: flag("view") as MachineView | undefined, person: flag("person"), to: flag("to"), platform: flag("platform") as MachinePlatform | undefined, ...(flag("state") ? { state: flag("state") } : {}), ...(numberOf(parsed, "cursor") !== null ? { cursor: numberOf(parsed, "cursor")! } : {}), ...(parsed.flags["quiet"] === true ? { quiet: true } : {}), ...(numberOf(parsed, "limit") ? { limit: numberOf(parsed, "limit")! } : {}) }, dbPath);
       if (!answer.ok) return refuse("relate machine", answer.code, answer.problem);
       const block = flag("form") === "genui" ? machineGenuiBlock(answer.block) : answer.block;
       if (json) return { code: 0, stdout: JSON.stringify({ block, text: answer.text, throughSeq: answer.throughSeq }, null, 2) };

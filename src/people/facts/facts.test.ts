@@ -202,6 +202,29 @@ describe('two tiers: marks queue up, the decider drains them (REQ-FACTS-04)', ()
     expect(report.queued).toBe(0)
   })
 
+  test('the stream hands the marked lines to the decider on its own, and says a coded refusal when no key is set', async () => {
+    const on = world()
+    const dm = chat(on, 'twitter', '1000000001-1000000007')
+    const lines: string[] = []
+    const stream = factStream(on, { env: {}, clock: () => NOW, screener: () => screener, decider: () => ({ ok: true, model: 'subq-snap-1.1', decisions }), log: (line) => lines.push(line) })!
+    expect(queuedCount(on)).toBe(0)
+    expect((await stream.tick())?.lines).toBe(0)
+    const said = say(on, dm, 'twitter', '1000000007', false, 'i work at a sawmill these days', 0)
+    const ticked = await stream.tick()
+    expect(ticked?.marked).toBe(1)
+    expect(queuedCount(on)).toBe(0)
+    const facts = factsAbout(on, { personId: null, identities: [{ platform: 'twitter', userId: '1000000007' }] })
+    expect(facts.map((f) => f.sourceMessageKeys[0])).toEqual([said])
+    expect(lines.join('\n')).toContain('the decider settled 1 marked line(s) into 1 lasting fact(s)')
+    const refused: string[] = []
+    const noKey = factStream(on, { env: {}, clock: () => NOW, screener: () => screener, decider: () => factDecider({}, null), log: (line) => refused.push(line) })!
+    say(on, dm, 'twitter', '1000000007', false, 'i work at a boatyard now', 0)
+    await noKey.tick()
+    expect(queuedCount(on)).toBe(1)
+    expect(refused.join('\n')).toContain('factDeciderUnavailable')
+    expect(refused.join('\n')).toContain('SUBQ_API_KEY is not set')
+  })
+
   test('the stream is off by setting, and a screen that fails backs off instead of retrying every batch', async () => {
     const on = world()
     expect(factStream(on, { env: { LOG_FACTS_SCREEN: 'off' }, screener: () => screener })).toBeNull()

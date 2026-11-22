@@ -34,6 +34,10 @@ export const SCREEN_BATCH = 8
 
 export const DECIDE_BATCH = 8
 
+export const DECIDE_CHATS = 4
+
+export const DECIDE_EVERY_MS = 900_000
+
 export const DECIDE_CONTEXT_LINES = 4
 
 export const SLOT_MIN = 0.5

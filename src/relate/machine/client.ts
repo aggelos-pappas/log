@@ -5,7 +5,7 @@ import { findPeople, GraphUnreadable, pointerOf, readFromFile, readOffset } from
 import { ownerRequest } from '../owner/helpers/index'
 import { identitySpec } from '../../people/helpers/identity'
 import type { Ask, PersonFound } from '../graph/index'
-import { evidenceOf, firstInteractions, joinedStanding, networkBlock, ownerAccounts, personBlock, rankLinks, routeBlock, routeCandidates, standingOf } from './helpers/index'
+import { cellContext, cellsIn, evidenceOf, firstInteractions, joinedStanding, networkBlock, nextMoveOf, ownerAccounts, personBlock, rankLinks, routeBlock, routeCandidates, stageLabelOf, standingOf, withoutBots } from './helpers/index'
 import { machineText } from './render/text'
 import { MACHINE_READ_MS, ROUTE_CONNECTORS } from './types'
 import { LADDERS, MACHINE_PLATFORMS } from './types'
@@ -16,6 +16,10 @@ export interface MachineAsk {
   person?: string
   to?: string
   platform?: MachinePlatform
+  state?: string
+  cursor?: number
+  quiet?: boolean
+  limit?: number
 }
 
 export type MachineAnswer = { ok: true; block: StateMachineBlock; text: string; throughSeq: number } | { ok: false; code: 'relateMachineNoGraph' | 'relateMachineNobody' | 'graphUnreadable'; problem: string }
@@ -158,11 +162,17 @@ export async function machineFrom(read: Ask, ask: MachineAsk, throughSeq: number
   if (view === 'network') {
     const evidence = await evidenceOf(read, null, firsts)
     const everyone = people(evidence)
+    const context = cellContext(handle, now)
+    const bots = context.bots
+    const options = { cursor: Math.max(0, ask.cursor ?? 0), quiet: ask.quiet === true, ...(ask.limit ? { limit: ask.limit } : {}) }
+    const cellFor = (platform: MachinePlatform) => (held: readonly PersonStanding[]) => cellsIn(context, held, options, nextMoveOf, (s) => stageLabelOf(s.platform, s.stage))
+    const pages = (platform: MachinePlatform) => ({ ...(ask.state ? { state: ask.state } : {}), cell: cellFor(platform) })
     const views = platformViews((platform) => {
       const kept = platform === 'all' ? everyone : people(new Map([...evidence].filter(([, e]) => e.platform === platform))).map((s) => s.lanes?.[0] ?? s)
-      return { block: networkBlock(kept, throughSeq, now, LADDERS[platform]), count: kept.length }
+      const clean = withoutBots(kept, bots)
+      return { block: networkBlock(clean, throughSeq, now, LADDERS[platform], pages(platform)), count: clean.length }
     })
-    block = withPlatforms(views, ask.platform, networkBlock(everyone, throughSeq, now))
+    block = withPlatforms(views, ask.platform, networkBlock(withoutBots(everyone, bots), throughSeq, now, LADDERS.all, pages('all')))
   } else {
     const asked = view === 'route' ? ask.to ?? ask.person : ask.person ?? ask.to
     if (!asked) return { ok: false, code: 'relateMachineNobody', problem: `the ${view} view needs ${view === 'route' ? 'to' : 'person'}: a handle or name` }

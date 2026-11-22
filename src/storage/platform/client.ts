@@ -134,6 +134,11 @@ export function writeIdentityProfile(handle: Database, row: IdentityProfileRow):
   handle.prepare('INSERT INTO identityProfiles (platform, userId, bio, avatarHash, followerCount, verified, extra, fetchedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(platform, userId) DO UPDATE SET bio = COALESCE(excluded.bio, identityProfiles.bio), avatarHash = COALESCE(excluded.avatarHash, identityProfiles.avatarHash), followerCount = COALESCE(excluded.followerCount, identityProfiles.followerCount), verified = COALESCE(excluded.verified, identityProfiles.verified), extra = CASE WHEN excluded.extra IS NULL THEN identityProfiles.extra WHEN identityProfiles.extra IS NULL THEN excluded.extra ELSE json_patch(identityProfiles.extra, excluded.extra) END, fetchedAt = MAX(identityProfiles.fetchedAt, excluded.fetchedAt)').run(row.platform, row.userId, row.bio, row.avatarHash, row.followerCount, row.verified === null ? null : row.verified ? 1 : 0, row.extra ? JSON.stringify(row.extra) : null, row.fetchedAt)
 }
 
+export function markAutomatedIdentity(handle: Database, platform: string, userId: string, now: Date = new Date()): void {
+  if (!platform || !userId) return
+  writeIdentityProfile(handle, { platform, userId, bio: null, avatarHash: null, followerCount: null, verified: null, extra: { bot: true }, fetchedAt: now.toISOString() })
+}
+
 export function identityProfileRowOf(platform: string, userId: string, fields: IdentityProfileFields, fetchedAt: string): IdentityProfileRow | null {
   const clean = profileFieldsOf(fields)
   if (!clean) return null

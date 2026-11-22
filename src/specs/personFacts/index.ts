@@ -42,6 +42,11 @@ const anchors: RequirementAnchors = {
   ],
   'REQ-FACTS-04': [
     { kind: 'symbol', file: extract, name: 'extractFacts' },
+    { kind: 'symbol', file: extract, name: 'decideQueued' },
+    { kind: 'symbol', file: stream, name: 'factStream' },
+    { kind: 'value', file: types, name: 'DECIDE_EVERY_MS', equals: 900000 },
+    { kind: 'uses', file: stream, name: 'decideQueued' },
+    { kind: 'uses', file: ownerScript, name: 'factStream' },
     { kind: 'symbol', file: extract, name: 'sideAllows' },
     { kind: 'symbol', file: screen, name: 'gliner2Screener' },
     { kind: 'symbol', file: screen, name: 'screenLines' },
@@ -94,6 +99,7 @@ export const personFacts = {
     'REQ-FACTS-04': noul('Does extractFacts read only lines after each chat\'s factOffsets offset, mark candidates with one GLiNER2 schema (classification, entities, relations) locally, keep relations only when both ends resolve, skip model calls for repeats of current facts, send only marked lines to SubQ in DECIDE_BATCH batches for ADD, SUPERSEDE or NOOP, and drop slots the speaker cannot state?'),
     'REQ-FACTS-05': noul('Does the voice gate read the recipient\'s open promises, put them on the card SubQ reads, and hold a draft that repeats one with an already promised block, and does the person card show open promises and current facts with their dates and sources?'),
     'REQ-FACTS-06': noul('Does the shared projection write Episode, Fact, FROM, ABOUT, SUPERSEDES and MENTIONS in both the full build and the in-place apply, with a vector index on Fact.embedding that filters on closedAt, and does recall return current facts with their evidence lines and what they replaced?'),
+  'REQ-FACTS-07': noul('Does every tick of factStream that has marked lines waiting hand them to the decider on its own (decideQueued, up to DECIDE_CHATS chats a tick, no sooner than DECIDE_EVERY_MS apart) so facts appear without log people facts extract, and with no SubQ key does it log one coded refusal (factDeciderUnavailable) and leave the lines queued instead of dropping them?'),
     unspecifiedBehavior: noul('Does any person-facts code send a message, call a paid API other than SubQ in tier 2, or edit or delete a recorded fact instead of superseding it?'),
   },
   assertions: {
@@ -103,6 +109,7 @@ export const personFacts = {
     'REQ-FACTS-04': MET,
     'REQ-FACTS-05': MET,
     'REQ-FACTS-06': MET,
+    'REQ-FACTS-07': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }
