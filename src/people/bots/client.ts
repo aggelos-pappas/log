@@ -101,6 +101,10 @@ export const BOT_DISCORD_PAGES_PER_SERVER = 10
 export const BOT_SLACK_MEMBERS_PER_RUN = 200
 export const BOT_TARGETED_LOOKUPS = 20
 export const BOT_DISCORD_REFUSED_MS = 7 * 24 * 60 * 60_000
+export const BOT_PLACE_REFUSAL = 'platformError'
+export const BOT_ACCOUNT_REFUSALS = ['governorBlocked', 'rateLimited', 'sessionDead', 'noPlatformSession', 'engineTimedOut', 'engineNoAnswer', 'identityMismatch', 'templateStale']
+
+const accountLevel = (code: string | undefined): boolean => Boolean(code && BOT_ACCOUNT_REFUSALS.includes(code))
 
 const cursorKey = (account: string, server: string): string => `discord:${account}:${server}`
 const refusedKey = (account: string, server: string): string => `discord:${account}:${server}:refused`
@@ -141,6 +145,10 @@ export function botSources(deps: BotEngineDeps): BotSources {
         const one = await deps.discord(account, { action: 'member', user })
         budget -= 1
         if (!one.ok) {
+          if (accountLevel(one.code)) {
+            stopped = `${one.code}: ${one.detail ?? ''}`
+            break
+          }
           refused.push(`person ${user} answered ${one.code ?? 'platformError'}`)
           continue
         }
@@ -151,8 +159,8 @@ export function botSources(deps: BotEngineDeps): BotSources {
       const servers = served.servers ?? []
       let tried = 0
       for (const server of servers) {
-        const refusedUntil = getState<{ until?: number }>('botBackfill', refusedKey(account.account, server.id), {}, deps.handle)?.body.until ?? 0
-        if (refusedUntil > clock()) {
+        const held = getState<{ until?: number; code?: string }>('botBackfill', refusedKey(account.account, server.id), {}, deps.handle)?.body
+        if (held?.code === BOT_PLACE_REFUSAL && (held.until ?? 0) > clock()) {
           refused.push(`${server.name ?? server.id} keeps refusing`)
           continue
         }
@@ -165,8 +173,12 @@ export function botSources(deps: BotEngineDeps): BotSources {
         const pages = Math.max(1, Math.min(BOT_DISCORD_PAGES_PER_SERVER, budget))
         const run = await deps.discord(account, { action: 'members', server: server.id, after: cursor, pages })
         if (!run.ok) {
+          if (accountLevel(run.code)) {
+            stopped = `${run.code}: ${run.detail ?? ''}`
+            break
+          }
           refused.push(`${server.name ?? server.id} answered ${run.code ?? 'platformError'}`)
-          putState('botBackfill', refusedKey(account.account, server.id), { until: clock() + BOT_DISCORD_REFUSED_MS }, clock(), deps.handle)
+          putState('botBackfill', refusedKey(account.account, server.id), { until: clock() + BOT_DISCORD_REFUSED_MS, code: BOT_PLACE_REFUSAL }, clock(), deps.handle)
           continue
         }
         budget -= Number(run.requests ?? pages)
