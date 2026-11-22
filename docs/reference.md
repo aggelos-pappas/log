@@ -76,7 +76,7 @@ flowchart LR
   anyB --> b_slack
   anyB --> b_instagram
   anyB --> b_tiktok
-  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, router, runs, storage, version, update, models, relate, people, network, timing, tool, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, index, facts, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy"]
+  anyN["Any platform, no browser: launch, setup, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, router, runs, storage, version, update, models, relate, people, network, timing, tool, inbox, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, index, facts, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy"]
   anyN -.-> twenty
   newP["log new platform name: one more platform, wired whole (rule 83)"] -.-> twenty
   drivers --> api
@@ -114,7 +114,7 @@ Source: [`docs/diagrams/browsers.mmd`](diagrams/browsers.mmd).
 
 - **The account's browser, through the driver:** `facebook host`, `inspect`, `flow`, `<platform> warmup`, `facebook join`, `facebook read`, `facebook poll`, `facebook check`, `reddit read`, `discord read`, `slack read`. They run on whichever browser the account uses: whatever `socialAccounts.browserDriver` names (Camoufox, AdsPower, Brave), else AdsPower when it has a linked profile (`socialAccounts.adsPowerProfileId`), else `LOG_BROWSER_DRIVER`, else Camoufox.
 - **Camoufox only, not on the driver yet:** `facebook doctor`, `facebook connect`, `facebook profile`, `facebook scan`, `facebook status`, `facebook watch`, `facebook publish`, `facebook campaign`, `discord watch`, `linkedin connect`, `slack watch`, `instagram watch`. They launch Camoufox themselves (facebook-camofox-client's worker, or the publish, connect and profile sessions), so on an AdsPower account they don't open its AdsPower profile. Moving one onto the driver is moving it into `OPENER_ACTIONS` (`src/browser/run`).
-- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `version`, `update`, `models`, `relate`, `people`, `network`, `timing`, `tool`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `index`, `facts`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord friend`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`.
+- **No browser:** `launch`, `setup`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `version`, `update`, `models`, `relate`, `people`, `network`, `timing`, `tool`, `inbox`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `index`, `facts`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord friend`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`.
 - **No browser path at all:** X. Its accounts run on the direct API only (rule 80).
 
 Each browser's capabilities, built or not: [`docs/browsers.md`](browsers.md) (generated, `bun run check:browsers`). AdsPower's setup: [`docs/adsPower.md`](adsPower.md).
@@ -227,9 +227,9 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 318 command tools + saved flows"]
+  mcp["MCP server log: 319 command tools + saved flows"]
   bin["bin/log.ts"]
-  runCli["runCli: 145 commands (COMMANDS)"]
+  runCli["runCli: 146 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
   engine{"commandEngine: DIRECT_ROUTES"}
   direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi, tiktokApi (curl_cffi, TikTok Studio calls) (vendor/), the account's saved session, a governor per account"]
@@ -287,6 +287,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | Command | What it does | Platform | Flags | Engine | Browser | MCP tool | Hooks: shell · MCP | Live log | Rules |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [`log launch`](#log-launch) | Start here: a guided menu to set log up (platforms, sign-ins, the account's browser and extensions), add an account, sign it in, check it and connect your agent (and the listing tools when Twenty is set up) | any (none) | `--setup` `--json` | none | none | terminal only: prompts in a terminal (Clack). Call the commands it wraps directly. | PreToolUse, PostToolUse · n/a | no | 30, 38, 39, 40, 41 |
+| [`log setup`](#log-setup) | Set up everything an agent can set up in one pass: wire the agent harnesses, set local account defaults, and name the exact sign-ins only you can finish | any (none) | `[--json]` `[--dryRun]` `[--platforms <list,…>]` `[--extensions <list,…>]` `[--harnesses <list,…>]` `[--config <file>]` | none | none | `setup` | PreToolUse, PostToolUse · PostToolUse | no | 8, 30, 47, 163, 30, 38, 39, 40, 41 |
 | [`log console`](#log-console) | The local console: this machine's status, accounts, usage, events, AI client config and settings, as an interactive terminal console, as JSON per screen, or as the web console served on loopback (--web) | any (none) | `[--web]` `[--port <integer 0..65535>]` `[--noOpen]` `[--json]` `[--platform <facebook|twitter|reddit|discord|linkedin|slack|instagram|tiktok>]` `[--days <1|7|30>]` `[--kind <kind>]` `[--status <recorded|succeeded|failed|unknown>]` `[--page <integer 0..>]` `[--pageSize <integer 1..>]` `[--client <claudeCode|codex|opencode>]` | none | none | `consoleStart`, `consoleConnections`, `consoleUsage`, `consoleEvents`, `consoleAiClients`, `consoleSettings` | PreToolUse, PostToolUse · PostToolUse | no | 47, 134, 163, 168, 172, 30, 38, 39, 40, 41 |
 | [`log credentials`](#log-credentials) | A provider's keys on this machine: save them from masked prompts, checked with the provider first, or read the values that are not secret | any (none) | `--provider <adsPower|typesafe|subq|memelord|fishAudio|inworld|treg|jina|assemblyAi|parallel|twoCaptcha|byteful>` `[--host <url>]` `[--homes <CC,CC|all>]` `[--json]` | none | none | `credentialsRead` | PreToolUse, PostToolUse · PostToolUse | no | 41, 47, 163, 164, 172, 30, 38, 39, 40, 41 |
 | [`log facebook listings`](#log-facebook-listings) | List the Twenty listings, by status, account or campaign | `facebook` first | `[--status <DRAFT|READY|PUBLISHING|UNCONFIRMED|FAILED|BLOCKED|REMOVED|ACCOUNT_LOST|REPLACED|ACTIVE|UNDER_REVIEW|DUPLICATE_TAKEDOWN|DELETED_BY_FB|POLICY_VIOLATION|COMMERCE_BAN|CHECKPOINT_REQUIRED|SOLD|RETRY_EXHAUSTED|UNKNOWN>]` `[--account <accountName>]` `[--campaign <campaignId>]` `[--json]` | none | none | `facebookListings` | PreToolUse, PostToolUse · PostToolUse | no | 30, 38, 39, 40, 41 |
@@ -470,6 +471,7 @@ flowchart TB
   terminal["terminal only"]
   subgraph g_any["Any platform"]
     c_launch["launch"]
+    c_setup["setup"]
     c_console["console"]
     c_credentials["credentials"]
     c_adsPower["adsPower"]
@@ -635,6 +637,8 @@ flowchart TB
   end
   cli --> c_launch
   c_launch -.- terminal
+  cli --> c_setup
+  mcp --> c_setup
   cli --> c_console
   mcp --> c_console
   cli --> c_credentials
@@ -1192,6 +1196,14 @@ Start here: a guided menu to set log up (platforms, sign-ins, the account's brow
 
 ```text
 log launch [--setup] [--json]
+```
+
+#### log setup
+
+Set up everything an agent can set up in one pass: wire the agent harnesses, set local account defaults, and name the exact sign-ins only you can finish MCP tools: `setup`, one per form, with named fields.
+
+```text
+log setup [--json] [--dryRun] [--platforms <list>] [--extensions <list>] [--harnesses <list>] [--config <file>]
 ```
 
 #### log console

@@ -81,6 +81,28 @@ It goes in this order:
 
 Keys go in `~/.logCli/.env` and are never printed. Set `LOG_SETUP=0` to install without the wizard. There's no log account to sign in to. To add accounts by hand, read [add your accounts](accounts.md).
 
+## Agent setup, in one pass
+
+The wizard above needs a terminal. An agent can set up everything that does not need a person instead:
+
+```bash
+log setup --json
+```
+
+It wires every agent harness installed on this machine, makes sure `LOG_ACCOUNTS=local` is set, and then prints exactly which sign-ins are left and the command for each. It never asks a question and it never invents a key. A second run is a no-op: steps already done are reported as done.
+
+```bash
+log setup --json --dryRun                         # report the plan, write nothing
+log setup --json --platforms twitter,reddit        # include the sign-ins those platforms need
+log setup --json --extensions memelord            # include an extension's key step
+log setup --json --harnesses none                 # leave agent harnesses alone
+log setup --json --config ./log-setup.json        # the same selection from a file
+```
+
+The config file is a JSON object with `platforms`, `extensions` and `harnesses` arrays; values are the ids used on the command line (for example `"platforms": ["twitter", "reddit"]`). Flags and config file entries are combined.
+
+Exit codes: `0` when nothing needs a person, `3` when sign-ins remain (`reason` is `humanActionRequired` in the JSON), `2` for bad input. `next` lists the remaining commands in order. Keys and cookies are still entered by their owner in a terminal; this command only names where they go.
+
 ## From source
 
 To work on log itself:
@@ -90,7 +112,7 @@ git clone https://github.com/matthewdonsemail-lab/log
 cd log
 bun install                      # also installs the git hooks
 uv venv --python 3.12 .venv
-uv pip install --python .venv -r vendor/twikit/requirements.txt ./vendor/fbk ./vendor/endcord
+uv pip install --python .venv -r vendor/twikit/requirements.txt ./vendor/fbk ./vendor/endcord './vendor/instagrapi[curl]'
 cp .env.example .env.local       # set LOG_PYTHON to .venv's python, and LOG_ACCOUNTS=local
 bun link                         # puts this checkout's log and logMcp on your PATH
 log --help
