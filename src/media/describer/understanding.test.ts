@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runCli } from "../../cli/runner/index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 import { db } from "../../inbox/store/index.ts";
 import { hashOf } from "../voiceNotes/client.ts";
 import { writeTranscript } from "../voiceNotes/helpers/store.ts";
@@ -105,7 +106,7 @@ describe("media becomes text any model reads, kept small in log.db (rule 169)", 
     expect(spoken.transcript).toBe("welcome to the demo");
     expect(spoken.description).toContain('speech: "welcome to the demo"');
     expect(JSON.parse(spoken.providers!)).toEqual(["fakeEars", "fakeVision"]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("a local file a person asked about is never deleted, and an item the queue was too full for is described when there is room", async () => {
     const path = join(mkdtempSync(join(tmpdir(), "mine")), "mine.png");

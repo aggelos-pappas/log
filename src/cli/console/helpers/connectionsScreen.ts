@@ -35,7 +35,7 @@ export async function runConnectionsScreen(ui: ConsoleUi): Promise<void> {
     { value: BACK, label: "Back" },
   ]);
   if (action === "check") await checkAccountSession(ui.context, account);
-  if (action === "signIn") await signInAccount(ui.context, { platform: account.platform, accountName: account.accountName, hasProfile: account.browserProfile });
+  if (action === "signIn") await signInAccount(ui.context, { platform: account.platform, accountName: account.accountName });
 }
 
 export { loadConsoleConnections };

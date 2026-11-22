@@ -1,4 +1,4 @@
-import { ADSPOWER_SETUP, SETUP_EXTENSIONS, setEnvValue, signInRouteOf, browserSignInSteps } from "../../launch/helpers/index.ts";
+import { SETUP_EXTENSIONS, setEnvValue, signInRouteOf, browserSignInSteps } from "../../launch/helpers/index.ts";
 import { PLATFORM_LABELS } from "../../runner/helpers/platforms.ts";
 import type { Platform } from "../../runner/helpers/platforms.ts";
 import type { ExtensionId } from "../../launch/helpers/index.ts";
@@ -39,18 +39,6 @@ export function setupEnvStep(envFile: string, text: string, dryRun: boolean): Se
   };
 }
 
-export function setupAdsPowerStep(): SetupStep {
-  return {
-    id: "adsPower",
-    kind: "human",
-    label: ADSPOWER_SETUP.label,
-    detail: ADSPOWER_SETUP.keyHint,
-    done: false,
-    url: ADSPOWER_SETUP.signUpUrl,
-    keyName: ADSPOWER_SETUP.keyName,
-  };
-}
-
 export function setupPlatformStep(platform: Platform): SetupStep {
   const label = PLATFORM_LABELS[platform];
   const route = signInRouteOf(platform);
@@ -78,9 +66,9 @@ export function setupPlatformStep(platform: Platform): SetupStep {
     id: `platform:${platform}`,
     kind: "human",
     label,
-    detail: browserSignInSteps(platform, "<name>", false),
+    detail: browserSignInSteps(platform, "<name>"),
     done: false,
-    command: `log localAccount add --platform ${platform} --account <name> --adsPower <profileId>`,
+    command: `log localAccount add --platform ${platform} --account <name>`,
   };
 }
 

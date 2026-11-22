@@ -37,12 +37,21 @@ function capture() {
 function stubPrompts(answers: unknown[]) {
   const calls: string[] = [];
   const offered: string[][] = [];
+  const steps: string[] = [];
+  const outros: string[] = [];
   launchDeps.tty = () => ({ stdinTTY: true, stdoutTTY: true });
   launchDeps.twentyReady = () => true;
   launchDeps.prompts = {
     intro: () => void calls.push("intro"),
-    outro: () => void calls.push("outro"),
+    outro: (message) => {
+      calls.push("outro");
+      outros.push(typeof message === "string" ? message : "");
+    },
     cancel: () => void calls.push("cancel"),
+    step: (message) => {
+      calls.push("step");
+      steps.push(typeof message === "string" ? message : "");
+    },
     select: async (options) => {
       calls.push("select");
       offered.push(((options as { options?: { value: string }[] }).options ?? []).map((o) => o.value));
@@ -66,7 +75,7 @@ function stubPrompts(answers: unknown[]) {
       return answers.shift();
     },
   };
-  return { calls, offered };
+  return { calls, offered, steps, outros };
 }
 
 describe("parseLaunchArgs / shouldPrompt", () => {
@@ -117,7 +126,7 @@ describe("runLaunch", () => {
     expect(calls).toEqual(["intro", "select", "select", "select", "outro"]);
   });
 
-  test("status offers the statuses in Twenty and delegates to `listings --status`", async () => {
+  test("status offers the saved statuses and delegates to `listings --status`", async () => {
     const { offered } = stubPrompts(["marketplace", "status", "SOLD"]);
     const { context, out } = capture();
     expect((await runLaunch(context, [])).code).toBe(0);
@@ -165,9 +174,9 @@ describe("runLaunch", () => {
     expect(delegated).toEqual([["warmup", "facebook", "reel", "plan", "--reels", "8-20", "--watch", "4-25", "--skip", "0.6", "--comments", "0.3", "--profile", "0.15"]]);
   });
 
-  test("cancel exits 1", async () => {
+  test("cancel exits 130 with a clack cancel", async () => {
     const { calls } = stubPrompts([Symbol("clack:cancel")]);
-    expect((await runLaunch(capture().context, [])).code).toBe(1);
+    expect((await runLaunch(capture().context, [])).code).toBe(130);
     expect(calls).toContain("cancel");
   });
 });
@@ -191,7 +200,7 @@ describe("runLaunch: start here, no Twenty", () => {
     expect(out.join("\n")).toContain("claude mcp add log -- logMcp");
   });
 
-  test("Twenty set up adds the Facebook Marketplace menu", async () => {
+  test("workspace listings add the Facebook Marketplace menu", async () => {
     const { offered } = stubPrompts(["agent"]);
     await runLaunch(capture().context, []);
     expect(offered[0]).toEqual(["setup", "add", "signIn", "check", "agent", "console", "marketplace"]);
@@ -210,17 +219,17 @@ describe("runLaunch: start here, no Twenty", () => {
   });
 
   test("add a Reddit account saves it locally, then shows how to sign in in its browser", async () => {
-    stubPrompts(["add", "reddit", "redditName", "k1abc"]);
+    stubPrompts(["add", "reddit", "redditName"]);
     const delegated = recordRuns();
     const { context, out } = capture();
     expect((await runLaunch(context, [])).code).toBe(0);
-    expect(delegated).toEqual([["localAccount", "add", "--platform", "reddit", "--account", "redditName", "--adsPower", "k1abc"]]);
+    expect(delegated).toEqual([["localAccount", "add", "--platform", "reddit", "--account", "redditName"]]);
     expect(out.join("\n")).toContain("log inspect start --account redditName");
-    expect(out.join("\n")).not.toContain("--adsPower <profileId>");
+    expect(out.join("\n")).not.toMatch(/AdsPower/i);
   });
 
   test("add a Facebook account asks its proxy, home and city, and connecting can wait", async () => {
-    stubPrompts(["add", "facebook", "fbName", "", "http://u:p@host:1", "us", "Bethlehem", "no"]);
+    stubPrompts(["add", "facebook", "fbName", "http://u:p@host:1", "us", "Bethlehem", "no"]);
     const delegated = recordRuns();
     const { context, out } = capture();
     expect((await runLaunch(context, [])).code).toBe(0);
@@ -265,13 +274,12 @@ describe("log launch --setup", () => {
     return delegated;
   }
 
-  function setupRig(adsPowerUp = true, tregFound = true) {
+  function setupRig(tregFound = true) {
     const opened: string[] = [];
     const ran: string[] = [];
     const files: Record<string, string> = { "/home/.logCli/.env": "LOG_ACCOUNTS=local\n" };
     launchDeps.openUrl = (url) => (opened.push(url), true);
     launchDeps.runInTerminal = (command, args) => (ran.push([command, ...args].join(" ")), { found: tregFound, code: 0 });
-    launchDeps.adsPowerUp = async () => adsPowerUp;
     launchDeps.harnesses = () => [];
     launchDeps.installHarness = () => ({ configPath: "/home/.config/opencode/opencode.jsonc", changed: true, pluginDir: "/home/.config/opencode/plugins/logHooks", pluginFiles: [] });
     launchDeps.envFile = () => "/home/.logCli/.env";
@@ -301,15 +309,15 @@ describe("log launch --setup", () => {
     else process.env.MEMELORD_API_KEY = before;
   });
 
-  test("a browser platform asks for AdsPower first, on its referral link, and checks its Local API", async () => {
-    const { offered } = stubPrompts([["discord"], "signUp", "", "dcName", "", []]);
-    const { opened } = setupRig(false);
+  test("a browser platform never asks for AdsPower and signs in in its own browser", async () => {
+    const { steps } = stubPrompts([["discord"], "dcName", []]);
+    const { opened } = setupRig();
     recordRuns();
     const { context, out } = capture();
     expect((await runLaunch(context, ["--setup"])).code).toBe(0);
-    expect(offered[1]).toEqual(["signUp", "have", "skip"]);
-    expect(opened).toEqual(["https://www.adspower.com/share/pD25Iu"]);
-    expect(out.join("\n")).toContain("AdsPower: its Local API didn't answer");
+    expect(steps).toEqual(["Platforms", "Discord", "Extensions"]);
+    expect(opened).toEqual([]);
+    expect(out.join("\n")).not.toMatch(/AdsPower/i);
   });
 
   test("Inworld says what its referral gives, and a skipped key is listed, never saved", async () => {
@@ -326,7 +334,7 @@ describe("log launch --setup", () => {
 
   test("treg not installed says where to get it", async () => {
     stubPrompts([[], ["treg"], "have"]);
-    setupRig(true, false);
+    setupRig(false);
     const { context, out } = capture();
     expect((await runLaunch(context, ["--setup"])).code).toBe(0);
     expect(out.join("\n")).toContain("treg isn't installed: install it from https://treg.to/?ref=matthewdonse-aebsh");
@@ -352,5 +360,40 @@ describe("log launch --setup", () => {
     expect(setEnvValue("A=1", "C", "3")).toBe("A=1\nC=3\n");
     expect(setEnvValue("", "C", "3")).toBe("C=3\n");
     expect(setupSummary([], "/x/.env")).toContain("nothing was set up this time");
+  });
+
+  test("cancelling a setup prompt exits 130 and calls cancel", async () => {
+    const { calls } = stubPrompts([Symbol("clack:cancel")]);
+    setupRig();
+    recordRuns();
+    expect((await runLaunch(capture().context, ["--setup"])).code).toBe(130);
+    expect(calls).toContain("cancel");
+  });
+
+  test("each setup stage emits a clack step in order", async () => {
+    const { steps } = stubPrompts([["twitter"], "@someHandle", [], []]);
+    setupRig();
+    recordRuns();
+    expect((await runLaunch(capture().context, ["--setup"])).code).toBe(0);
+    expect(steps).toEqual(["Platforms", "X", "Extensions"]);
+  });
+
+  test("a setup run never announces an AdsPower stage", async () => {
+    const { steps } = stubPrompts([["discord"], "dcName", []]);
+    setupRig();
+    recordRuns();
+    expect((await runLaunch(capture().context, ["--setup"])).code).toBe(0);
+    expect(steps).not.toContain("AdsPower");
+  });
+
+  test("a wizard failure ends with outro Failed and exits non-zero", async () => {
+    const { outros } = stubPrompts([["twitter"], "@someHandle"]);
+    setupRig();
+    launchDeps.run = () => {
+      throw new Error("boom");
+    };
+    const result = await runLaunch(capture().context, ["--setup"]);
+    expect(result.code).not.toBe(0);
+    expect(outros).toContain("Failed");
   });
 });

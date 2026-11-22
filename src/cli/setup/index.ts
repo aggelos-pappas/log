@@ -3,13 +3,13 @@ import { dirname } from "node:path";
 import { installHermes, hermesHome } from "../../agentHooks/hermes/index.ts";
 import { installOpenCode, opencodeConfigDir } from "../../agentHooks/opencode/index.ts";
 import { userEnvPath } from "../../config/userEnv/index.ts";
-import { SETUP_HARNESSES, needsBrowser } from "../launch/helpers/index.ts";
+import { SETUP_HARNESSES } from "../launch/helpers/index.ts";
 import type { ExtensionId } from "../launch/helpers/index.ts";
 import type { Platform } from "../runner/helpers/platforms.ts";
 import type { Command, CommandContext, CommandResult } from "../runner/types.ts";
 import { parseSetupArgs, SETUP_EXTENSION_IDS, SETUP_HARNESS_IDS, SETUP_INPUT, SETUP_PLATFORM_IDS, validateSetupIds } from "./helpers/index.ts";
 import type { SetupArgs } from "./helpers/index.ts";
-import { setupAdsPowerStep, setupEnvStep, setupExtensionStep, setupHarnessStep, setupPlatformStep } from "./helpers/index.ts";
+import { setupEnvStep, setupExtensionStep, setupHarnessStep, setupPlatformStep } from "./helpers/index.ts";
 import type { SetupStep } from "./helpers/index.ts";
 import { renderSetupReport } from "./helpers/index.ts";
 import type { SetupReport } from "./helpers/index.ts";
@@ -106,7 +106,6 @@ export function runSetupCommand(context: CommandContext, argv: string[]): Comman
 
   const platforms = selection.platforms as Platform[];
   const pending: SetupStep[] = [];
-  if (needsBrowser(platforms)) pending.push(setupAdsPowerStep());
   for (const platform of platforms) pending.push(setupPlatformStep(platform));
   for (const id of selection.extensions as ExtensionId[]) pending.push(setupExtensionStep(id));
   const next = pending.flatMap((step) => (step.command ? [step.command] : []));
