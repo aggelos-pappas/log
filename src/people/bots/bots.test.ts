@@ -129,4 +129,30 @@ describe('a Discord server that refuses its member list', () => {
     expect(account.stopped).toContain('1 place(s) refused')
     expect(account.account).toBe('sourcedand')
   })
+
+  test('a governor block stops the sweep and is never remembered as a place refusing, so the next run asks again', async () => {
+    const on = openDatabase(join(mkdtempSync(join(tmpdir(), 'botsBudget-')), 'log.db'))
+    const asked: string[] = []
+    let blocked = true
+    const sources = botSources({
+      handle: on,
+      accounts: () => [{ platform: 'discord', account: 'sourcedand', session: true }],
+      now: () => MACHINE_NOW,
+      discord: async (_account: unknown, spec: Record<string, unknown>) => {
+        asked.push(`${String(spec.action)}:${String(spec.server ?? '')}`)
+        if (spec.action === 'servers') return { ok: true, members: [], servers: [{ id: '9', name: 'first' }, { id: '10', name: 'second' }] }
+        if (blocked) return { ok: false, code: 'governorBlocked', detail: 'hourly cap reached (120/h)', members: [] }
+        return { ok: true, members: [{ userId: `91000004${String(spec.server)}`, bot: true, username: 'helper' }], requests: 1, stopped: null }
+      },
+      slack: async () => ({ ok: true, members: [], places: 0, stopped: null }),
+    })
+    const first = await backfillBots(on, sources, { now: new Date(MACHINE_NOW) })
+    expect(first.flagged).toBe(0)
+    expect(first.platforms.find((p) => p.platform === 'discord')!.accounts[0].stopped).toContain('governorBlocked')
+    expect(asked.filter((a) => a.startsWith('members'))).toHaveLength(1)
+    blocked = false
+    const second = await backfillBots(on, sources, { now: new Date(MACHINE_NOW + 60_000) })
+    expect(asked.filter((a) => a.startsWith('members'))).toEqual(['members:9', 'members:9', 'members:10'])
+    expect(second.flagged).toBe(2)
+  })
 })
