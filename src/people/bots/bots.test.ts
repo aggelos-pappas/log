@@ -155,4 +155,26 @@ describe('a Discord server that refuses its member list', () => {
     expect(asked.filter((a) => a.startsWith('members'))).toEqual(['members:9', 'members:9', 'members:10'])
     expect(second.flagged).toBe(2)
   })
+
+  test('a person the platform already answered about is not asked again, so the next run reaches the ones behind them', async () => {
+    const on = openDatabase(join(mkdtempSync(join(tmpdir(), 'botsAsked-')), 'log.db'))
+    const at = iso(MACHINE_NOW)
+    for (const id of ['9100000501', '9100000502', '9100000503']) on.prepare("INSERT INTO identities (platform, userId, handle, displayName, firstSeenAt, lastSeenAt) VALUES ('discord', ?, ?, NULL, ?, ?)").run(id, `person_${id.slice(-1)}`, at, at)
+    const askedFor: string[] = []
+    const sources = botSources({
+      handle: on,
+      accounts: () => [{ platform: 'discord', account: 'sourcedand', session: true }],
+      now: () => MACHINE_NOW,
+      discord: async (_account: unknown, spec: Record<string, unknown>) => {
+        if (spec.action === 'servers') return { ok: true, members: [], servers: [] }
+        askedFor.push(String(spec.user))
+        return { ok: true, members: [{ userId: String(spec.user), bot: false, username: null }], requests: 1, stopped: null }
+      },
+      slack: async () => ({ ok: true, members: [], places: 0, stopped: null }),
+    })
+    await backfillBots(on, sources, { now: new Date(MACHINE_NOW) })
+    expect(askedFor).toHaveLength(3)
+    await backfillBots(on, sources, { now: new Date(MACHINE_NOW + 3600_000) })
+    expect(askedFor).toHaveLength(3)
+  })
 })

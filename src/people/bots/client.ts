@@ -99,7 +99,8 @@ const memberOf = (row: unknown): BotMember | null => {
 export const BOT_DISCORD_REQUESTS_PER_RUN = 40
 export const BOT_DISCORD_PAGES_PER_SERVER = 10
 export const BOT_SLACK_MEMBERS_PER_RUN = 200
-export const BOT_TARGETED_LOOKUPS = 20
+export const BOT_TARGETED_LOOKUPS = 40
+export const BOT_ASKED_AGAIN_MS = 30 * 24 * 60 * 60_000
 export const BOT_DISCORD_REFUSED_MS = 7 * 24 * 60 * 60_000
 export const BOT_PLACE_REFUSAL = 'platformError'
 export const BOT_ACCOUNT_REFUSALS = ['governorBlocked', 'rateLimited', 'sessionDead', 'noPlatformSession', 'engineTimedOut', 'engineNoAnswer', 'identityMismatch', 'templateStale']
@@ -108,6 +109,7 @@ const accountLevel = (code: string | undefined): boolean => Boolean(code && BOT_
 
 const cursorKey = (account: string, server: string): string => `discord:${account}:${server}`
 const refusedKey = (account: string, server: string): string => `discord:${account}:${server}:refused`
+const askedKey = (account: string, user: string): string => `asked:discord:${account}:${user}`
 
 export interface BotEngineDeps {
   handle: Database
@@ -127,6 +129,10 @@ export function botSources(deps: BotEngineDeps): BotSources {
       const seen = new Set<string>()
       const refused: string[] = []
       let stopped: string | null = null
+      const askedRecently = (userId: string): boolean => {
+        const at = getState<{ at?: number }>('botBackfill', askedKey(account.account, userId), {}, deps.handle)?.body.at ?? 0
+        return at > 0 && clock() - at < BOT_ASKED_AGAIN_MS
+      }
       const take = (rows: readonly unknown[]) => {
         for (const row of rows) {
           const member = memberOf(row)
@@ -135,8 +141,8 @@ export function botSources(deps: BotEngineDeps): BotSources {
           members.push(member)
         }
       }
-      const known = deps.handle.prepare("SELECT userId FROM identities WHERE platform = 'discord' AND userId NOT LIKE 'unknown:%' ORDER BY lastSeenAt DESC LIMIT 200").all() as { userId: string }[]
-      const targets = [...new Set([...(account.userId ? [account.userId] : []), ...known.map((k) => k.userId)])].filter((id) => !seen.has(id)).slice(0, BOT_TARGETED_LOOKUPS)
+      const known = deps.handle.prepare("SELECT userId FROM identities WHERE platform = 'discord' AND userId NOT LIKE 'unknown:%' ORDER BY lastSeenAt DESC LIMIT 2000").all() as { userId: string }[]
+      const targets = [...new Set([...(account.userId ? [account.userId] : []), ...known.map((k) => k.userId)])].filter((id) => !seen.has(id) && !askedRecently(id)).slice(0, Math.max(1, Math.min(BOT_TARGETED_LOOKUPS, budget)))
       for (const user of targets) {
         if (budget < 1) {
           stopped = `stopped at ${BOT_DISCORD_REQUESTS_PER_RUN} requests; the rest is read next run`
@@ -152,6 +158,7 @@ export function botSources(deps: BotEngineDeps): BotSources {
           refused.push(`person ${user} answered ${one.code ?? 'platformError'}`)
           continue
         }
+        putState('botBackfill', askedKey(account.account, user), { at: clock() }, clock(), deps.handle)
         take(one.members)
       }
       const served = await deps.discord(account, { action: 'servers' })
