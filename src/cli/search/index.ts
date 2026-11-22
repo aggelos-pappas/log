@@ -175,9 +175,11 @@ export const searchCommand: Command = {
         const all = loadConversations();
         const rebuild = parsed.flags["rebuild"] === true;
         context.err(`search: ${rebuild ? "embedding and indexing" : "updating the index with what changed in"} ${all.length} conversations with ${embedder.model}`);
-        const built = rebuild ? { ...(await buildIndex(all, embedder)), rebuilt: true } : await updateIndex(all, embedder);
-        const changed = "embedded" in built && !built.rebuilt ? `, ${built.embedded} chunks embedded, ${built.removed} removed` : "";
-        const done = `search: ${built.rebuilt ? "indexed" : "index holds"} ${built.chunks} chunks from ${built.conversations} conversations${changed} in ${(built.ms / 1000).toFixed(1)} s`;
+        const started = performance.now();
+        const { embedConversations } = await import("../../indexPass/index.ts");
+        const built = rebuild ? { ...(await buildIndex(all, embedder)), rebuilt: true, embedded: 0, removed: 0 } : { ...(await embedConversations(all, embedder)), rebuilt: false };
+        const changed = rebuild ? "" : `, ${built.embedded} chunks embedded, ${built.removed} removed`;
+        const done = `search: ${built.rebuilt ? "indexed" : "index holds"} ${built.chunks} chunks from ${all.length} conversations${changed} in ${((performance.now() - started) / 1000).toFixed(1)} s`;
         return { code: 0, stdout: json ? JSON.stringify({ accounts: lines, ...built }, null, 2) : [...lines, done].join("\n") };
       }
       const index = await openIndex(embedder);
