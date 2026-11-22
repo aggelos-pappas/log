@@ -37,6 +37,8 @@ GENUI = ("vendor", "hermesGenui")
 GENUI_PACKAGE = "log_hermes_genui"
 GENUI_MACHINE = ("hermesPlugin", "genuiMachine.py")
 GENUI_MACHINE_PACKAGE = "log_hermes_genui_machine"
+GENUI_NETWORK = ("hermesPlugin", "genuiNetwork.py")
+GENUI_NETWORK_PACKAGE = "log_hermes_genui_network"
 SKILLS = ("hermesPlugin", "skills")
 MCP_SERVER = "log"
 MCP_SETUP = 'hermes mcp add log --command logMcp --env "LOG_ACCOUNTS=${LOG_ACCOUNTS}"'
@@ -640,13 +642,20 @@ def combined_llm_output(response_text="", platform="", **kwargs):
 
 def register_genui_blocks(genui, root):
     path = root.joinpath(*GENUI_MACHINE)
+    network_path = root.joinpath(*GENUI_NETWORK)
     if not path.is_file() or not hasattr(genui, "register_block"):
         return False
     try:
         spec = importlib.util.spec_from_file_location(GENUI_MACHINE_PACKAGE, path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        return bool(module.register_machine(genui))
+        registered = bool(module.register_machine(genui))
+        if network_path.is_file():
+            net_spec = importlib.util.spec_from_file_location(GENUI_NETWORK_PACKAGE, network_path)
+            net_module = importlib.util.module_from_spec(net_spec)
+            net_spec.loader.exec_module(net_module)
+            registered = bool(net_module.register_network(genui, machine_checker=lambda block, where: module.check_machine(block, where))) and registered
+        return registered
     except Exception:
         return False
 

@@ -180,6 +180,34 @@ export async function runMachine(input: unknown, ui: boolean, host: ReportHost =
   return runReport({ title: block.title ?? "Relationship state machine", subtitle: `Relate graph through event ${answer.throughSeq}`, blocks: [block] }, ui, {}, host);
 }
 
+export const MAP_GENUI_NOTE = "The networkMap block below goes into show_blocks unchanged, as one of its blocks, next to markdown, callouts or tables that explain it:";
+
+export async function runMap(input: unknown, ui: boolean, host: ReportHost = {}): Promise<CallToolResult> {
+  const { relateMap, networkMapGenuiBlock, MAP_FORMS, MAP_PLATFORMS } = await import("../../../relate/map/index.ts");
+  const ask = (input ?? {}) as Record<string, unknown>;
+  const pick = (name: string) => (typeof ask[name] === "string" && (ask[name] as string).trim() ? (ask[name] as string) : undefined);
+  const platform = pick("platform");
+  if (platform && !(MAP_PLATFORMS as readonly string[]).includes(platform)) return refused("reportFieldInvalid", [`platform: one of ${MAP_PLATFORMS.join(", ")}`]);
+  const form = pick("form");
+  if (form && !(MAP_FORMS as readonly string[]).includes(form)) return refused("reportFieldInvalid", [`form: one of ${MAP_FORMS.join(", ")}`]);
+  const count = (name: string) => (typeof ask[name] === "number" && Number.isFinite(ask[name] as number) && (ask[name] as number) >= 0 ? Math.floor(ask[name] as number) : undefined);
+  const answer = await relateMap({
+    platform: platform as "all" | undefined,
+    person: pick("person"), to: pick("to"),
+    ...(count("cursor") !== undefined ? { cursor: count("cursor")! } : {}),
+    ...(count("limit") ? { limit: count("limit")! } : {}),
+    ...(ask.quiet === true ? { quiet: true } : {}),
+    ...(form ? { form: form as "genui" | "view" } : {}),
+  });
+  if (!answer.ok) return { isError: true, content: [{ type: "text", text: `${answer.code}: ${answer.problem}` }], structuredContent: { error: answer.code, message: answer.problem } };
+  const block = answer.block;
+  if (form === "genui") {
+    const genui = networkMapGenuiBlock(block as unknown as Record<string, unknown>);
+    return { content: [{ type: "text", text: `${answer.text}\n\n${MAP_GENUI_NOTE}\n${JSON.stringify(genui)}` }], structuredContent: { block: genui, text: answer.text, throughSeq: answer.throughSeq } };
+  }
+  return runReport({ title: block.title ?? "Your network, drawn", subtitle: block.summary, blocks: [block as never] }, ui, {}, host);
+}
+
 export const REPORT_RESOURCE_DESCRIPTION = "A view the agent built for the question: stats, charts, tables and people, drawn from log's data";
 
 function rowCounts(data: Record<string, unknown>): Record<string, number> {

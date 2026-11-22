@@ -5,6 +5,8 @@ import type { GraphPointer } from "../../relate/graph/index.ts";
 import type { GraphCounts, NetworkGraphCounts } from "../../relate/graph/index.ts";
 import { MACHINE_FORMS, MACHINE_PLATFORMS, MACHINE_VIEWS, machineGenuiBlock, relateMachine } from "../../relate/machine/index.ts";
 import type { MachinePlatform, MachineView } from "../../relate/machine/index.ts";
+import { MAP_FORMS, MAP_PLATFORMS, networkMapGenuiBlock, relateMap } from "../../relate/map/index.ts";
+import type { MapPlatform } from "../../relate/map/index.ts";
 import { defaultDbPath, openDatabase } from "../../storage/schema/index.ts";
 import { tickLine } from "../../indexPass/helpers/tick.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
@@ -18,6 +20,7 @@ export const RELATE_USAGE = [
   "       log relate ask \"<text>\" [--json]",
   "       log relate query \"<cypher>\" [--platform <p>] [--json]",
   "       log relate machine [--person|--to <h>] [--view|--platform|--form <v>] [--state <s>] [--cursor <n>] [--quiet] [--limit <n>] [--json]",
+  "       log relate map [--person|--to <h>] [--platform|--form <v>] [--cursor <n>] [--quiet] [--limit <n>] [--json]",
   "       log relate owner status|start|stop [--json]",
   "The graph is a projection of log.db; a build can be redone (docs/relateGraph.md).",
 ].join("\n");
@@ -46,6 +49,21 @@ export const RELATE_INPUT: CommandInput = {
       ],
     },
     { words: ["query"], summary: "A read-only Cypher query on the Relate graph (at most 100 rows)", positionals: [{ name: "cypher", kind: "string", required: true, description: "The Cypher to run, e.g. MATCH (i:Identity)-[:ENGAGED]->(p:Post) RETURN i.handle, p.text LIMIT 5" }], flags: [{ name: "platform", kind: "enum", values: PLATFORMS, description: "Sets $platform" }, JSON_FLAG] },
+    {
+      words: ["map"],
+      summary: "The network map: cards of people, real connections and the bridge to someone",
+      positionals: [],
+      flags: [
+        { name: "person", kind: "string", description: "Focus this person's card and route" },
+        { name: "to", kind: "string", description: "Draw the shortest bridge to this person" },
+        { name: "platform", kind: "enum", values: MAP_PLATFORMS, description: "Only this platform's accounts" },
+        { name: "cursor", kind: "integer", min: 0, description: "How many people to skip, for the next page" },
+        { name: "quiet", kind: "boolean", description: "Only the ones gone quiet for 14 days or more" },
+        { name: "limit", kind: "integer", min: 1, max: 32, description: "How many people to draw, default 24" },
+        { name: "form", kind: "enum", values: MAP_FORMS, description: "genui: the block to pass to show_blocks" },
+        JSON_FLAG,
+      ],
+    },
   ],
 };
 
@@ -160,6 +178,15 @@ export const relateCommand: Command = {
       if (flag("form") === "genui") return { code: 0, stdout: JSON.stringify(block) };
       return { code: 0, stdout: answer.text };
     }
-    return refuseInput("relate", 'say build, status, verify, ask "<text>", query "<cypher>", machine or owner status|start|stop', RELATE_USAGE);
+    if (sub === "map" && rest.length === 0) {
+      const flag = (name: string) => (typeof parsed.flags[name] === "string" ? (parsed.flags[name] as string) : undefined);
+      const answer = await relateMap({ person: flag("person"), to: flag("to"), platform: flag("platform") as MapPlatform | undefined, ...(numberOf(parsed, "cursor") !== null ? { cursor: numberOf(parsed, "cursor")! } : {}), ...(parsed.flags["quiet"] === true ? { quiet: true } : {}), ...(numberOf(parsed, "limit") ? { limit: numberOf(parsed, "limit")! } : {}), ...(flag("form") ? { form: flag("form") as "genui" | "view" } : {}) }, dbPath);
+      if (!answer.ok) return refuse("relate map", "graphUnreadable", answer.problem);
+      const block = flag("form") === "genui" ? networkMapGenuiBlock(answer.block as unknown as Record<string, unknown>) : answer.block;
+      if (json) return { code: 0, stdout: JSON.stringify({ block, text: answer.text, throughSeq: answer.throughSeq }, null, 2) };
+      if (flag("form") === "genui") return { code: 0, stdout: JSON.stringify(block) };
+      return { code: 0, stdout: answer.text };
+    }
+    return refuseInput("relate", 'say build, status, verify, ask "<text>", query "<cypher>", machine, map or owner status|start|stop', RELATE_USAGE);
   },
 };

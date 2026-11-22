@@ -5,7 +5,9 @@ import { useEffect, useState } from "react";
 import type { MouseEvent } from "react";
 import { composerActions } from "../../../../../vendor/hermesGenui/web/src/host/actions.ts";
 import genui from "../../../../../vendor/hermesGenui/web/src/plugin.tsx";
+import { MAP_BLOCK } from "../../../../relate/map/types.ts";
 import { MACHINE_BLOCK } from "../../../../relate/machine/types.ts";
+import { NETWORK_MAP_GENUI_ENTRY } from "./genuiNetwork.tsx";
 import { MACHINE_GENUI_ENTRY } from "./genuiMachine.tsx";
 import { APP_DIRECTIVE, appApi, parseAppDirective } from "./appBridge.ts";
 import { injectAppStyles, LogApp } from "./hermesApp.tsx";
@@ -83,6 +85,7 @@ export default {
   name: "log",
   register(ctx: { rest: (path: string, opts?: { method?: string; body?: unknown }) => Promise<unknown>; register: (contribution: unknown) => unknown }) {
     genui.registerBlock(MACHINE_BLOCK, MACHINE_GENUI_ENTRY);
+    genui.registerBlock(MAP_BLOCK, NETWORK_MAP_GENUI_ENTRY);
     genui.register(ctx);
     injectStyles();
     injectAppStyles();

@@ -35,6 +35,9 @@ const CASES: Case[] = [
   { name: "machineRoute", view: true, tool: "relateMachine", args: { view: "route", person: "ivy_ops", to: "grace_ships" }, uri: "ui://log/report" },
   { name: "machineNetwork", view: true, tool: "relateMachine", args: { view: "network" }, uri: "ui://log/report" },
   { name: "machineGenui", view: false, tool: "relateMachine", args: { view: "network", form: "genui" }, uri: "ui://log/report" },
+  { name: "networkMap", view: true, tool: "relateMap", args: {}, uri: "ui://log/report" },
+  { name: "networkMapFocus", view: true, tool: "relateMap", args: { person: "ivy_ops" }, uri: "ui://log/report" },
+  { name: "mapGenui", view: false, tool: "relateMap", args: { form: "genui" }, uri: "ui://log/report" },
   { name: "browserMissing", view: true, tool: "browserView", args: { account: ACCOUNT }, uri: "ui://log/browserView" },
   { name: "signIn", view: false, tool: "sessionsSignIn", args: { account: ACCOUNT }, uri: "ui://log/browserView" },
   { name: "reportRefused", view: true, refusal: true, tool: "report", args: { title: "Nothing", blocks: [{ type: "nothing" }] }, uri: "ui://log/report" },
@@ -116,7 +119,7 @@ async function main(): Promise<void> {
   const client = await connect("mcpAppsCheck", UI, db);
   const listed = new Map((await client.listTools()).tools.map((tool) => [tool.name, tool]));
   const appToolNames = [...listed.values()].filter((tool) => (tool._meta as { ui?: unknown } | undefined)?.ui).map((tool) => tool.name);
-  for (const name of ["report", "relateMachine", "browserView", "sessionsSignIn", "browserViewStream", "browserViewFrame", "browserViewInput", "browserViewDone"]) if (!appToolNames.includes(name)) note(`${name} is not offered as an MCP App tool`);
+  for (const name of ["report", "relateMachine", "relateMap", "browserView", "sessionsSignIn", "browserViewStream", "browserViewFrame", "browserViewInput", "browserViewDone"]) if (!appToolNames.includes(name)) note(`${name} is not offered as an MCP App tool`);
   for (const tool of listed.values()) {
     const ui = (tool._meta as { ui?: { resourceUri?: string; visibility?: string[] } } | undefined)?.ui;
     if (!ui?.resourceUri) continue;
@@ -208,6 +211,9 @@ async function main(): Promise<void> {
   const genui = answers.get("machineGenui");
   const genuiBlock = ((genui?.result.structuredContent ?? {}) as { block?: Record<string, unknown> }).block;
   if (!genuiBlock) note("machineGenui: relateMachine answered without a stateMachine block for show_blocks");
+  const mapGenui = answers.get("mapGenui");
+  const mapBlock = ((mapGenui?.result.structuredContent ?? {}) as { block?: Record<string, unknown> }).block;
+  if (!mapBlock) note("mapGenui: relateMap answered without a networkMap block for show_blocks");
 
   const port = freePort();
   const server = Bun.serve({
@@ -233,7 +239,7 @@ async function main(): Promise<void> {
       if (url.pathname === "/hermes/pluginSdk.js") return new Response(await built("pluginSdkShim", pluginSdkShim, []), { headers: { "content-type": "text/javascript" } });
       if (url.pathname === "/hermes") {
         const theme = url.searchParams.get("theme") === "dark" ? "dark" : "light";
-        return new Response(hermesPage(theme, "aaaaaaaa", genuiBlock ? [genuiBlock] : []), { headers: { "content-type": "text/html; charset=utf-8" } });
+        return new Response(hermesPage(theme, "aaaaaaaa", [mapBlock, genuiBlock].filter(Boolean)), { headers: { "content-type": "text/html; charset=utf-8" } });
       }
       if (url.pathname === "/call") {
         const body = (await request.json()) as { name?: string; arguments?: Record<string, unknown> };
@@ -292,11 +298,14 @@ async function main(): Promise<void> {
         if (!seenTag) note(`hermes plugin (${theme}): registers no ${tag}`);
       }
       const labels = ((genuiBlock?.states ?? []) as { label?: string }[]).map((state) => state.label ?? "").filter(Boolean);
-      const seen = labels.filter((label) => drawn.text.includes(label));
-      if (seen.length < 2) note(`hermes plugin (${theme}): the state machine drew ${seen.length} of ${labels.length} state labels (${JSON.stringify(drawn.text.slice(0, 120))})`);
+      const seen = labels.filter((label) => drawn.full.includes(label));
+      if (seen.length < 2) note(`hermes plugin (${theme}): the state machine drew ${seen.length} of ${labels.length} state labels (${JSON.stringify(drawn.full.slice(0, 120))})`);
+      const handles = ((mapBlock?.nodes ?? []) as { handle?: string }[]).map((node) => String(node.handle ?? "").replace(/^@/, "")).filter(Boolean);
+      const mapSeen = handles.filter((handle) => drawn.full.includes(handle));
+      if (mapSeen.length < 2) note(`hermes plugin (${theme}): the map drew ${mapSeen.length} of ${handles.length} card handles (${JSON.stringify(drawn.full.slice(0, 160))})`);
       troubleOf({ ...drawn, ready: drawn.textLength > 0, height: null, calls: [], unknown: [], initialized: true }, theme, tab.trouble, "hermes plugin");
       const height = Math.max(drawn.scrollHeight + 48, 320);
-      const file = await tab.screenshot(join(shots, `hermesStateMachine-${theme}.png`), height);
+      const file = await tab.screenshot(join(shots, `networkMapAndMachine-${theme}.png`), height);
       renders.push({ name: "hermesStateMachine", theme, file, drawn: { ...drawn, ready: true, height: null, calls: [], unknown: [], initialized: true }, trouble: tab.trouble.length });
       tab.trouble.length = 0;
     }
@@ -326,6 +335,27 @@ async function main(): Promise<void> {
       if (seen.length < 2) note(`hermes genui validator: the fallback text names ${seen.length} of ${labels.length} states`);
       const answer = answers.get("machineGenui");
       if (answer && !answer.text.includes(verdict.text.split("\n")[0] ?? "\u0000")) note("machineGenui: the tool text does not carry the block's fallback text");
+    }
+  }
+  if (mapBlock) {
+    const python = process.env.LOG_PYTHON?.trim() || "python";
+    const script = [
+      "import importlib.util, json, sys",
+      "spec = importlib.util.spec_from_file_location('genuiNetwork', sys.argv[1])",
+      "module = importlib.util.module_from_spec(spec)",
+      "spec.loader.exec_module(module)",
+      "block = json.loads(sys.stdin.read())",
+      "print(json.dumps({'problems': module.check_network(block, 'block'), 'text': module.text_network(block)}))",
+    ].join("\n");
+    const run = Bun.spawn([python, "-c", script, join(root, "hermesPlugin", "genuiNetwork.py")], { stdin: new Blob([JSON.stringify(mapBlock)]), stdout: "pipe", stderr: "pipe", windowsHide: true });
+    const [out, err] = await Promise.all([new Response(run.stdout).text(), new Response(run.stderr).text()]);
+    if ((await run.exited) !== 0) note(`hermes genui network validator: ${python} failed: ${err.trim().split("\n").slice(-3).join(" ")}`);
+    else {
+      const verdict = JSON.parse(out.trim()) as { problems: [string, string][]; text: string };
+      for (const [where, problem] of verdict.problems) note(`hermes genui network validator: ${where}: ${problem}`);
+      const handles = ((mapBlock.nodes ?? []) as { handle?: string }[]).map((n) => String(n.handle ?? "").replace(/^@/, ""));
+      const seen = handles.filter((handle) => verdict.text.includes(handle));
+      if (seen.length < 2) note(`hermes genui network validator: the fallback text names ${seen.length} of ${handles.length} people`);
     }
   }
 

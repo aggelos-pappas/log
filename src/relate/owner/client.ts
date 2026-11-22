@@ -11,6 +11,8 @@ import { applyBatch, buildFileAsync, contextFrom, countsFrom, countsOf, eventsTh
 import { askOf } from '../graph/helpers/store'
 import { machineFrom } from '../machine/client'
 import type { MachineAsk } from '../machine/client'
+import { mapFrom } from '../map/mapFrom.ts'
+import type { MapAsk } from '../map/types.ts'
 import type { BuiltFile, GraphPointer, GraphStore, StoreOffset } from '../graph/types'
 import { beatGraphOwner, claimGraphOwner, GraphOwnerFenced, ownerAlive, ownerRequest, ownerRowOf, releaseGraphOwner } from './helpers/index'
 import { OWNER_BATCH_EVENTS, OWNER_BATCH_MS, OWNER_FAILURES_BEFORE_REBUILD, OWNER_HEARTBEAT_MS, OWNER_START_BACKOFF_MS, OWNER_STOP_WAIT_MS } from './types'
@@ -172,6 +174,7 @@ export async function runGraphOwner(options: OwnerOptions): Promise<OwnerOutcome
     }),
     query: (body) => reading(async (target, conn) => ({ ...(await readOnlyRows(askOf(conn), conn, String(body.cypher ?? ''), (body.params ?? {}) as Record<string, unknown>)), throughSeq: target.offset.throughSeq, served: 'owner' as const })),
     machine: (body) => reading(async (target, conn) => machineFrom(askOf(conn), (body.ask ?? {}) as MachineAsk, target.offset.throughSeq, handle, Number(body.now ?? Date.now()))),
+    map: (body) => reading(async (target, conn) => mapFrom(askOf(conn), (body.ask ?? {}) as MapAsk, target.offset.throughSeq, handle, Number(body.now ?? Date.now()))),
     counts: () => reading(async (_target, conn) => countsFrom(askOf(conn), conn)),
     status: async () => ok(statusNow()),
     rebuild: async () => startRebuild('asked').then(ok, failed),
