@@ -10,7 +10,7 @@ import { botKnowledge } from '../../relate/machine/helpers/bots'
 import { DISCORD_CHANNELS, DISCORD_PEOPLE, seedDiscordWorld } from '../../relate/machine/fixtures/discordWorld'
 import { DEMO_OWNER } from '../../relate/graph/fixtures/demoWorld'
 import { MACHINE_NOW } from '../../relate/machine/fixtures/machineWorld'
-import { backfillBots } from './client'
+import { backfillBots, botSources } from './client'
 import type { BotSources } from './types'
 
 const iso = (ms: number): string => new Date(ms).toISOString()
@@ -100,5 +100,33 @@ describe('backfilling the flag from a member list', () => {
     expect(again.flagged).toBe(0)
     expect(again.already).toBe(1)
     expect(on.prepare("SELECT COUNT(*) AS n FROM identityProfiles WHERE platform = 'discord'").get()).toEqual({ n: 1 } as unknown as Record<string, unknown>)
+  })
+})
+
+describe('a Discord server that refuses its member list', () => {
+  test('does not stop the sweep: the next server is still read, and the refusal is said in the summary', async () => {
+    const on = openDatabase(join(mkdtempSync(join(tmpdir(), 'botsRefused-')), 'log.db'))
+    const asked: string[] = []
+    const sources = botSources({
+      handle: on,
+      accounts: () => [{ platform: 'discord', account: 'sourcedand', session: true }],
+      now: () => MACHINE_NOW,
+      discord: async (_account: unknown, spec: Record<string, unknown>) => {
+        asked.push(String(spec.action))
+        if (spec.action === 'servers') return { ok: true, members: [], servers: [{ id: '2', name: 'closed' }, { id: '3', name: 'open' }] }
+        if (spec.action === 'members' && String(spec.server) === '2') return { ok: false, code: 'platformError', detail: 'Discord answered 403 to server 2 members: Missing Access', members: [] }
+        if (spec.action === 'members') return { ok: true, members: [{ userId: '9100000401', bot: true, username: 'Welcomer' }, { userId: '77', bot: false, username: 'Robin' }], requests: 1, stopped: null }
+        return { ok: true, members: [], requests: 1, stopped: null }
+      },
+      slack: async () => ({ ok: true, members: [], places: 0, stopped: null }),
+    })
+    const report = await backfillBots(on, sources, { now: new Date(MACHINE_NOW) })
+    expect(asked.filter((a) => a === 'members')).toHaveLength(2)
+    expect(report.flagged).toBe(1)
+    expect(botKnowledge(on).keys.has('discord:9100000401')).toBe(true)
+    const account = report.platforms.find((p) => p.platform === 'discord')!.accounts[0]
+    expect(account.read).toBe(2)
+    expect(account.stopped).toContain('1 place(s) refused')
+    expect(account.account).toBe('sourcedand')
   })
 })

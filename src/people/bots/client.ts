@@ -99,9 +99,11 @@ const memberOf = (row: unknown): BotMember | null => {
 export const BOT_DISCORD_REQUESTS_PER_RUN = 40
 export const BOT_DISCORD_PAGES_PER_SERVER = 10
 export const BOT_SLACK_MEMBERS_PER_RUN = 200
-export const BOT_TARGETED_LOOKUPS = 12
+export const BOT_TARGETED_LOOKUPS = 20
+export const BOT_DISCORD_REFUSED_MS = 7 * 24 * 60 * 60_000
 
 const cursorKey = (account: string, server: string): string => `discord:${account}:${server}`
+const refusedKey = (account: string, server: string): string => `discord:${account}:${server}:refused`
 
 export interface BotEngineDeps {
   handle: Database
@@ -119,6 +121,7 @@ export function botSources(deps: BotEngineDeps): BotSources {
       let budget = BOT_DISCORD_REQUESTS_PER_RUN
       const members: BotMember[] = []
       const seen = new Set<string>()
+      const refused: string[] = []
       let stopped: string | null = null
       const take = (rows: readonly unknown[]) => {
         for (const row of rows) {
@@ -138,25 +141,33 @@ export function botSources(deps: BotEngineDeps): BotSources {
         const one = await deps.discord(account, { action: 'member', user })
         budget -= 1
         if (!one.ok) {
-          stopped = `${one.code ?? 'platformError'}: ${one.detail ?? ''}`
-          break
+          refused.push(`person ${user} answered ${one.code ?? 'platformError'}`)
+          continue
         }
         take(one.members)
       }
       const served = await deps.discord(account, { action: 'servers' })
       if (!served.ok) return members.length ? { ok: true, members, places: 0, stopped: stopped ?? `${served.code ?? 'platformError'}: ${served.detail ?? ''}` } : { ok: false, code: served.code, detail: served.detail, members: [] }
       const servers = served.servers ?? []
+      let tried = 0
       for (const server of servers) {
+        const refusedUntil = getState<{ until?: number }>('botBackfill', refusedKey(account.account, server.id), {}, deps.handle)?.body.until ?? 0
+        if (refusedUntil > clock()) {
+          refused.push(`${server.name ?? server.id} keeps refusing`)
+          continue
+        }
         if (budget < 1) {
           stopped = `stopped at ${BOT_DISCORD_REQUESTS_PER_RUN} requests; the rest of ${servers.length} server${servers.length === 1 ? '' : 's'} is read next run`
           break
         }
+        tried++
         const cursor = getState<{ after?: string }>('botBackfill', cursorKey(account.account, server.id), {}, deps.handle)?.body.after ?? '0'
         const pages = Math.max(1, Math.min(BOT_DISCORD_PAGES_PER_SERVER, budget))
         const run = await deps.discord(account, { action: 'members', server: server.id, after: cursor, pages })
         if (!run.ok) {
-          stopped = `${run.code ?? 'platformError'}: ${run.detail ?? ''}`
-          break
+          refused.push(`${server.name ?? server.id} answered ${run.code ?? 'platformError'}`)
+          putState('botBackfill', refusedKey(account.account, server.id), { until: clock() + BOT_DISCORD_REFUSED_MS }, clock(), deps.handle)
+          continue
         }
         budget -= Number(run.requests ?? pages)
         take(run.members)
@@ -164,7 +175,9 @@ export function botSources(deps: BotEngineDeps): BotSources {
         if (run.stopped && last) putState('botBackfill', cursorKey(account.account, server.id), { after: last.userId }, clock(), deps.handle)
         else putState('botBackfill', cursorKey(account.account, server.id), { after: '0' }, clock(), deps.handle)
       }
-      return { ok: true, members, places: servers.length, stopped }
+      const refusedLine = refused.length ? `${refused.length} place(s) refused (${refused.slice(0, 3).join('; ')}), the rest were read` : null
+      if (!tried && !members.length && refused.length) return { ok: false, code: 'platformError', detail: `none of ${servers.length} server(s) gave their member list: ${refused.slice(0, 3).join('; ')}`, members: [] }
+      return { ok: true, members, places: servers.length, stopped: [stopped, refusedLine].filter(Boolean).join('. ') || null }
     },
   }]
   const slack: BotSources['sources'] = [{
