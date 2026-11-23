@@ -1,4 +1,5 @@
 import { rememberProfiles } from "../../../inbox/store/index.ts";
+import { saveProfileAvatars } from "../../../inbox/profiles/index.ts";
 import { twitterFollowerProfile } from "../../../storage/platform/index.ts";
 import type { TwitterFollower, TwitterSessionAnswer } from "../../../twitter/account/session/index.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseError, refuseInput } from "../../runner/helpers/index.ts";
@@ -61,7 +62,12 @@ export const followersCommand: Command = {
       context.err(`${opened.account.accountName}: followers read (up to ${limit}) on the direct-API engine, X called directly`);
       const run = await opened.engine({ action: "followers", limit });
       const code = run.answer.ok ? 0 : 1;
-      if (run.answer.ok && run.answer.followers?.length) rememberProfiles("twitter", opened.account.accountName, run.answer.followers.map((f) => twitterFollowerProfile(f as unknown as Record<string, unknown>)), context.now?.() ?? new Date());
+      if (run.answer.ok && run.answer.followers?.length) {
+        const now = context.now?.() ?? new Date();
+        const sightings = run.answer.followers.map((f) => twitterFollowerProfile(f as unknown as Record<string, unknown>));
+        rememberProfiles("twitter", opened.account.accountName, sightings, now);
+        await saveProfileAvatars("twitter", opened.account.accountName, sightings, now);
+      }
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", library: "twikit", account: opened.account.accountName, ...run.answer }, null, 2) };
       const governor = governorLine(run);
       return { code, stdout: [render(opened.account.accountName, run.answer), ...(governor ? [governor] : [])].join("\n") };

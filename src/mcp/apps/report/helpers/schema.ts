@@ -142,6 +142,7 @@ const mapLane = z.strictObject({ platform: line(MP.platform), state: line(MP.lab
 const mapNext = z.strictObject({ text: line(MP.text), tool: line(MP.platform) });
 const mapNode = z.strictObject({
   key: line(MP.id), handle: line(MP.label), name: line(MP.label).optional(), initials: line(4),
+  avatar: z.string().startsWith("data:image/").max(6_000_000).nullable().optional(),
   platform: line(MP.platform), platforms: z.array(line(MP.platform)).max(8),
   ring: z.number().int().min(1).max(4), tone: z.enum(MAP_TONES), why: line(MP.why),
   rooms: z.array(mapRoom).max(8), facts: z.array(mapFact).max(MP.facts),

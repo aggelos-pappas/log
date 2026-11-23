@@ -21,7 +21,8 @@ function Mark({ platform }: { platform: string }) {
   return <span className="rmPlatformChip" data-platform={platform} data-user={`@${platform}`} title={platform}>{PLATFORM_MARKS_LOCAL[platform] ?? PLATFORM_MARKS[platform] ?? platform.slice(0, 2).toUpperCase()}</span>;
 }
 
-function AvatarText({ text, cls = 'rmAvatar' }: { text: string; cls?: string }) {
+function AvatarText({ text, cls = 'rmAvatar', src }: { text: string; cls?: string; src?: string | null }) {
+  if (src) return <img className={cls} src={src} alt="" />;
   return <span className={cls} aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>{text.slice(0, 2).toUpperCase()}</span>;
 }
 
@@ -70,7 +71,7 @@ function Card({ node, pos, dim, selected, pathKeys, onOpen, onDrag }: { node: Ma
       <div className="rmRingBanner" style={{ ['--tone' as string]: banner }}>Ring {node.ring} · {RING_NAME[node.ring]}</div>
       {node.talk ? <div className="rmTalkStrip"><b>TALK NEXT</b><span>{node.next?.text ?? 'reach out'}</span></div> : null}
       <div className="rmNodeHeader" onMouseDown={(e) => onDrag(e, node.key)}>
-        <AvatarText text={node.initials || node.handle.replace(/^@/, '').slice(0, 2)} />
+        <AvatarText text={node.initials || node.handle.replace(/^@/, '').slice(0, 2)} src={node.avatar} />
         <span className="rmNodeName">@{node.handle.replace(/^@/, '')}</span>
         <span className="rmPlatformGallery">{node.platforms.map((p) => <Mark key={p} platform={p} />)}</span>
       </div>
