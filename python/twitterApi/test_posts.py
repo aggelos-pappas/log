@@ -69,3 +69,9 @@ def test_user_posts_pages_until_the_limit_and_reads_the_media_tab_when_asked(mon
     assert [p["id"] for p in out["posts"]] == ["1", "2", "3"] and out["pages"] == 2
     assert client.calls[0] == ("user", "someone") and client.calls[1] == ("tweets", "42", "Media", 3)
     assert out["user"]["followers"] == 685
+
+
+def test_a_follower_keeps_the_picture_url_the_engine_answer_carries():
+    user = SimpleNamespace(id="7", screen_name="someone", name="Someone", description="", location="", followers_count=1, following_count=2, statuses_count=3, can_dm=True, protected=False, created_at=None, profile_image_url=None, profile_image_url_https="https://pbs.example/picture.jpg")
+    row = engine.follower_of(user)
+    assert row["pictureUrl"] == "https://pbs.example/picture.jpg"

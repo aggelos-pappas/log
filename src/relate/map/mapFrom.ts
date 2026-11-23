@@ -1,4 +1,6 @@
 import type { Database } from 'bun:sqlite'
+import { readBlobBytes } from '../../storage/platform/index.ts'
+import { avatarDataUri } from '../../inbox/profiles/index.ts'
 import type { Ask } from '../graph/types.ts'
 import type { EvidenceTime, MachineAccount, PersonStanding, RoomFact, StageEvidence, StateMachineBlock } from '../machine/types.ts'
 import { botKnowledge, type BotKnowledge } from '../machine/helpers/bots.ts'
@@ -10,6 +12,11 @@ import type { MapAnswer, MapAsk, MapEdge, MapEdgeKind, MapHop, MapNode, MapRoom,
 
 type Row = Record<string, unknown>
 const num = (v: unknown): number | null => (v === null || v === undefined || v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null)
+const avatarOf = (handle: Database | null, platform: string, userId: string): string | null => {
+  if (!handle) return null
+  const row = handle.prepare('SELECT avatarHash FROM identityProfiles WHERE platform = ? AND userId = ?').get(platform, userId) as { avatarHash: string | null } | null
+  return row?.avatarHash ? avatarDataUri(readBlobBytes(handle, row.avatarHash)) : null
+}
 const isoMs = (v: unknown): number | null => {
   if (typeof v === 'number') return v
   const ms = typeof v === 'string' ? Date.parse(v) : NaN
@@ -261,6 +268,7 @@ export async function mapFrom(read: Ask, ask: MapAsk, throughSeq: number | null,
       handle: String(s.evidence.handle ?? key),
       ...(s.evidence.name ? { name: clip(s.evidence.name, MAP_LIMITS.label) } : {}),
       initials: initialsOf(String(s.evidence.handle ?? key), s.evidence.name),
+      avatar: avatarOf(handle, s.evidence.platform, key.slice(s.evidence.platform.length + 1)),
       platform: s.evidence.platform,
       platforms: [...new Set([s.evidence.platform, ...accounts.map((a) => a.platform)])],
       ring,

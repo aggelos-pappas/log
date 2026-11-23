@@ -1,4 +1,5 @@
 import { identifyAccount, rememberProfiles } from '../../../inbox/store/index'
+import { saveProfileAvatars } from '../../../inbox/profiles/index'
 import { sessionProfileOf } from '../../../storage/platform/index'
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -250,7 +251,11 @@ export async function recordTwitterSession(twenty: TwentyClient, account: Twitte
   const ownId = ownUserIdOf(account.cookies)
   const aboutTheOwner = !ownId || !run.answer.userId || String(run.answer.userId) === ownId
   if (run.answer.ok && state === 'loggedIn' && run.answer.userId && aboutTheOwner) identifyAccount('twitter', account.accountName, String(run.answer.userId), now)
-  if (run.answer.ok && state === 'loggedIn' && aboutTheOwner) rememberProfiles('twitter', account.accountName, [sessionProfileOf('twitter', run.answer as unknown as Record<string, unknown>)], now)
+  if (run.answer.ok && state === 'loggedIn' && aboutTheOwner) {
+    const sighting = sessionProfileOf('twitter', run.answer as unknown as Record<string, unknown>)
+    rememberProfiles('twitter', account.accountName, [sighting], now)
+    await saveProfileAvatars('twitter', account.accountName, [sighting], now)
+  }
   if (fresh) return []
   account.sessionState = state
   account.sessionCheckedAt = now.toISOString()

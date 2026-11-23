@@ -72,6 +72,7 @@ export interface MapNode {
   handle: string
   name?: string
   initials: string
+  avatar?: string | null
   platform: string
   platforms: string[]
   ring: number

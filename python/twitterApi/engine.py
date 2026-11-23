@@ -1142,7 +1142,7 @@ def follower_of(user: Any) -> dict[str, Any]:
         "canDm": bool(getattr(user, "can_dm", False)),
         "protected": bool(getattr(user, "protected", False)),
         "createdAt": getattr(user, "created_at", None),
-        "pictureUrl": getattr(user, "profile_image_url", None),
+        "pictureUrl": getattr(user, "profile_image_url", None) or getattr(user, "profile_image_url_https", None),
     }
 
 
