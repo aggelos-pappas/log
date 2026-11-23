@@ -75,3 +75,15 @@ def test_a_follower_keeps_the_picture_url_the_engine_answer_carries():
     user = SimpleNamespace(id="7", screen_name="someone", name="Someone", description="", location="", followers_count=1, following_count=2, statuses_count=3, can_dm=True, protected=False, created_at=None, profile_image_url=None, profile_image_url_https="https://pbs.example/picture.jpg")
     row = engine.follower_of(user)
     assert row["pictureUrl"] == "https://pbs.example/picture.jpg"
+
+
+def test_dm_and_notification_people_keep_the_picture_url_the_client_bundle_uses():
+    users = {"7": {"screen_name": "someone", "name": "Someone", "profile_image_url_https": "https://pbs.example/person.jpg"}}
+    person = engine.user_of(users, "7")
+    assert person["pictureUrl"] == "https://pbs.example/person.jpg"
+
+    from twitterApi.notifications import engager, person as notification_person
+
+    brief = {"user_id": "8", "screen_name": "other", "name": "Other", "profile_image_url_https": "https://pbs.example/other.jpg"}
+    assert notification_person(brief)["pictureUrl"] == "https://pbs.example/other.jpg"
+    assert engager(SimpleNamespace(id="9", screen_name="third", name="Third", followers_count=1, profile_image_url="https://pbs.example/third.jpg"))["pictureUrl"] == "https://pbs.example/third.jpg"

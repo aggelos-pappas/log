@@ -1,8 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { Database } from "bun:sqlite";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { rememberProfiles } from "../store/index.ts";
 import { migrate } from "../../storage/schema/client.ts";
-import { avatarDataUri, backfillProfileAvatars, saveProfileAvatars } from "./index.ts";
+import { avatarDataUri, backfillProfileAvatars, backfillXStateAvatars, saveProfileAvatars } from "./index.ts";
 
 const NOW = new Date("2026-11-14T10:00:00Z");
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
@@ -61,4 +64,23 @@ describe("profile avatars", () => {
     expect(report).toEqual({ seen: 1, saved: ["discord:6001"], failed: 0 });
     expect(stored(handle).avatarHash).toBeTruthy();
   });
+});
+
+test("backfills avatars from the X inbox state already kept", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "logXAvatars"));
+  const previous = process.env.LOG_TWITTER_STATE;
+  const accountDir = join(dir, "fakeAccount");
+  mkdirSync(accountDir, { recursive: true });
+  writeFileSync(join(accountDir, "inboxSync.json"), JSON.stringify({ legacy: { users: { "6002": { screen_name: "friend", name: "Friend", profile_image_url_https: "https://pbs.example/avatar.png" } } } }));
+  process.env.LOG_TWITTER_STATE = dir;
+  try {
+    const handle = fresh();
+    const report = await backfillXStateAvatars("fakeAccount", handle, 10, NOW, fakeFetch(PNG));
+    expect(report.saved).toEqual(["6002"]);
+    expect(handle.prepare("SELECT avatarHash FROM identityProfiles WHERE platform = ? AND userId = ?").get("twitter", "6002")).toBeTruthy();
+  } finally {
+    if (previous === undefined) delete process.env.LOG_TWITTER_STATE;
+    else process.env.LOG_TWITTER_STATE = previous;
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

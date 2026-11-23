@@ -1,3 +1,4 @@
+import { saveProfileAvatars, avatarSightingOf } from "../../../inbox/profiles/index.ts";
 import { timedSync } from "../../../observability/timing/index.ts";
 import { spawn } from "node:child_process";
 import { join } from "node:path";
@@ -235,6 +236,16 @@ export const dmsCommand: Command = {
       const words = everyChat.ok && everyChat.threads ? lastWordOf({ platform: "twitter", account: opened.account.accountName }) : [];
       if (words.length) context.err(`${opened.account.accountName}: who wrote last is read from log.db by time (${words.length} people, each one's old DM and X Chat judged together)`);
       const run = everyChat.ok && everyChat.threads ? { ...raw, answer: withDbLastWord(onePerPerson(everyChat), words) } : { ...raw, answer: everyChat };
+      if (run.answer.ok) {
+        const seen = new Set<string>();
+        const people = (run.answer.threads ?? []).flatMap((t) => t.with ?? []).filter((p) => {
+          const key = `${p.userId}:${p.pictureUrl ?? ""}`;
+          if (!p.pictureUrl || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).slice(0, 100);
+        await saveProfileAvatars("twitter", opened.account.accountName, people.map(avatarSightingOf), context.now?.() ?? new Date());
+      }
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) {
         const answer = waiting && run.answer.threads ? { ...run.answer, threads: run.answer.threads.filter(waitingOnYou), followUps: run.answer.threads.filter(followUpDue) } : run.answer;

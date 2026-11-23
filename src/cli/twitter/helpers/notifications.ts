@@ -1,4 +1,5 @@
 import type { TwitterSessionAnswer } from "../../../twitter/account/session/index.ts";
+import { saveProfileAvatars, avatarSightingOf } from "../../../inbox/profiles/index.ts";
 import { NOTIFICATION_TYPES, countByKind, engagersOf, isNotificationType, notificationStorePath, postEngagerSummaryOf, postIdOf, queryNotifications, readNotificationStore } from "../../../twitter/notification/feed/index.ts";
 import type { NotificationKind, NotificationStore, NotificationType, PostEngagerSummary, TwitterNotification } from "../../../twitter/notification/feed/index.ts";
 import { UNROLL_RUN_PAGES, engagerLine, runNotificationUnroll, unrollReportOf } from "../../../twitter/notification/unroll/index.ts";
@@ -108,6 +109,16 @@ export const notificationsCommand: Command = {
       const engagerPosts: PostEngagerSummary[] = unroll ? unroll.posts : postId ? [postEngagerSummaryOf(store, postId)] : [];
       const query = { kinds: NOTIFICATION_TYPES[type], ...(typeof since === "string" ? { since } : {}), ...(postId ? { postId } : {}) };
       const matched = queryNotifications(store, query);
+      if (answer.ok) {
+        const seen = new Set<string>();
+        const people = matched.filter((r) => {
+          const key = `${r.userId}:${r.pictureUrl ?? ""}`;
+          if (!r.pictureUrl || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).slice(0, 100);
+        await saveProfileAvatars("twitter", account, people.map(avatarSightingOf), context.now?.() ?? new Date());
+      }
       const shown = matched.slice(0, limit);
       const counts = countByKind(matched);
       const code = answer.ok ? 0 : 1;
