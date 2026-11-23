@@ -109,7 +109,6 @@
       "path": "docs/decisions/relateApp/networkMapMockup.html",
       "rule": "publicIp",
       "fingerprint": "4c844283f8a3",
-      "why": "An SVG path inside a data-URI avatar; the four numbers are coordinates, not an address"
-    }
+      "why": "False positive: a percent-encoded space (%20) followed by SVG path coordinates in an embedded base64 mockup, not an address"    }
   ]
 }

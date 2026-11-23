@@ -61,7 +61,7 @@ export function guideOfCommand(command: Pick<Command, "platform" | "name">): str
 export const FLOWS_GUIDE = Object.entries(GUIDE_TOPICS).find(([, t]) => t.flows)![0];
 
 export function guideLine(topic: string): string {
-  return `Before first using this tool in a session, load its guide: ${GUIDE_TOOL}({ topic: "${topic}" }) (${GUIDE_TOPICS[topic].about}).`;
+  return `Before first using this tool, load its guide: ${GUIDE_TOOL}({ topic: "${topic}" }) (${GUIDE_TOPICS[topic].about}).`;
 }
 
 export function guidePath(topic: string): string {

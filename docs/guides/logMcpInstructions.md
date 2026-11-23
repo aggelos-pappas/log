@@ -25,6 +25,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "discord/serverSearch" })` | Finding a conversation in a Discord server |
 | `getGuide({ useCase: "facebook/groups" })` | Listening to local Facebook groups |
 | `getGuide({ useCase: "facebook/marketplaceListings" })` | From accounts to live Marketplace listings |
+| `getGuide({ useCase: "inbox/agentToAgent" })` | Agent to agent: probe another agent and turn its findings into issues |
 | `getGuide({ useCase: "inbox/bossMaxxing" })` | Bossmaxxing: giving out tasks to the team |
 | `getGuide({ useCase: "inbox/governorReset" })` | Resetting an account's governor count |
 | `getGuide({ useCase: "inbox/ignoreServer" })` | Ignoring a server or a chat |
