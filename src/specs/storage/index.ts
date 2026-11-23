@@ -41,11 +41,13 @@ const PLATFORM_TYPES = 'src/storage/platform/types.ts'
 const PROFILE_READ = 'src/inbox/profiles/client.ts'
 const AVATARS = 'src/inbox/profiles/avatars.ts'
 const X_FOLLOWERS = 'src/cli/twitter/helpers/followers.ts'
+const X_DMS = 'src/cli/twitter/helpers/dms.ts'
+const X_NOTIFICATIONS = 'src/cli/twitter/helpers/notifications.ts'
 
 export const storage = {
   description: 'One SQLite database: times as integer milliseconds, one stable key per message, and old rows filled in resumable batches',
   specPath: 'docs/specs/storage.md',
-  codePaths: ['src/directApi/governor/client.ts', 'src/storage/state/client.ts', 'src/agentHooks/answers/client.ts', 'scripts/hooks/engines.ts', 'scripts/hooks/pageState.ts', 'src/agentHooks/sessionOffsets/client.ts', 'src/extensions/memeTaste/client.ts', 'src/extensions/voiceClone/helpers/store.ts', 'src/mcp/freshness/client.ts', 'src/mcp/reload/client.ts', 'src/voice/passes/client.ts', TIME, BASE, TYPED, MIGRATIONS, BACKFILL, SCHEMA, STORE, CATCH_UP, X_CHAT, CONVERSATIONS, DERIVED, DB_READ, COMMAND, PLATFORM_SESSION, X_SESSION, WATCH, RELAY, CLAIMS, DISCORD, SLACK, X_SEND, INSTAGRAM, LEDGER, QUEUE_STORE, QUEUE_PLAN, QUEUE_EVENTS, JOBS, TRANSCRIPTS, RECORDS, CONTEXT, ONE_DB, EXTENDERS, PROFILES, PLATFORM_TYPES, PROFILE_READ, AVATARS, X_FOLLOWERS, MEMBERS],
+  codePaths: ['src/directApi/governor/client.ts', 'src/storage/state/client.ts', 'src/agentHooks/answers/client.ts', 'scripts/hooks/engines.ts', 'scripts/hooks/pageState.ts', 'src/agentHooks/sessionOffsets/client.ts', 'src/extensions/memeTaste/client.ts', 'src/extensions/voiceClone/helpers/store.ts', 'src/mcp/freshness/client.ts', 'src/mcp/reload/client.ts', 'src/voice/passes/client.ts', TIME, BASE, TYPED, MIGRATIONS, BACKFILL, SCHEMA, STORE, CATCH_UP, X_CHAT, CONVERSATIONS, DERIVED, DB_READ, COMMAND, PLATFORM_SESSION, X_SESSION, WATCH, RELAY, CLAIMS, DISCORD, SLACK, X_SEND, INSTAGRAM, LEDGER, QUEUE_STORE, QUEUE_PLAN, QUEUE_EVENTS, JOBS, TRANSCRIPTS, RECORDS, CONTEXT, ONE_DB, EXTENDERS, PROFILES, PLATFORM_TYPES, PROFILE_READ, AVATARS, X_FOLLOWERS, X_DMS, X_NOTIFICATIONS, MEMBERS],
   anchors: {
     'REQ-STORAGE-01': [
       { kind: 'symbol', file: TIME, name: 'msOf' },
@@ -259,6 +261,8 @@ export const storage = {
       { kind: 'uses', file: PLATFORM_SESSION, name: 'saveProfileAvatars' },
       { kind: 'uses', file: X_SESSION, name: 'saveProfileAvatars' },
       { kind: 'uses', file: X_FOLLOWERS, name: 'saveProfileAvatars' },
+      { kind: 'uses', file: X_DMS, name: 'saveProfileAvatars' },
+      { kind: 'uses', file: X_NOTIFICATIONS, name: 'saveProfileAvatars' },
     ],
     'REQ-STORAGE-03': [
       { kind: 'symbol', file: BACKFILL, name: 'runBackfill' },

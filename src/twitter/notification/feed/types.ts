@@ -27,6 +27,7 @@ export interface TwitterNotification {
   followsYou?: boolean | null
   youFollow?: boolean | null
   followers?: number | null
+  pictureUrl?: string | null
   postId?: string | null
   postText?: string | null
   postUrl?: string | null

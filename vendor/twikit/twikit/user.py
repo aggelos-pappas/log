@@ -100,7 +100,7 @@ class User:
         core = data.get('core') or {}
         self.name: str = legacy.get('name') or core.get('name')
         self.screen_name: str = legacy.get('screen_name') or core.get('screen_name')
-        self.profile_image_url: str = legacy.get('profile_image_url_https')
+        self.profile_image_url: str = legacy.get('profile_image_url_https') or (data.get('avatar') or {}).get('image_url')
         self.profile_banner_url: str = legacy.get('profile_banner_url')
         self.url: str = legacy.get('url')
         self.location: str = legacy.get('location', '')

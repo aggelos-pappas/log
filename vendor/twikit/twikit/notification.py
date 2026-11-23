@@ -63,6 +63,7 @@ def _user_brief(users: dict, user_id: str) -> dict:
         'followers_count': data.get('followers_count'),
         'following': data.get('following'),
         'followed_by': data.get('followed_by'),
+        'profile_image_url_https': data.get('profile_image_url_https') or (data.get('avatar') or {}).get('image_url'),
     }
 
 

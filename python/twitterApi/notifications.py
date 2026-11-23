@@ -76,7 +76,7 @@ def post_url(handle: Any, tweet_id: Any) -> str | None:
 
 
 def person(user: dict[str, Any]) -> dict[str, Any]:
-    return {"userId": str(user.get("user_id") or ""), "handle": user.get("screen_name"), "name": user.get("name"), "followsYou": user.get("followed_by"), "youFollow": user.get("following"), "followers": user.get("followers_count")}
+    return {"userId": str(user.get("user_id") or ""), "handle": user.get("screen_name"), "name": user.get("name"), "followsYou": user.get("followed_by"), "youFollow": user.get("following"), "followers": user.get("followers_count"), "pictureUrl": user.get("profile_image_url_https")}
 
 
 def rows_of(page: dict[str, Any], me: str, my_handle: str | None) -> list[dict[str, Any]]:
@@ -157,7 +157,7 @@ Pace = Callable[[], Awaitable[None]]
 
 
 def engager(user: Any) -> dict[str, Any]:
-    return {"userId": str(getattr(user, "id", "") or ""), "handle": getattr(user, "screen_name", None), "name": getattr(user, "name", None), "followsYou": None, "youFollow": None, "followers": getattr(user, "followers_count", None)}
+    return {"userId": str(getattr(user, "id", "") or ""), "handle": getattr(user, "screen_name", None), "name": getattr(user, "name", None), "followsYou": None, "youFollow": None, "followers": getattr(user, "followers_count", None), "pictureUrl": getattr(user, "profile_image_url", None)}
 
 
 def engager_rows(users: list[Any], kind: str, post_id: str, me: str, my_handle: str | None, post_text: str | None) -> list[dict[str, Any]]:

@@ -94,6 +94,7 @@ export interface TwitterDmPerson {
   name?: string | null
   followsYou?: boolean | null
   youFollow?: boolean | null
+  pictureUrl?: string | null
 }
 
 export interface TwitterDmThread {

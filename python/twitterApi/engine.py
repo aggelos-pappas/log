@@ -672,7 +672,7 @@ def merge_state(into: dict[str, Any], state: dict[str, Any], box: str | None) ->
 
 def user_of(users: dict[str, Any], user_id: str) -> dict[str, Any]:
     user = users.get(user_id) or {}
-    return {"userId": user_id, "handle": user.get("screen_name"), "name": user.get("name"), "followsYou": user.get("followed_by"), "youFollow": user.get("following")}
+    return {"userId": user_id, "handle": user.get("screen_name"), "name": user.get("name"), "followsYou": user.get("followed_by"), "youFollow": user.get("following"), "pictureUrl": user.get("profile_image_url_https")}
 
 
 def thread_of(conversation: dict[str, Any], messages: list[dict[str, Any]], users: dict[str, Any], me: str, box: str) -> dict[str, Any]:
@@ -735,7 +735,7 @@ async def xchat_threads(client: Any, me: str, opened: dict[str, list[dict[str, A
     convs = await client.get_xchat_conversations()
     out = []
     for conv in convs:
-        people = [{"userId": uid, "handle": (conv.get("handles") or {}).get(uid)} for uid in conv.get("participant_ids") or []]
+        people = [{"userId": uid, "handle": (conv.get("handles") or {}).get(uid), "pictureUrl": (conv.get("avatars") or {}).get(uid)} for uid in conv.get("participant_ids") or []]
         last_ms = conv.get("last_time_ms")
         from_me = bool(conv.get("last_from_me"))
         said = [m for m in (opened or {}).get(conv.get("conversation_id") or "", []) if m.get("text") is not None]

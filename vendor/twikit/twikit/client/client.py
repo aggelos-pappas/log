@@ -3283,11 +3283,16 @@ class Client:
                         ids.add(part)
                 ids.discard(me)
                 handles = {}
+                avatars = {}
                 for part in detail.get('participants_results') or []:
                     rest = str(part.get('rest_id') or '')
-                    core = ((part.get('result') or {}).get('core') or {})
+                    result = part.get('result') or {}
+                    core = result.get('core') or {}
+                    avatar = (result.get('avatar') or {}).get('image_url')
                     if rest and core.get('screen_name'):
                         handles[rest] = core['screen_name']
+                    if rest and avatar:
+                        avatars[rest] = avatar
                 events = [decode_event(e) for e in (item.get('latest_message_events') or [])]
                 events = [e for e in events if e.get('time_ms') is not None]
                 last = max(events, key=lambda e: e['time_ms']) if events else None
@@ -3298,6 +3303,7 @@ class Client:
                     'last_time_ms': last['time_ms'] if last else None,
                     'last_from_me': bool(last and last['sender_id'] == me),
                     'handles': {k: v for k, v in handles.items() if k != me},
+                    'avatars': {k: v for k, v in avatars.items() if k != me},
                 })
             return out
 
