@@ -13,6 +13,7 @@ import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { MCP_APP_MIME_TYPE, UI_EXTENSION_ID } from "../apps/browserView/index.ts";
 import { CARDS } from "../apps/cards.ts";
 import { MACHINE_TOOL, REPORT_TOOL } from "../apps/report/index.ts";
+import { MAP_TOOL } from "../apps/report/types.ts";
 import { createLogMcpServer, TOOL_RESULT_SCHEMA } from "./index.ts";
 import { LOADS_EVERY_TOOL_MS } from "../../../scripts/tests/timeouts.ts";
 
@@ -26,6 +27,11 @@ const SAMPLES: Record<string, { args: Record<string, unknown>; ok: boolean }[]> 
     { args: { view: "network" }, ok: true },
     { args: { person: "nobody_here_at_all" }, ok: false },
     { args: { view: "sideways" }, ok: false },
+  ],
+  [MAP_TOOL]: [
+    { args: {}, ok: true },
+    { args: { person: "ivy_ops" }, ok: true },
+    { args: { form: "sideways" }, ok: false },
   ],
   [REPORT_TOOL]: [
     { args: { title: "Fake numbers", blocks: [{ type: "stat", items: [{ label: "Messages in", value: 3 }] }] }, ok: true },

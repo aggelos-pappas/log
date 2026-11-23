@@ -1,4 +1,5 @@
 import { machineText } from "../../../../relate/machine/render/text.ts";
+import { mapText } from "../../../../relate/map/mapFrom.ts";
 import type { BarChartBlock, CalloutBlock, Cell, LineChartBlock, PersonListBlock, ReportBlock, ReportSpec, StatBlock, TableBlock } from "../types.ts";
 
 export const BAR_WIDTH = 24;
@@ -83,6 +84,7 @@ export function blockText(block: ReportBlock): string {
   if (block.type === "table") return tableText(block);
   if (block.type === "personList") return personText(block);
   if (block.type === "stateMachine") return machineText(block);
+  if (block.type === "networkMap") return mapText(block);
   return calloutText(block);
 }
 

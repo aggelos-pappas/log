@@ -5,6 +5,8 @@ import type { GraphPointer } from "../../relate/graph/index.ts";
 import type { GraphCounts, NetworkGraphCounts } from "../../relate/graph/index.ts";
 import { MACHINE_FORMS, MACHINE_PLATFORMS, MACHINE_VIEWS, machineGenuiBlock, relateMachine } from "../../relate/machine/index.ts";
 import type { MachinePlatform, MachineView } from "../../relate/machine/index.ts";
+import { MAP_FORMS, MAP_PLATFORMS, networkMapGenuiBlock, relateMap } from "../../relate/map/index.ts";
+import type { MapPlatform } from "../../relate/map/index.ts";
 import { defaultDbPath, openDatabase } from "../../storage/schema/index.ts";
 import { tickLine } from "../../indexPass/helpers/tick.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
@@ -18,6 +20,7 @@ export const RELATE_USAGE = [
   "       log relate ask \"<text>\" [--json]",
   "       log relate query \"<cypher>\" [--platform <p>] [--json]",
   "       log relate machine [--person|--to <h>] [--view|--platform|--form <v>] [--state <s>] [--cursor <n>] [--quiet] [--limit <n>] [--json]",
+  "       log relate map [--person|--to <h>] [--platform|--form <v>] [--cursor <n>] [--quiet] [--limit <n>] [--json]",
   "       log relate owner status|start|stop [--json]",
   "The graph is a projection of log.db; a build can be redone (docs/relateGraph.md).",
 ].join("\n");
@@ -30,13 +33,13 @@ export const RELATE_INPUT: CommandInput = {
     { words: ["ask"], summary: "The connected context (chats, engagement, groups, introducers, orbit) of the people a text names", positionals: [{ name: "text", kind: "string", required: true, description: "A prompt or note naming people, e.g. \"reply to @someone\"" }], flags: [JSON_FLAG] },
     {
       words: ["machine"],
-      summary: "A relationship state machine: one person, the route to someone, or the network",
+      summary: "A relationship state machine: person, route or network",
       positionals: [],
       flags: [
         { name: "person", kind: "string", description: "Who: where you stand and the next move" },
         { name: "to", kind: "string", description: "Who: the route to them through people you know" },
         { name: "view", kind: "enum", values: MACHINE_VIEWS, description: "person, route or network" },
-        { name: "platform", kind: "enum", values: MACHINE_PLATFORMS, description: "Only this platform's accounts" },
+        { name: "platform", kind: "enum", values: MACHINE_PLATFORMS, description: "Only this platform" },
         { name: "state", kind: "string", description: "Network view: only this state's cell, for the next page of people" },
         { name: "cursor", kind: "integer", min: 0, description: "Network view: how many people of this state to skip, for the next page" },
         { name: "quiet", kind: "boolean", description: "Network view: the ones gone quiet for 14 days or more" },
@@ -45,7 +48,22 @@ export const RELATE_INPUT: CommandInput = {
         JSON_FLAG,
       ],
     },
-    { words: ["query"], summary: "A read-only Cypher query on the Relate graph (at most 100 rows)", positionals: [{ name: "cypher", kind: "string", required: true, description: "The Cypher to run, e.g. MATCH (i:Identity)-[:ENGAGED]->(p:Post) RETURN i.handle, p.text LIMIT 5" }], flags: [{ name: "platform", kind: "enum", values: PLATFORMS, description: "Sets $platform" }, JSON_FLAG] },
+    { words: ["query"], summary: "A read-only Cypher query on the Relate graph (100 rows max)", positionals: [{ name: "cypher", kind: "string", required: true, description: "The Cypher to run, e.g. MATCH (i:Identity)-[:ENGAGED]->(p:Post) RETURN i.handle, p.text LIMIT 5" }], flags: [{ name: "platform", kind: "enum", values: PLATFORMS, description: "Sets $platform" }, JSON_FLAG] },
+    {
+      words: ["map"],
+      summary: "Network map",
+      positionals: [],
+      flags: [
+        { name: "person", kind: "string", description: "Focus this person" },
+        { name: "to", kind: "string", description: "Bridge to this person" },
+        { name: "platform", kind: "enum", values: MAP_PLATFORMS, description: "Only this platform's accounts" },
+        { name: "cursor", kind: "integer", min: 0, description: "Skip for the next page" },
+        { name: "quiet", kind: "boolean", description: "Only the quiet ones" },
+        { name: "limit", kind: "integer", min: 1, max: 32, description: "People to draw, default 24" },
+        { name: "form", kind: "enum", values: MAP_FORMS, description: "genui: the block to pass to show_blocks" },
+        JSON_FLAG,
+      ],
+    },
   ],
 };
 
@@ -160,6 +178,15 @@ export const relateCommand: Command = {
       if (flag("form") === "genui") return { code: 0, stdout: JSON.stringify(block) };
       return { code: 0, stdout: answer.text };
     }
-    return refuseInput("relate", 'say build, status, verify, ask "<text>", query "<cypher>", machine or owner status|start|stop', RELATE_USAGE);
+    if (sub === "map" && rest.length === 0) {
+      const flag = (name: string) => (typeof parsed.flags[name] === "string" ? (parsed.flags[name] as string) : undefined);
+      const answer = await relateMap({ person: flag("person"), to: flag("to"), platform: flag("platform") as MapPlatform | undefined, ...(numberOf(parsed, "cursor") !== null ? { cursor: numberOf(parsed, "cursor")! } : {}), ...(parsed.flags["quiet"] === true ? { quiet: true } : {}), ...(numberOf(parsed, "limit") ? { limit: numberOf(parsed, "limit")! } : {}), ...(flag("form") ? { form: flag("form") as "genui" | "view" } : {}) }, dbPath);
+      if (!answer.ok) return refuse("relate map", "graphUnreadable", answer.problem);
+      const block = flag("form") === "genui" ? networkMapGenuiBlock(answer.block as unknown as Record<string, unknown>) : answer.block;
+      if (json) return { code: 0, stdout: JSON.stringify({ block, text: answer.text, throughSeq: answer.throughSeq }, null, 2) };
+      if (flag("form") === "genui") return { code: 0, stdout: JSON.stringify(block) };
+      return { code: 0, stdout: answer.text };
+    }
+    return refuseInput("relate", 'say build, status, verify, ask "<text>", query "<cypher>", machine, map or owner status|start|stop', RELATE_USAGE);
   },
 };

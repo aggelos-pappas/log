@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { transform } from "sucrase";
 import { MACHINE_FONT, machineCss } from "../../../../relate/machine/theme.ts";
+import { mapCss } from "../../../../relate/map/mapCss.ts";
 import { KitProvider, setHost } from "./kit.tsx";
 import type { KitHost } from "./kit.tsx";
 import { VIEW_MODULES, viewFromModule } from "./run.ts";
@@ -118,7 +119,7 @@ export function scopeKitCss(css: string, scope = ".logview"): string {
 const HERMES_FRAME = ".logview { display: block; margin: 8px 0; border-radius: 16px; overflow: hidden; max-width: 1100px; line-height: 1.45; } .logview .sb-page { padding: 20px 22px 24px; } .logview button { font: inherit; }";
 
 export function hermesKitCss(): string {
-  return `${geistFace()}${scopeKitCss(readFileSync(KIT_CSS, "utf8"))}${scopeKitCss(machineCss())}${HERMES_FRAME}`;
+  return `${geistFace()}${scopeKitCss(readFileSync(KIT_CSS, "utf8"))}${scopeKitCss(machineCss())}${scopeKitCss(mapCss())}${MAP_OVERRIDE}${HERMES_FRAME}`;
 }
 
 let built: Promise<string> | null = null;
@@ -139,10 +140,12 @@ function geistFace(): string {
   return `${faceOf("Geist", GEIST, "100 900", "woff2")}${machine.join("")}`;
 }
 
+const MAP_OVERRIDE = ".networkMap .rmCanvas{overflow:hidden}.networkMap .rmSurface{transform:translate(var(--pan-x,0px),var(--pan-y,0px))}";
+
 export function viewPage(script: string, baked?: unknown): string {
   const safe = script.replace(/<\/script/gi, "<\\/script");
   const data = baked ? `<script type="application/json" id="log:view-data">${JSON.stringify(baked).replace(/</g, "\\u003c")}</script>` : "";
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>log</title><style>${geistFace()}${readFileSync(KIT_CSS, "utf8")}</style>${data}</head><body><div id="root"></div><script type="module">${safe}</script></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>log</title><style>${geistFace()}${readFileSync(KIT_CSS, "utf8")}${mapCss()}${MAP_OVERRIDE}</style>${data}</head><body><div id="root"></div><script type="module">${safe}</script></body></html>`;
 }
 
 export function viewHtml(): Promise<string> {

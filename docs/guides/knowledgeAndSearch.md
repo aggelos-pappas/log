@@ -38,6 +38,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `relateAsk` | The connected context | `log relate ask "<text>" [--json]` |
 | `relateMachine` | A relationship state machine | `log relate machine [--person\|--to <h>] [--view\|--platform\|--form <v>] [--state <s>] [--cursor <n>] [--quiet] [--limit <n>] [--json]` |
 | `relateQuery` | A read-only Cypher query on the Relate graph | `log relate query "<cypher>" [--platform <p>] [--json]` |
+| `relateMap` | Network map | `log relate map [--person\|--to <h>] [--platform\|--form <v>] [--cursor <n>] [--quiet] [--limit <n>] [--json]` |
 | `people` | List everyone linked across platforms, with each person's identities | `log people [--json]` |
 | `peopleShow` | The person card for someone across every platform | `log people show <who> [--json]` |
 | `peopleSuggest` | Accounts on different platforms that are probably one person, with… | `log people suggest [--limit <n>] [--check] [--json]   (--check asks SubQ)` |

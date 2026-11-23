@@ -4,7 +4,7 @@ import { BROWSER_VIEW_TOOL, BROWSER_VIEW_URI, MCP_APP_MIME_TYPE } from "./browse
 import { appToolMeta } from "./meta.ts";
 import type { AppCsp } from "./meta.ts";
 import { readReportResource, REPORT_RESOURCE_DESCRIPTION } from "./report/client.ts";
-import { MACHINE_TOOL, REPORT_TOOL, REPORT_URI, REPORT_VIEW_META_KEY } from "./report/types.ts";
+import { MACHINE_TOOL, MAP_TOOL, REPORT_TOOL, REPORT_URI, REPORT_VIEW_META_KEY } from "./report/types.ts";
 import { SIGN_IN_TOOL } from "./signIn/types.ts";
 
 export const VIEW_META_KEY = REPORT_VIEW_META_KEY;
@@ -61,8 +61,8 @@ export const CARDS: AppCard[] = [
     uri: REPORT_URI,
     name: "View",
     description: REPORT_RESOURCE_DESCRIPTION,
-    tools: [MACHINE_TOOL],
-    asks: "Draw where the owner stands with someone as a state machine, the route to them, or the network by state.",
+    tools: [MACHINE_TOOL, MAP_TOOL],
+    asks: "Draw where the owner stands with someone as a state machine, the route to them, or the network by state; or draw the network map of cards and real connections.",
     prompts: ["show me where I am with grace_ships", "who could introduce me to linus_k", "show my network as a state machine"],
     invoking: "Drawing the state machine",
     invoked: "State machine drawn",

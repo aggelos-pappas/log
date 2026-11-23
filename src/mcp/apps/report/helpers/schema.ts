@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MACHINE_DIRECTIONS, MACHINE_LIMITS as M, MACHINE_PLATFORMS, MACHINE_TONES, MACHINE_VIEWS } from "../../../../relate/machine/types.ts";
+import { MAP_LIMITS as MP, MAP_PLATFORMS, MAP_TONES, MAP_VIEWS } from "../../../../relate/map/types.ts";
 import { REPORT_BLOCK_TYPES, REPORT_LIMITS as L } from "../types.ts";
 import type { ReportCheck, ReportRefusal, ReportSpec } from "../types.ts";
 
@@ -135,7 +136,41 @@ export const stateMachine = z
     });
   });
 
-const block = z.discriminatedUnion("type", [heading, text, stat, barChart, lineChart, table, personList, callout, stateMachine]);
+const mapRoom = z.strictObject({ key: line(MP.id), name: line(MP.label), server: z.string().max(MP.label).nullable().optional(), kind: line(MP.platform), platform: line(MP.platform), meaning: line(MP.label), at: z.string().max(MP.at).nullable().optional(), members: z.array(line(MP.label)).max(4) });
+const mapFact = z.strictObject({ slot: line(40), text: line(MP.text), quote: line(MP.quote), at: line(40) });
+const mapLane = z.strictObject({ platform: line(MP.platform), state: line(MP.label) });
+const mapNext = z.strictObject({ text: line(MP.text), tool: line(MP.platform) });
+const mapNode = z.strictObject({
+  key: line(MP.id), handle: line(MP.label), name: line(MP.label).optional(), initials: line(4),
+  platform: line(MP.platform), platforms: z.array(line(MP.platform)).max(8),
+  ring: z.number().int().min(1).max(4), tone: z.enum(MAP_TONES), why: line(MP.why),
+  rooms: z.array(mapRoom).max(8), facts: z.array(mapFact).max(MP.facts),
+  next: mapNext.optional(), lanes: z.array(mapLane).max(MP.lanes),
+  quiet: z.boolean(), talk: z.boolean(), at: ms, machine: stateMachine,
+});
+const mapEdge = z.strictObject({ a: line(MP.id), b: line(MP.id), kind: z.enum(["direct", "shared", "mention", "reply", "quote", "reacted"]), room: line(MP.label), at: z.string().max(MP.at).nullable().optional() });
+const mapRing = z.strictObject({ id: z.number().int().min(1).max(4), label: line(MP.label), tone: z.enum(MAP_TONES), count: finite.min(0), nodes: z.array(line(MP.id)).max(MP.nodes) });
+const mapHop = z.strictObject({ key: line(MP.id), handle: line(MP.label), room: line(MP.label).optional(), at: z.string().max(MP.at).nullable().optional() });
+export const networkMap = z
+  .strictObject({
+    type: z.literal("networkMap"), title: line(L.title).optional(), summary: line(L.text).optional(),
+    view: z.enum(MAP_VIEWS).optional(), platform: z.enum(MAP_PLATFORMS).optional(),
+    cursor: finite.min(0), nextCursor: finite.min(0).nullable(), total: finite.min(0),
+    rings: z.array(mapRing).max(4), nodes: z.array(mapNode).max(MP.nodes),
+    edges: z.array(mapEdge).max(MP.edges), rooms: z.array(mapRoom).max(MP.rooms),
+    path: z.array(mapHop).max(8), target: line(MP.id).optional(),
+  })
+  .superRefine((block, ctx) => {
+    const keys = new Set(block.nodes.map((n) => n.key));
+    block.edges.forEach((e, i) => {
+      for (const end of ["a", "b"] as const) {
+        const key = e[end];
+        if (key !== "owner" && !keys.has(key)) ctx.addIssue({ code: "custom", path: ["edges", i, end], message: `no node has key "${key}"` });
+      }
+    });
+  });
+
+const block = z.discriminatedUnion("type", [heading, text, stat, barChart, lineChart, table, personList, callout, stateMachine, networkMap]);
 
 export const reportSchema = z.strictObject({
   title: line(L.title),

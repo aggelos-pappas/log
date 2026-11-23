@@ -67,8 +67,8 @@ export const REPORT_DESCRIPTION = [
   'One call: { title, data: { dms: { source: "twitterDmsBySender", since?: "30d", account?, limit? } } } reads log.db and draws a starter view (stats, messages per day, top senders, a people table).',
   "Sources, picked by source, all from log.db, no platform call: twitterDmsBySender (X one-to-one DMs by sender); dmsBySender { platform, account?, since?, limit? } (the same for any platform, reportSourceNoData when it has none); waitingOnYou { platform?, account?, since? } (who waits on the owner, with platform and account); identityProfile { platform, userId or handle } (one person's name, bio, follower count, verified flag and avatar, kept from session checks and follower reads, refused with identityProfileMissing when none is stored).",
   'Your own view: add code, a React component in JSX. import { Page, Card, Grid, Row, Stack, Stat, Badge, Table, Bars, BarChart, LineChart, Sparkline, Avatar, Quote, Icon, Tabs, Details, Empty, Query, Time, fmt, rel, useTool, useData } from "log". End with export default function App({ data, title, subtitle }) { return <Page title={title}>…</Page> }.',
-  "Components: Page { title, subtitle, actions }, Card { title, actions, pad }, Grid { min }, Row/Stack { gap }, Stat { label, value, hint, tone }, Badge { tone: neutral|good|bad|warn|accent }, Table { rows, columns: [{ key, title, render, align, width }], limit }, Bars { data: [{ label, value }], unit } for ranked lists, BarChart { data: [{ label, value }] } for columns, LineChart { series: [{ name, values }], labels }, Sparkline { values, width }, Avatar { name, size, src }, Quote, Icon { name } (Font Awesome 6 names in camelCase: xTwitter, discord, message, users, clock, fire…), Time { value } (relative), fmt(n). Plain CSS works with the --sb-* variables (--sb-text, --sb-muted, --sb-accent, --sb-surface).",
-  "Interaction (from Lynx): Routes { routes: { \"/\": Overview, \"/person/:handle\": Person } } with Link { to } and BackLink for list-to-detail pages; AskButton { prompt } and FollowUps { prompts } put a question into the chat; askAgent(text); Pointable { about } and tellAgent(text) tell the agent what the person is looking at; ErrorNote offers Ask the agent to fix it; Button, Input, Select, Textarea, Field, Modal, useAction(fn) for forms; Markdown; FullscreenButton; downloadCsv(name, rows); openExternal(url). End overviews with 2 or 3 FollowUps. A send never happens from the view: AskButton prompts go through the chat and its gates.",
+  "Components: Page, Card, Grid, Row/Stack, Stat, Badge, Table, Bars, BarChart, LineChart, Sparkline, Avatar, Quote, Icon (Font Awesome 6 camelCase names), Time (relative), fmt(n). Plain CSS works with the --sb-* variables.",
+  "Interaction: Routes { routes } with Link, BackLink, AskButton { prompt }, FollowUps { prompts }, askAgent(text), Pointable { about }, tellAgent(text), ErrorNote, Button, Input, Select, Textarea, Field, Modal, useAction(fn), Markdown, FullscreenButton, downloadCsv(name, rows), openExternal(url). End overviews with 2 or 3 FollowUps. Sends never happen from a view.",
   "Data: data.<name> from the data field is there at once. useTool(name, args) calls a log read tool live from the view and returns { data, loading, error, reload }; wrap it in Query. Only call read tools.",
   "Shown inline in MCP Apps hosts (Claude, ChatGPT, Cursor) and Hermes Desktop; elsewhere (Claude Code, Codex) as text. A view that doesn't compile is refused with reportFieldInvalid and the line to fix.",
   guideLine(REPORT_GUIDE),
@@ -178,6 +178,34 @@ export async function runMachine(input: unknown, ui: boolean, host: ReportHost =
     return { content: [{ type: "text", text: `${answer.text}\n\n${MACHINE_GENUI_NOTE}\n${JSON.stringify(genui)}` }], structuredContent: { block: genui, text: answer.text, throughSeq: answer.throughSeq } };
   }
   return runReport({ title: block.title ?? "Relationship state machine", subtitle: `Relate graph through event ${answer.throughSeq}`, blocks: [block] }, ui, {}, host);
+}
+
+export const MAP_GENUI_NOTE = "The networkMap block below goes into show_blocks unchanged, as one of its blocks, next to markdown, callouts or tables that explain it:";
+
+export async function runMap(input: unknown, ui: boolean, host: ReportHost = {}): Promise<CallToolResult> {
+  const { relateMap, networkMapGenuiBlock, MAP_FORMS, MAP_PLATFORMS } = await import("../../../relate/map/index.ts");
+  const ask = (input ?? {}) as Record<string, unknown>;
+  const pick = (name: string) => (typeof ask[name] === "string" && (ask[name] as string).trim() ? (ask[name] as string) : undefined);
+  const platform = pick("platform");
+  if (platform && !(MAP_PLATFORMS as readonly string[]).includes(platform)) return refused("reportFieldInvalid", [`platform: one of ${MAP_PLATFORMS.join(", ")}`]);
+  const form = pick("form");
+  if (form && !(MAP_FORMS as readonly string[]).includes(form)) return refused("reportFieldInvalid", [`form: one of ${MAP_FORMS.join(", ")}`]);
+  const count = (name: string) => (typeof ask[name] === "number" && Number.isFinite(ask[name] as number) && (ask[name] as number) >= 0 ? Math.floor(ask[name] as number) : undefined);
+  const answer = await relateMap({
+    platform: platform as "all" | undefined,
+    person: pick("person"), to: pick("to"),
+    ...(count("cursor") !== undefined ? { cursor: count("cursor")! } : {}),
+    ...(count("limit") ? { limit: count("limit")! } : {}),
+    ...(ask.quiet === true ? { quiet: true } : {}),
+    ...(form ? { form: form as "genui" | "view" } : {}),
+  });
+  if (!answer.ok) return { isError: true, content: [{ type: "text", text: `${answer.code}: ${answer.problem}` }], structuredContent: { error: answer.code, message: answer.problem } };
+  const block = answer.block;
+  if (form === "genui") {
+    const genui = networkMapGenuiBlock(block as unknown as Record<string, unknown>);
+    return { content: [{ type: "text", text: `${answer.text}\n\n${MAP_GENUI_NOTE}\n${JSON.stringify(genui)}` }], structuredContent: { block: genui, text: answer.text, throughSeq: answer.throughSeq } };
+  }
+  return runReport({ title: block.title ?? "Your network, drawn", subtitle: block.summary, blocks: [block as never] }, ui, {}, host);
 }
 
 export const REPORT_RESOURCE_DESCRIPTION = "A view the agent built for the question: stats, charts, tables and people, drawn from log's data";

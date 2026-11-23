@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { faSvg } from "./icons.ts";
 
 export { StateMachine } from "./machine.tsx";
+export { NetworkMap } from "./networkMap.tsx";
 
 const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(" ");
 

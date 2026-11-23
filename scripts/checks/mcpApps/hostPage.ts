@@ -102,6 +102,7 @@ frame.srcdoc = spec.html.replace(/<head[^>]*>/i, (match) => match + '<meta http-
 export interface Drawn {
   ready: boolean;
   text: string;
+  full: string;
   textLength: number;
   scrollHeight: number;
   clientHeight: number;
@@ -130,6 +131,7 @@ export const INSPECT = `(() => {
   const fonts = document.fonts ? [...document.fonts].map((face) => ({ family: face.family.replace(/^["']|["']$/g, ""), status: face.status })) : [];
   return {
     text: text.slice(0, 400),
+    full: (document.body.innerText || ''),
     textLength: text.length,
     scrollHeight: document.body.scrollHeight,
     clientHeight: document.body.clientHeight,

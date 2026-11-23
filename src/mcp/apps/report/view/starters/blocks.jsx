@@ -1,4 +1,4 @@
-import { Avatar, Bars, Card, Grid, LineChart, Page, Row, Stack, Stat, StateMachine, Table, fmt } from "log";
+import { Avatar, Bars, Card, Grid, LineChart, NetworkMap, Page, Row, Stack, Stat, StateMachine, Table, fmt } from "log";
 
 function Block({ block, pageTitle }) {
   switch (block.type) {
@@ -53,6 +53,12 @@ function Block({ block, pageTitle }) {
       return (
         <Card title={block.title === pageTitle ? undefined : block.title} pad={false}>
           <StateMachine machine={block} />
+        </Card>
+      );
+    case "networkMap":
+      return (
+        <Card title={block.title === pageTitle ? undefined : block.title} pad={false}>
+          <NetworkMap block={block} />
         </Card>
       );
     case "callout":
