@@ -39,6 +39,7 @@ export const GUIDE_TOPICS: Readonly<Record<string, GuideTopic>> = {
   governor: { about: "Every platform account's governor: its daily count of requests and writes, reading it, and putting it back to 0 when matt says so, recorded in log.db", commands: ["any:governor"], skills: ["governor"] },
   newPlatform: { about: "Making a new platform whole with one command, and where every new file goes", commands: ["any:new"], skills: ["layout"] },
   instagram: { about: "An Instagram account: its session, reading its DMs, sending text and photos, and the live realtime watch", commands: ["instagram:session", "instagram:dms", "instagram:send", "instagram:react", "instagram:voice", "instagram:watch"], skills: ["instagram"] },
+  tiktok: { about: "TikTok search, full video exports and account sessions", commands: ["tiktok:session", "tiktok:search", "tiktok:scrape"], skills: [] },
 };
 
 export const guideKey = (command: Pick<Command, "platform" | "name">): string => `${command.platform}:${command.name}`;

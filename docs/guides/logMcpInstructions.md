@@ -90,6 +90,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `governor` | Every platform account's governor: its daily count of requests and writes, reading it, and putting it back to 0 when matt says so, recorded in log.db |
 | `newPlatform` | Making a new platform whole with one command, and where every new file goes |
 | `instagram` | An Instagram account: its session, reading its DMs, sending text and photos, and the live realtime watch |
+| `tiktok` | TikTok search, full video exports and account sessions |
 
 ## How a run reports back
 

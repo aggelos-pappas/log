@@ -108,7 +108,15 @@ def new_profile(run: dict[str, Any], exit_geo: dict[str, Any], log=lambda _m: No
     from camoufox.utils import launch_options
 
     rng = rng or random.SystemRandom()
-    opts = launch_options(os="windows", headless=False, env={}, screen=screen_bounds(), locale=run["locale"], i_know_what_im_doing=True)
+    opts = launch_options(
+        os="windows",
+        headless=False,
+        env={},
+        screen=screen_bounds(),
+        locale=run["locale"],
+        canvas_noise=True,
+        i_know_what_im_doing=True,
+    )
     config = strip_per_launch(decode_env_config(opts["env"]))
     prefs = {k: v for k, v in (opts.get("firefox_user_prefs") or {}).items() if k not in PER_LAUNCH_PREFS}
     home = run.get("homeCoordinates")
@@ -192,14 +200,20 @@ def launch_prefs(profile: dict[str, Any], run: dict[str, Any], exit_ip: str) -> 
     return prefs
 
 
-def build_launch(profile: dict[str, Any], run: dict[str, Any], exit_ip: str, exit_timezone: str, proxy: dict[str, str], visible: dict[str, Any]) -> dict[str, Any]:
+def build_launch(profile: dict[str, Any], run: dict[str, Any], exit_ip: str, exit_timezone: str, proxy: dict[str, str] | None, visible: dict[str, Any]) -> dict[str, Any]:
+    from inspect import signature
+
     from camoufox.addons import add_default_addons
     from camoufox.pkgman import installed_verstr, launch_path
     from camoufox.utils import get_env_vars, get_target_os, validate_config
 
     config = launch_config(profile, run, exit_ip, exit_timezone, visible, installed_verstr().split(".", 1)[0])
+    executable_path = launch_path()
     addons: list[str] = []
-    add_default_addons(addons, None)
+    if "executable_path" in signature(add_default_addons).parameters:
+        add_default_addons(addons, None, executable_path=executable_path)
+    else:
+        add_default_addons(addons, None)
     if addons:
         config["addons"] = addons
     validate_config(config, path=None)
@@ -212,7 +226,7 @@ def build_launch(profile: dict[str, Any], run: dict[str, Any], exit_ip: str, exi
     except ImportError:
         pass
     return {
-        "executable_path": launch_path(),
+        "executable_path": executable_path,
         "args": [],
         "env": env,
         "firefox_user_prefs": prefs,

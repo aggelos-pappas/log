@@ -52,6 +52,9 @@ import { linkedinCookiesCommand, linkedinSessionCommand } from "../linkedin/inde
 import { slackChatsCommand, slackCookiesCommand, slackReadCommand, slackSendCommand, slackSessionCommand, slackWatchCommand, slackWorkspacesCommand } from "../slack/index.ts";
 import { instagramDmsCommand, instagramSendCommand, instagramSessionCommand, instagramWatchCommand } from "../instagram/index.ts";
 import { discordReactCommand, instagramReactCommand, slackReactCommand, twitterReactCommand } from "../react/index.ts";
+import { tiktokSessionCommand } from "../tiktok/index.ts";
+import { tiktokSearchCommand } from "../tiktok/search.ts";
+import { tiktokScrapeCommand } from "../tiktok/scrape.ts";
 
 export * from "./helpers/index.ts";
 export { ALIASES, createContext, defaultSendInspect, runFast, takeProxyMs } from "./client.ts";
@@ -160,6 +163,9 @@ export const COMMANDS: Command[] = [
   instagramReactCommand,
   instagramVoiceCommand,
   twitterVoiceCommand,
+  tiktokSessionCommand,
+  tiktokSearchCommand,
+  tiktokScrapeCommand,
 ];
 
 export async function runCli(argv: string[], context?: Partial<CommandContext>): Promise<number> {

@@ -71,16 +71,21 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   instagramVoice: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send_voice', when: 'voice --live (a voice note in the voice cloned from matt, its upload on curl_cffi)', seam: 'directInstagram' },
   instagramReact: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send_reaction', when: 'react --live (--remove takes it off)', seam: 'directInstagram' },
   instagramSend: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send', when: 'send --live (text one message per line, and --photo through direct_send_photo)', seam: 'directInstagram' },
-  instagramWatch: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'websocket', method: 'realtime_connect', when: 'watch (Instagram pushes each DM over its realtime MQTT, edge-mqtt.facebook.com, nothing polled)', seam: 'directInstagramLive' }
+  instagramWatch: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'websocket', method: 'realtime_connect', when: 'watch (Instagram pushes each DM over its realtime MQTT, edge-mqtt.facebook.com, nothing polled)', seam: 'directInstagramLive' },
+  tiktokSession: { platform: 'tiktok', library: 'no client vendored yet', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directTiktok' },
+  tiktokSearch: { engine: 'browser', platform: 'tiktok', library: 'shared inspect browser', only: false, surface: 'search', method: 'videos', when: 'text or hashtag video searches', seam: 'sendInspect' },
+  tiktokScrape: { engine: 'browser', platform: 'tiktok', library: 'local omkarcloud scraper service', only: false, surface: 'videos', method: 'details', when: 'query discovery and local-service video extraction; a supplied video link uses only the local service', seam: 'sendInspect' }
 }
 
 export function commandEngine(command: string): CommandEngine {
   const route = DIRECT_ROUTES[command]
+  if (route?.engine === 'browser') return 'browser'
   if (route) return route.only ? 'directApiOnly' : 'directApiFirst'
   return commandBrowser(command) === 'none' ? 'none' : 'browser'
 }
 
 export function engineHead(route: DirectRoute): string {
+  if (route.engine === 'browser') return `the account's existing Log inspect browser, with recorded navigation and scroll steps for ${route.when}`
   if (route.platform === 'twitter') return `the direct-API engine only (twikit, vendored in vendor/twikit, ${route.surface}.${route.method} for the ${route.when}; no browser and no proxy: X accounts call X directly, rule 80)`
   if (route.platform !== 'facebook') return `the direct-API engine only (${route.library}, vendored in vendor/${route.library}, ${route.surface}.${route.method} for the ${route.when}; no browser)`
   return `the direct-API engine first (fbk ${route.surface}.${route.method}, no browser) for ${route.when}, when the account has a saved c_user + xs session, a proxy in its home country and is inside its hours (--bypass skips the hours)`
@@ -98,6 +103,7 @@ export function platformEngineText(platform: string): string {
 export function engineLine(command: string): string | null {
   const route = DIRECT_ROUTES[command]
   if (!route) return null
+  if (route.engine === 'browser') return `Engine: ${engineHead(route)}. Uses the existing account session and shared inspect gates; stops on checkpoints and rate limits.`
   return `Engine: ${engineHead(route)}. ${platformEngineText(route.platform)}`
 }
 

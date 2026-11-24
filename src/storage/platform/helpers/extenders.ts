@@ -91,6 +91,7 @@ export const EXTENDERS: Readonly<Record<string, PlatformExtender>> = {
   slack: slackExtender,
   instagram: instagramExtender,
   reddit: redditExtender,
+  tiktok: makeExtender({ platform: 'tiktok', chatKind: () => 'dm' }),
 }
 
 export function extenderOf(platform: string): PlatformExtender {

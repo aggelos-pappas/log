@@ -264,7 +264,8 @@ def apply(kwargs: dict[str, Any], visible: dict[str, Any]) -> dict[str, Any]:
             deviceProfile.write_run_file(_armed["devicePath"], run)
     except deviceProfile.ProfileError as exc:
         raise GateError("deviceProfileInvalid", str(exc)) from None
-    options = deviceProfile.build_launch(profile, run, exit_["exitIp"], exit_["timezone"], playwright_proxy(proxy), visible)
+    launch_proxy = None if proxy.get("direct") else playwright_proxy(proxy)
+    options = deviceProfile.build_launch(profile, run, exit_["exitIp"], exit_["timezone"], launch_proxy, visible)
     _armed.update({
         "proxy": proxy,
         "launch": options,
