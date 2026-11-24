@@ -118,12 +118,12 @@ describe("console loaders", () => {
 
   test("ai clients print this machine's MCP config for Claude Code, Codex and opencode", () => {
     const data = loadConsoleAiClients({ root: join(home, "log checkout") });
-    expect(data.server).toEqual(["bun", "--cwd", join(home, "log checkout"), "bin", "logMcp.ts"]);
+    expect(data.server).toEqual(["bun", "--cwd", join(home, "log checkout"), "bin/logMcp.ts"]);
     expect(data.clients.map((client) => client.id)).toEqual(["claudeCode", "codex", "opencode"]);
-    expect(data.clients[0].command).toBe(`claude mcp add log -- bun --cwd ${shellWord(join(home, "log checkout"))} bin logMcp.ts`);
-    expect(JSON.parse(data.clients[0].config)).toEqual({ mcpServers: { log: { command: "bun", args: ["--cwd", join(home, "log checkout"), "bin", "logMcp.ts"] } } });
+    expect(data.clients[0].command).toBe(`claude mcp add log -- bun --cwd ${shellWord(join(home, "log checkout"))} bin/logMcp.ts`);
+    expect(JSON.parse(data.clients[0].config)).toEqual({ mcpServers: { log: { command: "bun", args: ["--cwd", join(home, "log checkout"), "bin/logMcp.ts"] } } });
     expect(data.clients[1].config).toContain("[mcp_servers.log]");
-    expect(JSON.parse(data.clients[2].config).mcp.servers.log).toEqual({ type: "local", command: data.server, codemode: false });
+    expect(JSON.parse(data.clients[2].config).mcp.servers.log).toEqual({ type: "local", command: data.server });
     expect(loadConsoleAiClients({ client: "codex" }).clients.map((client) => client.id)).toEqual(["codex"]);
     expect(() => loadConsoleAiClients({ client: "nope" })).toThrow("consoleAiClientInvalid");
   });

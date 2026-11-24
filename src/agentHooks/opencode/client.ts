@@ -14,7 +14,7 @@ export function opencodeConfigDir(): string {
 }
 
 export function logMcpCommand(root: string = PACKAGE_ROOT): string[] {
-  return ["bun", "--cwd", root, "bin", "logMcp.ts"];
+  return ["bun", "--cwd", root, "bin/logMcp.ts"];
 }
 
 export function stripJsonc(text: string): string {
@@ -82,7 +82,7 @@ export function mergeConfig(text: string, command: string[]): MergeResult {
       changed = true;
     }
   }
-  const wanted = { type: "local", command, codemode: false };
+  const wanted = { type: "local", command };
   const same = JSON.stringify(servers[SERVER]) === JSON.stringify(wanted);
   servers[SERVER] = wanted;
   const nextMcp: Record<string, unknown> = { ...mcp, servers };
