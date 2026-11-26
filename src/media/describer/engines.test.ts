@@ -32,7 +32,7 @@ items = [
 ]
 print(json.dumps([engine.media_ref_of(i) for i in items]))`);
     expect(got).toEqual([{ url: "https://cdn/p.jpg", name: "1.jpg", type: "image/jpeg" }, { url: "https://cdn/v.mp4", name: "2.mp4", type: "video/mp4" }, { url: "https://cdn/g.gif", name: "3.gif", type: "image/gif" }, null]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("Discord keeps each image or video someone sends through its own REST session, and leaves audio and files to their own paths", () => {
     if (spawnSync(python, ["-c", "import sys; sys.path.insert(0, " + JSON.stringify(root) + "); from discordApi import engine"], { encoding: "utf8" }).status !== 0) return;

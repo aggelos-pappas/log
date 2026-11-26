@@ -32,7 +32,8 @@ function render(accountName: string, answer: PlatformAnswer): string {
 
 export const TIKTOK_STATS_USAGE = [
   "Usage: log tiktok stats --account <accountName> [--limit <n>] [--json]",
-  "Read followers, following and the account's own posts' engagement on the direct-API engine (no browser). --limit defaults to 50, at most 500. Refusals stop without retries.",
+  "How the account is doing on TikTok, on the direct-API engine (no browser): its followers and following (TikTok Studio's multiGetFollowRelationCount), then its own posts newest first with each one's views, likes, comments, shares and saves (TikTok Studio's creator/manage/item_list/v1, the Content page's own list).",
+  "Reads only: nothing is sent. --limit is how many posts to read, default 50, at most 500.",
 ].join("\n");
 
 const TIKTOK_STATS_INPUT: CommandInput = {
@@ -151,7 +152,8 @@ const VISIBILITIES = ["everyone", "friends", "onlyMe"] as const;
 
 export const TIKTOK_POST_USAGE = [
   'Usage: log tiktok post --account <accountName> --video <path> --caption "<caption>" [--visibility everyone|friends|onlyMe] [--approvedBy <who>] [--live] [--json]',
-  "Upload and post through the direct-API engine (no browser). Dry run unless --live with --approvedBy. Visibility defaults to everyone. TikTok's returned item_id confirms publication; failures stop without retries. An uploaded video refused at publication is reported by its video id.",
+  "Posts one video on TikTok on the direct-API engine, with no browser, through the calls TikTok Studio's upload page makes (recorded from a real post): GET /api/v1/video/upload/auth/ for the upload's temporary keys, ApplyUploadInner on TikTok's upload gateway (/top/v1, signed AWS4-HMAC-SHA256 with those keys), the video sent to the storage host it names with its CRC32 (in parts above 8 MB, then finished), then POST /tiktok/web/project/post/v1/ with the video id and the caption.",
+  "A dry run unless --live, which needs --approvedBy (rule 8). TikTok's answer decides: the new post's item_id is the post, and anything else stops the run with nothing retried (rule 94); a video uploaded but refused at the post step is said with its video id. --visibility defaults to everyone.",
 ].join("\n");
 
 const TIKTOK_POST_INPUT: CommandInput = {
@@ -221,7 +223,8 @@ export const tiktokPostCommand: Command = {
 
 export const TIKTOK_DELETE_USAGE = [
   "Usage: log tiktok delete --account <accountName> --id <postId> [--approvedBy <who>] [--live] [--json]",
-  "Delete an owned post through the direct-API engine (no browser). Dry run unless --live with --approvedBy. The id comes from the post's link or tiktok stats. TikTok must name that id with zero edit errors; refusals stop without retries.",
+  "Deletes one of the account's own TikTok posts on the direct-API engine, with no browser: POST /tiktok/post/edit/v1/ with delete_type 1, the call TikTok Studio's Delete button makes (recorded from a real delete). TikTok's answer decides: edit_diff names the post and every edit result is 0, or nothing is retried (rule 94).",
+  "A dry run unless --live, which needs --approvedBy (rule 8). The id is the number in the post's link (log tiktok stats lists them).",
 ].join("\n");
 
 const TIKTOK_DELETE_INPUT: CommandInput = {
