@@ -7,6 +7,7 @@ flowchart TB
   terminal["terminal only"]
   subgraph g_any["Any platform"]
     c_launch["launch"]
+    c_setup["setup"]
     c_console["console"]
     c_credentials["credentials"]
     c_adsPower["adsPower"]
@@ -175,6 +176,8 @@ flowchart TB
   end
   cli --> c_launch
   c_launch -.- terminal
+  cli --> c_setup
+  mcp --> c_setup
   cli --> c_console
   mcp --> c_console
   cli --> c_credentials

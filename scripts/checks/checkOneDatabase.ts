@@ -51,6 +51,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'src/browser/runStore/client.ts': { writes: 7, kind: 'capture' },
   'src/cli/capture/index.ts': { writes: 1, kind: 'capture' },
   'src/cli/launch/index.ts': { writes: 1, kind: 'session' },
+  'src/cli/setup/index.ts': { writes: 1, kind: 'session' },
   'src/cli/lifecycle/index.ts': { writes: 1, kind: 'repo' },
   'src/cli/publish/index.ts': { writes: 1, kind: 'capture' },
   'src/cli/twitter/helpers/send.ts': { writes: 1, kind: 'media' },

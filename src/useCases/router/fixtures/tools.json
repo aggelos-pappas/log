@@ -1,4 +1,5 @@
 [
+{"name":"setup","platform":null,"summary":"Set up everything an agent can set up without a sign-in, in one pass. Set up everything an agent can set up in one pass: wire the agent harnesses, set local account defaults, and name the exact sign-ins only you can finish","flags":["dryRun","platforms","extensions","harnesses","config"],"required":[],"notes":"","effect":"write"},
 {"name":"consoleStart","platform":null,"summary":"Whether log.db is here and the MCP is running, how many accounts there are and when the last event came in","flags":[],"required":[],"notes":"","effect":"read"},
 {"name":"consoleConnections","platform":null,"summary":"Local accounts by platform with their session state","flags":["platform"],"required":[],"notes":"","effect":"read"},
 {"name":"consoleUsage","platform":null,"summary":"Calls by kind over 1, 7 or 30 days, from platform reads and actions to decisions and media","flags":["days"],"required":[],"notes":"","effect":"read"},

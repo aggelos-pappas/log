@@ -1,10 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { cancel, intro, isCancel, multiselect, outro, password, select, text } from "@clack/prompts";
+import { cancel, intro, isCancel, log, multiselect, outro, password, select, text } from "@clack/prompts";
 import { buildBrowserCommand } from "../../auth/session/helpers/urls.ts";
-import { DEFAULT_LOCAL_API_URL } from "../../browser/adsPower/types.ts";
-import { driverOrNull } from "../../browser/driver/index.ts";
 import { userEnvPath } from "../../config/userEnv/index.ts";
 import { LISTING_STATUSES, listListingsWhere } from "../../facebook/marketplace/agencyListing/index.ts";
 import { checkRunnable, listFacebookAccounts, toTwentyEnum } from "../../platformKit/socialAccount/index.ts";
@@ -23,7 +21,7 @@ import type { Command, CommandContext, CommandResult } from "../runner/types.ts"
 import { installOpenCode, opencodeConfigDir } from "../../agentHooks/opencode/index.ts";
 import type { HarnessInstall } from "../../agentHooks/opencode/index.ts";
 import { hermesHome, installHermes } from "../../agentHooks/hermes/index.ts";
-import { ADSPOWER_SETUP, agentSetupText, browserSignInSteps, needsBrowser, parseLaunchArgs, platformOfTwenty, platformOption, setEnvValue, SETUP_EXTENSIONS, SETUP_HARNESSES, setupSummary, shouldPrompt, signInRouteOf, START_ACTIONS, START_PLATFORMS, twentyReady } from "./helpers/index.ts";
+import { agentSetupText, browserSignInSteps, parseLaunchArgs, platformOfTwenty, platformOption, setEnvValue, SETUP_EXTENSIONS, SETUP_HARNESSES, setupSummary, shouldPrompt, signInRouteOf, START_ACTIONS, START_PLATFORMS, twentyReady } from "./helpers/index.ts";
 import type { LaunchTTY, SetupExtension, SetupHarness, SetupOutcome } from "./helpers/index.ts";
 
 export * from "./helpers/index.ts";
@@ -32,12 +30,15 @@ export const LAUNCH_USAGE = "Usage: log launch [--setup] [--json]";
 
 const MARKETPLACE_ACTIONS = ["browse", "status", "account", "accounts", "scan", "watch", "connect", "join", "answer", "fill", "reels", "doctor"] as const;
 
+class SetupCancelled extends Error {}
+
 type PromptSelectOptions = Parameters<typeof select>[0];
 
 interface LaunchPrompts {
   intro(title: string): void;
   outro(message?: string): void;
   cancel(message?: string): void;
+  step(message: string): void;
   select(option: PromptSelectOptions): Promise<unknown>;
   text(option: Parameters<typeof text>[0]): Promise<unknown>;
   multiselect(option: Parameters<typeof multiselect>[0]): Promise<unknown>;
@@ -53,7 +54,6 @@ export const launchDeps: {
   twentyReady: () => boolean;
   openUrl: (url: string) => boolean;
   runInTerminal: (command: string, args: readonly string[]) => { found: boolean; code: number };
-  adsPowerUp: () => Promise<boolean>;
   harnesses: () => readonly SetupHarness[];
   installHarness: (harness: SetupHarness) => HarnessInstall;
   envFile: () => string;
@@ -64,6 +64,7 @@ export const launchDeps: {
     intro,
     outro,
     cancel,
+    step: (message) => log.step(message),
     select: select as LaunchPrompts["select"],
     text: text as LaunchPrompts["text"],
     multiselect: multiselect as LaunchPrompts["multiselect"],
@@ -79,14 +80,6 @@ export const launchDeps: {
   runInTerminal: (command, args) => {
     const run = spawnSync(command, [...args], { stdio: "inherit", shell: process.platform === "win32", windowsHide: true });
     return { found: !run.error && run.status !== 9009 && run.status !== 127, code: run.status ?? 1 };
-  },
-  adsPowerUp: async () => {
-    try {
-      const response = await fetch(`${process.env.ADSPOWER_HOST?.trim() || DEFAULT_LOCAL_API_URL}/status`, { signal: AbortSignal.timeout(3000) });
-      return response.ok;
-    } catch {
-      return false;
-    }
   },
   harnesses: () => SETUP_HARNESSES.filter((harness) => existsSync(harnessHomes[harness.id]?.() ?? "")),
   installHarness: (harness) => (harness.id === "hermes" ? installHermes() : installOpenCode()),
@@ -116,7 +109,7 @@ async function pick(options: PromptSelectOptions): Promise<string | null> {
   const value = await launchDeps.prompts.select(options);
   if (isCancel(value) || typeof value !== "string") {
     launchDeps.prompts.cancel("Launch cancelled.");
-    return null;
+    throw new SetupCancelled();
   }
   return value;
 }
@@ -125,7 +118,7 @@ async function ask(message: string, placeholder?: string, optional = false): Pro
   const value = await launchDeps.prompts.text({ message, ...(placeholder ? { placeholder } : {}) });
   if (isCancel(value) || typeof value !== "string" || (!optional && !value.trim())) {
     launchDeps.prompts.cancel("Launch cancelled.");
-    return null;
+    throw new SetupCancelled();
   }
   return value.trim();
 }
@@ -133,7 +126,6 @@ async function ask(message: string, placeholder?: string, optional = false): Pro
 export interface PickedAccount {
   platform: Platform;
   accountName: string;
-  hasProfile: boolean;
 }
 
 async function pickAccount(context: CommandContext, message: string, keep: (account: PickedAccount) => boolean): Promise<PickedAccount | null | string> {
@@ -142,7 +134,7 @@ async function pickAccount(context: CommandContext, message: string, keep: (acco
     .flatMap((row): PickedAccount[] => {
       const platform = platformOfTwenty(row.platform);
       const accountName = String(row.accountName || row.name || "");
-      return platform && accountName ? [{ platform, accountName, hasProfile: driverOrNull({ browserDriver: typeof row.browserDriver === "string" ? row.browserDriver : null, adsPowerProfileId: typeof row.adsPowerProfileId === "string" ? row.adsPowerProfileId : null }, process.env) !== "adsPower" || Boolean(row.adsPowerProfileId) }] : [];
+      return platform && accountName ? [{ platform, accountName }] : [];
     })
     .filter(keep);
   if (!accounts.length) return "no account yet: pick Add an account first.";
@@ -171,7 +163,7 @@ export async function signInAccount(context: CommandContext, account: PickedAcco
     }
     return delegate(connectCommand, context, ["--account", account.accountName]);
   }
-  context.out(browserSignInSteps(account.platform, account.accountName, account.hasProfile));
+  context.out(browserSignInSteps(account.platform, account.accountName));
   return { code: 0 };
 }
 
@@ -182,11 +174,8 @@ async function addAccount(context: CommandContext, preset?: Platform): Promise<{
   const name = await ask(`The account's name on ${PLATFORM_LABELS[platform]}`, placeholder);
   if (name === null) return { code: 1 };
   const accountName = name.replace(/^@/, "");
-  if (signInRouteOf(platform).kind === "cookies") return signInAccount(context, { platform, accountName, hasProfile: false });
+  if (signInRouteOf(platform).kind === "cookies") return signInAccount(context, { platform, accountName });
   const argv = ["add", "--platform", platform, "--account", accountName];
-  const profile = await ask("Its AdsPower browser profile id (leave empty if it has none yet)", undefined, true);
-  if (profile === null) return { code: 1 };
-  if (profile) argv.push("--adsPower", profile);
   if (platform === "facebook") {
     const proxy = await ask("Its proxy (scheme://user:pass@host:port, in the account's country)");
     if (proxy === null) return { code: 1 };
@@ -198,14 +187,14 @@ async function addAccount(context: CommandContext, preset?: Platform): Promise<{
   }
   const added = await delegate(await commandFor("localAccount", "any"), context, argv);
   if (added.code !== 0) return added;
-  return signInAccount(context, { platform, accountName, hasProfile: driverOrNull({ browserDriver: null, adsPowerProfileId: profile || null }, process.env) !== "adsPower" || Boolean(profile) });
+  return signInAccount(context, { platform, accountName });
 }
 
 async function pickMany(options: Parameters<typeof multiselect>[0]): Promise<string[] | null> {
   const value = await launchDeps.prompts.multiselect(options);
   if (isCancel(value) || !Array.isArray(value)) {
     launchDeps.prompts.cancel("Setup cancelled.");
-    return null;
+    throw new SetupCancelled();
   }
   return value.map(String);
 }
@@ -214,7 +203,7 @@ async function askSecret(message: string): Promise<string | null> {
   const value = await launchDeps.prompts.password({ message, mask: "•" });
   if (isCancel(value)) {
     launchDeps.prompts.cancel("Setup cancelled.");
-    return null;
+    throw new SetupCancelled();
   }
   return typeof value === "string" ? value.trim() : "";
 }
@@ -265,19 +254,6 @@ async function setUpExtension(context: CommandContext, extension: SetupExtension
   return { label: extension.label, ok: true, detail: `${access.keyName} saved` };
 }
 
-async function setUpAdsPower(context: CommandContext): Promise<SetupOutcome | null> {
-  context.out(`\n${ADSPOWER_SETUP.label}: ${ADSPOWER_SETUP.adds}`);
-  const go = await openSignUp(context, ADSPOWER_SETUP.label, ADSPOWER_SETUP.signUpUrl);
-  if (go === null) return null;
-  if (!go) return { label: ADSPOWER_SETUP.label, ok: false, detail: "skipped: browser platforms need it to sign in" };
-  const key = await askSecret(ADSPOWER_SETUP.keyHint);
-  if (key === null) return null;
-  if (key) saveKey(context, ADSPOWER_SETUP.keyName, key);
-  return (await launchDeps.adsPowerUp())
-    ? { label: ADSPOWER_SETUP.label, ok: true, detail: "its Local API answered" }
-    : { label: ADSPOWER_SETUP.label, ok: false, detail: "its Local API didn't answer: open AdsPower and turn on its Local API (Automation, API)" };
-}
-
 async function setUpHarness(harness: SetupHarness): Promise<SetupOutcome> {
   try {
     const got = launchDeps.installHarness(harness);
@@ -292,20 +268,18 @@ async function setUpHarness(harness: SetupHarness): Promise<SetupOutcome> {
 async function runSetup(context: CommandContext): Promise<CommandResult> {
   const outcomes: SetupOutcome[] = [];
   context.out(`Your settings and keys go in ${launchDeps.envFile()}. Space picks, Enter goes on.`);
+  launchDeps.prompts.step("Platforms");
   const picked = await pickMany({ message: "Which platforms do you want log on?", options: START_PLATFORMS.map(platformOption), required: false });
   if (picked === null) return { code: 1 };
   const platforms = START_PLATFORMS.filter((platform) => picked.includes(platform));
-  if (needsBrowser(platforms)) {
-    const adsPower = await setUpAdsPower(context);
-    if (adsPower === null) return { code: 1 };
-    outcomes.push(adsPower);
-  }
   for (const platform of platforms) {
     const label = PLATFORM_LABELS[platform];
+    launchDeps.prompts.step(label);
     context.out(`\n${label}: add the account and sign it in.`);
     const added = await addAccount(context, platform);
     outcomes.push({ label, ok: added.code === 0, detail: added.code === 0 ? "account added and signed in" : "not signed in yet: log launch, Sign in an account you added" });
   }
+  launchDeps.prompts.step("Extensions");
   const chosen = await pickMany({
     message: "Which extensions do you want?",
     options: SETUP_EXTENSIONS.map((extension) => ({ value: extension.id, label: extension.label, hint: extension.adds })),
@@ -319,6 +293,7 @@ async function runSetup(context: CommandContext): Promise<CommandResult> {
   }
   const offered = launchDeps.harnesses();
   if (offered.length) {
+    launchDeps.prompts.step("Agent harnesses");
     const wired = await pickMany({
       message: "Which agent harnesses should log wire itself into?",
       options: offered.map((harness) => ({ value: harness.id, label: harness.label, hint: harness.adds })),
@@ -405,7 +380,7 @@ export async function runLaunch(context: CommandContext, argv: string[]): Promis
         { value: "check", label: "Check an account is still signed in", hint: "log <platform> session check" },
         { value: "agent", label: "Connect your agent (Claude Code, Codex)", hint: "logMcp" },
         { value: "console", label: "Console: this machine's status, accounts, usage, events and settings", hint: "log console" },
-        ...(launchDeps.twentyReady() ? [{ value: "marketplace", label: "Facebook Marketplace (listings in Twenty)", hint: "log facebook listings" }] : []),
+        ...(launchDeps.twentyReady() ? [{ value: "marketplace", label: "Facebook Marketplace (listings)", hint: "log facebook listings" }] : []),
       ],
     });
     if (start === null) return { code: 1 };
@@ -413,6 +388,8 @@ export async function runLaunch(context: CommandContext, argv: string[]): Promis
     if (result.code === 0) prompts.outro("Done.");
     return result;
   } catch (error) {
+    if (error instanceof SetupCancelled) return { code: 130 };
+    prompts.outro("Failed");
     const message = error instanceof Error ? error.message : String(error);
     return { code: 2, stderr: `log launch failed: ${message}` };
   }
@@ -434,7 +411,7 @@ async function runMarketplace(context: CommandContext): Promise<CommandResult> {
         { value: "watch", label: "Run the listing monitor and watch each step", hint: "log facebook watch --account" },
         { value: "connect", label: "Connect a Facebook account (opens Camoufox)", hint: "log facebook connect --account" },
         { value: "join", label: "Join a Facebook group (in the account's open browser; dry run)", hint: "log facebook join group --account --group" },
-        { value: "answer", label: "Answer a group's questions, step by step (saved to Twenty, not sent)", hint: "log facebook join group --answer" },
+        { value: "answer", label: "Answer a group's questions, step by step (saved locally, not sent)", hint: "log facebook join group --answer" },
         { value: "fill", label: "Fill a group's dialog from its answers (in the open browser; dry run)", hint: "log facebook join group --fill" },
         { value: "reels", label: "Warm up: Facebook Reels, as a person watches them", hint: "log facebook warmup reel" },
         { value: "doctor", label: "Check the live setup", hint: "log facebook doctor" },
@@ -479,7 +456,7 @@ async function runMarketplace(context: CommandContext): Promise<CommandResult> {
     } else if (action === "scan" || action === "watch" || action === "connect") {
       const purpose = action === "connect" ? "connect" : "run";
       if (!accounts.some((account) => checkRunnable(account, purpose).ok)) {
-        return { code: 1, stderr: "log launch: no FACEBOOK account may run: each needs a usable status, a proxy and a home country in Twenty. See `log facebook accounts`." };
+        return { code: 1, stderr: "log launch: no FACEBOOK account may run: each needs a usable status, a proxy and a home country in the workspace. See `log facebook accounts`." };
       }
       const accountId = await pick({
         message: action === "connect" ? "Which account to connect?" : "Which account's listings?",
@@ -492,7 +469,7 @@ async function runMarketplace(context: CommandContext): Promise<CommandResult> {
       result = await delegate(command, context, ["--account", accountId]);
     } else if (action === "join") {
       const runnable = accounts.filter((account) => checkRunnable(account, "run").ok);
-      if (!runnable.length) return { code: 1, stderr: "log launch: no FACEBOOK account may run: each needs a usable status, a proxy and a home country in Twenty. See `log facebook accounts`." };
+      if (!runnable.length) return { code: 1, stderr: "log launch: no FACEBOOK account may run: each needs a usable status, a proxy and a home country in the workspace. See `log facebook accounts`." };
       const accountId = await pick({
         message: "Which account joins?",
         options: runnable.map((account) => ({ value: account.accountName, label: account.accountName, hint: `${account.homeCity ?? "?"}, ${account.homeCountry}` })),
@@ -597,7 +574,7 @@ export const launchCommand: Command = {
   name: "launch",
   terminalOnly: "prompts in a terminal (Clack). Call the commands it wraps directly.",
   effect: "write",
-  summary: "Start here: a guided menu to set log up (platforms, sign-ins, the account's browser and extensions), add an account, sign it in, check it and connect your agent (and the listing tools when Twenty is set up)",
+  summary: "Start here: a guided menu to set log up (platforms, sign-ins, the account's browser and extensions), add an account, sign it in, check it and connect your agent (and the listing tools when saved listings are available)",
   args: "[--setup] [--json]",
   run: runLaunch,
 };

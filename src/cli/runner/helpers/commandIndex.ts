@@ -9,6 +9,7 @@ export interface CommandIndexEntry {
 
 export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "launch", platform: "any", module: "src/cli/launch/index.ts", exportName: "launchCommand", terminalOnly: "prompts in a terminal (Clack). Call the commands it wraps directly." },
+  { name: "setup", platform: "any", module: "src/cli/setup/index.ts", exportName: "setupCommand" },
   { name: "console", platform: "any", module: "src/cli/console/index.ts", exportName: "consoleCommand" },
   { name: "credentials", platform: "any", module: "src/cli/credentials/index.ts", exportName: "credentialsCommand" },
   { name: "listings", platform: "facebook", module: "src/cli/listing/index.ts", exportName: "listingsCommand" },

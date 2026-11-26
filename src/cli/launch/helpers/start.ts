@@ -43,10 +43,9 @@ export function platformOption(platform: Platform): { value: string; label: stri
   return { value: platform, label: PLATFORM_LABELS[platform], hint };
 }
 
-export function browserSignInSteps(platform: Platform, accountName: string, hasProfile: boolean): string {
+export function browserSignInSteps(platform: Platform, accountName: string): string {
   return [
     `${PLATFORM_LABELS[platform]} signs in once, in the account's own browser:`,
-    ...(hasProfile ? [] : [`  0. Give it an AdsPower browser profile: log localAccount add --platform ${platform} --account ${accountName} --adsPower <profileId>`]),
     `  1. log inspect start --account ${accountName}`,
     "  2. Sign in by hand in the window that opens.",
     `  3. log inspect do stop --account ${accountName}   (the session is saved when it stops)`,

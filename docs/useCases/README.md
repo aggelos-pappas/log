@@ -59,6 +59,7 @@ What log-cli is built to do, one page each, by platform. Each page gives the ide
 | Every chat | [Ignoring a server or a chat](inbox/ignoreServer.md) | stops the live push alerting on a server or chat; its messages are still stored |
 | Every chat | [Quieting the live push](inbox/quietPush.md) | quiets the live push for as many minutes as the owner says |
 | Every platform | [Resetting an account's governor count](inbox/governorReset.md) | puts an account's daily governor count back to 0 when the owner says so, kept as a log.db ledger row |
+| log itself | [Set up log in one pass](log/agentSetup.md) | wires what an agent can wire and names the sign-ins only the owner can finish |
 | log itself | [Moving accounts to another browser](log/browserMove.md) | moves accounts to another browser with their signed-in session, done when the platform says signed in |
 | log itself | [Encrypted account store](log/secretStore.md) | shows what is sealed and what is still plain, and tells the owner when no recovery passphrase is set |
 | log itself | [Local models](log/localModels.md) | shows which local models this release pins and fetches the missing ones after the owner's yes |

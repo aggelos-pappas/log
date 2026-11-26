@@ -254,7 +254,7 @@ export function main(argv: string[] = process.argv.slice(2), env: Record<string,
     for (const test of selection.tests) console.log(test);
     return 0;
   }
-  const run = spawnSync("bun", ["test", ...(selection.full ? [] : selection.tests.map((t) => `./${t}`))], { cwd: root, stdio: "inherit", windowsHide: true });
+  const run = spawnSync("bun", ["test", ...(env.BUN_TEST_TIMEOUT ? [`--timeout=${env.BUN_TEST_TIMEOUT}`] : []), ...(selection.full ? [] : selection.tests.map((t) => `./${t}`))], { cwd: root, stdio: "inherit", windowsHide: true });
   return run.status ?? 1;
 }
 

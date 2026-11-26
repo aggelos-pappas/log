@@ -106,6 +106,7 @@ const SOURCE_COMMAND_RULES: Readonly<Record<string, number[]>> = {
   watchers: [94, 105, 123, 163],
   voiceNotes: [8, 109, 133, 137, 142, 163],
   console: [47, 55, 134, 163, 168, 172, 177],
+  setup: [8, 30, 47, 55, 163],
   credentials: [41, 47, 163, 164, 172],
   accounts: [154, 163, 172],
   balance: [41, 73, 94, 164],

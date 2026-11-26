@@ -245,6 +245,14 @@
       "summary": "Posting on LinkedIn, liking or reposting, and taking a post down"
     },
     {
+      "name": "log-log-agent-setup",
+      "description": "Set up log in one pass. A log play (docs/useCases/log/agentSetup.md): An agent can set up everything that does not need a browser sign-in in a single command, then name the sign-ins only the owner can finish. The command never asks a question or invents a key, and a second run reports what is already done.",
+      "files": [
+        "SKILL.md"
+      ],
+      "summary": "Set up log in one pass"
+    },
+    {
       "name": "log-log-browser-move",
       "description": "Moving accounts to another browser. A log play (docs/useCases/log/browserMove.md): AdsPower is deprecated and Camoufox is log's browser. The agent moves accounts off AdsPower (or between any two browsers) with their signed-in session, and only calls one moved when the platform says it is signed in.",
       "files": [
