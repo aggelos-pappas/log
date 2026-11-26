@@ -20,6 +20,7 @@ When the owner asks for one of these, follow its page step by step.
 | `getGuide({ useCase: "linkedin/posts" })` | Posting on LinkedIn, liking or reposting, and taking a post down | "post this on linkedin", "put this up on linkedin with the picture", "like <someone>'s post on linkedin", "repost that on linkedin", "delete that linkedin post" |
 | `getGuide({ useCase: "log/browserMove" })` | Moving accounts to another browser | "move my accounts off adspower", "move everything to camoufox", "switch this account to brave", "get rid of adspower" |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM | "read the messages with <someone> on slack", "reply to <someone> on slack", "what did <someone> say in <workspace>" |
+| `getGuide({ useCase: "tiktok/videoResearch" })` | Researching public TikTok videos | "export videos with this hashtag", "search TikTok for this query", "get full data from these TikTok videos" |
 
 ## The tools in this guide
 

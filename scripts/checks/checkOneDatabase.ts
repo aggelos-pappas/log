@@ -67,6 +67,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'src/mcp/oauth/client.ts': { writes: 1, kind: 'session' },
   'src/media/persona/client.ts': { writes: 3, kind: 'dataset' },
   'src/media/photo/client.ts': { writes: 1, kind: 'dataset' },
+  'src/tiktok/details/client.ts': { writes: 1, kind: 'dataset' },
   'src/observability/liveLog/index.ts': { writes: 1, kind: 'log' },
   'src/platformKit/session/client.ts': { writes: 4, kind: 'session' },
   'src/release/apply/client.ts': { writes: 1, kind: 'session' },

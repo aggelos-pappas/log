@@ -167,4 +167,3 @@ describe("log tiktok delete", () => {
     expect(r.out).toContain("deleted post 7709617645145902356");
   });
 });
-

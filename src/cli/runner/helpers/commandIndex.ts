@@ -154,4 +154,6 @@ export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "stats", platform: "tiktok", module: "src/cli/tiktok/index.ts", exportName: "tiktokStatsCommand" },
   { name: "post", platform: "tiktok", module: "src/cli/tiktok/index.ts", exportName: "tiktokPostCommand" },
   { name: "delete", platform: "tiktok", module: "src/cli/tiktok/index.ts", exportName: "tiktokDeleteCommand" },
+  { name: "search", platform: "tiktok", module: "src/cli/tiktok/index.ts", exportName: "tiktokSearchCommand" },
+  { name: "scrape", platform: "tiktok", module: "src/cli/tiktok/index.ts", exportName: "tiktokScrapeCommand" },
 ]

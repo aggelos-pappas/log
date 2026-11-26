@@ -5,7 +5,7 @@ Generated from the code by `bun run docs:build`, so it always matches what `log`
 <!-- surface:start · written by `bun run docs:build` from the code. Not edited by hand. -->
 ## Commands, MCP tools and hooks
 
-log-cli is platform-agnostic: 8 platforms so far, Facebook (22 commands of its own), X (20 commands of its own), Reddit (5 commands of its own), Discord (14 commands of its own), LinkedIn (12 commands of its own), Slack (9 commands of its own), Instagram (6 commands of its own), TikTok (4 commands of its own), and a new one is made by `log new platform <name>` (rule 83). A command that acts on one platform names it first, `log <platform> <command> …` (`log facebook listings`, `log twitter session`, `log reddit session`, `log discord session`, `log linkedin session`, `log slack session`, `log instagram session`, `log tiktok session`), in every form; one that works on any platform takes none (the Platform column, rule 63).
+log-cli is platform-agnostic: 8 platforms so far, Facebook (22 commands of its own), X (20 commands of its own), Reddit (5 commands of its own), Discord (14 commands of its own), LinkedIn (12 commands of its own), Slack (9 commands of its own), Instagram (6 commands of its own), TikTok (6 commands of its own), and a new one is made by `log new platform <name>` (rule 83). A command that acts on one platform names it first, `log <platform> <command> …` (`log facebook listings`, `log twitter session`, `log reddit session`, `log discord session`, `log linkedin session`, `log slack session`, `log instagram session`, `log tiktok session`), in every form; one that works on any platform takes none (the Platform column, rule 63).
 Each command runs on the platform's direct API first where it has one, and on the account's browser otherwise (the Engine and Browser columns). log-cli is browser-agnostic too: each account's browser is a driver (AdsPower first, Camoufox kept, more browser providers to come), and every driver opens through the same gates.
 Every command is a CLI command (`log [<platform>] <command>`) and, unless it only works in a terminal, an MCP tool on the `log` server (Facebook's take the command's name, every other platform's start with the platform: `twitterReply`, `redditSessionCheck`).
 The same hooks fire whether it runs from a shell or over MCP, and both write the same live log, `~/.logCli/mcp/<day>.log`.
@@ -62,8 +62,12 @@ flowchart LR
   e_instagrapi --> api
   p_instagram -->|"browser: the any-platform commands"| b_instagram["Instagram's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_instagram --> drivers
-  p_tiktok["TikTok (TIKTOK): 4 commands of its own"]
+  p_tiktok["TikTok (TIKTOK): 6 commands of its own"]
   twenty --> p_tiktok
+  p_tiktok -->|"direct API: tiktok session, tiktok stats, tiktok post, tiktok delete"| e_shared_inspect_browser["shared inspect browser"]
+  e_shared_inspect_browser --> api
+  p_tiktok -->|"direct API: tiktok session, tiktok stats, tiktok post, tiktok delete"| e_bundled_omkarcloud_tiktok_scraper["bundled omkarcloud/tiktok-scraper"]
+  e_bundled_omkarcloud_tiktok_scraper --> api
   p_tiktok -->|"direct API: tiktok session, tiktok stats, tiktok post, tiktok delete"| e_tiktokApi__curl_cffi__TikTok_Studio_calls_["tiktokApi (curl_cffi, TikTok Studio calls)"]
   e_tiktokApi__curl_cffi__TikTok_Studio_calls_ --> api
   p_tiktok -->|"browser: the any-platform commands"| b_tiktok["TikTok's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
@@ -114,14 +118,14 @@ Source: [`docs/diagrams/browsers.mmd`](diagrams/browsers.mmd).
 
 - **The account's browser, through the driver:** `facebook host`, `inspect`, `flow`, `<platform> warmup`, `facebook join`, `facebook read`, `facebook poll`, `facebook check`, `reddit read`, `discord read`, `slack read`. They run on whichever browser the account uses: whatever `socialAccounts.browserDriver` names (Camoufox, AdsPower, Brave), else AdsPower when it has a linked profile (`socialAccounts.adsPowerProfileId`), else `LOG_BROWSER_DRIVER`, else Camoufox.
 - **Camoufox only, not on the driver yet:** `facebook doctor`, `facebook connect`, `facebook profile`, `facebook scan`, `facebook status`, `facebook watch`, `facebook publish`, `facebook campaign`, `discord watch`, `linkedin connect`, `slack watch`, `instagram watch`. They launch Camoufox themselves (facebook-camofox-client's worker, or the publish, connect and profile sessions), so on an AdsPower account they don't open its AdsPower profile. Moving one onto the driver is moving it into `OPENER_ACTIONS` (`src/browser/run`).
-- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `version`, `update`, `models`, `relate`, `people`, `network`, `timing`, `tool`, `inbox`, `harness`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `index`, `facts`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord friend`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`.
+- **No browser:** `launch`, `console`, `credentials`, `facebook listings`, `facebook listing`, `facebook accounts`, `facebook account`, `adsPower`, `localAccount`, `accounts`, `facebook lifecycle`, `facebook preflight`, `proxy`, `facebook conversations`, `facebook conversation`, `facebook messenger`, `errors`, `graph`, `capture`, `router`, `runs`, `storage`, `version`, `update`, `models`, `relate`, `people`, `network`, `timing`, `tool`, `inbox`, `harness`, `media`, `browsers`, `browser`, `report`, `job`, `mcp`, `login`, `logout`, `whoami`, `twitter session`, `twitter follows`, `twitter dms`, `twitter chat`, `twitter cookies`, `voice`, `search`, `index`, `facts`, `kb`, `runtime`, `memelord`, `treg`, `balance`, `governor`, `sessions`, `chats`, `messages`, `watchers`, `voiceNotes`, `clone`, `transcribe`, `twitter followers`, `twitter posts`, `twitter notifications`, `twitter reply`, `twitter quote`, `twitter post`, `twitter like`, `twitter list`, `twitter repost`, `twitter delete`, `twitter follow`, `twitter dm`, `twitter react`, `twitter queue`, `new`, `reddit session`, `reddit post`, `reddit reply`, `reddit vote`, `discord session`, `discord secrets`, `discord chats`, `discord servers`, `discord channels`, `discord posts`, `discord search`, `discord send`, `discord delete`, `discord friend`, `discord react`, `discord voice`, `linkedin session`, `linkedin cookies`, `linkedin post`, `linkedin delete`, `linkedin suggestions`, `linkedin like`, `linkedin repost`, `linkedin message`, `linkedin inbox`, `linkedin posts`, `linkedin messages`, `slack session`, `slack workspaces`, `slack chats`, `slack send`, `slack cookies`, `slack react`, `slack voice`, `instagram session`, `instagram dms`, `instagram send`, `instagram react`, `instagram voice`, `twitter voice`, `tiktok session`, `saidBy`, `tiktok stats`, `tiktok post`, `tiktok delete`, `tiktok search`, `tiktok scrape`.
 - **No browser path at all:** X. Its accounts run on the direct API only (rule 80).
 
 Each browser's capabilities, built or not: [`docs/browsers.md`](browsers.md) (generated, `bun run check:browsers`). AdsPower's setup: [`docs/adsPower.md`](adsPower.md).
 
 ### Engines: the direct API first, the browser behind it
 
-A command on the direct-API engine calls the platform's internal API with the account's saved session, paced by its own governor, and opens no browser. Each platform has its own vendored client: Facebook through fbk (`vendor/fbk`), X through twikit (`vendor/twikit`), Reddit through reverseChud (`vendor/reverseChud`), Discord through endcord (`vendor/endcord`), LinkedIn through openLinkedinApi (`vendor/openLinkedinApi`), Slack through gabrielSlack (`vendor/gabrielSlack`), Instagram through instagrapi (`vendor/instagrapi`), TikTok through tiktokApi (curl_cffi, TikTok Studio calls) (`vendor/tiktokApi (curl_cffi, TikTok Studio calls)`). Every one reaches the network through one pinned browser-impersonating session: curl_cffi for the Python clients (`check:twikitTransport`), wreq-js for reverseChud (`check:reverseChudTransport`). Which engine runs each command is code (`DIRECT_ROUTES` and `commandEngine` in `src/directApi/engine`), and this section, the Engine column and every MCP tool's description are generated from it (8 clients, 71 commands).
+A command on the direct-API engine calls the platform's internal API with the account's saved session, paced by its own governor, and opens no browser. Each platform has its own vendored client: Facebook through fbk (`vendor/fbk`), X through twikit (`vendor/twikit`), Reddit through reverseChud (`vendor/reverseChud`), Discord through endcord (`vendor/endcord`), LinkedIn through openLinkedinApi (`vendor/openLinkedinApi`), Slack through gabrielSlack (`vendor/gabrielSlack`), Instagram through instagrapi (`vendor/instagrapi`), TikTok through shared inspect browser (`vendor/shared inspect browser`), bundled omkarcloud/tiktok-scraper (`vendor/bundled omkarcloud/tiktok-scraper`), tiktokApi (curl_cffi, TikTok Studio calls) (`vendor/tiktokApi (curl_cffi, TikTok Studio calls)`). Every one reaches the network through one pinned browser-impersonating session: curl_cffi for the Python clients (`check:twikitTransport`), wreq-js for reverseChud (`check:reverseChudTransport`). Which engine runs each command is code (`DIRECT_ROUTES` and `commandEngine` in `src/directApi/engine`), and this section, the Engine column and every MCP tool's description are generated from it (10 clients, 71 commands).
 
 **Facebook.** Facebook's own page decides, not accountStatus: loggedIn reads; checkpoint stops and deactivates the account; loggedOut or accountWarning hands over to the browser path. Each account has its own governor (gaps of 4 s or more, 120 an hour, 500 a day, 40 writes a day, a 15-minute pause on a soft block, 6 hours on a checkpoint) and its result is written to socialAccounts.sessionState.
 
@@ -227,12 +231,12 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 322 command tools + saved flows"]
+  mcp["MCP server log: 324 command tools + saved flows"]
   bin["bin/log.ts"]
-  runCli["runCli: 146 commands (COMMANDS)"]
+  runCli["runCli: 148 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
   engine{"commandEngine: DIRECT_ROUTES"}
-  direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi, tiktokApi (curl_cffi, TikTok Studio calls) (vendor/), the account's saved session, a governor per account"]
+  direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi, shared inspect browser, bundled omkarcloud/tiktok-scraper, tiktokApi (curl_cffi, TikTok Studio calls) (vendor/), the account's saved session, a governor per account"]
   browser["The account's browser (one per day, rule 35)"]
   api["The platform's internal API: its answer decides (rule 73)"]
   twenty[("Twenty: socialAccounts.sessionState, refreshed cookies")]
@@ -432,6 +436,8 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log tiktok stats`](#log-tiktok-stats) | Read an account's TikTok followers and its own posts' views, likes, comments, shares and saves, on the direct-API engine | `tiktok` first | `--account <accountName>` `[--limit <integer 1..500>]` `[--json]` | direct API only | none | `tiktokStats` | PreToolUse, PostToolUse · PostToolUse | no | 73, 94, 30, 38, 39, 40, 41 |
 | [`log tiktok post`](#log-tiktok-post) | Post one video on TikTok on the direct-API engine, with no browser; a dry run unless --live | `tiktok` first | `--account <accountName>` `--video <path>` `--caption <text>` `[--visibility <text>]` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `tiktokPost`, `tiktokPostLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
 | [`log tiktok delete`](#log-tiktok-delete) | Delete one of the account's own TikTok posts on the direct-API engine, with no browser; a dry run unless --live | `tiktok` first | `--account <accountName>` `--id <postId>` `[--approvedBy <who>]` `[--live]` `[--json]` | direct API only | none | `tiktokDelete`, `tiktokDeleteLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 73, 94, 30, 38, 39, 40, 41 |
+| [`log tiktok search`](#log-tiktok-search) | Search video links and card metadata in the open TikTok browser | `tiktok` first | `--account <name>` `--query <text or #hashtag>` `[--limit <integer>]` `[--pages <integer>]` `[--json]` | browser | none | `tiktokSearch` | PreToolUse, PostToolUse · PostToolUse | no | 8, 19, 26, 29, 35, 73, 94, 30, 38, 39, 40, 41 |
+| [`log tiktok scrape`](#log-tiktok-scrape) | Export full video JSON with the bundled scraper, from search or one link | `tiktok` first | `--account <name>` `[--query <text or #hashtag>]` `[--url <video link>]` `[--limit <integer>]` `[--pages <integer>]` `[--output <file.json>]` `[--json]` | browser | none | `tiktokScrape` | PreToolUse, PostToolUse · PostToolUse | no | 8, 19, 26, 29, 35, 73, 94, 30, 38, 39, 40, 41 |
 
 ### Saved flows: MCP tools of their own (rule 31)
 
@@ -634,6 +640,8 @@ flowchart TB
     c_tiktokStats["stats"]
     c_tiktokPost["post"]
     c_tiktokDelete["delete"]
+    c_tiktokSearch["search"]
+    c_tiktokScrape["scrape"]
   end
   cli --> c_launch
   c_launch -.- terminal
@@ -953,6 +961,10 @@ flowchart TB
   mcp --> c_tiktokPost
   cli --> c_tiktokDelete
   mcp --> c_tiktokDelete
+  cli --> c_tiktokSearch
+  mcp --> c_tiktokSearch
+  cli --> c_tiktokScrape
+  mcp --> c_tiktokScrape
   f_deletePost["facebookFlowDeletePost: flow run deletePost"]
   mcp --> f_deletePost
   f_deletePost --> c_flow
@@ -2749,6 +2761,24 @@ Delete one of the account's own TikTok posts on the direct-API engine, with no b
 log tiktok delete --account <accountName> --id <postId> [--approvedBy <who>] [--live] [--json]
 Deletes one of the account's own TikTok posts on the direct-API engine, with no browser: POST /tiktok/post/edit/v1/ with delete_type 1, the call TikTok Studio's Delete button makes (recorded from a real delete). TikTok's answer decides: edit_diff names the post and every edit result is 0, or nothing is retried (rule 94).
 A dry run unless --live, which needs --approvedBy (rule 8). The id is the number in the post's link (log tiktok stats lists them).
+```
+
+#### log tiktok search
+
+Search video links and card metadata in the open TikTok browser MCP tools: `tiktokSearch`, one per form, with named fields.
+
+```text
+log tiktok search --account <name> --query <text or #hashtag> [--limit <1-100>] [--pages <1-10>] [--json]
+Uses the open account browser. Returns deduplicated video cards in source order with bounded coverage. Stops on checkpoints or rate limits.
+```
+
+#### log tiktok scrape
+
+Export full video JSON with the bundled scraper, from search or one link MCP tools: `tiktokScrape`, one per form, with named fields.
+
+```text
+log tiktok scrape --account <name> (--query <text or #hashtag> | --url <video link>) [--limit <1-100>] [--pages <1-10>] [--output <file.json>] [--json]
+Searches the open browser, then extracts sequentially with the bundled scraper. Preserves upstream video JSON and checkpoints output. Reports failures, pending links and bounded coverage; refusals stop.
 ```
 
 <!-- surface:end -->

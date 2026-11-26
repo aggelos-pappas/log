@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 57 domains, 683 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 57 domains, 686 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -967,8 +967,11 @@ How log keeps what it reads and does: one SQLite database, `~/.logCli/log.db`, w
 
 ## [TikTok](./tiktok.md)
 
-What `log new platform tiktok` made, and what the platform's code must keep doing as it grows. Rules 83, 117 and 123.
+TikTok account sessions and recorded browser video search. Rules 83, 117 and 123.
 
+- **REQ-TIKTOK-07** Full video exports preserve the bundled upstream scraper schema
+- **REQ-TIKTOK-05** Text and hashtag searches use the existing account browser
+- **REQ-TIKTOK-06** Search results preserve source identifiers and collection limits
 - **REQ-TIKTOK-01** The account is found on its own platform's row and gated
 - **REQ-TIKTOK-02** The engine runs the account through the shared platform kit
 - **REQ-TIKTOK-03** TikTok's own answer is what gets recorded

@@ -45,8 +45,12 @@ flowchart LR
   e_instagrapi --> api
   p_instagram -->|"browser: the any-platform commands"| b_instagram["Instagram's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_instagram --> drivers
-  p_tiktok["TikTok (TIKTOK): 4 commands of its own"]
+  p_tiktok["TikTok (TIKTOK): 6 commands of its own"]
   twenty --> p_tiktok
+  p_tiktok -->|"direct API: tiktok session, tiktok stats, tiktok post, tiktok delete"| e_shared_inspect_browser["shared inspect browser"]
+  e_shared_inspect_browser --> api
+  p_tiktok -->|"direct API: tiktok session, tiktok stats, tiktok post, tiktok delete"| e_bundled_omkarcloud_tiktok_scraper["bundled omkarcloud/tiktok-scraper"]
+  e_bundled_omkarcloud_tiktok_scraper --> api
   p_tiktok -->|"direct API: tiktok session, tiktok stats, tiktok post, tiktok delete"| e_tiktokApi__curl_cffi__TikTok_Studio_calls_["tiktokApi (curl_cffi, TikTok Studio calls)"]
   e_tiktokApi__curl_cffi__TikTok_Studio_calls_ --> api
   p_tiktok -->|"browser: the any-platform commands"| b_tiktok["TikTok's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
