@@ -16,7 +16,7 @@ Checked by: code and SubQ
 
 ### REQ-ADSPOWER-02: A profile holds no proxy
 
-A profile is created with no proxy, and with the account's name, the remark `log-cli twenty:<id>`, the `logCli` group and the language of its home country. No password, cookie or 2FA key is put on it. Rule 42.
+A profile is created with no proxy, and with the account's name, the remark `log-cli account:<id>` (an older `log-cli twenty:<id>` remark still matches), the `logCli` group and the language of its home country. No password, cookie or 2FA key is put on it. Rule 42.
 
 Checked by: code and SubQ
 

@@ -143,9 +143,9 @@ export function collectAccounts(accounts: readonly FacebookAccount[]): KbArticle
       `Daily listing cap: ${a.dailyListingCap}`,
       `Last posted: ${a.lastPostedAt ?? 'never'}`,
       `Vendor: ${a.vendor ?? 'unknown'}`,
-      `Twenty row: socialAccounts ${a.id}`,
+      `Account row: ${a.id}`,
     ]
-    return article(`account:${a.accountName}`, 'account', `Account ${a.label || a.accountName}: ${[a.homeCity, a.homeCountry].filter(Boolean).join(', ') || 'no home'}, ${a.status ?? 'no status'}`, lines.filter(Boolean).join('\n'), `twenty:socialAccounts/${a.id}`, ['account', a.homeCountry ?? 'noHome', a.status ?? 'noStatus'])
+    return article(`account:${a.accountName}`, 'account', `Account ${a.label || a.accountName}: ${[a.homeCity, a.homeCountry].filter(Boolean).join(', ') || 'no home'}, ${a.status ?? 'no status'}`, lines.filter(Boolean).join('\n'), `accounts/${a.id}`, ['account', a.homeCountry ?? 'noHome', a.status ?? 'noStatus'])
   })
 }
 

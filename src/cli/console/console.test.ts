@@ -130,7 +130,6 @@ describe("log console, interactive and web", () => {
 
   test("log launch has a Console entry that opens the console menu", async () => {
     launchDeps.tty = () => ({ stdinTTY: true, stdoutTTY: true });
-    launchDeps.twentyReady = () => false;
     launchDeps.prompts = { ...launchDeps.prompts, intro: () => {}, outro: () => {}, cancel: () => {}, select: async () => "console" };
     const menus: string[][] = [];
     consoleDeps.select = async (options) => {

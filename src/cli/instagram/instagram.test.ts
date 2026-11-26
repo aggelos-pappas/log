@@ -36,7 +36,7 @@ async function run(argv: string[], engine?: PlatformEngineRun, store = fixture()
 }
 
 describe("log instagram session check", () => {
-  test("loggedIn: the engine's answer goes to Twenty", async () => {
+  test("loggedIn: the engine's answer goes to the account store", async () => {
     const r = await run(["instagram", "session", "check", "--account", "instagramOne"], { answer: { ok: true, loginState: "loggedIn", screenName: "instagramOne" }, refreshed: null });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["instagramOne:ping"]);

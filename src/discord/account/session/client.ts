@@ -5,7 +5,7 @@ import type { AccountStore } from '../../../accounts/store/index'
 
 export const DISCORD_PLATFORM: PlatformShape = {
   platform: 'discord',
-  twentyPlatform: 'DISCORD',
+  accountPlatform: 'DISCORD',
   label: 'Discord',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', 'discordApi', 'engine.py'),
   sessionCookies: [],

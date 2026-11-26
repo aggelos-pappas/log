@@ -40,7 +40,7 @@ of its warm-up. This does that for one account, both photos in one run (the owne
    log facebook profile setup --account <a> 2>&1 | tee <log>
    ```
 
-   It prints each photo as `would upload`, `no photo set in Twenty` or
+   It prints each photo as `would upload`, `no photo set in the account store` or
    `no control for it on the page`, and the run folder
    (`~/.logCli/runs/profile/<time>_<a>/`).
 4. Read `profileFound.txt` in that folder and the step HARs (`firefox/steps/`).

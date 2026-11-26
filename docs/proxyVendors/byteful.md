@@ -63,12 +63,12 @@ All 58 endpoints from the OpenAPI spec. The Use column means:
 | Used | GET | /city/search | Search City | The account's city by name, nearest its home coordinates, with devices (`searchCities`, `pickCity`). |
 | Used | GET | /customer/retrieve | Retrieve Current Customer | `log proxy balance`: the credit balance API checkouts are paid from (`getCreditCents`). |
 | Used | GET | /proxy/search | Search Proxies | `log proxy static`: the static IPs on the account with each one's city, state and coordinates (`staticProxies`). |
-| Used | GET | /residential/list | Generated Residential List | `log proxy assign --vendor byteful`: one sticky (24 h) residential URL pinned to the account's city, then checked and saved to Twenty's `proxy` (`residentialProxyUrl`). |
+| Used | GET | /residential/list | Generated Residential List | `log proxy assign --vendor byteful`: one sticky (24 h) residential URL pinned to the account's city, then checked and saved to the account row's `proxy` (`residentialProxyUrl`). |
 | Used | GET | /residential/summary | Retrieve Residential Service Summary | `log proxy balance` and the warm-up's traffic meter: bytes used and left, and the proxy user (`getResidentialSummary`, `bytefulMeter`). |
 | Next | GET | /checkout/catalog | Retrieve Simplified Product Checkout Catalog | Which products are on sale per country, with stock (`product_stock`), before a quote. |
 | Next | GET | /ip_address/geolocate/{ip_address} | Retrieve IP Address Geolocation | Where an IP is: a second opinion on an exit IP next to our own proxy check. |
 | Next | POST | /proxy/list_by_id | Generate Proxy List By ID | One static IP as a connection string, by its id. |
-| Next | GET | /proxy/list_by_search | Generate Proxy List By Search | The static IPs as connection strings (`list_format`, `list_authentication`) once bought: each one becomes an account's `proxy` in Twenty. |
+| Next | GET | /proxy/list_by_search | Generate Proxy List By Search | The static IPs as connection strings (`list_format`, `list_authentication`) once bought: each one becomes an account's `proxy` on its row in the account store. |
 | Next | GET | /proxy/retrieve/{proxy_id} | Retrieve Proxy | One static IP's details (location, ports, online) for a check. |
 | Next | GET | /residential_availability/search | Search Residential Availability | How many residential devices each city of a state has (`group_by=city`), to pick the nearest city with devices for an account whose own city has none (when a city is missing from the list). |
 | Next | GET | /service/retrieve/{service_id} | Retrieve Service | One service, with its proxies (`proxies=true`). |

@@ -5,7 +5,7 @@ import type { AccountStore } from '../../../accounts/store/index'
 
 export const TIKTOK_PLATFORM: PlatformShape = {
   platform: 'tiktok',
-  twentyPlatform: 'TIKTOK',
+  accountPlatform: 'TIKTOK',
   label: 'TikTok',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', 'tiktokApi', 'engine.py'),
   sessionCookies: ['sessionid', 'sid_tt']

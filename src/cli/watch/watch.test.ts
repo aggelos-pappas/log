@@ -9,7 +9,7 @@ async function run(argv: string[], reply: () => unknown, store = marketplaceFixt
   const err: string[] = [];
   const worker = (async () => reply()) as unknown as WorkerClient;
   const code = await runCli(argv, { worker, accounts: store, out: (line) => out.push(line), err: (line) => err.push(line) });
-  return { code, out: out.join("\n"), err: err.join("\n"), outLines: out, twenty: store };
+  return { code, out: out.join("\n"), err: err.join("\n"), outLines: out, accounts: store };
 }
 
 const SCAN = {
@@ -46,15 +46,15 @@ describe("toCheckOutcome", () => {
 });
 
 describe("log facebook watch", () => {
-  test("runs one check against the account's Twenty listings, prints the trace and the decisions", async () => {
-    const { code, out, err, twenty } = await run(["facebook", "watch", "--account", "galwayOne"], () => SCAN);
+  test("runs one check against the account's stored listings, prints the trace and the decisions", async () => {
+    const { code, out, err, accounts } = await run(["facebook", "watch", "--account", "galwayOne"], () => SCAN);
     expect(code).toBe(0);
     expect(err).toContain("checking");
     expect(err).toContain("done");
     expect(out).toContain("111");
     expect(out).toContain("DELETED_BY_FB");
     expect(out).toContain("Nothing was posted.");
-    expect(twenty.rows.agencyListings.find((r) => r.id === "liveTwo")!.clicksCount).toBeUndefined();
+    expect(accounts.rows.agencyListings.find((r) => r.id === "liveTwo")!.clicksCount).toBeUndefined();
   });
 
   test("--json streams NDJSON trace lines, then the output", async () => {
@@ -65,11 +65,11 @@ describe("log facebook watch", () => {
     expect(parsed.at(-1).stopReason).toBe("checks done");
   });
 
-  test("a login wall stops with code 1 and marks the account NEEDS_LOGIN in Twenty", async () => {
-    const { code, out, twenty } = await run(["facebook", "watch", "--account", "galwayOne"], () => ({ ok: false, code: "sessionExpired" }));
+  test("a login wall stops with code 1 and marks the account NEEDS_LOGIN in the account store", async () => {
+    const { code, out, accounts } = await run(["facebook", "watch", "--account", "galwayOne"], () => ({ ok: false, code: "sessionExpired" }));
     expect(code).toBe(1);
     expect(out).toContain("sessionExpired");
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!.accountStatus).toBe("NEEDS_LOGIN");
+    expect(accounts.rows.socialAccounts.find((r) => r.id === "galwayOne")!.accountStatus).toBe("NEEDS_LOGIN");
   });
 
   test("validates flags, and never starts for an account that may not run", async () => {

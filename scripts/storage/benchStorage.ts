@@ -75,7 +75,7 @@ function dbReads(path: string): Stat[] {
   }
   const plan = (db.query("EXPLAIN QUERY PLAN SELECT * FROM events WHERE conversationId = 'x' ORDER BY seq DESC LIMIT 100").all() as { detail: string }[]).map((row) => row.detail).join("; ");
   const search = db.query("SELECT count(*) AS n FROM searchIndex WHERE searchIndex MATCH ?");
-  const searchSamples = ["dialer", "twenty", "money", "call", "video", "voice", "price", "discord"].map((word) => {
+  const searchSamples = ["dialer", "proxy", "money", "call", "video", "voice", "price", "discord"].map((word) => {
     const started = performance.now();
     search.get(word);
     return performance.now() - started;

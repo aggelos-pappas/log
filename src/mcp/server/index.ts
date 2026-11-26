@@ -20,8 +20,6 @@ import { appendLiveLine, liveLogDir } from "../../observability/liveLog/index.ts
 import { msText, timeCall } from "../../observability/timing/index.ts";
 import { accountOfArgv, appendProgress, busyJob, cancelRequested, DEFAULT_WAIT_MS, finishJob, heldByOther, jobScope, MAX_WAIT_MS, startJob } from "../jobs/index.ts";
 import type { JobRecord } from "../jobs/index.ts";
-import { oauthFromEnv } from "../oauth/index.ts";
-import type { OAuthServer } from "../oauth/index.ts";
 import { activePlay, BROWSERS_HEAD, capResult, currentToolName, narrowingFlags, FLOW_LIVE_TOOL, forgetPlayScope, gatedToolOf, guideAnswer, handleOf, PLAY_HANDLE_FIELD, playMeta, playRefusal, actingAsOwnerTools, capabilityPlayGateMode, folderOfPlay, namedByPlay, platformOfTool, playGateMode, stepToolsOf, playScope, processPlayScope, renamedTool, touchPlay, withoutHandle, withPlayFooter, withRenamedNote } from "./helpers/index.ts";
 import type { PlayScope } from "./helpers/index.ts";
 import { isPlatform } from "../../cli/runner/helpers/index.ts";
@@ -530,34 +528,29 @@ export interface LogMcpHttpOptions {
   host?: string;
   port?: number;
   token?: string | null;
-  oauth?: OAuthServer | null;
   context?: Partial<CommandContext>;
   server?: LogMcpOptions;
 }
 
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1"]);
 
-function authorized(request: Request, token: string | null, oauth: OAuthServer | null): boolean {
-  if (!token && !oauth) return true;
+function authorized(request: Request, token: string | null): boolean {
+  if (!token) return true;
   const given = /^Bearer (.+)$/.exec(request.headers.get("authorization") ?? "")?.[1] ?? "";
   if (!given) return false;
-  if (token) {
-    const a = Buffer.from(given);
-    const b = Buffer.from(token);
-    if (a.length === b.length && timingSafeEqual(a, b)) return true;
-  }
-  return oauth ? oauth.verifyBearer(given) : false;
+  const a = Buffer.from(given);
+  const b = Buffer.from(token);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 export function serveLogMcpHttp(options: LogMcpHttpOptions = {}): { url: string; stop: () => void } {
   const host = options.host ?? "127.0.0.1";
   const token = options.token ?? null;
-  const oauth = options.oauth ?? null;
-  if (!LOOPBACK.has(host) && !token && !oauth) throw new Error(`log MCP over HTTP on ${host} needs a token or OAuth: set LOG_MCP_TOKEN, or LOG_MCP_PUBLIC_URL with Twenty (only loopback runs without one)`);
+  if (!LOOPBACK.has(host) && !token) throw new Error(`log MCP over HTTP on ${host} needs a token: set LOG_MCP_TOKEN (only loopback runs without one)`);
   const sessions = new Map<string, WebStandardStreamableHTTPServerTransport>();
   const stateless = statelessLogHandlers(options.context ?? {}, { ...(options.server ?? {}), scope: playScope("http:stateless"), principal: "http" });
-  const rebinding = !LOOPBACK.has(host) || oauth !== null;
-  const allowedHosts = () => [...(LOOPBACK.has(host) ? ["127.0.0.1", "localhost", "[::1]"].flatMap((h) => [h, `${h}:${server.port}`]) : [host, `${host}:${server.port}`]), ...(oauth ? [oauth.publicHost] : [])];
+  const rebinding = !LOOPBACK.has(host);
+  const allowedHosts = () => (LOOPBACK.has(host) ? ["127.0.0.1", "localhost", "[::1]"].flatMap((h) => [h, `${h}:${server.port}`]) : [host, `${host}:${server.port}`]);
   const server = Bun.serve({
     hostname: host,
     port: options.port ?? 7337,
@@ -565,7 +558,7 @@ export function serveLogMcpHttp(options: LogMcpHttpOptions = {}): { url: string;
       const url = new URL(request.url);
       if (url.pathname === "/api/console/events") {
         const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
-        if (!token || !authorized(request, token, null)) return Response.json({ error: "consoleWorkspaceAccessDenied" }, { status: 401, headers });
+        if (!token || !authorized(request, token)) return Response.json({ error: "consoleWorkspaceAccessDenied" }, { status: 401, headers });
         if (request.method !== "GET") return Response.json({ error: "consoleMethodNotAllowed" }, { status: 405, headers: { ...headers, Allow: "GET" } });
         try {
           return Response.json(readConsoleEvents(), { headers });
@@ -573,12 +566,8 @@ export function serveLogMcpHttp(options: LogMcpHttpOptions = {}): { url: string;
           return Response.json({ error: "consoleWorkspaceUnavailable" }, { status: 503, headers });
         }
       }
-      if (oauth) {
-        const answered = await oauth.handle(request);
-        if (answered) return answered;
-      }
       if (url.pathname !== "/mcp") return new Response("Not found: the MCP endpoint is /mcp", { status: 404 });
-      if (!authorized(request, token, oauth)) return oauth ? oauth.unauthorized() : new Response("Unauthorized", { status: 401, headers: { "WWW-Authenticate": "Bearer" } });
+      if (!authorized(request, token)) return new Response("Unauthorized", { status: 401, headers: { "WWW-Authenticate": "Bearer" } });
       if (request.method === "POST") {
         const body = await request.clone().json().catch(() => undefined);
         if (isModernHttp(request.headers, body)) {
@@ -608,10 +597,9 @@ export function serveLogMcpHttp(options: LogMcpHttpOptions = {}): { url: string;
 
 export async function startLogMcpHttp(root: string, options: { host?: string; port?: number }): Promise<void> {
   loadEnv(root);
-  const oauth = oauthFromEnv();
-  settleLocation(httpLocation(options.host ?? "127.0.0.1", Boolean(process.env.LOG_MCP_TOKEN || oauth)));
-  const served = serveLogMcpHttp({ ...options, token: process.env.LOG_MCP_TOKEN || null, oauth });
-  const how = [process.env.LOG_MCP_TOKEN ? "the static bearer token" : "", oauth ? `OAuth through Twenty, resource ${oauth.resource}` : ""].filter(Boolean).join(" or ") || "loopback, no token";
+  settleLocation(httpLocation(options.host ?? "127.0.0.1", Boolean(process.env.LOG_MCP_TOKEN)));
+  const served = serveLogMcpHttp({ ...options, token: process.env.LOG_MCP_TOKEN || null });
+  const how = process.env.LOG_MCP_TOKEN ? "the static bearer token" : "loopback, no token";
   console.error(`log MCP over HTTP: ${served.url} (${how})`);
   await new Promise(() => {});
 }

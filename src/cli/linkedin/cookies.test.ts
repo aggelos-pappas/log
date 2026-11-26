@@ -57,7 +57,7 @@ async function run(argv: string[], engine: PlatformEngineRun | null, store = mar
       return engine ?? { answer: { ok: false, code: "notExpected" }, refreshed: null };
     },
   });
-  return { code, out: out.join("\n"), err: err.join("\n"), calls, twenty: store };
+  return { code, out: out.join("\n"), err: err.join("\n"), calls, accounts: store };
 }
 
 const LOGGED_IN = (screenName: string): PlatformEngineRun => ({ answer: { ok: true, loginState: "loggedIn", screenName, userId: "ACoAAB" }, refreshed: null });
@@ -69,11 +69,11 @@ describe("log linkedin cookies save", () => {
     expect(r.code).toBe(0);
     const all = { bcookie: '"v=2&abc"', bscookie: '"v=1&def"', li_rm: "ghi", li_at: LI_AT, JSESSIONID: `"${JSESSION}"`, lidc: '"b=VB"' };
     expect(r.calls).toEqual([{ account: "mandeepSingh", action: "ping", cookies: all }]);
-    const row = r.twenty.rows.socialAccounts!.find((x) => x.accountName === "mandeepSingh")!;
+    const row = r.accounts.rows.socialAccounts!.find((x) => x.accountName === "mandeepSingh")!;
     expect(row).toMatchObject({ platform: "LINKEDIN", sessionState: "loggedIn", cookies: all });
     expect(JSON.parse(readFileSync(join(state.root, "mandeepSingh", "browser.json"), "utf8"))).toEqual({ userAgent: UA, secChUa: '"Chromium";v="142"', secChUaPlatform: '"Windows"', xLiTrack: '{"clientVersion":"1.13"}' });
     expect(state.cleared).toBe(1);
-    expect(r.out).toContain("added in Twenty as a LINKEDIN socialAccount");
+    expect(r.out).toContain("added in the account store as a LINKEDIN socialAccount");
     for (const text of [r.out, r.err, ...said]) {
       expect(text).not.toContain(LI_AT);
       expect(text).not.toContain(JSESSION);
@@ -85,11 +85,11 @@ describe("log linkedin cookies save", () => {
     const refused = await run(["linkedin", "cookies", "save", "--account", "mandeepSingh"], { answer: { ok: false, code: "sessionDead", loginState: "loggedOut" }, refreshed: null });
     expect(refused.code).toBe(1);
     expect(refused.err).toContain("linkedinCookiesRefused");
-    expect(refused.twenty.rows.socialAccounts!.some((x) => x.platform === "LINKEDIN")).toBe(false);
+    expect(refused.accounts.rows.socialAccounts!.some((x) => x.platform === "LINKEDIN")).toBe(false);
     typed(CURL);
     const wrong = await run(["linkedin", "cookies", "save", "--account", "mandeepSingh"], LOGGED_IN("someoneElse"));
     expect(wrong.err).toContain("linkedinCookiesWrongAccount");
-    expect(wrong.twenty.rows.socialAccounts!.some((x) => x.platform === "LINKEDIN")).toBe(false);
+    expect(wrong.accounts.rows.socialAccounts!.some((x) => x.platform === "LINKEDIN")).toBe(false);
   });
 
   test("a copy without the browser's cookies or user agent, or not from linkedin.com, is refused before LinkedIn is called", async () => {

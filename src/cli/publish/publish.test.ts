@@ -74,14 +74,14 @@ async function run(argv: string[], session = fakeSession(), store = marketplaceF
   const out: string[] = [];
   const err: string[] = [];
   const code = await runCli(argv, { session: session.factory, accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), outLines: out, session, twenty: store };
+  return { code, out: out.join("\n"), err: err.join("\n"), outLines: out, session, accounts: store };
 }
 
 const row = (store: ReturnType<typeof marketplaceFixture>, object: string, id: string) => store.rows[object].find((r) => r.id === id)!;
 
 describe("log facebook publish", () => {
-  test("dry run by default: fills, reviews, never clicks Publish, records the run in Twenty", async () => {
-    const { code, out, err, session, twenty } = await run(["facebook", "publish", "--listing", "readyOne"]);
+  test("dry run by default: fills, reviews, never clicks Publish, records the run in the account store", async () => {
+    const { code, out, err, session, accounts } = await run(["facebook", "publish", "--listing", "readyOne"]);
     expect(code).toBe(0);
     expect(out).toContain("Dry run");
     expect(err).toContain("uploadingPhotos");
@@ -90,18 +90,18 @@ describe("log facebook publish", () => {
     expect(session.closedCount()).toBe(1);
     expect(session.proxyFiles[0]).toEqual({ server: "http://203.0.113.7:8080", username: "user", password: "secretPass", country: "IE" });
     expect(existsSync(session.configs[0].proxyPath)).toBe(false);
-    const listing = row(twenty, "agencyListings", "readyOne");
+    const listing = row(accounts, "agencyListings", "readyOne");
     expect(listing).toMatchObject({ status: "READY", lastRunResult: "DRY_RUN", lastErrorCode: null });
     expect((listing.photoHashes as string[]).length).toBe(1);
   });
 
-  test("--live publishes, and the listing and account are updated in Twenty", async () => {
-    const { code, out, session, twenty } = await run(["facebook", "publish", "--listing", "readyOne", "--live"]);
+  test("--live publishes, and the listing and account are updated in the account store", async () => {
+    const { code, out, session, accounts } = await run(["facebook", "publish", "--listing", "readyOne", "--live"]);
     expect(code).toBe(0);
     expect(out).toContain("Published.");
     expect(session.calls.filter((c) => c.step === "publish")).toHaveLength(1);
-    expect(row(twenty, "agencyListings", "readyOne")).toMatchObject({ status: "ACTIVE", lastRunResult: "PUBLISHED", listingId: "1583545526797714" });
-    expect(row(twenty, "socialAccounts", "galwayOne").lastPostedAt).toBeTruthy();
+    expect(row(accounts, "agencyListings", "readyOne")).toMatchObject({ status: "ACTIVE", lastRunResult: "PUBLISHED", listingId: "1583545526797714" });
+    expect(row(accounts, "socialAccounts", "galwayOne").lastPostedAt).toBeTruthy();
   });
 
   test("a reCAPTCHA goes to CaptchaKraken, and the attempt lands in the ledger", async () => {
@@ -118,11 +118,11 @@ describe("log facebook publish", () => {
 
   test("Arkose with no 2Captcha key stops for a person, without solving", async () => {
     const session = fakeSession({ open: [{ kind: "captcha", detection: { kind: "arkose" } }] });
-    const { code, out, twenty } = await run(["facebook", "publish", "--listing", "readyOne"], session);
+    const { code, out, accounts } = await run(["facebook", "publish", "--listing", "readyOne"], session);
     expect(code).toBe(1);
     expect(out).toContain("needs a person");
     expect(session.calls.some((c) => c.step === "solveCaptcha")).toBe(false);
-    expect(row(twenty, "agencyListings", "readyOne")).toMatchObject({ lastRunResult: "NEEDS_PERSON", lastErrorCode: "noSolverConfigured" });
+    expect(row(accounts, "agencyListings", "readyOne")).toMatchObject({ lastRunResult: "NEEDS_PERSON", lastErrorCode: "noSolverConfigured" });
   });
 
   test("a login wall on the form is signed through in the same browser, then the form opens again (rule 24)", async () => {
@@ -159,12 +159,12 @@ describe("log facebook publish", () => {
 
   test("Facebook disabling the account mid-run makes it BANNED and replaces its campaign listings", async () => {
     const session = fakeSession({ open: [{ kind: "issue", issue: "accountDisabled", detail: "Your account has been disabled" }] });
-    const { code, out, twenty } = await run(["facebook", "publish", "--listing", "readyOne", "--live"], session);
+    const { code, out, accounts } = await run(["facebook", "publish", "--listing", "readyOne", "--live"], session);
     expect(code).toBe(1);
     expect(out).toContain("galwayOne is now BANNED");
-    expect(row(twenty, "socialAccounts", "galwayOne")).toMatchObject({ accountStatus: "BANNED", statusReason: "accountDisabled" });
-    expect(row(twenty, "agencyListings", "liveOne").status).toBe("REPLACED");
-    const replacements = twenty.rows.agencyListings.filter((r) => r.replacesId === "liveOne");
+    expect(row(accounts, "socialAccounts", "galwayOne")).toMatchObject({ accountStatus: "BANNED", statusReason: "accountDisabled" });
+    expect(row(accounts, "agencyListings", "liveOne").status).toBe("REPLACED");
+    const replacements = accounts.rows.agencyListings.filter((r) => r.replacesId === "liveOne");
     expect(replacements).toHaveLength(1);
     expect(replacements[0]).toMatchObject({ status: "READY", generation: 1, campaignId: "campaignGalway" });
     expect(["galwayThree", "dublinOne"]).toContain(replacements[0].socialAccountId as string);
@@ -202,8 +202,8 @@ describe("log facebook publish refuses before any browser opens", () => {
   }
 
   test("the refusal is written to the listing row", async () => {
-    const { twenty } = await run(["facebook", "publish", "--listing", "onNoProxy"]);
-    expect(row(twenty, "agencyListings", "onNoProxy")).toMatchObject({ lastRunResult: "BLOCKED", lastErrorCode: "noProxy" });
+    const { accounts } = await run(["facebook", "publish", "--listing", "onNoProxy"]);
+    expect(row(accounts, "agencyListings", "onNoProxy")).toMatchObject({ lastRunResult: "BLOCKED", lastErrorCode: "noProxy" });
   });
 
   test("--live stops at the account's daily cap", async () => {
@@ -218,7 +218,7 @@ describe("log facebook publish refuses before any browser opens", () => {
 });
 
 describe("log facebook publish: device, exit IP and local hours (rules 12, 15, 18)", () => {
-  test("the session gets the run's device file, and a first-launch device is saved to Twenty", async () => {
+  test("the session gets the run's device file, and a first-launch device is saved to the account store", async () => {
     const session = fakeSession();
     const factory = session.factory;
     const made = {
@@ -238,29 +238,29 @@ describe("log facebook publish: device, exit IP and local hours (rules 12, 15, 1
       writeFileSync(config.devicePath!, JSON.stringify({ ...file, profile: made, created: true }));
       return factory(config);
     };
-    const { code, out, twenty } = await run(["facebook", "publish", "--listing", "readyOne"], session);
+    const { code, out, accounts } = await run(["facebook", "publish", "--listing", "readyOne"], session);
     expect(code).toBe(0);
     expect(out).toContain("Pinned a new device for galwayOne");
-    expect(row(twenty, "socialAccounts", "galwayOne").deviceProfile).toEqual(made);
+    expect(row(accounts, "socialAccounts", "galwayOne").deviceProfile).toEqual(made);
   });
 
   test("an exit IP that moved inside the country is recorded on the account", async () => {
     const session = fakeSession({
       review: [{ ok: true, receipt: null, photoCount: 1, exitIpChanged: { from: "203.0.113.1", to: "203.0.113.2", country: "IE" } }],
     });
-    const { code, out, twenty } = await run(["facebook", "publish", "--listing", "readyOne"], session);
+    const { code, out, accounts } = await run(["facebook", "publish", "--listing", "readyOne"], session);
     expect(code).toBe(0);
     expect(out).toContain("The proxy exit moved from 203.0.113.1 to 203.0.113.2");
-    expect(row(twenty, "socialAccounts", "galwayOne")).toMatchObject({ proxyExitIp: "203.0.113.2", proxyExitCountry: "IE" });
+    expect(row(accounts, "socialAccounts", "galwayOne")).toMatchObject({ proxyExitIp: "203.0.113.2", proxyExitCountry: "IE" });
   });
 
   test("an exit that left the country before Publish blocks the run; Publish isn't retried", async () => {
     const session = fakeSession({ publish: [{ ok: false, code: "proxyCountryChanged", detail: "the exit moved to 1.2.3.4 in GB" }] });
-    const { code, twenty } = await run(["facebook", "publish", "--listing", "readyOne", "--live"], session);
+    const { code, accounts } = await run(["facebook", "publish", "--listing", "readyOne", "--live"], session);
     expect(code).toBe(1);
     expect(session.calls.filter((c) => c.step === "publish")).toHaveLength(1);
-    expect(row(twenty, "agencyListings", "readyOne")).toMatchObject({ lastRunResult: "BLOCKED", lastErrorCode: "proxyCountryChanged" });
-    expect(row(twenty, "socialAccounts", "galwayOne").accountStatus).toBe("ACTIVE");
+    expect(row(accounts, "agencyListings", "readyOne")).toMatchObject({ lastRunResult: "BLOCKED", lastErrorCode: "proxyCountryChanged" });
+    expect(row(accounts, "socialAccounts", "galwayOne").accountStatus).toBe("ACTIVE");
   });
 
   test("at 03:00 in Galway nothing opens, dry run included", async () => {

@@ -16,7 +16,7 @@ Checked by: code and SubQ
 
 ### REQ-CAP-02: The platform comes from the account
 
-`choosePlatform` takes the workspace's accounts (`readConnectionAccounts`: the local accounts file and the session folders), the account's name (an `@` and case ignored) and the platform if given. One platform keeping the name gives that platform. Two give `platformAmbiguous`, listing them. None, with no platform given, gives `accountNotFound`. A platform given that the account is kept under is used; one it isn't kept under, when it is kept elsewhere, gives `accountPlatformMismatch` with where it is; an account not kept locally under any platform is passed to the given platform's own command, which looks it up (an account kept in Twenty).
+`choosePlatform` takes the workspace's accounts (`readConnectionAccounts`: the local accounts file and the session folders), the account's name (an `@` and case ignored) and the platform if given. One platform keeping the name gives that platform. Two give `platformAmbiguous`, listing them. None, with no platform given, gives `accountNotFound`. A platform given that the account is kept under is used; one it isn't kept under, when it is kept elsewhere, gives `accountPlatformMismatch` with where it is; an account not kept locally under any platform is passed to the given platform's own command, which looks it up (an account in the local account store).
 
 Checked by: code and SubQ
 

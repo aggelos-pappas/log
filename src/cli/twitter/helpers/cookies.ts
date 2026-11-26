@@ -13,7 +13,7 @@ import type { Command, CommandInput } from "../../runner/types.ts";
 
 export const COOKIES_USAGE = [
   "Usage: log twitter cookies save --account <handle> [--style <copyStyle>] [--name <label>]",
-  "Saves an X account's session to Twenty from a masked Clack prompt: its auth_token, ct0 and twid cookies (twid carries the account's id), copied from a browser signed in to x.com, never passed as flags or printed. They are checked first: the direct-API engine (no browser; direct unless it has a proxy, rule 80) pings X with them, and only cookies X accepts for that same handle are saved. A handle Twenty doesn't have yet gets a new TWITTER socialAccounts row (rule 13); one it has gets its cookies replaced. --style sets the account's copyStyle, the writing style every send and queue check holds its copy to (empty: house). The account's governor starts under ~/.logCli/twitter/<handle>.",
+  "Saves an X account's session to the account store from a masked Clack prompt: its auth_token, ct0 and twid cookies (twid carries the account's id), copied from a browser signed in to x.com, never passed as flags or printed. They are checked first: the direct-API engine (no browser; direct unless it has a proxy, rule 80) pings X with them, and only cookies X accepts for that same handle are saved. A handle the account store doesn't have yet gets a new TWITTER socialAccounts row (rule 13); one it has gets its cookies replaced. --style sets the account's copyStyle, the writing style every send and queue check holds its copy to (empty: house). The account's governor starts under ~/.logCli/twitter/<handle>.",
 ].join("\n");
 
 interface CookiePrompts {
@@ -32,12 +32,12 @@ export const COOKIES_INPUT: CommandInput = {
   forms: [
     {
       words: ["save"],
-      summary: "Save an X account's auth_token, ct0 and twid to Twenty from a masked prompt, checked against X first",
+      summary: "Save an X account's auth_token, ct0 and twid from a masked prompt, checked against X first",
       positionals: [],
       flags: [
         { name: "account", kind: "string", required: true, description: "The account's X handle, saved as its accountName" },
         { name: "style", kind: "string", description: `The account's copy style (${Object.keys(COPY_STYLES).join(", ")}; empty: ${DEFAULT_COPY_STYLE})` },
-        { name: "name", kind: "string", description: "The row's name in Twenty for a new account (default: the handle)" },
+        { name: "name", kind: "string", description: "The row's name for a new account (default: the handle)" },
       ],
     },
   ],
@@ -62,7 +62,7 @@ export const cookiesCommand: Command = {
   name: "cookies",
   terminalOnly: "asks for an X account's session cookies (auth_token, ct0 and twid) in a Clack prompt (masked) and checks them with X before saving. Run `log twitter cookies save --account <handle>` in a terminal.",
   effect: "write",
-  summary: "Add or refresh an X account in Twenty: its session cookies from a masked prompt, checked against X, and its copy style",
+  summary: "Add or refresh an X account: its session cookies from a masked prompt, checked against X, and its copy style",
   input: COOKIES_INPUT,
   args: "save --account <handle> [--style <s>] [--name <label>]",
   async run(context, argv) {
@@ -81,7 +81,7 @@ export const cookiesCommand: Command = {
     try {
       const found = await existing(context, handle);
       const prompts = context.cookiePrompts ?? cookiesDeps.prompts;
-      prompts.intro(`log twitter cookies save — @${handle}${found ? " (already in Twenty: its cookies are replaced)" : " (new in Twenty)"}`);
+      prompts.intro(`log twitter cookies save — @${handle}${found ? " (already in the account store: its cookies are replaced)" : " (new in the account store)"}`);
       const ask = async (message: string) => {
         const value = await prompts.password({ message, mask: "•", validate: (v) => (isCookieValue(v) ? undefined : "paste the cookie's value only") });
         return isCancel(value) || !isCookieValue(value) ? null : value.trim();
@@ -114,8 +114,8 @@ export const cookiesCommand: Command = {
       else await context.accounts.create("socialAccounts", { name: label, accountName: handle, platform: "TWITTER", ...fields } as never);
       writeLocalSession(handle, "loggedIn", now, twitterStateRoot());
       const styleName = style || found?.copyStyle || DEFAULT_COPY_STYLE;
-      prompts.outro(`Saved to Twenty. @${handle} is loggedIn (${run.answer.userId}), copy style ${styleName}.`);
-      return { code: 0, stdout: `log twitter cookies save: @${handle} ${found ? "updated" : "added"} in Twenty as a TWITTER socialAccount, loggedIn as @${signedInAs} (${run.answer.userId}), cookies <set>, copy style ${styleName}.` };
+      prompts.outro(`Saved to the account store. @${handle} is loggedIn (${run.answer.userId}), copy style ${styleName}.`);
+      return { code: 0, stdout: `log twitter cookies save: @${handle} ${found ? "updated" : "added"} in the account store as a TWITTER socialAccount, loggedIn as @${signedInAs} (${run.answer.userId}), cookies <set>, copy style ${styleName}.` };
     } catch (error) {
       return refuseError("twitter cookies save", error);
     }

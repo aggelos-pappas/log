@@ -116,8 +116,6 @@ export const ARGS_TOOLS_GIVEN_FORMS: ReadonlySet<string> = new Set([
   "facebookCampaign",
   "facebookCampaignLive",
   "graph",
-  "logout",
-  "whoami",
 ]);
 
 export function renamedTool(name: string): string | null {

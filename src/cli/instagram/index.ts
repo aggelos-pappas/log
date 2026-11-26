@@ -51,7 +51,7 @@ export const instagramSessionCommand: Command = {
   name: "session",
   effect: "read",
   input: INSTAGRAM_SESSION_INPUT,
-  summary: "Check that Instagram still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty",
+  summary: "Check that Instagram still accepts an account's saved session, on the direct-API engine, sending nothing; the answer is saved",
   args: "check --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(INSTAGRAM_SESSION_INPUT));

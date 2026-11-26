@@ -3,8 +3,8 @@ import { HOME_COUNTRIES } from '../../../platformKit/home/index'
 import type { FacebookAccount } from '../../../platformKit/socialAccount/index'
 import type { CreateProfileBody } from '../types'
 
-export const twentyRemark = (accountId: string) => `log-cli twenty:${accountId}`
-export const remarkAccountId = (remark: string | null): string | null => remark?.match(/twenty:(\S+)/)?.[1] ?? null
+export const accountRemark = (accountId: string) => `log-cli account:${accountId}`
+export const remarkAccountId = (remark: string | null): string | null => remark?.match(/(?:account|twenty):(\S+)/)?.[1] ?? null
 
 export function profileRequest(account: FacebookAccount, groupId: string): CreateProfileBody | null {
   const site = siteOfAccount(account)
@@ -14,7 +14,7 @@ export function profileRequest(account: FacebookAccount, groupId: string): Creat
   return {
     name: account.accountName,
     group_id: groupId,
-    remark: twentyRemark(account.id),
+    remark: accountRemark(account.id),
     platform: site.hosts[0],
     user_proxy_config: { proxy_soft: 'no_proxy' },
     fingerprint_config: {

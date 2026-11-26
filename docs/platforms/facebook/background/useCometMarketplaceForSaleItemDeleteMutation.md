@@ -84,8 +84,8 @@ Deletes the listing: sent `input.for_sale_item_id` (the listing), `batch_delete_
 
 ## What our machine does with it
 
-`marketplaceListingDelete` step `s04_clickDelete` waits for it and its answer decides the step (rule 73): `deleted_for_sale_item_id` must equal the `listingId` given and what we sent as `variables.input.for_sale_item_id`. Only then does `log facebook listing remove` set the Twenty row REMOVED.
+`marketplaceListingDelete` step `s04_clickDelete` waits for it and its answer decides the step (rule 73): `deleted_for_sale_item_id` must equal the `listingId` given and what we sent as `variables.input.for_sale_item_id`. Only then did `log facebook listing remove` set the stored row REMOVED (listings are retired, #339).
 
 ## What can go wrong
 
-Seen with 200 only. An answer without that id, or an error, fails the step with `answerNotAsExpected` and the Twenty row is left as it was, to be checked on Selling by hand. Never retried: a second press would act on whatever card is next.
+Seen with 200 only. An answer without that id, or an error, fails the step with `answerNotAsExpected` and the stored row is left as it was, to be checked on Selling by hand. Never retried: a second press would act on whatever card is next.

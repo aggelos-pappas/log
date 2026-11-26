@@ -161,7 +161,7 @@ Then ask in plain words: *"read my X DMs and tell me who's waiting on me"*. log'
 | [Reddit](docs/platformGuides/reddit.md) | home feed, subreddits, posts and their comments; posts, replies, votes | its own API client, no browser |
 | [LinkedIn](docs/platformGuides/linkedin.md) | inbox and messages, posts, likes, reposts, connection requests and suggestions | its own API client, no browser |
 | [TikTok](docs/platforms/tiktok/README.md) | post stats, posting and deleting, video and hashtag search, full video exports | its own API client; search in the account's own browser, exports through the bundled extractor |
-| [Facebook](docs/platformGuides/facebook.md) | legacy: Marketplace listings are deferred, and group listening still needs a Twenty server | the account's own browser |
+| [Facebook](docs/platformGuides/facebook.md) | legacy: Marketplace listings and group listening are retired (#339) | the account's own browser |
 
 ## Highlights
 

@@ -45,7 +45,7 @@ describe('createAccountStore', () => {
     expect(await store.loginSecrets('gone')).toBeNull()
   })
 
-  test('listings, conversations and groups were only ever in Twenty, so every call on them is refused as twentyRemoved', async () => {
+  test('listings, conversations and groups were only ever in the account store, so every call on them is refused as twentyRemoved', async () => {
     const { store } = setup()
     await expect(store.list('agencyListings')).rejects.toMatchObject({ code: 'twentyRemoved' })
     await expect(store.get('agencyConversations', 'x')).rejects.toMatchObject({ code: 'twentyRemoved' })

@@ -104,7 +104,6 @@ $EnvFile = Join-Path $LogHome ".env"
 if (-not (Test-Path $EnvFile)) { New-Item -ItemType File -Path $EnvFile | Out-Null }
 $Current = Get-Content $EnvFile -ErrorAction SilentlyContinue
 if (-not ($Current -match '^LOG_PYTHON=')) { Add-Content $EnvFile "LOG_PYTHON=$Python" }
-if (-not ($Current -match '^LOG_ACCOUNTS=')) { Add-Content $EnvFile "LOG_ACCOUNTS=local" }
 
 Say "running the after-install steps log update runs too: the Python engines, database migrations, skills, harness plugins and the pinned local models"
 $PostInstall = Join-Path $Root "scripts\update\postInstall.ts"

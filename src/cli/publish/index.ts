@@ -43,8 +43,9 @@ export * from "./helpers/index.ts";
 
 export const PUBLISH_USAGE = [
   "Usage: log facebook publish --listing <agencyListingId> [--live] [--json] [--formUrl <url>] [--bypass] [--now]",
+  "Retired (#339): Marketplace listings were kept in Twenty, which log no longer uses.",
   "Dry run unless --live: fills and checks everything, never clicks Publish.",
-  "The listing, its account and the account's proxy all come from Twenty.",
+  "The listing, its account and the account's proxy all come from the account store.",
   "--bypass skips only the account's waking hours (rule 18); every other gate still runs.",
   "--now skips only the 10-minute launch gap (rule 24); the 8 launches a day still hold.",
 ].join("\n");
@@ -102,7 +103,7 @@ export const PUBLISH_INPUT: CommandInput = {
     {
       words: [],
       liveEffect: "write",
-      summary: "Post one Twenty listing; a dry run unless live",
+      summary: "Retired (#339): Post one stored listing; a dry run unless live",
       positionals: [],
       flags: [
         { name: "listing", kind: "string", required: true, description: "The agencyListing id" },
@@ -124,7 +125,7 @@ export const publishCommand: Command = {
   longRunning: true,
   effect: "browser",
   input: PUBLISH_INPUT,
-  summary: "Post one Twenty listing (dry run unless --live), printing every machine step",
+  summary: "Retired (#339): posting a stored listing",
   args: "--listing <id> [--live] [--json] [--bypass] [--now]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(PUBLISH_INPUT));
@@ -278,9 +279,9 @@ export const publishCommand: Command = {
         const loss = await recordAccountIssue(context.accounts, account, output.issue, output.failure?.detail ?? null);
         if (loss) notes.push(renderLoss(loss));
       }
-      notes.push(`Written to Twenty: agencyListing ${listing.id}.`);
+      notes.push(`Written to the account store: agencyListing ${listing.id}.`);
     } catch (error) {
-      notes.push(`Could not write the run to Twenty: ${refuseError("publish", error).stderr}`);
+      notes.push(`Could not write the run to the account store: ${refuseError("publish", error).stderr}`);
     }
 
     const code = output.result === "dryRun" || output.result === "published" ? 0 : 1;

@@ -14,12 +14,12 @@ async function main(): Promise<number> {
   const store = createAccountStore()
   const account = await findAccount(store, name)
   if (!account.proxy) {
-    process.stderr.write(`${account.accountName}: no proxy in Twenty; refusing (a wrong-country exit burns it)\n`)
+    process.stderr.write(`${account.accountName}: no proxy in the account store; refusing (a wrong-country exit burns it)\n`)
     return 1
   }
   const secrets = await store.loginSecrets(account.id)
   if (!secrets?.email || !secrets.password) {
-    process.stderr.write(`${account.accountName}: no email/password in Twenty\n`)
+    process.stderr.write(`${account.accountName}: no email/password in the account store\n`)
     return 1
   }
   process.stderr.write(`${account.accountName} (${account.homeCity}, ${account.homeCountry}): running through fbk via its own proxy\n`)

@@ -28,7 +28,7 @@ describe('browser parity (rule 44)', () => {
     for (const row of [camoufoxCapabilities, adsPowerCapabilities, braveCapabilities]) expect(Object.keys(row).sort()).toEqual(Object.keys(BROWSER_CAPABILITIES).sort())
   })
 
-  test("an account's browser comes from Twenty, Camoufox when empty, refused when unknown", () => {
+  test("an account's browser comes from the account store, Camoufox when empty, refused when unknown", () => {
     expect(() => browserFor({ browserDriver: 'netscape' })).toThrow(/browserDriverUnknown/)
     expect(browserFor({ browserDriver: 'adsPower', adsPowerProfileId: 'k1' })).toEqual({ driver: 'adsPower', profileId: 'k1' })
     expect(browserFor({ browserDriver: null, adsPowerProfileId: null })).toEqual({ driver: 'camoufox', profileId: null })

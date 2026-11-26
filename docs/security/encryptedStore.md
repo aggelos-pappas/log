@@ -22,7 +22,7 @@ log keeps every account session (cookies, the Discord token in storage origins, 
 ## Sealed on access, never lost
 
 1. **Read:** when log reads `localAccounts.json` or `.env` and finds a secret in plain text, it seals the secret into log.db, reads it back, and compares it with the plain value. The plain copy is removed from the file only after that read-back matched (the file is rewritten through a temp file and a rename). If the read-back differs, the file is left exactly as it was.
-2. **Write:** `localAccount login`, `localAccount pull`, every session saved back after a run and `credentials save` write secrets straight to the store; the files keep only non-secret fields and a ref (`sealedSecrets` per account, `LOG_SEALED_KEYS` in `.env`).
+2. **Write:** `localAccount login`, every session saved back after a run and `credentials save` write secrets straight to the store; the files keep only non-secret fields and a ref (`sealedSecrets` per account, `LOG_SEALED_KEYS` in `.env`).
 3. **No key holder:** if no OS keystore answers and `LOG_STORE_PASSPHRASE` is not set, log keeps using the plain file, prints one warning per file naming the gap, and seals it on the first use after a key holder appears.
 4. **Locked or tampered:** if log.db holds sealed secrets but no holder opens the key (another user, a lost passphrase), commands refuse with `secretStoreLocked`. A sealed row that fails its check refuses with `secretTampered`. Neither ever reads as an empty session.
 5. **Engine handoff:** when the store is ready, a spawned Python engine gets a ref (`cookiesRef`) to the sealed session instead of a cookies file in a temp folder, and reads it with `python/secretStore`. Rotated cookies an engine writes back are written owner-only (0600).
@@ -39,7 +39,6 @@ log keeps every account session (cookies, the Discord token in storage origins, 
 ## Not covered yet
 
 - log's own sign-in tokens (`auth/sessions.json`) and MCP OAuth tokens (`mcp/oauth.json`): still 0600 files; `log storage status` lists them.
-- If you use the optional Twenty workspace for accounts, it keeps its own copy of `socialAccounts.cookies` and login secrets; its at-rest protection is the operator's.
 - Persistent browser profiles (Camoufox, Brave) and Playwright `storage_state` files: they rely on OS file permissions and full-disk encryption (BitLocker, FileVault, LUKS).
 - A long-running engine host still receives a 0600 temp cookies file, so hosts started by older code keep working.
 - The direct-API engine (`python/directApi`) still reads a temp cookies file.

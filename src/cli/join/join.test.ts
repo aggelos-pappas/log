@@ -36,7 +36,7 @@ async function run(argv: string[], replies: InspectStepResult[] = [], store = ma
     return replies.shift() ?? null;
   };
   const code = await runCli(argv, { accounts: store, sendInspect, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), sent, twenty: store };
+  return { code, out: out.join("\n"), err: err.join("\n"), sent, accounts: store };
 }
 
 describe("parseJoinArgs", () => {
@@ -61,12 +61,12 @@ describe("log facebook join group", () => {
 
   test("a dry run in the open browser reads the gate, clicks nothing, and patches joinSubmission per step", async () => {
     openBrowser();
-    const { code, out, err, sent, twenty } = await run(["facebook", "join", "group", "--account", "galwayOne", "--group", GROUP], [recordedGroupPage() as InspectStepResult]);
+    const { code, out, err, sent, accounts } = await run(["facebook", "join", "group", "--account", "galwayOne", "--group", GROUP], [recordedGroupPage() as InspectStepResult]);
     expect(code).toBe(0);
     expect(sent.map((s) => s.action)).toEqual(["goto"]);
     expect(out).toContain("dry run, nothing clicked");
     expect(err).toContain("joinSubmission idle");
-    const row = twenty.rows.agencyGroups[0];
+    const row = accounts.rows.agencyGroups[0];
     expect(row).toMatchObject({ socialAccountId: "galwayOne", facebookGroupId: "4191018610937243", joinStatus: "NOT_MEMBER", membersLabel: "17.3K members" });
     expect((row.joinSubmission as { history: unknown[] }).history).toHaveLength(1);
   });
@@ -80,7 +80,7 @@ describe("log facebook join group", () => {
     expect(live.code).toBe(0);
     expect(live.sent.map((s) => s.action)).toEqual(["goto", "clickRole", "snapshot"]);
     expect(live.out).toContain('the group then asked "Participant questions"');
-    const shown = await run(["facebook", "join", "group", "--account", "galwayOne", "--group", "4191018610937243", "--show"], [], live.twenty);
+    const shown = await run(["facebook", "join", "group", "--account", "galwayOne", "--group", "4191018610937243", "--show"], [], live.accounts);
     expect(shown.code).toBe(0);
     expect(shown.sent).toEqual([]);
     expect(shown.out).toContain("member");
@@ -126,7 +126,7 @@ describe("log facebook join group", () => {
     expect(asked).toEqual(["Which account joins?", "Which group? (its URL or id)"]);
   });
 
-  test("--answer: the Clack stepper over a private group's recorded questions, saved to Twenty as the draft, nothing sent", async () => {
+  test("--answer: the Clack stepper over a private group's recorded questions, saved to the account store as the draft, nothing sent", async () => {
     openBrowser();
     const folder = mkdtempSync(join(tmpdir(), "logJoinClick"));
     const click = { ok: true, url: GROUP, folder } as InspectStepResult;
@@ -166,7 +166,7 @@ describe("log facebook join group", () => {
       "text 2/2 (membership) What is a general complaint you have about Bethlehem?",
       "note Group rules from the admins",
       "confirm I agree to the group rules",
-      "outro Saved to Twenty. Not sent to Facebook.",
+      "outro Saved to the account store. Not sent to Facebook.",
     ]);
     const saved = (store.rows.agencyGroups[0] as unknown as { joinSubmission: { formPhase: string; draft: { answers: Record<string, unknown>; rulesAgreed: boolean } } }).joinSubmission;
     expect(saved.formPhase).toBe("incomplete");

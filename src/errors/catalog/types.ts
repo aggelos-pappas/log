@@ -6,7 +6,7 @@ export type ErrorLayer =
   | 'runtime'
   | 'auth'
   | 'listing'
-  | 'twenty'
+  | 'store'
   | 'proxyVendor'
   | 'profile'
   | 'browser'
@@ -98,7 +98,7 @@ export const ERROR_CATALOG = {
   },
   accountNotTwitter: {
     layer: 'account',
-    meaning: 'A log twitter command was given an account whose platform in Twenty is not TWITTER.',
+    meaning: 'A log twitter command was given an account whose platform in the account store is not TWITTER.',
     retryable: false,
     raisedIn: ['twitter/account/session'],
     publish: 'blocked',
@@ -107,7 +107,7 @@ export const ERROR_CATALOG = {
   },
   noTwitterSession: {
     layer: 'account',
-    meaning: "The X account's saved cookies in Twenty have no auth_token + ct0, so there is no session to call X with.",
+    meaning: "The X account's saved cookies in the account store have no auth_token + ct0, so there is no session to call X with.",
     retryable: false,
     raisedIn: ['twitter/account/session'],
     publish: 'blocked',
@@ -116,7 +116,7 @@ export const ERROR_CATALOG = {
   },
   twitterCookiesRefused: {
     layer: 'account',
-    meaning: "X didn't accept the cookies typed into log twitter cookies save, so nothing was saved to Twenty.",
+    meaning: "X didn't accept the cookies typed into log twitter cookies save, so nothing was saved to the account store.",
     retryable: false,
     raisedIn: ['cli/twitter'],
     publish: 'blocked',
@@ -125,7 +125,7 @@ export const ERROR_CATALOG = {
   },
   linkedinCookiesRefused: {
     layer: 'account',
-    meaning: "LinkedIn didn't accept the cookies typed into log linkedin cookies save, so nothing was saved to Twenty.",
+    meaning: "LinkedIn didn't accept the cookies typed into log linkedin cookies save, so nothing was saved to the account store.",
     retryable: false,
     raisedIn: ['cli/linkedin'],
     publish: 'blocked',
@@ -553,7 +553,7 @@ export const ERROR_CATALOG = {
   },
   accountNotOnPlatform: {
     layer: 'account',
-    meaning: "A log <platform> command was given an account whose platform in Twenty isn't that platform.",
+    meaning: "A log <platform> command was given an account whose platform in the account store isn't that platform.",
     retryable: false,
     raisedIn: ['platformKit/session'],
     publish: 'blocked',
@@ -562,7 +562,7 @@ export const ERROR_CATALOG = {
   },
   noPlatformSession: {
     layer: 'account',
-    meaning: "The account's saved cookies in Twenty don't hold the session cookies its platform needs, so there is no session to call it with.",
+    meaning: "The account's saved cookies in the account store don't hold the session cookies its platform needs, so there is no session to call it with.",
     retryable: false,
     raisedIn: ['platformKit/session'],
     publish: 'blocked',
@@ -587,12 +587,12 @@ export const ERROR_CATALOG = {
   },
   wrongPassword: {
     layer: 'account',
-    meaning: "Facebook said the password is wrong, or found no account for the email, when `log facebook connect` signed in with Twenty's details.",
+    meaning: "Facebook said the password is wrong, or found no account for the email, when `log facebook connect` signed in with the account's saved details.",
     retryable: false,
     raisedIn: ['connect.routing'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: "Fix the account's email or password in Twenty, then `log facebook connect` again. Auto-login stops at once so Facebook doesn't see repeated wrong passwords."
+    action: "Fix the account's email or password in the account store, then `log facebook connect` again. Auto-login stops at once so Facebook doesn't see repeated wrong passwords."
   },
   videoSelfieRequired: {
     layer: 'account',
@@ -610,7 +610,7 @@ export const ERROR_CATALOG = {
     raisedIn: ['connect.signingIn'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: 'Run `log facebook connect` again and finish the step its last page names in the Camoufox window, or give it a longer `--wait`. A two-step page needs the totpSecret in Twenty.'
+    action: 'Run `log facebook connect` again and finish the step its last page names in the Camoufox window, or give it a longer `--wait`. A two-step page needs the totpSecret in the account store.'
   },
   unconfirmedUser: {
     layer: 'account',
@@ -763,7 +763,7 @@ export const ERROR_CATALOG = {
     raisedIn: ['proxyGate', 'publish.openingForm', 'worker', 'platformKit/account'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: 'Fix the username and password in the socialAccount proxy in Twenty.'
+    action: 'Fix the username and password in the socialAccount proxy in the account store.'
   },
   proxyMalformed: {
     layer: 'account',
@@ -772,7 +772,7 @@ export const ERROR_CATALOG = {
     raisedIn: ['proxyGate', 'platformKit/socialAccount', 'publish.openingForm', 'worker', 'platformKit/account'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: 'Fix the socialAccount proxy in Twenty.'
+    action: 'Fix the socialAccount proxy in the account store.'
   },
   accountNotFacebook: {
     layer: 'account',
@@ -781,7 +781,7 @@ export const ERROR_CATALOG = {
     raisedIn: ['platformKit/socialAccount'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: 'Pick a FACEBOOK account, or fix its platform in Twenty.'
+    action: 'Pick a FACEBOOK account, or fix its platform in the account store.'
   },
   accountPlatformMissing: {
     layer: 'account',
@@ -833,7 +833,7 @@ export const ERROR_CATALOG = {
     raisedIn: ['platformKit/socialAccount'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: 'Set accountStatus in Twenty (log facebook account status), or use another account.'
+    action: 'Set accountStatus in the account store (log facebook account status), or use another account.'
   },
   noHomeCountry: {
     layer: 'account',
@@ -842,7 +842,7 @@ export const ERROR_CATALOG = {
     raisedIn: ['platformKit/socialAccount'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: 'Set homeCountry (and homeCity) on the socialAccount in Twenty.'
+    action: 'Set homeCountry (and homeCity) on the socialAccount in the account store.'
   },
   accountDisabled: {
     layer: 'account',
@@ -860,16 +860,16 @@ export const ERROR_CATALOG = {
     raisedIn: ['cli/publish', 'facebook/marketplace/replacement'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: 'Wait until tomorrow, or raise dailyListingCap in Twenty.'
+    action: 'Wait until tomorrow, or raise dailyListingCap in the account store.'
   },
   noProxy: {
     layer: 'account',
-    meaning: 'The account has no proxy in Twenty, and no browser opens for an account without one (rule 12), not for a dry run and not for signing in.',
+    meaning: 'The account has no proxy in the account store, and no browser opens for an account without one (rule 12), not for a dry run and not for signing in.',
     retryable: false,
     raisedIn: ['proxyGate', 'platformKit/socialAccount', 'publish.openingForm', 'worker'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: 'Set the socialAccount proxy in Twenty (scheme://user:pass@host:port), then `log proxy check --account <name>`.'
+    action: 'Set the socialAccount proxy in the account store (scheme://user:pass@host:port), then `log proxy check --account <name>`.'
   },
   proxyCountryMismatch: {
     layer: 'account',
@@ -878,7 +878,7 @@ export const ERROR_CATALOG = {
     raisedIn: ['proxyGate', 'publish.openingForm', 'worker'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: "Use a proxy that exits in the account's homeCountry, or fix homeCountry in Twenty if it is wrong."
+    action: "Use a proxy that exits in the account's homeCountry, or fix homeCountry in the account store if it is wrong."
   },
   proxyCountryChanged: {
     layer: 'account',
@@ -896,7 +896,7 @@ export const ERROR_CATALOG = {
     raisedIn: ['browser/run', 'cli/watch'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: 'Run it inside the window in the detail, or change activeHoursStart/activeHoursEnd on the socialAccount in Twenty.'
+    action: 'Run it inside the window in the detail, or change activeHoursStart/activeHoursEnd on the socialAccount in the account store.'
   },
   xSessionHostDown: {
     layer: 'account',
@@ -1013,7 +1013,7 @@ export const ERROR_CATALOG = {
     raisedIn: ['platformKit/home', 'browser/run'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: 'Add the country to HOME_COUNTRIES in src/platformKit/home/types.ts, or fix homeCountry in Twenty.'
+    action: 'Add the country to HOME_COUNTRIES in src/platformKit/home/types.ts, or fix homeCountry in the account store.'
   },
   noHomeTimezone: {
     layer: 'account',
@@ -1022,7 +1022,7 @@ export const ERROR_CATALOG = {
     raisedIn: ['platformKit/home', 'browser/run'],
     publish: 'blocked',
     monitor: 'blocked',
-    action: 'Add the city to CITY_TIMEZONES in src/platformKit/home/types.ts, or fix homeCity in Twenty.'
+    action: 'Add the city to CITY_TIMEZONES in src/platformKit/home/types.ts, or fix homeCity in the account store.'
   },
   deviceProfileInvalid: {
     layer: 'account',
@@ -1730,7 +1730,7 @@ export const ERROR_CATALOG = {
 
   listingNotFound: {
     layer: 'listing',
-    meaning: 'No agencyListing with that id in Twenty.',
+    meaning: 'No agencyListing with that id in the account store.',
     retryable: false,
     raisedIn: ['facebook/marketplace/agencyListing'],
     action: 'Check the id (log facebook listings shows them).'
@@ -1747,7 +1747,7 @@ export const ERROR_CATALOG = {
     meaning: 'The agencyListing has no socialAccount, so nothing knows which account posts it.',
     retryable: false,
     raisedIn: ['facebook/marketplace/agencyListing'],
-    action: 'Set its Social account in Twenty, or fill the campaign with log facebook campaign fill.'
+    action: 'Set its Social account in the account store, or fill the campaign with log facebook campaign fill.'
   },
   listingNotPublishable: {
     layer: 'listing',
@@ -1761,7 +1761,7 @@ export const ERROR_CATALOG = {
     meaning: "The listing's fields would stall the create form (title, price, category, photos, location).",
     retryable: false,
     raisedIn: ['cli/publish'],
-    action: 'Fix the fields named in the detail in Twenty.'
+    action: 'Fix the fields named in the detail in the account store.'
   },
   notEnoughCopyVersions: {
     layer: 'listing',
@@ -1779,18 +1779,18 @@ export const ERROR_CATALOG = {
   },
 
   twentyRemoved: {
-    layer: 'twenty',
+    layer: 'store',
     meaning: 'This feature kept its data in Twenty, which log no longer uses; it is retired until it is rebuilt on log.db (#339).',
     retryable: false,
     raisedIn: ['accounts/store'],
     action: 'Nothing to run: the feature comes back when it is rebuilt on log.db (#339).'
   },
   accountNotFound: {
-    layer: 'twenty',
-    meaning: 'No socialAccount with that accountName or id in Twenty.',
+    layer: 'store',
+    meaning: 'No socialAccount with that accountName or id in the account store.',
     retryable: false,
     raisedIn: ['platformKit/socialAccount'],
-    action: 'Check the accountName in Twenty (log facebook accounts lists the Facebook ones). An inbox watcher for an account gone from Twenty is not restarted.'
+    action: 'Check the accountName in the account store (log facebook accounts lists the Facebook ones). An inbox watcher for an account gone from the account store is not restarted.'
   },
 
   twoCaptchaNotConfigured: {
@@ -1845,24 +1845,17 @@ export const ERROR_CATALOG = {
 
   timedOut: {
     layer: 'auth',
-    meaning: '`log login` waited and the browser never finished signing in.',
+    meaning: "A sign-in in the account's browser was waited for and never finished.",
     retryable: true,
-    raisedIn: ['auth/exchange'],
-    action: 'Run `log login` again, or `log login --token <t>`.'
-  },
-  invalidExchange: {
-    layer: 'auth',
-    meaning: "The browser's sign-in payload did not match this login's state or PKCE challenge.",
-    retryable: false,
-    raisedIn: ['auth/exchange'],
-    action: 'Run `log login` again from the start.'
+    raisedIn: ['platformKit/connect'],
+    action: 'Run the sign-in again and finish the page it names, or give it a longer `--wait`.'
   },
   profilePhotoMissing: {
     layer: 'profile',
-    meaning: "The account has no profilePhoto or coverPhoto in Twenty, or the file can't be read.",
+    meaning: "The account has no profilePhoto or coverPhoto in the account store, or the file can't be read.",
     retryable: false,
     raisedIn: ['profile.preparing'],
-    action: 'Set socialAccounts.profilePhoto and coverPhoto (a URL or a local path) in Twenty, then run again.'
+    action: 'Set socialAccounts.profilePhoto and coverPhoto (a URL or a local path) in the account store, then run again.'
   },
   profileControlNotFound: {
     layer: 'profile',
@@ -1950,7 +1943,7 @@ export const ERROR_CATALOG = {
   },
   adsPowerProfileMissing: {
     layer: 'adsPower',
-    meaning: 'The account has no AdsPower profile linked in Twenty (socialAccounts.adsPowerProfileId).',
+    meaning: 'The account has no AdsPower profile linked in the account store (socialAccounts.adsPowerProfileId).',
     retryable: false,
     raisedIn: ['browser/adsPower', 'python/browserDriver'],
     action: 'Run `log adsPower sync --apply` (it makes the profile and links it).'
@@ -2041,7 +2034,7 @@ export const ERROR_CATALOG = {
   },
   groupNoAccount: {
     layer: 'group',
-    meaning: 'No account in Twenty is in this group (no agencyGroups row with its id), so none can read it.',
+    meaning: 'No account in the account store is in this group (no agencyGroups row with its id), so none can read it.',
     retryable: false,
     raisedIn: ['cli/read.worker'],
     action: 'Join it first with one account: log facebook join group --account <a> --group <id> --live.'

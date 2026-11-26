@@ -6,7 +6,7 @@ Slack is a platform of its own: every command is `log slack <command> …`, and 
 
 | Part | Where |
 | --- | --- |
-| The accounts | `socialAccounts` with platform `SLACK`, kept locally in `~/.logCli/localAccounts.json` (rule 97), or optionally in Twenty |
+| The accounts | `socialAccounts` with platform `SLACK`, kept locally in `~/.logCli/localAccounts.json` (rule 97) |
 | The session (find the account, its gate, its engine, the answer back to its row) | `src/slack/account/session`, on the shared `src/platformKit/session` |
 | The commands | `src/cli/slack/index.ts`: `session check`, `workspaces`, `chats`, `read`, `watch`, `send`, and `cookies save` (terminal only) |
 | The engine | `python/slackApi/engine.py`, on the shared `python/platformKit/engine.py`; each account's governor is under `~/.logCli/slack/<account>` |

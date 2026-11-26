@@ -171,10 +171,10 @@ describe("log MCP server", () => {
     const client = await connected();
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name)).toContain("facebookListings");
-    expect(tools.find((tool) => tool.name === "facebookPublish")?.description).toContain("dry run unless --live");
+    expect(tools.find((tool) => tool.name === "facebookPublish")?.description).toContain("Retired (#339)");
   }, LOADS_EVERY_TOOL_MS);
 
-  test("runs a command against Twenty and returns its output", async () => {
+  test("runs a command against the account store and returns its output", async () => {
     const client = await connected();
     const result = await client.callTool({ name: "facebookListings", arguments: { json: true } });
     expect(result.isError).toBe(false);

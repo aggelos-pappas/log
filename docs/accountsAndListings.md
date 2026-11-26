@@ -1,17 +1,19 @@
 # Accounts and listings
 
 This page explains how log keeps track of Facebook accounts, their Marketplace
-listings and campaigns, and what happens when an account is lost. These
-Marketplace agency features are deferred legacy: listings, campaigns and
-conversations live in Twenty, and log reads them, runs them and writes the
-results back. Accounts themselves live in the local account store by default,
-and in Twenty only if you keep them there (deprecated, #337). Read this
-when you set up accounts, run a campaign, or want to know why a listing moved
-to another account.
+listings and campaigns, and what happens when an account is lost. Accounts
+live in the account store. Read this when you set up accounts, run a
+campaign, or want to know why a listing moved to another account.
+
+**Retired (#339).** Listings, campaigns and conversations were kept only in
+Twenty, which log no longer uses, so the `log facebook listings`, `listing`,
+`campaign`, `publish` and `conversations` commands refuse with `twentyRemoved`
+until they are rebuilt on log.db. The listing and campaign parts of this page
+are kept as the design.
 
 ## Where things live
 
-| What | Object (local store or Twenty for accounts, Twenty for the rest) | Key fields log uses |
+| What | Object (the account store for accounts; the stored records for the rest) | Key fields log uses |
 |---|---|---|
 | A Facebook account | `socialAccounts`, `platform = FACEBOOK` | `accountName` (the `--account` handle), `proxy`, `homeCity`, `homeCountry`, `accountStatus`, `statusReason`, `cookies`, `dailyListingCap`, `lastPostedAt`, proxy check results, `vendor…`, `totpSecret` |
 | A listing on one account | `agencyListings` | the ad (`title`, `description`, `price`, `category`, `condition`, `photos`, `copyVersions` and the `copyVersionId` this copy took), the location (`locationQuery` such as "Galway, Ireland", `locationCity`, `locationCountry`), `status`, `socialAccount`, `campaign`, `replaces`, `generation`, Facebook's `listingId` / `listingUrl`, the last run |
@@ -19,8 +21,7 @@ to another account.
 | A campaign | `agencyCampaigns` | Groups listings: 10 accounts in Galway means 10 `agencyListings` rows with the same `campaign` |
 
 Other tools can read the same `socialAccounts` rows. log only ever **adds**
-fields (`scripts/twenty/twentySetup.mjs`), so nothing another tool relies on
-changes.
+fields, so nothing another tool relies on changes.
 
 ## Account status
 
@@ -64,7 +65,7 @@ This deletes the listing on Facebook from its own account's Selling page,
 through the recorded flow `marketplaceListingDelete` (More options, Delete
 listing, Delete, then "No, haven't sold").
 
-- The Twenty row becomes **REMOVED** only once Facebook's delete answer names
+- The stored row became **REMOVED** only once Facebook's delete answer names
   that listing's id.
 - The row is never deleted. It keeps its title, photos, Facebook id, clicks and
   account, so the account still shows it, marked REMOVED.

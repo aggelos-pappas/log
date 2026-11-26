@@ -91,7 +91,7 @@ export const localAccountCommand: Command = {
   name: "localAccount",
   effect: "write",
   input: LOCAL_ACCOUNT_INPUT,
-  summary: "Accounts kept in a local file instead of Twenty: add one, with the account's browser profile, or list them",
+  summary: "Accounts kept in the local account file: add one, with the account's browser profile, or list them",
   args: "<add|list|login> [--platform <p>] [--account <a>] [--browser <name>] [--adsPower <id>] [--proxy <url>] [--home <CC>] [--json]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(LOCAL_ACCOUNT_INPUT));
@@ -114,7 +114,7 @@ export const localAccountCommand: Command = {
     const home = text("home")?.toUpperCase();
     const browser = text("browser");
     if (browser !== undefined && !isBrowserDriver(browser)) return refuse("localAccount add", "browserDriverUnknown", `--browser is one of ${BROWSER_DRIVERS.join(", ")}`);
-    const store = PLATFORM_SITES[platform as (typeof PLATFORMS)[number]].twenty;
+    const store = PLATFORM_SITES[platform as (typeof PLATFORMS)[number]].accountPlatform;
     const fields = {
       ...(text("adsPower") ? { adsPowerProfileId: text("adsPower"), browserDriver: "adsPower" } : {}),
       ...(browser ? { browserDriver: browser } : {}),
@@ -123,6 +123,6 @@ export const localAccountCommand: Command = {
       ...(text("city") ? { homeCity: text("city") } : {}),
     };
     const row = updateLocalAccount(store, accountName, fields, path) ?? upsertLocalAccount({ accountName, platform: store, ...fields }, path);
-    return { code: 0, stdout: `log localAccount: ${row.platform} ${accountName} saved in ${path} (${row.id}), browser ${browserOfRow(row) ?? "unknown"}. Twenty is not touched.` };
+    return { code: 0, stdout: `log localAccount: ${row.platform} ${accountName} saved in ${path} (${row.id}), browser ${browserOfRow(row) ?? "unknown"}.` };
   },
 };

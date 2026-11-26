@@ -35,7 +35,7 @@ export interface PlatformEngineRun {
 
 export interface PlatformShape {
   platform: string
-  twentyPlatform: string
+  accountPlatform: string
   label: string
   engine: string
   sessionCookies: readonly string[]

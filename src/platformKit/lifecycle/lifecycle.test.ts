@@ -191,7 +191,7 @@ describe('the account lifecycle (rule 35)', () => {
     expect(r.count.setName).toBe(2)
   })
 
-  test('accounts loaded from Twenty start where they are', async () => {
+  test('accounts loaded from the account store start where they are', async () => {
     const banned = run({ ...fresh, status: 'banned' })
     expect(banned.actor.getSnapshot().value).toBe('banned')
     expect(banned.calls).toEqual([])

@@ -1,4 +1,4 @@
-import { SETUP_EXTENSIONS, setEnvValue, signInRouteOf, browserSignInSteps } from "../../launch/helpers/index.ts";
+import { SETUP_EXTENSIONS, signInRouteOf, browserSignInSteps } from "../../launch/helpers/index.ts";
 import { PLATFORM_LABELS } from "../../runner/helpers/platforms.ts";
 import type { Platform } from "../../runner/helpers/platforms.ts";
 import type { ExtensionId } from "../../launch/helpers/index.ts";
@@ -14,29 +14,6 @@ export interface SetupStep {
   command?: string;
   url?: string;
   keyName?: string;
-}
-
-export interface SetupEnvResult {
-  step: SetupStep;
-  text: string;
-  changed: boolean;
-}
-
-export function setupEnvStep(envFile: string, text: string, dryRun: boolean): SetupEnvResult {
-  const done = /^\s*(?:export\s+)?LOG_ACCOUNTS\s*=/m.test(text);
-  const changed = !done && !dryRun;
-  const next = done ? text : setEnvValue(text, "LOG_ACCOUNTS", "local");
-  return {
-    step: {
-      id: "env",
-      kind: "agent",
-      label: "Local accounts",
-      detail: done ? `LOG_ACCOUNTS is already set in ${envFile}` : changed ? `Wrote LOG_ACCOUNTS=local to ${envFile}` : `Would write LOG_ACCOUNTS=local to ${envFile}`,
-      done: done || changed,
-    },
-    text: next,
-    changed,
-  };
 }
 
 export function setupPlatformStep(platform: Platform): SetupStep {

@@ -52,7 +52,7 @@ The full sequence:
 
 ```text
 log facebook scan / status / watch / publish / campaign run / connect / proxy check
-  │  TS: findAccount (local account store, or Twenty) → prepareRun (browser/run)
+  │  TS: findAccount (the account store) → prepareRun (browser/run)
   │      not FACEBOOK / unusable status / no proxy / no homeCountry ──▶ refused, no Python started
   │      (publish) listing country ≠ homeCountry ──▶ listingCountryMismatch
   │      no locale / timezone for the home (platformKit/home) ──▶ noHomeLocale / noHomeTimezone

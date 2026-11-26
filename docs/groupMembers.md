@@ -63,7 +63,7 @@ A member counts as an owner when either:
 
 ## Output
 
-Nothing goes to Twenty. Each run writes two files:
+Nothing is stored elsewhere. Each run writes two files:
 
 - `~/.logCli/members/<group>/<run time>.tsv` (`LOG_MEMBERS_DIR` moves it): `id`, `name`, `url`, `bio`, `category`, `followers`, `joined`, `owner`, one row per member, with tabs and newlines in bios flattened.
 - The same name as `.json`: the account, the group and its id, the plan, why it stopped, the scrolls, and every member with its `owner` reason.

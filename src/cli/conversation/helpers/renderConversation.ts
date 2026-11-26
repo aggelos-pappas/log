@@ -3,7 +3,7 @@ import type { Conversation, Message, RecordThreadResult, ScannedThread } from ".
 const when = (iso: string | null) => (iso ? iso.replace("T", " ").slice(0, 16) : "-");
 
 export function renderConversations(conversations: Conversation[]): string {
-  if (!conversations.length) return "No Marketplace conversations in Twenty yet.";
+  if (!conversations.length) return "No Marketplace conversations in the account store yet.";
   const lines = [`${conversations.length} conversation(s):`];
   for (const c of conversations) {
     const unread = c.unreadCount ? ` ${c.unreadCount} unread` : "";

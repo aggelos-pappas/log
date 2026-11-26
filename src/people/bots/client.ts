@@ -34,7 +34,7 @@ export async function backfillBots(handle: Database, sources: BotSources, option
     const rows: BotAccountReport[] = []
     for (const account of mine) {
       if (!account.session) {
-        rows.push({ account: account.account, read: 0, bots: 0, flagged: 0, already: 0, refused: { code: 'noPlatformSession', detail: `${account.account} has no saved session in Twenty, so ${platform} was not asked` } })
+        rows.push({ account: account.account, read: 0, bots: 0, flagged: 0, already: 0, refused: { code: 'noPlatformSession', detail: `${account.account} has no saved session in the account store, so ${platform} was not asked` } })
         continue
       }
       const sweep: BotSweep = await source.sweep(account)

@@ -40,7 +40,7 @@ export const redditSessionCommand: Command = {
   name: "session",
   effect: "read",
   input: REDDIT_SESSION_INPUT,
-  summary: "Check that Reddit still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty",
+  summary: "Check that Reddit still accepts an account's saved session, on the direct-API engine, sending nothing; the answer is saved",
   args: "check --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(REDDIT_SESSION_INPUT));

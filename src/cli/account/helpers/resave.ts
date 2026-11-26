@@ -23,7 +23,7 @@ export async function resaveKeptRun(store: AccountStore, account: FacebookAccoun
   const profile = device?.created ? toDeviceProfile(device.profile) : null;
   if (profile) {
     try {
-      lines.push((await saveDeviceProfile(store, account, profile)) ? `Pinned ${account.accountName}'s device in Twenty.` : `${account.accountName} already has a device in Twenty: kept that one (rule 15).`);
+      lines.push((await saveDeviceProfile(store, account, profile)) ? `Pinned ${account.accountName}'s device in the account store.` : `${account.accountName} already has a device in the account store: kept that one (rule 15).`);
     } catch (error) {
       ok = false;
       lines.push(`Could not save the device: ${error instanceof Error ? error.message : String(error)}`);
@@ -33,7 +33,7 @@ export async function resaveKeptRun(store: AccountStore, account: FacebookAccoun
   if (state) {
     const cookies = toFacebookCookies(state.cookies);
     try {
-      lines.push((await saveSession(store, account.id, { cookies, origins: toOrigins(state.origins) })) ? `Saved ${account.accountName}'s session (${cookies.length} cookies) to Twenty.` : "The kept session holds no Facebook login: nothing saved.");
+      lines.push((await saveSession(store, account.id, { cookies, origins: toOrigins(state.origins) })) ? `Saved ${account.accountName}'s session (${cookies.length} cookies) to the account store.` : "The kept session holds no Facebook login: nothing saved.");
     } catch (error) {
       ok = false;
       lines.push(`Could not save the session: ${error instanceof Error ? error.message : String(error)}`);

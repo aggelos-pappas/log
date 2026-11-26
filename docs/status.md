@@ -5,7 +5,10 @@ built but untested, failing, or not built. It was read from the code, the
 tests, the "Checked" lines in `log.md` and real run folders, as of 2026-10-22.
 Read it before relying on a command, or when picking what to build next.
 Where another doc says more than this page, this page is right; those docs are
-listed near the end.
+listed near the end. log kept accounts and Marketplace records in Twenty then;
+it no longer does. Accounts are in the account store, and the listing,
+campaign, conversation and group commands are retired (#339): they refuse with
+`twentyRemoved`.
 
 | Mark | Means |
 |---|---|
@@ -14,7 +17,7 @@ listed near the end.
 | 🔴 | Ran live and failed, or only partly built |
 | ⬜ | Not built |
 
-## 1. Accounts and Twenty
+## 1. Accounts
 
 | Command | State | Evidence |
 |---|---|---|
@@ -38,7 +41,7 @@ listed near the end.
 | `log facebook watch` | 🔴 2026-10-18 | Stopped at `never_connected` / `session_expired`. Never checked a real listing. |
 | `log proxy check` / `assign` / `balance` | ✅ 2026-10-22 | Byteful, for two accounts |
 | `log proxy static` | 🟡 | Never run live |
-| `log facebook messenger pin` and the `messengerPinCreate` flow | ✅ 2026-10-22 | The PIN is saved in Twenty (`--show` says it is set). Recorded with `log inspect`: Create PIN, `pin`, `pin` again; Facebook registered it (`VestaServerGraphQLRegisterProvider…`, 200) and the inbox opened. Made into the flow `messengerPinCreate`, which hasn't run as a flow yet. The "Enter your PIN" screen a new device would show is mapped (`messengerPinEnter`: typed from Twenty) but not recorded yet. The hook runs the flow itself when the PIN is in Twenty, and flags a person only when it isn't. |
+| `log facebook messenger pin` and the `messengerPinCreate` flow | ✅ 2026-10-22 | The PIN is saved on the account's row (`--show` says it is set). Recorded with `log inspect`: Create PIN, `pin`, `pin` again; Facebook registered it (`VestaServerGraphQLRegisterProvider…`, 200) and the inbox opened. Made into the flow `messengerPinCreate`, which hasn't run as a flow yet. The "Enter your PIN" screen a new device would show is mapped (`messengerPinEnter`: typed from the account's row) but not recorded yet. The hook runs the flow itself when the PIN is on the account's row, and flags a person only when it isn't. |
 | `log adsPower sync` / `status` | ✅ 2026-10-19 | Made 10 profiles. Two capabilities are next ([#43](https://github.com/matthewdonsemail-lab/log/issues/43), [#44](https://github.com/matthewdonsemail-lab/log/issues/44)): `syncSessions` (publish, connect and profile still launch Camoufox) and `oneMachineAtATime` (the per-account browser lock). |
 
 ## 3. The host and the account's lifecycle
@@ -66,10 +69,10 @@ listed near the end.
 | `log facebook campaign fill` / `heal` / `run` / `show` | 🟡 | Never run on real accounts. `run --live` has never run on Facebook. |
 | `log facebook profile setup` | 🔴 2026-10-19 | One real dry run: `sessionExpired` (checkpoint page). `--live` never ran through this command. The photos and names that are set were done through `log flow run profileSetup`. |
 | profile rename | ⬜ | `renameNotBuilt` |
-| `log facebook conversations` / `conversation show\|read\|lead\|link` | 🟡 Twenty only | Run against Twenty (no conversations yet) |
+| `log facebook conversations` / `conversation show\|read\|lead\|link` | Retired (#339) | Ran against Twenty only (no conversations yet), which log no longer uses |
 | `log facebook conversation record --file` | 🟡 | Fed only by a JSON file written by hand |
 | **Reading the Marketplace inbox and its messages** | ⬜ | No code opens the inbox. No inspect recording of it exists. |
-| **Sending a reply** | ⬜ | Only the Twenty fields exist |
+| **Sending a reply** | ⬜ | Retired with conversations (#339) |
 
 ## 5. Warm-up
 
@@ -114,7 +117,7 @@ listed near the end.
 | The 57 commands and steps above | 26 | 16 | 7 | 8 |
 
 Under half of what is built has been proven live. Most of what is proven is
-Twenty, inspect, joining and reading a group, the five warm-up stages and one
+reading accounts, inspect, joining and reading a group, the five warm-up stages and one
 publish. Almost everything that acts on its own (the host's day, connect,
 scan and watch on AdsPower, campaigns) hasn't been. Group reading counts as ✅
 for its first version, though the current version hasn't run live.

@@ -64,7 +64,7 @@ export function runHost(options: RunHostOptions): { done: Promise<HostResult>; s
     lastLane = lane
     last = context
     if (Object.keys(fields).length) {
-      writes = writes.then(() => options.saveFields(fields)).catch((error) => log(`host ${options.account}: could not save ${Object.keys(fields).join(', ')} to Twenty (${error instanceof Error ? error.message : String(error)})`))
+      writes = writes.then(() => options.saveFields(fields)).catch((error) => log(`host ${options.account}: could not save ${Object.keys(fields).join(', ')} to the account store (${error instanceof Error ? error.message : String(error)})`))
     }
   })
 

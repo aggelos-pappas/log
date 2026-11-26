@@ -68,7 +68,7 @@ from its step's own recording, nothing clicked:
    `is_marketplace_access_banned`, `profile_status`, `sell_on_marketplace`).
    Anything but full access is the account's `suspended` issue.
 2. `/marketplace/you/selling`: each listing's state (active, being reviewed,
-   sold, rejected) and its clicks into Twenty's `agencyListings` (status,
+   sold, rejected) and its clicks into the stored `agencyListings` (retired, #339) (status,
    `clicksCount`, `lastCheckedAt`). The clicks are the page's "N clicks on
    listing": how many times people opened the listing's details page in the last
    14 days, preloaded in the page's own HTML by
@@ -77,8 +77,8 @@ from its step's own recording, nothing clicked:
    step 02).
 3. `/marketplace/inbox?targetTab=SELLER`: the seller chats. None: said so. Some:
    counted and kept as Facebook sent them in the run folder, until a recording of
-   a real chat maps a thread's fields (rule 29) and they go to Twenty's
-   conversations.
+   a real chat maps a thread's fields (rule 29) and they go to the stored
+   conversations (retired, #339).
 
 `log facebook check --account <a>` runs the same once.
 Code: `src/facebook/marketplace/check`.

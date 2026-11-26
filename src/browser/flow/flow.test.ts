@@ -225,7 +225,7 @@ describe("marketplaceListingDelete", () => {
 describe('flowWithParams', () => {
   const profileSetup = loadFlow('profileSetup')!
 
-  test('only the profile picture when Twenty has no cover or name', () => {
+  test('only the profile picture when the account has no cover or name', () => {
     const flow = flowWithParams(profileSetup, { uid: '1', profilePhoto: 'a.png' })
     expect(flow.steps.map((s) => s.id)).toEqual(['s01_gotome', 's02_clickProfilePictureActions', 's03_clickChooseProfilePicture', 's04_uploadUploadPhoto', 's05_clickSave'])
   })

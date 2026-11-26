@@ -7,14 +7,15 @@ import { JSON_FLAG, parseArgs, parserSpecOf, refuseInput } from "../runner/helpe
 import type { Command, CommandInput } from "../runner/types.ts";
 
 export const CHECK_USAGE = [
-  "Usage: log facebook check --account <accountName> [--bypass] [--json]   (in the account's open browser: Marketplace status, each listing's state and clicks in the last 14 days on Selling into Twenty, the seller inbox's chats; nothing clicked)",
+  "Usage: log facebook check --account <accountName> [--bypass] [--json]   (in the account's open browser: Marketplace status, each listing's state and clicks in the last 14 days on Selling into the account store, the seller inbox's chats; nothing clicked)",
+  "Retired (#339): Marketplace listings were kept in Twenty, which log no longer uses.",
 ].join("\n");
 
 export const CHECK_INPUT: CommandInput = {
   forms: [
     {
       words: [],
-      summary: "Check one account in its open browser",
+      summary: "Retired (#339): Check one account in its open browser",
       positionals: [],
       flags: [
         { name: "account", kind: "string", required: true, description: "The account whose browser is open (`inspectStart` opens it)" },
@@ -32,7 +33,7 @@ export const checkCommand: Command = {
   longRunning: true,
   effect: "browser",
   input: CHECK_INPUT,
-  summary: "Check one account in its open browser: may it still sell, each listing's state on Selling (into Twenty), and its seller inbox's chats",
+  summary: "Retired (#339): the Marketplace account check",
   args: "--account <a> [--bypass] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(CHECK_INPUT));

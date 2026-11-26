@@ -19,7 +19,7 @@ async function run(argv: string[], reply: (request: WorkerRequest) => unknown, s
     return reply(request);
   }) as WorkerClient;
   const code = await runCli(argv, { worker, accounts: store, out: (line) => out.push(line), err: (line) => err.push(line) });
-  return { code, out: out.join("\n"), err: err.join("\n"), requests, files, twenty: store };
+  return { code, out: out.join("\n"), err: err.join("\n"), requests, files, accounts: store };
 }
 
 const SCAN = {
@@ -27,7 +27,7 @@ const SCAN = {
   url: "https://www.facebook.com/marketplace/you/selling",
   listings: [
     { listingId: "111", title: "Rubbish Removal Galway", health: "DUPLICATE_TAKEDOWN", clicks: 4, href: "/marketplace/item/111/" },
-    { listingId: "999", title: "Not in Twenty", health: "ACTIVE", clicks: 0, href: "/marketplace/item/999/" },
+    { listingId: "999", title: "Not in the account store", health: "ACTIVE", clicks: 0, href: "/marketplace/item/999/" },
   ],
   needsAttention: ["Rubbish Removal Galway"],
   bodySample: "Your listings",
@@ -71,7 +71,7 @@ describe("rule 12: no browser for an account that may not run", () => {
 });
 
 describe("live commands", () => {
-  test("scan hands the worker file paths only, and the files carry the proxy and cookies from Twenty", async () => {
+  test("scan hands the worker file paths only, and the files carry the proxy and cookies from the account store", async () => {
     const { code, requests, files } = await run(["facebook", "scan", "--account", "galwayOne"], () => SCAN);
     expect(code).toBe(0);
     expect(JSON.stringify(requests[0])).not.toContain("secretPass");
@@ -80,29 +80,29 @@ describe("live commands", () => {
     expect(existsSync(requests[0].proxy_path!)).toBe(false);
   });
 
-  test("scan writes the dashboard back to the account's listings in Twenty", async () => {
-    const { out, twenty } = await run(["facebook", "scan", "--account", "galwayOne"], () => SCAN);
-    expect(out).toContain("Updated 1 listing(s) in Twenty.");
-    const row = twenty.rows.agencyListings.find((r) => r.id === "liveOne")!;
+  test("scan writes the dashboard back to the account's listings in the account store", async () => {
+    const { out, accounts } = await run(["facebook", "scan", "--account", "galwayOne"], () => SCAN);
+    expect(out).toContain("Updated 1 listing(s) in the account store.");
+    const row = accounts.rows.agencyListings.find((r) => r.id === "liveOne")!;
     expect(row.status).toBe("DUPLICATE_TAKEDOWN");
     expect(row.clicksCount).toBe(4);
   });
 
   test("a ban seen on the page makes the account RESTRICTED and replaces its campaign listings", async () => {
     const banned = { ...SCAN, bodySample: "You can't buy or sell on Facebook" };
-    const { out, twenty } = await run(["facebook", "scan", "--account", "galwayOne"], () => banned);
+    const { out, accounts } = await run(["facebook", "scan", "--account", "galwayOne"], () => banned);
     expect(out).toContain("galwayOne is now RESTRICTED");
-    const account = twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!;
+    const account = accounts.rows.socialAccounts.find((r) => r.id === "galwayOne")!;
     expect(account).toMatchObject({ accountStatus: "RESTRICTED", statusReason: "suspended" });
-    expect(twenty.rows.socialAccounts.some((r) => r.id === "galwayOne")).toBe(true);
-    expect(twenty.rows.agencyListings.find((r) => r.id === "readyOne")!.status).toBe("REPLACED");
+    expect(accounts.rows.socialAccounts.some((r) => r.id === "galwayOne")).toBe(true);
+    expect(accounts.rows.agencyListings.find((r) => r.id === "readyOne")!.status).toBe("REPLACED");
   });
 
   test("a worker failure with an account code updates the account", async () => {
-    const { code, err, twenty } = await run(["facebook", "scan", "--account", "galwayOne"], () => ({ ok: false, code: "checkpointed", detail: "verify" }));
+    const { code, err, accounts } = await run(["facebook", "scan", "--account", "galwayOne"], () => ({ ok: false, code: "checkpointed", detail: "verify" }));
     expect(code).toBe(1);
     expect(err).toContain("checkpointed");
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!.accountStatus).toBe("CHECKPOINT");
+    expect(accounts.rows.socialAccounts.find((r) => r.id === "galwayOne")!.accountStatus).toBe("CHECKPOINT");
   }, SPAWNS_PROCESS_MS);
 
   test("status opens one listing", async () => {
@@ -142,7 +142,7 @@ describe("live commands", () => {
   }
   const FAST_CONNECT = { pollMs: 1, codeWindowMs: 1 };
 
-  test("connect runs the connect machine through the proxy and saves the cookies to Twenty", async () => {
+  test("connect runs the connect machine through the proxy and saves the cookies to the account store", async () => {
     const store = marketplaceFixture();
     const session = scriptedConnect(["loggedIn"]);
     const out: string[] = [];
@@ -160,7 +160,7 @@ describe("live commands", () => {
     expect(await runCli(["facebook", "connect", "--account", "needsLogin", "--wait", "5"], { connectSession: session.factory, accounts: store, out: () => {}, err: () => {} })).toBe(1);
   });
 
-  test("connect --noPrompt types Twenty's details from a private file, deleted after the run, through two-step", async () => {
+  test("connect --noPrompt types the account's saved details from a private file, deleted after the run, through two-step", async () => {
     const store = marketplaceFixture();
     await store.update("socialAccounts", "needsLogin", { email: "fixture@example.com", password: "fixturePass", totpSecret: "GEZDGNBVGY3TQOJQ" } as never);
     const session = scriptedConnect(["loginForm", "twoStepMethod", "twoStepCode", "trustDevice", "loggedIn"]);
@@ -253,7 +253,7 @@ print(json.dumps([a.classify(u, h, t, **{"password_field": False, "code_field": 
     expect(run.stdout.trim()).toBe("94287082 07081804 287082 287082");
   }, SPAWNS_PROCESS_MS);
 
-  test("doctor reports the setup and which Twenty accounts may run", async () => {
+  test("doctor reports the setup and which accounts may run", async () => {
     const reply = { ok: true, checks: { python: "3.12.10", facebookCamofoxClient: "/fcc", camoufoxBrowser: "/camoufox.exe", camoufoxVersion: "152" } };
     const { code, out } = await run(["facebook", "doctor", "--json"], () => reply);
     expect(code).toBe(0);
@@ -284,7 +284,7 @@ describe("rules 15 and 18: the device and the local hours", () => {
     const out: string[] = [];
     const err: string[] = [];
     const code = await runCli(argv, { worker, accounts: store, now, out: (l) => out.push(l), err: (l) => err.push(l) });
-    return { code, out: out.join("\n"), err: err.join("\n"), twenty: store };
+    return { code, out: out.join("\n"), err: err.join("\n"), accounts: store };
   }
 
   test("scan at 03:00 Galway time is refused with the local time; no worker starts", async () => {
@@ -311,7 +311,7 @@ describe("rules 15 and 18: the device and the local hours", () => {
     expect(started).toBe(1);
   });
 
-  test("the first launch's device is saved to Twenty once and never printed", async () => {
+  test("the first launch's device is saved to the account store once and never printed", async () => {
     const worker = (async (request: WorkerRequest) => {
       const file = JSON.parse(readFileSync(request.device_path!, "utf8"));
       expect(file).toMatchObject({ locale: "en-IE", languages: ["en-IE", "en"], homeTimezone: "Europe/Dublin", profile: null });
@@ -322,7 +322,7 @@ describe("rules 15 and 18: the device and the local hours", () => {
     expect(result.code).toBe(0);
     expect(result.err).toContain("Pinned a new device for galwayOne");
     expect(result.out + result.err).not.toContain("canvas:seed");
-    expect(result.twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!.deviceProfile).toEqual(DEVICE);
+    expect(result.accounts.rows.socialAccounts.find((r) => r.id === "galwayOne")!.deviceProfile).toEqual(DEVICE);
     expect(() => JSON.parse(result.out)).not.toThrow();
   });
 

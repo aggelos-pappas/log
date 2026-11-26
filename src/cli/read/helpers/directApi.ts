@@ -15,6 +15,6 @@ export function renderDirectRead(rows: DirectPost[]): string {
     const when = p.creation_time ? new Date(p.creation_time * 1000).toISOString().slice(0, 16) : "?";
     lines.push(`  ${when} ${(p.text || "(no text)").replace(/\s+/g, " ").slice(0, 100)}`);
   }
-  lines.push("  Twenty: lastReadAt updated; posts go to OpenMagpie, only matches reach Twenty (rule 65).");
+  lines.push("  Group record: lastReadAt updated; posts go to OpenMagpie (rule 65).");
   return lines.join("\n");
 }

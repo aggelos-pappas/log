@@ -30,7 +30,7 @@ async function run(argv: string[], engine?: PlatformEngineRun, store = fixture()
 }
 
 describe("log tiktok session check", () => {
-  test("loggedIn: the engine's answer goes to Twenty", async () => {
+  test("loggedIn: the engine's answer goes to the account store", async () => {
     const r = await run(["tiktok", "session", "check", "--account", "tiktokOne"], { answer: { ok: true, loginState: "loggedIn", screenName: "tiktokOne" }, refreshed: null });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["tiktokOne:ping"]);

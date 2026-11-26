@@ -44,7 +44,7 @@ export const GROUP_MEMBERS_REFETCH = 'GroupsCometMembersPageNewMembersSectionRef
 export const newMembersAnswered = (exchanges: readonly StepExchange[]): boolean =>
   exchanges.some((e) => e.name === GROUP_MEMBERS_REFETCH && answered(e.answer, 'new_members', (v) => Array.isArray((v as { edges?: unknown } | null)?.edges) && ((v as { edges: unknown[] }).edges.length > 0)))
 
-const PIN_FROM_OWNER = 'the owner gives the account\'s 6-digit PIN once: `log facebook messenger pin --account <a>` in his terminal (a Clack prompt, kept in Twenty, never printed). Then reopen the browser so the session has it'
+const PIN_FROM_OWNER = 'the owner gives the account\'s 6-digit PIN once: `log facebook messenger pin --account <a>` in his terminal (a Clack prompt, kept in the account store, never printed). Then reopen the browser so the session has it'
 
 export const PAGE_STATES: readonly StateRule[] = [
   { id: 'disabled', url: /checkpoint\/disabled|account\/disabled/i, what: 'the account is disabled', resolve: 'a person: the account is lost or appealed (rule 13: keep its record)', person: true },
@@ -93,7 +93,7 @@ export const PAGE_STATES: readonly StateRule[] = [
     id: 'messengerPinCreate',
     text: /create a pin to access your chats/i,
     what: 'Messenger\'s "Create a PIN to access your chats on any device": the inbox stays behind it (Bethlehem, warm-up 20261022T092119 steps 25-27)',
-    resolve: 'run the recorded flow with the PIN from Twenty: `log flow run messengerPinCreate --account <a> --live` (Create PIN, the PIN, the PIN again; Bethlehem 20261022T100521), then a snapshot: the inbox shows Chats',
+    resolve: 'run the recorded flow with the saved PIN: `log flow run messengerPinCreate --account <a> --live` (Create PIN, the PIN, the PIN again; Bethlehem 20261022T100521), then a snapshot: the inbox shows Chats',
     withoutPin: PIN_FROM_OWNER,
     person: false
   },
@@ -101,7 +101,7 @@ export const PAGE_STATES: readonly StateRule[] = [
     id: 'messengerPinEnter',
     text: /enter your pin/i,
     what: 'Messenger asks for the account\'s PIN to open its chats here (a PIN set before, met on another browser or device). Mapped 2026-10-22 before its first recording',
-    resolve: 'type the PIN from Twenty: `log inspect do pin --live --account <a>`, then `log inspect do snapshot --account <a>`; if it stays, press its Continue/Next by its ref. Not recorded yet: keep each step (rule 29) and make the flow `messengerPinEnter` with `log flow fromInspect`',
+    resolve: 'type the saved PIN: `log inspect do pin --live --account <a>`, then `log inspect do snapshot --account <a>`; if it stays, press its Continue/Next by its ref. Not recorded yet: keep each step (rule 29) and make the flow `messengerPinEnter` with `log flow fromInspect`',
     withoutPin: PIN_FROM_OWNER,
     person: false
   },
@@ -164,7 +164,7 @@ export const PAGE_STATES: readonly StateRule[] = [
     resolve: 'press "Try another way" (`clickRole button "Try another way"`): the method picker opens, then choose the authentication app',
     person: false
   },
-  { id: 'twoStepCode', url: /two_step_verification|two_factor|\/checkpoint/i, text: /enter (the )?(6-digit )?code|authentication code|login code/i, what: 'two-step: the code field', resolve: '`log inspect do code --live --account <a>` (the TOTP from Twenty, rule 21)', person: false },
+  { id: 'twoStepCode', url: /two_step_verification|two_factor|\/checkpoint/i, text: /enter (the )?(6-digit )?code|authentication code|login code/i, what: 'two-step: the code field', resolve: '`log inspect do code --live --account <a>` (the TOTP from the account store, rule 21)', person: false },
   { id: 'loginForm', url: /\/login|login\.php/i, what: 'the login form', resolve: '`log inspect do signIn --live --account <a>` (rule 21), or `log facebook connect --account <a>`', person: false },
   { id: 'checkpoint', url: /\/checkpoint/i, what: 'a Facebook checkpoint', resolve: 'none: a checkpointed account is deactivated (rule 82, the owner 2026-11-02): the browser checkpoint watch sets it DEACTIVATED, reason checkpointed, its listings lost; the browser closes and nothing is pressed. Tell the owner', person: true }
 ]

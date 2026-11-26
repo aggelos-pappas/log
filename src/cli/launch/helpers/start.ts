@@ -32,9 +32,9 @@ export function signInRoutesOf(platform: Platform): readonly SignInRouteName[] {
   return SIGN_IN_ROUTES[platform];
 }
 
-export function platformOfTwenty(value: unknown): Platform | null {
+export function platformOfAccount(value: unknown): Platform | null {
   const store = String(value ?? "").toUpperCase();
-  return PLATFORMS.find((p) => PLATFORM_SITES[p].twenty === store) ?? null;
+  return PLATFORMS.find((p) => PLATFORM_SITES[p].accountPlatform === store) ?? null;
 }
 
 export function platformOption(platform: Platform): { value: string; label: string; hint: string } {
@@ -61,8 +61,4 @@ export function agentSetupText(): string {
     "  Any other:    run `logMcp` as a stdio MCP server",
     "Then ask your agent to check an account. More: https://log.listeningkit.com/docs",
   ].join("\n");
-}
-
-export function twentyReady(env: Record<string, string | undefined> = process.env): boolean {
-  return Boolean((env.LOG_TWENTY_BASE_URL || env.TWENTY_BASE_URL)?.trim() && (env.LOG_TWENTY_API_KEY || env.TWENTY_API_KEY)?.trim());
 }

@@ -42,7 +42,7 @@ function copyOfRepo(): string {
 
 describe("log new platform", () => {
   test("names follow the platform's name", () => {
-    expect(namesOf({ name: "blueSky" })).toMatchObject({ pascal: "BlueSky", constant: "BLUE_SKY", label: "BlueSky", twentyPlatform: "BLUESKY", seam: "directBlueSky", sessionKey: "blueSkySession", cookieDomain: ".bluesky.com" });
+    expect(namesOf({ name: "blueSky" })).toMatchObject({ pascal: "BlueSky", constant: "BLUE_SKY", label: "BlueSky", accountPlatform: "BLUESKY", seam: "directBlueSky", sessionKey: "blueSkySession", cookieDomain: ".bluesky.com" });
   });
 
   test("the plan wires every registration through the syntax tree and writes the platform's files", () => {

@@ -52,7 +52,7 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   redditReply: { platform: 'reddit', library: 'reverseChud', only: true, surface: 'posts', method: 'reply', when: 'a comment or reply', seam: 'directReddit' },
   redditVote: { platform: 'reddit', library: 'reverseChud', only: true, surface: 'posts', method: 'vote', when: 'a vote', seam: 'directReddit' },
   discordSession: { platform: 'discord', library: 'endcord', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directDiscord' },
-  discordSecrets: { platform: 'discord', library: 'endcord', only: true, surface: 'account', method: 'none', when: 'secrets (a Clack prompt; the email, password and 2FA secret go to Twenty, Discord is not called)', seam: 'directDiscord' },
+  discordSecrets: { platform: 'discord', library: 'endcord', only: true, surface: 'account', method: 'none', when: 'secrets (a Clack prompt; the email, password and 2FA secret go to the account store, Discord is not called)', seam: 'directDiscord' },
   discordChats: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'get_dms', when: 'chats (the DMs and group DMs)', seam: 'directDiscord' },
   discordRead: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'get_messages', when: 'read (a chat or channel, paged with before)', seam: 'directDiscord' },
   discordServers: { platform: 'discord', library: 'endcord', only: true, surface: 'account', method: 'get_guilds', when: 'servers (the servers the account is in)', seam: 'directDiscord' },
@@ -116,10 +116,10 @@ export function engineHead(route: DirectRoute): string {
 }
 
 export function platformEngineText(platform: string): string {
-  if (platform === 'twitter') return `X's own answer decides: the session check's HTTP status first (401 or 403 is loggedOut, 200 or 404 loggedIn), then the call's own answer, read into one event (sent, dropped, throttled, dailyLimit, gone, automated, duplicate, sessionDead, restricted). Each account has its own governor under ~/.logCli/twitter/<account> (sends count as writes, ${writesPerDayOf('twitter')} a day), refreshed cookies are merged back into its Twenty row, and the session state is written to socialAccounts.sessionState.`
+  if (platform === 'twitter') return `X's own answer decides: the session check's HTTP status first (401 or 403 is loggedOut, 200 or 404 loggedIn), then the call's own answer, read into one event (sent, dropped, throttled, dailyLimit, gone, automated, duplicate, sessionDead, restricted). Each account has its own governor under ~/.logCli/twitter/<account> (sends count as writes, ${writesPerDayOf('twitter')} a day), refreshed cookies are merged back into its account row, and the session state is written to socialAccounts.sessionState.`
   if (platform !== 'facebook') {
     const label = isPlatform(platform) ? PLATFORM_LABELS[platform] : platform
-    return `${label}'s own answer decides. Each account has its own governor under ~/.logCli/${platform}/<account>, refreshed cookies are merged back into its Twenty row, and the session state is written to socialAccounts.sessionState.`
+    return `${label}'s own answer decides. Each account has its own governor under ~/.logCli/${platform}/<account>, refreshed cookies are merged back into its account row, and the session state is written to socialAccounts.sessionState.`
   }
   return `Facebook's own page decides, not accountStatus: loggedIn reads; checkpoint stops and deactivates the account; loggedOut or accountWarning hands over to the browser path. Each account has its own governor (gaps of 4 s or more, 120 an hour, 500 a day, 40 writes a day, a 15-minute pause on a soft block, 6 hours on a checkpoint) and its result is written to socialAccounts.sessionState.`
 }

@@ -4,7 +4,7 @@
     {
       "path": "src/cli/live/live.test.ts",
       "rule": "gitleaks",
-      "fingerprint": "94a15c7068d7",
+      "fingerprint": "aabbdecc8a8c",
       "why": "Dummy login and two-step secret written to a fixture account in a test"
     },
     {

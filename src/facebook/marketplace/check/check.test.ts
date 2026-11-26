@@ -53,7 +53,7 @@ describe('the Marketplace check reads the recorded responses', () => {
 })
 
 describe('keepCheck', () => {
-  test('a listing that moved gets its status in Twenty; chats are kept as sent; a ban is an issue', async () => {
+  test('a listing that moved gets its status in the account store; chats are kept as sent; a ban is an issue', async () => {
     const store = marketplaceFixture()
     const account = (await store.list('socialAccounts')).find((a) => a.accountName === 'galwayOne')!
     const created = await store.create('agencyListings', { title: 'Junk Removal', socialAccountId: account.id, listingId: '1425935622848350', status: 'UNDER_REVIEW' } as never)
@@ -62,7 +62,7 @@ describe('keepCheck', () => {
     expect((await store.list('agencyListings')).find((r) => r.id === (created as { id: string }).id)?.status).toBe('ACTIVE')
     expect(report.lines.join('\n')).toContain('underReview → active')
     expect((await store.list('agencyListings')).find((r) => r.id === (created as { id: string }).id)?.clicksCount).toBe(15)
-    expect(report.lines.join('\n')).toContain('active, 15 clicks in 14 days; Twenty underReview → active; clicks empty → 15')
+    expect(report.lines.join('\n')).toContain('active, 15 clicks in 14 days; stored underReview → active; clicks empty → 15')
     expect(report.threads).toBe(1)
     expect(report.issue).toBeNull()
     const kept = report.lines.find((l) => l.includes('kept as sent'))!.split('kept as sent: ')[1]

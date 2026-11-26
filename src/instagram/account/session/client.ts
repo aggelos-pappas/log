@@ -5,7 +5,7 @@ import type { AccountStore } from '../../../accounts/store/index'
 
 export const INSTAGRAM_PLATFORM: PlatformShape = {
   platform: 'instagram',
-  twentyPlatform: 'INSTAGRAM',
+  accountPlatform: 'INSTAGRAM',
   label: 'Instagram',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', 'instagramApi', 'engine.py'),
   sessionCookies: ['sessionid', 'ds_user_id', 'csrftoken']

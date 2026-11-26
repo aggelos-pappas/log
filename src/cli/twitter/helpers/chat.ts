@@ -15,7 +15,7 @@ import type { Engine } from "./account.ts";
 export const CHAT_USAGE = [
   "Usage: log twitter chat pin --account <accountName> [--show]",
   "       log twitter chat watch --account <accountName> [--seconds <n>] [--inbox] [--json]",
-  "Saves the account's X Chat PIN (the 4-digit code X asks for to open encrypted DMs) to Twenty, asked twice in a masked Clack prompt and never printed or passed as a flag. It is checked first: the direct-API engine (no browser; direct unless it has a proxy, rule 80) unlocks the account's keys with it through Juicebox (a wrong PIN uses one of X's limited guesses), and only a PIN that opens them is saved. `log twitter dms` uses it to recover the account's X Chat keys through Juicebox (vendor/chatXdk) and read the encrypted messages. --show says only whether one is set.",
+  "Saves the account's X Chat PIN (the 4-digit code X asks for to open encrypted DMs) to the account store, asked twice in a masked Clack prompt and never printed or passed as a flag. It is checked first: the direct-API engine (no browser; direct unless it has a proxy, rule 80) unlocks the account's keys with it through Juicebox (a wrong PIN uses one of X's limited guesses), and only a PIN that opens them is saved. `log twitter dms` uses it to recover the account's X Chat keys through Juicebox (vendor/chatXdk) and read the encrypted messages. --show says only whether one is set.",
   "watch keeps one socket open to X Chat, the way X's own chat app does (read with rea from X's shipped code, issue #68): a token from GenerateXChatTokenMutation, wss://chat-ws.x.com/ws, a KeepAlive every 30 s, a fresh token and a new socket when it drops. X pushes each message the moment it lands, so nothing is polled and no inbox read can hit X's 429. Each message is decrypted with the saved PIN and printed as it arrives (who, when, what they said). --inbox also hands each new message from someone else to the inbox hook, which puts it in front of the agent with what to do next. --seconds stops it after that long; without it, it watches until stopped.",
 ].join("\n");
 
@@ -35,7 +35,7 @@ export const CHAT_INPUT: CommandInput = {
   forms: [
     {
       words: ["pin"],
-      summary: "Save the account's X Chat PIN to Twenty from a masked prompt, checked against X first",
+      summary: "Save the account's X Chat PIN from a masked prompt, checked against X first",
       positionals: [],
       flags: [
         { name: "account", kind: "string", required: true, description: "The TWITTER socialAccount's accountName (its handle)" },
@@ -67,7 +67,7 @@ export const chatCommand: Command = {
   name: "chat",
   terminalOnly: "asks the owner for the X Chat PIN in a Clack prompt (masked). The owner runs `log twitter chat pin --account <a>` in a terminal.",
   effect: "write",
-  summary: "X Chat's PIN for the account's encrypted DMs: asked in a Clack prompt, kept in Twenty, never printed",
+  summary: "X Chat's PIN for the account's encrypted DMs: asked in a Clack prompt, saved, never printed",
   input: CHAT_INPUT,
   args: "pin --account <name> [--show] | watch --account <name> [--seconds <n>] [--inbox] [--json]",
   async run(context, argv) {
@@ -110,8 +110,8 @@ export const chatCommand: Command = {
       return { code: 1, stderr: `log twitter chat pin: ${check.answer.code}: ${check.answer.detail ?? ""}` };
     }
     await context.accounts.update("socialAccounts", account.id, { messengerPin: first } as never);
-    prompts.outro("Saved to Twenty. `log twitter dms` opens X Chat with it, never printed.");
-    return { code: 0, stdout: `${account.accountName}: X Chat PIN <set> in Twenty` };
+    prompts.outro("Saved to the account store. `log twitter dms` opens X Chat with it, never printed.");
+    return { code: 0, stdout: `${account.accountName}: X Chat PIN <set> in the account store` };
   },
 };
 

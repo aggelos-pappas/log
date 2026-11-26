@@ -10,7 +10,7 @@ async function run(argv: string[], store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const code = await runCli(argv, { accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), twenty: store };
+  return { code, out: out.join("\n"), err: err.join("\n"), accounts: store };
 }
 
 const THREADS = [

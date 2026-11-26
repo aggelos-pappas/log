@@ -21,7 +21,7 @@ describe('runs by platform', () => {
     expect(checkRunnable(account({ platform: 'YOUTUBE' }), 'connect')).toMatchObject({ ok: false, code: 'accountNotFacebook' })
   })
 
-  test("an account's platform and site come from its Twenty value", () => {
+  test("an account's platform and site come from its account platform value", () => {
     expect(platformOfAccount({ platform: 'TWITTER' })).toBe('twitter')
     expect(siteOfAccount({ platform: 'FACEBOOK' }).proxy).toBe('required')
     expect(() => platformOfAccount({ platform: null })).toThrow('accountPlatformMissing')

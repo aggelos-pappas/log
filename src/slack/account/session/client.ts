@@ -5,7 +5,7 @@ import type { AccountStore } from '../../../accounts/store/index'
 
 export const SLACK_PLATFORM: PlatformShape = {
   platform: 'slack',
-  twentyPlatform: 'SLACK',
+  accountPlatform: 'SLACK',
   label: 'Slack',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', 'slackApi', 'engine.py'),
   sessionCookies: ['d']

@@ -68,7 +68,7 @@ export function hostActors(context: CommandContext, account: FacebookAccount, br
   };
 
   return {
-    checkProxy: fromPromise<StepOutcome, LifecycleActorInputs["checkProxy"]>(async () => (account.proxy ? ok() : error("noProxy", "no proxy in Twenty (rule 12)"))),
+    checkProxy: fromPromise<StepOutcome, LifecycleActorInputs["checkProxy"]>(async () => (account.proxy ? ok() : error("noProxy", "no proxy in the account store (rule 12)"))),
 
     openBrowser: fromPromise<StepOutcome, LifecycleActorInputs["openBrowser"]>(async () => {
       if (account.adsPowerProfileId) {
@@ -156,7 +156,7 @@ export function hostActors(context: CommandContext, account: FacebookAccount, br
         const signedIn = Boolean(state?.cookies.some((c) => c.name === "c_user") && state?.cookies.some((c) => c.name === "xs"));
         if (signedIn && !/\/login|login\.php/.test(url)) {
           await saveSession(context.accounts, account.id, state!);
-          log(`host ${account.accountName}: signed in; session saved to Twenty (${state!.cookies.length} cookies)`);
+          log(`host ${account.accountName}: signed in; session saved to the account store (${state!.cookies.length} cookies)`);
           return ok();
         }
         if (triedForm >= 2) return issue("signInNotFinished", `still signed out on ${url} after two sign-ins`);
@@ -189,7 +189,7 @@ export function hostActors(context: CommandContext, account: FacebookAccount, br
       if (!input.live) return error("needsLive", "the profile changes Facebook: run the host with --live when the owner asks (rule 8)");
       const recorded = loadFlow("profileSetup");
       if (!recorded || !browser.session) return error("flowNotRecorded", "profileSetup");
-      if (!account.profilePhoto) return error("noProfileInTwenty", "profilePhoto is needed in Twenty");
+      if (!account.profilePhoto) return error("noProfileSaved", "profilePhoto is needed in the account store");
       const [firstName, ...rest] = (account.profileName ?? "").split(" ");
       const sources = [account.profilePhoto, account.coverPhoto].filter((p): p is string => Boolean(p));
       const photos = await preparePhotos(sources, { dir: join(browser.session.current.runDir, "photos"), proxy: fetchProxyUrl(account.proxy) });

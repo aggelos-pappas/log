@@ -120,7 +120,7 @@ export const tiktokSessionCommand: Command = {
   name: "session",
   effect: "read",
   input: TIKTOK_SESSION_INPUT,
-  summary: "Check that TikTok still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty",
+  summary: "Check that TikTok still accepts an account's saved session, on the direct-API engine, sending nothing; the answer is saved",
   args: "check --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(TIKTOK_SESSION_INPUT));

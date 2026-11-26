@@ -1,6 +1,6 @@
 import type { AccountStore, AccountObjects } from '../../../accounts/store/index'
 import type { PublishOutput } from '../publish/types'
-import { fromTwentyEnum, toTwentyEnum } from '../../../platformKit/socialAccount/helpers/index'
+import { fromStoredEnum, toStoredEnum } from '../../../platformKit/socialAccount/helpers/index'
 import { copyVersionsOf, LIVE_COPY_STATUSES, lintVersions, pickVersion, requiredVersions, skipWordsOf } from '../copy/index'
 import type { CopyVersion, LiveCopy } from '../copy/index'
 import type { AgencyListing, AgencyListingRow, AgencyListingStatus, ListingCondition, RunResult } from './types'
@@ -33,8 +33,8 @@ function safeJson(text: string): unknown {
 }
 
 export function toAgencyListing(row: AgencyListingRow): AgencyListing {
-  const status = row.status ? fromTwentyEnum(row.status) : null
-  const condition = row.condition ? (fromTwentyEnum(row.condition) as ListingCondition) : null
+  const status = row.status ? fromStoredEnum(row.status) : null
+  const condition = row.condition ? (fromStoredEnum(row.condition) as ListingCondition) : null
   return {
     id: row.id,
     title: (row.title ?? row.name ?? '').trim(),
@@ -57,7 +57,7 @@ export function toAgencyListing(row: AgencyListingRow): AgencyListing {
     listingUrl: row.listingUrl ?? null,
     publishedAt: row.publishedAt ?? null,
     lastRunAt: row.lastRunAt ?? null,
-    lastRunResult: row.lastRunResult ? fromTwentyEnum(row.lastRunResult) : null,
+    lastRunResult: row.lastRunResult ? fromStoredEnum(row.lastRunResult) : null,
     lastErrorCode: row.lastErrorCode ?? null,
     lastError: row.lastError ?? null,
     clicksCount: typeof row.clicksCount === 'number' ? row.clicksCount : null,
@@ -82,7 +82,7 @@ export async function setListingStatus(
   status: AgencyListingStatus,
   extra: ListingUpdate = {}
 ): Promise<void> {
-  await store.update(AGENCY_LISTINGS, id, { status: toTwentyEnum(status) as ListingUpdate['status'], ...extra })
+  await store.update(AGENCY_LISTINGS, id, { status: toStoredEnum(status) as ListingUpdate['status'], ...extra })
 }
 
 export function copySkipWords(ad: Pick<AgencyListing, 'locationCity' | 'locationQuery'>): Set<string> {
@@ -125,13 +125,13 @@ export async function createSlot(
     price: ad.price,
     priceCurrency: ad.priceCurrency,
     category: ad.category,
-    condition: (ad.condition ? toTwentyEnum(ad.condition) : null) as ListingCreate['condition'],
+    condition: (ad.condition ? toStoredEnum(ad.condition) : null) as ListingCreate['condition'],
     photos: ad.photos as unknown as ListingCreate['photos'],
     locationQuery: ad.locationQuery,
     locationCity: ad.locationCity,
     locationCountry: ad.locationCountry,
     locationPostalCode: ad.locationPostalCode,
-    status: toTwentyEnum('ready') as ListingCreate['status'],
+    status: toStoredEnum('ready') as ListingCreate['status'],
     socialAccountId: accountId,
     campaignId: options.campaignId,
     replacesId: options.replaces?.id ?? null,
@@ -161,7 +161,7 @@ export async function recordRun(
   const result: RunResult = output.result === 'unconfirmedId' ? 'unconfirmed' : output.result
   const update: ListingUpdate = {
     lastRunAt: now.toISOString(),
-    lastRunResult: toTwentyEnum(result) as ListingUpdate['lastRunResult'],
+    lastRunResult: toStoredEnum(result) as ListingUpdate['lastRunResult'],
     lastErrorCode: output.failure?.code ?? null,
     lastError: output.failure ? `${output.failure.state}: ${output.failure.detail ?? output.failure.code}`.slice(0, 500) : null
   }
@@ -170,7 +170,7 @@ export async function recordRun(
   const status = dryRun
     ? result === 'blocked' || result === 'needsPerson' ? 'blocked' : null
     : result === 'published' && output.review ? 'underReview' : RESULT_STATUS[result]
-  if (status) update.status = toTwentyEnum(status) as ListingUpdate['status']
+  if (status) update.status = toStoredEnum(status) as ListingUpdate['status']
   if (!dryRun && result === 'published') {
     update.listingId = output.listingId
     update.listingUrl = output.listingUrl

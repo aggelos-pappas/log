@@ -93,7 +93,7 @@ export const platformScaffold = {
     'REQ-PLATFORM-12': noul('For an account that is not FACEBOOK, does checkRunnable refuse it when its site has no browser path, and return ok with a direct connection and no proxy server when its site proxy is none, while a FACEBOOK account still needs a proxy and a homeCountry?'),
     'REQ-PLATFORM-13': noul('Does planSync skip the homes check and the home locale check for an account whose site proxy is none, and does profileRequest use the US home (en-US) when such an account has no home?'),
     'REQ-PLATFORM-14': noul('Does planNewPlatform add docs/specs/<name>.md from specDoc and src/specs/<name>/index.ts from specIndex to the files it writes, and does specIndex give every requirement in specDoc anchors on symbols or strings in the session client, the cli command, PLATFORMS and DIRECT_ROUTES that the plan writes or edits, with a rubric for each and MET assertions?'),
-    unspecifiedBehavior: noul('Does the code write files or edits for a new platform, overwrite an existing one, change Twenty, or open a browser for a platform outside PLATFORM_SITES, by a route the specification does not describe?'),
+    unspecifiedBehavior: noul('Does the code write files or edits for a new platform, overwrite an existing one, change the account store, or open a browser for a platform outside PLATFORM_SITES, by a route the specification does not describe?'),
   },
   assertions: {
     'REQ-PLATFORM-01': MET,

@@ -126,7 +126,7 @@ describe('groupAnswerMachine', () => {
   })
 })
 
-describe('the application in Twenty', () => {
+describe('the application in the account store', () => {
   test('the stepper sets ready or drafting; each fill step patches it with a history line', async () => {
     expect(applicationFromDraft(OPTIONS, null, new Date()).status).toBe('notStarted')
     expect(applicationFromDraft(OPTIONS, { ...DRAFT, rulesAgreed: false }, new Date()).status).toBe('drafting')

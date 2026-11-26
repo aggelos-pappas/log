@@ -53,7 +53,7 @@ export function twitterGate(account: TwitterAccount): TwitterGate {
   if (account.platform !== 'TWITTER') return { ok: false, code: 'accountNotTwitter', detail: `${account.accountName} is ${account.platform ?? 'no platform'}` }
   if (account.status === 'deactivated') return { ok: false, code: 'accountDeactivated', detail: `${account.accountName} is deactivated` }
   const cookies = twitterCookies(account.cookies)
-  if (!cookies.auth_token || !cookies.ct0) return { ok: false, code: 'noTwitterSession', detail: `${account.accountName} has no saved auth_token + ct0 in Twenty` }
+  if (!cookies.auth_token || !cookies.ct0) return { ok: false, code: 'noTwitterSession', detail: `${account.accountName} has no saved auth_token + ct0 in the account store` }
   return { ok: true }
 }
 

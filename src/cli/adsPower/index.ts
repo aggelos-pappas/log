@@ -34,7 +34,7 @@ export const adsPowerCommand: Command = liveThroughAction<Command>({
   name: "adsPower",
   effect: "write",
   input: ADS_POWER_INPUT,
-  summary: "AdsPower: Local API status, its profiles, and one profile per Twenty account (sync)",
+  summary: "AdsPower: Local API status, its profiles, and one profile per saved account (sync)",
   args: "<status|profiles|sync> [--apply] [--account <a>] [--homes <US,IE>] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(ADS_POWER_INPUT));
@@ -51,7 +51,7 @@ export const adsPowerCommand: Command = liveThroughAction<Command>({
         const profiles = await adsPower.listProfiles();
         if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ profiles }, null, 2) };
         if (profiles.length === 0) return { code: 0, stdout: "No AdsPower profiles." };
-        const lines = profiles.map((p) => `${p.profileId.padEnd(10)} ${p.name.padEnd(22)} ${remarkAccountId(p.remark) ? `twenty ${remarkAccountId(p.remark)}` : "(not log-cli)"}`);
+        const lines = profiles.map((p) => `${p.profileId.padEnd(10)} ${p.name.padEnd(22)} ${remarkAccountId(p.remark) ? `account ${remarkAccountId(p.remark)}` : "(not log-cli)"}`);
         return { code: 0, stdout: [`${profiles.length} AdsPower profile(s):`, ...lines].join("\n") };
       }
       const apply = parsed.flags["apply"] === true;

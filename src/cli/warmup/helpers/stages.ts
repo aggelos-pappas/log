@@ -176,7 +176,7 @@ async function accountIssue(context: CommandContext, account: FacebookAccount, c
   try {
     await recordAccountIssue(context.accounts, account, code, `seen in the warm-up (${activity}): ${detail}`);
   } catch (error) {
-    context.err(`(could not update Twenty: ${error instanceof Error ? error.message : String(error)})`);
+    context.err(`(could not update the account store: ${error instanceof Error ? error.message : String(error)})`);
   }
 }
 

@@ -16,14 +16,14 @@ describe("runCli", () => {
   test("no command prints usage for every command", async () => {
     const { code, out } = await run([]);
     expect(code).toBe(0);
-    for (const name of ["launch", "listings", "listing", "accounts", "account", "doctor", "connect", "scan", "status", "watch", "proxy", "publish", "campaign", "login", "logout", "whoami", "capture"]) expect(out).toContain(`log ${name}`);
+    for (const name of ["launch", "listings", "listing", "accounts", "account", "doctor", "connect", "scan", "status", "watch", "proxy", "publish", "campaign", "capture"]) expect(out).toContain(`log ${name}`);
   });
 
   test("unknown command exits 2", async () => {
     expect((await run(["bogus"])).code).toBe(2);
   });
 
-  test("listings --json returns every Twenty listing", async () => {
+  test("listings --json returns every stored listing", async () => {
     const { code, out } = await run(["facebook", "listings", "--json"]);
     expect(code).toBe(0);
     expect(JSON.parse(out).listings).toHaveLength(8);

@@ -26,7 +26,8 @@ export * from "./helpers/index.ts";
 export const READ_USAGE = [
   "Usage: log facebook read group --account <accountName> --group <group url or id> [--scrolls <n>] [--commentPosts <n>] [--live] [--bypass] [--json]",
   "       log facebook read group --account <accountName> --group <g> --show [--json]",
-  "Reads the group's new posts (since its cursor in Twenty) and the comments of the new posts that have some. Only the cursor is saved to Twenty (rule 65); --show prints it.",
+  "Retired (#339): read group; group records were kept in Twenty. read members still works: it writes only files.",
+  "Reads the group's new posts (since its saved cursor) and the comments of the new posts that have some. Only the cursor is saved (rule 65); --show prints it.",
   "Without --live, on a numeric group id, it runs on the direct-API engine first (fbk groups.feed_read, no browser) when the account has a saved session and a proxy in its home country: Facebook's own page decides, not accountStatus (loggedIn reads; checkpoint stops and deactivates; anything else hands over to the browser). The result goes to socialAccounts.sessionState.",
   "--scrolls: feed scrolls at most (default 6). --commentPosts: posts whose comments are read at most (default 5; 0 reads none).",
   "--worker (OpenMagpie's call) is refused here: it became its own command, log facebook poll (its usage).",
@@ -37,7 +38,7 @@ export const READ_USAGE = [
   "Reads the group's newest members from its People tab (/groups/<g>/members) in the account's open browser: the page's first 10, then a scroll at a time, each scroll's GroupsCometMembersPageNewMembersSectionRefetchQuery answers (about 10 members each, 2 a scroll). Nothing is clicked (rule 8).",
   "--count: members to read (1-5000). --secondsPerScroll: the wait before each scroll (default 15; the owner: the time 40 scrolls take is a variable). --maxScrolls: scrolls at most (default twice the plan's, plus 2). It says up front: count N → ~S scrolls, ~M min at Xs per scroll.",
   "It stops at --count members, when the list ends (has_next_page false) or at --maxScrolls. --owners keeps only owners: a bio naming owner, co-owner, founder, CEO, president, proprietor or self-employed, or a page (a category set).",
-  "The members go to ~/.logCli/members/<group>/<run time>.tsv and .json, never to Twenty; it prints how many, how many with a bio, owners and pages, and the files. --json gives them.",
+  "The members go to ~/.logCli/members/<group>/<run time>.tsv and .json, never to the account store; it prints how many, how many with a bio, owners and pages, and the files. --json gives them.",
 ].join("\n");
 
 async function renderSaved(store: AccountStore, groupRowId: string, name: string): Promise<{ text: string; json: unknown }> {
@@ -49,7 +50,7 @@ async function renderSaved(store: AccountStore, groupRowId: string, name: string
       ? "  No cursor yet: the first read keeps every post it sees."
       : `  Cursor: newest post ${cursor.lastPostId ?? "?"} at ${cursor.watermark === null ? "?" : new Date(cursor.watermark * 1000).toISOString().slice(0, 16)}Z, ${cursor.seenIds?.length ?? 0} post id(s) already seen.`,
     ...(row?.lastReadReason ? [`  Last read: ${row.lastReadReason}`] : []),
-    "  The posts themselves go to OpenMagpie (log facebook poll); only its matches reach Twenty, in socialListening (rule 65).",
+    "  The posts themselves go to OpenMagpie (log facebook poll) (rule 65).",
   ];
   return { text: lines.join("\n"), json: { lastReadAt: row?.lastReadAt ?? null, lastReadReason: row?.lastReadReason ?? null, cursor } };
 }
@@ -69,7 +70,7 @@ function renderRun(output: GroupReadOutput, saved: SavedRead, live: boolean): st
   if (output.gap) lines.push("  The scrolls ran out before the last read's posts showed: posts between may be missing (raise --scrolls).");
   const rejected = Object.entries(output.rejected).map(([why, n]) => `${why} ${n}`);
   if (rejected.length) lines.push(`  rejected (never patched): ${rejected.join(", ")}`);
-  lines.push(`  Twenty: the cursor ${saved.cursorMoved ? "moved" : "stayed"}; no post or comment is saved there (rule 65).`);
+  lines.push(`  Group record: the cursor ${saved.cursorMoved ? "moved" : "stayed"}; no post or comment is saved there (rule 65).`);
   for (const step of output.steps) lines.push(`  ${step.ok ? "✓" : "✗"} ${step.step}${step.detail ? `: ${step.detail}` : ""}${step.folder ? `  (${step.folder})` : ""}`);
   return lines.join("\n");
 }
@@ -129,7 +130,7 @@ export async function readGroupOnce(context: CommandContext, current: CurrentIns
   const output = await toPromise(actor);
 
   const saved = await saveRead(context.accounts, group.id, output, readReason(output, current.runDir), context.now?.() ?? new Date());
-  context.err(`Twenty: the group's cursor ${saved.cursorMoved ? "moved" : "stayed"} (rule 65: only the cursor is kept there).`);
+  context.err(`Group record: the group's cursor ${saved.cursorMoved ? "moved" : "stayed"} (rule 65: only the cursor is kept there).`);
   return { output, saved };
 }
 
@@ -304,7 +305,7 @@ export const readCommand: Command = {
   name: "read",
   longRunning: true,
   effect: "browser",
-  summary: "Read a Facebook group's new posts and their comments, or its newest members, as one account, by hand: posts on the direct-API engine first, else in its open browser; only the group's cursor is saved to Twenty, the members to a file",
+  summary: "Read a Facebook group's newest members as one account, in its open browser, to a file; reading its new posts and comments is retired (#339)",
   args: "group --account <a> --group <g> [--scrolls <n>] [--commentPosts <n>] [--live] [--bypass] [--json] | --show | members --account <a> --group <g> --count <n> [--secondsPerScroll <s>] [--maxScrolls <n>] [--owners] [--bypass] [--json]",
   input: READ_INPUT,
   run: runRead,

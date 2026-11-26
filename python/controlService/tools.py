@@ -18,7 +18,6 @@ READ_TOOLS = frozenset({
     "discordRead",
     "search",
     "errors",
-    "whoami",
     "browserView",
     "getGuide",
     "logSearch",

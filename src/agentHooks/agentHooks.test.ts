@@ -99,7 +99,7 @@ describe("live logs hook", () => {
   test("finds an installed log command, and not git log", () => {
     expect(logCommandOf("log twitter dms --account a")).toBe("dms");
     expect(logCommandOf("cd repo && log capture docs | tail -3")).toBe("capture");
-    expect(logCommandOf("LOG_ACCOUNTS=local log localAccount list")).toBe("localAccount");
+    expect(logCommandOf("LOG_TRACK=stable log localAccount list")).toBe("localAccount");
     expect(logCommandOf("git log --oneline -3")).toBeNull();
     expect(logCommandOf("git log origin/main..HEAD")).toBeNull();
     expect(buffersOutput("log capture docs 2>&1 | tail -20")).toBe(true);
@@ -126,7 +126,6 @@ describe("live logs hook", () => {
   test("the terminal-only prompts the owner runs himself are not refused", () => {
     expect(liveLogVerdict("Bash", "log twitter chat pin --account a")).toEqual({ deny: null, context: null });
     expect(liveLogVerdict("Bash", "log twitter cookies save --account a")).toEqual({ deny: null, context: null });
-    expect(liveLogVerdict("Bash", "log login")).toEqual({ deny: null, context: null });
   });
 
   test("shell commands that aren't log runs go through", () => {

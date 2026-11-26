@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { loadFlow } from "../../browser/flow/index.ts";
 import { setListingStatus } from "../../facebook/marketplace/agencyListing/index.ts";
 import { runFlow } from "../flow/index.ts";
-import { fromTwentyEnum, listFacebookAccounts, findAccount, toTwentyEnum } from "../../platformKit/socialAccount/index.ts";
+import { fromStoredEnum, listFacebookAccounts, findAccount, toStoredEnum } from "../../platformKit/socialAccount/index.ts";
 import { countryMismatch, createSlot, getListing, LISTING_STATUSES, listListingsWhere } from "../../facebook/marketplace/agencyListing/index.ts";
 import type { AgencyListing } from "../../facebook/marketplace/agencyListing/index.ts";
 import type { ListingFilter } from "../../facebook/marketplace/agencyListing/index.ts";
@@ -14,13 +14,14 @@ import { liveThroughAction } from "../../platformKit/action/index.ts";
 
 export * from "./helpers/index.ts";
 
-export const LISTINGS_USAGE = "Usage: log facebook listings [--status <STATUS>] [--account <accountName>] [--campaign <campaignId>] [--json]";
+export const LISTINGS_USAGE = "Usage: log facebook listings [--status <STATUS>] [--account <accountName>] [--campaign <campaignId>] [--json]\nRetired (#339): Marketplace listings were kept in Twenty, which log no longer uses.";
 export const LISTING_USAGE = [
   "Usage: log facebook listing <agencyListingId> [--json]",
   "       log facebook listing create --account <accountName> --file <listing.json> [--json]",
   "       log facebook listing sweep [--apply] [--json]   (every listing whose account is blocked (checkpoint, restricted, banned, dead, deactivated, or a wrong password) is marked ACCOUNT_LOST, and a campaign's copy goes to another account; a dry run unless --apply)",
   "       log facebook listing lint --file <listing.json> [--json]   (the copy rules on the file's copy versions, and whether it would publish; nothing is saved)",
-  "       log facebook listing remove <agencyListingId|facebookListingId> [--live] [--bypass] [--now] [--json]   (delete it on Facebook through the recorded flow marketplaceListingDelete, then REMOVED in Twenty; a dry run unless --live)",
+  "       log facebook listing remove <agencyListingId|facebookListingId> [--live] [--bypass] [--now] [--json]   (delete it on Facebook through the recorded flow marketplaceListingDelete, then REMOVED; a dry run unless --live)",
+  "Retired (#339): Marketplace listings were kept in Twenty, which log no longer uses. listing lint still works: it saves nothing.",
   "The file: title, description, price, priceCurrency, category, condition (new|usedLikeNew|usedGood|usedFair), photos (paths or URLs), locationQuery ('City, State' with the state written out, 'Bethlehem, Pennsylvania', or 'City, Country': an abbreviation, zip or number is refused, rule 72), locationCity, locationCountry, locationPostalCode (kept, never typed), copyVersions ([{ id, title, description }], written by skills/listingCopy; the first is the ad's own title and description; each copy of the ad picks the one least like what is live in its city).",
 ].join("\n");
 
@@ -28,10 +29,10 @@ export const LISTINGS_INPUT: CommandInput = {
   forms: [
     {
       words: [],
-      summary: "List the Twenty listings",
+      summary: "Retired (#339): List the stored listings",
       positionals: [],
       flags: [
-        { name: "status", kind: "enum", values: LISTING_STATUSES.map(toTwentyEnum), description: "Only listings in this status" },
+        { name: "status", kind: "enum", values: LISTING_STATUSES.map(toStoredEnum), description: "Only listings in this status" },
         { name: "account", kind: "string", description: "Only this account's listings" },
         { name: "campaign", kind: "string", description: "Only this campaign's listings (its id)" },
         JSON_FLAG,
@@ -46,7 +47,7 @@ export const listingsCommand: Command = {
   name: "listings",
   effect: "read",
   input: LISTINGS_INPUT,
-  summary: "List the Twenty listings, by status, account or campaign",
+  summary: "Retired (#339): the stored Marketplace listings",
   args: "[--status <s>] [--account <name>] [--campaign <id>] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(LISTINGS_INPUT));
@@ -55,10 +56,10 @@ export const listingsCommand: Command = {
     const filters: ListingFilter[] = [];
     const status = parsed.flags["status"];
     if (typeof status === "string") {
-      if (!(LISTING_STATUSES as readonly string[]).includes(fromTwentyEnum(status))) {
-        return { code: 1, error: "inputInvalid", stderr: `log facebook listings: status must be one of ${LISTING_STATUSES.map(toTwentyEnum).join(", ")}` };
+      if (!(LISTING_STATUSES as readonly string[]).includes(fromStoredEnum(status))) {
+        return { code: 1, error: "inputInvalid", stderr: `log facebook listings: status must be one of ${LISTING_STATUSES.map(toStoredEnum).join(", ")}` };
       }
-      filters.push({ status: { eq: toTwentyEnum(fromTwentyEnum(status)) as never } });
+      filters.push({ status: { eq: toStoredEnum(fromStoredEnum(status)) as never } });
     }
     try {
       const accounts = await listFacebookAccounts(context.accounts);
@@ -76,10 +77,10 @@ export const listingsCommand: Command = {
 
 export const LISTING_INPUT: CommandInput = {
   forms: [
-    { words: [], summary: "One listing in full", positionals: [{ name: "id", kind: "string", required: true, description: "The agencyListing id" }], flags: [JSON_FLAG] },
+    { words: [], summary: "Retired (#339): One listing in full", positionals: [{ name: "id", kind: "string", required: true, description: "The agencyListing id" }], flags: [JSON_FLAG] },
     {
       words: ["create"], effect: "write",
-      summary: "Create a listing in Twenty from a listing.json",
+      summary: "Retired (#339): Create a listing from a listing.json",
       positionals: [],
       flags: [
         { name: "account", kind: "string", required: true, description: "The account that will publish it" },
@@ -89,7 +90,7 @@ export const LISTING_INPUT: CommandInput = {
     },
     {
       words: ["remove"], effect: "browser", liveEffect: "delete",
-      summary: "Delete a listing on Facebook from its account's Selling page, then set it REMOVED in Twenty (the row stays); a dry run unless live",
+      summary: "Retired (#339): Delete a listing on Facebook from its account's Selling page, then set it REMOVED (the row stays); a dry run unless live",
       positionals: [{ name: "listing", kind: "string", required: true, description: "The agencyListing id, or the Facebook listing id" }],
       flags: [
         { name: "live", kind: "boolean", live: true, description: "Delete it on Facebook, only when the owner asked (rule 8)" },
@@ -100,9 +101,9 @@ export const LISTING_INPUT: CommandInput = {
     },
     {
       words: ["sweep"], effect: "write",
-      summary: "Mark every listing of a blocked account ACCOUNT_LOST (a dry run unless --apply)",
+      summary: "Retired (#339): Mark every listing of a blocked account ACCOUNT_LOST (a dry run unless --apply)",
       positionals: [],
-      flags: [{ name: "apply", kind: "boolean", live: true, description: "Write ACCOUNT_LOST to Twenty and hand campaign copies to another account" }, JSON_FLAG],
+      flags: [{ name: "apply", kind: "boolean", live: true, description: "Write ACCOUNT_LOST and hand campaign copies to another account" }, JSON_FLAG],
     },
     {
       words: ["lint"],
@@ -119,7 +120,7 @@ export const listingCommand: Command = liveThroughAction<Command>({
   name: "listing",
   effect: "read",
   input: LISTING_INPUT,
-  summary: "Show one Twenty listing, or create one for an account from a JSON file",
+  summary: "Retired (#339): one stored listing (listing lint still works)",
   args: "<id> | create --account <name> --file <listing.json> | lint --file <listing.json> | remove <id> [--live] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(LISTING_INPUT));
@@ -146,7 +147,7 @@ export const listingCommand: Command = liveThroughAction<Command>({
         if (!parsed.flags["apply"]) {
           const rows = await blockedListings(context.accounts);
           if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ apply: false, lost: rows.map((r) => ({ listing: r.listing.id, title: r.listing.title, account: r.account.accountName, status: r.account.status, reason: r.account.statusReason })) }, null, 2) };
-          return { code: 0, stdout: [`${rows.length} listing(s) on blocked accounts would be marked ACCOUNT_LOST (dry run; --apply writes it):`, ...rows.map((r) => `  ${toTwentyEnum(r.listing.status ?? "unknown")} ${r.listing.title} on ${r.account.accountName} (${toTwentyEnum(r.account.status ?? "unknown")}${r.account.statusReason ? `, ${r.account.statusReason}` : ""})`)].join("\n") };
+          return { code: 0, stdout: [`${rows.length} listing(s) on blocked accounts would be marked ACCOUNT_LOST (dry run; --apply writes it):`, ...rows.map((r) => `  ${toStoredEnum(r.listing.status ?? "unknown")} ${r.listing.title} on ${r.account.accountName} (${toStoredEnum(r.account.status ?? "unknown")}${r.account.statusReason ? `, ${r.account.statusReason}` : ""})`)].join("\n") };
         }
         const report = await sweepBlockedListings(context.accounts);
         if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ apply: true, lost: report.lost.map((r) => r.listing.id), replaced: report.replacements.filter((r) => r.next).map((r) => r.next!.id) }, null, 2) };
@@ -201,7 +202,7 @@ async function removeListing(context: Parameters<Command["run"]>[0], ref: string
     const listing = (await getListing(context.accounts, ref).catch(() => null)) ?? (await listListingsWhere(context.accounts, { listingId: { eq: ref } }))[0] ?? null;
     if (!listing) return refuse("listing", "listingNotFound", ref);
     if (!listing.listingId) return refuse("listing", "listingNotRemovable", `${listing.id} has no Facebook listing id: it was never published, so there is nothing to delete on Facebook`);
-    if (!listing.status || !(REMOVABLE_STATUSES as readonly string[]).includes(listing.status)) return refuse("listing", "listingNotRemovable", `${listing.id} is ${toTwentyEnum(listing.status ?? "unknown")}: only ${REMOVABLE_STATUSES.map(toTwentyEnum).join(", ")} listings are deleted on Facebook`);
+    if (!listing.status || !(REMOVABLE_STATUSES as readonly string[]).includes(listing.status)) return refuse("listing", "listingNotRemovable", `${listing.id} is ${toStoredEnum(listing.status ?? "unknown")}: only ${REMOVABLE_STATUSES.map(toStoredEnum).join(", ")} listings are deleted on Facebook`);
     if (!listing.socialAccountId) return refuse("listing", "listingNotRemovable", `${listing.id} has no account`);
     const account = await findAccount(context.accounts, listing.socialAccountId);
     const flow = loadFlow("marketplaceListingDelete");
@@ -209,10 +210,10 @@ async function removeListing(context: Parameters<Command["run"]>[0], ref: string
     const values = { listingTitle: listing.title ?? "", listingId: listing.listingId };
     const after = async () => {
       await setListingStatus(context.accounts, listing.id, "removed", { lastRunAt: new Date().toISOString(), lastErrorCode: null, lastError: null });
-      return [`Facebook answered the delete for listing ${listing.listingId}. ${listing.id} is now REMOVED in Twenty (kept, never deleted, rule 13).`];
+      return [`Facebook answered the delete for listing ${listing.listingId}. ${listing.id} is now REMOVED in the account store (kept, never deleted, rule 13).`];
     };
     const result = await runFlow(context, flow, values, { ...flags, account: account.accountName }, after);
-    if (!flags["live"]) return { ...result, stdout: [`${listing.title} (${listing.listingId}) on ${account.accountName}, ${toTwentyEnum(listing.status)} in Twenty.`, result.stdout ?? "", "Then: REMOVED in Twenty, only once Facebook's answer names this listing's id."].join("\n") };
+    if (!flags["live"]) return { ...result, stdout: [`${listing.title} (${listing.listingId}) on ${account.accountName}, ${toStoredEnum(listing.status)} in the account store.`, result.stdout ?? "", "Then: REMOVED in the account store, only once Facebook's answer names this listing's id."].join("\n") };
     return result;
   } catch (error) {
     return refuseError("listing", error);

@@ -150,7 +150,7 @@ describe('the join submission (the hackathon reportCommunityForm shape)', () => 
     expect(hashQuestionSet(['A?'])).toMatch(/^[0-9a-f]{8}$/)
   })
 
-  test('whatever Twenty holds reads back whole', () => {
+  test('whatever the group record holds reads back whole', () => {
     expect(readSubmission(null)).toEqual(emptySubmission())
     expect(readSubmission({ formPhase: 'nonsense', questions: ['Q'] })).toMatchObject({ formPhase: 'idle', questions: ['Q'] })
   })
@@ -340,7 +340,7 @@ describe('groupJoinMachine', () => {
   })
 })
 
-describe('agencyGroups in Twenty', () => {
+describe('agencyGroups in the account store', () => {
   test('one row per account and group, patched per step, keyed on the id the page gave', async () => {
     const store = marketplaceFixture()
     const ref = (parseGroupRef('bethlehemcommunity') as { ok: true; group: never }).group

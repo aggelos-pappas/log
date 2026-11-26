@@ -5,7 +5,7 @@ import { marketplaceFixture } from '../../accounts/store/index'
 import {
   checkRunnable,
   findAccount,
-  fromTwentyEnum,
+  fromStoredEnum,
   listFacebookAccounts,
   maskProxyUrl,
   maskProxyUsername,
@@ -13,7 +13,7 @@ import {
   setAccountStatus,
   statusForIssue,
   toFacebookCookies,
-  toTwentyEnum
+  toStoredEnum
 } from './index'
 
 describe('parseProxyUrl', () => {
@@ -91,7 +91,7 @@ describe('prepareRun', () => {
   })
 })
 
-describe('socialAccounts in Twenty', () => {
+describe('socialAccounts in the account store', () => {
   test('only FACEBOOK accounts are listed; lookups by name or id', async () => {
     const store = marketplaceFixture()
     const names = (await listFacebookAccounts(store)).map((a) => a.accountName)
@@ -128,11 +128,11 @@ describe('helpers', () => {
     expect(statusForIssue('proxyCountryMismatch')).toBeNull()
   })
 
-  test('Twenty SELECT values convert both ways', () => {
-    expect(toTwentyEnum('needsLogin')).toBe('NEEDS_LOGIN')
-    expect(toTwentyEnum('accountLost')).toBe('ACCOUNT_LOST')
-    expect(fromTwentyEnum('UNDER_REVIEW')).toBe('underReview')
-    expect(fromTwentyEnum('DELETED_BY_FB')).toBe('deletedByFb')
+  test('stored SELECT values convert both ways', () => {
+    expect(toStoredEnum('needsLogin')).toBe('NEEDS_LOGIN')
+    expect(toStoredEnum('accountLost')).toBe('ACCOUNT_LOST')
+    expect(fromStoredEnum('UNDER_REVIEW')).toBe('underReview')
+    expect(fromStoredEnum('DELETED_BY_FB')).toBe('deletedByFb')
   })
 })
 

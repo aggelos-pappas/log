@@ -2,7 +2,7 @@
 
 An account's one browser on any platform: opening it through its gates, inspecting a page step by step, where every open browser is, the live view for signing in, AdsPower profiles and local accounts.
 
-Load next, when the work needs it: getGuide({ topic: "sessions" }) (Whether each account's saved session still works, from the platform's own answer, with the next step to sign it back in; and log's own sign-in for a team (login, logout, whoami)); getGuide({ topic: "flows" }) (Recorded flows and the warm-up on any platform: a recording turned into steps that run in the account's open browser, each step checked against the call it must cause); getGuide({ topic: "facebookBrowser" }) (A Facebook account's browser for its day: preflight, opening and signing in, the host and its lifecycle, the profile and Messenger PIN, its accounts and the account checks).
+Load next, when the work needs it: getGuide({ topic: "sessions" }) (Whether each account's saved session still works, from the platform's own answer, with the next step to sign it back in); getGuide({ topic: "flows" }) (Recorded flows and the warm-up on any platform: a recording turned into steps that run in the account's open browser, each step checked against the call it must cause); getGuide({ topic: "facebookBrowser" }) (A Facebook account's browser for its day: preflight, opening and signing in, the host and its lifecycle, the profile and Messenger PIN, its accounts and the account checks).
 
 Written by `bun run docs:build` from the code, the skills and AGENTS.md. Not edited by hand: change the command's usage, its skill or the rule, and rebuild.
 

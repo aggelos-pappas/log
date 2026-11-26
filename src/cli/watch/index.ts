@@ -17,13 +17,13 @@ import { renderMonitorOutput, summarizeMonitor, toCheckOutcome } from "./helpers
 
 export * from "./helpers/index.ts";
 
-export const WATCH_USAGE = "Usage: log facebook watch --account <accountName> [--checks <n>] [--interval <minutes>] [--json] [--bypass]";
+export const WATCH_USAGE = "Usage: log facebook watch --account <accountName> [--checks <n>] [--interval <minutes>] [--json] [--bypass]\nRetired (#339): Marketplace listings were kept in Twenty, which log no longer uses.";
 
 export const WATCH_INPUT: CommandInput = {
   forms: [
     {
       words: [],
-      summary: "Run the Marketplace listing monitor (XState) for one Facebook account and print every step",
+      summary: "Retired (#339): Run the Marketplace listing monitor (XState) for one Facebook account and print every step",
       positionals: [],
       flags: [
         FACEBOOK_ACCOUNT_FLAG,
@@ -50,7 +50,7 @@ export const watchCommand: Command = {
   longRunning: true,
   effect: "browser",
   input: WATCH_INPUT,
-  summary: "Run the listing monitor (XState) for one account and print every step",
+  summary: "Retired (#339): the listing monitor",
   args: "--account <name> [--checks <n>] [--interval <min>] [--json] [--bypass]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(WATCH_INPUT));

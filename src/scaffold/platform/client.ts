@@ -30,7 +30,7 @@ export function namesOf(options: NewPlatformOptions): PlatformNames {
     pascal,
     constant,
     label: options.label?.trim() || pascal,
-    twentyPlatform: options.twentyPlatform?.trim() || name.toUpperCase(),
+    accountPlatform: options.accountPlatform?.trim() || name.toUpperCase(),
     library,
     libraryText: library ? library.split("/").pop()! : "no client vendored yet",
     sessionCookies: options.sessionCookies ?? [],
@@ -73,7 +73,7 @@ export function planNewPlatform(root: string, options: NewPlatformOptions): Plat
   const edits: PlannedEdit[] = [
     { path: FILES.platforms, what: `PLATFORMS gains "${n.name}"`, apply: (s) => addToArray(s, "PLATFORMS", `"${n.name}"`), landed: (s) => arrayHasText(s, "PLATFORMS", `"${n.name}"`) },
     { path: FILES.platforms, what: `PLATFORM_LABELS gains ${n.name}: "${n.label}"`, apply: (s) => addToObject(s, "PLATFORM_LABELS", n.name, JSON.stringify(n.label)), landed: (s) => objectHasKey(s, "PLATFORM_LABELS", n.name) },
-    { path: FILES.platforms, what: `PLATFORM_SITES gains ${n.name} (${n.hosts.join(", ")}, proxy ${n.proxy}, ${n.browser ? "the account's browser" : "no browser"})`, apply: (s) => addToObject(s, "PLATFORM_SITES", n.name, `{ twenty: ${JSON.stringify(n.twentyPlatform)}, domain: ${JSON.stringify(n.cookieDomain)}, hosts: [${n.hosts.map((h) => JSON.stringify(h)).join(", ")}], home: ${JSON.stringify(n.home)}, proxy: ${JSON.stringify(n.proxy)}, browser: ${n.browser} }`), landed: (s) => objectHasKey(s, "PLATFORM_SITES", n.name) },
+    { path: FILES.platforms, what: `PLATFORM_SITES gains ${n.name} (${n.hosts.join(", ")}, proxy ${n.proxy}, ${n.browser ? "the account's browser" : "no browser"})`, apply: (s) => addToObject(s, "PLATFORM_SITES", n.name, `{ accountPlatform: ${JSON.stringify(n.accountPlatform)}, domain: ${JSON.stringify(n.cookieDomain)}, hosts: [${n.hosts.map((h) => JSON.stringify(h)).join(", ")}], home: ${JSON.stringify(n.home)}, proxy: ${JSON.stringify(n.proxy)}, browser: ${n.browser} }`), landed: (s) => objectHasKey(s, "PLATFORM_SITES", n.name) },
     { path: FILES.runner, what: `imports ${n.name}SessionCommand`, apply: (s) => addImport(s, `../${n.name}/index.ts`, `${n.name}SessionCommand`), landed: (s) => hasImport(s, `../${n.name}/index.ts`, `${n.name}SessionCommand`) },
     { path: FILES.runnerCore, what: `imports run${n.pascal}Engine`, apply: (s) => addImport(s, `../../${n.name}/account/session/index.ts`, `run${n.pascal}Engine`), landed: (s) => hasImport(s, `../../${n.name}/account/session/index.ts`, `run${n.pascal}Engine`) },
     { path: FILES.runner, what: `COMMANDS gains ${n.name}SessionCommand`, apply: (s) => addToArray(s, "COMMANDS", `${n.name}SessionCommand`), landed: (s) => arrayHasText(s, "COMMANDS", `${n.name}SessionCommand`) },

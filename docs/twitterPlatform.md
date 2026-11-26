@@ -22,7 +22,7 @@ The X controller already does on X what log does on Facebook through fbk: it cal
 
 ## What the X controller does
 
-The controller is an earlier skill that **sends** what a person has already approved, from any X account in Twenty, through twikit:
+The controller is an earlier skill that **sends** what a person has already approved, from any X account it holds a session for, through twikit:
 
 | Script | What it does |
 | --- | --- |
@@ -36,7 +36,7 @@ Its habits match log's:
 
 - Finding people and posts is done by a separate search tool, never through twikit.
 - Nothing is sent without a named approver.
-- Cookies come from the account's `socialAccounts` row (the local account store, or Twenty if you keep accounts there) and are never printed.
+- Cookies come from the account's `socialAccounts` row in the account store and are never printed.
 - Copy is checked against the house style before it goes out: lowercase (a capital may open a line), no commas, no full stops, no em dashes.
 
 ### How X answers
@@ -60,7 +60,7 @@ flowchart LR
   cli["log twitter reply / dm / queue …<br/>CLI and MCP tool"] --> src["src/twitter/&lt;area&gt;/&lt;domain&gt;<br/>gates, account store, XState machines"]
   src --> engine["python/twitterApi/engine.py<br/>one session host, governor, no proxy"]
   engine --> twikit["vendor/twikit<br/>X's internal API"]
-  src --> twenty["socialAccounts (local store or Twenty)<br/>platform TWITTER"]
+  src --> accounts["socialAccounts (the account store)<br/>platform TWITTER"]
 ```
 
 | Layer | Facebook | X |
@@ -116,7 +116,7 @@ What every platform's commands share stays shared: the copy rules (beside `faceb
 
 ## The account row
 
-X accounts are `socialAccounts` rows, in the local account store (or Twenty if you keep accounts there), with platform `TWITTER`. They need cookies set; they don't need a proxy or home country. After each run, X's refreshed cookies are merged back into the row, as the controller does.
+X accounts are `socialAccounts` rows, in the account store, with platform `TWITTER`. They need cookies set; they don't need a proxy or home country. After each run, X's refreshed cookies are merged back into the row, as the controller does.
 
 ## Not yet
 
@@ -133,7 +133,7 @@ The warm-up, X listening (searching and reading posts), a browser path for X, an
 ## Decisions
 
 - **No proxy for X.** X accounts call X directly, as the controller does. The rule that a browser never opens without a proxy stays Facebook's.
-- **The name.** The platform word is `twitter` (matching Twenty's `TWITTER`).
+- **The name.** The platform word is `twitter` (matching the account row's platform `TWITTER`).
 
 The rules behind this are in AGENTS.md.
 

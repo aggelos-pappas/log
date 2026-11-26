@@ -14,11 +14,13 @@ Draft every message from that person's own thread and the owner's real replies (
 
 The same accounts can join the local groups in their town and hear when someone asks for what the business sells ("anyone know someone who can take away an old sofa?"). This page shows the parts.
 
+**Retired (#339).** The group records and matches were kept only in Twenty, which log no longer uses, so `log facebook join group`, `read group` and `poll` refuse with `twentyRemoved` until they are rebuilt on log.db. `read members` still works: it writes only files.
+
 ```mermaid
 flowchart LR
   join["1. join the group<br/>log facebook join group"] --> poll["2. poll it every 5 min<br/>log facebook poll"]
   poll --> magpie["3. OpenMagpie keeps every post<br/>and picks the matches"]
-  magpie --> twenty["4. matches land in<br/>Twenty socialListening"]
+  magpie --> matches["4. matches land in<br/>socialListening (retired)"]
 ```
 
 How the owner asks for it: "join the local facebook groups in <town>", "listen to the facebook groups for people asking for <service>", "read the posts in the facebook group", "poll the facebook group for new posts", "find the business owners in the facebook group".

@@ -35,7 +35,7 @@ async function run(argv: string[], replies: InspectStepResult[] = [], store = ma
     return replies.shift() ?? null;
   };
   const code = await runCli(argv, { accounts: store, sendInspect, out: (l) => out.push(l), err: (l) => err.push(l), ...(now ? { now } : {}) });
-  return { code, out, err: err.join("\n"), sent, twenty: store };
+  return { code, out, err: err.join("\n"), sent, accounts: store };
 }
 
 const openBrowser = () => writeCurrentInspect({ account: "galwayOne", runDir: "/runs/inspect/galwayOne", commandsPath: "/c", repliesPath: "/r", startedAt: "2026-10-22T10:00:00.000Z" });
@@ -104,6 +104,6 @@ describe("log facebook poll", () => {
     expect(sent.map((s) => s.action)).toEqual(["goto", "scroll"]);
     const answer = JSON.parse(out[0]!);
     expect(answer.result.results.map((r: { external_id: string; matched_terms: string[] }) => [r.external_id, r.matched_terms])).toEqual([["2", ["post 2"]]]);
-    expect(answer.result.errors).toEqual([{ group_id: "123", code: "groupNoAccount", error: "no account in Twenty is in group 123: join it first (log facebook join group)" }]);
+    expect(answer.result.errors).toEqual([{ group_id: "123", code: "groupNoAccount", error: "no account in the account store is in group 123: join it first (log facebook join group)" }]);
   });
 });

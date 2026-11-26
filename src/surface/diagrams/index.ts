@@ -44,13 +44,13 @@ export function platformsDiagram(entries: readonly CommandEntry[]): Diagram {
   const anyNone = entries.filter((e) => shared(e) && e.browser === "none");
   const lines = [
     "flowchart LR",
-    `  twenty[("Twenty socialAccounts: one row per account, its platform, session and proxy")]`,
+    `  accounts[("Account store socialAccounts: one row per account, its platform, session and proxy")]`,
     `  api["The platform's internal API: its own answer decides (rule 73)"]`,
     `  drivers["The account's browser: AdsPower or Camoufox, through the driver (The browser layer)"]`,
   ];
   for (const p of PLATFORMS) {
     const own = entries.filter((e) => e.platform === p);
-    lines.push(`  p_${p}["${label(`${PLATFORM_LABELS[p]} (${PLATFORM_SITES[p].twenty}): ${countOf(entries.filter((e) => e.platform === p).length, "command")} of its own`)}"]`, `  twenty --> p_${p}`);
+    lines.push(`  p_${p}["${label(`${PLATFORM_LABELS[p]} (${PLATFORM_SITES[p].accountPlatform}): ${countOf(entries.filter((e) => e.platform === p).length, "command")} of its own`)}"]`, `  accounts --> p_${p}`);
     for (const lib of platformLibraries(p)) {
       const node = `e_${lib.replace(/[^A-Za-z0-9_]/g, "_")}`;
       const vendored = /^[A-Za-z0-9_.-]+$/.test(lib);
@@ -62,8 +62,8 @@ export function platformsDiagram(entries: readonly CommandEntry[]): Diagram {
     } else lines.push(`  p_${p} -.->|"no browser path (rule 80)"| nob_${p}["${label(`${PLATFORM_LABELS[p]} runs on its direct API only`)}"]`);
   }
   lines.push(`  anyB["${label(`Any platform with a browser path: ${names(anyBrowser)}`)}"]`, ...PLATFORMS.filter((p) => PLATFORM_SITES[p].browser).map((p) => `  anyB --> b_${p}`));
-  lines.push(`  anyN["${label(`Any platform, no browser: ${names(anyNone)}`)}"]`, "  anyN -.-> twenty");
-  lines.push(`  newP["log new platform name: one more platform, wired whole (rule 83)"] -.-> twenty`, "  drivers --> api");
+  lines.push(`  anyN["${label(`Any platform, no browser: ${names(anyNone)}`)}"]`, "  anyN -.-> accounts");
+  lines.push(`  newP["log new platform name: one more platform, wired whole (rule 83)"] -.-> accounts`, "  drivers --> api");
   return {
     name: "platforms",
     title: "The platforms",
@@ -90,7 +90,7 @@ export function surfaceDiagram(entries: readonly CommandEntry[], hooks: readonly
     `  direct["${label(`Direct-API engine: ${directLibraries().join(", ")} (vendor/), the account's saved session, a governor per account`)}"]`,
     `  browser["The account's browser (one per day, rule 35)"]`,
     `  api["The platform's internal API: its answer decides (rule 73)"]`,
-    `  twenty[("Twenty: socialAccounts.sessionState, refreshed cookies")]`,
+    `  accounts[("Account store: socialAccounts.sessionState, refreshed cookies")]`,
     "  agent --> shell",
     "  owner --> bin",
     "  shell --> bin",
@@ -102,7 +102,7 @@ export function surfaceDiagram(entries: readonly CommandEntry[], hooks: readonly
     "  engine -->|browser| browser",
     "  direct --> api",
     "  browser --> api",
-    "  direct --> twenty",
+    "  direct --> accounts",
     "  bin -->|cli:command lines| live",
     "  mcp -->|tool lines| live",
     "  live -.->|tail -f, under Monitor| agent",
@@ -202,11 +202,11 @@ export function browsersDiagram(entries: readonly CommandEntry[]): Diagram {
   const without = PLATFORMS.filter((p) => !PLATFORM_SITES[p].browser).map((p) => PLATFORM_LABELS[p]);
   const lines = [
     "flowchart LR",
-    `  twenty["Twenty socialAccounts: platform, browserDriver, adsPowerProfileId"]`,
+    `  accounts["Account store socialAccounts: platform, browserDriver, adsPowerProfileId"]`,
     `  pick{"driverNameOf"}`,
     `  gates["${label(`Every driver: the proxy gate (${proxied.join(", ")}: a proxy in the home country, rule 12. ${open.join(", ")}: no proxy, rule 84), self-check, HAR, human mouse (rules 17, 22, 32)`)}"]`,
     `  session["One Playwright context: python/browser/browserDriver.py"]`,
-    "  twenty --> pick",
+    "  accounts --> pick",
     ...BROWSER_DRIVERS.map((d) => `  pick -->|"${label(d === "adsPower" ? "a linked profile, or browserDriver adsPower" : d === DEFAULT_BROWSER_DRIVER ? `browserDriver ${d}, or nothing set` : `browserDriver ${d}, or ${BROWSER_DRIVER_ENV}=${d}`)}"| d_${d}["${label(d)}"]`),
     ...BROWSER_DRIVERS.map((d) => `  d_${d} --> gates`),
     `  more["Next browser provider: one more driver (src/browser/name), rule 44"] -.-> gates`,
@@ -217,7 +217,7 @@ export function browsersDiagram(entries: readonly CommandEntry[]): Diagram {
     `  camoufox -.->|"launches Camoufox itself"| d_camoufox`,
     ...(without.length ? [`  nobrowser["${label(`No browser path: ${without.join(", ")} (direct API only, rule 80)`)}"] -.-x pick`] : []),
   ];
-  return { name: "browsers", title: "The browser layer", about: "log-cli is browser-agnostic: each account's browser is a driver picked from Twenty, AdsPower first, and every driver opens through the same gates. Whether the gate needs a proxy is the platform's (`PLATFORM_SITES`). From `BROWSER_DRIVERS` (`src/browser/driver`) and `commandBrowser` (`src/browser/run`).", mermaid: lines.join("\n") };
+  return { name: "browsers", title: "The browser layer", about: "log-cli is browser-agnostic: each account's browser is a driver picked from the account store, AdsPower first, and every driver opens through the same gates. Whether the gate needs a proxy is the platform's (`PLATFORM_SITES`). From `BROWSER_DRIVERS` (`src/browser/driver`) and `commandBrowser` (`src/browser/run`).", mermaid: lines.join("\n") };
 }
 
 export function diagrams(entries: readonly CommandEntry[], flows: readonly FlowEntry[]): Diagram[] {

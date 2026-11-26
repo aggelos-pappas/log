@@ -19,6 +19,7 @@ export const POLL_EVERY_MS = 5 * 60_000;
 export const POLL_USAGE = [
   "Usage: log facebook poll <group url or id> <accountName> [<how long to poll: 30m, 2h>] [--bypass]",
   "       log facebook poll --request <request json>   (OpenMagpie's facebook_group worker: groups.search in, post records out as one JSON line; python/openMagpie/facebookWorker.py calls it)",
+  "Retired (#339): Facebook group records were kept in Twenty, which log no longer uses.",
   "One poll reads the group once in the account's open browser, posts only, nothing clicked, and prints one JSON line: the posts it saw, as OpenMagpie's records. With a time it polls every 5 minutes until the time is up, a line each.",
   "Every poll runs inside the account's local hours (rule 18); --bypass skips that, only when the owner asked (rule 20). --request never skips it.",
   "The account's browser must be open (log inspect start for that account, or log facebook host start): a poll is a step in it (rule 35).",
@@ -53,7 +54,7 @@ async function pollRequest(context: CommandContext, text: string): Promise<Comma
     try {
       const rows = await context.accounts.list("agencyGroups", { facebookGroupId: { eq: groupId } });
       if (!rows.length) {
-        failed("groupNoAccount", `no account in Twenty is in group ${groupId}: join it first (log facebook join group)`);
+        failed("groupNoAccount", `no account in the account store is in group ${groupId}: join it first (log facebook join group)`);
         continue;
       }
       const ordered = [...rows].sort((a, b) => Number(b.joinStatus === "MEMBER") - Number(a.joinStatus === "MEMBER"));
@@ -129,7 +130,7 @@ export const pollCommand: Command = {
   longRunning: true,
   effect: "browser",
   input: POLL_INPUT,
-  summary: "Poll a Facebook group from one account, in its open browser, for a time or once: each poll's posts as one JSON line, OpenMagpie's records; --request answers OpenMagpie's facebook_group worker (#27, rule 63)",
+  summary: "Retired (#339): polling a Facebook group",
   args: "<group> <account> [<how long to poll>] [--bypass] | --request <json>",
   run: runPoll,
 };

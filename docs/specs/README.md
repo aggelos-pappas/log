@@ -361,13 +361,13 @@ Every Facebook account goes out through its own proxy, kept as one URL on the ac
 
 ## [Facebook groups](./facebookGroups.md)
 
-Facebook group listening is OpenMagpie's triage job: an account joins a group, OpenMagpie polls it through log-cli's worker (`log facebook poll --request`), keeps every post and sends only the matches to Twenty. log-cli writes only the group's read state to Twenty. A group's members are read from its People tab, a scroll at a time, into files on disk. Rules 65 and 77 (rule 65 replaces rules 61 and 62).
+Facebook group listening is OpenMagpie's triage job: an account joins a group, OpenMagpie polls it through log-cli's worker (`log facebook poll --request`), keeps every post and sends on only the matches. log-cli writes only the group's read state, to the group record. Group records were kept in Twenty, which log no longer uses, so the join, read and poll commands are retired until they are rebuilt on log.db (#339). A group's members are read from its People tab, a scroll at a time, into files on disk. Rules 65 and 77 (rule 65 replaces rules 61 and 62).
 
 - **REQ-GROUP-01** The poll worker answers OpenMagpie's groups.search
 - **REQ-GROUP-02** Each group is read in an open browser of an account in it
 - **REQ-GROUP-03** A poll clicks nothing and reads no comments
 - **REQ-GROUP-04** A sign-in problem is auth_required to OpenMagpie
-- **REQ-GROUP-05** Only the group's read state and identity are written to Twenty
+- **REQ-GROUP-05** Only the group's read state and identity are written to the group record
 - **REQ-GROUP-06** The cursor moves only when the feed read finished
 - **REQ-GROUP-07** Members are read from the People tab, nothing clicked
 - **REQ-GROUP-08** Members come from the page and each scroll's refetch answer
@@ -375,7 +375,7 @@ Facebook group listening is OpenMagpie's triage job: an account joins a group, O
 - **REQ-GROUP-10** secondsPerScroll is the wait before each scroll
 - **REQ-GROUP-11** It stops at the count, the end of the list or maxScrolls
 - **REQ-GROUP-12** --owners keeps owners and pages
-- **REQ-GROUP-13** Members go to files, never to Twenty
+- **REQ-GROUP-13** Members go to files, never to a stored record
 - **REQ-GROUP-14** A members page that answered is a known state that needs nothing
 
 ## [Warm-up](./warmup.md)
@@ -599,7 +599,7 @@ Who liked, reposted, replied to, quoted or followed an X account, read through t
 
 ## [Platform scaffold](./platformScaffold.md)
 
-A new platform is made whole with one command, `log new platform <name>` (MCP `newPlatform`), and one table, `PLATFORM_SITES`, says what each platform is: its Twenty value, cookie domain, hosts, home page, whether it needs a proxy and whether it has a browser path. `log inspect`, the account's browser and the AdsPower sync read that table, so a new platform is explored the same way as Facebook. Rules 83 and 84.
+A new platform is made whole with one command, `log new platform <name>` (MCP `newPlatform`), and one table, `PLATFORM_SITES`, says what each platform is: its account platform value (`accountPlatform`), cookie domain, hosts, home page, whether it needs a proxy and whether it has a browser path. `log inspect`, the account's browser and the AdsPower sync read that table, so a new platform is explored the same way as Facebook. Rules 83 and 84.
 
 - **REQ-PLATFORM-01** One command writes the platform's files
 - **REQ-PLATFORM-02** The repo is wired by editing each file through its syntax tree
@@ -906,7 +906,7 @@ log-cli is read-only on Facebook except where the owner asked for an action. Pos
 - **REQ-LISTING-19** A live publish stops at the account's daily cap
 - **REQ-LISTING-20** The check reads three pages and clicks nothing
 - **REQ-LISTING-21** Anything but full access is the account's suspended issue
-- **REQ-LISTING-22** Each listing's state on Selling goes into Twenty
+- **REQ-LISTING-22** Each listing's state on Selling goes into its stored row
 - **REQ-LISTING-23** Seller chats are counted and kept as sent
 
 ## [Who each person is and where they are](./pipeline.md)

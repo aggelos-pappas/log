@@ -12,6 +12,7 @@ export const CAMPAIGN_USAGE = [
   "       log facebook campaign heal --campaign <agencyCampaignId>",
   "       log facebook campaign run  --campaign <agencyCampaignId> [--live] [--bypass]",
   "       log facebook campaign show --campaign <agencyCampaignId> [--json]",
+  "Retired (#339): Marketplace listings were kept in Twenty, which log no longer uses.",
 ].join("\n");
 
 const CAMPAIGN: FlagSpec = { name: "campaign", kind: "string", required: true, description: "The agencyCampaign id" };
@@ -21,19 +22,19 @@ export const CAMPAIGN_INPUT: CommandInput = {
     {
       words: ["fill"],
       effect: "write",
-      summary: "Put one ad on N accounts in the campaign's place, each with its own copy version",
+      summary: "Retired (#339): Put one ad on N accounts in the campaign's place, each with its own copy version",
       positionals: [],
       flags: [CAMPAIGN, { name: "from", kind: "string", required: true, description: "The agencyListing id of the ad" }, { name: "accounts", kind: "integer", required: true, min: 1, description: "How many accounts carry it" }],
     },
-    { words: ["heal"], effect: "write", summary: "Hand each ACCOUNT_LOST listing in the campaign to another account", positionals: [], flags: [CAMPAIGN] },
+    { words: ["heal"], effect: "write", summary: "Retired (#339): Hand each ACCOUNT_LOST listing in the campaign to another account", positionals: [], flags: [CAMPAIGN] },
     {
       words: ["run"],
       liveEffect: "write",
-      summary: "Publish the campaign's READY listings (a dry run unless live)",
+      summary: "Retired (#339): Publish the campaign's READY listings (a dry run unless live)",
       positionals: [],
       flags: [CAMPAIGN, { name: "live", kind: "boolean", live: true, description: "Publish them on Facebook, only when the owner asked (rule 8)" }, { name: "bypass", kind: "boolean", bypass: true, description: "Outside the accounts' waking hours, only when the owner asked (rule 86)" }],
     },
-    { words: ["show"], effect: "read", summary: "The campaign's listings and the account each is on", positionals: [], flags: [CAMPAIGN, JSON_FLAG] },
+    { words: ["show"], effect: "read", summary: "Retired (#339): The campaign's listings and the account each is on", positionals: [], flags: [CAMPAIGN, JSON_FLAG] },
   ],
 };
 
@@ -44,7 +45,7 @@ export const campaignCommand: Command = liveThroughAction<Command>({
   longRunning: true,
   effect: "browser",
   input: CAMPAIGN_INPUT,
-  summary: "Put one ad on N accounts in one place, replace lost accounts, publish the campaign",
+  summary: "Retired (#339): Marketplace campaigns",
   args: "<fill|heal|run|show> --campaign <id> [...]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(CAMPAIGN_INPUT));

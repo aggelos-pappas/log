@@ -105,7 +105,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 |---|---|
 | `logCatalog` | Finding and running any log command with three tools: logSearch by what you want done, logGet for its inputs and a call that works, logCall to run it |
 | `accountBrowser` | An account's one browser on any platform: opening it through its gates, inspecting a page step by step, where every open browser is, the live view for signing in, AdsPower profiles and local accounts |
-| `sessions` | Whether each account's saved session still works, from the platform's own answer, with the next step to sign it back in; and log's own sign-in for a team (login, logout, whoami) |
+| `sessions` | Whether each account's saved session still works, from the platform's own answer, with the next step to sign it back in |
 | `flows` | Recorded flows and the warm-up on any platform: a recording turned into steps that run in the account's open browser, each step checked against the call it must cause |
 | `inbox` | All chats as one inbox: listing, reading, watching, sending, reacting, voice notes, who waits on a reply, claiming a chat, and every action's log |
 | `voiceGate` | The voice gate on every send as the owner: the draft checked against his writing, and its indexes |

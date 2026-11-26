@@ -193,8 +193,8 @@ Loads the seller's listings on Marketplace > Selling (`/marketplace/you/selling`
 
 ## What our machine does with it
 
-The Marketplace check (`src/facebook/marketplace/check`, `log facebook check` and the host's watch round) reads it from the Selling step's recording, preloaded or posted: `sellingListingsOf` takes each listing's state into Twenty's `agencyListings.status` and its clicks into `clicksCount` (Bethlehem's: 15, then 19, on 2026-10-23). Nothing waits on it and nothing is clicked.
+The Marketplace check (`src/facebook/marketplace/check`, `log facebook check` and the host's watch round) reads it from the Selling step's recording, preloaded or posted: `sellingListingsOf` took each listing's state into the stored `agencyListings.status` (listings are retired, #339) and its clicks into `clicksCount` (Bethlehem's: 15, then 19, on 2026-10-23). Nothing waits on it and nothing is clicked.
 
 ## What can go wrong
 
-Seen only with 200. If the page loads without it (a login wall, a checkpoint, a slow proxy), the check says "Selling didn't load" and changes nothing in Twenty. A listing without `listing_insights` keeps its last `clicksCount`. Paging past the first page isn't read yet: an account with more listings than the first page holds would miss the rest.
+Seen only with 200. If the page loads without it (a login wall, a checkpoint, a slow proxy), the check says "Selling didn't load" and changes no stored listing. A listing without `listing_insights` keeps its last `clicksCount`. Paging past the first page isn't read yet: an account with more listings than the first page holds would miss the rest.

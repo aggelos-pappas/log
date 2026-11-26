@@ -37,7 +37,7 @@ async function run(argv: string[], engine?: PlatformEngineRun, store = fixture()
 }
 
 describe("log discord session check", () => {
-  test("loggedIn: the engine's answer goes to Twenty", async () => {
+  test("loggedIn: the engine's answer goes to the account store", async () => {
     const r = await run(["discord", "session", "check", "--account", "discordOne"], { answer: { ok: true, loginState: "loggedIn", screenName: "discordOne" }, refreshed: null });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["discordOne:ping"]);

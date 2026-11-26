@@ -90,7 +90,7 @@ export function orderMoves(entries: MovePlanEntry[]): MovePlanEntry[] {
 }
 
 async function accountsOf(store: AccountStore): Promise<FacebookAccount[]> {
-  return listBrowserAccounts(store, PLATFORMS.map((p) => PLATFORM_SITES[p].twenty))
+  return listBrowserAccounts(store, PLATFORMS.map((p) => PLATFORM_SITES[p].accountPlatform))
 }
 
 export function pickAccount(accounts: FacebookAccount[], ref: string): FacebookAccount {

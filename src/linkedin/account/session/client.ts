@@ -5,7 +5,7 @@ import type { AccountStore } from '../../../accounts/store/index'
 
 export const LINKEDIN_PLATFORM: PlatformShape = {
   platform: 'linkedin',
-  twentyPlatform: 'LINKEDIN',
+  accountPlatform: 'LINKEDIN',
   label: 'LinkedIn',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', 'linkedinApi', 'engine.py'),
   sessionCookies: ['li_at', 'JSESSIONID']

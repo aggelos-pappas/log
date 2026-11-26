@@ -6,7 +6,7 @@ import { marketplaceFixture } from '../../accounts/store/index'
 import { adsPowerDriver } from './index'
 import { AdsPowerError, createAdsPowerClient } from './index'
 import type { AdsPowerClient, AdsPowerProfile } from './index'
-import { adsPowerHomes, homesOf, planSync, profileRequest, remarkAccountId, syncProfiles, twentyRemark } from './index'
+import { adsPowerHomes, homesOf, planSync, profileRequest, remarkAccountId, syncProfiles, accountRemark } from './index'
 
 function fakeFetch(answers: Record<string, unknown[]>) {
   const calls: { path: string; body: unknown; auth: string | null }[] = []
@@ -77,11 +77,11 @@ describe('adsPower Local API client', () => {
   })
 })
 
-describe('adsPower profiles from Twenty (rule 42)', () => {
+describe('adsPower profiles from the account store (rule 42)', () => {
   test('the profile is Windows Chrome with the home locale, IP timezone and noise, and holds no proxy or secret', async () => {
     const [account] = (await listFacebookAccounts(marketplaceFixture())).filter((a) => a.accountName === 'galwayOne')
     const body = profileRequest(account, '7')!
-    expect(body).toMatchObject({ name: 'galwayOne', group_id: '7', remark: twentyRemark(account.id), user_proxy_config: { proxy_soft: 'no_proxy' } })
+    expect(body).toMatchObject({ name: 'galwayOne', group_id: '7', remark: accountRemark(account.id), user_proxy_config: { proxy_soft: 'no_proxy' } })
     expect(body.fingerprint_config).toMatchObject({ browser_kernel_config: { type: 'chrome' }, language: ['en-IE', 'en'], automatic_timezone: '1', canvas: '1', webgl_image: '1', audio: '1' })
     expect(JSON.stringify(body)).not.toMatch(/password|cookie|fakey|username/)
     expect(remarkAccountId(body.remark!)).toBe(account.id)
@@ -90,7 +90,7 @@ describe('adsPower profiles from Twenty (rule 42)', () => {
   test('the plan makes a profile per account, skips banned and unlocalisable ones, and relinks one found by its remark', async () => {
     const accounts = await listFacebookAccounts(marketplaceFixture())
     const galwayTwo = accounts.find((a) => a.accountName === 'galwayTwo')!
-    const plan = planSync(accounts, [{ profileId: 'old', profileNo: '1', name: 'galwayTwo', groupId: '7', remark: twentyRemark(galwayTwo.id), lastOpenTime: null }])
+    const plan = planSync(accounts, [{ profileId: 'old', profileNo: '1', name: 'galwayTwo', groupId: '7', remark: accountRemark(galwayTwo.id), lastOpenTime: null }])
     const action = (name: string) => plan.find((e) => e.accountName === name)!.action
     expect(action('banned')).toBe('skip')
     expect(action('noCountry')).toBe('skip')
@@ -100,7 +100,7 @@ describe('adsPower profiles from Twenty (rule 42)', () => {
     expect(plan.filter((e) => e.action === 'create')).toHaveLength(7)
   })
 
-  test('sync is a dry run unless applied; applied, it makes the profiles and links each in Twenty, and a rerun only finds them linked', async () => {
+  test('sync is a dry run unless applied; applied, it makes the profiles and links each in the account store, and a rerun only finds them linked', async () => {
     const store = marketplaceFixture()
     const ads = memoryAdsPower()
     const dry = await syncProfiles(store, ads.client, { apply: false, homes: null })
@@ -109,7 +109,7 @@ describe('adsPower profiles from Twenty (rule 42)', () => {
     const lines: string[] = []
     const applied = await syncProfiles(store, ads.client, { apply: true, homes: null, log: (l) => lines.push(l) })
     expect(ads.log.filter((l) => l.startsWith('create'))).toHaveLength(8)
-    expect(lines.some((l) => /^adsPower \d+\/11 galwayOne: made profile p\d+, linked in Twenty$/.test(l))).toBe(true)
+    expect(lines.some((l) => /^adsPower \d+\/11 galwayOne: made profile p\d+, linked in the account store$/.test(l))).toBe(true)
     const linked = (await listFacebookAccounts(store)).find((a) => a.accountName === 'galwayOne')!
     expect(linked.adsPowerProfileId).toBe(applied.entries.find((e) => e.accountName === 'galwayOne')!.profileId)
     const again = await syncProfiles(store, ads.client, { apply: true, homes: null })
@@ -122,14 +122,14 @@ describe('a deactivated or out-of-home account gives its AdsPower profile back (
   test('the plan releases the profile of a deactivated account, and one whose home is outside the chosen homes', async () => {
     const accounts = await listFacebookAccounts(marketplaceFixture())
     const galwayOne = { ...accounts.find((a) => a.accountName === 'galwayOne')!, status: 'deactivated' as const, adsPowerProfileId: 'g1' }
-    const profiles = [{ profileId: 'g1', profileNo: '1', name: 'galwayOne', groupId: '7', remark: twentyRemark(galwayOne.id), lastOpenTime: null }]
+    const profiles = [{ profileId: 'g1', profileNo: '1', name: 'galwayOne', groupId: '7', remark: accountRemark(galwayOne.id), lastOpenTime: null }]
     const plan = planSync([galwayOne, ...accounts.filter((a) => a.accountName !== 'galwayOne')], profiles, ['US'])
     expect(plan.find((e) => e.accountName === 'galwayOne')).toMatchObject({ action: 'release', profileId: 'g1', note: 'status deactivated' })
     expect(plan.find((e) => e.accountName === 'galwayTwo')).toMatchObject({ action: 'skip', note: 'home IE is not in US' })
     expect(plan.filter((e) => e.action === 'create').every((e) => accounts.find((a) => a.id === e.accountId)!.homeCountry === 'US')).toBe(true)
   })
 
-  test('applied, a release deletes the profile and unlinks it in Twenty before the freed slot goes to an account waiting for one', async () => {
+  test('applied, a release deletes the profile and unlinks it in the account store before the freed slot goes to an account waiting for one', async () => {
     const store = marketplaceFixture()
     const ads = memoryAdsPower()
     await syncProfiles(store, ads.client, { apply: true, homes: null })
@@ -142,7 +142,7 @@ describe('a deactivated or out-of-home account gives its AdsPower profile back (
     expect(ads.log).toContain(`delete ${held}`)
     expect(ads.profiles.some((p) => p.profileId === held)).toBe(false)
     expect((await listFacebookAccounts(store)).find((a) => a.accountName === 'galwayOne')!.adsPowerProfileId).toBeNull()
-    expect(lines[1]).toMatch(/galwayOne: released profile .+ \(status deactivated\), unlinked in Twenty$/)
+    expect(lines[1]).toMatch(/galwayOne: released profile .+ \(status deactivated\), unlinked in the account store$/)
     const again = await syncProfiles(store, ads.client, { apply: true, homes: null })
     expect(again.entries.find((e) => e.accountName === 'galwayOne')).toMatchObject({ action: 'skip', note: 'status deactivated' })
   })

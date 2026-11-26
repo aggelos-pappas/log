@@ -27,7 +27,7 @@ export const PLATFORM_LABELS: Readonly<Record<Platform, string>> = {
 };
 
 export interface PlatformSite {
-  twenty: string;
+  accountPlatform: string;
   domain: string;
   hosts: readonly string[];
   home: string;
@@ -36,19 +36,19 @@ export interface PlatformSite {
 }
 
 export const PLATFORM_SITES: Readonly<Record<Platform, PlatformSite>> = {
-  facebook: { twenty: "FACEBOOK", domain: ".facebook.com", hosts: ["facebook.com"], home: "https://www.facebook.com/marketplace/", proxy: "required", browser: true },
-  twitter: { twenty: "TWITTER", domain: ".x.com", hosts: ["x.com", "twitter.com"], home: "https://x.com/home", proxy: "none", browser: false },
-  reddit: { twenty: "REDDIT", domain: ".reddit.com", hosts: ["reddit.com", "redd.it", "redditmedia.com"], home: "https://www.reddit.com/", proxy: "none", browser: true },
-  discord: { twenty: "DISCORD", domain: ".discord.com", hosts: ["discord.com", "discord.gg"], home: "https://discord.com/login", proxy: "none", browser: true },
-  linkedin: { twenty: "LINKEDIN", domain: ".linkedin.com", hosts: ["linkedin.com", "www.linkedin.com"], home: "https://www.linkedin.com/feed/", proxy: "none", browser: true },
-  slack: { twenty: "SLACK", domain: ".slack.com", hosts: ["slack.com", "app.slack.com"], home: "https://app.slack.com/", proxy: "none", browser: true },
-  instagram: { twenty: "INSTAGRAM", domain: ".instagram.com", hosts: ["instagram.com", "www.instagram.com"], home: "https://www.instagram.com/", proxy: "none", browser: true },
-  tiktok: { twenty: "TIKTOK", domain: ".tiktok.com", hosts: ["www.tiktok.com", "tiktok.com"], home: "https://www.tiktok.com/", proxy: "none", browser: true },
+  facebook: { accountPlatform: "FACEBOOK", domain: ".facebook.com", hosts: ["facebook.com"], home: "https://www.facebook.com/marketplace/", proxy: "required", browser: true },
+  twitter: { accountPlatform: "TWITTER", domain: ".x.com", hosts: ["x.com", "twitter.com"], home: "https://x.com/home", proxy: "none", browser: false },
+  reddit: { accountPlatform: "REDDIT", domain: ".reddit.com", hosts: ["reddit.com", "redd.it", "redditmedia.com"], home: "https://www.reddit.com/", proxy: "none", browser: true },
+  discord: { accountPlatform: "DISCORD", domain: ".discord.com", hosts: ["discord.com", "discord.gg"], home: "https://discord.com/login", proxy: "none", browser: true },
+  linkedin: { accountPlatform: "LINKEDIN", domain: ".linkedin.com", hosts: ["linkedin.com", "www.linkedin.com"], home: "https://www.linkedin.com/feed/", proxy: "none", browser: true },
+  slack: { accountPlatform: "SLACK", domain: ".slack.com", hosts: ["slack.com", "app.slack.com"], home: "https://app.slack.com/", proxy: "none", browser: true },
+  instagram: { accountPlatform: "INSTAGRAM", domain: ".instagram.com", hosts: ["instagram.com", "www.instagram.com"], home: "https://www.instagram.com/", proxy: "none", browser: true },
+  tiktok: { accountPlatform: "TIKTOK", domain: ".tiktok.com", hosts: ["www.tiktok.com", "tiktok.com"], home: "https://www.tiktok.com/", proxy: "none", browser: true },
 };
 
 export function knownPlatformOfAccount(account: { platform?: string | null }): Platform | null {
   const store = String(account.platform ?? "").toUpperCase();
-  return PLATFORMS.find((p) => PLATFORM_SITES[p].twenty === store) ?? null;
+  return PLATFORMS.find((p) => PLATFORM_SITES[p].accountPlatform === store) ?? null;
 }
 
 export function platformOfAccount(account: { platform?: string | null }): Platform {

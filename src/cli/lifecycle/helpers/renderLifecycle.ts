@@ -11,7 +11,7 @@ export interface LifecycleRow {
 export function renderLifecycleTable(rows: LifecycleRow[]): string {
   const lines = ["Account                               Status       Lifecycle                     Left"];
   for (const r of rows) {
-    const stored = r.stored && r.stored !== r.state ? ` (Twenty: ${r.stored})` : "";
+    const stored = r.stored && r.stored !== r.state ? ` (stored: ${r.stored})` : "";
     lines.push(`${r.accountName.padEnd(37)} ${String(r.status ?? "unset").padEnd(12)} ${r.state.padEnd(29)} ${r.left.join(", ") || "-"}${stored}`);
   }
   return lines.join("\n");

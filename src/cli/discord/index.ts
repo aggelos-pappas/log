@@ -74,7 +74,7 @@ export const discordSessionCommand: Command = {
   name: "session",
   effect: "read",
   input: DISCORD_SESSION_INPUT,
-  summary: "Check that Discord still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty",
+  summary: "Check that Discord still accepts an account's saved session, on the direct-API engine, sending nothing; the answer is saved",
   args: "check --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DISCORD_SESSION_INPUT));
@@ -1156,7 +1156,7 @@ export const discordSearchCommand: Command = {
 
 export const DISCORD_SECRETS_USAGE = [
   "Usage: log discord secrets --account <accountName> [--show]",
-  "Asks for the Discord account's email, password and 2FA secret (the base32 key from its authenticator setup, optional) in a Clack prompt, masked, and keeps them in Twenty (socialAccounts email, password, totpSecret) for the account's sign-in in its own browser. Nothing is printed; --show says only which are set. It never calls Discord, the direct-API engine included.",
+  "Asks for the Discord account's email, password and 2FA secret (the base32 key from its authenticator setup, optional) in a Clack prompt, masked, and keeps them in the account store (socialAccounts email, password, totpSecret) for the account's sign-in in its own browser. Nothing is printed; --show says only which are set. It never calls Discord, the direct-API engine included.",
 ].join("\n");
 
 interface SecretPrompts {
@@ -1185,7 +1185,7 @@ export const discordSecretsCommand: Command = {
   name: "secrets",
   terminalOnly: "asks for a Discord account's email, password and 2FA secret in a Clack prompt (masked). Run `log discord secrets --account <a>` in a terminal.",
   effect: "write",
-  summary: "The Discord account's email, password and 2FA secret, asked in a Clack prompt and kept in Twenty for its sign-in, never printed",
+  summary: "The Discord account's email, password and 2FA secret, asked in a Clack prompt and saved for its sign-in, never printed",
   args: "--account <a> [--show]",
   async run(context, argv) {
     const parsed = parseArgs(argv, { boolean: ["show"], valued: ["account"] });
@@ -1217,7 +1217,7 @@ export const discordSecretsCommand: Command = {
     const totpSecret = typeof totp === "string" && totp ? totpSecretOf(totp) : null;
     await context.accounts.update("socialAccounts", account.id, { email: email.trim(), password: pass, ...(totpSecret ? { totpSecret } : {}) } as never);
     prompts.outro("Saved. They are typed into Discord's sign-in in the account's own browser, never printed.");
-    return { code: 0, stdout: `${account.accountName}: email <set>, password <set>, 2FA secret ${mark(totpSecret)} in Twenty` };
+    return { code: 0, stdout: `${account.accountName}: email <set>, password <set>, 2FA secret ${mark(totpSecret)} in the account store` };
   },
 };
 

@@ -51,16 +51,16 @@ async function run(argv: string[], store = marketplaceFixture(photo), session = 
   const out: string[] = [];
   const err: string[] = [];
   const code = await runCli(argv, { accounts: store, session: session.factory as never, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), twenty: store, session };
+  return { code, out: out.join("\n"), err: err.join("\n"), accounts: store, session };
 }
 
 describe("log facebook campaign", () => {
   test("fill refuses an ad without enough copy versions for the listings it would have live in its city", async () => {
-    const { code, err, twenty } = await run(["facebook", "campaign", "fill", "--campaign", "campaignNew", "--from", "adTemplate", "--accounts", "5"]);
+    const { code, err, accounts } = await run(["facebook", "campaign", "fill", "--campaign", "campaignNew", "--from", "adTemplate", "--accounts", "5"]);
     expect(code).toBe(1);
     expect(err).toContain("notEnoughCopyVersions");
     expect(err).toContain("0 copy version(s) for 10 listing(s) live in Galway: write at least 10");
-    expect(twenty.rows.agencyListings.filter((r) => r.campaignId === "campaignNew")).toHaveLength(0);
+    expect(accounts.rows.agencyListings.filter((r) => r.campaignId === "campaignNew")).toHaveLength(0);
   });
 
   test("fill puts the ad on every eligible account in its country, each copy with the version least like what's live, and says how many it couldn't", async () => {

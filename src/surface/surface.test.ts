@@ -95,8 +95,8 @@ describe("readme", () => {
     expect(section).toContain("Reddit through reverseChud (`vendor/reverseChud`)");
     expect(section).toContain("- `log reddit session`: the direct-API engine only (reverseChud, vendored in vendor/reverseChud");
     expect(section).not.toContain("is the first platform");
-    const first = withSurface("# x\n\nintro\n\n## Twenty\n\nrest\n", section);
-    expect(first.indexOf("<!-- surface:start")).toBeLessThan(first.indexOf("## Twenty"));
+    const first = withSurface("# x\n\nintro\n\n## Roadmap\n\nrest\n", section);
+    expect(first.indexOf("<!-- surface:start")).toBeLessThan(first.indexOf("## Roadmap"));
     expect(withSurface(first, section)).toBe(first);
     expect(first.split(SURFACE_END).length).toBe(2);
   });

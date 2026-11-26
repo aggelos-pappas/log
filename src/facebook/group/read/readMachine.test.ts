@@ -162,7 +162,7 @@ describe("group read machine", () => {
   });
 });
 
-describe("group read in Twenty (rule 65: only the cursor)", () => {
+describe("group read in the account store (rule 65: only the cursor)", () => {
   test("saves the cursor, when and what it read, and no post or comment", async () => {
     const store = createMemoryAccountStore({ agencyGroups: [{ id: "g1", facebookGroupId: GROUP }] });
     const { output } = await run([groupPage([unit("4", T + 40, 1)]), feedScroll([unit("3", T + 30)], false), postPage([comment("4", "41", T + 41)]), commentAnswer([], false)]);

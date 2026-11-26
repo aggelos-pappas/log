@@ -31,7 +31,7 @@ async function run(argv: string[], session = scriptedProfile(), store = marketpl
   const out: string[] = [];
   const err: string[] = [];
   const code = await runCli(argv, { profileSession: session.factory, accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), session, twenty: store };
+  return { code, out: out.join("\n"), err: err.join("\n"), session, accounts: store };
 }
 
 describe("log facebook profile setup", () => {
@@ -41,13 +41,13 @@ describe("log facebook profile setup", () => {
     expect(result.session.steps).toEqual(["open", "read"]);
     expect(result.session.closed()).toBe(1);
     expect(result.out).toContain("dry run: nothing changed on Facebook");
-    expect(result.out).toContain("Profile photo: no photo set in Twenty");
+    expect(result.out).toContain("Profile photo: no photo set in the account store");
     expect(result.out).toContain("profileFound.txt");
     expect(result.err).toContain("reading");
     expect(result.session.configs[0].captureDir.replaceAll("\\", "/")).toMatch(/\/profile\/\d{8}T\d{6}_galwayOne\/camoufox$/);
   });
 
-  test("--live with no photos in Twenty is refused before a browser opens", async () => {
+  test("--live with no photos in the account store is refused before a browser opens", async () => {
     const result = await run(["facebook", "profile", "setup", "--account", "galwayOne", "--live"]);
     expect(result.code).toBe(1);
     expect(result.session.steps).toEqual([]);

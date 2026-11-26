@@ -4,7 +4,7 @@ title: "Platform scaffold"
 
 # Platform scaffold
 
-A new platform is made whole with one command, `log new platform <name>` (MCP `newPlatform`), and one table, `PLATFORM_SITES`, says what each platform is: its Twenty value, cookie domain, hosts, home page, whether it needs a proxy and whether it has a browser path. `log inspect`, the account's browser and the AdsPower sync read that table, so a new platform is explored the same way as Facebook. Rules 83 and 84.
+A new platform is made whole with one command, `log new platform <name>` (MCP `newPlatform`), and one table, `PLATFORM_SITES`, says what each platform is: its account platform value (`accountPlatform`), cookie domain, hosts, home page, whether it needs a proxy and whether it has a browser path. `log inspect`, the account's browser and the AdsPower sync read that table, so a new platform is explored the same way as Facebook. Rules 83 and 84.
 
 ## Making a platform
 
@@ -60,7 +60,7 @@ Checked by: code and SubQ
 
 ### REQ-PLATFORM-10: Each platform's row says what it is
 
-`PLATFORM_SITES` has a row for every platform, with its Twenty value, cookie domain, hosts, home page, `proxy` (`required` or `none`) and `browser`. Facebook's proxy is `required` (rule 12, unchanged). X (twitter) has no browser path (rule 80). Reddit's proxy is `none`.
+`PLATFORM_SITES` has a row for every platform, with its account platform value (`accountPlatform`), cookie domain, hosts, home page, `proxy` (`required` or `none`) and `browser`. Facebook's proxy is `required` (rule 12, unchanged). X (twitter) has no browser path (rule 80). Reddit's proxy is `none`.
 
 Checked by: code (anchors)
 

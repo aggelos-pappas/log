@@ -8,9 +8,9 @@ import { liveThroughAction } from "../../platformKit/action/index.ts";
 const REPO = join(import.meta.dir, "..", "..", "..");
 
 export const NEW_USAGE = [
-  "Usage: log new platform <name> [--label <shown name>] [--twentyPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]",
+  "Usage: log new platform <name> [--label <shown name>] [--accountPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]",
   "Makes a new platform for log-cli: its account session on the shared platformKit, `log <name> session check` with its MCP tool, a direct-API engine in python/<name>Api on the shared Python kit, and docs/platforms/<name>. The repo is wired by editing each file through its syntax tree (PLATFORMS, PLATFORM_LABELS, COMMANDS, COMMAND_INDEX, createContext, CommandContext, DIRECT_ROUTES, COMMAND_RULES), and every edit is checked to have landed before anything is written.",
-  "Without --apply it lists what it would write and change, and writes nothing. Nothing is overwritten: an existing platform or file is refused. It says what Twenty is missing (the socialAccounts.platform option) but never changes Twenty. Then fill in the engine's actions and add the platform's families as commands (rule 83).",
+  "Without --apply it lists what it would write and change, and writes nothing. Nothing is overwritten: an existing platform or file is refused. It never changes the account store. Then fill in the engine's actions and add the platform's families as commands (rule 83).",
 ].join("\n");
 
 export const NEW_INPUT: CommandInput = {
@@ -22,7 +22,7 @@ export const NEW_INPUT: CommandInput = {
       positionals: [{ name: "name", kind: "string", required: true, description: "The platform's name, camelCase (reddit, blueSky)" }],
       flags: [
         { name: "label", kind: "string", description: "How it is shown (default: the name capitalised)" },
-        { name: "twentyPlatform", kind: "string", description: "Its socialAccounts.platform value in Twenty (default: the name in capitals)" },
+        { name: "accountPlatform", kind: "string", description: "Its socialAccounts.platform value (default: the name in capitals)" },
         { name: "library", kind: "string", description: "Its vendored client's folder, vendor/<folder>" },
         { name: "sessionCookies", kind: "list", description: "The cookies a logged-in session must have, comma-separated" },
         { name: "cookieDomain", kind: "string", description: "The domain its cookies are saved under (default: . and its first host)" },
@@ -53,7 +53,7 @@ export const newCommand: Command = liveThroughAction<Command>({
     const str = (flag: string) => (typeof parsed.flags[flag] === "string" ? (parsed.flags[flag] as string) : undefined);
     let plan;
     try {
-      plan = planNewPlatform(REPO, { name, label: str("label"), twentyPlatform: str("twentyPlatform"), library: str("library"), cookieDomain: str("cookieDomain"), hosts: listOf(parsed, "hosts"), home: str("home"), noProxy: parsed.flags["noProxy"] === true, noBrowser: parsed.flags["noBrowser"] === true, sessionCookies: listOf(parsed, "sessionCookies") });
+      plan = planNewPlatform(REPO, { name, label: str("label"), accountPlatform: str("accountPlatform"), library: str("library"), cookieDomain: str("cookieDomain"), hosts: listOf(parsed, "hosts"), home: str("home"), noProxy: parsed.flags["noProxy"] === true, noBrowser: parsed.flags["noBrowser"] === true, sessionCookies: listOf(parsed, "sessionCookies") });
     } catch (error) {
       return { code: 1, stderr: `log new platform: ${error instanceof Error ? error.message : String(error)}` };
     }

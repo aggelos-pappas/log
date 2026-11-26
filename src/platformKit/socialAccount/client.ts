@@ -2,7 +2,7 @@ import { hasStoredDevice } from '../../camofox/device/index'
 import type { DeviceProfile } from '../../camofox/device/index'
 import { AccountStoreError } from '../../accounts/store/index'
 import type { AccountStore, AccountObjects } from '../../accounts/store/index'
-import { fromTwentyEnum, hasFacebookSession, toTwentyEnum } from './helpers/index'
+import { fromStoredEnum, hasFacebookSession, toStoredEnum } from './helpers/index'
 import { ACCOUNT_STATUSES, DEFAULT_DAILY_LISTING_CAP } from './types'
 import type { AccountStatus, FacebookAccount, SocialAccountRow } from './types'
 import type { PlaywrightCookie } from './helpers/index'
@@ -14,7 +14,7 @@ type AccountUpdate = AccountObjects['socialAccounts']['update']
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export function toFacebookAccount(row: SocialAccountRow): FacebookAccount {
-  const status = row.accountStatus ? fromTwentyEnum(row.accountStatus) : null
+  const status = row.accountStatus ? fromStoredEnum(row.accountStatus) : null
   return {
     id: row.id,
     accountName: row.accountName?.trim() || (row.platform && row.platform !== 'FACEBOOK' ? row.name?.trim() : '') || row.id,
@@ -88,7 +88,7 @@ export async function setAccountStatus(
   now: Date = new Date()
 ): Promise<void> {
   await store.update(SOCIAL_ACCOUNTS, accountId, {
-    accountStatus: toTwentyEnum(status) as AccountUpdate['accountStatus'],
+    accountStatus: toStoredEnum(status) as AccountUpdate['accountStatus'],
     statusReason: reason,
     statusDetail: detail ? detail.slice(0, 500) : null,
     statusChangedAt: now.toISOString(),

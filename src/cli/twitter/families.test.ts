@@ -58,7 +58,7 @@ function harness(script: Script = () => ({ ok: false, code: "notExpected" }), st
     });
     return { code, out: out.join("\n"), err: err.join("\n") };
   };
-  return { run, calls, twenty: store, clockAt: () => clock };
+  return { run, calls, accounts: store, clockAt: () => clock };
 }
 
 describe("log twitter session webClient", () => {
@@ -277,11 +277,11 @@ describe("log twitter reply, quote, like, dm", () => {
     expect(h.calls[1].force).toBeUndefined();
   });
 
-  test("a dead session goes back to Twenty", async () => {
+  test("a dead session goes back to the account store", async () => {
     const h = harness(() => ({ ok: false, event: "sessionDead", code: "sessionDead", loginState: "loggedOut", detail: "401" }));
     const r = await h.run(["twitter", "like", "--account", "xTwo", "--tweet", POST_A, "--approvedBy", "the owner", "--live"]);
     expect(r.code).toBe(1);
-    expect(h.twenty.rows.socialAccounts!.find((a) => a.accountName === "xTwo")!.sessionState).toBe("loggedOut");
+    expect(h.accounts.rows.socialAccounts!.find((a) => a.accountName === "xTwo")!.sessionState).toBe("loggedOut");
   });
 });
 

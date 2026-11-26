@@ -13,11 +13,11 @@ export function summarizeProfile(context: unknown): Record<string, unknown> {
 const ACTION_TEXT: Record<ProfilePlanStep["action"], string> = {
   wouldUpload: "would upload (dry run)",
   uploaded: "uploaded",
-  noPhotoInTwenty: "no photo set in Twenty",
+  noPhotoSaved: "no photo set in the account store",
   noControl: "no control for it on the page",
   wouldRename: "would rename (dry run)",
   alreadyNamed: "already has that name",
-  noNameInTwenty: "no profileName set in Twenty",
+  noNameSaved: "no profileName set in the account store",
   renameNotBuilt: "not changed: the rename is built from this dry run's nameFound.txt first",
 };
 

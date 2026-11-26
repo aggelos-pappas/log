@@ -33,7 +33,6 @@ comment, the quote an hour later).
 
 - Repo: `listeningkit-frontend`, `docs/okf/operations/social-posting-playbook.md`
   (branch `docs/social-posting-playbook`).
-- Twenty (optional): Notes → "Social posting playbook" in your own Twenty.
 - Knowledge base: `log kb search "social posting playbook"`.
 
 Post the original with `log twitter post --account <handle> --text "<copy>" --media <video.mp4>` (MCP `twitterPost`, `twitterPostLive`).
@@ -134,7 +133,7 @@ order:
 | 5 | Every day | Reply to people posting about your topic, one line about their post backed by your own fact, inside the account's 240 writes a day | `docs/useCases/twitter/topicReplies.md`, the queue's `limit` |
 | 6 | Always | Answer whoever writes back. Never send a cold template to someone you already talk to | `log twitter dms --account <a> [--with <handle>]`, `chat watch` (needs the X Chat PIN), rule 109 |
 | 7 | Weekly | Score the followers (treg profiles and their posts), and talk to the best ones by hand | `docs/useCases/twitter/followers.md`, treg `anyapi.x.user.profile` |
-| 8 | Always | Leads from posts and DMs go into Twenty | `agencyProspects` |
+| 8 | Always | Leads from posts and DMs are kept | `agencyProspects` |
 
 Finding people and posts is always treg (`treg call anyapi.x.search.posts
 --file q.json`, `anyapi.x.user.profile`, `treg.x.user.posts`). On Windows,
@@ -147,7 +146,7 @@ account posts about comes from its own plan:
 | Account | Plan | What it sets |
 | --- | --- | --- |
 | your main account | its plan in the knowledge base (`log kb search "<account> plan"`) | the product, the people it is for, the follower atlas |
-| a teammate's account | the teammate's own social growth plan | positioning, content pillars and their ratio, the hook and CTA banks, the 30-day and 90-day plans, DM openers, leads in Twenty, the weekly review |
+| a teammate's account | the teammate's own social growth plan | positioning, content pillars and their ratio, the hook and CTA banks, the 30-day and 90-day plans, DM openers, leads, the weekly review |
 
 Where they disagree, the X discipline wins on X. The plan's comment
 prompts ("comment your AI stack") read as engagement bait there, so on X
@@ -188,10 +187,10 @@ Add each new piece in the same place every time, so every account gets it:
   `docs/useCases/twitter/README.md`.
 - **A posting or editing rule** (recording, captions, the cut, the export,
   when and how to post): change the social posting playbook, in the repo and
-  the Twenty note together. Then link anything new from section 2 here.
+  the knowledge base together. Then link anything new from section 2 here.
 - **A new X command:** `src/cli/twitter/helpers/<name>.ts` on the direct-API
   engine (`DIRECT_ROUTES`, `COMMAND_RULES`), never a browser.
 
 Then run `log kb sync`. This skill, the use cases and the docs go into
-Twenty's knowledge base and its Redis search, and every agent finds them
+the knowledge base in log.db, searched locally, and every agent finds them
 with `log kb search`.

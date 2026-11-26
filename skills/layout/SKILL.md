@@ -14,7 +14,7 @@ description: 'Where a new file goes in log-cli (rule 2). Every file sits in a do
 | `python/session/` | the processes TypeScript runs: `inspectSession`, `connectSession`, `publishSession`, `profileSession`, `logWorker` |
 | `python/login/`, `python/device/`, `python/errors/`, `python/fixtures/` | sign-in, Camoufox's device, the error codes and catalog, test pages |
 | `scripts/checks/` | the lefthook gates (`check:*`) |
-| `scripts/commitLog/`, `scripts/docs/`, `scripts/hooks/`, `scripts/privacy/`, `scripts/twenty/`, `scripts/datasets/` | the private day-log gate, the generated docs, the agent hooks, the privacy check, Twenty setup and client, dataset builds |
+| `scripts/commitLog/`, `scripts/docs/`, `scripts/hooks/`, `scripts/privacy/`, `scripts/datasets/` | the private day-log gate, the generated docs, the agent hooks, the privacy check, dataset builds |
 
 ## A new Python module
 

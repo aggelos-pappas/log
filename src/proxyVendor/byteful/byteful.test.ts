@@ -59,7 +59,7 @@ describe('Byteful', () => {
   })
 })
 
-describe('the proxy provider, from the account proxy URL in Twenty', () => {
+describe('the proxy provider, from the account proxy URL in the account store', () => {
   test("each provider's host; a static IP has none and isn't metered", () => {
     expect(vendorOfProxy('http://u-zone-custom:pw@na.proxy.2captcha.com:2334')).toEqual({ vendor: 'twoCaptcha', billing: 'traffic' })
     expect(vendorOfProxy('http://100001_x_c_us_s_A:pw@residential.byteful.com:8000')).toEqual({ vendor: 'byteful', billing: 'traffic' })

@@ -4,7 +4,7 @@ import { dirname } from "node:path";
 import { hostDir, readProgress, runHost, sendControl } from "../../facebook/marketplace/host/index.ts";
 import type { HostControl, MilestoneField } from "../../facebook/marketplace/host/index.ts";
 import { standingOf } from "../../platformKit/lifecycle/index.ts";
-import { findAccount, toTwentyEnum } from "../../platformKit/socialAccount/index.ts";
+import { findAccount, toStoredEnum } from "../../platformKit/socialAccount/index.ts";
 import { createInspector, formatTraceLine } from "../../observability/trace/index.ts";
 import { numberOf, parseArgs, parserSpecOf, PROXY_MS_FLAG, refuseError, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
@@ -119,7 +119,7 @@ export const hostCommand: Command = {
     ];
     if (result.context.issue) lines.push(`  account issue: ${result.context.issue.code}${result.context.issue.detail ? ` (${result.context.issue.detail})` : ""}`);
     const blocked = result.context.issue ? await recordAccountIssue(context.accounts, account, result.context.issue.code, result.context.issue.detail ?? null) : null;
-    if (blocked) lines.push(`  ${account.accountName} is now ${toTwentyEnum(blocked.status)} (${result.context.issue!.code}): ${blocked.lost.length} listing(s) marked ACCOUNT_LOST, ${blocked.replacements.filter((r) => r.next).length} handed to another account`);
+    if (blocked) lines.push(`  ${account.accountName} is now ${toStoredEnum(blocked.status)} (${result.context.issue!.code}): ${blocked.lost.length} listing(s) marked ACCOUNT_LOST, ${blocked.replacements.filter((r) => r.next).length} handed to another account`);
     if (result.context.lastError) lines.push(`  last error: ${result.context.lastError.code}${result.context.lastError.detail ? ` (${result.context.lastError.detail})` : ""}`);
     lines.push(`  progress: ${hostDir(account.accountName)}/progress.json (log facebook host status); restart carries on from it.`);
     return { code: ["stopped", "host.overnight.rest"].includes(result.state) ? 0 : 1, stdout: lines.join("\n") };

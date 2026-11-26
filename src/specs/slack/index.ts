@@ -44,7 +44,7 @@ export const slack = {
     ],
   },
   rubrics: {
-    'REQ-SLACK-01': noul('Does findSlackAccount find the account through findPlatformAccount with SLACK_PLATFORM, whose twentyPlatform is SLACK, and does slackGate check it with platformGate before the engine runs?'),
+    'REQ-SLACK-01': noul('Does findSlackAccount find the account through findPlatformAccount with SLACK_PLATFORM, whose accountPlatform is SLACK, and does slackGate check it with platformGate before the engine runs?'),
     'REQ-SLACK-02': noul('Does runSlackEngine run the account through runPlatformEngine with SLACK_PLATFORM, whose engine is python/slackApi/engine.py?'),
     'REQ-SLACK-03': noul('Does the slack session check command send nothing to Slack beyond the check, and record the answer Slack gave through recordSlackSession, which merges refreshed cookies for SLACK_COOKIE_DOMAIN back into the row?'),
     'REQ-SLACK-04': noul('Is slack listed in PLATFORMS and PLATFORM_SITES, and does DIRECT_ROUTES have a slackSession route for platform slack?'),

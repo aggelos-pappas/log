@@ -22,8 +22,9 @@ export * from "./helpers/index.ts";
 export const JOIN_USAGE = [
   "Usage: log facebook join group --account <accountName> --group <group url, id or name> [--live] [--json]",
   "       log facebook join group --account <accountName> --group <g> --show",
-  "       log facebook join group --account <accountName> --group <g> --answer [--set <n>=<value>]... [--agree]   (Clack steps over the group's questions, or the same answers given here; saved to Twenty, never sent)",
+  "       log facebook join group --account <accountName> --group <g> --answer [--set <n>=<value>]... [--agree]   (Clack steps over the group's questions, or the same answers given here; saved to the account store, never sent)",
   "       log facebook join group --account <accountName> --group <g> --fill [--live [--submit]]   (the draft into the group's dialog, step by step)",
+  "Retired (#339): Facebook group records were kept in Twenty, which log no longer uses.",
   "Every step in the browser runs inside the account's local hours; --bypass skips that for one run, only when the owner asked (rule 86).",
   "The account's browser must be open (log inspect start --account <a>, or log facebook host start): a join is a step in it (rule 35).",
 ].join("\n");
@@ -117,7 +118,7 @@ async function answerGroup(context: CommandContext, accountId: string, accountNa
     const draft = draftFrom(options, answers, agree, now);
     const complete = draftComplete(options, draft);
     const saved = await saveDraft(context.accounts, group, draft, complete, now);
-    return { code: 0, stdout: `${complete.complete ? "Every answer given, the rules agreed: saved to Twenty, not sent." : `Saved to Twenty, still missing: ${complete.missing.join("; ")}`}\n${renderGroup(saved)}` };
+    return { code: 0, stdout: `${complete.complete ? "Every answer given, the rules agreed: saved to the account store, not sent." : `Saved to the account store, still missing: ${complete.missing.join("; ")}`}\n${renderGroup(saved)}` };
   }
   if (!shouldPrompt(json, joinDeps.tty())) return { code: 1, stderr: "log facebook join: --answer is a Clack stepper: it needs an interactive terminal (or give the answers: --set 1=Yes --set 2=\"…\" --agree)" };
   joinDeps.prompts.intro(`log facebook join group --answer — ${group.name}`);
@@ -130,7 +131,7 @@ async function answerGroup(context: CommandContext, accountId: string, accountNa
   const draft = draftFrom(options, given.answers, given.rulesAgreed, now);
   const complete = draftComplete(options, draft);
   const saved = await saveDraft(context.accounts, group, draft, complete, now);
-  joinDeps.prompts.outro(complete.complete ? "Saved to Twenty. Not sent to Facebook." : `Saved to Twenty, still missing: ${complete.missing.join("; ")}`);
+  joinDeps.prompts.outro(complete.complete ? "Saved to the account store. Not sent to Facebook." : `Saved to the account store, still missing: ${complete.missing.join("; ")}`);
   return { code: 0, stdout: renderGroup(saved) };
 }
 
@@ -256,7 +257,7 @@ export async function runJoin(context: CommandContext, argv: string[]): Promise<
     }
     if (!accountRef) {
       const accounts = (await listFacebookAccounts(context.accounts)).filter((account) => checkRunnable(account, "run").ok);
-      if (accounts.length === 0) return { code: 1, stderr: "log facebook join: no FACEBOOK account may run: each needs a usable status, a proxy and a home country in Twenty. See `log facebook accounts`." };
+      if (accounts.length === 0) return { code: 1, stderr: "log facebook join: no FACEBOOK account may run: each needs a usable status, a proxy and a home country in the account store. See `log facebook accounts`." };
       accountRef = answered(
         await joinDeps.prompts.select({
           message: "Which account joins?",
@@ -352,7 +353,7 @@ export const joinCommand: Command = {
   longRunning: true,
   effect: "browser",
   input: JOIN_INPUT,
-  summary: "Join a Facebook group as one account, in its open browser: read the gate, --live presses Join; every step patches agencyGroups.joinSubmission",
+  summary: "Retired (#339): joining a Facebook group",
   args: "group --account <a> --group <g> [--live] | --show | --answer [--set n=v]... [--agree] | --fill [--live [--submit]] [--bypass] [--json]",
   run: runJoin,
 };

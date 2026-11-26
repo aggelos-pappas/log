@@ -40,7 +40,7 @@ async function run(argv: string[], engine?: PlatformEngineRun | ((spec: Record<s
 }
 
 describe("log slack session check", () => {
-  test("loggedIn: the engine's answer goes to Twenty", async () => {
+  test("loggedIn: the engine's answer goes to the account store", async () => {
     const r = await run(["slack", "session", "check", "--account", "slackOne"], { answer: { ok: true, loginState: "loggedIn", screenName: "slackOne" }, refreshed: null });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["slackOne:ping"]);

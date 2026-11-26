@@ -31,7 +31,7 @@ capabilities: [Browsers](browsers.md). How it runs across servers:
 | `python/browser/browserDriver.py` | `open_ads_power`: gate, proxy on, start a visible window, `connect_over_cdp`, the profile's context, session HAR, self-check; at the end, stop and proxy off |
 | `src/cli/adsPower/` | `log adsPower status`, `log adsPower profiles`, `log adsPower sync [--apply] [--homes <US,IE>]` |
 
-The account row (local store, or Twenty if you use it) gets two fields, both additions:
+The account's row in the account store gets two fields, both additions:
 
 - `adsPowerProfileId`: the profile linked to the account.
 - `browserDriver`: `adsPower` or `camoufox`. When it is empty, an account
@@ -41,8 +41,9 @@ The account row (local store, or Twenty if you use it) gets two fields, both add
 
 Each profile is set up with:
 
-- **Name:** the account's `accountName`, with a remark `log-cli twenty:<id>` so
-  a lost link can be found again.
+- **Name:** the account's `accountName`, with a remark `log-cli account:<id>` so
+  a lost link can be found again (an older `log-cli twenty:<id>` remark still
+  matches).
 - **Group:** `logCli`.
 - **Browser:** Windows Chrome (`random_ua` Windows 10/11).
 - **Language:** pinned from the home country (`HOME_COUNTRIES`).
@@ -65,7 +66,7 @@ held by an account that will use it:
 - **DEACTIVATED accounts:** `log facebook account status <a> DEACTIVATED`
   deletes the account's profile from AdsPower, clears `adsPowerProfileId`, then
   runs the sync so an account waiting for a profile gets the freed slot. An
-  account set to DEACTIVATED directly on its row (in the local file or Twenty) gives its profile back at the
+  account set to DEACTIVATED directly on its row in the account store gives its profile back at the
   next `log adsPower sync --apply`.
 - **Home countries:** `LOG_ADSPOWER_HOMES` in `.env.local` (for example `US`),
   or `--homes` on the sync, names the home countries that hold profiles. An

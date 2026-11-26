@@ -27,7 +27,7 @@ describe("one result envelope", () => {
     expect(shape(await call("facebookCheck", {}))).toMatchObject({ exit: 1, ok: false, code: "inputInvalid", platform: "facebook", capability: "check" });
     expect(shape(await call("discordSendLive", { account: "fakeGuild", channel: "1", text: "hi", approvedBy: "fakeOwner" }))).toMatchObject({ code: "liveNotConfirmed", platform: "discord", capability: "send" });
     expect(shape(await call("noSuchTool", {}))).toMatchObject({ code: "toolUnknown", platform: null, capability: null });
-    expect(shape(await call("login", {}))).toMatchObject({ code: "terminalOnly" });
+    expect(shape(await call("launch", {}))).toMatchObject({ code: "terminalOnly" });
   });
 
   test("a refusal inside the command reaches the result as its code", async () => {

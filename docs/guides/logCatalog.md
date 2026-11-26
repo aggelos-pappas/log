@@ -35,7 +35,7 @@ help[1]:
 - **acts:**
   - `no` only reads.
   - `live` has a live run that acts on the platform.
-  - `write`, `browser` or `delete` change local data, Twenty or the account's browser.
+  - `write`, `browser` or `delete` change local data or the account's browser.
   - `terminal` is a prompt the owner runs in a terminal, never over MCP.
 
 ### 2. Read it: `logGet`

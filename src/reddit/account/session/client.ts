@@ -5,7 +5,7 @@ import type { AccountStore } from '../../../accounts/store/index'
 
 export const REDDIT_PLATFORM: PlatformShape = {
   platform: 'reddit',
-  twentyPlatform: 'REDDIT',
+  accountPlatform: 'REDDIT',
   label: 'Reddit',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', 'redditApi', 'engine.py'),
   sessionCookies: ['reddit_session']

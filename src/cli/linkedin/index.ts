@@ -63,7 +63,7 @@ export const linkedinSessionCommand: Command = {
   name: "session",
   effect: "read",
   input: LINKEDIN_SESSION_INPUT,
-  summary: "Check that LinkedIn still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty",
+  summary: "Check that LinkedIn still accepts an account's saved session, on the direct-API engine, sending nothing; the answer is saved",
   args: "check|scripts --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(LINKEDIN_SESSION_INPUT));

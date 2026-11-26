@@ -1,6 +1,6 @@
 ---
 name: conversations
-description: Store and manage buyers' Marketplace conversations in Twenty - agencyConversations tied to their agencyListing and socialAccount, agencyMessages tied to their conversation. Use when the owner asks about buyers, leads, messages, inbox, replies, "who wrote about this listing", or to record a scanned thread.
+description: Retired (#339). Store and manage buyers' Marketplace conversations - agencyConversations tied to their agencyListing and socialAccount, agencyMessages tied to their conversation. Use when the owner asks about buyers, leads, messages, inbox, replies, "who wrote about this listing", or to record a scanned thread.
 ---
 
 # conversations
@@ -10,13 +10,15 @@ listing and account. Each message is an `agencyMessage` in it. The shape,
 and where each field came from, is in
 `docs/conversations.md`.
 
+**Retired (#339).** Conversations were kept only in Twenty, which log no
+longer uses, so these commands refuse with `twentyRemoved` until they are
+rebuilt on log.db.
+
 ## Hard boundaries
 
-1. **Twenty only.** These commands never open a browser and never write to
+1. **Stored records only.** These commands never open a browser and never write to
    Facebook (rule 8). Replying waits for the owner.
-2. **Additive**. A field is only ever added through
-   `scripts/twenty/twentySetup.mjs`, then the client is regenerated
-   (`bun run twenty:client`). blaster's SMS fields are never
+2. **Additive**. A field is only ever added. blaster's SMS fields are never
    renamed or retyped.
 3. **Never guess the listing.** A thread is tied to a listing by the
    Facebook listing id, or by a title only one listing on the account has.

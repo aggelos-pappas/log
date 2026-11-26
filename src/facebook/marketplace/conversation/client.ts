@@ -1,7 +1,7 @@
 import type { AccountStore, AccountObjects } from '../../../accounts/store/index'
 import { listListingsWhere } from '../agencyListing/index'
 import type { AgencyListing } from '../agencyListing/index'
-import { fromTwentyEnum, toTwentyEnum } from '../../../platformKit/socialAccount/helpers/index'
+import { fromStoredEnum, toStoredEnum } from '../../../platformKit/socialAccount/helpers/index'
 import { contactsIn, conversationKey, messageKey, nextLeadStatus, previewOf, sameTitle } from './helpers/index'
 import type {
   AiStatus,
@@ -29,11 +29,11 @@ type ConversationUpdate = AccountObjects['agencyConversations']['update']
 type MessageCreate = AccountObjects['agencyMessages']['create']
 export type ConversationFilter = AccountObjects['agencyConversations']['filter']
 
-const MARKETPLACE = toTwentyEnum('facebookMarketplace')
+const MARKETPLACE = toStoredEnum('facebookMarketplace')
 
 function pick<T extends string>(raw: unknown, allowed: readonly T[]): T | null {
   if (typeof raw !== 'string' || !raw) return null
-  const value = fromTwentyEnum(raw)
+  const value = fromStoredEnum(raw)
   return (allowed as readonly string[]).includes(value) ? (value as T) : null
 }
 
@@ -50,7 +50,7 @@ function mediaOf(raw: unknown): MessageMedia[] {
 }
 
 export function toConversation(row: ConversationRow): Conversation {
-  const channel: ConversationChannel = row.channel ? (fromTwentyEnum(row.channel) as ConversationChannel) : 'sms'
+  const channel: ConversationChannel = row.channel ? (fromStoredEnum(row.channel) as ConversationChannel) : 'sms'
   const direction = row.latestDirection === 'inbound' || row.latestDirection === 'outbound' ? row.latestDirection : null
   return {
     id: row.id,
@@ -86,7 +86,7 @@ export function toMessage(row: MessageRow): Message {
   return {
     id: row.id,
     conversationId: row.agencyConversationId ?? null,
-    channel: row.channel ? (fromTwentyEnum(row.channel) as ConversationChannel) : 'sms',
+    channel: row.channel ? (fromStoredEnum(row.channel) as ConversationChannel) : 'sms',
     direction: row.direction === 'inbound' || row.direction === 'outbound' ? (row.direction as MessageDirection) : null,
     status,
     body: row.body ?? '',
@@ -152,7 +152,7 @@ export async function recordThread(store: AccountStore, socialAccountId: string,
       facebookThreadId: thread.facebookThreadId,
       socialAccountId,
       agencyListingId,
-      leadStatus: toTwentyEnum('new') as ConversationCreate['leadStatus'],
+      leadStatus: toStoredEnum('new') as ConversationCreate['leadStatus'],
       messageCount: 0,
       unreadCount: 0
     })
@@ -187,7 +187,7 @@ export async function recordThread(store: AccountStore, socialAccountId: string,
       facebookMessageId: message.facebookMessageId ?? null,
       messageKey: key,
       isRead: !inbound,
-      sentBy: (inbound ? null : toTwentyEnum(message.sentBy ?? 'person')) as MessageCreate['sentBy'],
+      sentBy: (inbound ? null : toStoredEnum(message.sentBy ?? 'person')) as MessageCreate['sentBy'],
       media: (message.media ?? []) as unknown as MessageCreate['media']
     })
     messageCount++
@@ -221,7 +221,7 @@ export async function recordThread(store: AccountStore, socialAccountId: string,
     agencyListingId,
     buyerPhone,
     buyerEmail,
-    leadStatus: toTwentyEnum(nextLeadStatus(conversation.leadStatus, { replied, phone: phoneSeen })) as ConversationUpdate['leadStatus'],
+    leadStatus: toStoredEnum(nextLeadStatus(conversation.leadStatus, { replied, phone: phoneSeen })) as ConversationUpdate['leadStatus'],
     latestMessageAt,
     latestDirection,
     latestPreview,
@@ -243,7 +243,7 @@ export async function markRead(store: AccountStore, conversationId: string, now 
 }
 
 export async function setLeadStatus(store: AccountStore, conversationId: string, status: LeadStatus): Promise<Conversation> {
-  return toConversation(await store.update(AGENCY_CONVERSATIONS, conversationId, { leadStatus: toTwentyEnum(status) as ConversationUpdate['leadStatus'] }))
+  return toConversation(await store.update(AGENCY_CONVERSATIONS, conversationId, { leadStatus: toStoredEnum(status) as ConversationUpdate['leadStatus'] }))
 }
 
 export async function linkListing(store: AccountStore, conversationId: string, agencyListingId: string): Promise<Conversation> {

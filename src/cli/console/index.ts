@@ -8,10 +8,9 @@ import type { ConsoleDomain } from "../../console/screens/index.ts";
 import { USAGE_DAYS, usageDaysOf } from "../../console/usage/index.ts";
 import { serveConsoleWeb } from "../../console/web/index.ts";
 import type { ConsoleWebOptions, ConsoleWebServer } from "../../console/web/index.ts";
-import { authDeps } from "../auth/index.ts";
 import { shouldPrompt } from "../launch/helpers/shouldPrompt.ts";
 import type { LaunchTTY } from "../launch/helpers/shouldPrompt.ts";
-import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, PLATFORMS } from "../runner/helpers/index.ts";
+import { JSON_FLAG, numberOf, openBrowser, parseArgs, parserSpecOf, PLATFORMS } from "../runner/helpers/index.ts";
 import type { FlagValue } from "../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandInput, CommandResult } from "../runner/types.ts";
 import {
@@ -104,7 +103,7 @@ export const consoleDeps: {
   intro,
   outro,
   tty: () => ({ stdinTTY: process.stdin?.isTTY, stdoutTTY: process.stdout?.isTTY }),
-  openUrl: (url) => authDeps.openBrowser(url),
+  openUrl: (url) => openBrowser(url),
   serve: (options) => serveConsoleWeb(options),
   wait: () => new Promise<void>(() => {}),
 };

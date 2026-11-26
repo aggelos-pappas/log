@@ -16,7 +16,7 @@ async function run(argv: string[], reply: (request: WorkerRequest) => unknown, s
     return reply(request);
   }) as WorkerClient;
   const code = await runCli(argv, { worker, accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), requests, proxyFiles, twenty: store };
+  return { code, out: out.join("\n"), err: err.join("\n"), requests, proxyFiles, accounts: store };
 }
 
 describe("countryOfLocation", () => {
@@ -33,8 +33,8 @@ describe("countryOfLocation", () => {
 });
 
 describe("log proxy check", () => {
-  test("checks the Twenty proxy without a browser, and records the exit in Twenty", async () => {
-    const { code, out, requests, proxyFiles, twenty } = await run(["proxy", "check", "--account", "galwayOne"], () => ({
+  test("checks the saved proxy without a browser, and records the exit in the account store", async () => {
+    const { code, out, requests, proxyFiles, accounts } = await run(["proxy", "check", "--account", "galwayOne"], () => ({
       ok: true,
       exitIp: "203.0.113.7",
       exitCountry: "IE",
@@ -45,20 +45,20 @@ describe("log proxy check", () => {
     expect(out).not.toContain("secretPass");
     expect(requests[0]).toMatchObject({ action: "proxy.check" });
     expect(proxyFiles[0]).toMatchObject({ server: "http://203.0.113.7:8080", country: "IE" });
-    const account = twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!;
+    const account = accounts.rows.socialAccounts.find((r) => r.id === "galwayOne")!;
     expect(account).toMatchObject({ proxyExitIp: "203.0.113.7", proxyExitCountry: "IE" });
     expect(account.proxyCheckedAt).toBeTruthy();
   });
 
   test("a mismatch is refused and still recorded", async () => {
-    const { code, err, twenty } = await run(["proxy", "check", "--account", "galwayOne"], () => ({
+    const { code, err, accounts } = await run(["proxy", "check", "--account", "galwayOne"], () => ({
       ok: false,
       code: "proxyCountryMismatch",
       detail: "exit IP 203.0.113.81 is in VN, the account is IE",
     }));
     expect(code).toBe(1);
     expect(err).toContain("proxyCountryMismatch");
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")).toMatchObject({ proxyExitIp: "203.0.113.81", proxyExitCountry: "VN" });
+    expect(accounts.rows.socialAccounts.find((r) => r.id === "galwayOne")).toMatchObject({ proxyExitIp: "203.0.113.81", proxyExitCountry: "VN" });
   });
 
   test("works for any status (it opens no browser), never without a proxy", async () => {
@@ -97,17 +97,17 @@ describe("log proxy assign (2Captcha, fetch stubbed)", () => {
     }
   }
 
-  test("builds a Galway proxy, checks it exits in Ireland, then saves it to Twenty", async () => {
+  test("builds a Galway proxy, checks it exits in Ireland, then saves it to the account store", async () => {
     stub2Captcha();
     try {
-      const { code, out, proxyFiles, twenty } = await run(["proxy", "assign", "--account", "noProxy"], () => ({ ok: true, exitIp: "203.0.113.9", exitCountry: "IE", country: "IE" }));
+      const { code, out, proxyFiles, accounts } = await run(["proxy", "assign", "--account", "noProxy"], () => ({ ok: true, exitIp: "203.0.113.9", exitCountry: "IE", country: "IE" }));
       expect(code).toBe(0);
-      expect(out).toContain("in Ireland (galway, connacht, Ireland). Saved to Twenty.");
+      expect(out).toContain("in Ireland (galway, connacht, Ireland). Saved to the account store.");
       expect(out).not.toContain("testPass");
       expect(out).not.toContain("u7etest");
       expect(out).toContain("***-zone-custom-region-ie");
       expect(proxyFiles[0]).toMatchObject({ server: "http://eu.proxy.2captcha.com:2334", password: "testPass", country: "IE" });
-      const saved = String(twenty.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy);
+      const saved = String(accounts.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy);
       expect(saved).toContain("u7etest-zone-custom-region-ie-st-connacht-city-galway-session-");
       expect(saved).toContain("sessTime-120");
     } finally {
@@ -138,7 +138,7 @@ describe("log proxy assign (2Captcha, fetch stubbed)", () => {
     try {
       const exits = [{ exitIp: "198.51.100.1", latitude: 51.5, longitude: -0.12 }, { exitIp: "198.51.100.2", latitude: 53.28, longitude: -9.03 }];
       const sessions: string[] = [];
-      const { code, out, twenty } = await run(["proxy", "assign", "--account", "noProxy"], () => {
+      const { code, out, accounts } = await run(["proxy", "assign", "--account", "noProxy"], () => {
         const exit = exits[sessions.length];
         sessions.push(exit.exitIp);
         return { ok: true, exitCountry: "IE", country: "IE", ...exit };
@@ -146,8 +146,8 @@ describe("log proxy assign (2Captcha, fetch stubbed)", () => {
       expect(code).toBe(0);
       expect(sessions).toHaveLength(2);
       expect(out).toContain("exits at 198.51.100.2");
-      expect(out).toMatch(/\d+ km from Galway\)\. Saved to Twenty\./);
-      const saved = String(twenty.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy);
+      expect(out).toMatch(/\d+ km from Galway\)\. Saved to the account store\./);
+      const saved = String(accounts.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy);
       expect(saved).toContain("-session-");
     } finally {
       restore();
@@ -176,14 +176,14 @@ describe("log proxy assign (2Captcha, fetch stubbed)", () => {
     stub2Captcha();
     try {
       let calls = 0;
-      const { code, out, twenty } = await run(["proxy", "assign", "--account", "noProxy"], () => {
+      const { code, out, accounts } = await run(["proxy", "assign", "--account", "noProxy"], () => {
         calls++;
         return { ok: true, exitIp: `198.51.100.${calls}`, exitCountry: "IE", country: "IE", latitude: 51.9, longitude: -8.47 };
       });
       expect(code).toBe(1);
       expect(calls).toBe(3);
       expect(out).toContain("proxyTooFar");
-      expect(twenty.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy).toBeNull();
+      expect(accounts.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy).toBeNull();
     } finally {
       restore();
     }
@@ -192,10 +192,10 @@ describe("log proxy assign (2Captcha, fetch stubbed)", () => {
   test("a proxy that exits in the wrong country is never saved", async () => {
     stub2Captcha();
     try {
-      const { code, out, twenty } = await run(["proxy", "assign", "--account", "noProxy"], () => ({ ok: false, code: "proxyCountryMismatch", detail: "exit IP 1.2.3.4 is in GB, the account is IE" }));
+      const { code, out, accounts } = await run(["proxy", "assign", "--account", "noProxy"], () => ({ ok: false, code: "proxyCountryMismatch", detail: "exit IP 1.2.3.4 is in GB, the account is IE" }));
       expect(code).toBe(1);
       expect(out).toContain("not saved");
-      expect(twenty.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy).toBeNull();
+      expect(accounts.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy).toBeNull();
     } finally {
       restore();
     }

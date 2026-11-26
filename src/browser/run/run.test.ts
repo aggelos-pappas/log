@@ -17,7 +17,7 @@ async function account(name: string, changes: Record<string, unknown> = {}) {
   return findAccount(store, name)
 }
 
-describe('run.keep: a save Twenty refused never loses the device or the session (Harrisburg, 2026-10-19)', () => {
+describe('run.keep: a refused save never loses the device or the session (Harrisburg, 2026-10-19)', () => {
   test('login.json goes at once; the rest moves out of the temp folder, and cleanup leaves it', async () => {
     process.env.LOG_UNSAVED_DIR = join(ROOT, 'unsaved')
     const prepared = prepareRun(await account('galwayOne'), 'connect', { now: DAY, root: ROOT, login: { email: 'e', password: 'p', totpSecret: null, messengerPin: null } })

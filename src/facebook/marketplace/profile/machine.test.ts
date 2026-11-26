@@ -44,20 +44,20 @@ describe('profileMachine', () => {
       { item: 'profilePhoto', control: 'Update profile picture', action: 'wouldUpload' },
       { item: 'coverPhoto', control: 'Add cover photo', action: 'wouldUpload' }
     ])
-    expect(output.plan[2]).toMatchObject({ item: 'name', action: 'noNameInTwenty' })
+    expect(output.plan[2]).toMatchObject({ item: 'name', action: 'noNameSaved' })
   })
 
-  test('a dry run with no photos in Twenty still reads the page, and says so', async () => {
+  test('a dry run with no photos in the account store still reads the page, and says so', async () => {
     const { output, calls } = await run({ hasProfilePhoto: false, hasCoverPhoto: false })
     expect(calls).toEqual(['open', 'read'])
-    expect(output.plan.map((p) => p.action)).toEqual(['noPhotoInTwenty', 'noPhotoInTwenty', 'noNameInTwenty'])
+    expect(output.plan.map((p) => p.action)).toEqual(['noPhotoSaved', 'noPhotoSaved', 'noNameSaved'])
   })
 
   test('--live uploads the profile photo, then the cover, in one run', async () => {
     const { output, calls } = await run({ live: true })
     expect(calls).toEqual(['preparePhotos', 'open', 'read', 'uploadProfilePhoto p.jpg', 'uploadCoverPhoto c.jpg'])
     expect(output.result).toBe('saved')
-    expect(output.plan.map((p) => p.action)).toEqual(['uploaded', 'uploaded', 'noNameInTwenty'])
+    expect(output.plan.map((p) => p.action)).toEqual(['uploaded', 'uploaded', 'noNameSaved'])
   })
 
   test('--live without both photos stops before any browser opens', async () => {

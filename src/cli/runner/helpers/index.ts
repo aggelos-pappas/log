@@ -6,3 +6,4 @@ export * from "./platforms.ts";
 export * from "./commandInput.ts";
 export * from "./flagValues.ts";
 export * from "./retired.ts";
+export * from "./openBrowser.ts";
