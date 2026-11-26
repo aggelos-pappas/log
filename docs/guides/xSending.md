@@ -94,7 +94,7 @@ one to open, and where a new workflow or style goes.
 
 The cookies are saved only when X answers loggedIn for that same handle. A
 refused or wrong-account paste saves nothing. Each check merges X's refreshed
-cookies back into the row. The cookies live only on the account's row (sealed in the secret store
+cookies back into the row. The cookies live only on the account's row (keyring-encrypted
 when it is local), and are never printed, committed or put in the knowledge base.
 
 ### 2. Original posts: the social posting playbook

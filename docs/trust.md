@@ -48,7 +48,6 @@ This is the separation security research recommends for agents: the model choose
 | Sessions and sign-ins | `~/.logCli` on your machine, typed into a masked prompt, never passed as command-line flags |
 | Messages and events | `~/.logCli/log.db`, a local SQLite database |
 | Settings | `~/.logCli/.env` and `~/.logCli/settings.json` |
-| Shared accounts, optional | [Twenty](twenty.md), an open-source CRM you host, if you choose to use it |
 
 ## What leaves your machine
 

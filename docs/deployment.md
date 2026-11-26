@@ -1,6 +1,6 @@
 # Running log on servers
 
-This page describes one way to run log in production: [AdsPower](https://www.adspower.com/share/pD25Iu) plus log together on a browser server, with your laptop as the development machine. It explains how the pieces talk to each other, why the browser and log must share a machine, how to keep development and production from opening the same account twice, and how to reach log's MCP server remotely. Accounts live in the local account store on the browser server; a Twenty server is deprecated (#337, #338, #339), used only if you share accounts through it, run the knowledge base, or use the deferred Marketplace agency features ([Twenty](twenty.md)). Read it if you're moving log off a single machine.
+This page describes one way to run log in production: [AdsPower](https://www.adspower.com/share/pD25Iu) plus log together on a browser server, with your laptop as the development machine. It explains how the pieces talk to each other, why the browser and log must share a machine, how to keep development and production from opening the same account twice, and how to reach log's MCP server remotely. Accounts live in the local account store on the browser server; a Twenty server is deprecated (#337, #338, #339), used only if you share accounts through it, run the knowledge base, or use the deferred Marketplace agency features. Read it if you're moving log off a single machine.
 
 ## The one constraint: log runs beside AdsPower
 

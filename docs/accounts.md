@@ -2,7 +2,7 @@
 
 Every account needs two things: a name log knows it by, and a signed-in session. You add the account once, sign it in, then check it.
 
-You don't sign in to log itself: your accounts live on your machine, and each one signs in on its own platform. `log login` is only for a team that keeps its accounts in [Twenty](twenty.md).
+You don't sign in to log itself: your accounts live on your machine, and each one signs in on its own platform. `log login` is only for the deprecated Twenty workspace (#337).
 
 ## The quick way
 
@@ -69,7 +69,7 @@ Each platform has the same check: `log reddit session check`, `log discord sessi
 
 ## Many accounts
 
-The local file holds as many accounts as you like. Only if several machines must share one set of accounts can you optionally keep them in [Twenty](twenty.md) (legacy for accounts). `log localAccount pull` copies the accounts Twenty has into your local file, cookies and login included, each keeping its Twenty id (`--platform` for one platform; an account already in the file is kept unless `--refresh`). A local account wins over a Twenty account of the same name, and `LOG_ACCOUNTS=local` in `~/.logCli/.env` leaves Twenty out of accounts entirely. `LOG_LOCAL_ACCOUNTS` moves the file. The deferred Marketplace listings, groups and conversations still live in Twenty. The details: [Local accounts](specs/localAccounts.md).
+The local file holds as many accounts as you like. Only if several machines must share one set of accounts could they be kept in a Twenty workspace, which is deprecated (#337). `log localAccount pull` copies the accounts Twenty has into your local file, cookies and login included, each keeping its Twenty id (`--platform` for one platform; an account already in the file is kept unless `--refresh`). A local account wins over a Twenty account of the same name, and `LOG_ACCOUNTS=local` in `~/.logCli/.env` leaves Twenty out of accounts entirely. `LOG_LOCAL_ACCOUNTS` moves the file. The deferred Marketplace listings, groups and conversations still live in Twenty. The details: [Local accounts](specs/localAccounts.md).
 
 Next: [connect your agent](mcp.md).
 

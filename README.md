@@ -174,7 +174,7 @@ Then ask in plain words: *"read my X DMs and tell me who's waiting on me"*. log'
 - **Turn aware.** On Discord and Slack a multi-line reply waits while they are typing, and holds the rest if they write back or keep typing ([#199](https://github.com/matthewdonsemail-lab/log/pull/199), [#202](https://github.com/matthewdonsemail-lab/log/pull/202)).
 - **Search knows where it was said.** Every hit names a DM, a group or a server channel, and you can search only one of them ([#198](https://github.com/matthewdonsemail-lab/log/pull/198)).
 - **It watches its own tools.** Tool health shows which tools are used, which fail and which guides went stale, and suggests the fix ([#203](https://github.com/matthewdonsemail-lab/log/pull/203)).
-- **Your machine, your data.** Accounts and sessions stay in `~/.logCli`, in the local account store (`localAccounts.json`, secrets sealed).
+- **Your machine, your data.** Accounts and sessions stay in `~/.logCli`, in the local account store (`localAccounts.json`), its secrets encrypted, with the key held by your OS keyring ([encrypted account store](docs/security/encryptedStore.md)).
 
 ## Works in every harness
 
@@ -509,7 +509,7 @@ Every call is timed: `log timing` shows p50, p95 and p99 for every tool and each
 - **Fast.** Your agent reads a conversation in milliseconds, not seconds.
 - **Gentle on your accounts.** The platform isn't asked again every time your agent looks something up. One account was disabled after an agent read a server too much, too fast (rule 94), and reading from `log.db` keeps that from happening.
 - **Yours.** Your messages, sessions and media text stay on your machine in one file you can back up.
-- **Shareable when you need it.** Accounts live in the local account store. A hosted version, with a login per user, is planned. ([Twenty](docs/twenty.md) is deprecated.)
+- **Shareable when you need it.** Accounts live in the local account store. A hosted version, with a login per user, is planned.
 
 ## Roadmap
 

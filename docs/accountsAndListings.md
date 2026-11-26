@@ -5,7 +5,7 @@ listings and campaigns, and what happens when an account is lost. These
 Marketplace agency features are deferred legacy: listings, campaigns and
 conversations live in Twenty, and log reads them, runs them and writes the
 results back. Accounts themselves live in the local account store by default,
-and in Twenty only if you keep them there ([Twenty](twenty.md)). Read this
+and in Twenty only if you keep them there (deprecated, #337). Read this
 when you set up accounts, run a campaign, or want to know why a listing moved
 to another account.
 
