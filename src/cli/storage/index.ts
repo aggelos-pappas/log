@@ -10,10 +10,9 @@ import { cancel, intro, isCancel, outro, password } from "@clack/prompts";
 import { sealedSecrets, secretStoreState, setRecoveryPassphrase } from "../../storage/secrets/index.ts";
 import { shouldPrompt } from "../launch/helpers/shouldPrompt.ts";
 import type { LaunchTTY } from "../launch/helpers/shouldPrompt.ts";
-import { localAccountsPath, plainLocalAccounts } from "../../twenty/graphql/index.ts";
+import { localAccountsPath, plainLocalAccounts } from "../../accounts/store/index.ts";
 import { parseEnvFile, plainEnvSecrets, userEnvPath } from "../../config/userEnv/index.ts";
-import { authDir } from "../../auth/session/client.ts";
-import { oauthStorePath } from "../../mcp/oauth/client.ts";
+import { logHome } from "../../config/logHome/index.ts";
 
 export const STORAGE_USAGE = [
   "Usage: log storage status [--json]   (sealed vs plain secrets; reads only)",
@@ -47,7 +46,7 @@ export interface SecretStatus {
   store: ReturnType<typeof secretStoreState>;
   sealed: Record<string, number>;
   plain: { file: string; what: string; count: number; fields: string[] }[];
-  notCovered: string[];
+  leftover: string[];
 }
 
 export function secretStatus(env: Record<string, string | undefined> = process.env): SecretStatus {
@@ -64,8 +63,9 @@ export function secretStatus(env: Record<string, string | undefined> = process.e
     const names = plainEnvSecrets(values);
     if (names.length) plain.push({ file: envFile, what: "keys", count: names.length, fields: names.sort() });
   }
-  const notCovered = [join(authDir(env), "sessions.json"), oauthStorePath(env)].filter((file) => existsSync(file));
-  return { store, sealed, plain, notCovered };
+  const home = env.LOG_HOME || logHome();
+  const leftover = [join(home, "auth", "sessions.json"), join(home, "mcp", "oauth.json")].filter((file) => existsSync(file));
+  return { store, sealed, plain, leftover };
 }
 
 export function secretStatusLines(status: SecretStatus): string[] {
@@ -78,7 +78,7 @@ export function secretStatusLines(status: SecretStatus): string[] {
   lines.push(`  sealed in log.db: ${kinds.join(", ") || "nothing yet"}`);
   for (const item of status.plain) lines.push(`  plain: ${item.file}: ${item.count} ${item.what} (${item.fields.join(", ")}), sealed on their next use${store.ready ? "" : " once a key holder answers"}`);
   if (!status.plain.length) lines.push("  plain: no account secrets or keys left in plain files");
-  for (const file of status.notCovered) lines.push(`  not covered yet: ${file} (log's own sign-in tokens, file permissions only)`);
+  for (const file of status.leftover) lines.push(`  leftover: ${file} (tokens from the Twenty sign-in log no longer uses; safe to delete)`);
   return lines;
 }
 

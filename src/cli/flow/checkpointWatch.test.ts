@@ -4,18 +4,18 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { InspectSessionConfig } from "../../browser/inspect/index.ts";
 import { findAccount } from "../../platformKit/socialAccount/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { CommandContext } from "../runner/types.ts";
 import { openInspectSession } from "./helpers/index.ts";
 
 describe("openInspectSession", () => {
-  test("a host, flow or warm-up browser sent to a checkpoint sets the account to DEACTIVATED in Twenty", async () => {
-    const twenty = marketplaceFixture();
-    const account = await findAccount(twenty, "galwayOne");
+  test("a host, flow or warm-up browser sent to a checkpoint sets the account to DEACTIVATED in the account store", async () => {
+    const store = marketplaceFixture();
+    const account = await findAccount(store, "galwayOne");
     const captureDir = join(mkdtempSync(join(tmpdir(), "flowCheckpoint")), "run", "camoufox");
     const errors: string[] = [];
     const context = {
-      twenty,
+      accounts: store,
       err: (line: string) => errors.push(line),
       inspectSession: async (config: InspectSessionConfig) => {
         mkdirSync(dirname(config.captureDir), { recursive: true });
@@ -27,7 +27,7 @@ describe("openInspectSession", () => {
     const opened = await openInspectSession(context, account, { statePath: "", proxyPath: "", devicePath: null, captureDir, loginPath: null });
     expect("session" in opened).toBe(true);
     if ("session" in opened) await opened.session;
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")).toMatchObject({ accountStatus: "DEACTIVATED", statusReason: "checkpointed" });
-    expect(errors.join("\n")).toContain("galwayOne is checkpointed, so it is DEACTIVATED in Twenty");
+    expect(store.rows.socialAccounts.find((r) => r.id === "galwayOne")).toMatchObject({ accountStatus: "DEACTIVATED", statusReason: "checkpointed" });
+    expect(errors.join("\n")).toContain("galwayOne is checkpointed, so it is DEACTIVATED in the account store");
   });
 });

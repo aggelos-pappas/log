@@ -49,7 +49,7 @@ const note = (problem: string) => problems.push(problem);
 
 const env = (db: string): Record<string, string> => {
   const clean = { ...process.env } as Record<string, string | undefined>;
-  for (const key of ["LOG_TWENTY_BASE_URL", "LOG_TWENTY_API_KEY", "LOG_HOME", "LOG_VOXL_URL", "LOG_INSPECT_CURRENT"]) delete clean[key];
+  for (const key of ["LOG_HOME", "LOG_VOXL_URL", "LOG_INSPECT_CURRENT"]) delete clean[key];
   return { ...(clean as Record<string, string>), LOG_DB: db, LOG_CONTEXT_SERVICE: "off", LOG_BROWSER_VIEW_LOCATION: "local", LOG_MCP_RELOAD: "off" };
 };
 

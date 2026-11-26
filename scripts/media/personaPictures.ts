@@ -7,7 +7,7 @@ import { assignPersonas, backgroundOf, drawPersonas, nextBackground, imageOf, li
 import type { PersonaRecord, PictureFacet } from '../../src/media/persona/index'
 import { readDatasets } from '../../src/warmup/persona/index'
 import { listFacebookAccounts, saveProfilePhoto } from '../../src/platformKit/socialAccount/index'
-import { createTwentyClient } from '../../src/twenty/graphql/client'
+import { createAccountStore } from '../../src/accounts/store/index'
 import { personaPath, seedOf } from '../../src/cli/warmup/helpers/personaRun'
 
 const { values } = parseArgs({
@@ -61,13 +61,13 @@ const othersOf = (record: PersonaRecord) => {
 }
 const deps = { ...liveDeps({ examples: ownerExamples.map(imageOf), reference: referenceRecord ? imageOf(join(personasDir(), referenceRecord.profilePicture!)) : null, others: othersOf, log }), usedBackgrounds: (record: PersonaRecord) => records.filter((r) => r !== record).map((r) => r.characteristics.background).filter((b): b is string => Boolean(b)) }
 
-async function linkInTwenty(twenty: ReturnType<typeof createTwentyClient>, accountId: string, record: PersonaRecord) {
+async function linkInStore(store: ReturnType<typeof createAccountStore>, accountId: string, record: PersonaRecord) {
   if (!record.matched || !record.profilePicture) {
     log(`${record.account!.homeCity}: no picture passed every check, so socialAccounts.profilePhoto is left as it is`)
     return
   }
   const source = join(personasDir(), record.profilePicture).replace(/\\/g, '/')
-  await saveProfilePhoto(twenty, accountId, source)
+  await saveProfilePhoto(store, accountId, source)
   log(`${record.account!.homeCity}: socialAccounts.profilePhoto set to ${source}`)
 }
 
@@ -83,8 +83,8 @@ async function regenerate(record: PersonaRecord, fixes: PictureFacet[]) {
 }
 
 if (values.accounts) {
-  const twenty = createTwentyClient()
-  const all = await listFacebookAccounts(twenty)
+  const accounts = createAccountStore()
+  const all = await listFacebookAccounts(accounts)
   const wanted = all.filter((a) => a.status === 'needsLogin' && !a.profilePhoto && a.homeCity && a.homeCountry && !records.some((r) => r.account?.accountName === a.accountName))
   log(`accounts with no persona yet: ${wanted.length} (${wanted.map((a) => `${a.homeCity} ${a.homeCountry}`).join(', ')})`)
   const assigned = assignPersonas(readDatasets(), wanted.map((a) => ({ accountName: a.accountName, homeCity: a.homeCity!, homeCountry: a.homeCountry! })), seedOf, records)
@@ -104,12 +104,12 @@ if (values.accounts) {
     await makeProfilePicture(record, deps, undefined, ALWAYS_FIX)
     writePersonas(records)
     const account = wanted.find((a) => a.accountName === record.account!.accountName)!
-    await linkInTwenty(twenty, account.id, record)
+    await linkInStore(accounts, account.id, record)
     todo.push(record)
   }
 } else if (values.accountsRedo) {
-  const twenty = createTwentyClient()
-  const all = await listFacebookAccounts(twenty)
+  const store = createAccountStore()
+  const all = await listFacebookAccounts(store)
   todo = []
   const accountRecords = records.filter((r) => r.account && !r.approved)
   for (const [i, record] of accountRecords.entries()) {
@@ -134,7 +134,7 @@ if (values.accounts) {
     } else {
       await regenerate(record, ALWAYS_FIX)
     }
-    await linkInTwenty(twenty, account.id, record)
+    await linkInStore(store, account.id, record)
     todo.push(record)
   }
 } else if (values.recheck) {

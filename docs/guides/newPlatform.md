@@ -23,8 +23,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `toolScaffold` | A hand-rolled one-off made a log command and MCP tool | `log tool scaffold [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]` |
 | `toolScaffoldLive` | A hand-rolled one-off made a log command and MCP tool, live on the platform | `log tool scaffold [<name> --summary <text>] [--acts] [--flags <a,b>] [--area <f>] [--asks <a,b>] [--guide <g>] [--apply] [--json]` |
 | `toolHealth` | Which tools are used, fail or went stale, with a fix per flag | `log tool health [--days <n>] [--json]` |
-| `newPlatform` | Make a new platform's session, command, MCP tool, engine and docs… | `log new platform <name> [--label <shown name>] [--twentyPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]` |
-| `newPlatformLive` | Make a new platform's session, command, MCP tool…, live on the platform | `log new platform <name> [--label <shown name>] [--twentyPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]` |
+| `newPlatform` | Make a new platform's session, command, MCP tool, engine and docs… | `log new platform <name> [--label <shown name>] [--accountPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]` |
+| `newPlatformLive` | Make a new platform's session, command, MCP tool…, live on the platform | `log new platform <name> [--label <shown name>] [--accountPlatform <ENUM>] [--library <vendor/folder>] [--sessionCookies <a,b>] [--cookieDomain <.site.com>] [--hosts <a.com,b.com>] [--home <https://…>] [--noProxy] [--noBrowser] [--apply] [--json]` |
 
 ## The work, step by step: layout
 
@@ -41,7 +41,7 @@ From `skills/layout/SKILL.md`.
 | `python/session/` | the processes TypeScript runs: `inspectSession`, `connectSession`, `publishSession`, `profileSession`, `logWorker` |
 | `python/login/`, `python/device/`, `python/errors/`, `python/fixtures/` | sign-in, Camoufox's device, the error codes and catalog, test pages |
 | `scripts/checks/` | the lefthook gates (`check:*`) |
-| `scripts/commitLog/`, `scripts/docs/`, `scripts/hooks/`, `scripts/privacy/`, `scripts/twenty/`, `scripts/datasets/` | the private day-log gate, the generated docs, the agent hooks, the privacy check, Twenty setup and client, dataset builds |
+| `scripts/commitLog/`, `scripts/docs/`, `scripts/hooks/`, `scripts/privacy/`, `scripts/datasets/` | the private day-log gate, the generated docs, the agent hooks, the privacy check, dataset builds |
 
 ### A new Python module
 

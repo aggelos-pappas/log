@@ -104,7 +104,7 @@ export const proxies = {
     'REQ-PROXY-10': noul('Does runPersonaSession read the meter on every fifth swipe and stop with trafficBudgetSpent when budget.usedMb plus runMb reaches budget.budgetMb?'),
     'REQ-PROXY-11': noul('At the end of a metered warm-up, do runPersonaSession and runFeedSession read the meter and call recordTraffic with the time, account, run and mb, appending one line to the ledger at trafficLedgerPath()?'),
     'REQ-PROXY-12': noul('Does meterForProxy return the meter of the vendor that vendorOfProxy reads from the proxy (bytefulMeter for byteful, twoCaptchaMeter for twoCaptcha) and null when the proxy has no traffic-billed vendor?'),
-    unspecifiedBehavior: noul('Does the proxy code save a proxy to Twenty, run a metered warm-up past its budget, or set the speed limit by a route the specification does not describe?'),
+    unspecifiedBehavior: noul('Does the proxy code save a proxy to the account store, run a metered warm-up past its budget, or set the speed limit by a route the specification does not describe?'),
   },
   assertions: {
     'REQ-PROXY-01': MET,

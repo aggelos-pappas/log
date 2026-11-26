@@ -40,7 +40,7 @@ export const redditSessionCommand: Command = {
   name: "session",
   effect: "read",
   input: REDDIT_SESSION_INPUT,
-  summary: "Check that Reddit still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty",
+  summary: "Check that Reddit still accepts an account's saved session, on the direct-API engine, sending nothing; the answer is saved",
   args: "check --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(REDDIT_SESSION_INPUT));
@@ -49,13 +49,13 @@ export const redditSessionCommand: Command = {
     const ref = parsed.flags["account"];
     if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log reddit session check: --account is needed\n${REDDIT_SESSION_USAGE}` };
     try {
-      const account = await findRedditAccount(context.twenty, ref);
+      const account = await findRedditAccount(context.accounts, ref);
       const gate = redditGate(account);
       if (!gate.ok) return refuse("reddit session check", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directReddit) return { code: 1, stderr: "log reddit session check: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: session check on the direct-API engine`);
       const run = context.directReddit(account, { action: "ping" });
-      for (const line of await recordRedditSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordRedditSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "reddit", account: account.accountName, ...run.answer }, null, 2) };
       return { code, stdout: render(account.accountName, run.answer) };
@@ -191,7 +191,7 @@ export const redditReadCommand: Command = {
     if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log reddit read: --account is needed\n${REDDIT_READ_USAGE}` };
     const json = Boolean(parsed.flags["json"]);
     try {
-      const account = await findRedditAccount(context.twenty, ref);
+      const account = await findRedditAccount(context.accounts, ref);
       const gate = redditGate(account);
       if (!gate.ok) return refuse("reddit read", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directReddit) return { code: 1, stderr: "log reddit read: the direct-API engine isn't wired in this context" };
@@ -201,7 +201,7 @@ export const redditReadCommand: Command = {
         if (typeof query !== "string" || !query.trim()) return { code: 1, error: "inputInvalid", stderr: `log reddit read subreddits: --query is needed\n${REDDIT_READ_USAGE}` };
         context.err(`${account.accountName}: looking up subreddits for "${query}"`);
         const run = context.directReddit(account, { action: "subreddits", query });
-        for (const line of await recordRedditSession(context.twenty, account, run, now)) context.err(line);
+        for (const line of await recordRedditSession(context.accounts, account, run, now)) context.err(line);
         const answer = run.answer as typeof run.answer & { subreddits?: SubredditFound[] };
         if (!answer.ok) return { code: 1, stderr: `log reddit read subreddits: ${answer.code}: ${answer.detail ?? ""}` };
         const found = answer.subreddits ?? [];
@@ -211,7 +211,7 @@ export const redditReadCommand: Command = {
       if (form === "home") {
         context.err(`${account.accountName}: reading the home feed`);
         const run = context.directReddit(account, { action: "home" });
-        for (const line of await recordRedditSession(context.twenty, account, run, now)) context.err(line);
+        for (const line of await recordRedditSession(context.accounts, account, run, now)) context.err(line);
         const answer = run.answer as typeof run.answer & { posts?: RedditPost[] };
         if (!answer.ok) return { code: 1, stderr: `log reddit read home: ${answer.code}: ${answer.detail ?? ""}` };
         const feed = answer.posts ?? [];
@@ -224,7 +224,7 @@ export const redditReadCommand: Command = {
         const limit = numberOf(parsed, "limit") ?? 50;
         context.err(`${account.accountName}: reading ${url} and its comments`);
         const run = context.directReddit(account, { action: "post", url, limit });
-        for (const line of await recordRedditSession(context.twenty, account, run, now)) context.err(line);
+        for (const line of await recordRedditSession(context.accounts, account, run, now)) context.err(line);
         const answer = run.answer as typeof run.answer & { post?: RedditPost; comments?: RedditThreadComment[] };
         if (!answer.ok || !answer.post) return { code: 1, stderr: `log reddit read post: ${answer.code}: ${answer.detail ?? ""}` };
         const comments = answer.comments ?? [];
@@ -250,7 +250,7 @@ export const redditReadCommand: Command = {
       const host = typeof linksTo === "string" && linksTo.trim() ? linksTo.trim() : undefined;
       context.err(`${account.accountName}: reading r/${subreddit}'s newest posts back ${days} days`);
       const run = context.directReddit(account, { action: "posts", subreddit, days });
-      for (const line of await recordRedditSession(context.twenty, account, run, now)) context.err(line);
+      for (const line of await recordRedditSession(context.accounts, account, run, now)) context.err(line);
       const answer = run.answer as typeof run.answer & { posts?: RedditPost[]; pages?: number; complete?: boolean; stoppedBy?: { code: string; detail: string } };
       if (!answer.ok) return { code: 1, stderr: `log reddit read posts: ${answer.code}: ${answer.detail ?? ""}` };
       const all = answer.posts ?? [];
@@ -318,7 +318,7 @@ function redditWriteCommand(write: RedditWrite): Command {
       const watermark = copy ? watermarkReadingOf(copy.text) : null;
       if (watermark?.level === "artifacts") return refuse(`reddit ${write.name}`, "aiArtifacts", `the copy carries what AI chat interfaces leave in text: ${watermark.findings.filter((f) => f.deterministic).map((f) => `${f.label} ×${f.count}`).join(", ")}`);
       try {
-        const account = await findRedditAccount(context.twenty, ref);
+        const account = await findRedditAccount(context.accounts, ref);
         const gate = redditGate(account);
         if (!gate.ok) return refuse(`reddit ${write.name}`, gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
         const plan = write.plan(built.fields);
@@ -353,7 +353,7 @@ function redditWriteCommand(write: RedditWrite): Command {
         if (acted.stage === "gating") return refuseGated(`reddit ${write.name}`, acted, "voiceGateFailed");
         rethrowFailure(acted);
         const run = acted.answer!;
-        for (const line of await recordRedditSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+        for (const line of await recordRedditSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
         const answer = run.answer as typeof run.answer & Record<string, unknown>;
         if (!answer.ok) return { code: 1, stderr: `log reddit ${write.name}: ${answer.code}: ${answer.detail ?? ""}. Nothing is retried (rule 94).` };
         if (json) return { code: 0, stdout: JSON.stringify({ platform: "reddit", account: account.accountName, approvedBy, ...answer }, null, 2) };

@@ -30,8 +30,7 @@ log facebook lifecycle --account <name>      # one, with its standing
 log facebook lifecycle states                # the state tree from the machine itself
 ```
 
-A field the lifecycle reads is added to the account row (for a Twenty workspace, through
-`scripts/twenty/twentySetup.mjs` and the client regenerated). A fact it reads from a past run (a rename, a
+A field the lifecycle reads is added to the account row in the account store. A fact it reads from a past run (a rename, a
 location) is backfilled only from that run's recording (rule 25), never guessed.
 
 Full description: `docs/lifecycle.md`. Requirements: `docs/specs/accountLifecycle.md`.

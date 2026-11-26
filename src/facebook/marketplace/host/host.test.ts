@@ -33,7 +33,7 @@ function host(account: string, s: ReturnType<typeof steps>, saved: Partial<Recor
 }
 
 describe('the host runner (rule 35)', () => {
-  test('runs the lifecycle in one browser, saving progress and each milestone to Twenty', async () => {
+  test('runs the lifecycle in one browser, saving progress and each milestone to the account store', async () => {
     process.env.LOG_HOST_DIR = mkdtempSync(join(tmpdir(), 'logHost'))
     const s = steps({ watchCheck: () => ({ kind: 'issue', issue: 'restrictedPolicy' }) })
     const saved: Partial<Record<MilestoneField, string>>[] = []

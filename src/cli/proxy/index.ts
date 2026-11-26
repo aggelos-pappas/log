@@ -32,7 +32,7 @@ export const PROXY_USAGE = [
   "       log proxy assign  --account <accountName> | --missing  [--vendor twoCaptcha|byteful] [--city <city> [--region <state>] | --anyCity] [--minutes <1-120>] [--socks5]",
   "       log proxy balance [--json]",
   "       log proxy static  [--json]   (Byteful's static ISP IPs on the account, where each is)",
-  "The proxy is the socialAccount's `proxy` field in Twenty (scheme://user:pass@host:port), its country `homeCountry`.",
+  "The proxy is the socialAccount's `proxy` field in the account store (scheme://user:pass@host:port), its country `homeCountry`.",
 ].join("\n");
 
 async function checkProxy(context: CommandContext, account: FacebookAccount): Promise<{ ok: true; check: ProxyCheck } | { ok: false; result: CommandResult; exitIp: string | null; exitCountry: string | null }> {
@@ -77,10 +77,10 @@ async function saveFirstGood(
       misses.push(`${checked.check.exitIp} ${ms} ms per Facebook file`);
       continue;
     }
-    await context.twenty.update("socialAccounts", account.id, { proxy: url });
-    await recordProxyCheck(context.twenty, account.id, { exitIp: checked.check.exitIp, exitCountry: checked.check.exitCountry });
+    await context.accounts.update("socialAccounts", account.id, { proxy: url });
+    await recordProxyCheck(context.accounts, account.id, { exitIp: checked.check.exitIp, exitCountry: checked.check.exitCountry });
     const away = km !== null ? `, ${km} km from ${account.homeCity}` : "";
-    return { ok: true, line: `${account.accountName}: ${maskProxyUrl(url)} → exits at ${checked.check.exitIp} in ${countryName(checked.check.exitCountry)} (${where}${away}). Saved to Twenty.` };
+    return { ok: true, line: `${account.accountName}: ${maskProxyUrl(url)} → exits at ${checked.check.exitIp} in ${countryName(checked.check.exitCountry)} (${where}${away}). Saved to the account store.` };
   }
   return { ok: false, line: `${account.accountName}: proxyTooFar: not saved. ${PROXY_ATTEMPTS} sessions exited over ${MAX_PROXY_KM} km from ${account.homeCity} or too slow for Facebook (${misses.join("; ")}). Try again, or --city/--region nearby.` };
 }
@@ -99,7 +99,7 @@ async function assignByteful(
 ): Promise<{ ok: boolean; line: string }> {
   if (account.status === "deactivated") return { ok: false, line: `${account.accountName}: accountNotUsable (DEACTIVATED: it gets no proxy)` };
   if (account.platform !== "FACEBOOK") return { ok: false, line: `${account.accountName}: accountNotFacebook` };
-  if (!account.homeCountry) return { ok: false, line: `${account.accountName}: noHomeCountry (set homeCountry in Twenty first)` };
+  if (!account.homeCountry) return { ok: false, line: `${account.accountName}: noHomeCountry (set homeCountry in the account store first)` };
   const country = account.homeCountry;
   const centre = centreOf(account, options.anyCity);
   const city = options.anyCity ? null : (options.city ?? account.homeCity);
@@ -122,7 +122,7 @@ async function assignOne(
 ): Promise<{ ok: boolean; line: string }> {
   if (account.status === "deactivated") return { ok: false, line: `${account.accountName}: accountNotUsable (DEACTIVATED: it gets no proxy)` };
   if (account.platform !== "FACEBOOK") return { ok: false, line: `${account.accountName}: accountNotFacebook` };
-  if (!account.homeCountry) return { ok: false, line: `${account.accountName}: noHomeCountry (set homeCountry in Twenty first)` };
+  if (!account.homeCountry) return { ok: false, line: `${account.accountName}: noHomeCountry (set homeCountry in the account store first)` };
   const country = account.homeCountry;
   const city = options.anyCity ? null : (options.city ?? account.homeCity);
   let place: TwoCaptchaPlace | null = null;
@@ -257,10 +257,10 @@ export const proxyCommand: Command = {
         if (summary.bytesLeft <= 0) return refuse("proxy assign", "bytefulRefused", "the residential plan has no traffic left (log proxy balance)");
         let accounts: FacebookAccount[];
         if (parsed.flags["missing"]) {
-          accounts = (await listFacebookAccounts(context.twenty)).filter((a) => !a.proxy && a.status !== "deactivated");
+          accounts = (await listFacebookAccounts(context.accounts)).filter((a) => !a.proxy && a.status !== "deactivated");
           if (accounts.length === 0) return { code: 0, stdout: "Every FACEBOOK account already has a proxy." };
         } else if (typeof parsed.flags["account"] === "string") {
-          accounts = [await findAccount(context.twenty, parsed.flags["account"])];
+          accounts = [await findAccount(context.accounts, parsed.flags["account"])];
         } else {
           return { code: 1, stderr: `log proxy assign: --account <name> or --missing\n${PROXY_USAGE}` };
         }
@@ -285,10 +285,10 @@ export const proxyCommand: Command = {
       try {
         let accounts: FacebookAccount[];
         if (parsed.flags["missing"]) {
-          accounts = (await listFacebookAccounts(context.twenty)).filter((a) => !a.proxy && a.status !== "deactivated");
+          accounts = (await listFacebookAccounts(context.accounts)).filter((a) => !a.proxy && a.status !== "deactivated");
           if (accounts.length === 0) return { code: 0, stdout: "Every FACEBOOK account already has a proxy." };
         } else if (typeof parsed.flags["account"] === "string") {
-          accounts = [await findAccount(context.twenty, parsed.flags["account"])];
+          accounts = [await findAccount(context.accounts, parsed.flags["account"])];
         } else {
           return { code: 1, stderr: `log proxy assign: --account <name> or --missing\n${PROXY_USAGE}` };
         }
@@ -318,15 +318,15 @@ export const proxyCommand: Command = {
     try {
       const checked = await checkProxy(context, account);
       if (!checked.ok) {
-        await recordProxyCheck(context.twenty, account.id, { exitIp: checked.exitIp, exitCountry: checked.exitCountry });
+        await recordProxyCheck(context.accounts, account.id, { exitIp: checked.exitIp, exitCountry: checked.exitCountry });
         return { ...checked.result, stderr: (checked.result.stderr ?? "").replace(/^log proxy:/, "log proxy check:") };
       }
       const check = checked.check;
-      await recordProxyCheck(context.twenty, account.id, { exitIp: check.exitIp, exitCountry: check.exitCountry });
+      await recordProxyCheck(context.accounts, account.id, { exitIp: check.exitIp, exitCountry: check.exitCountry });
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ accountName: account.accountName, proxy: maskProxyUrl(account.proxy), ...check }, null, 2) };
       return {
         code: 0,
-        stdout: `${account.accountName}: ${maskProxyUrl(account.proxy)} exits at ${check.exitIp}, in ${countryName(check.exitCountry)}, matching the account. Saved to Twenty.` +
+        stdout: `${account.accountName}: ${maskProxyUrl(account.proxy)} exits at ${check.exitIp}, in ${countryName(check.exitCountry)}, matching the account. Saved to the account store.` +
           (check.facebookMs != null ? `\nFacebook through it: ${check.facebookMs} ms per file${check.facebookMs > slowFacebookMs() ? ` (too slow, over ${slowFacebookMs()} ms: launches are refused with proxyTooSlow; run log proxy assign --account ${account.accountName})` : ""}.` : ""),
       };
     } catch (error) {

@@ -55,7 +55,7 @@ These are proposed additions, not six already implemented tables. Each has a res
 
 ## Actual dependency to replace
 
-[`PlatformAccount`](../../src/platformKit/session/client.ts) currently aliases `FacebookAccount`, and `findPlatformAccount` queries Twenty. The local-account fallback also wraps the old client. Native implementation must replace account reads **and session refresh writes** with a direct workspace repository; native startup must not require the old client or generated domain types.
+[`PlatformAccount`](../../src/platformKit/session/client.ts) currently aliases `FacebookAccount`, and `findPlatformAccount` queries the local account store (log no longer uses Twenty). Native implementation must replace account reads **and session refresh writes** with a direct workspace repository; native startup must not require the old client or generated domain types.
 
 Import only active account configuration needed by current adapters. Preserve `(platform, account)`, upstream identity, credential references and browser bindings. Retain source exports privately, stop old writers at cutover, and avoid a second writable authority. Do not import old CRM/listing structures merely because their generated types exist.
 

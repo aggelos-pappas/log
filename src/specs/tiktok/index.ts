@@ -51,7 +51,7 @@ export const tiktok = {
     'REQ-TIKTOK-07': noul('Does the query or video-link export retain the bundled upstream parser objects unchanged, checkpoint results atomically, report pending and failed links, and stop on engine failures or refusals?'),
     'REQ-TIKTOK-05': noul('Does TikTok search use the existing account inspect browser for text and hashtag queries, refusing absent sessions and preserving shared recording?'),
     'REQ-TIKTOK-06': noul('Are results deduplicated by string video ID, bounded by validated limits, and returned with source metadata and explicit stopping reasons including failures?'),
-    'REQ-TIKTOK-01': noul('Does findTiktokAccount find the account through findPlatformAccount with TIKTOK_PLATFORM, whose twentyPlatform is TIKTOK, and does tiktokGate check it with platformGate before the engine runs?'),
+    'REQ-TIKTOK-01': noul('Does findTiktokAccount find the account through findPlatformAccount with TIKTOK_PLATFORM, whose accountPlatform is TIKTOK, and does tiktokGate check it with platformGate before the engine runs?'),
     'REQ-TIKTOK-02': noul('Does runTiktokEngine run the account through runPlatformEngine with TIKTOK_PLATFORM, whose engine is python/tiktokApi/engine.py?'),
     'REQ-TIKTOK-03': noul('Does the tiktok session check command send nothing to TikTok beyond the check, and record the answer TikTok gave through recordTiktokSession, which merges refreshed cookies for TIKTOK_COOKIE_DOMAIN back into the row?'),
     'REQ-TIKTOK-04': noul('Is tiktok listed in PLATFORMS and PLATFORM_SITES, and does DIRECT_ROUTES have a tiktokSession route for platform tiktok?'),

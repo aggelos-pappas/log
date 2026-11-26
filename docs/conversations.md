@@ -1,10 +1,12 @@
 # Buyer conversations
 
-When a buyer messages an account about a Marketplace listing, log stores that chat as a conversation in your Twenty server, tied to the account and the listing. Each message is its own row, so you can see every lead, where it stands, and which listing it came from. Read this if you work with leads or want to know how a chat is matched to a listing.
+When a buyer messaged an account about a Marketplace listing, log stored that chat as a conversation, tied to the account and the listing. Each message is its own row, so you can see every lead, where it stands, and which listing it came from. Read this if you work with leads or want to know how a chat is matched to a listing.
+
+**Retired (#339).** Conversations and their messages were kept only in Twenty, which log no longer uses, so the `log facebook conversations` and `conversation` commands refuse with `twentyRemoved` until they are rebuilt on log.db. This page is kept as the design.
 
 ## The shape
 
-A conversation is a row in Twenty's `agencyConversations`, and every message is an `agencyMessages` row. These are the same two objects an SMS tool already uses for its threads. log only added fields and relations (`scripts/twenty/twentySetup.mjs`), so existing SMS rows and readers keep working.
+A conversation was an `agencyConversations` row, and every message an `agencyMessages` row. These are the same two objects an SMS tool already uses for its threads. log only added fields and relations, so existing SMS rows and readers kept working.
 
 ```
 socialAccount 1 ──< agencyConversation >── 1 agencyListing
@@ -24,7 +26,7 @@ The reverse fields are `socialAccount.agencyConversations`, `agencyListing.agenc
 | --- | --- | --- |
 | An earlier Marketplace tool | A thread is a lead: buyer name, id and profile; lead status `new → contacted → qualified → booked / lost / spam`; per-message read flag, who sent it (person, VA, AI, system), AI draft status and original text. | It keyed a thread on a hash of the buyer's name, so one buyer writing about two listings became one lead. It stored the listing as a title only, and put the current time into message ids, so a rescan stored every message again. Here the key is the account plus Facebook's own thread id, the listing is a relation, and a message key stays the same across rescans. |
 | An SMS tool's conversations | One identity per thread (`pairKey`); a summary (`latestDirection`, `latestPreview` of 120 characters, `latestMessageAt`, `latestMessageId`, `messageCount`) that only moves forward; a message status that only moves up `received < queued < sent < undelivered < failed < delivered`. | The same fields are reused for Marketplace rows, with `channel = FACEBOOK_MARKETPLACE`. |
-| Twenty, before log | `agencyConversation` (phone numbers, `pairKey`, latest fields, status, links) and `agencyMessage` (direction, status, body, numbers, errors). | Untouched, except that a message now links to its conversation. |
+| The stored objects, before log | `agencyConversation` (phone numbers, `pairKey`, latest fields, status, links) and `agencyMessage` (direction, status, body, numbers, errors). | Untouched, except that a message now links to its conversation. |
 
 ## Fields log added
 

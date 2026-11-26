@@ -43,7 +43,7 @@ skill in the same commit.
 | [`marketingPage`](skills/marketingPage/SKILL.md) | Make a marketing page on the site for one play, the way /rea-looksmaxxing was made: the platform pages' sections, a phone stepper with real clips, an agent session, an embed, logo chips, a use case and an installable skill |
 | [`layout`](skills/layout/SKILL.md) | Where a new file goes: every file in a domain folder, never loose in `python/` or `scripts/` (rule 58) |
 | [`xPosting`](skills/xPosting/SKILL.md) | Set up an X account in Twenty (`log twitter cookies save`), its copy style, original posts by the social posting playbook, and replies, dms and queues with `log twitter` |
-| [`knowledgeBase`](skills/knowledgeBase/SKILL.md) | Search the knowledge base before guessing, save what a session learned, and refresh it from every source (rule 93) |
+| [`memory`](skills/memory/SKILL.md) | Search log's memory before guessing, save what a session learned, and refresh it from every source (rule 93) |
 | [`logCatalog`](skills/logCatalog/SKILL.md) | Find and run any log command over MCP: logSearch the job, logGet its inputs and a call that works, logCall it (rule 163) |
 | [`memelord`](skills/memelord/SKILL.md) | Reply in a chat with a Memelord meme that fits the moment: read, search, gate, send its media url (rule 119) |
 | [`voiceClone`](skills/voiceClone/SKILL.md) | the owner's voice cloned once per provider (Inworld or Fish Audio), and a voice note in it sent natively only when he asks: draft, gate, dry run, live (rules 142, 143) |

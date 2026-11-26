@@ -1,6 +1,6 @@
 # Flow: `messengerPinCreate`
 
-Messenger's Create a PIN: open /messages/, press Create PIN, type the account's PIN from Twenty, then again to confirm (rule 67). Recorded on Bethlehem 2026-10-22.
+Messenger's Create a PIN: open /messages/, press Create PIN, type the account's PIN from its row in the account store, then again to confirm (rule 67). Recorded on Bethlehem 2026-10-22.
 
 Built by `log flow fromInspect` from the recording `~/.logCli/runs/inspect/20261022T100521_<userId:1>` (account <userId:1>). Run it on any account with `log flow run messengerPinCreate --account <a> --live`, or over MCP as the tool `facebookFlowMessengerPinCreate` (rule 31).
 

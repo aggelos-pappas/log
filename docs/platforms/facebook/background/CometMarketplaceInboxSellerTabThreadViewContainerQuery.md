@@ -175,8 +175,8 @@ The seller tab of Marketplace's inbox (`/marketplace/inbox?targetTab=SELLER`): t
 
 ## What our machine does with it
 
-It is what the Marketplace check reads for chats (`sellerInboxOf`, `src/facebook/marketplace/check`; rule 69): every host round and `log facebook check`. With no threads it says so; with some it counts them and keeps them as sent in the run folder, because a thread's own fields aren't mapped until a recording holds a real one (rule 29). Mapping them is how chats will reach Twenty's conversations (rule 34).
+It is what the Marketplace check reads for chats (`sellerInboxOf`, `src/facebook/marketplace/check`; rule 69): every host round and `log facebook check`. With no threads it says so; with some it counts them and keeps them as sent in the run folder, because a thread's own fields aren't mapped until a recording holds a real one (rule 29). Mapping them is how chats would reach the stored conversations (rule 34), which are retired (#339).
 
 ## What can go wrong
 
-None seen: three calls, 200 in 659-1209 ms. If it failed or didn't fire, the check says "the seller inbox didn't load" and moves Twenty nothing; the host's next round reads it again.
+None seen: three calls, 200 in 659-1209 ms. If it failed or didn't fire, the check says "the seller inbox didn't load" and moves no stored record; the host's next round reads it again.

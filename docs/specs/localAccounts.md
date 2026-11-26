@@ -4,7 +4,7 @@ title: "Local accounts"
 
 # Local accounts
 
-Accounts live in a local file, on every platform, so log runs everything locally; Twenty is deprecated for accounts (#337). `log localAccount pull|add|list|login` (MCP `localAccountPull`, `localAccountAdd`, `localAccountList`; `login` is terminal-only) fills and reads the file, and `LOG_ACCOUNTS=local` leaves Twenty out of accounts entirely. Listings, groups and conversations (the deferred Marketplace agency objects) stay in Twenty. Rule 97, which narrows rule 13 for accounts only.
+Accounts live in a local file, on every platform, so log runs everything locally; log no longer uses Twenty. `log localAccount add|list|login` (MCP `localAccountAdd`, `localAccountList`; `login` is terminal-only) fills and reads the file. Listings, groups and conversations (the deferred Marketplace agency objects) were kept only in Twenty and are retired until rebuilt on log.db (#339). Rule 97, which narrows rule 13 for accounts only.
 
 ## The file
 
@@ -16,15 +16,9 @@ Checked by: code and SubQ
 
 ## The commands
 
-### REQ-LOCAL-02: Pull copies every Twenty account in, keeping its Twenty id
+### REQ-LOCAL-03: Add makes an account
 
-`log localAccount pull` copies every Twenty account (or one platform's, `--platform`) into the file with its cookies and its login (email, password, two-step secret, PIN). Each pulled row keeps its Twenty id, so its listings and groups still find it. A Twenty row with no account name is skipped. An account already in the file (the same id, or the same platform and account name) is kept as it is unless `--refresh`. Twenty is not changed.
-
-Checked by: code and SubQ
-
-### REQ-LOCAL-03: Add makes an account Twenty never had
-
-`log localAccount add --platform <p> --account <a>` saves an account to the file under a local id (`local:<platform>:<accountName>`), with its AdsPower profile (`--adsPower`, which sets the AdsPower driver), proxy, home country and city. It takes any platform log knows, and Twenty is not touched.
+`log localAccount add --platform <p> --account <a>` saves an account to the file under a local id (`local:<platform>:<accountName>`), with its AdsPower profile (`--adsPower`, which sets the AdsPower driver), proxy, home country and city. It takes any platform log knows.
 
 Checked by: code and SubQ
 
@@ -42,29 +36,23 @@ Checked by: code and SubQ
 
 ## How every command reads accounts
 
-### REQ-LOCAL-05: A local row wins over Twenty's of the same name
+### REQ-LOCAL-05: Every command reads accounts from the file
 
-Every command reads accounts through one wrapper (`withLocalAccounts`). Without `LOG_ACCOUNTS=local` and with a Twenty workspace configured, a list of accounts holds the local rows and then Twenty's rows, minus any Twenty row with the same platform and name as a local one.
-
-Checked by: code and SubQ
-
-### REQ-LOCAL-06: LOG_ACCOUNTS=local leaves Twenty out of accounts
-
-With `LOG_ACCOUNTS=local`, listing, reading, creating and updating accounts and reading their logins use only the file, and Twenty is never asked about an account.
+Every command reads accounts through one store (`createAccountStore`, `src/accounts/store`). Listing, reading, creating and updating accounts and reading their logins use only the file.
 
 Checked by: code and SubQ
 
 ### REQ-LOCAL-07: A session a run saves goes back to the file
 
-An update to an account that is in the file (a session a run captured or refreshed, a state) is written to the file, never to Twenty.
+An update to an account that is in the file (a session a run captured or refreshed, a state) is written to the file.
 
 Checked by: SubQ
 
-### REQ-LOCAL-08: Everything else stays in Twenty
+### REQ-LOCAL-08: Everything else is retired
 
-Listings, groups, conversations and every other object are read and written in Twenty whatever `LOG_ACCOUNTS` says.
+Listings, groups, conversations and every other object were kept only in Twenty, so every call on them is refused with `twentyRemoved` and nothing reaches a network.
 
-Checked by: SubQ
+Checked by: code and SubQ
 
 ### REQ-LOCAL-09: The tool names the rule it falls under
 

@@ -1,11 +1,11 @@
 import { join } from 'node:path'
 import { findPlatformAccount, platformGate, recordPlatformSession, runPlatformEngine } from '../../../platformKit/session/index'
 import type { PlatformAccount, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from '../../../platformKit/session/index'
-import type { TwentyClient } from '../../../twenty/graphql/index'
+import type { AccountStore } from '../../../accounts/store/index'
 
 export const LINKEDIN_PLATFORM: PlatformShape = {
   platform: 'linkedin',
-  twentyPlatform: 'LINKEDIN',
+  accountPlatform: 'LINKEDIN',
   label: 'LinkedIn',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', 'linkedinApi', 'engine.py'),
   sessionCookies: ['li_at', 'JSESSIONID']
@@ -13,8 +13,8 @@ export const LINKEDIN_PLATFORM: PlatformShape = {
 
 export const LINKEDIN_COOKIE_DOMAIN = '.linkedin.com'
 
-export function findLinkedinAccount(twenty: TwentyClient, ref: string): Promise<PlatformAccount> {
-  return findPlatformAccount(twenty, LINKEDIN_PLATFORM, ref)
+export function findLinkedinAccount(store: AccountStore, ref: string): Promise<PlatformAccount> {
+  return findPlatformAccount(store, LINKEDIN_PLATFORM, ref)
 }
 
 export function linkedinGate(account: PlatformAccount): PlatformGate {
@@ -25,6 +25,6 @@ export function runLinkedinEngine(account: PlatformAccount, spec: PlatformEngine
   return runPlatformEngine(LINKEDIN_PLATFORM, account, spec)
 }
 
-export function recordLinkedinSession(twenty: TwentyClient, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
-  return recordPlatformSession(twenty, LINKEDIN_PLATFORM, account, run, now, LINKEDIN_COOKIE_DOMAIN)
+export function recordLinkedinSession(store: AccountStore, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
+  return recordPlatformSession(store, LINKEDIN_PLATFORM, account, run, now, LINKEDIN_COOKIE_DOMAIN)
 }

@@ -6,7 +6,7 @@ import { parseArgs, refuseInput } from "../runner/helpers/index.ts";
 import type { Command } from "../runner/types.ts";
 
 export const MESSENGER_USAGE = [
-  "Usage: log facebook messenger pin --account <accountName> [--show]   (a Clack prompt asks for the 6-digit PIN twice, masked, and keeps it in Twenty; --show says only whether one is set)",
+  "Usage: log facebook messenger pin --account <accountName> [--show]   (a Clack prompt asks for the 6-digit PIN twice, masked, and keeps it in the account store; --show says only whether one is set)",
 ].join("\n");
 
 interface MessengerPrompts {
@@ -31,7 +31,7 @@ export const messengerCommand: Command = {
   name: "messenger",
   terminalOnly: "asks the owner for the Messenger PIN in a Clack prompt (masked). The owner runs `log facebook messenger pin --account <a>` in a terminal.",
   effect: "write",
-  summary: "Messenger's PIN for the account's encrypted chats: asked in a Clack prompt, kept in Twenty, never printed",
+  summary: "Messenger's PIN for the account's encrypted chats: asked in a Clack prompt, saved, never printed",
   args: "pin --account <name> [--show]",
   async run(context, argv) {
     const parsed = parseArgs(argv, { boolean: ["show"], valued: ["account"] });
@@ -42,12 +42,12 @@ export const messengerCommand: Command = {
     if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log facebook messenger pin: --account is needed\n${MESSENGER_USAGE}` };
     let account;
     try {
-      account = await findAccount(context.twenty, ref);
+      account = await findAccount(context.accounts, ref);
     } catch (error) {
       return { code: 1, stderr: `log facebook messenger pin: ${(error as Error).message}` };
     }
     if (parsed.flags["show"]) {
-      const secrets = await context.twenty.loginSecrets(account.id);
+      const secrets = await context.accounts.loginSecrets(account.id);
       return { code: 0, stdout: `${account.accountName}: Messenger PIN ${secrets?.messengerPin ? "<set>" : "<empty>"}` };
     }
     if (!shouldPrompt(false, messengerDeps.tty())) {
@@ -69,8 +69,8 @@ export const messengerCommand: Command = {
       prompts.cancel("The two PINs differ. Nothing saved.");
       return { code: 1, stderr: "log facebook messenger pin: the two PINs differ, nothing saved" };
     }
-    await context.twenty.update("socialAccounts", account.id, { messengerPin: first } as never);
-    prompts.outro("Saved to Twenty. It is typed into Messenger by `log inspect do pin --live`, never printed.");
-    return { code: 0, stdout: `${account.accountName}: Messenger PIN <set> in Twenty` };
+    await context.accounts.update("socialAccounts", account.id, { messengerPin: first } as never);
+    prompts.outro("Saved to the account store. It is typed into Messenger by `log inspect do pin --live`, never printed.");
+    return { code: 0, stdout: `${account.accountName}: Messenger PIN <set> in the account store` };
   },
 };

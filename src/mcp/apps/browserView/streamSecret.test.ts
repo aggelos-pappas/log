@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { viewerDeps } from "../../../browser/viewer/index.ts";
-import { marketplaceFixture } from "../../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../../accounts/store/index.ts";
 import { createLogMcpServer, runToolCall } from "../../server/index.ts";
 import { MCP_APP_MIME_TYPE, UI_EXTENSION_ID } from "./index.ts";
 import { LOADS_EVERY_TOOL_MS } from "../../../../scripts/tests/timeouts.ts";
@@ -44,7 +44,7 @@ afterAll(() => {
 });
 
 async function connected(capabilities: Record<string, unknown>) {
-  const mcp = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
+  const mcp = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false });
   const client = new Client({ name: "test", version: "0.0.0" }, { capabilities });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await Promise.all([mcp.connect(serverSide), client.connect(clientSide)]);

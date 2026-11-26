@@ -1,5 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { readFileSync } from "node:fs";
 import { installHermes, hermesHome } from "../../agentHooks/hermes/index.ts";
 import { installOpenCode, opencodeConfigDir } from "../../agentHooks/opencode/index.ts";
 import { userEnvPath } from "../../config/userEnv/index.ts";
@@ -9,7 +8,7 @@ import type { Platform } from "../runner/helpers/platforms.ts";
 import type { Command, CommandContext, CommandResult } from "../runner/types.ts";
 import { parseSetupArgs, SETUP_EXTENSION_IDS, SETUP_HARNESS_IDS, SETUP_INPUT, SETUP_PLATFORM_IDS, validateSetupIds } from "./helpers/index.ts";
 import type { SetupArgs } from "./helpers/index.ts";
-import { setupEnvStep, setupExtensionStep, setupHarnessStep, setupPlatformStep } from "./helpers/index.ts";
+import { setupExtensionStep, setupHarnessStep, setupPlatformStep } from "./helpers/index.ts";
 import type { SetupStep } from "./helpers/index.ts";
 import { renderSetupReport } from "./helpers/index.ts";
 import type { SetupReport } from "./helpers/index.ts";
@@ -70,11 +69,6 @@ function harnessLabel(id: string): string {
   return SETUP_HARNESSES.find((harness) => harness.id === id)?.label ?? id;
 }
 
-function writeEnvFile(path: string, text: string): void {
-  mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
-  writeFileSync(path, text, { mode: 0o600 });
-}
-
 export function runSetupCommand(context: CommandContext, argv: string[]): CommandResult {
   const parsed = parseSetupArgs(argv);
   if (!parsed.ok) return { code: 2, error: "inputInvalid", stderr: `log setup: ${parsed.error}\n${SETUP_USAGE}` };
@@ -87,10 +81,7 @@ export function runSetupCommand(context: CommandContext, argv: string[]): Comman
   }
   const selection = mergeSelection(args, file);
   const envFile = userEnvPath();
-  const envText = existsSync(envFile) ? readFileSync(envFile, "utf8") : "";
-  const env = setupEnvStep(envFile, envText, args.dryRun);
-  if (env.changed) writeEnvFile(envFile, env.text);
-  const agent: SetupStep[] = [env.step];
+  const agent: SetupStep[] = [];
 
   const harnessIds = selection.harnesses.includes("none") ? [] : selection.harnesses.length ? selection.harnesses : SETUP_HARNESSES.map((harness) => harness.id);
   for (const id of harnessIds) {

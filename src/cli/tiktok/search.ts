@@ -25,7 +25,7 @@ export const tiktokSearchCommand: Command = {
     const pages = numberOf(parsed, 'pages') ?? 1
     if (!query || query === '#' || parsed.positionals.length || !Number.isInteger(limit) || limit < 1 || limit > 100 || !Number.isInteger(pages) || pages < 1 || pages > 10) return refuseInput('tiktok search', 'Invalid query, URL or collection bounds', TIKTOK_SEARCH_USAGE)
     try {
-      const account = await findTiktokAccount(context.twenty, String(parsed.flags.account))
+      const account = await findTiktokAccount(context.accounts, String(parsed.flags.account))
       const gate = tiktokGate(account)
       if (!gate.ok) return refuseGated('tiktok search', gate, 'accountNotUsable')
       if (!readCurrentInspect(undefined, account.accountName)) return refuseInput('tiktok search', `Open this account first: log inspect start --account ${account.accountName} --url https://www.tiktok.com/ --detach`)

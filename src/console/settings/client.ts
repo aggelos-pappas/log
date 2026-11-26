@@ -3,7 +3,7 @@ import { PLATFORMS } from "../../cli/runner/helpers/platforms.ts";
 import { userEnvPath } from "../../config/userEnv/index.ts";
 import { writesPerDayOf } from "../../directApi/engine/index.ts";
 import { governorCounts } from "../../directApi/governor/index.ts";
-import { localAccountsPath } from "../../twenty/graphql/index.ts";
+import { localAccountsPath } from "../../accounts/store/index.ts";
 import { DEFAULT_CONSOLE_PORT } from "../screens/index.ts";
 import { consoleDbPath } from "../store/index.ts";
 import type { ConsoleGovernor, ConsoleSettings } from "./types.ts";

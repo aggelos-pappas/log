@@ -5,9 +5,9 @@ import { join } from "node:path";
 import { signInRouteOf } from "../../../cli/launch/helpers/start.ts";
 import { PLATFORMS } from "../../../cli/runner/helpers/platforms.ts";
 import type { Platform } from "../../../cli/runner/helpers/platforms.ts";
-import { fromTwentyEnum } from "../../../platformKit/socialAccount/helpers/twentyEnum.ts";
+import { fromStoredEnum } from "../../../platformKit/socialAccount/helpers/storedEnum.ts";
 import { vendorOfProxy } from "../../../proxyVendor/vendor/helpers/vendorOfProxy.ts";
-import { localAccountsPath, readLocalAccounts } from "../../../twenty/graphql/index.ts";
+import { localAccountsPath, readLocalAccounts } from "../../../accounts/store/index.ts";
 import { ACCOUNT_STATUSES, SESSION_STATES } from "../types.ts";
 import type { AccountStatus, BrowserChoice, ConnectionAccount, ProxyProvider, SessionState } from "../types.ts";
 import { BROWSER_BRANDS, BROWSER_DRIVERS, DEFAULT_BROWSER_DRIVER, DEPRECATED_BROWSER_DRIVERS, driverOrNull } from "../../../browser/driver/index.ts";
@@ -62,7 +62,7 @@ export function readConnectionAccounts(env: Env = process.env, home = homedir())
   for (const row of readLocalAccounts(localAccountsPath(env))) {
     const platform = platformOf(row.platform);
     const name = typeof row.accountName === "string" && row.accountName ? row.accountName : typeof row.name === "string" ? row.name : "";
-    const status = typeof row.accountStatus === "string" && row.accountStatus ? fromTwentyEnum(row.accountStatus) : row.status;
+    const status = typeof row.accountStatus === "string" && row.accountStatus ? fromStoredEnum(row.accountStatus) : row.status;
     if (name && platform) add(platform, name, { state: row.sessionState, checkedAt: row.sessionCheckedAt, status, homeCountry: row.homeCountry, proxy: row.proxy, statusReason: row.statusReason, browser: driverOrNull({ browserDriver: typeof row.browserDriver === "string" ? row.browserDriver : null, adsPowerProfileId: typeof row.adsPowerProfileId === "string" ? row.adsPowerProfileId : null }, env) });
   }
   for (const [platform, root] of Object.entries(sessionRoots(env, home)) as [Platform, string][]) {

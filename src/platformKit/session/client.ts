@@ -8,8 +8,8 @@ import { join } from 'node:path'
 import { platformStateRoot, writeLocalSession, writesPerDayOf } from '../../directApi/engine/index'
 import { SOCIAL_ACCOUNTS, engineRoute, toFacebookAccount } from '../socialAccount/index'
 import type { FacebookAccount, SocialAccountRow } from '../socialAccount/index'
-import { TwentyError, accountStore } from '../../twenty/graphql/index'
-import type { TwentyClient } from '../../twenty/graphql/index'
+import { AccountStoreError } from '../../accounts/store/index'
+import type { AccountStore } from '../../accounts/store/index'
 import { timedEngine, timedEngineSync, timedSync } from '../../observability/timing/index'
 import { askReadHost, hostable, readHostOf, startReadHost } from '../readHost/index'
 import { driverOrNull } from '../../browser/driver/index'
@@ -20,15 +20,15 @@ import { sessionHandoff } from '../../storage/secrets/index'
 
 export type PlatformAccount = FacebookAccount
 
-export async function findPlatformAccount(twenty: TwentyClient, shape: PlatformShape, ref: string): Promise<PlatformAccount> {
+export async function findPlatformAccount(store: AccountStore, shape: PlatformShape, ref: string): Promise<PlatformAccount> {
   const key = ref.trim().replace(/^@/, '')
-  const anyPlatform = await twenty.list(SOCIAL_ACCOUNTS, { accountName: { eq: key } })
-  const named = anyPlatform.filter((r) => String(r.platform) === shape.twentyPlatform)
-  const rows = named.length ? named : (await twenty.list(SOCIAL_ACCOUNTS, { name: { eq: key } })).filter((r) => String(r.platform) === shape.twentyPlatform && !r.accountName?.trim())
+  const anyPlatform = await store.list(SOCIAL_ACCOUNTS, { accountName: { eq: key } })
+  const named = anyPlatform.filter((r) => String(r.platform) === shape.accountPlatform)
+  const rows = named.length ? named : (await store.list(SOCIAL_ACCOUNTS, { name: { eq: key } })).filter((r) => String(r.platform) === shape.accountPlatform && !r.accountName?.trim())
   const foundOn = [...new Set(anyPlatform.map((r) => String(r.platform ?? '').toLowerCase()).filter(Boolean))]
-  if (rows.length === 0 && foundOn.length) throw new TwentyError('accountPlatformMismatch', `"${key}" is not a ${shape.twentyPlatform.toLowerCase()} account: it is kept under ${foundOn.join(', ')}`)
-  if (rows.length === 0) throw new TwentyError('accountNotFound', `no ${shape.twentyPlatform} socialAccount "${key}"`)
-  if (rows.length > 1) throw new TwentyError('accountNotFound', `${rows.length} ${shape.twentyPlatform} socialAccounts are called "${key}"`)
+  if (rows.length === 0 && foundOn.length) throw new AccountStoreError('accountPlatformMismatch', `"${key}" is not a ${shape.accountPlatform.toLowerCase()} account: it is kept under ${foundOn.join(', ')}`)
+  if (rows.length === 0) throw new AccountStoreError('accountNotFound', `no ${shape.accountPlatform} socialAccount "${key}"`)
+  if (rows.length > 1) throw new AccountStoreError('accountNotFound', `${rows.length} ${shape.accountPlatform} socialAccounts are called "${key}"`)
   return toFacebookAccount(rows[0] as SocialAccountRow)
 }
 
@@ -71,17 +71,17 @@ export function sessionStorageOf(origins: unknown, wanted: PlatformShape['sessio
 }
 
 export function platformGate(account: PlatformAccount, shape: PlatformShape): PlatformGate {
-  if (String(account.platform) !== shape.twentyPlatform) return { ok: false, code: 'accountNotOnPlatform', detail: `${account.accountName} is ${account.platform ?? 'no platform'}, not ${shape.twentyPlatform}` }
+  if (String(account.platform) !== shape.accountPlatform) return { ok: false, code: 'accountNotOnPlatform', detail: `${account.accountName} is ${account.platform ?? 'no platform'}, not ${shape.accountPlatform}` }
   if (account.status === 'deactivated') return { ok: false, code: 'accountDeactivated', detail: `${account.accountName} is deactivated` }
   const cookies = sessionCookiesOf(account.cookies)
   const missing = shape.sessionCookies.filter((name) => !cookies[name])
   if (shape.sessionStorage) {
     const stored = sessionStorageOf(account.storageOrigins, shape.sessionStorage)
     const absent = shape.sessionStorage.keys.filter((key) => !stored[key])
-    if (missing.length || absent.length) return { ok: false, code: 'noPlatformSession', detail: `${account.accountName} has no saved ${[...missing, ...absent.map((k) => `${shape.sessionStorage!.origin} localStorage ${k}`)].join(' + ')} in Twenty` }
+    if (missing.length || absent.length) return { ok: false, code: 'noPlatformSession', detail: `${account.accountName} has no saved ${[...missing, ...absent.map((k) => `${shape.sessionStorage!.origin} localStorage ${k}`)].join(' + ')} in the account store` }
     return { ok: true }
   }
-  if (missing.length || Object.keys(cookies).length === 0) return { ok: false, code: 'noPlatformSession', detail: `${account.accountName} has no saved ${missing.length ? missing.join(' + ') : 'cookies'} in Twenty` }
+  if (missing.length || Object.keys(cookies).length === 0) return { ok: false, code: 'noPlatformSession', detail: `${account.accountName} has no saved ${missing.length ? missing.join(' + ') : 'cookies'} in the account store` }
   return { ok: true }
 }
 
@@ -225,13 +225,13 @@ function spawnPlatformEngineLive(shape: PlatformShape, account: PlatformAccount,
   })
 }
 
-export async function recordPlatformSession(twenty: TwentyClient, shape: PlatformShape, account: PlatformAccount, run: PlatformEngineRun, now: Date, cookieDomain: string): Promise<string[]> {
+export async function recordPlatformSession(store: AccountStore, shape: PlatformShape, account: PlatformAccount, run: PlatformEngineRun, now: Date, cookieDomain: string): Promise<string[]> {
   const state = run.answer.loginState
   if (!state) return []
   const update: Record<string, unknown> = { sessionState: state, sessionCheckedAt: now.toISOString() }
   const cookiesBack = run.answer.ok && state === 'loggedIn' && run.refreshed && Object.keys(run.refreshed).length > 0
   if (cookiesBack) update.cookies = mergeCookieShape(account.cookies, run.refreshed!, cookieDomain)
-  await twenty.update(SOCIAL_ACCOUNTS, account.id, update as never)
+  await store.update(SOCIAL_ACCOUNTS, account.id, update as never)
   writeLocalSession(account.accountName, state, now, platformStateRoot(shape.platform))
   if (run.answer.ok && state === 'loggedIn' && run.answer.userId) identifyAccount(shape.platform, account.accountName, String(run.answer.userId), now)
   if (run.answer.ok && state === 'loggedIn') {
@@ -239,5 +239,5 @@ export async function recordPlatformSession(twenty: TwentyClient, shape: Platfor
     rememberProfiles(shape.platform, account.accountName, [sighting], now)
     await saveProfileAvatars(shape.platform, account.accountName, [sighting], now)
   }
-  return [`${accountStore(account.id)}: ${account.accountName} sessionState ${state} (${shape.label}'s own answer)${cookiesBack ? ', its refreshed cookies merged back' : ''}.`]
+  return [`Local accounts: ${account.accountName} sessionState ${state} (${shape.label}'s own answer)${cookiesBack ? ', its refreshed cookies merged back' : ''}.`]
 }

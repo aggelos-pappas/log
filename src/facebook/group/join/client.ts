@@ -1,4 +1,4 @@
-import type { TwentyClient, TwentyObjects } from '../../../twenty/graphql/index'
+import type { AccountStore, AccountObjects } from '../../../accounts/store/index'
 import { applicationFromDraft } from '../answer/client'
 import { emptySubmission, patchSubmission, readSubmission } from './helpers/index'
 import type { Group, GroupJoinContext, GroupJoinOutput, GroupJoinStatus, GroupRef, GroupJoinSubmission, JoinDraft } from './types'
@@ -6,8 +6,8 @@ import { GROUP_JOIN_STATUSES } from './types'
 
 export const AGENCY_GROUPS = 'agencyGroups' as const
 
-type GroupRow = TwentyObjects['agencyGroups']['row']
-type GroupUpdate = TwentyObjects['agencyGroups']['update']
+type GroupRow = AccountObjects['agencyGroups']['row']
+type GroupUpdate = AccountObjects['agencyGroups']['update']
 
 export const toJoinStatusEnum = (status: GroupJoinStatus) => status.replace(/[A-Z]/g, (c) => `_${c}`).toUpperCase() as NonNullable<GroupRow['joinStatus']>
 
@@ -33,31 +33,31 @@ export function toGroup(row: GroupRow): Group {
   }
 }
 
-export async function findGroup(twenty: TwentyClient, socialAccountId: string, keys: string[]): Promise<Group | null> {
+export async function findGroup(store: AccountStore, socialAccountId: string, keys: string[]): Promise<Group | null> {
   const wanted = [...new Set(keys.filter(Boolean))]
   if (!wanted.length) return null
-  const rows = await twenty.list(AGENCY_GROUPS, { socialAccountId: { eq: socialAccountId }, facebookGroupId: { in: wanted } })
+  const rows = await store.list(AGENCY_GROUPS, { socialAccountId: { eq: socialAccountId }, facebookGroupId: { in: wanted } })
   return rows[0] ? toGroup(rows[0]) : null
 }
 
-export async function listGroups(twenty: TwentyClient, socialAccountId: string): Promise<Group[]> {
-  return (await twenty.list(AGENCY_GROUPS, { socialAccountId: { eq: socialAccountId } })).map(toGroup)
+export async function listGroups(store: AccountStore, socialAccountId: string): Promise<Group[]> {
+  return (await store.list(AGENCY_GROUPS, { socialAccountId: { eq: socialAccountId } })).map(toGroup)
 }
 
-export async function ensureGroup(twenty: TwentyClient, socialAccountId: string, group: GroupRef): Promise<Group> {
-  const existing = await findGroup(twenty, socialAccountId, [group.key])
+export async function ensureGroup(store: AccountStore, socialAccountId: string, group: GroupRef): Promise<Group> {
+  const existing = await findGroup(store, socialAccountId, [group.key])
   if (existing) return existing
-  const row = await twenty.create(AGENCY_GROUPS, {
+  const row = await store.create(AGENCY_GROUPS, {
     name: group.key,
     socialAccountId,
     facebookGroupId: group.key,
     groupUrl: group.url,
     joinSubmission: emptySubmission()
-  } as unknown as TwentyObjects['agencyGroups']['create'])
+  } as unknown as AccountObjects['agencyGroups']['create'])
   return toGroup(row)
 }
 
-export async function patchGroupStep(twenty: TwentyClient, group: Group, context: Pick<GroupJoinContext, 'formPhase' | 'dialog' | 'options' | 'inference' | 'questions' | 'submittedAt'>, step: { step: string; detail: string; folder: string | null }, now: Date): Promise<Group> {
+export async function patchGroupStep(store: AccountStore, group: Group, context: Pick<GroupJoinContext, 'formPhase' | 'dialog' | 'options' | 'inference' | 'questions' | 'submittedAt'>, step: { step: string; detail: string; folder: string | null }, now: Date): Promise<Group> {
   const patch: Partial<Omit<GroupJoinSubmission, 'history'>> = context.formPhase === 'idle' ? {} : { formPhase: context.formPhase }
   if (context.dialog) {
     Object.assign(patch, {
@@ -79,23 +79,23 @@ export async function patchGroupStep(twenty: TwentyClient, group: Group, context
   }
   if (context.inference) patch.inference = context.inference
   const joinSubmission = patchSubmission(group.joinSubmission, patch, { at: now.toISOString(), ...step })
-  const row = await twenty.update(AGENCY_GROUPS, group.id, { joinSubmission } as unknown as GroupUpdate)
+  const row = await store.update(AGENCY_GROUPS, group.id, { joinSubmission } as unknown as GroupUpdate)
   return toGroup(row)
 }
 
-export async function saveDraft(twenty: TwentyClient, group: Group, draft: JoinDraft, complete: { complete: boolean; missing: string[] }, now: Date): Promise<Group> {
+export async function saveDraft(store: AccountStore, group: Group, draft: JoinDraft, complete: { complete: boolean; missing: string[] }, now: Date): Promise<Group> {
   const joinSubmission = patchSubmission(
     group.joinSubmission,
     { draft, formPhase: 'incomplete', draftAnswers: Object.values(draft.answers).map((a) => (Array.isArray(a) ? a.join(', ') : a)), application: applicationFromDraft(group.joinSubmission.options, draft, now) },
     { at: now.toISOString(), step: 'stepper', detail: complete.complete ? 'every answer given in Clack, rules agreed; not sent' : `answers saved in Clack, missing: ${complete.missing.join('; ')}`, folder: null }
   )
-  return toGroup(await twenty.update(AGENCY_GROUPS, group.id, { joinSubmission } as unknown as GroupUpdate))
+  return toGroup(await store.update(AGENCY_GROUPS, group.id, { joinSubmission } as unknown as GroupUpdate))
 }
 
-export async function recordGroupRead(twenty: TwentyClient, group: Group, output: GroupJoinOutput, runDir: string, now: Date): Promise<Group> {
+export async function recordGroupRead(store: AccountStore, group: Group, output: GroupJoinOutput, runDir: string, now: Date): Promise<Group> {
   const page = output.after ?? output.page
   const reason = `${output.result}${page ? `: gate ${page.gate}${page.button ? ` (button "${page.button}")` : ''}` : ''}${output.problem ? `, ${output.problem.code}: ${output.problem.detail}` : ''}; ${runDir}`
-  if (!page) return toGroup(await twenty.update(AGENCY_GROUPS, group.id, { joinStatusReason: reason, lastCheckedAt: now.toISOString() } as GroupUpdate))
+  if (!page) return toGroup(await store.update(AGENCY_GROUPS, group.id, { joinStatusReason: reason, lastCheckedAt: now.toISOString() } as GroupUpdate))
   const groupId = output.page?.groupId ?? page.groupId ?? group.facebookGroupId ?? output.group.key
   const fields: GroupUpdate = {
     name: page.name ?? group.name ?? output.group.key,
@@ -107,5 +107,5 @@ export async function recordGroupRead(twenty: TwentyClient, group: Group, output
     lastCheckedAt: now.toISOString(),
     ...(output.after ? { joinRequestedAt: now.toISOString() } : {})
   }
-  return toGroup(await twenty.update(AGENCY_GROUPS, group.id, fields))
+  return toGroup(await store.update(AGENCY_GROUPS, group.id, fields))
 }

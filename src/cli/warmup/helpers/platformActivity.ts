@@ -60,7 +60,7 @@ export async function runPlatformActivity(context: CommandContext, positionals: 
   if (activityName === "persona") {
     if (typeof flags.account !== "string") return { code: 1, error: "inputInvalid", stderr: `log facebook warmup: --account is required\n${PLATFORM_USAGE}` };
     try {
-      const account = await findAccount(context.twenty, flags.account);
+      const account = await findAccount(context.accounts, flags.account);
       const seed = typeof flags.seed === "string" ? Number(flags.seed) : undefined;
       const { persona, drawn } = personaFor(account.accountName, account.homeCountry ?? "US", { fresh: flags.newPersona === true, seed });
       const { viewer } = viewerFor(personaPath(account.accountName), persona.seed, { fresh: flags.newPersona === true, scrollSpeed: persona.summary.scrollSpeed });
@@ -100,7 +100,7 @@ export async function runPlatformActivity(context: CommandContext, positionals: 
   if (typeof flags.account !== "string") return { code: 1, error: "inputInvalid", stderr: `log facebook warmup: --account is required\n${PLATFORM_USAGE}` };
 
   try {
-    const account = await findAccount(context.twenty, flags.account);
+    const account = await findAccount(context.accounts, flags.account);
     const check = checkRunnable(account, "run");
     if (!check.ok) return refuse("warmup", check.code, check.detail);
     const home = homeOf(account);

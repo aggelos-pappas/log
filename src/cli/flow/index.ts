@@ -1,5 +1,5 @@
 import { recordAccountIssue } from "../../facebook/marketplace/replacement/index.ts";
-import { findAccount, toTwentyEnum } from "../../platformKit/socialAccount/index.ts";
+import { findAccount, toStoredEnum } from "../../platformKit/socialAccount/index.ts";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { createActor, fromPromise, toPromise } from "xstate";
@@ -118,9 +118,9 @@ export async function runFlow(
       if (!existsSync(values[p.name])) return { code: 1, stderr: `log flow: ${p.name}: no such video file ${values[p.name]}` };
       filled[p.name] = resolve(values[p.name]);
     }
-    const account = await findAccount(context.twenty, uid);
+    const account = await findAccount(context.accounts, uid);
     if (flow.steps.some((s) => s.name?.includes("{profileName}"))) {
-      if (!account.profileName) return { code: 1, stderr: `log flow: ${flow.name} names the account's own posts by its profile name, and ${uid} has none in Twenty (socialAccounts.profileName)` };
+      if (!account.profileName) return { code: 1, stderr: `log flow: ${flow.name} names the account's own posts by its profile name, and ${uid} has none in the account store (socialAccounts.profileName)` };
       filled.profileName = account.profileName;
     }
     context.err(`Flow ${flow.name} on ${uid}: ${flow.steps.length} steps, in the browser already open for it (${already.runDir}), no new launch (rule 35)`);
@@ -147,7 +147,7 @@ export async function runFlow(
     }
     filled.uid = account.accountName;
     if (flow.steps.some((s) => s.name?.includes("{profileName}"))) {
-      if (!account.profileName) return { code: 1, stderr: `log flow: ${flow.name} names the account's own posts by its profile name, and ${account.accountName} has none in Twenty (socialAccounts.profileName)` };
+      if (!account.profileName) return { code: 1, stderr: `log flow: ${flow.name} names the account's own posts by its profile name, and ${account.accountName} has none in the account store (socialAccounts.profileName)` };
       filled.profileName = account.profileName;
     }
     const opened = await openInspectSession(context, account, run);
@@ -162,8 +162,8 @@ export async function runFlow(
     } catch {
     }
     const issue = output.steps.find((s) => !s.ok)?.issue;
-    const blocked = issue ? await recordAccountIssue(context.twenty, await findAccount(context.twenty, account.accountName), issue, output.failedAt) : null;
-    const afterLines = output.result === "done" && after ? await after(output) : blocked ? [`${account.accountName} is now ${toTwentyEnum(blocked.status)} (${issue}): ${blocked.lost.length} listing(s) marked ACCOUNT_LOST, ${blocked.replacements.filter((r) => r.next).length} handed to another account`] : [];
+    const blocked = issue ? await recordAccountIssue(context.accounts, await findAccount(context.accounts, account.accountName), issue, output.failedAt) : null;
+    const afterLines = output.result === "done" && after ? await after(output) : blocked ? [`${account.accountName} is now ${toStoredEnum(blocked.status)} (${issue}): ${blocked.lost.length} listing(s) marked ACCOUNT_LOST, ${blocked.replacements.filter((r) => r.next).length} handed to another account`] : [];
     if (flags["json"]) return { code: output.result === "done" ? 0 : 1, stdout: JSON.stringify({ ...output, ...(afterLines.length ? { after: afterLines } : {}) }, null, 2) };
     return { code: output.result === "done" ? 0 : 1, stdout: [renderRun(flow, output, runDir), ...afterLines].join("\n") };
   });

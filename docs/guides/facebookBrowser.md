@@ -22,7 +22,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 |---|---|---|
 | `facebookAccounts` | List the Facebook accounts | `log facebook accounts [--json]` |
 | `facebookAccountShow` | One account's record | `log facebook account show <accountName> [--json]` |
-| `facebookAccountResave` | Save a run's device and session that Twenty didn't take | `log facebook account resave <accountName> --from <folder>   (a run's device and session Twenty didn't take: ~/.logCli/runs/unsaved/...)` |
+| `facebookAccountResave` | Save a run's device and session that wasn't saved | `log facebook account resave <accountName> --from <folder>   (a run's device and session the account store didn't take: ~/.logCli/runs/unsaved/...)` |
 | `facebookAccountResetOpens` | Restart today's count of launches and host opens, only when the owner… | `log facebook account resetOpens <accountName\|all> [--reason <text>]   (today's launches and host opens count from now; nothing is deleted)` |
 | `facebookAccountStatus` | Set an account's status | `log facebook account status <accountName> <ACTIVE\|WARMING\|LIMITED\|PAUSED\|NEEDS_LOGIN\|CHECKPOINT\|RESTRICTED\|BANNED\|DEAD\|DEACTIVATED> [--reason <code>] [--detail <text>]` |
 | `facebookLifecycle` | Each Facebook account's place in its lifecycle | `log facebook lifecycle [--account <name>] [--json]` |
@@ -30,7 +30,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `facebookLifecycleStatesLive` | The lifecycle machine's state tree, live on Facebook | `log facebook lifecycle states [--write]   (the machine's state tree; --write regenerates docs/lifecycle.md)` |
 | `facebookPreflight` | Before any browser opens, check each Facebook account will get through | `log facebook preflight [--account <accountName>] [--homes <US,CA>] [--noProxy] [--apply] [--json]` |
 | `facebookPreflightLive` | Before any browser opens, check each Facebook account…, live on Facebook | `log facebook preflight [--account <accountName>] [--homes <US,CA>] [--noProxy] [--apply] [--json]` |
-| `facebookDoctor` | Check python, facebook-camofox-client, Camoufox, Twenty, and which… | `log facebook doctor [--json]` |
+| `facebookDoctor` | Check python, facebook-camofox-client, Camoufox, the accounts, and… | `log facebook doctor [--json]` |
 | `facebookConnect` | Sign a Facebook account in through its proxy | `log facebook connect --account <accountName> [--noPrompt] [--wait <seconds>] [--bypass] [--now]` |
 | `facebookProfileSetup` | Set a Facebook account's profile picture and cover photo from its… | `log facebook profile setup --account <accountName> [--live] [--bypass] [--json]` |
 | `facebookProfileSetupLive` | Set a Facebook account's profile picture and cover…, live on Facebook | `log facebook profile setup --account <accountName> [--live] [--bypass] [--json]` |
@@ -38,10 +38,10 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `facebookHostStartLive` | Run the account's lifecycle in one open browser…, live on Facebook | `log facebook host start --account <accountName> [--live] [--likes] [--bypass] [--now] [--gapSeconds <n>] [--watchMinutes <n>]   (--live: profile, name, location; --likes: the warm-up's likes)` |
 | `facebookHostSend` | Send an event to the account's running host | `log facebook host send --account <accountName> <PERSON_DONE\|PAUSE\|RESUME\|SHUTDOWN\|LOST>` |
 | `facebookHostStatus` | Where each host is | `log facebook host status [--account <accountName>]` |
-| `facebookCheck` | Check one account in its open browser | `log facebook check --account <accountName> [--bypass] [--json]   (in the account's open browser: Marketplace status, each listing's state and clicks in the last 14 days on Selling into Twenty, the seller inbox's chats; nothing clicked)` |
-| `facebookScan` | Read Marketplace > Selling live for one account and update its… | `log facebook scan --account <accountName> [--json] [--bypass]` |
+| `facebookCheck` | Retired: #339) | `log facebook check --account <accountName> [--bypass] [--json]   (in the account's open browser: Marketplace status, each listing's state and clicks in the last 14 days on Selling into the account store, the seller inbox's chats; nothing clicked)` |
+| `facebookScan` | Retired: #339) | `log facebook scan --account <accountName> [--json] [--bypass]` |
 | `facebookStatus` | Open one Marketplace item page live and classify its status | `log facebook status <listingId> --account <accountName> [--json] [--bypass]` |
-| `facebookWatch` | Run the Marketplace listing monitor | `log facebook watch --account <accountName> [--checks <n>] [--interval <minutes>] [--json] [--bypass]` |
+| `facebookWatch` | Retired: #339) | `log facebook watch --account <accountName> [--checks <n>] [--interval <minutes>] [--json] [--bypass]` |
 
 ## The work, step by step: facebookInspect
 
@@ -172,7 +172,7 @@ from its step's own recording, nothing clicked:
    `is_marketplace_access_banned`, `profile_status`, `sell_on_marketplace`).
    Anything but full access is the account's `suspended` issue.
 2. `/marketplace/you/selling`: each listing's state (active, being reviewed,
-   sold, rejected) and its clicks into Twenty's `agencyListings` (status,
+   sold, rejected) and its clicks into the stored `agencyListings` (retired, #339) (status,
    `clicksCount`, `lastCheckedAt`). The clicks are the page's "N clicks on
    listing": how many times people opened the listing's details page in the last
    14 days, preloaded in the page's own HTML by
@@ -181,8 +181,8 @@ from its step's own recording, nothing clicked:
    step 02).
 3. `/marketplace/inbox?targetTab=SELLER`: the seller chats. None: said so. Some:
    counted and kept as Facebook sent them in the run folder, until a recording of
-   a real chat maps a thread's fields (rule 29) and they go to Twenty's
-   conversations.
+   a real chat maps a thread's fields (rule 29) and they go to the stored
+   conversations (retired, #339).
 
 `log facebook check --account <a>` runs the same once.
 Code: `src/facebook/marketplace/check`.
@@ -256,8 +256,7 @@ log facebook lifecycle --account <name>      # one, with its standing
 log facebook lifecycle states                # the state tree from the machine itself
 ```
 
-A field the lifecycle reads is added to the account row (for a Twenty workspace, through
-`scripts/twenty/twentySetup.mjs` and the client regenerated). A fact it reads from a past run (a rename, a
+A field the lifecycle reads is added to the account row in the account store. A fact it reads from a past run (a rename, a
 location) is backfilled only from that run's recording (rule 25), never guessed.
 
 Full description: `docs/lifecycle.md`. Requirements: `docs/specs/accountLifecycle.md`.
@@ -303,7 +302,7 @@ of its warm-up. This does that for one account, both photos in one run (the owne
    log facebook profile setup --account <a> 2>&1 | tee <log>
    ```
 
-   It prints each photo as `would upload`, `no photo set in Twenty` or
+   It prints each photo as `would upload`, `no photo set in the account store` or
    `no control for it on the page`, and the run folder
    (`~/.logCli/runs/profile/<time>_<a>/`).
 4. Read `profileFound.txt` in that folder and the step HARs (`firefox/steps/`).

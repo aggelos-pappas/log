@@ -4,7 +4,7 @@ import type { PreparedRun } from "../../browser/run/index.ts";
 import type { CommandContext } from "../../cli/runner/types.ts";
 import { savePlatformSession } from "../socialAccount/index.ts";
 import type { FacebookAccount, PlaywrightCookie } from "../socialAccount/index.ts";
-import type { TwentyClient } from "../../twenty/graphql/index.ts";
+import type { AccountStore } from "../../accounts/store/index.ts";
 import type { SessionReport } from "../sessionCheck/index.ts";
 import { browserSessionGate, readSessionSave, runSignIn, signInRouteFor } from "./index.ts";
 import type { SaveOutcome, SignInAccount, SignInActors, SignInStore } from "./index.ts";
@@ -157,19 +157,19 @@ describe("saving a browser session", () => {
 
   test("savePlatformSession writes the session, its state and when it was checked, and says so", async () => {
     const updates: Record<string, unknown>[] = [];
-    const twenty = { update: async (_: string, __: string, fields: Record<string, unknown>) => void updates.push(fields) } as unknown as TwentyClient;
-    const result = await savePlatformSession(twenty, "d1", { cookies: [], origins: token }, (state) => browserSessionGate("discord", state), new Date("2026-11-14T10:05:00.000Z"));
+    const store = { update: async (_: string, __: string, fields: Record<string, unknown>) => void updates.push(fields) } as unknown as AccountStore;
+    const result = await savePlatformSession(store, "d1", { cookies: [], origins: token }, (state) => browserSessionGate("discord", state), new Date("2026-11-14T10:05:00.000Z"));
     expect(result).toMatchObject({ saved: true });
     expect(updates).toEqual([{ cookies: [], storageOrigins: token, sessionState: "loggedIn", sessionCheckedAt: "2026-11-14T10:05:00.000Z" }]);
   });
 
   test("a signed-out browser closing leaves the stored session untouched, and the outcome reaches the caller", async () => {
     const updates: unknown[] = [];
-    const twenty = { update: async (...args: unknown[]) => void updates.push(args) } as unknown as TwentyClient;
+    const store = { update: async (...args: unknown[]) => void updates.push(args) } as unknown as AccountStore;
     const account = { id: "localDiscordGuild", accountName: "fakeGuild", platform: "DISCORD" } as FacebookAccount;
     const run = { browserWrote: () => true, readStorageState: () => ({ cookies: [cookie("locale"), cookie("__dcfduid")], origins: [{ origin: "https://discord.com", localStorage: [] }] }) } as unknown as PreparedRun;
     const at = new Date("2026-11-14T10:05:00.000Z");
-    const note = await keepSession({ twenty, now: () => at } as unknown as CommandContext, account, run);
+    const note = await keepSession({ accounts: store, now: () => at } as unknown as CommandContext, account, run);
     expect(updates).toEqual([]);
     expect(note).toContain("Kept fakeGuild's stored session");
     expect(readSessionSave("localDiscordGuild", "2026-11-14T10:00:00.000Z")).toMatchObject({ saved: false, code: "noPlatformSession" });
@@ -178,10 +178,10 @@ describe("saving a browser session", () => {
 
   test("a run that never opened a browser saves nothing, though its seeded state holds cookies", async () => {
     const updates: unknown[] = [];
-    const twenty = { update: async (...args: unknown[]) => void updates.push(args) } as unknown as TwentyClient;
+    const store = { update: async (...args: unknown[]) => void updates.push(args) } as unknown as AccountStore;
     const account = { id: "localDiscordNever", accountName: "fakeGuild", platform: "DISCORD" } as FacebookAccount;
     const run = { browserWrote: () => false, readStorageState: () => ({ cookies: Array.from({ length: 10 }, () => cookie("__dcfduid")), origins: token }) } as unknown as PreparedRun;
-    const note = await keepSession({ twenty, now: () => new Date("2026-11-14T10:05:00.000Z") } as unknown as CommandContext, account, run);
+    const note = await keepSession({ accounts: store, now: () => new Date("2026-11-14T10:05:00.000Z") } as unknown as CommandContext, account, run);
     expect(note).toBeNull();
     expect(updates).toEqual([]);
     expect(readSessionSave("localDiscordNever", "2026-11-14T10:00:00.000Z")).toBeNull();
@@ -189,11 +189,11 @@ describe("saving a browser session", () => {
 
   test("a signed-in browser closing saves its session and records it", async () => {
     const updates: unknown[] = [];
-    const twenty = { update: async (...args: unknown[]) => void updates.push(args) } as unknown as TwentyClient;
+    const store = { update: async (...args: unknown[]) => void updates.push(args) } as unknown as AccountStore;
     const account = { id: "localDiscordSaved", accountName: "fakeGuild", platform: "DISCORD" } as FacebookAccount;
     const run = { browserWrote: () => true, readStorageState: () => ({ cookies: [], origins: token }) } as unknown as PreparedRun;
     const at = new Date("2026-11-14T10:05:00.000Z");
-    const note = await keepSession({ twenty, now: () => at } as unknown as CommandContext, account, run);
+    const note = await keepSession({ accounts: store, now: () => at } as unknown as CommandContext, account, run);
     expect(updates.length).toBe(1);
     expect(note).toContain("Saved fakeGuild's browser session");
     expect(readSessionSave("localDiscordSaved", "2026-11-14T10:00:00.000Z")).toMatchObject({ saved: true });

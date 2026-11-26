@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { isMessengerPin, messengerDeps } from "./index.ts";
 
@@ -18,11 +18,11 @@ function prompted(answers: string[]) {
   return said;
 }
 
-async function run(argv: string[], twenty = marketplaceFixture()) {
+async function run(argv: string[], store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await runCli(argv, { twenty, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), twenty };
+  const code = await runCli(argv, { accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
+  return { code, out: out.join("\n"), err: err.join("\n"), accounts: store };
 }
 
 describe("log facebook messenger pin", () => {
@@ -32,14 +32,14 @@ describe("log facebook messenger pin", () => {
     expect(isMessengerPin("12a456")).toBe(false);
   });
 
-  test("the PIN typed twice is kept in Twenty and never printed", async () => {
+  test("the PIN typed twice is kept in the account store and never printed", async () => {
     prompted(["482913", "482913"]);
     const r = await run(["facebook", "messenger", "pin", "--account", "galwayOne"]);
     expect(r.code).toBe(0);
     expect(r.out + r.err).not.toContain("482913");
-    const account = (await r.twenty.list("socialAccounts")).find((a) => a.accountName === "galwayOne")!;
-    expect((await r.twenty.loginSecrets(account.id))?.messengerPin).toBe("482913");
-    const shown = await run(["facebook", "messenger", "pin", "--account", "galwayOne", "--show"], r.twenty);
+    const account = (await r.accounts.list("socialAccounts")).find((a) => a.accountName === "galwayOne")!;
+    expect((await r.accounts.loginSecrets(account.id))?.messengerPin).toBe("482913");
+    const shown = await run(["facebook", "messenger", "pin", "--account", "galwayOne", "--show"], r.accounts);
     expect(shown.out).toContain("<set>");
     expect(shown.out).not.toContain("482913");
   });
@@ -48,8 +48,8 @@ describe("log facebook messenger pin", () => {
     prompted(["482913", "111111"]);
     const r = await run(["facebook", "messenger", "pin", "--account", "galwayOne"]);
     expect(r.code).toBe(1);
-    const account = (await r.twenty.list("socialAccounts")).find((a) => a.accountName === "galwayOne")!;
-    expect((await r.twenty.loginSecrets(account.id))?.messengerPin).toBeNull();
+    const account = (await r.accounts.list("socialAccounts")).find((a) => a.accountName === "galwayOne")!;
+    expect((await r.accounts.loginSecrets(account.id))?.messengerPin).toBeNull();
   });
 
   test("without a terminal it asks for one and never takes the PIN as a flag", async () => {

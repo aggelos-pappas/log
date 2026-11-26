@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { InspectSessionConfig } from "../../browser/inspect/index.ts";
 import { logHome } from "../../config/logHome/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 
 process.env.LOG_INSPECT_CURRENT = join(mkdtempSync(join(tmpdir(), "logInspectCurrent")), "current.json");
@@ -12,7 +12,7 @@ process.env.LOG_INSPECT_CURRENT = join(mkdtempSync(join(tmpdir(), "logInspectCur
 async function run(argv: string[], overrides: Record<string, unknown> = {}) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await runCli(argv, { twenty: marketplaceFixture(), out: (l) => out.push(l), err: (l) => err.push(l), ...overrides });
+  const code = await runCli(argv, { accounts: marketplaceFixture(), out: (l) => out.push(l), err: (l) => err.push(l), ...overrides });
   return { code, out: out.join("\n"), err: err.join("\n") };
 }
 
@@ -49,10 +49,10 @@ describe("log inspect", () => {
     expect(configs.map((c) => c.ownerDriven)).toEqual([true, false]);
   });
 
-  test("a browser Facebook sends to a checkpoint while it is open sets the account to DEACTIVATED in Twenty", async () => {
-    const twenty = marketplaceFixture();
+  test("a browser Facebook sends to a checkpoint while it is open sets the account to DEACTIVATED in the account store", async () => {
+    const store = marketplaceFixture();
     const result = await run(["inspect", "start", "--account", "galwayOne"], {
-      twenty,
+      accounts: store,
       inspectSession: async (config: InspectSessionConfig) => {
         const navigations = [
           { url: "https://www.facebook.com/groups/123/members", at: "2026-10-24T06:42:06.000Z" },
@@ -64,21 +64,21 @@ describe("log inspect", () => {
       },
     });
     expect(result.code).toBe(0);
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")).toMatchObject({ accountStatus: "DEACTIVATED", statusReason: "checkpointed" });
-    expect(result.err).toContain("galwayOne is checkpointed, so it is DEACTIVATED in Twenty and its listings are marked lost: Facebook sent the page to /checkpoint/1501092823525282/ (a checkpoint) at 2026-10-24T06:51:09.000Z");
+    expect(store.rows.socialAccounts.find((r) => r.id === "galwayOne")).toMatchObject({ accountStatus: "DEACTIVATED", statusReason: "checkpointed" });
+    expect(result.err).toContain("galwayOne is checkpointed, so it is DEACTIVATED in the account store and its listings are marked lost: Facebook sent the page to /checkpoint/1501092823525282/ (a checkpoint) at 2026-10-24T06:51:09.000Z");
   });
 
   test("a browser that never lands on a checkpoint leaves the account's status as it was", async () => {
-    const twenty = marketplaceFixture();
+    const store = marketplaceFixture();
     await run(["inspect", "start", "--account", "galwayOne"], {
-      twenty,
+      accounts: store,
       inspectSession: async (config: InspectSessionConfig) => {
         mkdirSync(dirname(config.captureDir), { recursive: true });
         writeFileSync(join(dirname(config.captureDir), "navigations.jsonl"), JSON.stringify({ url: "https://www.facebook.com/groups/123/members", at: "2026-10-24T06:42:06.000Z" }) + "\n");
         return 0;
       },
     });
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!.accountStatus).toBe("ACTIVE");
+    expect(store.rows.socialAccounts.find((r) => r.id === "galwayOne")!.accountStatus).toBe("ACTIVE");
   });
 
   test("start goes through the same gates: an account with no proxy opens nothing", async () => {
@@ -143,7 +143,7 @@ describe("log inspect start --detach (how an MCP agent opens the account's brows
     };
     try {
       const out: string[] = [];
-      const code = await runCli(["inspect", "start", "--account", "galwayOne", "--detach"], { twenty: marketplaceFixture(), out: (l) => out.push(l), err: () => {} });
+      const code = await runCli(["inspect", "start", "--account", "galwayOne", "--detach"], { accounts: marketplaceFixture(), out: (l) => out.push(l), err: () => {} });
       expect(code).toBe(0);
       expect(started).toEqual([["inspect", "start", "--account", "galwayOne"]]);
       expect(out.join("\n")).toContain("is open, as its own process");
@@ -159,7 +159,7 @@ describe("log inspect start --detach (how an MCP agent opens the account's brows
     inspectDetachDeps.start = () => ({ exited: () => 1 });
     try {
       const err: string[] = [];
-      const code = await runCli(["inspect", "start", "--account", "galwayOne", "--detach"], { twenty: marketplaceFixture(), out: () => {}, err: (l) => err.push(l) });
+      const code = await runCli(["inspect", "start", "--account", "galwayOne", "--detach"], { accounts: marketplaceFixture(), out: () => {}, err: (l) => err.push(l) });
       expect(code).toBe(1);
       expect(err.join("\n")).toContain("ended before its browser was ready");
     } finally {
@@ -181,7 +181,7 @@ describe("log inspect start --detach (how an MCP agent opens the account's brows
       mkdirSync(dirname(logPath), { recursive: true });
       appendFileSync(logPath, "AdsPower profile k1 stopped\nInspect session for galwayOne ended (exit 0).\n");
       const err: string[] = [];
-      const code = await runCli(["inspect", "start", "--account", "galwayOne", "--detach"], { twenty: marketplaceFixture(), out: () => {}, err: (l) => err.push(l) });
+      const code = await runCli(["inspect", "start", "--account", "galwayOne", "--detach"], { accounts: marketplaceFixture(), out: () => {}, err: (l) => err.push(l) });
       expect(code).toBe(1);
       expect(err.join("\n")).toContain("launchBudgetSpent");
       expect(err.join("\n")).not.toContain("AdsPower profile k1 stopped");

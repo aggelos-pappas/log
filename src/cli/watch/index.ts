@@ -17,13 +17,13 @@ import { renderMonitorOutput, summarizeMonitor, toCheckOutcome } from "./helpers
 
 export * from "./helpers/index.ts";
 
-export const WATCH_USAGE = "Usage: log facebook watch --account <accountName> [--checks <n>] [--interval <minutes>] [--json] [--bypass]";
+export const WATCH_USAGE = "Usage: log facebook watch --account <accountName> [--checks <n>] [--interval <minutes>] [--json] [--bypass]\nRetired (#339): Marketplace listings were kept in Twenty, which log no longer uses.";
 
 export const WATCH_INPUT: CommandInput = {
   forms: [
     {
       words: [],
-      summary: "Run the Marketplace listing monitor (XState) for one Facebook account and print every step",
+      summary: "Retired (#339): Run the Marketplace listing monitor (XState) for one Facebook account and print every step",
       positionals: [],
       flags: [
         FACEBOOK_ACCOUNT_FLAG,
@@ -50,7 +50,7 @@ export const watchCommand: Command = {
   longRunning: true,
   effect: "browser",
   input: WATCH_INPUT,
-  summary: "Run the listing monitor (XState) for one account and print every step",
+  summary: "Retired (#339): the listing monitor",
   args: "--account <name> [--checks <n>] [--interval <min>] [--json] [--bypass]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(WATCH_INPUT));
@@ -69,7 +69,7 @@ export const watchCommand: Command = {
     const json = Boolean(parsed.flags["json"]);
     let listings: WatchedListing[];
     try {
-      listings = (await listListingsWhere(context.twenty, { socialAccountId: { eq: account.id } }))
+      listings = (await listListingsWhere(context.accounts, { socialAccountId: { eq: account.id } }))
         .filter((l) => l.listingId && (l.status === "active" || l.status === "underReview"))
         .map((l) => ({
           listingId: l.listingId as string,
@@ -112,7 +112,7 @@ export const watchCommand: Command = {
           }
           const saved = await keepSession(context, account, run);
           if (saved) context.err(saved);
-          if (result.ok) await syncDashboard(context.twenty, account.id, (result as ScanResult).listings);
+          if (result.ok) await syncDashboard(context.accounts, account.id, (result as ScanResult).listings);
           return toCheckOutcome(result as ScanResult | WorkerFailure);
         }),
       },
@@ -137,7 +137,7 @@ export const watchCommand: Command = {
     try {
       actor.start();
       const output = (await toPromise(actor)) as MonitorOutput;
-      const loss = output.issue ? await recordAccountIssue(context.twenty, account, output.issue, output.stopReason) : null;
+      const loss = output.issue ? await recordAccountIssue(context.accounts, account, output.issue, output.stopReason) : null;
       const failed = output.stopReason !== "checks done" && output.stopReason !== "stopped";
       const code = failed ? 1 : 0;
       if (json) return { code, stdout: JSON.stringify({ kind: "output", ...output, accountStatus: loss?.status ?? null }) };

@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } fr
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { TwitterEngineRun, TwitterEngineSpec, TwitterSessionAnswer } from "../../twitter/account/session/index.ts";
 import { approveQueue, buildQueue, loadQueue, pidAlive } from "../../twitter/queue/plan/index.ts";
 import type { EventKind, Queue, QueueAction } from "../../twitter/queue/plan/index.ts";
@@ -28,9 +28,9 @@ const DMS = ["yo the new tool is up", "yo made a free tool", "yo the tool is liv
 const DEAD_PID = 4_194_301;
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "xQueue", accountName: "xQueue", platform: "TWITTER", cookies: { auth_token: "a".repeat(40), ct0: "b".repeat(40) }, proxy: null });
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "xQueue", accountName: "xQueue", platform: "TWITTER", cookies: { auth_token: "a".repeat(40), ct0: "b".repeat(40) }, proxy: null });
+  return store;
 }
 
 function queueFile(dir: string, action: QueueAction, count: number, events: { n: number; kind: EventKind; s: number }[], minGap: number): string {
@@ -60,7 +60,7 @@ async function cli(argv: string[], hooks: Hooks = {}) {
   let calls = 0;
   let sleeps = 0;
   const context: Partial<CommandContext> = {
-    twenty: fixture(),
+    accounts: fixture(),
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     now: () => new Date(world.clock),

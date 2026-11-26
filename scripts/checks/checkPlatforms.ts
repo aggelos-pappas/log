@@ -11,7 +11,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const problems: string[] = [];
 const has = (path: string) => existsSync(join(root, path));
 
-for (const platform of PLATFORMS) if (!PLATFORM_SITES[platform]) problems.push(`${platform}: no PLATFORM_SITES entry (its Twenty value, hosts, home, proxy and browser)`);
+for (const platform of PLATFORMS) if (!PLATFORM_SITES[platform]) problems.push(`${platform}: no PLATFORM_SITES entry (its account platform value, hosts, home, proxy and browser)`);
 
 for (const platform of PLATFORMS.filter((p) => p !== PLATFORMS[0])) {
   if (!PLATFORM_LABELS[platform]) problems.push(`${platform}: no PLATFORM_LABELS entry (src/cli/runner/helpers/platforms.ts)`);

@@ -18,7 +18,7 @@ learn.chatgpt.com/docs/hooks): `hookSpecificOutput.additionalContext`,
 | `scripts/hooks/liveLogs.ts` | PreToolUse (Bash, PowerShell, Monitor) | Refuses a log run piped through tail/head and any hand-run `log …` (rules 26, 163); reminds a long one off a Monitor |
 | `scripts/hooks/storage.ts` | SessionStart, UserPromptSubmit | `~/.logCli/runs` over 2 GB or the disk nearly full (rule 66) |
 | `scripts/hooks/engines.ts` | SessionStart, UserPromptSubmit | The direct-API engines and each account's session and governor; a stale MCP server and uncommitted local changes, loudly (rule 163) |
-| `scripts/hooks/knowledge.ts` | SessionStart | The knowledge base is there and how to search it |
+| `scripts/hooks/knowledge.ts` | SessionStart | log's memory is there and how to search it |
 | `scripts/hooks/inbox.ts` | SessionStart, UserPromptSubmit, PostToolUse | Anyone who wrote to a signed-in account's inbox since the last look |
 | `scripts/hooks/queue.ts` | SessionStart, UserPromptSubmit, PostToolUse | What every account's queue did since the last look (rule 109) |
 | `scripts/hooks/xLive.ts` | SessionStart, UserPromptSubmit, PostToolUse | What X's own client shows on each X account, new for this session |

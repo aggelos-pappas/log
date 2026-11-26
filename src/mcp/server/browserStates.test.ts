@@ -3,7 +3,7 @@ import { PAGE_STATES, refOf, RESOLVE_CALLS } from "../../browser/flow/helpers/pa
 import { browserView } from "../../browser/inspect/index.ts";
 import type { BrowserAt } from "../../browser/inspect/index.ts";
 import { COMMANDS } from "../../cli/runner/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { browserLines, runToolCall, savedFlows, toolsFromCommands, toolsFromFlows } from "./index.ts";
 
 const CHECKPOINT = "https://www.facebook.com/checkpoint/1501092823525282/";
@@ -24,7 +24,7 @@ describe("where every open browser is, in every tool result (rules 54-55)", () =
     expect(view.needsOwner).toContain("video selfie");
   });
 
-  test("Messenger's Create PIN runs the recorded flow when the PIN is in Twenty, and is the owner's when it isn't", () => {
+  test("Messenger's Create PIN runs the recorded flow when the PIN is in the account store, and is the owner's when it isn't", () => {
     const text = "- heading \"Create a PIN to access your chats on any device\" [ref=e3]";
     expect(browserView(at("https://www.facebook.com/messages/", text, { messengerPin: true })).next).toEqual({ tool: "facebookFlowMessengerPinCreateLive", input: { account: "bethlehem", confirmLive: true } });
     const without = browserView(at("https://www.facebook.com/messages/", text));
@@ -62,7 +62,7 @@ describe("where every open browser is, in every tool result (rules 54-55)", () =
     const views = [browserView(at("https://www.facebook.com/", "- heading \"Remember password\" [level=3]"))];
     expect(browserLines(views)[0]).toContain("page state rememberPassword");
     expect(browserLines(views)[1]).toContain("Next: call `inspectDoLive`");
-    const result = await runToolCall("errors", { code: "locationNotSet" }, { twenty: marketplaceFixture() }, () => {}, () => views);
+    const result = await runToolCall("errors", { code: "locationNotSet" }, { accounts: marketplaceFixture() }, () => {}, () => views);
     const text = (result.content as { text: string }[])[0].text;
     expect(text.split("\n")[0]).toContain("bethlehem on https://www.facebook.com/");
     expect(result.structuredContent).toMatchObject({ next: { tool: "inspectDoLive" }, needsOwner: null, browsers: [{ account: "bethlehem", state: { id: "rememberPassword" } }] });
@@ -72,7 +72,7 @@ describe("where every open browser is, in every tool result (rules 54-55)", () =
   });
 
   test("progress carries every streamed line with its time", async () => {
-    const result = await runToolCall("facebookAccounts", {}, { twenty: marketplaceFixture() }, () => {}, () => []);
+    const result = await runToolCall("facebookAccounts", {}, { accounts: marketplaceFixture() }, () => {}, () => []);
     const progress = (result.structuredContent as { progress: { at: string; source: string; line: string }[] }).progress;
     expect(progress.length).toBeGreaterThan(0);
     for (const p of progress) expect(Number.isNaN(Date.parse(p.at))).toBe(false);

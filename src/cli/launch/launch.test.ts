@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { listAccounts } from "../../platformKit/account/index.ts";
 import { listListings } from "../../facebook/marketplace/listing/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { CommandContext } from "../runner/types.ts";
 import { launchDeps, parseLaunchArgs, runLaunch, setEnvValue, setupSummary, shouldPrompt, SETUP_HARNESSES } from "./index.ts";
 
@@ -13,7 +13,7 @@ function capture() {
   const err: string[] = [];
   const context: CommandContext = {
     load: () => ({ listings: listListings(), accounts: listAccounts() }),
-    twenty: marketplaceFixture(),
+    accounts: marketplaceFixture(),
     worker: async () => ({ ok: false, code: "crashed", detail: "worker not stubbed" }),
     session: () => {
       throw new Error("session not stubbed");
@@ -40,7 +40,6 @@ function stubPrompts(answers: unknown[]) {
   const steps: string[] = [];
   const outros: string[] = [];
   launchDeps.tty = () => ({ stdinTTY: true, stdoutTTY: true });
-  launchDeps.twentyReady = () => true;
   launchDeps.prompts = {
     intro: () => void calls.push("intro"),
     outro: (message) => {
@@ -96,12 +95,11 @@ describe("parseLaunchArgs / shouldPrompt", () => {
 });
 
 describe("runLaunch", () => {
-  test("--json lists actions without prompting", async () => {
+  test("--json lists the start actions without prompting", async () => {
     const { calls } = stubPrompts([]);
     const result = await runLaunch(capture().context, ["--json"]);
     expect(result.code).toBe(0);
     expect(JSON.parse(result.stdout!).start).toEqual(["setup", "add", "signIn", "check", "agent", "console"]);
-    expect(JSON.parse(result.stdout!).actions).toEqual(["browse", "status", "account", "accounts", "scan", "watch", "connect", "join", "answer", "fill", "reels", "doctor"]);
     expect(calls).toEqual([]);
   });
 
@@ -112,68 +110,6 @@ describe("runLaunch", () => {
     expect(calls).toEqual([]);
   });
 
-  test("browse delegates to `listing <id>`, with the listings from Twenty", async () => {
-    const { calls } = stubPrompts(["marketplace", "browse", "readyOne"]);
-    const delegated: string[][] = [];
-    launchDeps.run = (command, context, argv) => {
-      delegated.push([command.name, ...argv]);
-      return real.run(command, context, argv);
-    };
-    const { context, out } = capture();
-    expect((await runLaunch(context, [])).code).toBe(0);
-    expect(delegated).toEqual([["listing", "readyOne"]]);
-    expect(out.join("\n")).toContain("Rubbish Removal Galway");
-    expect(calls).toEqual(["intro", "select", "select", "select", "outro"]);
-  });
-
-  test("status offers the saved statuses and delegates to `listings --status`", async () => {
-    const { offered } = stubPrompts(["marketplace", "status", "SOLD"]);
-    const { context, out } = capture();
-    expect((await runLaunch(context, [])).code).toBe(0);
-    expect(offered[2]).toEqual(expect.arrayContaining(["DRAFT", "READY", "ACTIVE", "SOLD"]));
-    expect(out.join("\n")).toContain("soldOne");
-  });
-
-  test("scan offers only accounts that may run (rule 12) and delegates to `scan --account <name>`", async () => {
-    const { offered } = stubPrompts(["marketplace", "scan", "galwayOne"]);
-    const delegated: string[][] = [];
-    launchDeps.run = (command, _context, argv) => {
-      delegated.push([command.name, ...argv]);
-      return { code: 0, stdout: "scanned" };
-    };
-    expect((await runLaunch(capture().context, [])).code).toBe(0);
-    expect(delegated).toEqual([["scan", "--account", "galwayOne"]]);
-    expect(offered[2]).toEqual(expect.arrayContaining(["galwayOne", "galwayTwo", "vietnam"]));
-    for (const refused of ["noProxy", "noCountry", "banned", "unset", "twitterOne"]) expect(offered[2]).not.toContain(refused);
-  });
-
-  test("join offers only accounts that may run, asks for the group, and delegates a dry run to `join group`", async () => {
-    const { calls, offered } = stubPrompts(["marketplace", "join", "galwayOne", "https://www.facebook.com/groups/4191018610937243/"]);
-    const delegated: string[][] = [];
-    launchDeps.run = (command, _context, argv) => {
-      delegated.push([command.name, ...argv]);
-      return { code: 0, stdout: "read" };
-    };
-    expect((await runLaunch(capture().context, [])).code).toBe(0);
-    expect(offered[1]).toContain("join");
-    expect(offered[2]).not.toContain("banned");
-    expect(calls).toEqual(["intro", "select", "select", "select", "text", "outro"]);
-    expect(delegated).toEqual([["join", "group", "--account", "galwayOne", "--group", "https://www.facebook.com/groups/4191018610937243/"]]);
-    expect(delegated[0]).not.toContain("--live");
-  });
-
-  test("Warm up Facebook Reels: the stepper asks the session's shape, likes default no, and plans it", async () => {
-    const { calls } = stubPrompts(["marketplace", "reels", "8-20", "4-25", "0.6", "0.3", "0.15", "no", "no"]);
-    const delegated: string[][] = [];
-    launchDeps.run = (command, _context, argv) => {
-      delegated.push([command.name, ...argv]);
-      return { code: 0, stdout: "planned" };
-    };
-    expect((await runLaunch(capture().context, [])).code).toBe(0);
-    expect(calls.filter((c) => c === "select")).toHaveLength(9);
-    expect(delegated).toEqual([["warmup", "facebook", "reel", "plan", "--reels", "8-20", "--watch", "4-25", "--skip", "0.6", "--comments", "0.3", "--profile", "0.15"]]);
-  });
-
   test("cancel exits 130 with a clack cancel", async () => {
     const { calls } = stubPrompts([Symbol("clack:cancel")]);
     expect((await runLaunch(capture().context, [])).code).toBe(130);
@@ -181,7 +117,7 @@ describe("runLaunch", () => {
   });
 });
 
-describe("runLaunch: start here, no Twenty", () => {
+describe("runLaunch: start here", () => {
   function recordRuns(answer: (name: string) => { code: number; stdout?: string } = () => ({ code: 0, stdout: "ok" })) {
     const delegated: string[][] = [];
     launchDeps.run = (command, _context, argv) => {
@@ -191,24 +127,16 @@ describe("runLaunch: start here, no Twenty", () => {
     return delegated;
   }
 
-  test("the start menu leads with adding an account and hides Facebook Marketplace without Twenty", async () => {
+  test("the start menu leads with adding an account", async () => {
     const { offered } = stubPrompts(["agent"]);
-    launchDeps.twentyReady = () => false;
     const { context, out } = capture();
     expect((await runLaunch(context, [])).code).toBe(0);
     expect(offered[0]).toEqual(["setup", "add", "signIn", "check", "agent", "console"]);
     expect(out.join("\n")).toContain("claude mcp add log -- logMcp");
   });
 
-  test("workspace listings add the Facebook Marketplace menu", async () => {
-    const { offered } = stubPrompts(["agent"]);
-    await runLaunch(capture().context, []);
-    expect(offered[0]).toEqual(["setup", "add", "signIn", "check", "agent", "console", "marketplace"]);
-  });
-
   test("add an X account goes straight to the masked cookie prompt", async () => {
     const { calls, offered } = stubPrompts(["add", "twitter", "@someHandle"]);
-    launchDeps.twentyReady = () => false;
     const delegated = recordRuns();
     const { context, out } = capture();
     expect((await runLaunch(context, [])).code).toBe(0);
@@ -248,7 +176,7 @@ describe("runLaunch: start here, no Twenty", () => {
     const { offered } = stubPrompts(["check", "0"]);
     const delegated = recordRuns();
     const { context } = capture();
-    const accounts = (await context.twenty.list("socialAccounts")) as unknown as { platform?: string }[];
+    const accounts = (await context.accounts.list("socialAccounts")) as unknown as { platform?: string }[];
     expect(accounts.some((a) => a.platform === "TWITTER")).toBe(true);
     expect((await runLaunch(context, [])).code).toBe(0);
     expect(offered[1]).toEqual(["0"]);
@@ -277,7 +205,7 @@ describe("log launch --setup", () => {
   function setupRig(tregFound = true) {
     const opened: string[] = [];
     const ran: string[] = [];
-    const files: Record<string, string> = { "/home/.logCli/.env": "LOG_ACCOUNTS=local\n" };
+    const files: Record<string, string> = { "/home/.logCli/.env": "LOG_TRACK=stable\n" };
     launchDeps.openUrl = (url) => (opened.push(url), true);
     launchDeps.runInTerminal = (command, args) => (ran.push([command, ...args].join(" ")), { found: tregFound, code: 0 });
     launchDeps.harnesses = () => [];
@@ -300,7 +228,7 @@ describe("log launch --setup", () => {
     expect(delegated).toEqual([["cookies", "save", "--account", "someHandle"]]);
     expect(opened).toEqual(["https://treg.to/?ref=matthewdonse-aebsh", "https://www.memelord.com/sign-up?ref=kfwut9wc", "https://www.memelord.com/settings/developer"]);
     expect(ran).toEqual(["treg login"]);
-    expect(files["/home/.logCli/.env"]).toBe("LOG_ACCOUNTS=local\nMEMELORD_API_KEY=memeKey123\n");
+    expect(files["/home/.logCli/.env"]).toBe("LOG_TRACK=stable\nMEMELORD_API_KEY=memeKey123\n");
     expect(out.join("\n")).toContain("✓ treg: signed in");
     expect(out.join("\n")).toContain("✓ Memelord: MEMELORD_API_KEY saved");
     expect(out.join("\n")).not.toContain("memeKey123");
@@ -329,7 +257,7 @@ describe("log launch --setup", () => {
     expect(out.join("\n")).toContain("$10 in credits");
     expect(out.join("\n")).toContain("· Inworld: no key");
     expect(out.join("\n")).toContain("· Fish Audio: skipped");
-    expect(files["/home/.logCli/.env"]).toBe("LOG_ACCOUNTS=local\n");
+    expect(files["/home/.logCli/.env"]).toBe("LOG_TRACK=stable\n");
   });
 
   test("treg not installed says where to get it", async () => {

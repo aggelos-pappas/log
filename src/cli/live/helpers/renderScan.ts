@@ -21,7 +21,7 @@ export function renderScan(scan: ScanResult): string {
 }
 
 export function renderLoss(loss: LossReport): string {
-  const lines = [`${loss.account.accountName} is now ${loss.status.toUpperCase()} in Twenty (kept, never deleted).`];
+  const lines = [`${loss.account.accountName} is now ${loss.status.toUpperCase()} in the account store (kept, never deleted).`];
   if (loss.lost.length) lines.push(`${loss.lost.length} listing(s) moved to ACCOUNT_LOST.`);
   for (const r of loss.replacements) {
     lines.push(
@@ -37,14 +37,14 @@ export function renderLoss(loss: LossReport): string {
 export function renderDoctor(
   checks: DoctorChecks,
   accounts: { accountName: string; ready: boolean; why: string | null; hasCookies: boolean }[],
-  twentyError: string | null,
+  storeError: string | null,
 ): string {
   const mark = (ok: boolean) => (ok ? "ok  " : "MISS");
   const lines = [
     `${mark(true)} python ${checks.python}`,
     `${mark(!!checks.facebookCamofoxClient)} facebook-camofox-client ${checks.facebookCamofoxClient ?? checks.facebookCamofoxClientError ?? ""}`.trimEnd(),
     `${mark(!!checks.camoufoxBrowser)} Camoufox ${checks.camoufoxVersion ?? ""} ${checks.camoufoxBrowser ?? checks.camoufoxBrowserError ?? ""}`.trimEnd(),
-    `${mark(!twentyError)} Twenty ${twentyError ? twentyError.split("\n")[0] : `${accounts.length} FACEBOOK account(s)`}`,
+    `${mark(!storeError)} Account store ${storeError ? storeError.split("\n")[0] : `${accounts.length} FACEBOOK account(s)`}`,
   ];
   if (accounts.length) {
     lines.push(

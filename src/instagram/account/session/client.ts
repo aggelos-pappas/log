@@ -1,11 +1,11 @@
 import { join } from 'node:path'
 import { findPlatformAccount, platformGate, recordPlatformSession, runPlatformEngine, runPlatformEngineLive } from '../../../platformKit/session/index'
 import type { PlatformAccount, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from '../../../platformKit/session/index'
-import type { TwentyClient } from '../../../twenty/graphql/index'
+import type { AccountStore } from '../../../accounts/store/index'
 
 export const INSTAGRAM_PLATFORM: PlatformShape = {
   platform: 'instagram',
-  twentyPlatform: 'INSTAGRAM',
+  accountPlatform: 'INSTAGRAM',
   label: 'Instagram',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', 'instagramApi', 'engine.py'),
   sessionCookies: ['sessionid', 'ds_user_id', 'csrftoken']
@@ -13,8 +13,8 @@ export const INSTAGRAM_PLATFORM: PlatformShape = {
 
 export const INSTAGRAM_COOKIE_DOMAIN = '.instagram.com'
 
-export function findInstagramAccount(twenty: TwentyClient, ref: string): Promise<PlatformAccount> {
-  return findPlatformAccount(twenty, INSTAGRAM_PLATFORM, ref)
+export function findInstagramAccount(store: AccountStore, ref: string): Promise<PlatformAccount> {
+  return findPlatformAccount(store, INSTAGRAM_PLATFORM, ref)
 }
 
 export function instagramGate(account: PlatformAccount): PlatformGate {
@@ -29,6 +29,6 @@ export function runInstagramEngineLive(account: PlatformAccount, spec: PlatformE
   return runPlatformEngineLive(INSTAGRAM_PLATFORM, account, spec, onLive)
 }
 
-export function recordInstagramSession(twenty: TwentyClient, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
-  return recordPlatformSession(twenty, INSTAGRAM_PLATFORM, account, run, now, INSTAGRAM_COOKIE_DOMAIN)
+export function recordInstagramSession(store: AccountStore, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
+  return recordPlatformSession(store, INSTAGRAM_PLATFORM, account, run, now, INSTAGRAM_COOKIE_DOMAIN)
 }

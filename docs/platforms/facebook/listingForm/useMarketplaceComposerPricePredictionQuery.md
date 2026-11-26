@@ -170,7 +170,7 @@ Asks Facebook's price suggestion for the listing (`marketplace_c2c_pricing.price
 
 ## What our machine does with it
 
-Nothing. The price comes from the listing in Twenty.
+Nothing. The price comes from the stored listing (listings are retired, #339).
 
 ## What can go wrong
 

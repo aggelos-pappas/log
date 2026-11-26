@@ -22,8 +22,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 |---|---|---|
 | `facebookJoinGroup` | Join a Facebook group as one account, in its open browser | `log facebook join group --account <accountName> --group <group url, id or name> [--live] [--json]` |
 | `facebookJoinGroupLive` | Join a Facebook group as one account, in its open…, live on Facebook | `log facebook join group --account <accountName> --group <group url, id or name> [--live] [--json]` |
-| `facebookReadGroup` | Read a Facebook group's new posts and the comments of the new posts… | `log facebook read group --account <accountName> --group <group url or id> [--scrolls <n>] [--commentPosts <n>] [--live] [--bypass] [--json]` |
-| `facebookReadGroupLive` | Read a Facebook group's new posts and the comments of…, live on Facebook | `log facebook read group --account <accountName> --group <group url or id> [--scrolls <n>] [--commentPosts <n>] [--live] [--bypass] [--json]` |
+| `facebookReadGroup` | Retired: #339) | `log facebook read group --account <accountName> --group <group url or id> [--scrolls <n>] [--commentPosts <n>] [--live] [--bypass] [--json]` |
+| `facebookReadGroupLive` | Retired: #339), live on Facebook | `log facebook read group --account <accountName> --group <group url or id> [--scrolls <n>] [--commentPosts <n>] [--live] [--bypass] [--json]` |
 | `facebookReadMembers` | Read a Facebook group's newest members | `log facebook read members --account <accountName> --group <group url or id> --count <n> [--secondsPerScroll <s>] [--maxScrolls <n>] [--owners] [--bypass] [--json]` |
 | `facebookPoll` | Poll a Facebook group from one account in its open browser, once or… | `log facebook poll <group url or id> <accountName> [<how long to poll: 30m, 2h>] [--bypass]` |
 

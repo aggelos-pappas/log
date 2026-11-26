@@ -37,15 +37,11 @@ flowchart TB
     c_browser["browser"]
     c_report["report"]
     c_job["job"]
-    c_mcp["mcp"]
-    c_login["login"]
-    c_logout["logout"]
-    c_whoami["whoami"]
     c_voice["voice"]
     c_search["search"]
     c_index["index"]
     c_facts["facts"]
-    c_kb["kb"]
+    c_memory["memory"]
     c_runtime["runtime"]
     c_memelord["memelord"]
     c_treg["treg"]
@@ -300,14 +296,6 @@ flowchart TB
   mcp --> c_report
   cli --> c_job
   mcp --> c_job
-  cli --> c_mcp
-  c_mcp -.- terminal
-  cli --> c_login
-  c_login -.- terminal
-  cli --> c_logout
-  mcp --> c_logout
-  cli --> c_whoami
-  mcp --> c_whoami
   cli --> c_twitterSession
   mcp --> c_twitterSession
   cli --> c_twitterFollows
@@ -326,8 +314,8 @@ flowchart TB
   c_index -.- terminal
   cli --> c_facts
   c_facts -.- terminal
-  cli --> c_kb
-  mcp --> c_kb
+  cli --> c_memory
+  mcp --> c_memory
   cli --> c_runtime
   c_runtime -.- terminal
   cli --> c_memelord

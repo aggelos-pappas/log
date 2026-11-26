@@ -49,7 +49,7 @@
       "description": "How log works inside, for contributors",
       "sections": [
         { "title": "Specs", "folder": "specs" },
-        { "title": "The ideas", "pages": ["howItWorks.md", "models.md", "liveInbox.md", "pipelineLabels.md", "unifyStorage.md", "storageAgainstTheBook.md", "storageReadPath.md", "hookStartup.md", "antigravityHooks.md", "toolCallSpeed.md", "toolCallsAgainstTheBook.md", "accountsAndListings.md", "lifecycle.md", "signingIn.md", "status.md", "security/encryptedStore.md"] },
+        { "title": "The ideas", "pages": ["howItWorks.md", "models.md", "liveInbox.md", "pipelineLabels.md", "unifyStorage.md", "storageAgainstTheBook.md", "storageReadPath.md", "hookStartup.md", "antigravityHooks.md", "toolCallSpeed.md", "toolCallsAgainstTheBook.md", "accountsAndListings.md", "lifecycle.md", "status.md", "security/encryptedStore.md"] },
         { "title": "Browsers and proxies", "pages": ["browsers.md", "browserSetup.md", "adsPower.md", "proxies.md", "browserIdentity.md"], "folders": ["proxyVendors", "httpClients"] },
         {
           "title": "Facebook in depth",
@@ -60,7 +60,7 @@
         { "title": "Diagrams", "folder": "diagrams" },
         {
           "title": "Working on log",
-          "pages": ["layout.md", "namingConventions.md", "contextLayer.md", "callTiming.md", "knowledgeBase.md", "relateGraph.md", "indexPass.md", "deployment.md", "twitterPlatform.md", "opencodeHooks.md", "contributing.md"],
+          "pages": ["layout.md", "namingConventions.md", "contextLayer.md", "callTiming.md", "memory.md", "relateGraph.md", "indexPass.md", "deployment.md", "twitterPlatform.md", "opencodeHooks.md", "contributing.md"],
           "folders": ["rea", "voice"]
         }
       ]

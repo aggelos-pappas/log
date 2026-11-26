@@ -6,7 +6,7 @@ Made by `log new platform discord`. Discord is a platform of its own: every comm
 
 | Part | Where |
 | --- | --- |
-| The accounts | `socialAccounts` with platform `DISCORD`, in the local account store `~/.logCli/localAccounts.json` (or Twenty if you keep accounts there; the Twenty option was added 2026-10-28 by `scripts/twenty/twentySetup.mjs`). First account: `<name:1>`, AdsPower profile `k1ifqe1s` |
+| The accounts | `socialAccounts` with platform `DISCORD`, in the local account store `~/.logCli/localAccounts.json`. First account: `<name:1>`, AdsPower profile `k1ifqe1s` |
 | The session (find the account, its gate, its engine, the answer back to the account row) | `src/discord/account/session`, on the shared `src/platformKit/session` |
 | The commands | `src/cli/discord/index.ts`: `log discord session check` (MCP `discordSessionCheck`) |
 | The engine | `python/discordApi/engine.py`, on the shared `python/platformKit/engine.py`; each account's governor is under `~/.logCli/discord/<account>` |

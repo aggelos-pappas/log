@@ -28,7 +28,7 @@ const run = (argv: string[]) => localAccountCommand.run({} as never, argv);
 const rows = () => JSON.parse(readFileSync(process.env.LOG_LOCAL_ACCOUNTS!, "utf8")).socialAccounts as Record<string, unknown>[];
 
 describe("log localAccount add --browser", () => {
-  test("sets the browser on the account's own row, even one pulled from Twenty, and list shows it", async () => {
+  test("sets the browser on the account's own row, even one pulled from the account store, and list shows it", async () => {
     const saved = await run(["add", "--platform", "reddit", "--account", "fakeRedditor", "--browser", "brave"]);
     expect(saved.code).toBe(0);
     expect(saved.stdout).toContain("browser brave");

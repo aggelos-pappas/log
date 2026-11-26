@@ -3,7 +3,7 @@ import { toFacebookAccount } from "../../../platformKit/socialAccount/index.ts";
 import type { SocialAccountRow } from "../../../platformKit/socialAccount/index.ts";
 import { findSlackAccount, SLACK_COOKIE_DOMAIN } from "../../../slack/account/session/index.ts";
 import type { PlatformAccount } from "../../../platformKit/session/index.ts";
-import { TwentyError, upsertLocalAccount } from "../../../twenty/graphql/index.ts";
+import { AccountStoreError, upsertLocalAccount } from "../../../accounts/store/index.ts";
 import { shouldPrompt } from "../../launch/helpers/index.ts";
 import type { LaunchTTY } from "../../launch/helpers/index.ts";
 import { parseArgs, parserSpecOf, refuse, refuseError, refuseInput } from "../../runner/helpers/index.ts";
@@ -57,9 +57,9 @@ export function withD(held: unknown, d: string): BrowserCookie[] | Record<string
 
 async function existing(context: Parameters<Command["run"]>[0], name: string): Promise<PlatformAccount | null> {
   try {
-    return await findSlackAccount(context.twenty, name);
+    return await findSlackAccount(context.accounts, name);
   } catch (error) {
-    if (error instanceof TwentyError && error.code === "accountNotFound" && !/ are called /.test(error.message)) return null;
+    if (error instanceof AccountStoreError && error.code === "accountNotFound" && !/ are called /.test(error.message)) return null;
     throw error;
   }
 }
@@ -106,9 +106,9 @@ export const slackCookiesCommand: Command = {
       const fields = { sessionState: "loggedIn", sessionCheckedAt: now.toISOString() };
       const label = typeof parsed.flags["name"] === "string" && parsed.flags["name"].trim() ? parsed.flags["name"].trim() : accountName;
       if (found) {
-        const row = await context.twenty.get("socialAccounts", found.id);
+        const row = await context.accounts.get("socialAccounts", found.id);
         const held = (row as unknown as { cookies?: unknown } | null)?.cookies;
-        await context.twenty.update("socialAccounts", found.id, { cookies: withD(held, d), ...fields } as never);
+        await context.accounts.update("socialAccounts", found.id, { cookies: withD(held, d), ...fields } as never);
       } else upsertLocalAccount({ accountName, name: label, platform: "SLACK", cookies: withD(null, d), ...fields });
       prompts.outro(`Saved locally. ${accountName} is loggedIn.`);
       return { code: 0, stdout: `log slack cookies save: ${accountName} ${found ? "updated" : "added"} as a local SLACK account, loggedIn${run.answer.screenName ? ` as ${run.answer.screenName}` : ""} in ${workspaces.length} workspace(s) (${workspaces.join(", ")}), d <set>.` };

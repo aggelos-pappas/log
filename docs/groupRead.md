@@ -2,7 +2,9 @@
 
 `log facebook read group` reads the posts (and, if you ask, the comments) of a Facebook group an account has joined. It runs in the account's already-open browser, scrolls the group, and reads the posts from Facebook's own responses rather than from the screen. This page explains how a read works, step by step. For how reads fit into automatic group listening, see [Listening to Facebook groups](groupListening.md), which wins where the two differ. What it must do is in the spec, [Facebook groups](specs/facebookGroups.md).
 
-log already joins groups and answers their entry questions (`src/facebook/group/join`, `src/facebook/group/answer`) and keeps each group in Twenty as an `agencyGroup`. This adds reading the posts.
+log already joins groups and answers their entry questions (`src/facebook/group/join`, `src/facebook/group/answer`) and kept each group as an `agencyGroup` record. This adds reading the posts.
+
+**Retired (#339).** The group records and their read cursor were kept only in Twenty, which log no longer uses, so the `log facebook join group` and `read group` commands refuse with `twentyRemoved` until they are rebuilt on log.db. This page is kept as the design.
 
 ## Where the approach comes from
 
@@ -13,7 +15,7 @@ An earlier Facebook client of ours built group listening first and got the appro
 | `domain_extraction/response_capture.py` | Reads the page's own responses while it scrolls; never calls Facebook's GraphQL itself. | Every step already records every response in its own HAR, so posts are read from that recording. There is no second listener. |
 | `domain_extraction/post_extractor.py` | Takes posts out of the page's embedded Relay JSON, keeping only those with a `post_id`, the expected group and a `creation_time`. | The same rules, in TypeScript, on the step's HAR and the first page's HTML, tested on a recorded run. |
 | `domain_records/normalization.py` | Rejects a post with no id or the wrong group; never fills in made-up values. | The same. |
-| `domain_posts/listen.py`, `domain_cursors/*` | One cursor per group, so each read yields only new posts; posts are saved before the cursor moves. | The same, with the cursor on the `agencyGroup` in Twenty. |
+| `domain_posts/listen.py`, `domain_cursors/*` | One cursor per group, so each read yields only new posts; posts are saved before the cursor moves. | The same, with the cursor on the `agencyGroup` record. |
 | `scripts/listen_group.py`, `listen_continuous.py` | Scroll one group, poll several. | A flow from a recording, run as an XState machine in the account's open browser. |
 
 What changes is how it runs: in the account's browser through the driver, in the browser kept open for the day, with every step recorded and read with rea, and every command available as a CLI command, an MCP tool and through the agent hooks.
@@ -70,16 +72,16 @@ The recorded flows `groupPostComments` and `groupPostDialog` stay as they are. T
 log facebook read group --account <a> --group <url|id> [--scrolls <n>] [--commentPosts <n>] [--live] [--bypass] [--json]
 ```
 
-- `--show` prints the group's read cursor from Twenty instead of reading (`src/cli/read`).
+- `--show` prints the group's stored read cursor instead of reading (`src/cli/read`).
 - It refuses without the account's open browser (`groupBrowserNotOpen`) and outside its active hours.
 - MCP tools: `facebookReadGroup` and `facebookReadGroupLive`. It's a long run, so watch its live log.
 
-## What is stored in Twenty
+## What was stored
 
-- **On `agencyGroup`:** `readCursor` (`{ lastPostId, watermark, idsAtWatermark }`, plus `seenIds`), `lastReadAt` and `lastReadReason`. This is all a read writes now.
+- **On `agencyGroup`:** `readCursor` (`{ lastPostId, watermark, idsAtWatermark }`, plus `seenIds`), `lastReadAt` and `lastReadReason`. This was all a read wrote.
 - **`agencyGroupPost`** and **`agencyGroupComment`** were added for posts and comments (author, text, permalink, feedback id, times, counts, reply depth). They still exist, but nothing writes to them any more: posts now go to the group-listening service instead (see [Listening to Facebook groups](groupListening.md)).
 
-The client lives in `src/facebook/group/read/client.ts` (`readStateOf` before a read). After any field change, regenerate the Twenty client with `bun run twenty:client`.
+The client lives in `src/facebook/group/read/client.ts` (`readStateOf` before a read).
 
 ## Tests
 

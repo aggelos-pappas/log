@@ -11,7 +11,7 @@ import type { AgencyListing } from "../../facebook/marketplace/agencyListing/ind
 import { publishMachine } from "../../facebook/marketplace/publish/index.ts";
 import { connectMachine } from "../../platformKit/connect/index.ts";
 import type { ActOutput, ConnectActorInputs, ReadOutput, SaveOutput, SolveOutput as ConnectSolveOutput } from "../../platformKit/connect/index.ts";
-import type { LoginSecrets } from "../../twenty/graphql/index.ts";
+import type { LoginSecrets } from "../../accounts/store/index.ts";
 import type {
   CaptureOutput,
   ConfirmOutput,
@@ -43,8 +43,9 @@ export * from "./helpers/index.ts";
 
 export const PUBLISH_USAGE = [
   "Usage: log facebook publish --listing <agencyListingId> [--live] [--json] [--formUrl <url>] [--bypass] [--now]",
+  "Retired (#339): Marketplace listings were kept in Twenty, which log no longer uses.",
   "Dry run unless --live: fills and checks everything, never clicks Publish.",
-  "The listing, its account and the account's proxy all come from Twenty.",
+  "The listing, its account and the account's proxy all come from the account store.",
   "--bypass skips only the account's waking hours (rule 18); every other gate still runs.",
   "--now skips only the 10-minute launch gap (rule 24); the 8 launches a day still hold.",
 ].join("\n");
@@ -55,7 +56,7 @@ function publishRunDir(runId: string, env: Record<string, string | undefined> = 
 
 async function refuseListing(context: CommandContext, listing: AgencyListing, code: ErrorCode, detail: string): Promise<CommandResult> {
   try {
-    await context.twenty.update("agencyListings", listing.id, {
+    await context.accounts.update("agencyListings", listing.id, {
       lastRunAt: new Date().toISOString(),
       lastRunResult: "BLOCKED" as never,
       lastErrorCode: code,
@@ -72,13 +73,13 @@ export async function checkPublishable(
   live: boolean,
   now: Date = new Date(),
 ): Promise<{ listing: AgencyListing; account: FacebookAccount } | CommandResult> {
-  const listing = await getListing(context.twenty, listingId);
+  const listing = await getListing(context.accounts, listingId);
   if (!listing) return refuse("publish", "listingNotFound", listingId);
   if (!listing.socialAccountId) return refuse("publish", "listingNoAccount", listing.id);
   if (!listing.status || !PUBLISHABLE_STATUSES.includes(listing.status)) {
     return refuse("publish", "listingNotPublishable", `${listing.id} is ${listing.status ?? "unset"}`);
   }
-  const account = await findAccount(context.twenty, listing.socialAccountId);
+  const account = await findAccount(context.accounts, listing.socialAccountId);
   const content = toPublishListing(listing);
   if (!content.ok) return refuseListing(context, listing, "listingInvalid", content.problems.join("; "));
   if (account.homeCountry) {
@@ -86,7 +87,7 @@ export async function checkPublishable(
     if (mismatch) return refuseListing(context, listing, "listingCountryMismatch", mismatch);
   }
   if (live) {
-    const published = await listListingsWhere(context.twenty, { socialAccountId: { eq: account.id } });
+    const published = await listListingsWhere(context.accounts, { socialAccountId: { eq: account.id } });
     const home = homeOf(account);
     const zones = new Map(home.ok ? [[account.id, home.home.timezone]] : []);
     const today = countPostedToday(published, now, zones).get(account.id) ?? 0;
@@ -102,7 +103,7 @@ export const PUBLISH_INPUT: CommandInput = {
     {
       words: [],
       liveEffect: "write",
-      summary: "Post one Twenty listing; a dry run unless live",
+      summary: "Retired (#339): Post one stored listing; a dry run unless live",
       positionals: [],
       flags: [
         { name: "listing", kind: "string", required: true, description: "The agencyListing id" },
@@ -124,7 +125,7 @@ export const publishCommand: Command = {
   longRunning: true,
   effect: "browser",
   input: PUBLISH_INPUT,
-  summary: "Post one Twenty listing (dry run unless --live), printing every machine step",
+  summary: "Retired (#339): posting a stored listing",
   args: "--listing <id> [--live] [--json] [--bypass] [--now]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(PUBLISH_INPUT));
@@ -150,7 +151,7 @@ export const publishCommand: Command = {
     const fixture = typeof parsed.flags.formUrl === "string" && parsed.flags.formUrl.startsWith("file:");
     let login: LoginSecrets | null = null;
     try {
-      login = await context.twenty.loginSecrets(account.id);
+      login = await context.accounts.loginSecrets(account.id);
     } catch {
       login = null;
     }
@@ -181,7 +182,7 @@ export const publishCommand: Command = {
       if (moved?.to) {
         exitNotes.push(`The proxy exit moved from ${moved.from ?? "?"} to ${moved.to} (still ${moved.country ?? account.homeCountry}).`);
         try {
-          await recordProxyCheck(context.twenty, account.id, { exitIp: moved.to, exitCountry: moved.country ?? account.homeCountry });
+          await recordProxyCheck(context.accounts, account.id, { exitIp: moved.to, exitCountry: moved.country ?? account.homeCountry });
         } catch {
         }
       }
@@ -248,7 +249,7 @@ export const publishCommand: Command = {
 
     let output: PublishOutput;
     try {
-      if (!dryRun) await setListingStatus(context.twenty, listing.id, "publishing");
+      if (!dryRun) await setListingStatus(context.accounts, listing.id, "publishing");
       actor.start();
       output = (await toPromise(actor)) as PublishOutput;
     } catch (error) {
@@ -272,15 +273,15 @@ export const publishCommand: Command = {
 
     const notes: string[] = [...exitNotes];
     try {
-      await recordRun(context.twenty, listing, output, dryRun, output.receipt);
-      if (!dryRun && output.result === "published") await markPosted(context.twenty, account.id);
+      await recordRun(context.accounts, listing, output, dryRun, output.receipt);
+      if (!dryRun && output.result === "published") await markPosted(context.accounts, account.id);
       if (output.issue) {
-        const loss = await recordAccountIssue(context.twenty, account, output.issue, output.failure?.detail ?? null);
+        const loss = await recordAccountIssue(context.accounts, account, output.issue, output.failure?.detail ?? null);
         if (loss) notes.push(renderLoss(loss));
       }
-      notes.push(`Written to Twenty: agencyListing ${listing.id}.`);
+      notes.push(`Written to the account store: agencyListing ${listing.id}.`);
     } catch (error) {
-      notes.push(`Could not write the run to Twenty: ${refuseError("publish", error).stderr}`);
+      notes.push(`Could not write the run to the account store: ${refuseError("publish", error).stderr}`);
     }
 
     const code = output.result === "dryRun" || output.result === "published" ? 0 : 1;

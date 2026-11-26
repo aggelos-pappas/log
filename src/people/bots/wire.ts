@@ -1,5 +1,5 @@
-import { createTwentyClient, withLocalAccounts } from '../../twenty/graphql/index'
-import type { TwentyClient } from '../../twenty/graphql/index'
+import { createAccountStore } from '../../accounts/store/index'
+import type { AccountStore } from '../../accounts/store/index'
 import { workspaceAccounts } from '../../platformKit/account/index'
 import type { PlatformAccount, PlatformEngineRun, PlatformEngineSpec } from '../../platformKit/session/index'
 import { discordGate, findDiscordAccount, runDiscordEngine } from '../../discord/account/session/index'
@@ -12,7 +12,7 @@ type Engine = (account: PlatformAccount, spec: Record<string, unknown>) => Platf
 
 export interface BotWireOptions {
   handle: Database
-  twenty?: TwentyClient
+  accountStore?: AccountStore
   discord?: Engine
   slack?: Engine
   accounts?: () => readonly BotAccount[]
@@ -43,7 +43,7 @@ function fine<T>(work: () => Promise<T>): Promise<T | BotSweep> {
 }
 
 export function defaultBotSources(options: BotWireOptions): BotSources {
-  const twenty = options.twenty ?? withLocalAccounts(createTwentyClient())
+  const store = options.accountStore ?? createAccountStore()
   const directDiscord = options.discord ?? runDiscordEngine
   const directSlack = options.slack ?? runSlackEngine
   const accountRows = (): readonly BotAccount[] => options.accounts ? options.accounts() : workspaceAccounts({ limit: 200 }).accounts.map((a) => ({
@@ -56,13 +56,13 @@ export function defaultBotSources(options: BotWireOptions): BotSources {
     handle: options.handle,
     accounts: accountRows,
     discord: async (account, spec) => fine(async () => {
-      const found = await findDiscordAccount(twenty, account.account)
+      const found = await findDiscordAccount(store, account.account)
       const gate = discordGate(found)
       if (!gate.ok) return { ok: false, code: gate.code, detail: gate.detail, members: [] }
       return answerOf(directDiscord(found, spec as PlatformEngineSpec), spec.action === 'servers')
     }),
     slack: async (account, spec) => fine(async () => {
-      const found = await findSlackAccount(twenty, account.account)
+      const found = await findSlackAccount(store, account.account)
       const gate = slackGate(found)
       if (!gate.ok) return { ok: false, code: gate.code, detail: gate.detail, members: [] }
       return answerOf(directSlack(found, spec as PlatformEngineSpec), false)

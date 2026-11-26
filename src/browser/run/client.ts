@@ -63,7 +63,7 @@ export function prepareRun(account: FacebookAccount, purpose: RunPurpose, option
   const carried = deadElsewhere ? [] : toFacebookCookies(account.cookies, siteOfAccount(account).domain)
   const cookies = platform === 'linkedin' ? carried.map((c) => ({ ...c, domain: linkedinCookieDomain(c.name, c.domain) })) : carried
   if (purpose === 'run' && cookies.length === 0) {
-    return { ok: false, code: 'neverConnected', detail: `${account.accountName} has no cookies in Twenty. Run: log facebook connect --account ${account.accountName}` }
+    return { ok: false, code: 'neverConnected', detail: `${account.accountName} has no cookies in the account store. Run: log facebook connect --account ${account.accountName}` }
   }
 
   let device: DeviceRunFile | null = null

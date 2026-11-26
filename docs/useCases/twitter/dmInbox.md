@@ -16,7 +16,7 @@ flowchart TD
   s0["1. Who is waiting on you: conversations where the last message isn…<br/><i>twitterDms</i>"]
   s1["2. The latest conversations, whoever spoke last<br/><i>twitterDms</i>"]
   s2["3. Read the ones that matter in full<br/><i>twitterDms</i>"]
-  s3["4. Who they are: bio and followers, and whether they're already in…<br/><i>treg's X profile read, Twenty</i>"]
+  s3["4. Who they are: bio and followers, and whether they're already in…<br/><i>treg's X profile read</i>"]
   s4["5. Sort it into a table: reply now (a real opportunity waiting on…<br/><i>wherever the owner reads</i>"]
   s5["6. Send what the owner approves, dry run first<br/><i>twitterDm, twitterDmLive, twitterQueueAdd, twitterQueueRunLive</i>"]
   s0 --> s1
@@ -32,7 +32,7 @@ flowchart TD
 | 1 | Who is waiting on you: conversations where the last message isn't yours, message requests included | `twitterDms` { account, waiting: true, limit: 50 } | a list, newest first, with each conversation id |
 | 2 | The latest conversations, whoever spoke last | `twitterDms` { account, limit: 10 } | the newest 10 |
 | 3 | Read the ones that matter in full | `twitterDms` { account, conversation: "<id>" } | what they asked, and when |
-| 4 | Who they are: bio and followers, and whether they're already in your CRM | [treg](https://treg.to/?ref=matthewdonse-aebsh)'s X profile read, Twenty | one line per person |
+| 4 | Who they are: bio and followers, and whether they're already in your CRM | [treg](https://treg.to/?ref=matthewdonse-aebsh)'s X profile read | one line per person |
 | 5 | Sort it into a table: **reply now** (a real opportunity waiting on you), **waiting on them** (worth one nudge), **no action** (pitches, spam). Each with a suggested move | wherever the owner reads | the owner picks what to answer |
 | 6 | Send what the owner approves, dry run first. One person: dry run, then live. Two or more go into the account's one queue, never a loop of sends (rule 105): `twitterQueueAdd` { queue, targets, action: "dm", by } adds them, even while it runs, at least minGap apart; if no run is going, `twitterQueueRunLive` { queue, keepOpen: true, confirmLive: true } starts it. Right before each send the queue reads that person again and holds the item when anything changed (rule 109) | `twitterDm`, then `twitterDmLive` { userId, text, approvedBy, confirmLive: true }, or `twitterQueueAdd` and `twitterQueueRunLive` | X's answer is `sent` |
 
@@ -62,7 +62,7 @@ Who wrote last is already in context at the start of a session: the SessionStart
 
 ## Next
 
-- [#34](https://github.com/matthewdonsemail-lab/log/issues/34) writes every conversation into Twenty, so each person's thread sits on their record.
+- [#34](https://github.com/matthewdonsemail-lab/log/issues/34) writes every conversation onto each person's record, so their thread sits there.
 
 ## Related
 

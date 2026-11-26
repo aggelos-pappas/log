@@ -1,7 +1,7 @@
 import { lastWordOf, waitingOf } from '../lastWord/index.ts'
 import type { LastWord } from '../lastWord/index.ts'
 import { sinceOf } from '../senders/index.ts'
-import { readLocalAccounts } from '../../twenty/graphql/helpers/localAccounts.ts'
+import { readLocalAccounts } from '../../accounts/store/helpers/localAccounts.ts'
 import { WAITING_DEFAULT_SINCE, WAITING_PREVIEW_CHARS } from './types.ts'
 import type { WaitingOptions, WaitingReport, WaitingRow } from './types.ts'
 

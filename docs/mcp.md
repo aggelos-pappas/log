@@ -107,7 +107,7 @@ ChatGPT and claude.ai reach a server from their own cloud, so they can't start `
 
 After log adds tools, open the app's details page in ChatGPT and refresh it; in claude.ai, disconnect and connect again.
 
-If ChatGPT's sign-in stops at `invalid_redirect_uri ... isn't Claude's callback`, or the sign-in page is a Twenty login, the origin is still sending `/mcp`, `/oauth/*` and `/.well-known/*` to an older `logMcp --http` with Twenty OAuth instead of the control service (`python/controlService`); that server only accepts Claude's callback. The routing to fix is in `docs/decisions/genuiEverywhere/research.md`.
+If ChatGPT's sign-in stops at `invalid_redirect_uri ... isn't Claude's callback`, or the sign-in page is a Twenty login, the origin is still sending `/mcp`, `/oauth/*` and `/.well-known/*` to an older log version's `logMcp --http`, whose OAuth went through Twenty (since removed), instead of the control service (`python/controlService`); that server only accepts Claude's callback. The routing to fix is in `docs/decisions/genuiEverywhere/research.md`.
 
 ### Check it from a script
 

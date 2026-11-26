@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { marketplaceFixture } from "../../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../../accounts/store/index.ts";
 import { createLogMcpServer } from "../../server/index.ts";
 import { MCP_APP_MIME_TYPE, UI_EXTENSION_ID } from "../browserView/index.ts";
 import { bar, sparkline } from "./helpers/text.ts";
@@ -28,7 +28,7 @@ const SPEC: ReportSpec = {
 };
 
 async function connected(capabilities: Record<string, unknown>) {
-  const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
+  const server = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false });
   const client = new Client({ name: "test", version: "0.0.0" }, { capabilities });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverSide), client.connect(clientSide)]);

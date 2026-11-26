@@ -100,7 +100,7 @@ Why (R, `src/useCases/router/client.ts`):
 | Tool descriptions at runtime | 3,280 | 85 | rule 10 in the live line (`toolsFromCommands.ts:107`) |
 | Rule numbers written as literals | | | `toolsFromCommands.ts:64,71,83,94`; `src/agentHooks/registry/index.ts:30-47`; `src/agentHooks/answers/client.ts:96,134` |
 
-**Hooks contradict each other (R).** The page-state hook says to run `log inspect do snapshot` (`src/agentHooks/pageState/index.ts:28`), the knowledge hook says `log kb search` (`answers/client.ts:96`), and the storage verdict says `log runs prune --apply` (`src/browser/runStore/helpers/storageVerdict.ts:5`). The live-log hook then refuses all three as hand-run shell commands.
+**Hooks contradict each other (R).** The page-state hook says to run `log inspect do snapshot` (`src/agentHooks/pageState/index.ts:28`), the knowledge hook says `log memory search` (`answers/client.ts:96`), and the storage verdict says `log runs prune --apply` (`src/browser/runStore/helpers/storageVerdict.ts:5`). The live-log hook then refuses all three as hand-run shell commands.
 
 **Twenty-era text (R).** The knowledge hook, the `accountsAndProxies` topic and the notes for `connect` and `join` (`toolsFromCommands.ts:83,91`) still describe Twenty. The guides mention it 210 times.
 
@@ -141,7 +141,7 @@ Why (R, `src/useCases/router/client.ts`):
 7. The X queue and live feed.
 8. Engine and governor freshness, and storage warnings.
 
-**Hard-coded to Claude Code (R):** `.claude/` paths and `CLAUDE_PROJECT_DIR` (`registry/index.ts:51,62`); the `mcp__log__` prefix (`registry/index.ts:9,44,98`, `src/contextLayer/session/types.ts:3`, `src/agentHooks/chatNames/index.ts:10`); `SHELL_CLIENTS` (`toolsFromCommands.ts:56`); the knowledge base's memory root (`src/cli/kb/index.ts:57`); `src/useCases/review/client.ts:9`.
+**Hard-coded to Claude Code (R):** `.claude/` paths and `CLAUDE_PROJECT_DIR` (`registry/index.ts:51,62`); the `mcp__log__` prefix (`registry/index.ts:9,44,98`, `src/contextLayer/session/types.ts:3`, `src/agentHooks/chatNames/index.ts:10`); `SHELL_CLIENTS` (`toolsFromCommands.ts:56`); memory's root for agent memory files (`src/cli/memory/index.ts:57`); `src/useCases/review/client.ts:9`.
 
 ## 5. Files to change
 
@@ -170,7 +170,7 @@ Why (R, `src/useCases/router/client.ts`):
 | | `src/agentHooks/answers/client.ts:92-138` | watchers and the describer start from the runtime or the MCP server too; the X-only hooks become per platform; MCP tool names, not shell lines |
 | | `src/agentHooks/pageState/index.ts:28`, `src/browser/runStore/helpers/storageVerdict.ts:5` | name MCP tools |
 | | `src/mcp/server/helpers/toolsFromCommands.ts:56-60` | shell detection per harness from the capability table |
-| | `src/cli/kb/index.ts:57`, `src/useCases/review/client.ts:9` | harness-neutral memory and session sources |
+| | `src/cli/memory/index.ts:57`, `src/useCases/review/client.ts:9` | harness-neutral memory and session sources |
 | | `docs/harnesses/*.md`, the README's install section | generated from the harness table |
 | **Stale-content checks** | `scripts/checks/` (new), `lefthook.yml`, `package.json` | the checks below |
 | | `docs/useCases/**`, `skills/**` | rewrite the 78 and 124 dead rule citations, the Twenty text and the old names |

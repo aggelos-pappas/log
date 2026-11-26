@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { INSTAGRAM_PLATFORM } from "../../instagram/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
@@ -13,17 +13,17 @@ import type { Conversation } from "../../search/conversations/index.ts";
 import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "instagramOne", accountName: "instagramOne", platform: "INSTAGRAM", cookies: { "sessionid": "x".repeat(20), "ds_user_id": "x".repeat(20), "csrftoken": "x".repeat(20) }, proxy: null } as never);
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "instagramOne", accountName: "instagramOne", platform: "INSTAGRAM", cookies: { "sessionid": "x".repeat(20), "ds_user_id": "x".repeat(20), "csrftoken": "x".repeat(20) }, proxy: null } as never);
+  return store;
 }
 
-async function run(argv: string[], engine?: PlatformEngineRun, twenty = fixture()) {
+async function run(argv: string[], engine?: PlatformEngineRun, store = fixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const calls: string[] = [];
   const code = await runCli(argv, {
-    twenty,
+    accounts: store,
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     directInstagram: (account, spec) => {
@@ -31,12 +31,12 @@ async function run(argv: string[], engine?: PlatformEngineRun, twenty = fixture(
       return engine ?? { answer: { ok: false, code: "notExpected" }, refreshed: null };
     },
   });
-  const row = twenty.rows.socialAccounts!.find((r) => r.accountName === "instagramOne")!;
+  const row = store.rows.socialAccounts!.find((r) => r.accountName === "instagramOne")!;
   return { code, out: out.join("\n"), err: err.join("\n"), calls, row };
 }
 
 describe("log instagram session check", () => {
-  test("loggedIn: the engine's answer goes to Twenty", async () => {
+  test("loggedIn: the engine's answer goes to the account store", async () => {
     const r = await run(["instagram", "session", "check", "--account", "instagramOne"], { answer: { ok: true, loginState: "loggedIn", screenName: "instagramOne" }, refreshed: null });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["instagramOne:ping"]);
@@ -149,7 +149,7 @@ describe("log instagram watch", () => {
     process.env.LOG_INBOX_STATE = mkdtempSync(join(tmpdir(), "inbox"));
     const lines: string[] = [];
     const code = await runCli(["instagram", "watch", "--account", "instagramOne", "--seconds", "5", "--inbox"], {
-      twenty: fixture(),
+      accounts: fixture(),
       out: () => {},
       err: (l) => lines.push(l),
       directInstagramLive: async (_account, spec, onLive) => {

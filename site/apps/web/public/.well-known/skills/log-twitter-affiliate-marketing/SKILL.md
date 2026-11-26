@@ -59,7 +59,7 @@ Say: **"go on docs/useCases/twitter/affiliateMarketing.md for `<tool>`, link `<a
 
 ## Next
 
-- [#35](https://github.com/matthewdonsemail-lab/log/issues/35) tracks which affiliate link went to whom and which turned into a signup, per person, in Twenty.
+- [#35](https://github.com/matthewdonsemail-lab/log/issues/35) tracks which affiliate link went to whom and which turned into a signup, per person.
 
 ## Related
 

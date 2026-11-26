@@ -26,7 +26,7 @@ describe("guide topics by capability and platform", () => {
   test("the shared topics hold the shared commands", () => {
     expect(guideOfCommand({ platform: "any", name: "inspect" })).toBe("accountBrowser");
     expect(guideOfCommand({ platform: "any", name: "sessions" })).toBe("sessions");
-    expect(guideOfCommand({ platform: "any", name: "whoami" })).toBe("sessions");
+    expect(guideOfCommand({ platform: "any", name: "sessions" })).toBe("sessions");
     expect(guideOfCommand({ platform: "byArgument", name: "warmup" })).toBe("flows");
     expect(guideOfCommand({ platform: "any", name: "inbox" })).toBe("inbox");
     expect(guideOfCommand({ platform: "any", name: "voice" })).toBe("voiceGate");

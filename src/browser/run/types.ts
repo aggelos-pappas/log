@@ -1,4 +1,4 @@
-import type { LoginSecrets } from '../../twenty/graphql/index'
+import type { LoginSecrets } from '../../accounts/store/index'
 import type { DeviceProfile } from '../../camofox/device/index'
 import type { ErrorCode } from '../../errors/catalog/index'
 import type { PlaywrightCookie } from '../../platformKit/socialAccount/index'

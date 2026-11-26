@@ -41,7 +41,7 @@ GENUI_NETWORK = ("hermesPlugin", "genuiNetwork.py")
 GENUI_NETWORK_PACKAGE = "log_hermes_genui_network"
 SKILLS = ("hermesPlugin", "skills")
 MCP_SERVER = "log"
-MCP_SETUP = 'hermes mcp add log --command logMcp --env "LOG_ACCOUNTS=${LOG_ACCOUNTS}"'
+MCP_SETUP = 'hermes mcp add log --command logMcp'
 MCP_MISSING = (
     ">>> LOG'S TOOLS ARE NOT SET UP IN HERMES: the log plugin is loaded, but config.yaml has no mcp_servers.log, so no mcp__log__* tool exists. "
     f"Tell the owner to run `{MCP_SETUP}` (or `log launch --setup`), then restart Hermes. Don't hand-roll log's reads meanwhile."

@@ -84,7 +84,7 @@ export const marketplacePublish = {
     'REQ-LISTING-19': noul('When live is true, does checkPublishable refuse with dailyCapReached once countPostedToday for the account, counted in its home timezone, reaches its dailyListingCap?'),
     'REQ-LISTING-20': noul('Does readMarketplace only send goto to CHECK_PAGES.status, CHECK_PAGES.selling and CHECK_PAGES.inbox and read each page from the HAR of its own step, and do both the check command and the check actor of the host call readMarketplace and keepCheck?'),
     'REQ-LISTING-21': noul('Does keepCheck set the issue code suspended whenever accessProblem finds a ban, sell not ELIGIBLE, an enforcementId or a profileStatus other than GOOD?'),
-    'REQ-LISTING-22': noul('Does keepCheck match each listing from sellingListingsOf to its Twenty row by listingId and update the status (from statusOfListing), clicksCount and lastCheckedAt of that row?'),
+    'REQ-LISTING-22': noul('Does keepCheck match each listing from sellingListingsOf to its stored row by listingId and update the status (from statusOfListing), clicksCount and lastCheckedAt of that row?'),
     'REQ-LISTING-23': noul('When the seller inbox has threads, does keepCheck write the raw answer of the inbox to a sellerInbox file in the run folder and count the threads, without mapping the fields of a thread?'),
     unspecifiedBehavior: noul('Does the publish or check code click Publish, retry after Publish, or click anything during the account check by a route the specification does not describe?'),
   },

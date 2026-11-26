@@ -7,7 +7,7 @@ import type { CommandContext, CommandResult } from "../../runner/types.ts";
 export type Engine = (spec: TwitterEngineSpec) => Promise<TwitterEngineRun>;
 
 export async function openTwitterAccount(context: CommandContext, label: string, ref: string): Promise<{ ok: true; account: TwitterAccount; engine: Engine } | { ok: false; result: CommandResult }> {
-  const account = await findTwitterAccount(context.twenty, ref);
+  const account = await findTwitterAccount(context.accounts, ref);
   const gate = twitterGate(account);
   if (!gate.ok) return { ok: false, result: refuse(label, gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail) };
   const direct = context.directTwitter;
@@ -15,7 +15,7 @@ export async function openTwitterAccount(context: CommandContext, label: string,
   const engine: Engine = async (spec) => {
     const run = await direct(account, spec);
     recordLogWrite(account.accountName, spec, run);
-    for (const line of await recordTwitterSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+    for (const line of await recordTwitterSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
     return run;
   };
   return { ok: true, account, engine };

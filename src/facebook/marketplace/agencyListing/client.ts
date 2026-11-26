@@ -1,6 +1,6 @@
-import type { TwentyClient, TwentyObjects } from '../../../twenty/graphql/index'
+import type { AccountStore, AccountObjects } from '../../../accounts/store/index'
 import type { PublishOutput } from '../publish/types'
-import { fromTwentyEnum, toTwentyEnum } from '../../../platformKit/socialAccount/helpers/index'
+import { fromStoredEnum, toStoredEnum } from '../../../platformKit/socialAccount/helpers/index'
 import { copyVersionsOf, LIVE_COPY_STATUSES, lintVersions, pickVersion, requiredVersions, skipWordsOf } from '../copy/index'
 import type { CopyVersion, LiveCopy } from '../copy/index'
 import type { AgencyListing, AgencyListingRow, AgencyListingStatus, ListingCondition, RunResult } from './types'
@@ -8,9 +8,9 @@ import { LISTING_STATUSES } from './types'
 
 export const AGENCY_LISTINGS = 'agencyListings' as const
 
-export type ListingFilter = TwentyObjects['agencyListings']['filter']
-type ListingCreate = TwentyObjects['agencyListings']['create']
-type ListingUpdate = TwentyObjects['agencyListings']['update']
+export type ListingFilter = AccountObjects['agencyListings']['filter']
+type ListingCreate = AccountObjects['agencyListings']['create']
+type ListingUpdate = AccountObjects['agencyListings']['update']
 
 function photosOf(raw: unknown): string[] {
   let value: unknown = raw
@@ -33,8 +33,8 @@ function safeJson(text: string): unknown {
 }
 
 export function toAgencyListing(row: AgencyListingRow): AgencyListing {
-  const status = row.status ? fromTwentyEnum(row.status) : null
-  const condition = row.condition ? (fromTwentyEnum(row.condition) as ListingCondition) : null
+  const status = row.status ? fromStoredEnum(row.status) : null
+  const condition = row.condition ? (fromStoredEnum(row.condition) as ListingCondition) : null
   return {
     id: row.id,
     title: (row.title ?? row.name ?? '').trim(),
@@ -57,7 +57,7 @@ export function toAgencyListing(row: AgencyListingRow): AgencyListing {
     listingUrl: row.listingUrl ?? null,
     publishedAt: row.publishedAt ?? null,
     lastRunAt: row.lastRunAt ?? null,
-    lastRunResult: row.lastRunResult ? fromTwentyEnum(row.lastRunResult) : null,
+    lastRunResult: row.lastRunResult ? fromStoredEnum(row.lastRunResult) : null,
     lastErrorCode: row.lastErrorCode ?? null,
     lastError: row.lastError ?? null,
     clicksCount: typeof row.clicksCount === 'number' ? row.clicksCount : null,
@@ -67,38 +67,38 @@ export function toAgencyListing(row: AgencyListingRow): AgencyListing {
   }
 }
 
-export async function getListing(twenty: TwentyClient, id: string): Promise<AgencyListing | null> {
-  const row = await twenty.get(AGENCY_LISTINGS, id)
+export async function getListing(store: AccountStore, id: string): Promise<AgencyListing | null> {
+  const row = await store.get(AGENCY_LISTINGS, id)
   return row ? toAgencyListing(row) : null
 }
 
-export async function listListingsWhere(twenty: TwentyClient, filter?: ListingFilter): Promise<AgencyListing[]> {
-  return (await twenty.list(AGENCY_LISTINGS, filter)).map(toAgencyListing)
+export async function listListingsWhere(store: AccountStore, filter?: ListingFilter): Promise<AgencyListing[]> {
+  return (await store.list(AGENCY_LISTINGS, filter)).map(toAgencyListing)
 }
 
 export async function setListingStatus(
-  twenty: TwentyClient,
+  store: AccountStore,
   id: string,
   status: AgencyListingStatus,
   extra: ListingUpdate = {}
 ): Promise<void> {
-  await twenty.update(AGENCY_LISTINGS, id, { status: toTwentyEnum(status) as ListingUpdate['status'], ...extra })
+  await store.update(AGENCY_LISTINGS, id, { status: toStoredEnum(status) as ListingUpdate['status'], ...extra })
 }
 
 export function copySkipWords(ad: Pick<AgencyListing, 'locationCity' | 'locationQuery'>): Set<string> {
   return skipWordsOf(ad.locationCity, ad.locationQuery)
 }
 
-export async function liveCopiesIn(twenty: TwentyClient, ad: Pick<AgencyListing, 'locationCity' | 'locationCountry'>): Promise<LiveCopy[]> {
+export async function liveCopiesIn(store: AccountStore, ad: Pick<AgencyListing, 'locationCity' | 'locationCountry'>): Promise<LiveCopy[]> {
   if (!ad.locationCity || !ad.locationCountry) return []
-  const rows = await listListingsWhere(twenty, { locationCity: { eq: ad.locationCity }, locationCountry: { eq: ad.locationCountry } })
+  const rows = await listListingsWhere(store, { locationCity: { eq: ad.locationCity }, locationCountry: { eq: ad.locationCountry } })
   return rows
     .filter((l) => l.status && (LIVE_COPY_STATUSES as readonly string[]).includes(l.status))
     .map((l) => ({ title: l.title, description: l.description ?? '', copyVersionId: l.copyVersionId }))
 }
 
-export async function copyVersionsShortfall(twenty: TwentyClient, ad: AgencyListing, count: number): Promise<string | null> {
-  const liveAfter = (await liveCopiesIn(twenty, ad)).length + count
+export async function copyVersionsShortfall(store: AccountStore, ad: AgencyListing, count: number): Promise<string | null> {
+  const liveAfter = (await liveCopiesIn(store, ad)).length + count
   const problems = lintVersions(ad.copyVersions, ad.locationCity, copySkipWords(ad))
   if (problems.length) return problems.map((p) => `${p.versionId}: ${p.detail}`).join('; ')
   if (liveAfter < 2) return null
@@ -110,13 +110,13 @@ export async function copyVersionsShortfall(twenty: TwentyClient, ad: AgencyList
 export type { CopyVersion }
 
 export async function createSlot(
-  twenty: TwentyClient,
+  store: AccountStore,
   ad: AgencyListing,
   accountId: string,
   options: { campaignId: string | null; replaces?: AgencyListing; reason?: string }
 ): Promise<AgencyListing> {
-  const chosen = ad.copyVersions.length ? pickVersion(ad.copyVersions, await liveCopiesIn(twenty, ad), { skip: copySkipWords(ad), avoidId: options.replaces?.copyVersionId ?? null }) : null
-  const row = await twenty.create(AGENCY_LISTINGS, {
+  const chosen = ad.copyVersions.length ? pickVersion(ad.copyVersions, await liveCopiesIn(store, ad), { skip: copySkipWords(ad), avoidId: options.replaces?.copyVersionId ?? null }) : null
+  const row = await store.create(AGENCY_LISTINGS, {
     name: chosen?.title ?? ad.title,
     title: chosen?.title ?? ad.title,
     description: chosen?.description ?? ad.description,
@@ -125,13 +125,13 @@ export async function createSlot(
     price: ad.price,
     priceCurrency: ad.priceCurrency,
     category: ad.category,
-    condition: (ad.condition ? toTwentyEnum(ad.condition) : null) as ListingCreate['condition'],
+    condition: (ad.condition ? toStoredEnum(ad.condition) : null) as ListingCreate['condition'],
     photos: ad.photos as unknown as ListingCreate['photos'],
     locationQuery: ad.locationQuery,
     locationCity: ad.locationCity,
     locationCountry: ad.locationCountry,
     locationPostalCode: ad.locationPostalCode,
-    status: toTwentyEnum('ready') as ListingCreate['status'],
+    status: toStoredEnum('ready') as ListingCreate['status'],
     socialAccountId: accountId,
     campaignId: options.campaignId,
     replacesId: options.replaces?.id ?? null,
@@ -151,7 +151,7 @@ const RESULT_STATUS: Record<RunResult, AgencyListingStatus | null> = {
 }
 
 export async function recordRun(
-  twenty: TwentyClient,
+  store: AccountStore,
   listing: AgencyListing,
   output: PublishOutput,
   dryRun: boolean,
@@ -161,7 +161,7 @@ export async function recordRun(
   const result: RunResult = output.result === 'unconfirmedId' ? 'unconfirmed' : output.result
   const update: ListingUpdate = {
     lastRunAt: now.toISOString(),
-    lastRunResult: toTwentyEnum(result) as ListingUpdate['lastRunResult'],
+    lastRunResult: toStoredEnum(result) as ListingUpdate['lastRunResult'],
     lastErrorCode: output.failure?.code ?? null,
     lastError: output.failure ? `${output.failure.state}: ${output.failure.detail ?? output.failure.code}`.slice(0, 500) : null
   }
@@ -170,26 +170,26 @@ export async function recordRun(
   const status = dryRun
     ? result === 'blocked' || result === 'needsPerson' ? 'blocked' : null
     : result === 'published' && output.review ? 'underReview' : RESULT_STATUS[result]
-  if (status) update.status = toTwentyEnum(status) as ListingUpdate['status']
+  if (status) update.status = toStoredEnum(status) as ListingUpdate['status']
   if (!dryRun && result === 'published') {
     update.listingId = output.listingId
     update.listingUrl = output.listingUrl
     update.publishedAt = now.toISOString()
     update.lastCheckedAt = now.toISOString()
   }
-  await twenty.update(AGENCY_LISTINGS, listing.id, update)
+  await store.update(AGENCY_LISTINGS, listing.id, update)
   return result
 }
 
 export const SYNCABLE: readonly AgencyListingStatus[] = ['publishing', 'unconfirmed', 'active', 'underReview', 'duplicateTakedown', 'unknown']
 
 export async function syncDashboard(
-  twenty: TwentyClient,
+  store: AccountStore,
   accountId: string,
   scanned: { listingId: string; title: string | null; health: string; clicks: number; href: string }[],
   now: Date = new Date()
 ): Promise<number> {
-  const rows = await listListingsWhere(twenty, { socialAccountId: { eq: accountId } })
+  const rows = await listListingsWhere(store, { socialAccountId: { eq: accountId } })
   let changed = 0
   for (const card of scanned) {
     const row =
@@ -202,7 +202,7 @@ export async function syncDashboard(
       update.listingId = card.listingId
       update.listingUrl = `https://www.facebook.com/marketplace/item/${card.listingId}/`
     }
-    await twenty.update(AGENCY_LISTINGS, row.id, update)
+    await store.update(AGENCY_LISTINGS, row.id, update)
     changed++
   }
   return changed

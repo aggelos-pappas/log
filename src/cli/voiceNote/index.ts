@@ -154,7 +154,7 @@ export const discordVoiceCommand = voiceNoteCommandOf({
   native: "a voice message (flags 8192, its waveform and duration), the bubble Discord's own app records",
   engine: "vendor/endcord",
   async resolve(context, label, flags) {
-    const account = await findDiscordAccount(context.twenty, String(flags["account"]));
+    const account = await findDiscordAccount(context.accounts, String(flags["account"]));
     const gate = discordGate(account);
     if (!gate.ok) return { ok: false, result: refuse(label, gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail) };
     const direct = context.directDiscord;
@@ -188,7 +188,7 @@ export const instagramVoiceCommand = voiceNoteCommandOf({
   native: "a voice clip (instagrapi's direct_send_voice: the audio uploaded to rupload.facebook.com/messenger_audio, then sent as a voice_attachment with its waveform)",
   engine: "vendor/instagrapi, in the account's one session",
   async resolve(context, label, flags) {
-    const account = await findInstagramAccount(context.twenty, String(flags["account"]));
+    const account = await findInstagramAccount(context.accounts, String(flags["account"]));
     const gate = instagramGate(account);
     if (!gate.ok) return { ok: false, result: refuse(label, gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail) };
     const direct = context.directInstagram;
@@ -224,7 +224,7 @@ export const twitterVoiceCommand = voiceNoteCommandOf({
     if (!opened.ok) return opened;
     const direct = context.directTwitter;
     if (!direct) return { ok: false, result: { code: 1, stderr: `log ${label}: the direct-API engine isn't wired in this context` } };
-    const secrets = await context.twenty.loginSecrets(opened.account.id).catch(() => null);
+    const secrets = await context.accounts.loginSecrets(opened.account.id).catch(() => null);
     const chatPin = secrets?.messengerPin ? String(secrets.messengerPin) : "";
     if (!chatPin) return { ok: false, result: refuse(label, "xchatPinMissing", `${opened.account.accountName} has no X Chat PIN saved, so X Chat can't be opened to send: the owner saves it once with log twitter chat pin --account ${opened.account.accountName}`) };
     const said = String(flags["with"]).trim().replace(/^@/, "");

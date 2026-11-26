@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createTwentyClient } from '../../src/twenty/graphql/client.ts'
+import { createAccountStore } from '../../src/accounts/store/index.ts'
 import { findAccount } from '../../src/platformKit/socialAccount/client.ts'
 import { engineRoute } from '../../src/platformKit/socialAccount/index.ts'
 
@@ -20,7 +20,7 @@ function netscape(cookies: { name: string; value: string; domain?: string; path?
 async function main(): Promise<number> {
   const name = process.argv[2]
   const query = process.argv[3] || 'free'
-  const account = await findAccount(createTwentyClient(), name)
+  const account = await findAccount(createAccountStore(), name)
   const raw = (account as unknown as { cookies: unknown }).cookies
   const cookies = Array.isArray(raw) ? raw : typeof raw === 'string' && raw ? JSON.parse(raw) : []
   const routed = engineRoute(account)

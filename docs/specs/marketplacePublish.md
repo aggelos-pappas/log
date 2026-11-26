@@ -46,9 +46,9 @@ Marketplace status is read from Facebook's `CometMarketplaceStatusContentContain
 
 Checked by: code and SubQ
 
-### REQ-LISTING-22: Each listing's state on Selling goes into Twenty
+### REQ-LISTING-22: Each listing's state on Selling goes into its stored row
 
-Each listing on Selling is matched to its Twenty row by its Facebook listing id, and its state (active, being reviewed, sold, rejected, duplicate) and clicks are written to the row.
+Each listing on Selling is matched to its stored row by its Facebook listing id, and its state (active, being reviewed, sold, rejected, duplicate) and clicks are written to the row.
 
 Checked by: code and SubQ
 

@@ -6,7 +6,6 @@ import { workspaceAccountsCommand } from "../accounts/index.ts";
 import { credentialsCommand } from "../credentials/index.ts";
 import { campaignCommand } from "../campaign/index.ts";
 import { conversationCommand, conversationsCommand } from "../conversation/index.ts";
-import { loginCommand, logoutCommand, whoamiCommand } from "../auth/index.ts";
 import { errorsCommand, graphCommand } from "../errors/index.ts";
 import { captureCommand } from "../capture/index.ts";
 import { checkCommand } from "../check/index.ts";
@@ -26,7 +25,7 @@ import { messengerCommand } from "../messenger/index.ts";
 import { discordSecretsCommand } from "../discord/index.ts";
 import { searchCommand } from "../search/index.ts";
 import { factsCommand, indexCommand } from "../indexPass/index.ts";
-import { kbCommand } from "../kb/index.ts";
+import { memoryCommand } from "../memory/index.ts";
 import { runtimeCommand } from "../runtime/index.ts";
 import { memelordCommand } from "../memelord/index.ts";
 import { tregCommand } from "../treg/index.ts";
@@ -59,7 +58,6 @@ import { browsersCommand } from "../browsers/index.ts";
 import { browserCommand } from "../browser/index.ts";
 import { reportCommand } from "../report/index.ts";
 import { jobCommand } from "../job/index.ts";
-import { mcpCommand } from "../mcp/index.ts";
 import { newCommand } from "../new/index.ts";
 import { publishCommand } from "../publish/index.ts";
 import { warmupCommand } from "../warmup/index.ts";
@@ -135,10 +133,6 @@ export const COMMANDS: Command[] = [
   browserCommand,
   reportCommand,
   jobCommand,
-  mcpCommand,
-  loginCommand,
-  logoutCommand,
-  whoamiCommand,
   sessionCommand,
   followsCommand,
   dmsCommand,
@@ -148,7 +142,7 @@ export const COMMANDS: Command[] = [
   searchCommand,
   indexCommand,
   factsCommand,
-  kbCommand,
+  memoryCommand,
   runtimeCommand,
   memelordCommand,
   tregCommand,

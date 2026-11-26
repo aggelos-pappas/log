@@ -1,11 +1,11 @@
 import { join } from 'node:path'
 import { findPlatformAccount, platformGate, recordPlatformSession, runPlatformEngine, runPlatformEngineLive } from '../../../platformKit/session/index'
 import type { PlatformAccount, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from '../../../platformKit/session/index'
-import type { TwentyClient } from '../../../twenty/graphql/index'
+import type { AccountStore } from '../../../accounts/store/index'
 
 export const DISCORD_PLATFORM: PlatformShape = {
   platform: 'discord',
-  twentyPlatform: 'DISCORD',
+  accountPlatform: 'DISCORD',
   label: 'Discord',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', 'discordApi', 'engine.py'),
   sessionCookies: [],
@@ -14,8 +14,8 @@ export const DISCORD_PLATFORM: PlatformShape = {
 
 export const DISCORD_COOKIE_DOMAIN = '.discord.com'
 
-export function findDiscordAccount(twenty: TwentyClient, ref: string): Promise<PlatformAccount> {
-  return findPlatformAccount(twenty, DISCORD_PLATFORM, ref)
+export function findDiscordAccount(store: AccountStore, ref: string): Promise<PlatformAccount> {
+  return findPlatformAccount(store, DISCORD_PLATFORM, ref)
 }
 
 export function discordGate(account: PlatformAccount): PlatformGate {
@@ -30,6 +30,6 @@ export function runDiscordEngineLive(account: PlatformAccount, spec: PlatformEng
   return runPlatformEngineLive(DISCORD_PLATFORM, account, spec, onLive)
 }
 
-export function recordDiscordSession(twenty: TwentyClient, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
-  return recordPlatformSession(twenty, DISCORD_PLATFORM, account, run, now, DISCORD_COOKIE_DOMAIN)
+export function recordDiscordSession(store: AccountStore, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
+  return recordPlatformSession(store, DISCORD_PLATFORM, account, run, now, DISCORD_COOKIE_DOMAIN)
 }

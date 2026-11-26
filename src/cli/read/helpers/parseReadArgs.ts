@@ -57,7 +57,7 @@ export function parseReadArgs(argv: string[]): ParseReadArgsResult {
     const maxScrolls = numberOf(parsed, "maxScrolls") ?? null;
     return { ok: true, target: "members", ...base, count: wanted, secondsPerScroll, maxScrolls, owners: parsed.flags.owners === true };
   }
-  if (parsed.flags.live && parsed.flags.show) return { ok: false, error: "--show only reads Twenty: it takes no --live" };
+  if (parsed.flags.live && parsed.flags.show) return { ok: false, error: "--show only reads the saved group record: it takes no --live" };
   const scrolls = numberOf(parsed, "scrolls") ?? DEFAULT_SCROLLS;
   const commentPosts = numberOf(parsed, "commentPosts") ?? DEFAULT_COMMENT_POSTS;
   return { ok: true, target: "group", ...base, scrolls, commentPosts, live: parsed.flags.live === true, show: parsed.flags.show === true };

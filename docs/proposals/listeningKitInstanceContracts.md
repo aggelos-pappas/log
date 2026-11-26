@@ -4,7 +4,7 @@
 
 ## Current scope correction — 11 November 2026
 
-The native V1 follows [the corrected SQLite-first schema](listeningKitSchema.md). Existing `log.db` events, identities, chats/messages, media, jobs and queues are the foundation. Generated Twenty objects, agency prefixes and CRM/SMS fields do not define the new model. Old listing/campaign functionality is deferred. Broad legacy-domain inventories below are dependency history, not requirements to port those domains into V1. Only active account configuration/session adapters and missing hosted execution contracts belong in this cutover.
+The native V1 follows [the corrected SQLite-first schema](listeningKitSchema.md). Existing `log.db` events, identities, chats/messages, media, jobs and queues are the foundation. The agency prefixes and CRM/SMS fields of the Twenty workspace log used to use do not define the new model. Old listing/campaign functionality is deferred. Broad legacy-domain inventories below are dependency history, not requirements to port those domains into V1. Only active account configuration/session adapters and missing hosted execution contracts belong in this cutover.
 
 
 11 November 2026. Companion to the authoritative data boundary and issue #112. These are implementation requirements and recommended V1 defaults, not implemented features.
@@ -28,7 +28,7 @@ The book's Part III distinguishes authoritative records from views that can be r
 | Website user, team, membership, MCP grant, selected workspace route | Hosted control PostgreSQL owns these facts. A route references an opaque workspace identity. | Treg-shaped control service remains proposed. No private account catalog belongs here. |
 | Platform account and settings | Workspace owns an immutable account id; platform user id is scoped by platform; handles are aliases. Session/profile references belong to this account. | Local JSON accounts exist; current SQLite `accounts` is an identity mapping, not a complete credential/settings repository. Add the missing domain repository and import mappings. |
 | Observed messages and interactions | Workspace's retained event record owns the observations that its typed views derive from. Scope upstream ids by platform/account/chat as required by that platform. | `eventsAsTheRecord` migration and message-key uniqueness exist. Keep the existing ingestion model; inspect each projection before declaring it rebuildable. |
-| Listings, campaigns, conversations, groups and their relations | Workspace owns locally managed records. Reference account/listing/chat ids explicitly; do not infer relationships from display names. | Inventory existing repositories and move the remaining Twenty operations into workspace storage. Do not introduce a second writable copy centrally. |
+| Listings, campaigns, conversations, groups and their relations | Workspace owns locally managed records. Reference account/listing/chat ids explicitly; do not infer relationships from display names. | Rebuild them on workspace storage (`log.db`); until then they are retired (#339) and refuse with `twentyRemoved`. Do not introduce a second writable copy centrally. |
 | Platform session material | Workspace owns the saved credentials/cookies/client state; platform answers determine whether they still work. Persist refreshes against the same account. | Platform engine exports private temporary cookie files, reads refreshes, then calls the account repository. Replace that repository dependency while retaining the session flow. |
 | Browser profile | Browser manager owns the actual persistent profile; Log stores its account-to-profile reference. | AdsPower uses `adsPowerProfileId`. A cookie JSON file is not the full browser profile; profile storage must be retained or explicitly reconnected. |
 | Job, queue and operation state | Workspace owns detailed execution status, result and platform evidence. Host owns only the minimal routing/recovery metadata already agreed. | Local jobs/queues exist. Hosted reconnect and operation deduplication still require implementation. |
@@ -60,7 +60,7 @@ These are logical relationships. Reuse existing tables and repositories where th
 
 Restart must attach the same private state volume and resolve the same account/profile ids. A fresh sandbox with empty storage is a new empty runtime until restored; signing into the website does not reconstruct platform sessions. Backups must consistently capture SQLite and referenced original files, with browser-managed state accounted for separately. Derived indexes may be rebuilt only from retained inputs. Moving to another compute provider is an explicit transfer/restore, never an automatic second writer to the same workspace data.
 
-The immediate implementation work is to finish native workspace repositories, preserve/import existing ids and state, and route authenticated hosted calls to that runtime. Existing JSON and Twenty exports become explicit import inputs, not permanent alternative writable authorities. SQLite migrations remain with the runtime under `src/storage/schema/helpers`; control PostgreSQL migrations belong to the control service. No additional private-data database service is implied.
+The immediate implementation work is to finish native workspace repositories, preserve/import existing ids and state, and route authenticated hosted calls to that runtime. Existing JSON files (and any old Twenty export) become explicit import inputs, not permanent alternative writable authorities. SQLite migrations remain with the runtime under `src/storage/schema/helpers`; control PostgreSQL migrations belong to the control service. No additional private-data database service is implied.
 
 ### Source anchors
 
@@ -68,7 +68,7 @@ The immediate implementation work is to finish native workspace repositories, pr
 - DDIA Part III, “Systems of record” / “Derived data systems” (local book lines 4356–4362); chapter 2 relationships; chapter 7 retry ambiguity (line 1769).
 - [Current SQLite path and transactional migrations](../../src/storage/schema/client.ts).
 - [Existing event record and identity migrations](../../src/storage/schema/helpers/migrations.ts).
-- [Local accounts adapter and remaining remote forwarding](../../src/twenty/graphql/helpers/localAccounts.ts).
+- [Local account store](../../src/accounts/store/helpers/localAccounts.ts): accounts only; every other object type refuses with `twentyRemoved`.
 - [Platform session export and refresh persistence](../../src/platformKit/session/client.ts).
 - [Account/profile binding](../../src/browser/adsPower/helpers/planSync.ts).
 
@@ -86,11 +86,11 @@ Own-cloud and Boat use this same instance contract. Changing compute provider do
 
 Inventory active account/session repository boundaries. Reuse existing SQLite events, identities, chats/messages, attachments, media, jobs and queues. Specify only missing account configuration, credential and hosted execution contracts. Defer old listing/campaign and other legacy domain schemas; preserve platform ids and message deduplication.
 
-The existing `withLocalAccounts` adapter is insufficient: its `local` mode covers accounts while other object types still forward to `remote`. The new runtime repository must open directly without constructing a remote client, Twenty URL, GraphQL types or server-owner session. Import/migration is a separate explicit tool, never a runtime fallback. Inventory caller paths in TypeScript, Python and scripts before claiming removal is complete.
+The local account store (`createAccountStore`) now opens directly, with no remote client, Twenty URL, GraphQL types or server-owner session; it covers accounts only, and every other object type refuses with `twentyRemoved` (#339). The new runtime repositories for those objects must open the same way. Import/migration is a separate explicit tool, never a runtime fallback. Inventory caller paths in TypeScript, Python and scripts before claiming removal is complete.
 
 Existing local JSON accounts need a versioned import into SQLite, preserving aliases and references. Record an import checkpoint and legacy-id mapping. After cutover, old JSON is retained as migration evidence and stops being a second writable authority. SQLite remains the authority for private application records; secret files may remain protected references rather than unencrypted account columns.
 
-Completion: a fresh runtime initializes and persists all supported domain operations with no Twenty configuration or remote calls.
+Completion: a fresh runtime initializes and persists all supported domain operations with no remote calls (accounts already do).
 
 ## 2. Configuration and secret lifecycle — blocks onboarding
 
@@ -156,9 +156,9 @@ Completion: a concrete manifest can deploy the control service/gateway, and a cl
 
 Pinned inspected Log revision: `4004558bdafcace630686df994d91254130659ab`.
 
-- [Local-account adapter](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/twenty/graphql/helpers/localAccounts.ts): account-only override plus remote forwarding for other object types.
+- [Local account store](../../src/accounts/store/helpers/localAccounts.ts): accounts only; other object types are retired (#339).
 - [Command context](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/cli/runner/types.ts) and [runner construction](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/cli/runner/client.ts): replace runtime vendor coupling and global configuration assumptions.
-- [Existing persistence interface](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/twenty/graphql/types.ts): inventory object contracts and login-secret reads.
+- [Existing persistence interface](../../src/accounts/store/types.ts): inventory object contracts and login-secret reads.
 - [SQLite schema/migration client](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/storage/schema/client.ts): reuse existing DB path and schema compatibility behavior.
 - [MCP server](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/mcp/server/index.ts) and [jobs](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/mcp/jobs/client.ts): scoped resources/logging, local results and recovery.
 - [Platform scaffolding](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/scaffold/platform/helpers/templates.ts): generated future platform code must target native repositories too.
@@ -176,7 +176,7 @@ The data boundary and auth choice are settled. These contracts make that decisio
 
 ## Application-wide cutover audit
 
-See Application cutover from Twenty for the inspected dependency inventory, real sign-up/sign-in journey, private-data import boundary and ordered implementation acceptance requirements. The current website has no working hosted sign-in/dashboard routes, and local account mode does not remove other Twenty operations. This cutover is required implementation work, not completed migration.
+See Application cutover from Twenty for the inspected dependency inventory, real sign-up/sign-in journey, private-data import boundary and ordered implementation acceptance requirements. The current website has no working hosted sign-in/dashboard routes. log no longer calls Twenty; the objects that lived only there are retired until rebuilt on `log.db` (#339). This cutover is required implementation work, not completed migration.
 
 
 ## Consolidated YAML schema

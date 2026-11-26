@@ -95,7 +95,7 @@ one to open, and where a new workflow or style goes.
 The cookies are saved only when X answers loggedIn for that same handle. A
 refused or wrong-account paste saves nothing. Each check merges X's refreshed
 cookies back into the row. The cookies live only on the account's row (keyring-encrypted
-when it is local), and are never printed, committed or put in the knowledge base.
+when it is local), and are never printed, committed or put in log's memory.
 
 ### 2. Original posts: the social posting playbook
 
@@ -107,8 +107,7 @@ comment, the quote an hour later).
 
 - Repo: `listeningkit-frontend`, `docs/okf/operations/social-posting-playbook.md`
   (branch `docs/social-posting-playbook`).
-- Twenty (optional): Notes → "Social posting playbook" in your own Twenty.
-- Knowledge base: `log kb search "social posting playbook"`.
+- Memory: `log memory search "social posting playbook"`.
 
 Post the original with `log twitter post --account <handle> --text "<copy>" --media <video.mp4>` (MCP `twitterPost`, `twitterPostLive`).
 It is a dry run first: it checks the copy against the account's style, and checks the file's type and size,
@@ -193,7 +192,7 @@ The parts every page uses:
 
 ### 3b. The growth loop (how the owner grows @xAccount)
 
-What worked for the owner (`log kb show memory:-buzz/listeningkit-real-state`): a
+What worked for the owner (`log memory show memory:-buzz/listeningkit-real-state`): a
 text post about treg ("$10 -> 30 conversations") did 205K views and 1,182
 likes, and the account's followers went from 308 to 352 in four days. The owner then turned
 the attention into conversations. Every account runs the same loop, in this
@@ -208,7 +207,7 @@ order:
 | 5 | Every day | Reply to people posting about your topic, one line about their post backed by your own fact, inside the account's 240 writes a day | `docs/useCases/twitter/topicReplies.md`, the queue's `limit` |
 | 6 | Always | Answer whoever writes back. Never send a cold template to someone you already talk to | `log twitter dms --account <a> [--with <handle>]`, `chat watch` (needs the X Chat PIN), rule 109 |
 | 7 | Weekly | Score the followers (treg profiles and their posts), and talk to the best ones by hand | `docs/useCases/twitter/followers.md`, treg `anyapi.x.user.profile` |
-| 8 | Always | Leads from posts and DMs go into Twenty | `agencyProspects` |
+| 8 | Always | Leads from posts and DMs are kept | `agencyProspects` |
 
 Finding people and posts is always treg (`treg call anyapi.x.search.posts
 --file q.json`, `anyapi.x.user.profile`, `treg.x.user.posts`). On Windows,
@@ -220,8 +219,8 @@ account posts about comes from its own plan:
 
 | Account | Plan | What it sets |
 | --- | --- | --- |
-| your main account | its plan in the knowledge base (`log kb search "<account> plan"`) | the product, the people it is for, the follower atlas |
-| a teammate's account | the teammate's own social growth plan | positioning, content pillars and their ratio, the hook and CTA banks, the 30-day and 90-day plans, DM openers, leads in Twenty, the weekly review |
+| your main account | its plan in log's memory (`log memory search "<account> plan"`) | the product, the people it is for, the follower atlas |
+| a teammate's account | the teammate's own social growth plan | positioning, content pillars and their ratio, the hook and CTA banks, the 30-day and 90-day plans, DM openers, leads, the weekly review |
 
 Where they disagree, the X discipline wins on X. The plan's comment
 prompts ("comment your AI stack") read as engagement bait there, so on X
@@ -262,13 +261,13 @@ Add each new piece in the same place every time, so every account gets it:
   `docs/useCases/twitter/README.md`.
 - **A posting or editing rule** (recording, captions, the cut, the export,
   when and how to post): change the social posting playbook, in the repo and
-  the Twenty note together. Then link anything new from section 2 here.
+  log's memory together. Then link anything new from section 2 here.
 - **A new X command:** `src/cli/twitter/helpers/<name>.ts` on the direct-API
   engine (`DIRECT_ROUTES`, `COMMAND_RULES`), never a browser.
 
-Then run `log kb sync`. This skill, the use cases and the docs go into
-Twenty's knowledge base and its Redis search, and every agent finds them
-with `log kb search`.
+Then run `log memory sync`. This skill, the use cases and the docs go into
+log's memory in log.db, searched locally, and every agent finds them
+with `log memory search`.
 
 ## The rules these tools fall under
 

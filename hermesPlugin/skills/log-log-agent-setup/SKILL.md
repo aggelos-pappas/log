@@ -33,7 +33,7 @@ Say: **"go on docs/useCases/log/agentSetup.md"**. The agent reads this page and 
 
 - **No prompts.** `log setup` never needs a TTY. The interactive `log launch --setup` wizard stays for the owner who wants to click through platforms.
 - **Nothing secret is invented.** Keys, cookies and 2FA still go in a terminal, with the command and place named in `pending`.
-- **Resumable.** Re-running reports already-wired harnesses and an already-set `LOG_ACCOUNTS` as done; it does not repeat them.
+- **Resumable.** Re-running reports already-wired harnesses as done; it does not repeat them.
 - **A config file works too.** `--config <file>` takes a JSON object with `platforms`, `extensions` and `harnesses` arrays; it is combined with the flags.
 
 ## Related

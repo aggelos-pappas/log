@@ -75,7 +75,7 @@ function discordConversationOf(account: string, c: DiscordExported): Conversatio
 
 async function indexDiscord(context: CommandContext, only: string | undefined, lines: string[], conversations: Conversation[]): Promise<void> {
   for (const name of only ? [only] : twitterAccounts(platformStateRoot("discord"))) {
-    const account = await findDiscordAccount(context.twenty, name).catch(() => null);
+    const account = await findDiscordAccount(context.accounts, name).catch(() => null);
     if (!account) {
       if (!only) lines.push(`discord ${name}: skipped, no DISCORD socialAccount`);
       continue;
@@ -136,7 +136,7 @@ async function indexAll(context: CommandContext, only: string | undefined, platf
       lines.push(`${account}: skipped, ${opened.result.stderr ?? "not usable"}`);
       continue;
     }
-    const secrets = await context.twenty.loginSecrets(opened.account.id).catch(() => null);
+    const secrets = await context.accounts.loginSecrets(opened.account.id).catch(() => null);
     const chatPin = secrets?.messengerPin ?? undefined;
     context.err(`${account}: reading every conversation${chatPin ? ", X Chat opened with the saved PIN" : ", X Chat stays encrypted (no PIN saved)"}`);
     const run = await opened.engine({ action: "inbox", limit: 200, export: true, ...(chatPin ? { chatPin } : {}) });

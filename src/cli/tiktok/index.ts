@@ -93,13 +93,13 @@ export const tiktokStatsCommand: Command = {
     if (typeof ref !== "string") return { code: 1, stderr: `log tiktok stats: --account is needed\n${TIKTOK_STATS_USAGE}` };
     const limit = numberOf(parsed, "limit") ?? 50;
     try {
-      const account = await findTiktokAccount(context.twenty, ref);
+      const account = await findTiktokAccount(context.accounts, ref);
       const gate = tiktokGate(account);
       if (!gate.ok) return refuse("tiktok stats", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directTiktok) return { code: 1, stderr: "log tiktok stats: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: reading its followers and its ${limit} newest posts' stats from TikTok Studio on the direct-API engine (reads only)`);
       const run = context.directTiktok(account, { action: "stats", limit });
-      for (const line of await recordTiktokSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordTiktokSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       const answer = run.answer;
       if (!answer.ok) return { code: 1, stderr: `log tiktok stats: ${account.accountName}: ${answer.code}: ${answer.detail ?? ""}. Nothing is retried (rule 94).` };
       const posts = (Array.isArray(answer["posts"]) ? answer["posts"] : []) as TiktokPostStats[];
@@ -120,7 +120,7 @@ export const tiktokSessionCommand: Command = {
   name: "session",
   effect: "read",
   input: TIKTOK_SESSION_INPUT,
-  summary: "Check that TikTok still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty",
+  summary: "Check that TikTok still accepts an account's saved session, on the direct-API engine, sending nothing; the answer is saved",
   args: "check --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(TIKTOK_SESSION_INPUT));
@@ -129,13 +129,13 @@ export const tiktokSessionCommand: Command = {
     const ref = parsed.flags["account"];
     if (typeof ref !== "string") return { code: 1, stderr: `log tiktok session check: --account is needed\n${TIKTOK_SESSION_USAGE}` };
     try {
-      const account = await findTiktokAccount(context.twenty, ref);
+      const account = await findTiktokAccount(context.accounts, ref);
       const gate = tiktokGate(account);
       if (!gate.ok) return refuse("tiktok session check", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directTiktok) return { code: 1, stderr: "log tiktok session check: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: session check on the direct-API engine`);
       const run = context.directTiktok(account, { action: "ping" });
-      for (const line of await recordTiktokSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordTiktokSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "tiktok", account: account.accountName, ...run.answer }, null, 2) };
       return { code, stdout: render(account.accountName, run.answer) };
@@ -203,14 +203,14 @@ export const tiktokPostCommand: Command = {
     const approvedBy = typeof parsed.flags["approvedBy"] === "string" ? parsed.flags["approvedBy"] : "";
     if (live && !approvedBy) return refuse("tiktok post", "notApproved", "--live needs --approvedBy <who> (rule 8)");
     try {
-      const account = await findTiktokAccount(context.twenty, ref);
+      const account = await findTiktokAccount(context.accounts, ref);
       const gate = tiktokGate(account);
       if (!gate.ok) return refuse("tiktok post", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!live) return { code: 0, stdout: `log tiktok post: dry run: ${account.accountName} would post ${video} (${Math.round(size / 1024)} KB) to ${visibility} with the caption "${caption}". Nothing was sent. --live --approvedBy <who> does it (rule 8).` };
       if (!context.directTiktok) return { code: 1, stderr: "log tiktok post: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: uploading ${Math.round(size / 1024)} KB and posting it on the direct-API engine, no browser (approved by ${approvedBy})`);
       const run = context.directTiktok(account, { action: "post", live: true, approvedBy, video, caption, visibility });
-      for (const line of await recordTiktokSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordTiktokSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       const answer = run.answer;
       if (!answer.ok) return { code: 1, stderr: `log tiktok post: ${account.accountName}: ${answer.code}: ${answer.detail ?? ""}. Nothing is retried (rule 94).` };
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ engine: "directApi", platform: "tiktok", account: account.accountName, itemId: answer["itemId"], videoId: answer["videoId"], url: answer["url"] }, null, 2) };
@@ -264,14 +264,14 @@ export const tiktokDeleteCommand: Command = {
     const approvedBy = typeof parsed.flags["approvedBy"] === "string" ? parsed.flags["approvedBy"] : "";
     if (live && !approvedBy) return refuse("tiktok delete", "notApproved", "--live needs --approvedBy <who> (rule 8)");
     try {
-      const account = await findTiktokAccount(context.twenty, ref);
+      const account = await findTiktokAccount(context.accounts, ref);
       const gate = tiktokGate(account);
       if (!gate.ok) return refuse("tiktok delete", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!live) return { code: 0, stdout: `log tiktok delete: dry run: ${account.accountName} would delete https://www.tiktok.com/@${account.accountName}/video/${id}. Nothing was sent. --live --approvedBy <who> does it (rule 8).` };
       if (!context.directTiktok) return { code: 1, stderr: "log tiktok delete: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: deleting post ${id} on the direct-API engine, no browser (approved by ${approvedBy})`);
       const run = context.directTiktok(account, { action: "deletePost", live: true, approvedBy, itemId: id });
-      for (const line of await recordTiktokSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordTiktokSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       const answer = run.answer;
       if (!answer.ok) return { code: 1, stderr: `log tiktok delete: ${account.accountName}: ${answer.code}: ${answer.detail ?? ""}. Nothing is retried (rule 94).` };
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ engine: "directApi", platform: "tiktok", account: account.accountName, itemId: id, deleted: true }, null, 2) };

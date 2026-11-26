@@ -88,7 +88,7 @@ async function fetchTwitter(context: CommandContext, account: string, missing: V
     lines.push(`twitter ${account}: ${missing.length} voice note file(s) missing and not fetched: ${opened.result.stderr ?? "the account isn't usable"}`);
     return [];
   }
-  const secrets = await context.twenty.loginSecrets(opened.account.id).catch(() => null);
+  const secrets = await context.accounts.loginSecrets(opened.account.id).catch(() => null);
   const chatPin = secrets?.messengerPin ?? undefined;
   if (!chatPin) {
     lines.push(`twitter ${account}: ${missing.length} voice note file(s) missing and not fetched: no X Chat PIN saved (log twitter chat pin)`);
@@ -116,7 +116,7 @@ async function fetchTwitter(context: CommandContext, account: string, missing: V
 }
 
 async function findDiscord(context: CommandContext, account: string, conversations: Conversation[], lines: string[]): Promise<{ notes: VoiceNote[]; conversations: Conversation[] }> {
-  const found = await findDiscordAccount(context.twenty, account).catch(() => null);
+  const found = await findDiscordAccount(context.accounts, account).catch(() => null);
   const gate = found ? discordGate(found) : null;
   if (!found || !gate?.ok || !context.directDiscord) {
     lines.push(`discord ${account}: not searched, ${!found ? "no DISCORD socialAccount" : !gate?.ok ? gate?.detail ?? "not usable" : "the direct-API engine isn't wired"}`);

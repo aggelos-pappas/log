@@ -4,7 +4,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { COMMANDS } from "../../cli/runner/index.ts";
 import { isPlatform, toolBaseName } from "../../cli/runner/helpers/platforms.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { catalog, entryById, getAnswer, resolveCall } from "../catalog/index.ts";
 import { ARGS_TOOLS_GIVEN_FORMS, commandTools, createLogMcpServer, currentToolName, guardCall, LOCAL_LIVE_FLAGS, RENAMED_COMMAND_TOOLS, RENAMED_FLOW_TOOLS, RENAMED_TOOLS, runToolCall, savedFlows, toolsFromCommands, toolsFromFlows } from "./index.ts";
 import { LOADS_EVERY_TOOL_MS } from "../../../scripts/tests/timeouts.ts";
@@ -56,7 +56,7 @@ describe("renamed Facebook tools keep their old names for one release", () => {
   });
 
   test("tools/list shows only the new names", async () => {
-    const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
+    const server = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false });
     const client = new Client({ name: "test", version: "0.0.0" });
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
     await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
@@ -71,8 +71,8 @@ describe("renamed Facebook tools keep their old names for one release", () => {
   }, LOADS_EVERY_TOOL_MS);
 
   test("an old name runs the new tool, through the same gates", async () => {
-    const result = await runToolCall("accounts", {}, { twenty: marketplaceFixture() }, () => {}, () => []);
-    const current = await runToolCall("facebookAccounts", {}, { twenty: marketplaceFixture() }, () => {}, () => []);
+    const result = await runToolCall("accounts", {}, { accounts: marketplaceFixture() }, () => {}, () => []);
+    const current = await runToolCall("facebookAccounts", {}, { accounts: marketplaceFixture() }, () => {}, () => []);
     expect(result.isError).toBe(current.isError);
     expect((result.structuredContent as { stdout: string }).stdout).toBe((current.structuredContent as { stdout: string }).stdout);
     expect(textOf(result)).toContain("`accounts` was renamed to `facebookAccounts`");

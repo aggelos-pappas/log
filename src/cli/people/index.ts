@@ -182,7 +182,7 @@ export const peopleCommand: Command = {
     if (sub === "bots" && rest.length === 0) {
       const asked = typeof parsed.flags["platform"] === "string" ? (parsed.flags["platform"] as string).toLowerCase().replace(/^x$|^twitter$/, "x") : null;
       try {
-        const report = await backfillBots(handle, defaultBotSources({ handle, twenty: _context.twenty }), { now: _context.now ? _context.now() : new Date(), ...(asked ? { platforms: [asked] } : {}) });
+        const report = await backfillBots(handle, defaultBotSources({ handle, accountStore: _context.accounts }), { now: _context.now ? _context.now() : new Date(), ...(asked ? { platforms: [asked] } : {}) });
         const nothing = report.platforms.every((p) => !p.accounts.some((a) => !a.refused));
         if (nothing && report.refused) return { ...refuse("people bots", "noPlatformSession", report.platforms.flatMap((p) => p.accounts.flatMap((a) => (a.refused ? [`${p.platform} ${a.account}: ${a.refused.detail}`] : []))).join("; ")), stdout: json ? JSON.stringify(report, null, 2) : "" };
         return { code: 0, stdout: json ? JSON.stringify(report, null, 2) : botBackfillText(report) };

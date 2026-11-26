@@ -177,7 +177,7 @@ export function goalText(accountName: string, runDir: string, goal: string | nul
 }
 
 async function pickSession(context: CommandContext, wanted: unknown): Promise<CurrentInspect | { code: number; stderr: string }> {
-  const name = typeof wanted === "string" ? await findAccount(context.twenty, wanted).then((a) => a.accountName, () => wanted) : undefined;
+  const name = typeof wanted === "string" ? await findAccount(context.accounts, wanted).then((a) => a.accountName, () => wanted) : undefined;
   const current = readCurrentInspect(undefined, name);
   if (current) return current;
   const open = openInspects();
@@ -187,7 +187,7 @@ async function pickSession(context: CommandContext, wanted: unknown): Promise<Cu
 
 export async function readInspectStep(context: CommandContext, accountName: string, folder: string | null, goal: string | null, since: string | null = null): Promise<{ reading: StepReading | null; text: string }> {
   if (!folder || !existsSync(folder)) return { reading: null, text: ">>> No recording for this step, so nothing was read (rule 73)." };
-  const account = await findAccount(context.twenty, accountName).catch(() => null);
+  const account = await findAccount(context.accounts, accountName).catch(() => null);
   try {
     const reading = await readStep(folder, { goal, account: stepAccountOf(account, accountName), decisions: context.decisions, now: context.now, since });
     const goalNote = goalText(accountName, dirname(dirname(folder)), goal, since);
@@ -216,7 +216,7 @@ export const inspectCommand: Command = {
       if (url && !parseInspectAction(["goto", url]).ok) return { code: 1, stderr: `log inspect: --url takes a https URL on a platform log-cli knows\n${INSPECT_USAGE}` };
       const wanted = typeof parsed.flags["account"] === "string" ? parsed.flags["account"] : null;
       if (wanted) {
-        const accountName = await findAccount(context.twenty, wanted).then((a) => a.accountName, () => wanted);
+        const accountName = await findAccount(context.accounts, wanted).then((a) => a.accountName, () => wanted);
         const existing = readCurrentInspect(undefined, accountName);
         if (existing) return { code: 1, stderr: `log inspect: a session is already open for ${existing.account} (${existing.runDir}). Stop it first: log inspect do stop --account ${existing.account}` };
         if (parsed.flags["detach"]) return startDetached(accountName, argv);
@@ -266,7 +266,7 @@ export const inspectCommand: Command = {
       }
       const open = openInspects();
       const wanted = typeof parsed.flags["account"] === "string" ? parsed.flags["account"] : undefined;
-      const accountName = wanted ? await findAccount(context.twenty, wanted).then((a) => a.accountName, () => wanted) : undefined;
+      const accountName = wanted ? await findAccount(context.accounts, wanted).then((a) => a.accountName, () => wanted) : undefined;
       const current = readCurrentInspect(undefined, accountName);
       if (!current) {
         if (!open.length) return { code: 1, stderr: "log inspect: no session is open. Start one: log inspect start --account <name>" };

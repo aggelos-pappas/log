@@ -4,7 +4,7 @@
 
 11 November 2026. Authoritative correction for issue #112 and PR #113. Proposed design; implementation pending.
 
-**Move away from Twenty. Keep social account data, conversations, messages, listings and execution data in the database inside the user's selected cloud workspace. ListeningKit's central hosted database stores identity, team authorization and workspace routing, not a copy of those application records.**
+**log no longer uses Twenty. Keep social account data, conversations, messages, listings and execution data in the database inside the user's selected cloud workspace. ListeningKit's central hosted database stores identity, team authorization and workspace routing, not a copy of those application records.**
 
 The previous version of this proposal placed social records in central PostgreSQL. That was too broad and is superseded by this decision. Treg remains the baseline for the hosted identity/control architecture; it does not require centralizing the workspace's private application data.
 
@@ -64,7 +64,7 @@ Use Treg's FastAPI + SQLModel/SQLAlchemy + PostgreSQL structure for the **contro
 
 For the **runtime**, extend the existing workspace-local `log.db`/SQLite storage behind platform/domain repository interfaces. Inventory existing coverage first, then add missing social account, listing, conversation and group persistence. Avoid introducing a second workspace database by default. Each team's runtime uses its own persistent directory and installation identity; private credentials/files remain alongside it under appropriate access restrictions.
 
-Replace `CommandContext.twenty` with vendor-independent repositories backed by that runtime-local storage. Runtime tools read/write those repositories directly. They do not send account or conversation CRUD to central ListeningKit APIs. Preserve existing platform identifiers, message deduplication, listing/conversation relations and tombstones/statuses.
+`CommandContext.accounts` (the local account store) replaced the Twenty client for accounts; the other objects need vendor-independent repositories backed by that runtime-local storage. Runtime tools read/write those repositories directly. They do not send account or conversation CRUD to central ListeningKit APIs. Preserve existing platform identifiers, message deduplication, listing/conversation relations and tombstones/statuses.
 
 Host-side authorization establishes user/team/grant/workspace authority. The runtime then checks that account/object handles belong to its bound workspace. Never accept a caller-supplied team or path as proof of access. Opaque handles are transport references, not permission by themselves.
 
@@ -74,11 +74,11 @@ Inspected Log revision: `4004558bdafcace630686df994d91254130659ab`.
 
 - [`src/storage/schema/client.ts`](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/storage/schema/client.ts): existing local database foundation to extend.
 - [`src/storage/platform/client.ts`](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/storage/platform/client.ts) and [`src/storage/records/client.ts`](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/storage/records/client.ts): inventory current persisted runtime state before adding tables.
-- [`src/cli/runner/types.ts`](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/cli/runner/types.ts): replace `CommandContext.twenty` with domain repositories.
-- [`src/twenty/graphql/types.ts`](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/twenty/graphql/types.ts) and [`client.ts`](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/twenty/graphql/client.ts): existing account/listing/message/group contract and selected fields define the migration inventory, not central hosted tables.
+- [`src/cli/runner/types.ts`](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/cli/runner/types.ts): `CommandContext.accounts` is the account repository; add domain repositories for the rest.
+- [`src/accounts/store/types.ts`](../../src/accounts/store/types.ts) and [`client.ts`](../../src/accounts/store/client.ts): existing account/listing/message/group contract and selected fields define the migration inventory, not central hosted tables.
 - [`src/mcp/jobs/client.ts`](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/mcp/jobs/client.ts): keep detailed jobs/results in workspace-local storage; hosted handles map to this workspace.
 - [`src/mcp/server/index.ts`](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/mcp/server/index.ts#L143): replace shared log fan-out with operation-scoped relay; do not centralize its payload logs.
-- [`src/mcp/oauth/client.ts`](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/mcp/oauth/client.ts#L194): hosted MCP login must no longer depend on the Twenty server owner.
+- `src/mcp/oauth` (the hosted MCP login through the Twenty server owner) was removed; hosted sign-in goes through the control service.
 
 Pinned Treg revision: `3149cb1a23f6a0ce2d6ffab403f79f58855d3856`.
 
@@ -108,15 +108,15 @@ Boat and own-cloud have the same data boundary. Persistence, retention and backu
 ## Implementation order and acceptance
 
 1. Enforce the host's control-only schema/telemetry contract and Treg-style identity/team/MCP authorization.
-2. Inventory Twenty consumers, existing local tables and private files. Define runtime repository coverage without assuming the existing SQLite schema already stores everything.
-3. Add missing local repositories/migrations and remove Twenty calls from platform execution, scripts and Python paths used by the product.
+2. Inventory the retired Twenty-era objects (#339), existing local tables and private files. Define runtime repository coverage without assuming the existing SQLite schema already stores everything.
+3. Add missing local repositories/migrations for the retired objects (Twenty calls are already gone from platform execution, scripts and Python paths).
 4. Route console and hosted MCP reads/writes to the selected runtime; scope streamed output and durable operation recovery.
 5. If carrying existing Twenty data forward, export only owner-selected records into an explicitly chosen workspace, preserving ids/relations. Protect credential migration and preserve source records. No automatic central import or dual writes.
-6. Document runtime persistence, recovery and an explicit VM-to-Boat transfer procedure. New onboarding requires no Twenty installation/key.
+6. Document runtime persistence, recovery and an explicit VM-to-Boat transfer procedure. New onboarding requires no Twenty installation/key (already true).
 
 Acceptance for later implementation: account/conversation/listing creation updates the workspace database; no private rows or payloads appear in the hosted database/logging/queues; two teams cannot cross-read runtime data; both runtime paths behave the same; offline and data-loss consequences are visible; lost acknowledgements cannot duplicate platform effects.
 
-This document supersedes any earlier wording that centrally stores social account catalogs, conversation/message projections, listings or detailed job results. Existing code still has Twenty dependencies. This documentation change has not migrated data, deployed infrastructure or deleted existing records.
+This document supersedes any earlier wording that centrally stores social account catalogs, conversation/message projections, listings or detailed job results. The code no longer depends on Twenty; the objects that lived only there are retired (#339). This documentation change has not migrated data, deployed infrastructure or deleted existing records.
 
 ## Remaining instance contracts
 

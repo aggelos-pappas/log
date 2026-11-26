@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { findAccount } from '../../platformKit/socialAccount/index'
-import { marketplaceFixture } from '../../twenty/graphql/index'
+import { marketplaceFixture } from '../../accounts/store/index'
 import { captureDirFor, lastLaunchReset, listLaunches, overLaunchBudget, prepareRun, recordLaunchReset, runBrowserOf } from './index'
 
 const DAY = new Date('2026-10-18T10:00:00Z')
@@ -12,12 +12,12 @@ const ROOT = mkdtempSync(join(tmpdir(), 'logCliRunTest'))
 afterAll(() => rmSync(ROOT, { recursive: true, force: true }))
 
 async function account(name: string, changes: Record<string, unknown> = {}) {
-  const twenty = marketplaceFixture()
-  await twenty.update('socialAccounts', name, { activeHoursStart: null, activeHoursEnd: null, ...changes })
-  return findAccount(twenty, name)
+  const store = marketplaceFixture()
+  await store.update('socialAccounts', name, { activeHoursStart: null, activeHoursEnd: null, ...changes })
+  return findAccount(store, name)
 }
 
-describe('run.keep: a save Twenty refused never loses the device or the session (Harrisburg, 2026-10-19)', () => {
+describe('run.keep: a refused save never loses the device or the session (Harrisburg, 2026-10-19)', () => {
   test('login.json goes at once; the rest moves out of the temp folder, and cleanup leaves it', async () => {
     process.env.LOG_UNSAVED_DIR = join(ROOT, 'unsaved')
     const prepared = prepareRun(await account('galwayOne'), 'connect', { now: DAY, root: ROOT, login: { email: 'e', password: 'p', totpSecret: null, messengerPin: null } })

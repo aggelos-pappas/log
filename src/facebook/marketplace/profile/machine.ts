@@ -27,7 +27,7 @@ export function planOf(context: Pick<ProfileContext, 'page' | 'namePage' | 'hasP
   const step = (item: ProfilePlanStep['item'], has: boolean, control: string | null): ProfilePlanStep => ({
     item,
     control,
-    action: context.uploaded.includes(item) ? 'uploaded' : !has ? 'noPhotoInTwenty' : !control ? 'noControl' : 'wouldUpload'
+    action: context.uploaded.includes(item) ? 'uploaded' : !has ? 'noPhotoSaved' : !control ? 'noControl' : 'wouldUpload'
   })
   const current = context.namePage?.currentName ?? null
   const wanted = context.profileName
@@ -37,7 +37,7 @@ export function planOf(context: Pick<ProfileContext, 'page' | 'namePage' | 'hasP
     current,
     wanted,
     action: !wanted
-      ? 'noNameInTwenty'
+      ? 'noNameSaved'
       : current && current.toLowerCase() === wanted.toLowerCase()
         ? 'alreadyNamed'
         : context.live

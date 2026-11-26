@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { TwitterEngineRun, TwitterEngineSpec, TwitterSessionAnswer } from "../../twitter/account/session/index.ts";
 import { notificationStorePath } from "../../twitter/notification/feed/index.ts";
 import type { NotificationStore, TwitterNotification } from "../../twitter/notification/feed/index.ts";
@@ -15,8 +15,8 @@ const ROWS: TwitterNotification[] = [
 ];
 
 function harness(script: (spec: TwitterEngineSpec) => TwitterSessionAnswer) {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "xTwo", accountName: "xTwo", platform: "TWITTER", cookies: { auth_token: "a".repeat(40), ct0: "b".repeat(40) }, proxy: null });
+  const accounts = marketplaceFixture();
+  accounts.rows.socialAccounts!.push({ id: "xTwo", accountName: "xTwo", platform: "TWITTER", cookies: { auth_token: "a".repeat(40), ct0: "b".repeat(40) }, proxy: null });
   const storePath = notificationStorePath("xTwo");
   mkdirSync(dirname(storePath), { recursive: true });
   const store: NotificationStore = { version: 1, userId: "100", bottomCursor: "b2", historyDone: false, syncedAt: "2026-11-01T13:00:00Z", rows: Object.fromEntries(ROWS.map((r) => [r.key, r])) };
@@ -28,7 +28,7 @@ function harness(script: (spec: TwitterEngineSpec) => TwitterSessionAnswer) {
     out.length = 0;
     err.length = 0;
     const code = await runCli(argv, {
-      twenty,
+      accounts,
       out: (l) => out.push(l),
       err: (l) => err.push(l),
       now: () => new Date("2026-11-01T14:00:00Z"),

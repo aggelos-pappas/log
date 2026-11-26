@@ -114,15 +114,15 @@ function formUsage(command: Command, form: InputForm): string[] {
 }
 
 export const NOTES: Readonly<Record<string, string[]>> = {
-  facebookConnect: [`Runs --noPrompt: saved cookies that work end it at once; otherwise it signs in by itself from the account's saved email, password and 2FA secret (the local accounts file, or Twenty for an account kept there) (${cite(21)}), and anything it can't handle waits for the owner in the visible window (up to --wait seconds, default 600). Progress streams to the live log.`],
+  facebookConnect: [`Runs --noPrompt: saved cookies that work end it at once; otherwise it signs in by itself from the account's saved email, password and 2FA secret (the local accounts file) (${cite(21)}), and anything it can't handle waits for the owner in the visible window (up to --wait seconds, default 600). Progress streams to the live log.`],
   inspectStart: ["Opens the account's browser as its own process (detach: true) and returns once the gate and self-check passed. It stays open until `inspectDo` with action stop (or 30 idle minutes)."],
   inspectDo: ["Sends one step to the open session and returns its snapshot (element refs), requests and rea reading. Steps that act on the platform (click, type, press, solve, signIn, code, pin…) are `inspectDoLive`."],
   inspectDoLive: ["Sends one step that acts on the platform to the open session and returns its snapshot (element refs), requests and rea reading."],
   facebookJoinGroup: [
     "Needs the account's browser open first: inspectStart { account, detach: true }. Then, in order:",
     "1. join group --account <a> --group <url|id> : reads the group page (Facebook's viewer_join_state from the page itself), clicks nothing. Run again later to check pending → accepted.",
-    "2. facebookJoinGroupLive: join group … --live (confirmLive) : presses Join; the questions, rules and join path go to the group's record (agencyGroups.joinSubmission.options, in Twenty).",
-    "3. join group … --answer --set 1=<option label or text> --set 2=… --agree : the answers (the Clack stepper needs a terminal; --set is the same over MCP). Saved to the group's record in Twenty, not sent.",
+    "2. facebookJoinGroupLive: join group … --live (confirmLive) : presses Join; the questions, rules and join path go to the group's record (agencyGroups.joinSubmission.options).",
+    "3. join group … --answer --set 1=<option label or text> --set 2=… --agree : the answers (the Clack stepper needs a terminal; --set is the same over MCP). Saved to the group's record, not sent.",
     "4. join group … --fill (dry run), then facebookJoinGroupLive: --fill --live --submit (confirmLive) : the answers into the group's dialog, Submit confirmed by Facebook (QUESTIONNAIRE_COMPLETED). --show reads the record at any time.",
   ],
   facebookProfileSetup: [`Without --live it only reads the profile and lists its controls in the run's profileFound.txt. facebookProfileSetupLive with --live uploads socialAccounts.profilePhoto and coverPhoto in one run (${cite(28)}): only when the owner asked.`],

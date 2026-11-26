@@ -23,7 +23,7 @@ export function helpLines(lines: readonly string[]): string[] {
 export function actsOf(entry: CatalogEntry): string {
   if (entry.terminalOnly) return `run by the owner in a terminal, not over MCP: it ${entry.terminalOnly}`;
   if (entry.liveTool) return `live run with live: true and confirmLive: true, only when the owner asked (rules 8, 10)`;
-  return entry.effect === "read" ? "no" : `changes ${entry.effect === "browser" ? "the account's browser" : "local or Twenty data"}`;
+  return entry.effect === "read" ? "no" : `changes ${entry.effect === "browser" ? "the account's browser" : "local data"}`;
 }
 
 export function callLine(entry: CatalogEntry, inputs: Record<string, unknown>, live = false): string {

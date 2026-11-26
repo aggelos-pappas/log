@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { findingOf } from '../../agentHooks/pageState/index'
 import { readingAt } from '../../browser/inspect/helpers/browserStates'
 import { runCli } from '../../cli/runner/index'
-import { marketplaceFixture } from '../../twenty/graphql/helpers/marketplaceFixture'
+import { marketplaceFixture } from '../../accounts/store/helpers/marketplaceFixture'
 import type { DecisionRequest, DecisionResponse } from '../decisions/types'
 import { bundleOf, decisionOf, DOCUMENT_FIELDS, documentAnswerOf, exchangesOf, exchangeTimeline, fitBundle, goalSoFarOf, loudText, questionsOf, readStep, stateOf, SUBQ_STEP_MODEL } from './index'
 import type { EarlierStep, StepAccount, StepBundle, StepExchange, StepTaken } from './index'
@@ -231,7 +231,7 @@ describe('reading a recorded step (log inspect read, and every inspect do)', () 
     const { root, folder } = recordedStep()
     const out: string[] = []
     try {
-      const code = await runCli(['inspect', 'read', folder, '--account', 'galwayOne', '--goal', GOAL], { twenty: marketplaceFixture(), decisions: async () => ANSWERS, out: (l) => out.push(l), err: () => {} })
+      const code = await runCli(['inspect', 'read', folder, '--account', 'galwayOne', '--goal', GOAL], { accounts: marketplaceFixture(), decisions: async () => ANSWERS, out: (l) => out.push(l), err: () => {} })
       expect(code).toBe(0)
       const text = out.join('\n')
       expect(text).toContain('>>> UNKNOWN STATE at 04_setlocationBethlehemPa')

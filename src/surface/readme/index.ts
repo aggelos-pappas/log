@@ -132,7 +132,7 @@ export function withSurface(readme: string, section: string): string {
   const start = readme.indexOf("<!-- surface:start");
   const end = readme.indexOf(SURFACE_END);
   if (start !== -1 && end !== -1) return readme.slice(0, start) + section + readme.slice(end + SURFACE_END.length);
-  const anchor = readme.indexOf("\n## Twenty");
+  const anchor = readme.indexOf("\n## Roadmap");
   if (anchor === -1) return `${readme.trimEnd()}\n\n${section}\n`;
   return `${readme.slice(0, anchor)}\n${section}\n${readme.slice(anchor)}`;
 }

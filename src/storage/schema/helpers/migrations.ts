@@ -159,6 +159,14 @@ export const PERSON_FACT_TABLES: readonly string[] = [
   'CREATE INDEX IF NOT EXISTS factCandidatesOpen ON factCandidates (chatId) WHERE decided IS NULL',
 ]
 
+export const MEMORY_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS kbArticles (key TEXT PRIMARY KEY, kind TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, source TEXT NOT NULL, tags TEXT NOT NULL, author TEXT NOT NULL, contentHash TEXT NOT NULL, syncedAt TEXT NOT NULL) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS kbArticlesByKind ON kbArticles (kind)',
+  'CREATE TABLE IF NOT EXISTS kbChunks (id TEXT PRIMARY KEY, key TEXT NOT NULL, kind TEXT NOT NULL, title TEXT NOT NULL, source TEXT NOT NULL, text TEXT NOT NULL, contentHash TEXT NOT NULL, model TEXT NOT NULL, vector BLOB NOT NULL) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS kbChunksByKey ON kbChunks (key)',
+  'CREATE INDEX IF NOT EXISTS kbChunksByKind ON kbChunks (kind)',
+]
+
 export const MIN_READER_VERSION = 1
 
 export const MIGRATIONS: readonly Migration[] = [
@@ -442,6 +450,14 @@ export const MIGRATIONS: readonly Migration[] = [
     creates: ['personFacts', 'personFactsByIdentity', 'personFactsByPerson', 'factCandidates', 'factCandidatesOpen'],
     apply(handle) {
       for (const statement of PERSON_FACT_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 33,
+    name: 'knowledgeBase',
+    creates: ['kbArticles', 'kbArticlesByKind', 'kbChunks', 'kbChunksByKey', 'kbChunksByKind'],
+    apply(handle) {
+      for (const statement of MEMORY_TABLES) handle.exec(statement)
     },
   },
 ]

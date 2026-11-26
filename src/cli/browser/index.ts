@@ -11,7 +11,7 @@ import { liveThroughAction } from "../../platformKit/action/index.ts";
 import { refuseError } from "../runner/helpers/index.ts";
 import type { CommandContext, CommandResult } from "../runner/types.ts";
 import type { ViewerView } from "../../browser/viewer/index.ts";
-import { readLocalAccounts } from "../../twenty/graphql/index.ts";
+import { readLocalAccounts } from "../../accounts/store/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
 import { knownPlatformOfAccount, PLATFORM_LABELS } from "../runner/helpers/platforms.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
@@ -120,7 +120,7 @@ export async function checkMovedAccount(account: FacebookAccount): Promise<MoveC
 
 export const browserDeps: { state: (account: string) => Promise<ViewerView>; move: (context: CommandContext) => MoveDeps } = {
   state: viewerState,
-  move: (context) => ({ twenty: context.twenty, adsPower: context.adsPower ?? createAdsPowerClient(), readState: readStateOverCdp, check: checkMovedAccount, ledger: logDbMoveLedger(), log: (line) => context.err(line), now: context.now }),
+  move: (context) => ({ accounts: context.accounts, adsPower: context.adsPower ?? createAdsPowerClient(), readState: readStateOverCdp, check: checkMovedAccount, ledger: logDbMoveLedger(), log: (line) => context.err(line), now: context.now }),
 };
 
 async function runMove(context: CommandContext, positionals: string[], flags: Record<string, unknown>): Promise<CommandResult> {

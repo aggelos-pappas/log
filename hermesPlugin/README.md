@@ -55,7 +55,7 @@ One native Hermes plugin, `log` (`plugin.yaml`, `__init__.py`). It used to be tw
    ```bash
    log launch --setup          # pick Hermes: writes <Hermes home>/plugins/log and retires an old logHooks folder
    hermes plugins enable log
-   hermes mcp add log --command logMcp --env "LOG_ACCOUNTS=${LOG_ACCOUNTS}"
+   hermes mcp add log --command logMcp
    ```
 
    Restart Hermes to load it. To have every write-capable log tool ask for approval first, also run `hermes config set mcp_servers.log.trust untrusted`. A native plugin can't declare an MCP server, so this one line in `config.yaml` is what gives Hermes the `mcp__log__*` tools; until it's there, the hook says so in each turn.

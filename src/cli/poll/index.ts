@@ -6,7 +6,7 @@ import { parseWorkerRequest, recordsOf, scrollsFor, WORKER_DEFAULT_LIMIT, worker
 import type { WorkerAnswer, WorkerRecord } from "../../facebook/group/read/index.ts";
 import { checkRunnable, findAccount } from "../../platformKit/socialAccount/index.ts";
 import type { FacebookAccount } from "../../platformKit/socialAccount/index.ts";
-import { TwentyError } from "../../twenty/graphql/index.ts";
+import { AccountStoreError } from "../../accounts/store/index.ts";
 import { readInBrowser } from "../read/index.ts";
 import { refuse, refuseError, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandResult } from "../runner/types.ts";
@@ -19,6 +19,7 @@ export const POLL_EVERY_MS = 5 * 60_000;
 export const POLL_USAGE = [
   "Usage: log facebook poll <group url or id> <accountName> [<how long to poll: 30m, 2h>] [--bypass]",
   "       log facebook poll --request <request json>   (OpenMagpie's facebook_group worker: groups.search in, post records out as one JSON line; python/openMagpie/facebookWorker.py calls it)",
+  "Retired (#339): Facebook group records were kept in Twenty, which log no longer uses.",
   "One poll reads the group once in the account's open browser, posts only, nothing clicked, and prints one JSON line: the posts it saw, as OpenMagpie's records. With a time it polls every 5 minutes until the time is up, a line each.",
   "Every poll runs inside the account's local hours (rule 18); --bypass skips that, only when the owner asked (rule 20). --request never skips it.",
   "The account's browser must be open (log inspect start for that account, or log facebook host start): a poll is a step in it (rule 35).",
@@ -51,16 +52,16 @@ async function pollRequest(context: CommandContext, text: string): Promise<Comma
       context.err(`  ✗ group ${groupId}: ${code}: ${error}`);
     };
     try {
-      const rows = await context.twenty.list("agencyGroups", { facebookGroupId: { eq: groupId } });
+      const rows = await context.accounts.list("agencyGroups", { facebookGroupId: { eq: groupId } });
       if (!rows.length) {
-        failed("groupNoAccount", `no account in Twenty is in group ${groupId}: join it first (log facebook join group)`);
+        failed("groupNoAccount", `no account in the account store is in group ${groupId}: join it first (log facebook join group)`);
         continue;
       }
       const ordered = [...rows].sort((a, b) => Number(b.joinStatus === "MEMBER") - Number(a.joinStatus === "MEMBER"));
       let account: FacebookAccount | null = null;
       for (const row of ordered) {
         if (!row.socialAccountId) continue;
-        const candidate = await findAccount(context.twenty, row.socialAccountId);
+        const candidate = await findAccount(context.accounts, row.socialAccountId);
         if (checkRunnable(candidate, "run").ok && readCurrentInspect(undefined, candidate.accountName)) {
           account = candidate;
           break;
@@ -75,12 +76,12 @@ async function pollRequest(context: CommandContext, text: string): Promise<Comma
         failed("groupRefInvalid", ref.error);
         continue;
       }
-      const group = await ensureGroup(context.twenty, account.id, ref.group);
+      const group = await ensureGroup(context.accounts, account.id, ref.group);
       const polled = await pollOnce(context, account, group, ref.group, request.limit, request.terms, false);
       results.push(...polled.records);
       if (polled.error) errors.push(polled.error);
     } catch (error) {
-      failed(error instanceof TwentyError ? error.code : "crashed", error instanceof Error ? error.message : String(error));
+      failed(error instanceof AccountStoreError ? error.code : "crashed", error instanceof Error ? error.message : String(error));
     }
   }
   if (!results.length && errors.length) return answer({ ok: false, code: errors[0]!.code, error: errors.map((e) => `${e.group_id}: ${e.error}`).join("; ") });
@@ -95,10 +96,10 @@ export async function runPoll(context: CommandContext, argv: string[]): Promise<
   try {
     const ref = parseGroupRef(parsed.group);
     if (!ref.ok) return refuse("poll", "groupRefInvalid", ref.error);
-    const account = await findAccount(context.twenty, parsed.account);
+    const account = await findAccount(context.accounts, parsed.account);
     const check = checkRunnable(account, "run");
     if (!check.ok) return refuse("poll", check.code, check.detail);
-    const group = await ensureGroup(context.twenty, account.id, ref.group);
+    const group = await ensureGroup(context.accounts, account.id, ref.group);
     const now = () => (context.now?.() ?? new Date()).getTime();
     const until = parsed.forMs === null ? null : now() + parsed.forMs;
     if (until !== null) context.err(`Polling ${group.name ?? ref.group.key} as ${account.accountName} every ${POLL_EVERY_MS / 60_000} min until ${new Date(until).toISOString().slice(11, 16)}Z.`);
@@ -129,7 +130,7 @@ export const pollCommand: Command = {
   longRunning: true,
   effect: "browser",
   input: POLL_INPUT,
-  summary: "Poll a Facebook group from one account, in its open browser, for a time or once: each poll's posts as one JSON line, OpenMagpie's records; --request answers OpenMagpie's facebook_group worker (#27, rule 63)",
+  summary: "Retired (#339): polling a Facebook group",
   args: "<group> <account> [<how long to poll>] [--bypass] | --request <json>",
   run: runPoll,
 };

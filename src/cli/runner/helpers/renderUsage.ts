@@ -1,7 +1,7 @@
 import type { Command } from "../types.ts";
 
 const NOTES = [
-  "Accounts and listings come from Twenty (socialAccounts, agencyListings). No browser opens without the account's proxy in its home country.",
+  "Accounts and listings come from the account store (socialAccounts, agencyListings). No browser opens without the account's proxy in its home country.",
   "Every command takes --json for machine-readable output and never prompts.",
 ];
 

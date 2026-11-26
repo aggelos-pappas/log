@@ -4,7 +4,7 @@ title: "Facebook groups"
 
 # Facebook groups
 
-Facebook group listening is OpenMagpie's triage job: an account joins a group, OpenMagpie polls it through log-cli's worker (`log facebook poll --request`), keeps every post and sends only the matches to Twenty. log-cli writes only the group's read state to Twenty. A group's members are read from its People tab, a scroll at a time, into files on disk. Rules 65 and 77 (rule 65 replaces rules 61 and 62).
+Facebook group listening is OpenMagpie's triage job: an account joins a group, OpenMagpie polls it through log-cli's worker (`log facebook poll --request`), keeps every post and sends on only the matches. log-cli writes only the group's read state, to the group record. Group records were kept in Twenty, which log no longer uses, so the join, read and poll commands are retired until they are rebuilt on log.db (#339). A group's members are read from its People tab, a scroll at a time, into files on disk. Rules 65 and 77 (rule 65 replaces rules 61 and 62).
 
 ## Listening
 
@@ -32,9 +32,9 @@ A checkpoint, a login wall, a video selfie, an expired session or an account nev
 
 Checked by: code and SubQ
 
-### REQ-GROUP-05: Only the group's read state and identity are written to Twenty
+### REQ-GROUP-05: Only the group's read state and identity are written to the group record
 
-A group read writes to Twenty only the group row's `readCursor`, `lastReadAt` and `lastReadReason`, and its `facebookGroupId` and `groupUrl` when the read finds the group's numeric id (a row made from a vanity URL gets its real id, which `poll --request` finds groups by). No post and no comment is written to Twenty (`agencyGroupPosts` and `agencyGroupComments` stay unused).
+A group read writes to the group record only the group row's `readCursor`, `lastReadAt` and `lastReadReason`, and its `facebookGroupId` and `groupUrl` when the read finds the group's numeric id (a row made from a vanity URL gets its real id, which `poll --request` finds groups by). No post and no comment is written to a stored record (`agencyGroupPosts` and `agencyGroupComments` stay unused).
 
 Checked by: code and SubQ
 
@@ -82,9 +82,9 @@ With `--owners`, only members whose bio names owner, co-owner, founder, CEO, pre
 
 Checked by: code and SubQ
 
-### REQ-GROUP-13: Members go to files, never to Twenty
+### REQ-GROUP-13: Members go to files, never to a stored record
 
-The members are saved to `~/.logCli/members/<group>/<run time>.tsv` and `.json`. Nothing about them is written to Twenty.
+The members are saved to `~/.logCli/members/<group>/<run time>.tsv` and `.json`. Nothing about them is written to a stored record.
 
 Checked by: code and SubQ
 

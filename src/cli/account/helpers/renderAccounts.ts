@@ -10,7 +10,7 @@ export function safeAccount(a: FacebookAccount): Record<string, unknown> {
 }
 
 export function renderAccountsTable(accounts: FacebookAccount[]): string {
-  if (accounts.length === 0) return "No FACEBOOK socialAccounts in Twenty yet. Add one with log launch.";
+  if (accounts.length === 0) return "No FACEBOOK socialAccounts in the account store yet. Add one with log launch.";
   return renderTable(
     ["Account", "Status", "Home", "Proxy", "Exit", "Cookies", "May run"],
     accounts.map((a) => {
@@ -32,7 +32,7 @@ export function renderAccountDetail(a: FacebookAccount): string {
   const check = checkRunnable(a, "run");
   return [
     `${a.accountName}  (${a.label})`,
-    `  Twenty id      ${a.id}`,
+    `  Row id        ${a.id}`,
     `  Status         ${a.status ? a.status.toUpperCase() : "unset"}${a.statusReason ? `  (${a.statusReason}${a.statusDetail ? `: ${a.statusDetail}` : ""})` : ""}`,
     `  Home           ${a.homeCity ?? "?"}, ${a.homeCountry ?? "?"}`,
     `  Proxy          ${a.proxy ? maskProxyUrl(a.proxy) : "NONE: no browser opens for this account"}`,

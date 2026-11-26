@@ -49,10 +49,11 @@ This skips the Python setup and the after-install routine (`scripts/update/postI
 
 ## Settings
 
-Settings live in `~/.logCli/.env`. Two are set for you:
+Settings live in `~/.logCli/.env`. One is set for you:
 
 - `LOG_PYTHON`: the Python the engines run on
-- `LOG_ACCOUNTS=local`: your accounts live in `~/.logCli/localAccounts.json`
+
+Your accounts live in `~/.logCli/localAccounts.json`.
 
 Everything else is optional: captcha solvers, proxies and AdsPower (for platforms that run in a browser). Every key is listed in [`.env.example`](../.env.example). A `.env.local` in the folder you run from wins over `~/.logCli/.env`.
 
@@ -88,7 +89,7 @@ The wizard above needs a terminal. An agent can set up everything that does not 
 log setup --json
 ```
 
-It wires every agent harness installed on this machine, makes sure `LOG_ACCOUNTS=local` is set, and then prints exactly which sign-ins are left and the command for each. It never asks a question and it never invents a key. A second run is a no-op: steps already done are reported as done.
+It wires every agent harness installed on this machine, and then prints exactly which sign-ins are left and the command for each. It never asks a question and it never invents a key. A second run is a no-op: steps already done are reported as done.
 
 ```bash
 log setup --json --dryRun                         # report the plan, write nothing
@@ -112,7 +113,7 @@ cd log
 bun install                      # also installs the git hooks
 uv venv --python 3.12 .venv
 uv pip install --python .venv -r vendor/twikit/requirements.txt ./vendor/fbk ./vendor/endcord './vendor/instagrapi[curl]'
-cp .env.example .env.local       # set LOG_PYTHON to .venv's python, and LOG_ACCOUNTS=local
+cp .env.example .env.local       # set LOG_PYTHON to .venv's python
 bun link                         # puts this checkout's log and logMcp on your PATH
 log --help
 ```

@@ -1,7 +1,7 @@
 export interface NewPlatformOptions {
   name: string
   label?: string
-  twentyPlatform?: string
+  accountPlatform?: string
   library?: string
   sessionCookies?: string[]
   cookieDomain?: string
@@ -16,7 +16,7 @@ export interface PlatformNames {
   pascal: string
   constant: string
   label: string
-  twentyPlatform: string
+  accountPlatform: string
   library: string | null
   libraryText: string
   sessionCookies: string[]

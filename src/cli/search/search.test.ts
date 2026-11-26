@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { hashEmbedder, loadConversations } from "../../search/conversations/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineSpec } from "../../platformKit/session/index.ts";
 import { runCli } from "../runner/index.ts";
 import { searchDeps } from "./index.ts";
@@ -30,9 +30,9 @@ afterEach(() => {
 });
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "discordOne", accountName: "discordOne", platform: "DISCORD", cookies: [], storageOrigins: [{ origin: "https://discord.com", localStorage: [{ name: "token", value: JSON.stringify("x".repeat(30)) }] }], proxy: null } as never);
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "discordOne", accountName: "discordOne", platform: "DISCORD", cookies: [], storageOrigins: [{ origin: "https://discord.com", localStorage: [{ name: "token", value: JSON.stringify("x".repeat(30)) }] }], proxy: null } as never);
+  return store;
 }
 
 const EXPORTED = [
@@ -45,7 +45,7 @@ describe("log search index on Discord", () => {
     const calls: PlatformEngineSpec[] = [];
     const out: string[] = [];
     const context = {
-      twenty: fixture(),
+      accounts: fixture(),
       out: (l: string) => out.push(l),
       err: () => {},
       directDiscord: (_account: unknown, spec: PlatformEngineSpec) => {
@@ -68,7 +68,7 @@ describe("log search index when Discord refuses the read", () => {
   test("a 429 keeps the conversations read before it and says where the read stopped", async () => {
     const out: string[] = [];
     const context = {
-      twenty: fixture(),
+      accounts: fixture(),
       out: (l: string) => out.push(l),
       err: () => {},
       directDiscord: () => ({ answer: { ok: false, code: "rateLimited", detail: "Discord answered 429 to channel 1555254123148873869 messages: the read stopped there", event: "throttled", httpStatus: 429, stopped: { conversationId: "1555254123148873869" }, conversations: EXPORTED, problems: [] }, refreshed: null }),

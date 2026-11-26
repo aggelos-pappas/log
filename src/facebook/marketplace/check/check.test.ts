@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { marketplaceFixture } from '../../../twenty/graphql/index.ts'
+import { marketplaceFixture } from '../../../accounts/store/index.ts'
 import { accessProblem, keepCheck, marketplaceAccessOf, sellerInboxOf, sellingListingsOf, statusOfListing } from './index.ts'
 
 const graphql = (name: string, body: unknown) => ({
@@ -53,21 +53,21 @@ describe('the Marketplace check reads the recorded responses', () => {
 })
 
 describe('keepCheck', () => {
-  test('a listing that moved gets its status in Twenty; chats are kept as sent; a ban is an issue', async () => {
-    const twenty = marketplaceFixture()
-    const account = (await twenty.list('socialAccounts')).find((a) => a.accountName === 'galwayOne')!
-    const created = await twenty.create('agencyListings', { title: 'Junk Removal', socialAccountId: account.id, listingId: '1425935622848350', status: 'UNDER_REVIEW' } as never)
+  test('a listing that moved gets its status in the account store; chats are kept as sent; a ban is an issue', async () => {
+    const store = marketplaceFixture()
+    const account = (await store.list('socialAccounts')).find((a) => a.accountName === 'galwayOne')!
+    const created = await store.create('agencyListings', { title: 'Junk Removal', socialAccountId: account.id, listingId: '1425935622848350', status: 'UNDER_REVIEW' } as never)
     const dir = mkdtempSync(join(tmpdir(), 'logCheck'))
-    const report = await keepCheck(twenty, account.id, 'galwayOne', { access: marketplaceAccessOf(status()), listings: sellingListingsOf(selling(listing('1425935622848350', null, INSIGHTS(15)))), inbox: sellerInboxOf(inbox([{ node: { id: 't1' } }])) }, dir)
-    expect((await twenty.list('agencyListings')).find((r) => r.id === (created as { id: string }).id)?.status).toBe('ACTIVE')
+    const report = await keepCheck(store, account.id, 'galwayOne', { access: marketplaceAccessOf(status()), listings: sellingListingsOf(selling(listing('1425935622848350', null, INSIGHTS(15)))), inbox: sellerInboxOf(inbox([{ node: { id: 't1' } }])) }, dir)
+    expect((await store.list('agencyListings')).find((r) => r.id === (created as { id: string }).id)?.status).toBe('ACTIVE')
     expect(report.lines.join('\n')).toContain('underReview → active')
-    expect((await twenty.list('agencyListings')).find((r) => r.id === (created as { id: string }).id)?.clicksCount).toBe(15)
-    expect(report.lines.join('\n')).toContain('active, 15 clicks in 14 days; Twenty underReview → active; clicks empty → 15')
+    expect((await store.list('agencyListings')).find((r) => r.id === (created as { id: string }).id)?.clicksCount).toBe(15)
+    expect(report.lines.join('\n')).toContain('active, 15 clicks in 14 days; stored underReview → active; clicks empty → 15')
     expect(report.threads).toBe(1)
     expect(report.issue).toBeNull()
     const kept = report.lines.find((l) => l.includes('kept as sent'))!.split('kept as sent: ')[1]
     expect(JSON.parse(readFileSync(kept, 'utf8'))).toEqual([{ node: { id: 't1' } }])
-    const banned = await keepCheck(twenty, account.id, 'galwayOne', { access: marketplaceAccessOf(status({ is_marketplace_access_banned: true })), listings: [], inbox: sellerInboxOf(inbox([])) }, dir)
+    const banned = await keepCheck(store, account.id, 'galwayOne', { access: marketplaceAccessOf(status({ is_marketplace_access_banned: true })), listings: [], inbox: sellerInboxOf(inbox([])) }, dir)
     expect(banned.issue?.code).toBe('suspended')
   })
 })
@@ -93,12 +93,12 @@ describe('a listing held for an identity check is not live', () => {
 
 describe('the identity hold is an account issue, not a live listing', () => {
   test("Hazleton's held listing goes BLOCKED and the check raises identityVerificationRequired", async () => {
-    const twenty = marketplaceFixture()
-    const account = (await twenty.list('socialAccounts')).find((a) => a.accountName === 'galwayOne')!
-    await twenty.create('agencyListings', { title: 'Junk Removal Hazleton', socialAccountId: account.id, listingId: '1789968938884830', status: 'ACTIVE' } as never)
+    const store = marketplaceFixture()
+    const account = (await store.list('socialAccounts')).find((a) => a.accountName === 'galwayOne')!
+    await store.create('agencyListings', { title: 'Junk Removal Hazleton', socialAccountId: account.id, listingId: '1789968938884830', status: 'ACTIVE' } as never)
     const held = { listingId: '1789968938884830', title: 'Junk Removal Hazleton', price: '$99', onMarketplace: true, sold: false, pending: false, draft: false, rejected: false, duplicate: false, notice: 'Confirm your identity to publish this and any future listings', clicks: 0, status: 'blocked' as const }
-    const report = await keepCheck(twenty, account.id, 'galwayOne', { access: marketplaceAccessOf(status()), listings: [held], inbox: sellerInboxOf(inbox([])) }, mkdtempSync(join(tmpdir(), 'logCheck')))
+    const report = await keepCheck(store, account.id, 'galwayOne', { access: marketplaceAccessOf(status()), listings: [held], inbox: sellerInboxOf(inbox([])) }, mkdtempSync(join(tmpdir(), 'logCheck')))
     expect(report.issue?.code).toBe('identityVerificationRequired')
-    expect((await twenty.list('agencyListings')).find((r) => r.listingId === '1789968938884830')?.status).toBe('BLOCKED')
+    expect((await store.list('agencyListings')).find((r) => r.listingId === '1789968938884830')?.status).toBe('BLOCKED')
   })
 })

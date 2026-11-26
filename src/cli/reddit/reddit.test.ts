@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { REDDIT_PLATFORM } from "../../reddit/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
@@ -11,17 +11,17 @@ import { gateDeps } from "../twitter/helpers/voice.ts";
 import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "redditOne", accountName: "redditOne", platform: "REDDIT", cookies: { "reddit_session": "x".repeat(20) }, proxy: null } as never);
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "redditOne", accountName: "redditOne", platform: "REDDIT", cookies: { "reddit_session": "x".repeat(20) }, proxy: null } as never);
+  return store;
 }
 
-async function run(argv: string[], engine?: PlatformEngineRun, twenty = fixture()) {
+async function run(argv: string[], engine?: PlatformEngineRun, store = fixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const calls: string[] = [];
   const code = await runCli(argv, {
-    twenty,
+    accounts: store,
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     directReddit: (account, spec) => {
@@ -29,12 +29,12 @@ async function run(argv: string[], engine?: PlatformEngineRun, twenty = fixture(
       return engine ?? { answer: { ok: false, code: "notExpected" }, refreshed: null };
     },
   });
-  const row = twenty.rows.socialAccounts!.find((r) => r.accountName === "redditOne")!;
+  const row = store.rows.socialAccounts!.find((r) => r.accountName === "redditOne")!;
   return { code, out: out.join("\n"), err: err.join("\n"), calls, row };
 }
 
 describe("log reddit session check", () => {
-  test("loggedIn: the engine's answer goes to Twenty", async () => {
+  test("loggedIn: the engine's answer goes to the account store", async () => {
     const r = await run(["reddit", "session", "check", "--account", "redditOne"], { answer: { ok: true, loginState: "loggedIn", screenName: "redditOne" }, refreshed: null });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["redditOne:ping"]);
@@ -127,7 +127,7 @@ describe("reddit post and reply go through the AI-artifact check, the voice gate
     try {
       const err: string[] = [];
       const code = await runCli(["reddit", "vote", "--account", "redditOne", "--target", "t3_abc", "--approvedBy", "fakeOwner", "--live"], {
-        twenty: fixture(),
+        accounts: fixture(),
         out: () => {},
         err: (l) => err.push(l),
         directReddit: () => {

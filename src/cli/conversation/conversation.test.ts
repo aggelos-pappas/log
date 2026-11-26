@@ -2,15 +2,15 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { parseThreads } from "./index.ts";
 
-async function run(argv: string[], twenty = marketplaceFixture()) {
+async function run(argv: string[], store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await runCli(argv, { twenty, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), twenty };
+  const code = await runCli(argv, { accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
+  return { code, out: out.join("\n"), err: err.join("\n"), accounts: store };
 }
 
 const THREADS = [
@@ -41,38 +41,38 @@ function withFile<T>(content: unknown, use: (path: string) => Promise<T>): Promi
 
 describe("log facebook conversation", () => {
   test("record stores scanned threads, ties them to listings, and a second record adds nothing", async () => {
-    const twenty = marketplaceFixture();
+    const store = marketplaceFixture();
     await withFile(THREADS, async (file) => {
-      const first = await run(["facebook", "conversation", "record", "--account", "galwayOne", "--file", file], twenty);
+      const first = await run(["facebook", "conversation", "record", "--account", "galwayOne", "--file", file], store);
       expect(first.code).toBe(0);
       expect(first.err).toContain("conversation 1/2: thread 9001");
       expect(first.out).toContain("2 message(s) added, 0 already stored; listing liveOne (by facebookListingId); lead contacted");
       expect(first.out).toContain("listing not matched");
-      const again = await run(["facebook", "conversation", "record", "--account", "galwayOne", "--file", file], twenty);
+      const again = await run(["facebook", "conversation", "record", "--account", "galwayOne", "--file", file], store);
       expect(again.out).toContain("0 message(s) added, 2 already stored");
     });
-    const list = await run(["facebook", "conversations", "--listing", "liveOne"], twenty);
+    const list = await run(["facebook", "conversations", "--listing", "liveOne"], store);
     expect(list.out).toContain("1 conversation(s):");
     expect(list.out).toContain("Sam Buyer · Rubbish Removal Galway");
   });
 
   test("show, read, lead and link", async () => {
-    const twenty = marketplaceFixture();
-    await withFile(THREADS, (file) => run(["facebook", "conversation", "record", "--account", "galwayOne", "--file", file], twenty));
-    const [unmatched] = (twenty.rows.agencyConversations ?? []).filter((r) => r.facebookThreadId === "9002");
+    const store = marketplaceFixture();
+    await withFile(THREADS, (file) => run(["facebook", "conversation", "record", "--account", "galwayOne", "--file", file], store));
+    const [unmatched] = (store.rows.agencyConversations ?? []).filter((r) => r.facebookThreadId === "9002");
     const id = unmatched.id;
 
-    const show = await run(["facebook", "conversation", "show", id], twenty);
+    const show = await run(["facebook", "conversation", "show", id], store);
     expect(show.out).toContain("listing: not matched");
     expect(show.out).toContain("* Alex: price?");
 
-    expect((await run(["facebook", "conversation", "read", id], twenty)).out).toBe("Marked 1 message(s) read.");
-    expect((await run(["facebook", "conversation", "lead", id, "SPAM"], twenty)).out).toBe("Lead is now spam.");
-    expect((await run(["facebook", "conversation", "lead", id, "WHATEVER"], twenty)).code).toBe(1);
+    expect((await run(["facebook", "conversation", "read", id], store)).out).toBe("Marked 1 message(s) read.");
+    expect((await run(["facebook", "conversation", "lead", id, "SPAM"], store)).out).toBe("Lead is now spam.");
+    expect((await run(["facebook", "conversation", "lead", id, "WHATEVER"], store)).code).toBe(1);
 
-    expect((await run(["facebook", "conversation", "link", id, "--listing", "liveTwo"], twenty)).err).toContain("on another account");
-    expect((await run(["facebook", "conversation", "link", id, "--listing", "readyOne"], twenty)).out).toContain("Linked to listing readyOne");
-    expect((await run(["facebook", "conversations", "--listing", "readyOne", "--json"], twenty)).out).toContain('"leadStatus": "spam"');
+    expect((await run(["facebook", "conversation", "link", id, "--listing", "liveTwo"], store)).err).toContain("on another account");
+    expect((await run(["facebook", "conversation", "link", id, "--listing", "readyOne"], store)).out).toContain("Linked to listing readyOne");
+    expect((await run(["facebook", "conversations", "--listing", "readyOne", "--json"], store)).out).toContain('"leadStatus": "spam"');
   });
 
   test("a scan file must have a thread id, messages, and directions", () => {

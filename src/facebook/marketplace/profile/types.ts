@@ -45,7 +45,7 @@ export interface ProfilePlanStep {
   control: string | null
   current?: string | null
   wanted?: string | null
-  action: 'wouldUpload' | 'uploaded' | 'noPhotoInTwenty' | 'noControl' | 'wouldRename' | 'alreadyNamed' | 'noNameInTwenty' | 'renameNotBuilt'
+  action: 'wouldUpload' | 'uploaded' | 'noPhotoSaved' | 'noControl' | 'wouldRename' | 'alreadyNamed' | 'noNameSaved' | 'renameNotBuilt'
 }
 
 export interface ProfileFailure {

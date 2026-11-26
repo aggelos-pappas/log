@@ -32,7 +32,7 @@ twitterDms  9.5 s                       (call 3f9a1c2b7e44)
  └─ unaccounted                         the call's own time outside every stage
 ```
 
-A send also shows `inbox.waitCaughtUp`, `inbox.claim` and the voice gate, step by step: `voice.sameness`, `voice.chatContext`, `voice.room`, `voice.rankedContext`, `voice.evidence` and `voice.reading`. Every `fetch` the call makes, to SubQ, Jina, Twenty or anything else, is a span of its own.
+A send also shows `inbox.waitCaughtUp`, `inbox.claim` and the voice gate, step by step: `voice.sameness`, `voice.chatContext`, `voice.room`, `voice.rankedContext`, `voice.evidence` and `voice.reading`. Every `fetch` the call makes, to SubQ, Jina or anything else, is a span of its own.
 
 ## Reading it
 

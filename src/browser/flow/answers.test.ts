@@ -37,7 +37,7 @@ describe('a stage flow step passes on Facebook\'s answer (rule 73)', () => {
     expect(answersIssue(marketplace, [page('page /marketplace/', 302, {})], BETHLEHEM)).toEqual({ code: 'answerNotAsExpected', text: 'page /marketplace/ answered 302, never 2xx' })
   })
 
-  test('without the account\'s home in Twenty, a home check is skipped, never failed', () => {
+  test('without the account\'s home in the account store, a home check is skipped, never failed', () => {
     expect(answersIssue(step('s03_gotomarketplaceCreateItem').answers!, [createPage(true, 'Barranco', 'PE')], {})).toBeNull()
   })
 

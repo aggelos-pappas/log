@@ -74,7 +74,7 @@ export const discordSessionCommand: Command = {
   name: "session",
   effect: "read",
   input: DISCORD_SESSION_INPUT,
-  summary: "Check that Discord still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty",
+  summary: "Check that Discord still accepts an account's saved session, on the direct-API engine, sending nothing; the answer is saved",
   args: "check --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DISCORD_SESSION_INPUT));
@@ -83,13 +83,13 @@ export const discordSessionCommand: Command = {
     const ref = parsed.flags["account"];
     if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log discord session check: --account is needed\n${DISCORD_SESSION_USAGE}` };
     try {
-      const account = await findDiscordAccount(context.twenty, ref);
+      const account = await findDiscordAccount(context.accounts, ref);
       const gate = discordGate(account);
       if (!gate.ok) return refuse("discord session check", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directDiscord) return { code: 1, stderr: "log discord session check: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: session check on the direct-API engine`);
       const run = context.directDiscord(account, { action: "ping" });
-      for (const line of await recordDiscordSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordDiscordSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, ...run.answer }, null, 2) };
       return { code, stdout: render(account.accountName, run.answer) };
@@ -165,7 +165,7 @@ export const discordChatsCommand: Command = {
     if (wrongKind) return refuseInput("discord chats", `--kind "${wrongKind}" is not one of ${CHAT_KINDS.join(", ")}`, DISCORD_CHATS_USAGE);
     const name = typeof parsed.flags["name"] === "string" ? String(parsed.flags["name"]) : "";
     try {
-      const account = await findDiscordAccount(context.twenty, String(parsed.flags["account"]));
+      const account = await findDiscordAccount(context.accounts, String(parsed.flags["account"]));
       const gate = discordGate(account);
       if (!gate.ok) return refuse("discord chats", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directDiscord) return { code: 1, stderr: "log discord chats: the direct-API engine isn't wired in this context" };
@@ -284,7 +284,7 @@ export const discordReadCommand: Command = {
     const limit = numberOf(parsed, "limit") ?? 20;
     const after = typeof parsed.flags["after"] === "string" ? parsed.flags["after"].trim() : undefined;
     try {
-      const account = await findDiscordAccount(context.twenty, String(parsed.flags["account"]));
+      const account = await findDiscordAccount(context.accounts, String(parsed.flags["account"]));
       const gate = discordGate(account);
       if (!gate.ok) return refuse("discord read", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directDiscord) return { code: 1, stderr: "log discord read: the direct-API engine isn't wired in this context" };
@@ -416,7 +416,7 @@ export const discordWatchCommand: Command = {
     const seconds = numberOf(parsed, "seconds") ?? 0;
     if (seconds !== 0 && seconds < 5) return refuse("discord watch", "secondsInvalid", "--seconds must be at least 5");
     try {
-      const account = await findDiscordAccount(context.twenty, String(parsed.flags["account"]));
+      const account = await findDiscordAccount(context.accounts, String(parsed.flags["account"]));
       const gate = discordGate(account);
       if (!gate.ok) return refuse("discord watch", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directDiscord || !context.directDiscordLive) return { code: 1, stderr: "log discord watch: the direct-API engine isn't wired in this context" };
@@ -531,7 +531,7 @@ export const discordDeleteCommand: Command = {
     if (!ids.length || ids.some((id) => !/^\d{15,22}$/.test(id))) return refuse("discord delete", "messageInvalid", "--message takes Discord message ids (from log discord read), separated by commas");
     if (live && !approvedBy) return refuse("discord delete", "notApproved", "--live needs --approvedBy <who> (rule 8)");
     try {
-      const account = await findDiscordAccount(context.twenty, String(parsed.flags["account"]));
+      const account = await findDiscordAccount(context.accounts, String(parsed.flags["account"]));
       const gate = discordGate(account);
       if (!gate.ok) return refuse("discord delete", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directDiscord) return { code: 1, stderr: "log discord delete: the direct-API engine isn't wired in this context" };
@@ -629,7 +629,7 @@ export const discordFriendCommand: Command = {
     if (!ids.length || ids.some((id) => !/^\d+$/.test(id))) return refuse("discord friend", "userInvalid", "--userId takes Discord user ids (fromId in log discord read), separated by commas");
     if (live && !approvedBy) return refuse("discord friend", "notApproved", "--live needs --approvedBy <who> (rule 8)");
     try {
-      const account = await findDiscordAccount(context.twenty, String(parsed.flags["account"]));
+      const account = await findDiscordAccount(context.accounts, String(parsed.flags["account"]));
       const gate = discordGate(account);
       if (!gate.ok) return refuse("discord friend", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!live) {
@@ -749,7 +749,7 @@ export const discordSendCommand: Command = {
     const watermark = watermarkReadingOf(text);
     if (watermark.level === "artifacts") return refuse("discord send", "aiArtifacts", `the copy carries what AI chat interfaces leave in text: ${watermark.findings.filter((f) => f.deterministic).map((f) => `${f.label} ×${f.count}`).join(", ")}`);
     try {
-      const account = await findDiscordAccount(context.twenty, String(parsed.flags["account"]));
+      const account = await findDiscordAccount(context.accounts, String(parsed.flags["account"]));
       const gate = discordGate(account);
       if (!gate.ok) return refuse("discord send", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       let target = channel;
@@ -921,7 +921,7 @@ function channelByName(direct: DirectDiscord, account: DiscordAccount, said: str
 }
 
 async function serverCommandStart(context: Parameters<Command["run"]>[0], accountName: string, label: string): Promise<{ refused: CommandResult } | { account: DiscordAccount; direct: DirectDiscord }> {
-  const account = await findDiscordAccount(context.twenty, accountName);
+  const account = await findDiscordAccount(context.accounts, accountName);
   const gate = discordGate(account);
   if (!gate.ok) return { refused: refuse(label, gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail) };
   if (!context.directDiscord) return { refused: { code: 1, stderr: `log ${label}: the direct-API engine isn't wired in this context` } };
@@ -1156,7 +1156,7 @@ export const discordSearchCommand: Command = {
 
 export const DISCORD_SECRETS_USAGE = [
   "Usage: log discord secrets --account <accountName> [--show]",
-  "Asks for the Discord account's email, password and 2FA secret (the base32 key from its authenticator setup, optional) in a Clack prompt, masked, and keeps them in Twenty (socialAccounts email, password, totpSecret) for the account's sign-in in its own browser. Nothing is printed; --show says only which are set. It never calls Discord, the direct-API engine included.",
+  "Asks for the Discord account's email, password and 2FA secret (the base32 key from its authenticator setup, optional) in a Clack prompt, masked, and keeps them in the account store (socialAccounts email, password, totpSecret) for the account's sign-in in its own browser. Nothing is printed; --show says only which are set. It never calls Discord, the direct-API engine included.",
 ].join("\n");
 
 interface SecretPrompts {
@@ -1185,7 +1185,7 @@ export const discordSecretsCommand: Command = {
   name: "secrets",
   terminalOnly: "asks for a Discord account's email, password and 2FA secret in a Clack prompt (masked). Run `log discord secrets --account <a>` in a terminal.",
   effect: "write",
-  summary: "The Discord account's email, password and 2FA secret, asked in a Clack prompt and kept in Twenty for its sign-in, never printed",
+  summary: "The Discord account's email, password and 2FA secret, asked in a Clack prompt and saved for its sign-in, never printed",
   args: "--account <a> [--show]",
   async run(context, argv) {
     const parsed = parseArgs(argv, { boolean: ["show"], valued: ["account"] });
@@ -1195,12 +1195,12 @@ export const discordSecretsCommand: Command = {
     if (typeof ref !== "string") return refuseInput("discord secrets", "--account is needed", DISCORD_SECRETS_USAGE);
     let account;
     try {
-      account = await findDiscordAccount(context.twenty, ref);
+      account = await findDiscordAccount(context.accounts, ref);
     } catch (error) {
       return refuseError("discord secrets", error);
     }
     if (parsed.flags["show"]) {
-      const held = await context.twenty.loginSecrets(account.id);
+      const held = await context.accounts.loginSecrets(account.id);
       return { code: 0, stdout: `${account.accountName}: email ${mark(held?.email)}, password ${mark(held?.password)}, 2FA secret ${mark(held?.totpSecret)}` };
     }
     if (!shouldPrompt(false, discordSecretsDeps.tty())) {
@@ -1215,9 +1215,9 @@ export const discordSecretsCommand: Command = {
     const totp = await prompts.password({ message: "Its 2FA secret (base32 key; leave empty if the account has no authenticator)", mask: "•", validate: (v) => (!v || totpSecretOf(String(v)) ? undefined : "A base32 key, letters A-Z and digits 2-7") });
     if (isCancel(totp)) return stopped(prompts);
     const totpSecret = typeof totp === "string" && totp ? totpSecretOf(totp) : null;
-    await context.twenty.update("socialAccounts", account.id, { email: email.trim(), password: pass, ...(totpSecret ? { totpSecret } : {}) } as never);
+    await context.accounts.update("socialAccounts", account.id, { email: email.trim(), password: pass, ...(totpSecret ? { totpSecret } : {}) } as never);
     prompts.outro("Saved. They are typed into Discord's sign-in in the account's own browser, never printed.");
-    return { code: 0, stdout: `${account.accountName}: email <set>, password <set>, 2FA secret ${mark(totpSecret)} in Twenty` };
+    return { code: 0, stdout: `${account.accountName}: email <set>, password <set>, 2FA secret ${mark(totpSecret)} in the account store` };
   },
 };
 

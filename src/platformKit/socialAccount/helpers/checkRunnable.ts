@@ -67,7 +67,7 @@ export function checkRunnable(account: FacebookAccount, purpose: RunPurpose): Ru
     }
   }
   if (!account.proxy?.trim()) {
-    return { ok: false, code: 'noProxy', detail: `${account.accountName} has no proxy in Twenty: no browser opens without one` }
+    return { ok: false, code: 'noProxy', detail: `${account.accountName} has no proxy in the account store: no browser opens without one` }
   }
   return ownProxy(account)
 }
@@ -93,7 +93,7 @@ export function engineProxyUrl(raw: string): string | null {
 export function engineRoute(account: Pick<FacebookAccount, 'accountName' | 'platform' | 'proxy'>): EngineRoute {
   const raw = account.proxy?.trim()
   if (!raw) {
-    if (account.platform === 'FACEBOOK') return { ok: false, code: 'noProxy', detail: `${account.accountName} has no proxy in Twenty: a Facebook account never calls out without one (rule 12). Nothing was sent.` }
+    if (account.platform === 'FACEBOOK') return { ok: false, code: 'noProxy', detail: `${account.accountName} has no proxy in the account store: a Facebook account never calls out without one (rule 12). Nothing was sent.` }
     return { ok: true, route: { proxy: null } }
   }
   const proxy = engineProxyUrl(raw)

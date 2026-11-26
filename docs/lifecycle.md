@@ -95,7 +95,7 @@ Opens are counted per local day: one, plus one reopen after a crash
 
 ## What the account row records
 
-These fields on `socialAccounts` (the local account store, or Twenty if you keep accounts there) are all additions; none replaces an older
+These fields on `socialAccounts` (the account's row in the account store) are all additions; none replaces an older
 field.
 
 | Field | Set when |

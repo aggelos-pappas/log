@@ -4,6 +4,8 @@ How a local service business gets listings in front of people in every town it s
 
 How the owner asks for it: "post a marketplace listing in <town>", "get listings up on facebook marketplace in every town", "set up the facebook accounts and publish the listings", "take the marketplace listing down".
 
+**Retired (#339).** Listings, campaigns and conversations were kept only in Twenty, which log no longer uses, so `log facebook listings`, `listing`, `campaign`, `publish`, `check`, `watch` and `conversations` refuse with `twentyRemoved` until they are rebuilt on log.db. `listing lint` still works. The account steps (import, proxy, profile, sign-in, warm-up) do not depend on it.
+
 ## The idea in one line
 
 One account per town. Each one gets a proxy in that town, its own browser profile, a photo, a cover, a name and a location, a day of normal browsing, and then one listing, all checked against Facebook's own answers.
@@ -16,7 +18,7 @@ flowchart LR
   host --> setup["5. sign in, check,<br/>photo, name, location"]
   setup --> warm["6. warm-up"]
   warm --> publish["7. publish the listing"]
-  publish --> check["8. check it every 12 min<br/>clicks into Twenty"]
+  publish --> check["8. check it every 12 min<br/>clicks counted"]
 ```
 
 ## One account, end to end
@@ -24,7 +26,7 @@ flowchart LR
 - **Imported** into the account store with its home town, cookies and two-step secret.
 - **Proxy:** a residential proxy near the home town, checked for country and distance before it's saved.
 - **Location:** typing "City, ST" can be offered as a different place entirely (a town of the same name abroad), and a bare zip can be offered as another country first. So locations are always typed with the state written out, "City, State" ([spec](../../specs/marketplaceLocation.md)).
-- **Listing:** the service, a price and photos. Facebook's create answer returns the listing id, under review at first, and Twenty marks it UNDER_REVIEW, then live.
+- **Listing:** the service, a price and photos. Facebook's create answer returns the listing id, under review at first, and the stored listing was marked UNDER_REVIEW, then live.
 - **Taken down** when needed: the delete answer names the listing id, and the row becomes REMOVED (rows are never deleted).
 
 Count the cost per account (the account, its proxy traffic, the browser profile) against what one lead is worth before scaling to many towns.
@@ -70,7 +72,7 @@ flowchart TD
 
 | # | Step | MCP tool | What decides it | Command |
 | --- | --- | --- | --- | --- |
-| 1 | Import | – | the account's `socialAccounts` row (the vendor import writes a Twenty workspace; `log localAccount pull` copies it into the local account store) | `scripts/twenty/importVendorAccounts.mjs` |
+| 1 | Import | – | the account's `socialAccounts` row in the account store | `log localAccount add`, `log localAccount login` |
 | 2 | Proxy | `proxyAssign`, `proxyCheck` | the exit IP is in the home country and within 100 km of the home town | `log proxy assign --account <a> --vendor <vendor>`, `log proxy check` |
 | 3 | Browser profile | `adsPowerSync` (a dry run), then `adsPowerSyncLive` { confirmLive: true } | one [AdsPower](https://www.adspower.com/share/pD25Iu) profile per account, linked in `adsPowerProfileId` | `log adsPower sync --apply` |
 | 4 | Ready? | `facebookPreflight` | hours, proxy, kernel, opens left, photo on disk, before anything opens | `log facebook preflight` |
@@ -103,7 +105,7 @@ flowchart LR
   browser --> fb["Facebook"]
   fb --> answer["Facebook's own answer<br/>read from the recording"]
   answer --> machine["the account's lifecycle machine<br/>onboarding lane, then host lane"]
-  answer --> twenty["Twenty: account, listing, clicks"]
+  answer --> records["account row; listing and clicks (retired)"]
 ```
 
 - Each account runs one lifecycle machine (`src/platformKit/lifecycle`): proxying, opening, signingIn, checkingAccount, settingProfile, settingName, settingLocation, warming, attached, then watching and checking.
@@ -116,7 +118,7 @@ Not every account makes it. Some are lost before or after their first listing: a
 
 ## Next
 
-- [#41](https://github.com/matthewdonsemail-lab/log/issues/41) reads buyers' messages into Twenty and replies to them (`log facebook conversations` keeps what is recorded today).
+- [#41](https://github.com/matthewdonsemail-lab/log/issues/41) reads buyers' messages and replies to them (`log facebook conversations` keeps what is recorded today).
 - [#42](https://github.com/matthewdonsemail-lab/log/issues/42) publishes as a tab of the host's browser on every path (the recorded flow does already; the older `log facebook publish` opens its own browser).
 
 ## Ways to reuse it

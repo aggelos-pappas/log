@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { marketplaceFixture } from '../../../twenty/graphql/helpers/marketplaceFixture'
+import { marketplaceFixture } from '../../../accounts/store/helpers/marketplaceFixture'
 import {
   contactsIn,
   conversationKey,
@@ -63,8 +63,8 @@ describe('conversation rules', () => {
 
 describe('recordThread', () => {
   test('a new thread becomes a conversation tied to its listing and account, with its messages', async () => {
-    const twenty = marketplaceFixture()
-    const result = await recordThread(twenty, 'galwayOne', thread(), NOW)
+    const store = marketplaceFixture()
+    const result = await recordThread(store, 'galwayOne', thread(), NOW)
     expect(result).toMatchObject({ created: true, added: 2, skipped: 0, listingMatchedBy: 'facebookListingId' })
     expect(result.conversation).toMatchObject({
       channel: 'facebookMarketplace',
@@ -80,7 +80,7 @@ describe('recordThread', () => {
       unreadCount: 2,
       lastScannedAt: NOW.toISOString()
     })
-    const messages = await messagesOf(twenty, result.conversation.id)
+    const messages = await messagesOf(store, result.conversation.id)
     expect(messages.map((m) => [m.direction, m.status, m.isRead, m.channel])).toEqual([
       ['inbound', 'received', false, 'facebookMarketplace'],
       ['inbound', 'received', false, 'facebookMarketplace']
@@ -88,18 +88,18 @@ describe('recordThread', () => {
   })
 
   test('scanning the same thread again adds nothing', async () => {
-    const twenty = marketplaceFixture()
-    await recordThread(twenty, 'galwayOne', thread(), NOW)
-    const again = await recordThread(twenty, 'galwayOne', thread(), NOW)
+    const store = marketplaceFixture()
+    await recordThread(store, 'galwayOne', thread(), NOW)
+    const again = await recordThread(store, 'galwayOne', thread(), NOW)
     expect(again).toMatchObject({ created: false, added: 0, skipped: 2, listingMatchedBy: 'kept' })
     expect(again.conversation.messageCount).toBe(2)
-    expect(twenty.rows.agencyMessages).toHaveLength(2)
-    expect(twenty.rows.agencyConversations).toHaveLength(1)
+    expect(store.rows.agencyMessages).toHaveLength(2)
+    expect(store.rows.agencyConversations).toHaveLength(1)
   })
 
   test('our reply and a phone number move the lead; the summary only moves forward', async () => {
-    const twenty = marketplaceFixture()
-    await recordThread(twenty, 'galwayOne', thread(), NOW)
+    const store = marketplaceFixture()
+    await recordThread(store, 'galwayOne', thread(), NOW)
     const next = thread({
       messages: [
         ...thread().messages,
@@ -108,7 +108,7 @@ describe('recordThread', () => {
         { direction: 'inbound', body: 'hello?', sentAt: '2026-10-19T13:00:00.000Z', senderName: 'Sam Buyer' }
       ]
     })
-    const result = await recordThread(twenty, 'galwayOne', next, NOW)
+    const result = await recordThread(store, 'galwayOne', next, NOW)
     expect(result.added).toBe(3)
     expect(result.conversation).toMatchObject({
       leadStatus: 'qualified',
@@ -119,35 +119,35 @@ describe('recordThread', () => {
       messageCount: 5,
       unreadCount: 4
     })
-    const ours = (await messagesOf(twenty, result.conversation.id)).find((m) => m.direction === 'outbound')
+    const ours = (await messagesOf(store, result.conversation.id)).find((m) => m.direction === 'outbound')
     expect(ours).toMatchObject({ status: 'sent', isRead: true, sentBy: 'person' })
   })
 
   test('the same thread id on two accounts is two conversations', async () => {
-    const twenty = marketplaceFixture()
-    await recordThread(twenty, 'galwayOne', thread(), NOW)
-    await recordThread(twenty, 'galwayTwo', thread({ facebookListingId: '222' }), NOW)
-    expect(twenty.rows.agencyConversations).toHaveLength(2)
-    expect((await listConversations(twenty, { agencyListingId: 'liveTwo' })).map((c) => c.socialAccountId)).toEqual(['galwayTwo'])
+    const store = marketplaceFixture()
+    await recordThread(store, 'galwayOne', thread(), NOW)
+    await recordThread(store, 'galwayTwo', thread({ facebookListingId: '222' }), NOW)
+    expect(store.rows.agencyConversations).toHaveLength(2)
+    expect((await listConversations(store, { agencyListingId: 'liveTwo' })).map((c) => c.socialAccountId)).toEqual(['galwayTwo'])
   })
 
   test('marking read clears the unread count; a lead status can be set by hand', async () => {
-    const twenty = marketplaceFixture()
-    const { conversation } = await recordThread(twenty, 'galwayOne', thread(), NOW)
-    expect(await markRead(twenty, conversation.id, NOW)).toBe(2)
-    const [read] = await listConversations(twenty, { socialAccountId: 'galwayOne' })
+    const store = marketplaceFixture()
+    const { conversation } = await recordThread(store, 'galwayOne', thread(), NOW)
+    expect(await markRead(store, conversation.id, NOW)).toBe(2)
+    const [read] = await listConversations(store, { socialAccountId: 'galwayOne' })
     expect(read).toMatchObject({ unreadCount: 0, lastReadAt: NOW.toISOString() })
-    expect((await messagesOf(twenty, conversation.id)).every((m) => m.isRead)).toBe(true)
-    expect((await setLeadStatus(twenty, conversation.id, 'booked')).leadStatus).toBe('booked')
-    const later = await recordThread(twenty, 'galwayOne', thread({ messages: [{ direction: 'inbound', body: '087 765 4321', sentAt: '2026-10-19T16:00:00.000Z', senderName: 'Sam Buyer' }] }), NOW)
+    expect((await messagesOf(store, conversation.id)).every((m) => m.isRead)).toBe(true)
+    expect((await setLeadStatus(store, conversation.id, 'booked')).leadStatus).toBe('booked')
+    const later = await recordThread(store, 'galwayOne', thread({ messages: [{ direction: 'inbound', body: '087 765 4321', sentAt: '2026-10-19T16:00:00.000Z', senderName: 'Sam Buyer' }] }), NOW)
     expect(later.conversation.leadStatus).toBe('booked')
   })
 
   test("SMS rows (blaster's) are not Marketplace conversations", async () => {
-    const twenty = marketplaceFixture()
-    twenty.rows.agencyConversations = [{ id: 'sms1', pairKey: '+3531|+3532', peerPhone: '+3531', latestMessageAt: '2026-10-19T10:00:00.000Z' }]
-    await recordThread(twenty, 'galwayOne', thread(), NOW)
-    expect((await listConversations(twenty)).map((c) => c.id)).not.toContain('sms1')
+    const store = marketplaceFixture()
+    store.rows.agencyConversations = [{ id: 'sms1', pairKey: '+3531|+3532', peerPhone: '+3531', latestMessageAt: '2026-10-19T10:00:00.000Z' }]
+    await recordThread(store, 'galwayOne', thread(), NOW)
+    expect((await listConversations(store)).map((c) => c.id)).not.toContain('sms1')
   })
 })
 

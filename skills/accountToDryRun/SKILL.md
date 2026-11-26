@@ -1,6 +1,6 @@
 ---
 name: accountToDryRun
-description: Take one Facebook account from imported (NEEDSLOGIN) to ACTIVE and run a full publish dry run, through the `log` MCP tools. Proxy, sign-in, a listing row (the legacy Twenty Marketplace agency objects), then the publish machine all the way to the filled create form, stopping before Publish. Use when a new or vendor account has to start working, or to prove an account can post before going live.
+description: Take one Facebook account from imported (NEEDSLOGIN) to ACTIVE and run a full publish dry run, through the `log` MCP tools. Proxy, sign-in, a listing row (retired, issue 339), then the publish machine all the way to the filled create form, stopping before Publish. Use when a new or vendor account has to start working, or to prove an account can post before going live.
 ---
 
 # accountToDryRun
@@ -9,6 +9,10 @@ Every step is an `mcp__log__*` tool (the `log` MCP server, `bun run mcp`).
 The same thing works in a terminal as `log <command> <args>`.
 Nothing here posts to Facebook. Going live is the last step, and only when
 the owner says so.
+
+**Retired (#339).** Listings were kept only in Twenty, which log no longer
+uses, so `listing`, `publish` and `scan` refuse with `twentyRemoved` until
+they are rebuilt on log.db. The account steps still work.
 
 ## Hard boundaries
 
@@ -70,10 +74,8 @@ CHECKPOINT), `wrongPassword`, `disabled` (BANNED) or `signInNotFinished`
 (NEEDSLOGIN), each naming the last page.
 
 Before the first connect, the account needs `email`, `password` and
-`totpSecret` on its account row. The vendor import writes them to a Twenty workspace:
-`node scripts/twenty/importVendorAccounts.mjs` (dry run, each field `<set>`/`<empty>`),
-then `--apply`. It reads every `docs/vendors/*.txt`. With `LOG_ACCOUNTS=local`, copy them into
-the local account store afterwards with `log localAccount pull`.
+`totpSecret` on its row in the account store. `log localAccount login --platform facebook
+--account <a>` saves the email and password from masked prompts, in a terminal.
 
 Check it:
 
@@ -90,7 +92,7 @@ names. Run step 3 again with someone at the window.
 mcp__log__facebookScan      args ["--account", "<a>"]    Marketplace > Selling loads
 ```
 
-### 5. The listing row in Twenty (legacy Marketplace agency)
+### 5. The listing row (retired, #339)
 
 Write the ad as JSON. Photos are local paths or URLs, and the first one is
 the cover:

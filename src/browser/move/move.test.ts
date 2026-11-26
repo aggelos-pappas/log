@@ -12,7 +12,7 @@ const DISCORD_ORIGINS = [{ origin: 'https://discord.com', localStorage: [{ name:
 
 function world(rows: Row[]) {
   const writes: { id: string; data: Record<string, unknown> }[] = []
-  const twenty = {
+  const store = {
     rows,
     writes,
     async list() {
@@ -34,7 +34,7 @@ function world(rows: Row[]) {
       return null
     }
   }
-  return twenty
+  return store
 }
 
 function fakeAdsPower(options: { up?: boolean; keyMismatch?: boolean; startFails?: boolean } = {}) {
@@ -67,11 +67,11 @@ const reddit = (over: Partial<Row> = {}): Row => ({ id: 'r1', accountName: 'grac
 const discord = (over: Partial<Row> = {}): Row => ({ id: 'd1', accountName: 'linus_k', platform: 'DISCORD', cookies: [], storageOrigins: DISCORD_ORIGINS, adsPowerProfileId: null, browserDriver: 'adsPower', ...over })
 
 function depsOf(rows: Row[], ads = fakeAdsPower(), verdict: (name: string) => MoveCheck = () => ({ verdict: 'signedIn', code: null, detail: null })) {
-  const twenty = world(rows)
+  const store = world(rows)
   const checked: string[] = []
   const ledger = memoryMoveLedger()
   const deps: MoveDeps = {
-    twenty: twenty as never,
+    accounts: store as never,
     adsPower: ads.client,
     readState: async (cdpUrl) => ({ cookies: [{ name: 'reddit_session', value: `fresh ${cdpUrl}`, domain: '.reddit.com', path: '/' }, { name: 'other', value: 'x', domain: '.example.com', path: '/' }], origins: [] }),
     check: async (account) => (checked.push(account.accountName), verdict(account.accountName)),
@@ -79,7 +79,7 @@ function depsOf(rows: Row[], ads = fakeAdsPower(), verdict: (name: string) => Mo
     env: {},
     now: () => new Date('2026-11-20T10:00:00Z')
   }
-  return { deps, twenty, checked, ledger, ads }
+  return { deps, accounts: store, checked, ledger, ads }
 }
 
 describe('browser move', () => {
@@ -89,67 +89,67 @@ describe('browser move', () => {
   })
 
   test('a dry run lists each account and makes no writes', async () => {
-    const { deps, twenty, ads, checked } = depsOf([reddit(), discord(), { id: 'f1', accountName: 'grace_fb', platform: 'FACEBOOK', adsPowerProfileId: 'k2', browserDriver: '' }])
+    const { deps, accounts, ads, checked } = depsOf([reddit(), discord(), { id: 'f1', accountName: 'grace_fb', platform: 'FACEBOOK', adsPowerProfileId: 'k2', browserDriver: '' }])
     const plan = await planMoves(deps, { all: true, to: 'camoufox' })
     expect(plan.entries.map((e) => [e.accountName, e.action, e.carries])).toEqual([
       ['grace_ships', 'move', 'adsPowerProfile'],
       ['linus_k', 'move', 'storedSession'],
       ['grace_fb', 'skip', null]
     ])
-    expect(twenty.writes).toEqual([])
+    expect(accounts.writes).toEqual([])
     expect(ads.calls).toEqual([])
     expect(checked).toEqual([])
   })
 
   test('moved: the profile is read headless, stopped, the session saved and the platform says signed in', async () => {
-    const { deps, twenty, ads, ledger } = depsOf([reddit()])
+    const { deps, accounts, ads, ledger } = depsOf([reddit()])
     const plan = await planMoves(deps, { account: 'grace_ships', to: 'camoufox' })
     const [result] = await moveAccounts(deps, plan)
     expect(result.outcome).toBe('moved')
     expect(ads.calls).toEqual(['start k1 headless', 'stop k1'])
-    expect(twenty.rows[0].browserDriver).toBe('camoufox')
-    expect(twenty.rows[0].adsPowerProfileId).toBeNull()
-    expect((twenty.rows[0].cookies as { name: string }[]).map((c) => c.name)).toEqual(['reddit_session'])
+    expect(accounts.rows[0].browserDriver).toBe('camoufox')
+    expect(accounts.rows[0].adsPowerProfileId).toBeNull()
+    expect((accounts.rows[0].cookies as { name: string }[]).map((c) => c.name)).toEqual(['reddit_session'])
     expect(ledger.get('r1')).toMatchObject({ state: 'moved', formerAdsPowerProfileId: 'k1', to: 'camoufox' })
     expect(result.detail).toContain('fingerprint')
   })
 
   test('AdsPower down or refusing the key: the saved session carries, and it says so', async () => {
     for (const ads of [fakeAdsPower({ up: false }), fakeAdsPower({ keyMismatch: true })]) {
-      const { deps, twenty } = depsOf([reddit()], ads)
+      const { deps, accounts } = depsOf([reddit()], ads)
       const plan = await planMoves(deps, { all: true, to: 'camoufox' })
       expect(plan.reach.code).toMatch(/adsPowerUnavailable|adsPowerKeyMismatch/)
       expect(plan.entries[0]).toMatchObject({ action: 'move', carries: 'storedSession' })
       const [result] = await moveAccounts(deps, plan)
       expect(result).toMatchObject({ outcome: 'moved', carried: 'storedSession' })
       expect(ads.calls).toEqual([])
-      expect(twenty.rows[0].cookies).toEqual(REDDIT_COOKIES)
+      expect(accounts.rows[0].cookies).toEqual(REDDIT_COOKIES)
     }
   })
 
   test('AdsPower down and no saved session: skipped, nothing written', async () => {
-    const { deps, twenty } = depsOf([reddit({ cookies: [] })], fakeAdsPower({ up: false }))
+    const { deps, accounts } = depsOf([reddit({ cookies: [] })], fakeAdsPower({ up: false }))
     const plan = await planMoves(deps, { all: true, to: 'camoufox' })
     expect(plan.entries[0].action).toBe('skip')
     expect((await moveAccounts(deps, plan))[0].outcome).toBe('skipped')
-    expect(twenty.writes).toEqual([])
+    expect(accounts.writes).toEqual([])
   })
 
   test('a profile that will not start fails with its code and changes nothing', async () => {
-    const { deps, twenty, ads } = depsOf([reddit()], fakeAdsPower({ startFails: true }))
+    const { deps, accounts, ads } = depsOf([reddit()], fakeAdsPower({ startFails: true }))
     const plan = await planMoves(deps, { all: true, to: 'brave' })
     const result = await moveOne(deps, plan.entries[0])
     expect(result).toMatchObject({ outcome: 'failed', code: 'adsPowerProfileWontStart' })
     expect(ads.calls).toEqual(['start k1 headless', 'start k1'])
-    expect(twenty.writes).toEqual([])
+    expect(accounts.writes).toEqual([])
   })
 
   test('not signed in after the move: everything is put back', async () => {
-    const { deps, twenty, ledger } = depsOf([reddit()], fakeAdsPower(), () => ({ verdict: 'signInNeeded', code: 'loggedOut', detail: null }))
+    const { deps, accounts, ledger } = depsOf([reddit()], fakeAdsPower(), () => ({ verdict: 'signInNeeded', code: 'loggedOut', detail: null }))
     const plan = await planMoves(deps, { all: true, to: 'camoufox' })
     const [result] = await moveAccounts(deps, plan)
     expect(result).toMatchObject({ outcome: 'rolledBack', code: 'browserMoveNotSignedIn' })
-    expect(twenty.rows[0]).toMatchObject({ browserDriver: null, adsPowerProfileId: 'k1', cookies: REDDIT_COOKIES })
+    expect(accounts.rows[0]).toMatchObject({ browserDriver: null, adsPowerProfileId: 'k1', cookies: REDDIT_COOKIES })
     expect(ledger.get('r1')?.state).toBe('rolledBack')
   })
 

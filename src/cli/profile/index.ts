@@ -86,8 +86,8 @@ export const profileCommand: Command = {
       let note: string | null = null;
       if (output.result === "saved") {
         try {
-          await markProfileSet(context.twenty, account.id, (context.now ?? (() => new Date()))());
-          note = `Recorded profileSetAt for ${account.accountName} in Twenty.`;
+          await markProfileSet(context.accounts, account.id, (context.now ?? (() => new Date()))());
+          note = `Recorded profileSetAt for ${account.accountName} in the account store.`;
         } catch (error) {
           note = `Could not record profileSetAt: ${refuseError("profile", error).stderr}`;
         }

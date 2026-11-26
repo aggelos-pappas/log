@@ -156,11 +156,11 @@ describe("who is waiting, read from the local inbox store with no network", () =
 });
 
 
-describe("an inbox watcher for an account gone from Twenty", () => {
+describe("an inbox watcher for an account gone from the account store", () => {
   test("is not started again once its own log ends on accountNotFound", () => {
     const root = process.env.LOG_INBOX_STATE as string;
     mkdirSync(join(root, "discord", "gone"), { recursive: true });
-    writeFileSync(join(root, "discord", "gone", "watch.log"), "log discord watch: accountNotFound: No socialAccount with that accountName or id in Twenty.\nlog facebook accounts lists the Facebook accounts.\n");
+    writeFileSync(join(root, "discord", "gone", "watch.log"), "log discord watch: accountNotFound: No socialAccount with that accountName or id in the account store.\nlog facebook accounts lists the Facebook accounts.\n");
     const started: string[] = [];
     const out = ensureLiveWatchers("discord", ["gone", "live"], (account) => (started.push(account), 4242), () => false);
     expect(started).toEqual(["live"]);

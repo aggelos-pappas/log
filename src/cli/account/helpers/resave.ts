@@ -4,9 +4,9 @@ import { toDeviceProfile } from "../../../camofox/device/helpers/deviceProfile.t
 import { toOrigins } from "../../../browser/run/client.ts";
 import { saveDeviceProfile, saveSession, toFacebookCookies } from "../../../platformKit/socialAccount/index.ts";
 import type { FacebookAccount } from "../../../platformKit/socialAccount/index.ts";
-import type { TwentyClient } from "../../../twenty/graphql/index.ts";
+import type { AccountStore } from "../../../accounts/store/index.ts";
 
-export async function resaveKeptRun(twenty: TwentyClient, account: FacebookAccount, dir: string): Promise<{ ok: boolean; lines: string[] }> {
+export async function resaveKeptRun(store: AccountStore, account: FacebookAccount, dir: string): Promise<{ ok: boolean; lines: string[] }> {
   const lines: string[] = [];
   if (!existsSync(dir)) return { ok: false, lines: [`No kept run at ${dir}`] };
   if (existsSync(join(dir, "login.json"))) rmSync(join(dir, "login.json"), { force: true });
@@ -23,7 +23,7 @@ export async function resaveKeptRun(twenty: TwentyClient, account: FacebookAccou
   const profile = device?.created ? toDeviceProfile(device.profile) : null;
   if (profile) {
     try {
-      lines.push((await saveDeviceProfile(twenty, account, profile)) ? `Pinned ${account.accountName}'s device in Twenty.` : `${account.accountName} already has a device in Twenty: kept that one (rule 15).`);
+      lines.push((await saveDeviceProfile(store, account, profile)) ? `Pinned ${account.accountName}'s device in the account store.` : `${account.accountName} already has a device in the account store: kept that one (rule 15).`);
     } catch (error) {
       ok = false;
       lines.push(`Could not save the device: ${error instanceof Error ? error.message : String(error)}`);
@@ -33,7 +33,7 @@ export async function resaveKeptRun(twenty: TwentyClient, account: FacebookAccou
   if (state) {
     const cookies = toFacebookCookies(state.cookies);
     try {
-      lines.push((await saveSession(twenty, account.id, { cookies, origins: toOrigins(state.origins) })) ? `Saved ${account.accountName}'s session (${cookies.length} cookies) to Twenty.` : "The kept session holds no Facebook login: nothing saved.");
+      lines.push((await saveSession(store, account.id, { cookies, origins: toOrigins(state.origins) })) ? `Saved ${account.accountName}'s session (${cookies.length} cookies) to the account store.` : "The kept session holds no Facebook login: nothing saved.");
     } catch (error) {
       ok = false;
       lines.push(`Could not save the session: ${error instanceof Error ? error.message : String(error)}`);

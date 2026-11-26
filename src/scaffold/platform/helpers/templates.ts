@@ -4,11 +4,11 @@ export function sessionClient(n: PlatformNames): string {
   return `import { join } from 'node:path'
 import { findPlatformAccount, platformGate, recordPlatformSession, runPlatformEngine } from '../../../platformKit/session/index'
 import type { PlatformAccount, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from '../../../platformKit/session/index'
-import type { TwentyClient } from '../../../twenty/graphql/index'
+import type { AccountStore } from '../../../accounts/store/index'
 
 export const ${n.constant}_PLATFORM: PlatformShape = {
   platform: '${n.name}',
-  twentyPlatform: '${n.twentyPlatform}',
+  accountPlatform: '${n.accountPlatform}',
   label: '${n.label}',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', '${n.name}Api', 'engine.py'),
   sessionCookies: [${n.sessionCookies.map((c) => `'${c}'`).join(", ")}]
@@ -16,8 +16,8 @@ export const ${n.constant}_PLATFORM: PlatformShape = {
 
 export const ${n.constant}_COOKIE_DOMAIN = '${n.cookieDomain}'
 
-export function find${n.pascal}Account(twenty: TwentyClient, ref: string): Promise<PlatformAccount> {
-  return findPlatformAccount(twenty, ${n.constant}_PLATFORM, ref)
+export function find${n.pascal}Account(store: AccountStore, ref: string): Promise<PlatformAccount> {
+  return findPlatformAccount(store, ${n.constant}_PLATFORM, ref)
 }
 
 export function ${n.name}Gate(account: PlatformAccount): PlatformGate {
@@ -28,8 +28,8 @@ export function run${n.pascal}Engine(account: PlatformAccount, spec: PlatformEng
   return runPlatformEngine(${n.constant}_PLATFORM, account, spec)
 }
 
-export function record${n.pascal}Session(twenty: TwentyClient, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
-  return recordPlatformSession(twenty, ${n.constant}_PLATFORM, account, run, now, ${n.constant}_COOKIE_DOMAIN)
+export function record${n.pascal}Session(store: AccountStore, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
+  return recordPlatformSession(store, ${n.constant}_PLATFORM, account, run, now, ${n.constant}_COOKIE_DOMAIN)
 }
 `;
 }
@@ -57,7 +57,7 @@ export const ${n.constant}_SESSION_INPUT: CommandInput = {
       summary: "Check that ${n.label} still accepts one account's saved session, sending nothing",
       positionals: [],
       flags: [
-        { name: "account", kind: "string", required: true, description: "The ${n.twentyPlatform} socialAccount's accountName (its handle)" },
+        { name: "account", kind: "string", required: true, description: "The ${n.accountPlatform} socialAccount's accountName (its handle)" },
         JSON_FLAG,
       ],
     },
@@ -75,7 +75,7 @@ export const ${n.name}SessionCommand: Command = {
   name: "session",
   effect: "read",
   input: ${n.constant}_SESSION_INPUT,
-  summary: "Check that ${n.label} still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty",
+  summary: "Check that ${n.label} still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to the account's row",
   args: "check --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(${n.constant}_SESSION_INPUT));
@@ -84,13 +84,13 @@ export const ${n.name}SessionCommand: Command = {
     const ref = parsed.flags["account"];
     if (typeof ref !== "string") return { code: 1, stderr: \`log ${n.name} session check: --account is needed\\n\${${n.constant}_SESSION_USAGE}\` };
     try {
-      const account = await find${n.pascal}Account(context.twenty, ref);
+      const account = await find${n.pascal}Account(context.accounts, ref);
       const gate = ${n.name}Gate(account);
       if (!gate.ok) return refuse("${n.name} session check", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.${n.seam}) return { code: 1, stderr: "log ${n.name} session check: the direct-API engine isn't wired in this context" };
       context.err(\`\${account.accountName}: session check on the direct-API engine (${n.libraryText})\`);
       const run = context.${n.seam}(account, { action: "ping" });
-      for (const line of await record${n.pascal}Session(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await record${n.pascal}Session(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "${n.name}", account: account.accountName, ...run.answer }, null, 2) };
       return { code, stdout: render(account.accountName, run.answer) };
@@ -108,23 +108,23 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { ${n.constant}_PLATFORM } from "../../${n.name}/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "${n.name}One", accountName: "${n.name}One", platform: "${n.twentyPlatform}", cookies: { ${n.sessionCookies.length ? n.sessionCookies.map((c) => `${JSON.stringify(c)}: "x".repeat(20)`).join(", ") : `session: "x".repeat(20)`} }, proxy: null } as never);
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "${n.name}One", accountName: "${n.name}One", platform: "${n.accountPlatform}", cookies: { ${n.sessionCookies.length ? n.sessionCookies.map((c) => `${JSON.stringify(c)}: "x".repeat(20)`).join(", ") : `session: "x".repeat(20)`} }, proxy: null } as never);
+  return store;
 }
 
-async function run(argv: string[], engine?: PlatformEngineRun, twenty = fixture()) {
+async function run(argv: string[], engine?: PlatformEngineRun, store = fixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const calls: string[] = [];
   const code = await runCli(argv, {
-    twenty,
+    accounts: store,
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     ${n.seam}: (account, spec) => {
@@ -132,12 +132,12 @@ async function run(argv: string[], engine?: PlatformEngineRun, twenty = fixture(
       return engine ?? { answer: { ok: false, code: "notExpected" }, refreshed: null };
     },
   });
-  const row = twenty.rows.socialAccounts!.find((r) => r.accountName === "${n.name}One")!;
+  const row = store.rows.socialAccounts!.find((r) => r.accountName === "${n.name}One")!;
   return { code, out: out.join("\\n"), err: err.join("\\n"), calls, row };
 }
 
 describe("log ${n.name} session check", () => {
-  test("loggedIn: the engine's answer goes to Twenty", async () => {
+  test("loggedIn: the engine's answer goes to the account store", async () => {
     const r = await run(["${n.name}", "session", "check", "--account", "${n.name}One"], { answer: { ok: true, loginState: "loggedIn", screenName: "${n.name}One" }, refreshed: null });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["${n.name}One:ping"]);
@@ -209,8 +209,8 @@ Made by \`log new platform ${n.name}\`. ${n.label} is a platform of its own: eve
 
 | Part | Where |
 | --- | --- |
-| The accounts | Twenty \`socialAccounts\` with platform \`${n.twentyPlatform}\` |
-| The session (find the account, its gate, its engine, the answer back to Twenty) | \`src/${n.name}/account/session\`, on the shared \`src/platformKit/session\` |
+| The accounts | The account store \`socialAccounts\` with platform \`${n.accountPlatform}\` |
+| The session (find the account, its gate, its engine, the answer back to the account store) | \`src/${n.name}/account/session\`, on the shared \`src/platformKit/session\` |
 | The commands | \`src/cli/${n.name}/index.ts\`: \`log ${n.name} session check\` (MCP \`${n.name}SessionCheck\`) |
 | The engine | \`python/${n.name}Api/engine.py\`, on the shared \`python/platformKit/engine.py\`; each account's governor is under \`~/.logCli/${n.name}/<account>\` |
 | The client | ${n.library ? `\`${n.library}\`` : "not vendored yet"} |
@@ -237,7 +237,7 @@ What \`log new platform ${n.name}\` made, and what the platform's code must keep
 
 ### REQ-${id}-01: The account is found on its own platform's row and gated
 
-An account is found in socialAccounts by its platform, ${n.twentyPlatform}, and checked by the platform's gate before its engine runs.
+An account is found in socialAccounts by its platform, ${n.accountPlatform}, and checked by the platform's gate before its engine runs.
 
 Checked by: code and SubQ
 
@@ -282,7 +282,7 @@ export const ${n.name} = {
       { kind: 'symbol', file: SESSION, name: '${n.constant}_PLATFORM' },
       { kind: 'symbol', file: SESSION, name: 'find${n.pascal}Account' },
       { kind: 'symbol', file: SESSION, name: '${n.name}Gate' },
-      { kind: 'string', file: SESSION, includes: '${n.twentyPlatform}' },
+      { kind: 'string', file: SESSION, includes: '${n.accountPlatform}' },
     ],
     'REQ-${id}-02': [
       { kind: 'symbol', file: SESSION, name: 'run${n.pascal}Engine' },
@@ -298,7 +298,7 @@ export const ${n.name} = {
     ],
   },
   rubrics: {
-    'REQ-${id}-01': noul('Does find${n.pascal}Account find the account through findPlatformAccount with ${n.constant}_PLATFORM, whose twentyPlatform is ${n.twentyPlatform}, and does ${n.name}Gate check it with platformGate before the engine runs?'),
+    'REQ-${id}-01': noul('Does find${n.pascal}Account find the account through findPlatformAccount with ${n.constant}_PLATFORM, whose accountPlatform is ${n.accountPlatform}, and does ${n.name}Gate check it with platformGate before the engine runs?'),
     'REQ-${id}-02': noul('Does run${n.pascal}Engine run the account through runPlatformEngine with ${n.constant}_PLATFORM, whose engine is python/${n.name}Api/engine.py?'),
     'REQ-${id}-03': noul('Does the ${n.name} session check command send nothing to ${n.label} beyond the check, and record the answer ${n.label} gave through record${n.pascal}Session, which merges refreshed cookies for ${n.constant}_COOKIE_DOMAIN back into the row?'),
     'REQ-${id}-04': noul('Is ${n.name} listed in PLATFORMS and PLATFORM_SITES, and does DIRECT_ROUTES have a ${n.sessionKey} route for platform ${n.name}?'),

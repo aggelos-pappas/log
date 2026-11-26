@@ -1,15 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import type { WorkerClient } from "../../camofox/worker/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { toCheckOutcome } from "./index.ts";
 
-async function run(argv: string[], reply: () => unknown, twenty = marketplaceFixture()) {
+async function run(argv: string[], reply: () => unknown, store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const worker = (async () => reply()) as unknown as WorkerClient;
-  const code = await runCli(argv, { worker, twenty, out: (line) => out.push(line), err: (line) => err.push(line) });
-  return { code, out: out.join("\n"), err: err.join("\n"), outLines: out, twenty };
+  const code = await runCli(argv, { worker, accounts: store, out: (line) => out.push(line), err: (line) => err.push(line) });
+  return { code, out: out.join("\n"), err: err.join("\n"), outLines: out, accounts: store };
 }
 
 const SCAN = {
@@ -46,15 +46,15 @@ describe("toCheckOutcome", () => {
 });
 
 describe("log facebook watch", () => {
-  test("runs one check against the account's Twenty listings, prints the trace and the decisions", async () => {
-    const { code, out, err, twenty } = await run(["facebook", "watch", "--account", "galwayOne"], () => SCAN);
+  test("runs one check against the account's stored listings, prints the trace and the decisions", async () => {
+    const { code, out, err, accounts } = await run(["facebook", "watch", "--account", "galwayOne"], () => SCAN);
     expect(code).toBe(0);
     expect(err).toContain("checking");
     expect(err).toContain("done");
     expect(out).toContain("111");
     expect(out).toContain("DELETED_BY_FB");
     expect(out).toContain("Nothing was posted.");
-    expect(twenty.rows.agencyListings.find((r) => r.id === "liveTwo")!.clicksCount).toBeUndefined();
+    expect(accounts.rows.agencyListings.find((r) => r.id === "liveTwo")!.clicksCount).toBeUndefined();
   });
 
   test("--json streams NDJSON trace lines, then the output", async () => {
@@ -65,11 +65,11 @@ describe("log facebook watch", () => {
     expect(parsed.at(-1).stopReason).toBe("checks done");
   });
 
-  test("a login wall stops with code 1 and marks the account NEEDS_LOGIN in Twenty", async () => {
-    const { code, out, twenty } = await run(["facebook", "watch", "--account", "galwayOne"], () => ({ ok: false, code: "sessionExpired" }));
+  test("a login wall stops with code 1 and marks the account NEEDS_LOGIN in the account store", async () => {
+    const { code, out, accounts } = await run(["facebook", "watch", "--account", "galwayOne"], () => ({ ok: false, code: "sessionExpired" }));
     expect(code).toBe(1);
     expect(out).toContain("sessionExpired");
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!.accountStatus).toBe("NEEDS_LOGIN");
+    expect(accounts.rows.socialAccounts.find((r) => r.id === "galwayOne")!.accountStatus).toBe("NEEDS_LOGIN");
   });
 
   test("validates flags, and never starts for an account that may not run", async () => {
@@ -85,8 +85,8 @@ describe("log facebook watch", () => {
 
 describe("log facebook watch keeps to the account's local hours (rule 18)", () => {
   test("a check that falls outside the window stops the watch without opening a browser", async () => {
-    const twenty = marketplaceFixture();
-    await twenty.update("socialAccounts", "galwayOne", { activeHoursStart: null, activeHoursEnd: null });
+    const store = marketplaceFixture();
+    await store.update("socialAccounts", "galwayOne", { activeHoursStart: null, activeHoursEnd: null });
     let started = 0;
     const worker = (async () => {
       started++;
@@ -96,7 +96,7 @@ describe("log facebook watch keeps to the account's local hours (rule 18)", () =
     const now = () => clock.shift() ?? new Date("2026-10-18T21:30:00Z");
     const out: string[] = [];
     const err: string[] = [];
-    await runCli(["facebook", "watch", "--account", "galwayOne", "--checks", "2", "--interval", "0.0001"], { worker, twenty, now, out: (l) => out.push(l), err: (l) => err.push(l) });
+    await runCli(["facebook", "watch", "--account", "galwayOne", "--checks", "2", "--interval", "0.0001"], { worker, accounts: store, now, out: (l) => out.push(l), err: (l) => err.push(l) });
     expect(started).toBe(1);
     expect(err.join("\n") + out.join("\n")).toContain("outsideActiveHours");
   });

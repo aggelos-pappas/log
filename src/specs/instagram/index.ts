@@ -68,7 +68,7 @@ export const instagram = {
     ],
   },
   rubrics: {
-    'REQ-INSTAGRAM-01': noul('Does findInstagramAccount find the account through findPlatformAccount with INSTAGRAM_PLATFORM, whose twentyPlatform is INSTAGRAM, and does instagramGate check it with platformGate before the engine runs?'),
+    'REQ-INSTAGRAM-01': noul('Does findInstagramAccount find the account through findPlatformAccount with INSTAGRAM_PLATFORM, whose accountPlatform is INSTAGRAM, and does instagramGate check it with platformGate before the engine runs?'),
     'REQ-INSTAGRAM-02': noul('Does runInstagramEngine run the account through runPlatformEngine with INSTAGRAM_PLATFORM, whose engine is python/instagramApi/engine.py?'),
     'REQ-INSTAGRAM-03': noul('Does the instagram session check command send nothing to Instagram beyond the check, and record the answer Instagram gave through recordInstagramSession, which merges refreshed cookies for INSTAGRAM_COOKIE_DOMAIN back into the row?'),
     'REQ-INSTAGRAM-05': noul('Does ping in python/instagramApi/engine.py answer sessionDead without calling Instagram when the cookies have no sessionid, and otherwise sign in only through the vendored instagrapi Client with login_by_sessionid, its private transport set to curl, answering sessionMismatch when the user Instagram returns differs from the cookies\' ds_user_id, and challenged, rateLimited or sessionDead for instagrapi\'s challenge, rate limit and login errors?'),

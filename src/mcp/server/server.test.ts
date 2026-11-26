@@ -3,7 +3,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { COMMANDS } from "../../cli/runner/index.ts";
 import { toolBaseName } from "../../cli/runner/helpers/platforms.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -14,7 +14,7 @@ import { readJob } from "../jobs/index.ts";
 import { LOADS_EVERY_TOOL_MS } from "../../../scripts/tests/timeouts.ts";
 
 async function connected() {
-  const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
+  const server = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false });
   const client = new Client({ name: "test", version: "0.0.0" });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
@@ -171,10 +171,10 @@ describe("log MCP server", () => {
     const client = await connected();
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name)).toContain("facebookListings");
-    expect(tools.find((tool) => tool.name === "facebookPublish")?.description).toContain("dry run unless --live");
+    expect(tools.find((tool) => tool.name === "facebookPublish")?.description).toContain("Retired (#339)");
   }, LOADS_EVERY_TOOL_MS);
 
-  test("runs a command against Twenty and returns its output", async () => {
+  test("runs a command against the account store and returns its output", async () => {
     const client = await connected();
     const result = await client.callTool({ name: "facebookListings", arguments: { json: true } });
     expect(result.isError).toBe(false);
@@ -210,7 +210,7 @@ describe("live logs", () => {
       return doctorReply;
     }) as unknown as WorkerClient;
     const seen: string[] = [];
-    const result = await runToolCall("facebookDoctor", { args: ["--json"] }, { twenty: marketplaceFixture(), worker }, (tool, stream, line) => seen.push(`${tool} ${stream} ${line}`));
+    const result = await runToolCall("facebookDoctor", { args: ["--json"] }, { accounts: marketplaceFixture(), worker }, (tool, stream, line) => seen.push(`${tool} ${stream} ${line}`));
     const text = (result.content as { text: string }[])[0].text;
     expect(text).toContain("log:\nOpening Camoufox through the proxy\nAuto-login: typed the email and password (try 1).");
     expect(seen[0]).toMatch(/^facebookDoctor out ▶ log facebook doctor --json  \(job job\w+\)  \(call [0-9a-f]{12}\)$/);
@@ -239,7 +239,7 @@ describe("live logs", () => {
         emitLog("worker", "Logged in.");
         return doctorReply;
       }) as unknown as WorkerClient;
-      const server = createLogMcpServer({ twenty: marketplaceFixture(), worker }, { logDir: dir });
+      const server = createLogMcpServer({ accounts: marketplaceFixture(), worker }, { logDir: dir });
       const client = new Client({ name: "test", version: "0.0.0" });
       const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
       await Promise.all([server.connect(serverSide), client.connect(clientSide)]);

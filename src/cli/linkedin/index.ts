@@ -63,7 +63,7 @@ export const linkedinSessionCommand: Command = {
   name: "session",
   effect: "read",
   input: LINKEDIN_SESSION_INPUT,
-  summary: "Check that LinkedIn still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty",
+  summary: "Check that LinkedIn still accepts an account's saved session, on the direct-API engine, sending nothing; the answer is saved",
   args: "check|scripts --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(LINKEDIN_SESSION_INPUT));
@@ -73,14 +73,14 @@ export const linkedinSessionCommand: Command = {
     const ref = parsed.flags["account"];
     if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log linkedin session check: --account is needed\n${LINKEDIN_SESSION_USAGE}` };
     try {
-      const account = await findLinkedinAccount(context.twenty, ref);
+      const account = await findLinkedinAccount(context.accounts, ref);
       const gate = linkedinGate(account);
       if (!gate.ok) return refuse("linkedin session check", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directLinkedin) return refuse("linkedin session check", "engineNotBuilt", "the direct-API engine isn't wired in this context");
       if (verb === "scripts") return scriptsOf(context, account, Boolean(parsed.flags["json"]));
       context.err(`${account.accountName}: session check on the direct-API engine (openLinkedinApi)`);
       const run = context.directLinkedin(account, { action: "ping" });
-      for (const line of await recordLinkedinSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordLinkedinSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "linkedin", account: account.accountName, ...run.answer }, null, 2) };
       return { code, stdout: render(account.accountName, run.answer) };

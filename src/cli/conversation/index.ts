@@ -11,17 +11,18 @@ import {
 } from "../../facebook/marketplace/conversation/index.ts";
 import type { LeadStatus } from "../../facebook/marketplace/conversation/index.ts";
 import { getListing } from "../../facebook/marketplace/agencyListing/index.ts";
-import { findAccount, fromTwentyEnum } from "../../platformKit/socialAccount/index.ts";
+import { findAccount, fromStoredEnum } from "../../platformKit/socialAccount/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuseError, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
 import { parseThreads, renderConversation, renderConversations, renderRecorded } from "./helpers/index.ts";
 
 export * from "./helpers/index.ts";
 
-export const CONVERSATIONS_USAGE = "Usage: log facebook conversations [--account <name>] [--listing <agencyListingId>] [--json]";
+export const CONVERSATIONS_USAGE = "Usage: log facebook conversations [--account <name>] [--listing <agencyListingId>] [--json]\nRetired (#339): Marketplace conversations were kept in Twenty, which log no longer uses.";
 export const CONVERSATION_USAGE = [
   "Usage: log facebook conversation show <id> [--json]",
   "       log facebook conversation read <id>",
+  "Retired (#339): Marketplace conversations were kept in Twenty, which log no longer uses.",
   `       log facebook conversation lead <id> <${LEAD_STATUSES.map((s) => s.toUpperCase()).join("|")}>`,
   "       log facebook conversation link <id> --listing <agencyListingId>",
   "       log facebook conversation record --account <name> --file <threads.json>",
@@ -31,7 +32,7 @@ export const CONVERSATIONS_INPUT: CommandInput = {
   forms: [
     {
       words: [],
-      summary: "List the buyers' conversations",
+      summary: "Retired (#339): List the buyers' conversations",
       positionals: [],
       flags: [{ name: "account", kind: "string", description: "Only this account's" }, { name: "listing", kind: "string", description: "Only this listing's (its agencyListing id)" }, JSON_FLAG],
     },
@@ -44,16 +45,16 @@ export const conversationsCommand: Command = {
   name: "conversations",
   effect: "read",
   input: CONVERSATIONS_INPUT,
-  summary: "List buyers' Marketplace conversations in Twenty, newest first, by account or listing",
+  summary: "Retired (#339): buyers' Marketplace conversations",
   args: "[--account <name>] [--listing <id>] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(CONVERSATIONS_INPUT));
     if (!parsed.ok) return refuseInput("facebook conversations", parsed.error, CONVERSATIONS_USAGE);
     if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log facebook conversations: unexpected argument "${parsed.positionals[0]}"\n${CONVERSATIONS_USAGE}` };
     try {
-      const account = typeof parsed.flags["account"] === "string" ? await findAccount(context.twenty, parsed.flags["account"]) : null;
+      const account = typeof parsed.flags["account"] === "string" ? await findAccount(context.accounts, parsed.flags["account"]) : null;
       const listing = typeof parsed.flags["listing"] === "string" ? parsed.flags["listing"] : undefined;
-      const conversations = await listConversations(context.twenty, { socialAccountId: account?.id, agencyListingId: listing });
+      const conversations = await listConversations(context.accounts, { socialAccountId: account?.id, agencyListingId: listing });
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ conversations }, null, 2) };
       return { code: 0, stdout: renderConversations(conversations) };
     } catch (error) {
@@ -66,13 +67,13 @@ const CONVERSATION_ID = { name: "id", kind: "string", required: true, descriptio
 
 export const CONVERSATION_INPUT: CommandInput = {
   forms: [
-    { words: ["show"], effect: "read", summary: "A conversation and its messages", positionals: [CONVERSATION_ID], flags: [JSON_FLAG] },
-    { words: ["read"], summary: "Mark its messages read", positionals: [CONVERSATION_ID], flags: [] },
-    { words: ["lead"], summary: "Set its lead status", positionals: [CONVERSATION_ID, { name: "status", kind: "enum", required: true, values: LEAD_STATUSES.map((s) => s.toUpperCase()), description: "The lead status" }], flags: [] },
-    { words: ["link"], summary: "Link it to its listing", positionals: [CONVERSATION_ID], flags: [{ name: "listing", kind: "string", required: true, description: "The agencyListing id" }] },
+    { words: ["show"], effect: "read", summary: "Retired (#339): A conversation and its messages", positionals: [CONVERSATION_ID], flags: [JSON_FLAG] },
+    { words: ["read"], summary: "Retired (#339): Mark its messages read", positionals: [CONVERSATION_ID], flags: [] },
+    { words: ["lead"], summary: "Retired (#339): Set its lead status", positionals: [CONVERSATION_ID, { name: "status", kind: "enum", required: true, values: LEAD_STATUSES.map((s) => s.toUpperCase()), description: "The lead status" }], flags: [] },
+    { words: ["link"], summary: "Retired (#339): Link it to its listing", positionals: [CONVERSATION_ID], flags: [{ name: "listing", kind: "string", required: true, description: "The agencyListing id" }] },
     {
       words: ["record"],
-      summary: "Store scanned threads",
+      summary: "Retired (#339): Store scanned threads",
       positionals: [],
       flags: [{ name: "account", kind: "string", required: true, description: "The account the threads are from" }, { name: "file", kind: "string", required: true, description: "The threads.json path" }],
     },
@@ -85,7 +86,7 @@ export const conversationCommand: Command = {
   name: "conversation",
   effect: "write",
   input: CONVERSATION_INPUT,
-  summary: "One conversation: show its messages, mark read, set its lead status, link its listing, or store a scanned thread",
+  summary: "Retired (#339): one buyer conversation",
   args: "<show|read|lead|link|record> [id] [STATUS] [--listing <id>] [--account <name> --file <json>]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(CONVERSATION_INPUT));
@@ -104,40 +105,40 @@ export const conversationCommand: Command = {
         }
         const threads = parseThreads(raw);
         if (!threads.ok) return { code: 1, stderr: `log facebook conversation record: ${threads.error}` };
-        const account = await findAccount(context.twenty, accountRef);
+        const account = await findAccount(context.accounts, accountRef);
         const results = [];
         for (const [i, thread] of threads.threads.entries()) {
           context.err(`conversation ${i + 1}/${threads.threads.length}: thread ${thread.facebookThreadId}`);
-          results.push(await recordThread(context.twenty, account.id, thread));
+          results.push(await recordThread(context.accounts, account.id, thread));
         }
         return { code: 0, stdout: parsed.flags["json"] ? JSON.stringify({ results }, null, 2) : renderRecorded(results) };
       }
       if (!id || !["show", "read", "lead", "link"].includes(action ?? "")) return { code: 1, error: "inputInvalid", stderr: `log facebook conversation: pick show, read, lead, link or record\n${CONVERSATION_USAGE}` };
-      const conversation = await getConversation(context.twenty, id);
+      const conversation = await getConversation(context.accounts, id);
       if (!conversation) return { code: 1, stderr: `log facebook conversation: no conversation ${id} (log facebook conversations lists them)` };
       if (action === "show") {
-        const messages = await messagesOf(context.twenty, id);
+        const messages = await messagesOf(context.accounts, id);
         if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ conversation, messages }, null, 2) };
         return { code: 0, stdout: renderConversation(conversation, messages) };
       }
       if (action === "read") {
-        const count = await markRead(context.twenty, id);
+        const count = await markRead(context.accounts, id);
         return { code: 0, stdout: `Marked ${count} message(s) read.` };
       }
       if (action === "lead") {
-        const status = value ? fromTwentyEnum(value) : "";
+        const status = value ? fromStoredEnum(value) : "";
         if (!(LEAD_STATUSES as readonly string[]).includes(status)) return { code: 1, stderr: `log facebook conversation lead: give a status\n${CONVERSATION_USAGE}` };
-        const saved = await setLeadStatus(context.twenty, id, status as LeadStatus);
+        const saved = await setLeadStatus(context.accounts, id, status as LeadStatus);
         return { code: 0, stdout: `Lead is now ${saved.leadStatus}.` };
       }
       const listingId = parsed.flags["listing"];
       if (typeof listingId !== "string") return { code: 1, stderr: `log facebook conversation link: give --listing <agencyListingId>\n${CONVERSATION_USAGE}` };
-      const listing = await getListing(context.twenty, listingId);
+      const listing = await getListing(context.accounts, listingId);
       if (!listing) return { code: 1, stderr: `log facebook conversation link: no agencyListing ${listingId}` };
       if (conversation.socialAccountId && listing.socialAccountId && listing.socialAccountId !== conversation.socialAccountId) {
         return { code: 1, stderr: `log facebook conversation link: listing ${listingId} is on another account than this conversation` };
       }
-      await linkListing(context.twenty, id, listingId);
+      await linkListing(context.accounts, id, listingId);
       return { code: 0, stdout: `Linked to listing ${listingId} (${listing.title}).` };
     } catch (error) {
       return refuseError("conversation", error);

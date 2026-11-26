@@ -1,6 +1,6 @@
 # sessions
 
-Whether each account's saved session still works, from the platform's own answer, with the next step to sign it back in; and log's own sign-in for a team (login, logout, whoami).
+Whether each account's saved session still works, from the platform's own answer, with the next step to sign it back in.
 
 Load next, when the work needs it: getGuide({ topic: "accountBrowser" }) (An account's one browser on any platform: opening it through its gates, inspecting a page step by step, where every open browser is, the live view for signing in, AdsPower profiles and local accounts); getGuide({ topic: "accountsAndProxies" }) (Every account in the workspace with its session state, and each account's proxy: checking it, giving it one from a provider in its home city, and providers' traffic; and the interactive launcher and agent setup command that set log up and add accounts).
 
@@ -20,8 +20,6 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 
 | Tool | What it does | Usage |
 |---|---|---|
-| `logout` | Forget the stored Twenty session | `log logout [--apiUrl <url>] [--json]` |
-| `whoami` | Show who is signed in to Twenty, refreshing the session if it expired | `log whoami [--apiUrl <url>] [--json]` |
 | `sessionsCheck` | Check every account's saved session through its platform's own answer | `log sessions check [--platform <p>] [--account <accountName>] [--json]` |
 | `sessionsSignIn` | Sign an account in | `log sessions signIn --account <account> [--platform <p>] [--route browser\|cookies] [--done] [--wait <s>] [--open] [--json]` |
 

@@ -2,9 +2,11 @@
 
 This page explains how a Marketplace listing's photos are stored, changed slightly for each upload, and sent to Facebook. Each upload gets its own fresh copy, so no two uploads of the same listing are the same file, and no camera or location details go with them. Read it if you're adding photos to a listing or running log on a different machine from where the photos live. The words that go with the photos follow `skills/listingCopy/SKILL.md`.
 
+**Retired (#339).** Listings were kept only in Twenty, which log no longer uses, so the `log facebook listing` and `publish` commands (but not `listing lint`) refuse with `twentyRemoved` until they are rebuilt on log.db. This page is kept as the design.
+
 ## Where photos are kept
 
-A listing is a row in Twenty's `agencyListings`. Its photos are the `photos` field (RAW_JSON): a list of 1 to 10 sources, cover photo first. Each source is one of three kinds (`src/media/photo/helpers/photoSource.ts`):
+A listing was an `agencyListings` row. Its photos are the `photos` field (RAW_JSON): a list of 1 to 10 sources, cover photo first. Each source is one of three kinds (`src/media/photo/helpers/photoSource.ts`):
 
 | Source | Example | How it is read |
 | --- | --- | --- |
@@ -12,9 +14,9 @@ A listing is a row in Twenty's `agencyListings`. Its photos are the `photos` fie
 | A URL | `https://…/before.jpg` | Fetched through the account's own proxy, never from this machine's IP. Refused when the account has no HTTP proxy. |
 | A data URL | `data:image/png;base64,…` | Decoded in place. |
 
-**Twenty keeps the addresses, not the files.** A path only works on the machine where the file is. If log runs on a separate browser server (see [Running log on servers](deployment.md)), a listing's photos must be URLs that server can fetch, or files copied to the same path there.
+**The row keeps the addresses, not the files.** A path only works on the machine where the file is. If log runs on a separate browser server (see [Running log on servers](deployment.md)), a listing's photos must be URLs that server can fetch, or files copied to the same path there.
 
-You set a listing's photos with the `photos` list in `listing.json` (`log facebook listing create --account <a> --file <listing.json>`), or by editing the row in Twenty.
+You set a listing's photos with the `photos` list in `listing.json` (`log facebook listing create --account <a> --file <listing.json>`), or by editing the stored row.
 
 ## What happens when a listing is published
 

@@ -54,7 +54,7 @@ export const linkedinSuggestionsCommand: Command = {
       const account = opened.account;
       context.err(`${account.accountName}: reading My Network's suggestions on the direct-API engine (reads only)`);
       const run = context.directLinkedin!(account, { action: "suggestions" });
-      for (const line of await recordLinkedinSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordLinkedinSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       if (!run.answer.ok) return failed("suggestions", run);
       const people = peopleOf(run.answer);
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ platform: "linkedin", account: account.accountName, people }, null, 2) };
@@ -124,7 +124,7 @@ export const linkedinConnectCommand: Command = {
       if (!pace.answer.ok) return failed("connect", pace);
       context.err(`${account.accountName}: invite ${profile}, approved by ${approvedBy}, on the direct-API engine`);
       const run = await actOnEngine(() => context.directLinkedin!(account, { action: "connect", live: true, approvedBy, profile }));
-      for (const line of await recordLinkedinSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordLinkedinSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       if (!run.answer.ok) return failed("connect", run);
       const person = (run.answer["connected"] ?? {}) as Partial<SuggestedPerson>;
       if (json) return { code: 0, stdout: JSON.stringify({ platform: "linkedin", account: account.accountName, approvedBy, ...run.answer }, null, 2) };

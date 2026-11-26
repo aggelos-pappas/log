@@ -57,7 +57,7 @@ export const TOOL_RESULT_SCHEMA = {
       description: "Every open browser after the call: account, step, url, the known page state it sits on (id, what, person), the failed step, its resolver call (next) and what only the owner can clear (needsOwner) (rules 54-55)",
     },
     next: { description: "The tool call that resolves the first open browser's known state ({ tool, input }), or null: call it, do not stop (rule 54)" },
-    needsOwner: { description: "What only the owner can clear (a video selfie, an ID, a disabled account, a PIN not in Twenty), or null: stop that account and tell the owner" },
+    needsOwner: { description: "What only the owner can clear (a video selfie, an ID, a disabled account, a PIN not saved), or null: stop that account and tell the owner" },
     job: {
       type: "object",
       properties: { id: { type: "string" }, status: { type: "string" }, afterLine: { type: "integer" } },

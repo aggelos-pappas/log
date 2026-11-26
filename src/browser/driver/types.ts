@@ -31,7 +31,7 @@ export const BROWSER_CAPABILITIES = {
   devicePinned: 'One fixed device per account, the same every open (rule 15)',
   localePinned: "navigator, Accept-Language and Intl in the home country's locale (rule 16)",
   sessionCarried: "The account's signed-in session carries over from one open to the next",
-  sessionSaved: 'The session is saved back to Twenty (saveState)',
+  sessionSaved: 'The session is saved back to the account store (saveState)',
   inspectSession: 'log inspect, the flows, the warm-up and log facebook host run in it (python/session/inspectSession.py)',
   syncSessions: 'publishSession, connectSession and profileSession (the sync sessions) run in it',
   oneMachineAtATime: 'It refuses to open where another machine already has the account open',

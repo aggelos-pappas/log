@@ -1,6 +1,6 @@
 # Where the code lives
 
-This is a map of log's source tree: what each folder holds and which part of the system it belongs to. Use it to find your way around before changing something. Code is organised by platform first (Facebook, X, Reddit), then by area and domain, with shared pieces (browsers, proxies, Twenty, rea) in their own folders.
+This is a map of log's source tree: what each folder holds and which part of the system it belongs to. Use it to find your way around before changing something. Code is organised by platform first (Facebook, X, Reddit), then by area and domain, with shared pieces (browsers, proxies, accounts, rea) in their own folders.
 
 ```text
 bin/log.ts                      the entry point
@@ -12,9 +12,9 @@ src/reddit/                     Reddit: account/session
 src/platformKit/                what every platform's account session shares (find, gate, run the engine, record)
 src/scaffold/platform/          `log new platform <name>`: writes and wires in a new platform
 src/directApi/engine/           DIRECT_ROUTES, commandEngine, the direct-API engine runner and governors
-src/twenty/graphql/             the local account store (helpers/localAccounts.ts), the optional generated Twenty client (generated/), its seam, and an in-memory Twenty for tests
-src/platformKit/socialAccount/  accounts (local store, or optional Twenty), and the check that an account may run (checkRunnable)
-src/facebook/marketplace/agencyListing/  listings in Twenty, writing run results back, dashboard sync
+src/accounts/store/             the local account store (helpers/localAccounts.ts) and an in-memory store for tests
+src/platformKit/socialAccount/  accounts in the account store, and the check that an account may run (checkRunnable)
+src/facebook/marketplace/agencyListing/  listings (retired, #339), writing run results back, dashboard sync
 src/facebook/marketplace/replacement/    losing an account, replacements, campaign fill
 src/facebook/marketplace/publish/        the XState publish machine
 src/facebook/marketplace/monitor/        the XState listing monitor and relist rules

@@ -4,7 +4,7 @@ import type { AdsPowerClient, AdsPowerProfile, CreateProfileBody, LocalApiConfig
 import { listBrowserAccounts, saveAdsPowerProfileId } from '../../platformKit/socialAccount/index'
 import { PLATFORM_SITES, PLATFORMS } from '../../cli/runner/helpers/platforms'
 import type { FacebookAccount } from '../../platformKit/socialAccount/index'
-import type { TwentyClient } from '../../twenty/graphql/index'
+import type { AccountStore } from '../../accounts/store/index'
 import type { BrowserDriver, BrowserEndpoint, GateResult } from '../driver/index'
 import { planSync, profileRequest } from './helpers/index'
 import { ADS_POWER_GROUP, ADS_POWER_HOMES_ENV } from './types'
@@ -86,7 +86,7 @@ export function createAdsPowerClient(
       const found = await call<{ list?: { group_id: string | number; group_name: string }[] }>('GET', `/api/v1/group/list?group_name=${encodeURIComponent(name)}&page_size=100`)
       const match = found?.list?.find((g) => g.group_name === name)
       if (match) return String(match.group_id)
-      const made = await call<{ group_id: string | number }>('POST', '/api/v1/group/create', { group_name: name, remark: 'log-cli: one profile per Facebook account in Twenty' })
+      const made = await call<{ group_id: string | number }>('POST', '/api/v1/group/create', { group_name: name, remark: 'log-cli: one profile per Facebook account in the account store' })
       return String(made.group_id)
     },
     async createProfile(body: CreateProfileBody) {
@@ -192,16 +192,16 @@ export function homesOf(value: string | undefined | null): string[] | null {
 }
 
 export async function syncProfiles(
-  twenty: TwentyClient,
+  store: AccountStore,
   adsPower: AdsPowerClient,
   options: { apply: boolean; account?: string; homes?: string[] | null; log?: (line: string) => void }
 ): Promise<ProfileSyncResult> {
   const log = options.log ?? (() => {})
-  const browserPlatforms = PLATFORMS.filter((p) => PLATFORM_SITES[p].browser).map((p) => PLATFORM_SITES[p].twenty)
-  const all = await listBrowserAccounts(twenty, browserPlatforms)
+  const browserPlatforms = PLATFORMS.filter((p) => PLATFORM_SITES[p].browser).map((p) => PLATFORM_SITES[p].accountPlatform)
+  const all = await listBrowserAccounts(store, browserPlatforms)
   const accounts = options.account ? all.filter((a) => a.accountName === options.account || a.id === options.account) : all
   const homes = options.homes === undefined ? adsPowerHomes() : options.homes
-  log(`adsPower: ${accounts.length} account(s) from Twenty${homes ? ` (homes ${homes.join(', ')})` : ''}; reading AdsPower's profiles`)
+  log(`adsPower: ${accounts.length} account(s) from the account store${homes ? ` (homes ${homes.join(', ')})` : ''}; reading AdsPower's profiles`)
   const profiles = await adsPower.listProfiles()
   const planned = planSync(accounts, profiles, homes)
   if (!options.apply) return { applied: false, entries: planned }
@@ -214,17 +214,17 @@ export async function syncProfiles(
     try {
       if (entry.action === 'release') {
         if (entry.profileId && live.has(entry.profileId)) await adsPower.deleteProfiles([entry.profileId])
-        await saveAdsPowerProfileId(twenty, account.id, null)
+        await saveAdsPowerProfileId(store, account.id, null)
         done.push(entry)
-        log(`adsPower ${i + 1}/${entries.length} ${account.accountName}: released profile ${entry.profileId ?? '-'} (${entry.note}), unlinked in Twenty`)
+        log(`adsPower ${i + 1}/${entries.length} ${account.accountName}: released profile ${entry.profileId ?? '-'} (${entry.note}), unlinked in the account store`)
       } else if (entry.action === 'create') {
         const body = profileRequest(account, groupId)!
         const made = await adsPower.createProfile(body)
-        await saveAdsPowerProfileId(twenty, account.id, made.profileId)
+        await saveAdsPowerProfileId(store, account.id, made.profileId)
         done.push({ ...entry, profileId: made.profileId })
-        log(`adsPower ${i + 1}/${entries.length} ${account.accountName}: made profile ${made.profileId}, linked in Twenty`)
+        log(`adsPower ${i + 1}/${entries.length} ${account.accountName}: made profile ${made.profileId}, linked in the account store`)
       } else if (entry.action === 'relink') {
-        await saveAdsPowerProfileId(twenty, account.id, entry.profileId!)
+        await saveAdsPowerProfileId(store, account.id, entry.profileId!)
         done.push(entry)
         log(`adsPower ${i + 1}/${entries.length} ${account.accountName}: relinked profile ${entry.profileId}`)
       } else {

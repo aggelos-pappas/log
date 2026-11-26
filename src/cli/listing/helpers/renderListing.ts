@@ -25,7 +25,7 @@ export function renderListingsTable(listings: AgencyListing[], accounts: Faceboo
 export function renderListingDetail(l: AgencyListing, account: FacebookAccount | null): string {
   return [
     `${l.title}`,
-    `  Twenty id    ${l.id}`,
+    `  Row id      ${l.id}`,
     `  Status       ${upper(l.status)}`,
     `  Account      ${account ? `${account.accountName} (${account.status ? account.status.toUpperCase() : "unset"}, ${account.homeCity ?? "?"}, ${account.homeCountry ?? "?"})` : "none"}`,
     `  Campaign     ${l.campaignId ?? "-"}`,

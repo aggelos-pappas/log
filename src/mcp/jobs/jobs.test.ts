@@ -6,7 +6,7 @@ import { clearCurrentInspect, writeCurrentInspect } from "../../browser/inspect/
 import type { CurrentInspect } from "../../browser/inspect/index.ts";
 import type { WorkerClient } from "../../camofox/worker/index.ts";
 import { emitLog } from "../../observability/processLog/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runToolCall } from "../server/index.ts";
 import { accountOfArgv, appendProgress, busyJob, finishJob, heldByOther, jobScope, jobView, PARENT_PID_ENV, readJob, requestCancel, startJob, statusOf } from "./index.ts";
 import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
@@ -24,7 +24,7 @@ describe("a long run outlasting its call becomes a job (Duet plan step 4)", () =
       emitLog("worker", "Self-check passed");
       return doctorReply;
     }) as unknown as WorkerClient;
-    const context = { twenty: marketplaceFixture(), worker };
+    const context = { accounts: marketplaceFixture(), worker };
     const started = await runToolCall("facebookDoctor", { args: ["--json"], waitMs: 50 }, context, () => {}, () => []);
     const handle = structured(started);
     expect(handle.exit).toBe(-1);
@@ -48,14 +48,14 @@ describe("a long run outlasting its call becomes a job (Duet plan step 4)", () =
 
   test("a run that ends inside its wait comes back whole, with its job finished", async () => {
     const worker = (async () => doctorReply) as unknown as WorkerClient;
-    const result = await runToolCall("facebookDoctor", { args: ["--json"] }, { twenty: marketplaceFixture(), worker }, () => {}, () => []);
+    const result = await runToolCall("facebookDoctor", { args: ["--json"] }, { accounts: marketplaceFixture(), worker }, () => {}, () => []);
     expect(structured(result).exit).toBe(0);
     expect(structured(result).job?.status).toBe("completed");
     expect(readJob(structured(result).job!.id)?.status).toBe("completed");
   });
 
   test("a quick tool is never a job", async () => {
-    const result = await runToolCall("facebookAccounts", {}, { twenty: marketplaceFixture() }, () => {}, () => []);
+    const result = await runToolCall("facebookAccounts", {}, { accounts: marketplaceFixture() }, () => {}, () => []);
     expect(structured(result).job).toBeUndefined();
   });
 });
@@ -74,7 +74,7 @@ describe("one job per account, cancel at the next browser step", () => {
       await sleep(150);
       return null;
     };
-    const context = { twenty: marketplaceFixture(), sendInspect, now: () => new Date("2026-10-22T12:00:00Z") };
+    const context = { accounts: marketplaceFixture(), sendInspect, now: () => new Date("2026-10-22T12:00:00Z") };
     const started = await runToolCall("facebookCheck", { account: "galwayOne", bypass: true, confirmBypass: true, waitMs: 20 }, context, () => {}, () => []);
     const id = structured(started).job!.id;
     expect(structured(started).exit).toBe(-1);

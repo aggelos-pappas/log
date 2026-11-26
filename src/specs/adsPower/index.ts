@@ -37,7 +37,7 @@ export const adsPower = {
     ],
     'REQ-ADSPOWER-02': [
       { kind: 'symbol', file: request, name: 'profileRequest' },
-      { kind: 'symbol', file: request, name: 'twentyRemark' },
+      { kind: 'symbol', file: request, name: 'accountRemark' },
       { kind: 'value', file: types, name: 'ADS_POWER_GROUP', equals: 'logCli' },
       { kind: 'string', file: request, includes: 'no_proxy' },
     ],
@@ -98,8 +98,8 @@ export const adsPower = {
     ],
   },
   rubrics: {
-    'REQ-ADSPOWER-01': noul('Does planSync return linked for an account whose adsPowerProfileId is a live profile, relink when a profile remark names the account Twenty id, and create otherwise, with syncProfiles saving the profile id it made or relinked?'),
-    'REQ-ADSPOWER-02': noul('Does profileRequest create the profile with no proxy, the remark from twentyRemark, the given group and the language of the home country, with no password, cookie or 2FA field in the body?'),
+    'REQ-ADSPOWER-01': noul('Does planSync return linked for an account whose adsPowerProfileId is a live profile, relink when a profile remark names the account id, and create otherwise, with syncProfiles saving the profile id it made or relinked?'),
+    'REQ-ADSPOWER-02': noul('Does profileRequest create the profile with no proxy, the remark from accountRemark, the given group and the language of the home country, with no password, cookie or 2FA field in the body?'),
     'REQ-ADSPOWER-03': noul('Does driverNameOf return the browserDriver when it names a known driver and refuse an unknown name, otherwise the driver LOG_BROWSER_DRIVER names (refusing an unknown one), then the default driver, never inferring adsPower from adsPowerProfileId, and write the adsPowerDeprecated line through warnAdsPower once when the result is adsPower?'),
     'REQ-ADSPOWER-16': noul('Is browser move a dry run unless apply; does moveOne read the AdsPower profile only when the Local API answers, else carry the saved session and say so; does it set browserDriver, clear adsPowerProfileId while recording it as the former profile, run the platform check, report moved only on signedIn, and otherwise put back the driver, profile link and session; and does nothing but releaseMoved delete a profile?'),
     'REQ-ADSPOWER-04': noul('Do open_ads_power and adsPowerDriver.prepare refuse with the missing profile code, before anything else is done, when the account has no AdsPower profile id?'),
@@ -110,7 +110,7 @@ export const adsPower = {
     'REQ-ADSPOWER-09': noul('Does open_ads_power attach with playwright.chromium.connect_over_cdp and use browser.contexts[0] when the profile has a context?'),
     'REQ-ADSPOWER-10': noul('Does open_ads_power attach a SessionHar to the context and await proxyGate.check_attached on it before yielding the Opened browser?'),
     'REQ-ADSPOWER-11': noul('Does carry_session_once add the saved Facebook cookies only when the profile has no c_user cookie, and leave the profile cookies untouched otherwise?'),
-    'REQ-ADSPOWER-12': noul('For an account whose status is a release status, does planSync return release, and does syncProfiles then delete the live profile and save a null profile id, without deleting the Twenty account?'),
+    'REQ-ADSPOWER-12': noul('For an account whose status is a release status, does planSync return release, and does syncProfiles then delete the live profile and save a null profile id, without deleting the stored account?'),
     'REQ-ADSPOWER-13': noul('When the account status command sets deactivated on an account with an adsPowerProfileId, does it call giveProfileBack, which runs syncProfiles with apply true?'),
     'REQ-ADSPOWER-14': noul('Does syncProfiles order the entries so every release entry runs before any create, relink or linked entry?'),
     'REQ-ADSPOWER-15': noul('When homes is set, does planSync release or skip an account whose homeCountry is not in homes, unless its platform runs with no proxy, with homes taken from the homes option or else the environment?'),

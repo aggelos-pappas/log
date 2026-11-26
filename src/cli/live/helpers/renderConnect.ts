@@ -16,7 +16,7 @@ const RESULT_TEXT: Record<ConnectOutput["result"], string> = {
   connected: "Signed in.",
   checkpointed: "Stopped on Facebook's checkpoint: a person has to clear it in the browser.",
   disabled: "Facebook says the account is disabled or locked.",
-  wrongPassword: "Facebook says the password is wrong (or found no account for the email). Fix it in Twenty.",
+  wrongPassword: "Facebook says the password is wrong (or found no account for the email). Fix it in the account store.",
   timedOut: "Not signed in before the deadline.",
   videoSelfie: "Facebook wants a video selfie to confirm the account. Nothing was clicked: a person has to record it, then connect again.",
   failed: "Failed.",

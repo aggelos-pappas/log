@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { hookReply } from '../../agentHooks/pageState/index'
 import { runCli } from '../../cli/runner/index'
 import type { StepReading } from '../../subq/stepReading/types'
-import { marketplaceFixture } from '../../twenty/graphql/helpers/marketplaceFixture'
+import { marketplaceFixture } from '../../accounts/store/helpers/marketplaceFixture'
 import { clearCurrentInspect, goalLine, goalMark, goalProgressOf, peeMarkdown, readOpenBrowsers, writeCurrentInspect } from './index'
 import type { GoalEvent } from './index'
 
@@ -116,7 +116,7 @@ describe('log inspect goal and finding', () => {
     writeCurrentInspect({ account: 'galwayOne', runDir, commandsPath: 'c', repliesPath: join(runDir, 'replies.jsonl'), startedAt: '2026-10-23T09:00:00.000Z', goal: GOAL })
     const out: string[] = []
     const err: string[] = []
-    const run = (argv: string[]) => runCli(argv, { twenty: marketplaceFixture(), out: (l) => out.push(l), err: (l) => err.push(l), now: () => new Date('2026-10-23T10:05:00.000Z') })
+    const run = (argv: string[]) => runCli(argv, { accounts: marketplaceFixture(), out: (l) => out.push(l), err: (l) => err.push(l), now: () => new Date('2026-10-23T10:05:00.000Z') })
     try {
       expect(await run(['inspect', 'goal', '--account', 'galwayOne'])).toBe(0)
       expect(out.join('\n')).toContain('step 04_setlocationBethlehemPa went wrong')

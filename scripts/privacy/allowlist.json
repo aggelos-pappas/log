@@ -2,6 +2,12 @@
   "emails": [],
   "findings": [
     {
+      "path": "src/cli/live/live.test.ts",
+      "rule": "gitleaks",
+      "fingerprint": "aabbdecc8a8c",
+      "why": "Dummy login and two-step secret written to a fixture account in a test"
+    },
+    {
       "path": "docs/platforms/discord/background/discordApiApplicationsPublic.md",
       "rule": "denylist",
       "fingerprint": "e48a0f97045f",
@@ -83,21 +89,26 @@
       "why": "Dummy proxy password in a test"
     },
     {
-      "path": "src/twenty/graphql/helpers/marketplaceFixture.ts",
+      "path": "src/accounts/store/helpers/marketplaceFixture.ts",
       "rule": "urlCredentials",
       "fingerprint": "96b193cdedf2",
       "why": "Dummy proxy password in a fixture"
     },
     {
-      "path": "src/knowledge/base/client.test.ts",
+      "path": "src/memory/client.test.ts",
       "rule": "urlCredentials",
       "fingerprint": "7fd3d2d9916d",
       "why": "A fake redis password the redaction test must mask"
     },
     {
-      "path": "src/knowledge/base/client.test.ts",
+      "path": "src/memory/client.test.ts",
       "rule": "gitleaks",
       "why": "A fake JWT and key the redaction test must mask"
+    },
+    {
+      "path": "src/knowledge/base/client.test.ts",
+      "rule": "gitleaks",
+      "why": "The same redaction test before it moved to src/memory, still in this branch's history"
     },
     {
       "path": "scripts/privacy/redactDocs.mjs",

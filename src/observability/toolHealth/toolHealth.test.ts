@@ -14,7 +14,7 @@ const registered: RegisteredTool[] = [
   { name: "twitterDms", module: "src/cli/twitter/index.ts" },
   { name: "discordRead", module: "src/cli/discord/index.ts" },
   { name: "slackChats", module: "src/cli/slack/index.ts" },
-  { name: "kbSearch", module: "src/cli/kb/index.ts" },
+  { name: "memorySearch", module: "src/cli/memory/index.ts" },
 ];
 
 const guides: GuideFile[] = [
@@ -26,7 +26,7 @@ const guides: GuideFile[] = [
 describe("toolHealth", () => {
   test("a terminal run counts for the MCP tool its words name", () => {
     expect(cliToolName("cli twitter dms")).toBe("twitterDms");
-    expect(cliToolName("cli kb")).toBe("kb");
+    expect(cliToolName("cli memory")).toBe("memory");
     expect(cliToolName("twitterDms")).toBeNull();
   });
 
@@ -43,7 +43,7 @@ describe("toolHealth", () => {
   });
 
   test("failing needs more than 20% failed over at least 5 calls, and names the codes", () => {
-    const few = [1, 2, 3, 4].map((n) => call("kbSearch", n, false));
+    const few = [1, 2, 3, 4].map((n) => call("memorySearch", n, false));
     const many = [1, 2, 3, 4, 5].map((n) => call("discordRead", n, n > 3, n <= 2 ? "inputInvalid" : null));
     const fine = [1, 2, 3, 4, 5].map((n) => call("twitterDms", n, n !== 1));
     const flags = failingTools([...few, ...many, ...fine]);
@@ -54,7 +54,7 @@ describe("toolHealth", () => {
   });
 
   test("unused lists registered tools no call touched, with the plays that name them, and never invents offers", () => {
-    const flags = unusedTools(registered, [call("twitterDms", 1, true), call("cli kb search", 2, true)], guides, 14);
+    const flags = unusedTools(registered, [call("twitterDms", 1, true), call("cli memory search", 2, true)], guides, 14);
     expect(flags.map((f) => f.tool)).toEqual(["discordRead", "slackChats"]);
     expect(flags.find((f) => f.tool === "slackChats")!.namedBy).toEqual(["docs/useCases/slack/dmReply.md"]);
     expect(flags.find((f) => f.tool === "discordRead")!.fix).toContain("retire");
@@ -66,7 +66,7 @@ describe("toolHealth", () => {
       { module: "src/cli/slack/index.ts", sha: "abc1234", at: NOW - 10 * DAY },
       { module: "src/cli/twitter/index.ts", sha: "def5678", at: NOW - 5 * DAY },
     ];
-    const flags = staleGuides(guides, registered, changes, ["twitter", "discord", "slack", "kb"]);
+    const flags = staleGuides(guides, registered, changes, ["twitter", "discord", "slack", "memory"]);
     expect(flags.map((f) => `${f.guide} ${f.tool} ${f.reason}`)).toEqual([
       "docs/guides/xInbox.md twitterDms schemaChanged",
       "docs/useCases/slack/dmReply.md slackChats schemaChanged",

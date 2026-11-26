@@ -125,7 +125,6 @@ PYTHON="$LOG_HOME/python/bin/python"
 ENV_FILE="$LOG_HOME/.env"
 touch "$ENV_FILE"
 grep -q '^LOG_PYTHON=' "$ENV_FILE" || printf 'LOG_PYTHON=%s\n' "$PYTHON" >> "$ENV_FILE"
-grep -q '^LOG_ACCOUNTS=' "$ENV_FILE" || printf 'LOG_ACCOUNTS=local\n' >> "$ENV_FILE"
 
 say "running the after-install steps log update runs too: the Python engines, database migrations, skills, harness plugins and the pinned local models"
 LOG_PYTHON="$PYTHON" bun "$ROOT/scripts/update/postInstall.ts" || say "some after-install steps need a look (above); run bun $ROOT/scripts/update/postInstall.ts again any time"

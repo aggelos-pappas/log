@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { COMMANDS } from "../../cli/runner/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { guardCall } from "../server/helpers/guardCall.ts";
 import { commandTools } from "../server/helpers/toolsFromCommands.ts";
 import { createLogMcpServer } from "../server/index.ts";
@@ -13,7 +13,7 @@ const entries = catalog(COMMANDS);
 const callable = entries.filter((e) => !e.terminalOnly);
 
 async function connected() {
-  const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false, readBrowsers: () => [] });
+  const server = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false, readBrowsers: () => [] });
   const client = new Client({ name: "test", version: "0.0.0" });
   const [a, b] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(b), client.connect(a)]);

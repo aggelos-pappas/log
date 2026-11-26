@@ -49,7 +49,7 @@ describe('the engines get the route in their spec, and a refused route starts no
   const marker = join(dir, 'started.txt')
   const engine = join(dir, 'engine.py')
   writeFileSync(engine, ['import json, sys', 'spec = json.load(open(sys.argv[1], encoding="utf-8"))', `open(${JSON.stringify(marker)}, "w").write("x")`, 'print(json.dumps({"ok": True, "route": spec.get("route")}))', ''].join('\n'))
-  const shape: PlatformShape = { platform: 'fake', twentyPlatform: 'DISCORD', label: 'Fake', engine, sessionCookies: [] }
+  const shape: PlatformShape = { platform: 'fake', accountPlatform: 'DISCORD', label: 'Fake', engine, sessionCookies: [] }
 
   test('the kit engine is spawned with the account route', () => {
     const run = runPlatformEngine(shape, account({ proxy: 'http://user:pw@gate.example:8080' }), { action: 'read' })

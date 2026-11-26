@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { TwitterEngineRun, TwitterEngineSpec, TwitterSessionAnswer } from "../../twitter/account/session/index.ts";
 import { fingerprint, loadQueue, saveQueue } from "../../twitter/queue/plan/index.ts";
 import { queueLogLines } from "../../twitter/queue/store/index.ts";
@@ -27,15 +27,15 @@ const POST_B = "https://x.com/bob/status/1900000000000000002";
 const POST_C = "https://x.com/carol/status/1900000000000000003";
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "xTwo", accountName: "xTwo", platform: "TWITTER", cookies: { auth_token: "a".repeat(40), ct0: "b".repeat(40) }, proxy: null });
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "xTwo", accountName: "xTwo", platform: "TWITTER", cookies: { auth_token: "a".repeat(40), ct0: "b".repeat(40) }, proxy: null });
+  return store;
 }
 
 type Script = (spec: TwitterEngineSpec) => TwitterSessionAnswer;
 
 function harness(script: Script = () => ({ ok: false, code: "notExpected" }), start = Date.parse("2026-10-26T01:00:00Z")) {
-  const twenty = fixture();
+  const store = fixture();
   const calls: TwitterEngineSpec[] = [];
   let clock = start;
   const out: string[] = [];
@@ -44,7 +44,7 @@ function harness(script: Script = () => ({ ok: false, code: "notExpected" }), st
     out.length = 0;
     err.length = 0;
     const code = await runCli(argv, {
-      twenty,
+      accounts: store,
       out: (l) => out.push(l),
       err: (l) => err.push(l),
       now: () => new Date(clock),
@@ -58,7 +58,7 @@ function harness(script: Script = () => ({ ok: false, code: "notExpected" }), st
     });
     return { code, out: out.join("\n"), err: err.join("\n") };
   };
-  return { run, calls, twenty, clockAt: () => clock };
+  return { run, calls, accounts: store, clockAt: () => clock };
 }
 
 describe("log twitter session webClient", () => {
@@ -277,11 +277,11 @@ describe("log twitter reply, quote, like, dm", () => {
     expect(h.calls[1].force).toBeUndefined();
   });
 
-  test("a dead session goes back to Twenty", async () => {
+  test("a dead session goes back to the account store", async () => {
     const h = harness(() => ({ ok: false, event: "sessionDead", code: "sessionDead", loginState: "loggedOut", detail: "401" }));
     const r = await h.run(["twitter", "like", "--account", "xTwo", "--tweet", POST_A, "--approvedBy", "the owner", "--live"]);
     expect(r.code).toBe(1);
-    expect(h.twenty.rows.socialAccounts!.find((a) => a.accountName === "xTwo")!.sessionState).toBe("loggedOut");
+    expect(h.accounts.rows.socialAccounts!.find((a) => a.accountName === "xTwo")!.sessionState).toBe("loggedOut");
   });
 });
 
@@ -414,11 +414,11 @@ describe("log twitter queue", () => {
 
   test("a cancel stops a run while it waits, sending nothing more", async () => {
     let cancel = false;
-    const twenty = fixture();
+    const store = fixture();
     const sent: TwitterEngineSpec[] = [];
     let clock = Date.parse("2026-10-26T01:00:00Z");
     const ctx = {
-      twenty,
+      accounts: store,
       out: () => {},
       err: () => {},
       now: () => new Date(clock),

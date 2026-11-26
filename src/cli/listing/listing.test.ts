@@ -64,22 +64,22 @@ describe("copy versions in listing.json", () => {
 
 describe("log facebook listing remove", () => {
   async function remove(argv: string[]) {
-    const { marketplaceFixture } = await import("../../twenty/graphql/index.ts");
-    const twenty = marketplaceFixture();
+    const { marketplaceFixture } = await import("../../accounts/store/index.ts");
+    const store = marketplaceFixture();
     const out: string[] = [];
     const err: string[] = [];
-    const code = await runCli(["facebook", "listing", "remove", ...argv], { twenty, out: (l) => out.push(l), err: (l) => err.push(l) });
-    return { code, out: out.join("\n"), err: err.join("\n"), twenty };
+    const code = await runCli(["facebook", "listing", "remove", ...argv], { accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
+    return { code, out: out.join("\n"), err: err.join("\n"), accounts: store };
   }
 
   test("a dry run names the listing, its account and the recorded flow, and changes nothing", async () => {
-    const { code, out, twenty } = await remove(["liveOne"]);
+    const { code, out, accounts } = await remove(["liveOne"]);
     expect(code).toBe(0);
-    expect(out).toContain("(111) on galwayOne, ACTIVE in Twenty.");
+    expect(out).toContain("(111) on galwayOne, ACTIVE in the account store.");
     expect(out).toContain('click button "More options for ');
     expect(out).toContain('click menuitem "Delete listing"');
-    expect(out).toContain("REMOVED in Twenty, only once Facebook's answer names this listing's id.");
-    expect(twenty.rows.agencyListings.find((r) => r.id === "liveOne")!.status).toBe("ACTIVE");
+    expect(out).toContain("REMOVED in the account store, only once Facebook's answer names this listing's id.");
+    expect(accounts.rows.agencyListings.find((r) => r.id === "liveOne")!.status).toBe("ACTIVE");
   });
 
   test("the Facebook listing id finds the row too", async () => {

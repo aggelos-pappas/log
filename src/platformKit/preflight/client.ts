@@ -35,7 +35,7 @@ export function preflightOf(account: PreflightAccount, facts: PreflightFacts, no
     const opens = facts.hostDay === today ? facts.hostOpensToday : 0
     checks.push(opens >= OPENS_PER_DAY ? fail('hostOpens', 'opensSpent', `the host opened the browser ${opens} times today, the most is ${OPENS_PER_DAY} (rule 35)`) : pass('hostOpens', `${opens} of ${OPENS_PER_DAY} today`))
   }
-  if (!account.proxy) checks.push(fail('proxy', 'noProxy', 'no proxy in Twenty (rule 12)'))
+  if (!account.proxy) checks.push(fail('proxy', 'noProxy', 'no proxy in the account store (rule 12)'))
   else if (!facts.proxy) checks.push(pass('proxy', 'not measured'))
   else if (!facts.proxy.ok) checks.push(fail('proxy', facts.proxy.code ?? 'proxyCheckFailed', facts.proxy.detail ?? 'the proxy check failed'))
   else if (facts.proxy.exitCountry && account.homeCountry && facts.proxy.exitCountry !== account.homeCountry.toUpperCase()) checks.push(fail('proxy', 'proxyWrongCountry', `exits in ${facts.proxy.exitCountry}, the account's home is ${account.homeCountry}`))

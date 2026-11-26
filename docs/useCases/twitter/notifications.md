@@ -50,7 +50,7 @@ For each post unrolled, and for `post` from what is kept, the answer says how ma
 - **Aggregated notifications are opened up, then unrolled.** "@a and 12 others liked your post" is kept as one row per person X names, and X names only some of them. The unroll reads the post's whole likers list and reposters list and adds everyone the notification left out, under the same key, so a person in both is one row. The account's own actions are never kept.
 - **One state machine runs the read.** The feed, then which posts, then likers page by page, then reposters page by page, five pages a call, at most 40 pages a run. A 429, a governor stop or the page cap ends it `stopped`, said plainly, with every row and each list's place kept; the next run goes on from there. It never retries by itself (rule 94).
 - **The lists need X's live operation.** If the answer is `engagersOperationUnknown`, X was not called: read the account's X web client once (`log twitter session webClient`), then read again.
-- **Kept, not synced anywhere.** The rows live in `~/.logCli/twitter/<account>/notifications.json`, never in Twenty.
+- **Kept, not synced anywhere.** The rows live in `~/.logCli/twitter/<account>/notifications.json`, nowhere else.
 
 ## What X shows
 

@@ -1,11 +1,11 @@
 import { join } from 'node:path'
 import { findPlatformAccount, platformGate, recordPlatformSession, runPlatformEngine, runPlatformEngineLive } from '../../../platformKit/session/index'
 import type { PlatformAccount, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from '../../../platformKit/session/index'
-import type { TwentyClient } from '../../../twenty/graphql/index'
+import type { AccountStore } from '../../../accounts/store/index'
 
 export const SLACK_PLATFORM: PlatformShape = {
   platform: 'slack',
-  twentyPlatform: 'SLACK',
+  accountPlatform: 'SLACK',
   label: 'Slack',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', 'slackApi', 'engine.py'),
   sessionCookies: ['d']
@@ -13,8 +13,8 @@ export const SLACK_PLATFORM: PlatformShape = {
 
 export const SLACK_COOKIE_DOMAIN = '.slack.com'
 
-export function findSlackAccount(twenty: TwentyClient, ref: string): Promise<PlatformAccount> {
-  return findPlatformAccount(twenty, SLACK_PLATFORM, ref)
+export function findSlackAccount(store: AccountStore, ref: string): Promise<PlatformAccount> {
+  return findPlatformAccount(store, SLACK_PLATFORM, ref)
 }
 
 export function slackGate(account: PlatformAccount): PlatformGate {
@@ -29,6 +29,6 @@ export function runSlackEngineLive(account: PlatformAccount, spec: PlatformEngin
   return runPlatformEngineLive(SLACK_PLATFORM, account, spec, onLive)
 }
 
-export function recordSlackSession(twenty: TwentyClient, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
-  return recordPlatformSession(twenty, SLACK_PLATFORM, account, run, now, SLACK_COOKIE_DOMAIN)
+export function recordSlackSession(store: AccountStore, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
+  return recordPlatformSession(store, SLACK_PLATFORM, account, run, now, SLACK_COOKIE_DOMAIN)
 }

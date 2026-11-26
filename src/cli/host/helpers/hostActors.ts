@@ -68,7 +68,7 @@ export function hostActors(context: CommandContext, account: FacebookAccount, br
   };
 
   return {
-    checkProxy: fromPromise<StepOutcome, LifecycleActorInputs["checkProxy"]>(async () => (account.proxy ? ok() : error("noProxy", "no proxy in Twenty (rule 12)"))),
+    checkProxy: fromPromise<StepOutcome, LifecycleActorInputs["checkProxy"]>(async () => (account.proxy ? ok() : error("noProxy", "no proxy in the account store (rule 12)"))),
 
     openBrowser: fromPromise<StepOutcome, LifecycleActorInputs["openBrowser"]>(async () => {
       if (account.adsPowerProfileId) {
@@ -155,8 +155,8 @@ export function hostActors(context: CommandContext, account: FacebookAccount, br
         const state = browser.run?.readStorageState();
         const signedIn = Boolean(state?.cookies.some((c) => c.name === "c_user") && state?.cookies.some((c) => c.name === "xs"));
         if (signedIn && !/\/login|login\.php/.test(url)) {
-          await saveSession(context.twenty, account.id, state!);
-          log(`host ${account.accountName}: signed in; session saved to Twenty (${state!.cookies.length} cookies)`);
+          await saveSession(context.accounts, account.id, state!);
+          log(`host ${account.accountName}: signed in; session saved to the account store (${state!.cookies.length} cookies)`);
           return ok();
         }
         if (triedForm >= 2) return issue("signInNotFinished", `still signed out on ${url} after two sign-ins`);
@@ -189,7 +189,7 @@ export function hostActors(context: CommandContext, account: FacebookAccount, br
       if (!input.live) return error("needsLive", "the profile changes Facebook: run the host with --live when the owner asks (rule 8)");
       const recorded = loadFlow("profileSetup");
       if (!recorded || !browser.session) return error("flowNotRecorded", "profileSetup");
-      if (!account.profilePhoto) return error("noProfileInTwenty", "profilePhoto is needed in Twenty");
+      if (!account.profilePhoto) return error("noProfileSaved", "profilePhoto is needed in the account store");
       const [firstName, ...rest] = (account.profileName ?? "").split(" ");
       const sources = [account.profilePhoto, account.coverPhoto].filter((p): p is string => Boolean(p));
       const photos = await preparePhotos(sources, { dir: join(browser.session.current.runDir, "photos"), proxy: fetchProxyUrl(account.proxy) });
@@ -259,7 +259,7 @@ export function hostActors(context: CommandContext, account: FacebookAccount, br
       };
       const found = await marketplaceCheck.readMarketplace(checked, log);
       if (landed) return landed;
-      const report = await marketplaceCheck.keepCheck(context.twenty, account.id, account.accountName, found, browser.session.current.runDir);
+      const report = await marketplaceCheck.keepCheck(context.accounts, account.id, account.accountName, found, browser.session.current.runDir);
       for (const line of report.lines) log(`host ${line}`);
       if (report.issue) return issue(report.issue.code, report.issue.detail);
       return ok(report.threads ? `${report.threads} seller chat(s)` : undefined);
@@ -280,7 +280,7 @@ export function hostActors(context: CommandContext, account: FacebookAccount, br
 async function placeFor(context: CommandContext, account: FacebookAccount): Promise<string | null> {
   const fromHome = homePlace(account);
   if (fromHome) return fromHome;
-  const rows = await context.twenty.list("agencyListings", { socialAccountId: { eq: account.id } });
+  const rows = await context.accounts.list("agencyListings", { socialAccountId: { eq: account.id } });
   const home = (account.homeCity ?? "").toLowerCase();
   const queries = rows.map((r) => r.locationQuery?.trim()).filter((q): q is string => Boolean(q));
   return queries.find((q) => q.split(",")[0].trim().toLowerCase() === home) ?? queries[0] ?? null;

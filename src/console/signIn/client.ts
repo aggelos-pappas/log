@@ -5,7 +5,7 @@ import { cookieCommandOf, cookieSaveBy, liveWiring, signInActorsOf } from "../..
 import { logDbSignInStore, runSignIn } from "../../platformKit/signIn/index.ts";
 import type { SignInActors, SignInResult as MachineResult, SignInRoute, SignInStore } from "../../platformKit/signIn/index.ts";
 import type { ConnectionAccount } from "../connections/index.ts";
-import { localAccountsPath, readLocalAccounts, writeLocalAccounts } from "../../twenty/graphql/index.ts";
+import { localAccountsPath, readLocalAccounts, writeLocalAccounts } from "../../accounts/store/index.ts";
 import { inProcessToolCaller } from "../accountCheck/index.ts";
 import type { CheckToolCaller } from "../accountCheck/index.ts";
 import { connectionIdOf, loadConnectionsView } from "../connections/index.ts";

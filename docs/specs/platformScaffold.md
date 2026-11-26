@@ -4,7 +4,7 @@ title: "Platform scaffold"
 
 # Platform scaffold
 
-A new platform is made whole with one command, `log new platform <name>` (MCP `newPlatform`), and one table, `PLATFORM_SITES`, says what each platform is: its Twenty value, cookie domain, hosts, home page, whether it needs a proxy and whether it has a browser path. `log inspect`, the account's browser and the AdsPower sync read that table, so a new platform is explored the same way as Facebook. Rules 83 and 84.
+A new platform is made whole with one command, `log new platform <name>` (MCP `newPlatform`), and one table, `PLATFORM_SITES`, says what each platform is: its account platform value (`accountPlatform`), cookie domain, hosts, home page, whether it needs a proxy and whether it has a browser path. `log inspect`, the account's browser and the AdsPower sync read that table, so a new platform is explored the same way as Facebook. Rules 83 and 84.
 
 ## Making a platform
 
@@ -44,12 +44,6 @@ A platform name that isn't camelCase starting with a lowercase letter is refused
 
 Checked by: code and SubQ
 
-### REQ-PLATFORM-07: It names what Twenty is missing and never changes Twenty
-
-When a configured Twenty workspace's `socialAccounts.platform` has no option for the new platform, the plan says so in a note (add it in the Twenty setup script, then regenerate the client). The command never writes to Twenty.
-
-Checked by: code and SubQ
-
 ### REQ-PLATFORM-08: The command writes the platform's row in the table
 
 The new platform's `PLATFORM_SITES` row is written from `--hosts` (default `<name>.com`), `--home` (default `https://www.<first host>/`, which must be a https URL on one of its hosts), `--noProxy` (proxy `none`, else `required`) and `--noBrowser` (no browser path).
@@ -66,7 +60,7 @@ Checked by: code and SubQ
 
 ### REQ-PLATFORM-10: Each platform's row says what it is
 
-`PLATFORM_SITES` has a row for every platform, with its Twenty value, cookie domain, hosts, home page, `proxy` (`required` or `none`) and `browser`. Facebook's proxy is `required` (rule 12, unchanged). X (twitter) has no browser path (rule 80). Reddit's proxy is `none`.
+`PLATFORM_SITES` has a row for every platform, with its account platform value (`accountPlatform`), cookie domain, hosts, home page, `proxy` (`required` or `none`) and `browser`. Facebook's proxy is `required` (rule 12, unchanged). X (twitter) has no browser path (rule 80). Reddit's proxy is `none`.
 
 Checked by: code (anchors)
 

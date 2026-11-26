@@ -1,21 +1,21 @@
 import { describe, expect, test } from "bun:test";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { mergeCookieShape, twitterCookies } from "../../twitter/account/session/index.ts";
 import type { TwitterEngineRun } from "../../twitter/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "xTwo", accountName: "xTwo", platform: "TWITTER", cookies: [{ name: "auth_token", value: "a".repeat(40), domain: ".x.com" }, { name: "ct0", value: "b".repeat(40), domain: ".x.com" }], proxy: null });
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "xTwo", accountName: "xTwo", platform: "TWITTER", cookies: [{ name: "auth_token", value: "a".repeat(40), domain: ".x.com" }, { name: "ct0", value: "b".repeat(40), domain: ".x.com" }], proxy: null });
+  return store;
 }
 
-async function run(argv: string[], engine?: TwitterEngineRun, twenty = fixture()) {
+async function run(argv: string[], engine?: TwitterEngineRun, store = fixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const calls: string[] = [];
   const code = await runCli(argv, {
-    twenty,
+    accounts: store,
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     directTwitter: (account, spec) => {
@@ -23,12 +23,12 @@ async function run(argv: string[], engine?: TwitterEngineRun, twenty = fixture()
       return engine ?? { answer: { ok: false, code: "notExpected" }, refreshed: null };
     },
   });
-  const row = twenty.rows.socialAccounts!.find((r) => r.accountName === "xTwo")!;
+  const row = store.rows.socialAccounts!.find((r) => r.accountName === "xTwo")!;
   return { code, out: out.join("\n"), err: err.join("\n"), calls, row };
 }
 
 describe("log twitter session check", () => {
-  test("loggedIn: on the direct-API engine with no proxy, sessionState and refreshed cookies go back to Twenty in the stored shape", async () => {
+  test("loggedIn: on the direct-API engine with no proxy, sessionState and refreshed cookies go back to the account store in the stored shape", async () => {
     const r = await run(["twitter", "session", "check", "--account", "xTwo"], { answer: { ok: true, loginState: "loggedIn", httpStatus: 404, userId: "42", screenName: "xtwo" }, refreshed: { ct0: "c".repeat(40), guest_id: "v1" } });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["xTwo:ping"]);
@@ -39,16 +39,16 @@ describe("log twitter session check", () => {
     expect(cookies.find((c) => c.name === "guest_id")).toMatchObject({ value: "v1", domain: ".x.com" });
   });
 
-  test("a check that changes nothing within the hour skips the Twenty write, and a changed cookie still writes", async () => {
-    const twenty = fixture();
+  test("a check that changes nothing within the hour skips the account store write, and a changed cookie still writes", async () => {
+    const store = fixture();
     const same = { answer: { ok: true, loginState: "loggedIn" as const, httpStatus: 404, userId: "42", screenName: "xtwo" }, refreshed: { ct0: "b".repeat(40) } };
-    const first = await run(["twitter", "session", "check", "--account", "xTwo"], same, twenty);
-    expect(first.err).toContain("Twenty: xTwo sessionState loggedIn");
+    const first = await run(["twitter", "session", "check", "--account", "xTwo"], same, store);
+    expect(first.err).toContain("Local accounts: xTwo sessionState loggedIn");
     const checkedAt = first.row.sessionCheckedAt;
-    const second = await run(["twitter", "session", "check", "--account", "xTwo"], same, twenty);
-    expect(second.err).not.toContain("Twenty:");
+    const second = await run(["twitter", "session", "check", "--account", "xTwo"], same, store);
+    expect(second.err).not.toContain("Local accounts:");
     expect(second.row.sessionCheckedAt).toBe(checkedAt);
-    const third = await run(["twitter", "session", "check", "--account", "xTwo"], { ...same, refreshed: { ct0: "d".repeat(40) } }, twenty);
+    const third = await run(["twitter", "session", "check", "--account", "xTwo"], { ...same, refreshed: { ct0: "d".repeat(40) } }, store);
     expect(third.err).toContain("its refreshed cookies merged back");
   });
 
@@ -79,7 +79,7 @@ describe("log twitter session check", () => {
 });
 
 describe("cookies", () => {
-  test("every shape Twenty may hold is read, and a merge keeps the stored shape", () => {
+  test("every shape the store may hold is read, and a merge keeps the stored shape", () => {
     expect(twitterCookies("auth_token=a; ct0=b")).toEqual({ auth_token: "a", ct0: "b" });
     expect(twitterCookies('{"auth_token":"a"}')).toEqual({ auth_token: "a" });
     expect(twitterCookies([{ name: "ct0", value: "b" }])).toEqual({ ct0: "b" });

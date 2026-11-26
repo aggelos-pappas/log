@@ -8,8 +8,7 @@ import { homeOf, outsideActiveHours } from '../../platformKit/home/index'
 import { engineRoute, parseProxyUrl } from '../../platformKit/socialAccount/index'
 import type { FacebookAccount } from '../../platformKit/socialAccount/index'
 import { setStatusAndReplace } from '../../facebook/marketplace/replacement/index'
-import { accountStore } from '../../twenty/graphql/index'
-import type { TwentyClient } from '../../twenty/graphql/index'
+import type { AccountStore } from '../../accounts/store/index'
 import { accountHasSession, cookiesOf, lastJsonLine, netscape, sessionStateOf } from './helpers/index'
 import type { LocalEngineState, CommandEngine, DirectGate, DirectOutcome, DirectRoute, EngineAnswer, EngineSpec, GovernorStatus, SessionState } from './types'
 import { WRITES_PER_DAY_DEFAULT, writesPerDayOf } from './types'
@@ -53,7 +52,7 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   redditReply: { platform: 'reddit', library: 'reverseChud', only: true, surface: 'posts', method: 'reply', when: 'a comment or reply', seam: 'directReddit' },
   redditVote: { platform: 'reddit', library: 'reverseChud', only: true, surface: 'posts', method: 'vote', when: 'a vote', seam: 'directReddit' },
   discordSession: { platform: 'discord', library: 'endcord', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directDiscord' },
-  discordSecrets: { platform: 'discord', library: 'endcord', only: true, surface: 'account', method: 'none', when: 'secrets (a Clack prompt; the email, password and 2FA secret go to Twenty, Discord is not called)', seam: 'directDiscord' },
+  discordSecrets: { platform: 'discord', library: 'endcord', only: true, surface: 'account', method: 'none', when: 'secrets (a Clack prompt; the email, password and 2FA secret go to the account store, Discord is not called)', seam: 'directDiscord' },
   discordChats: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'get_dms', when: 'chats (the DMs and group DMs)', seam: 'directDiscord' },
   discordRead: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'get_messages', when: 'read (a chat or channel, paged with before)', seam: 'directDiscord' },
   discordServers: { platform: 'discord', library: 'endcord', only: true, surface: 'account', method: 'get_guilds', when: 'servers (the servers the account is in)', seam: 'directDiscord' },
@@ -117,10 +116,10 @@ export function engineHead(route: DirectRoute): string {
 }
 
 export function platformEngineText(platform: string): string {
-  if (platform === 'twitter') return `X's own answer decides: the session check's HTTP status first (401 or 403 is loggedOut, 200 or 404 loggedIn), then the call's own answer, read into one event (sent, dropped, throttled, dailyLimit, gone, automated, duplicate, sessionDead, restricted). Each account has its own governor under ~/.logCli/twitter/<account> (sends count as writes, ${writesPerDayOf('twitter')} a day), refreshed cookies are merged back into its Twenty row, and the session state is written to socialAccounts.sessionState.`
+  if (platform === 'twitter') return `X's own answer decides: the session check's HTTP status first (401 or 403 is loggedOut, 200 or 404 loggedIn), then the call's own answer, read into one event (sent, dropped, throttled, dailyLimit, gone, automated, duplicate, sessionDead, restricted). Each account has its own governor under ~/.logCli/twitter/<account> (sends count as writes, ${writesPerDayOf('twitter')} a day), refreshed cookies are merged back into its account row, and the session state is written to socialAccounts.sessionState.`
   if (platform !== 'facebook') {
     const label = isPlatform(platform) ? PLATFORM_LABELS[platform] : platform
-    return `${label}'s own answer decides. Each account has its own governor under ~/.logCli/${platform}/<account>, refreshed cookies are merged back into its Twenty row, and the session state is written to socialAccounts.sessionState.`
+    return `${label}'s own answer decides. Each account has its own governor under ~/.logCli/${platform}/<account>, refreshed cookies are merged back into its account row, and the session state is written to socialAccounts.sessionState.`
   }
   return `Facebook's own page decides, not accountStatus: loggedIn reads; checkpoint stops and deactivates the account; loggedOut or accountWarning hands over to the browser path. Each account has its own governor (gaps of 4 s or more, 120 an hour, 500 a day, 40 writes a day, a 15-minute pause on a soft block, 6 hours on a checkpoint) and its result is written to socialAccounts.sessionState.`
 }
@@ -267,14 +266,14 @@ export function outcomeOf<Row>(answer: EngineAnswer<Row>): DirectOutcome<Row> {
   }
 }
 
-export async function recordSessionState(twenty: TwentyClient, account: FacebookAccount, state: SessionState | null, now: Date): Promise<string[]> {
+export async function recordSessionState(store: AccountStore, account: FacebookAccount, state: SessionState | null, now: Date): Promise<string[]> {
   if (!state) return []
-  await twenty.update('socialAccounts', account.id, { sessionState: state, sessionCheckedAt: now.toISOString() } as never)
+  await store.update('socialAccounts', account.id, { sessionState: state, sessionCheckedAt: now.toISOString() } as never)
   writeLocalSession(account.accountName, state, now)
-  const lines = [`${accountStore(account.id)}: ${account.accountName} sessionState ${state} (Facebook's own page, read by the direct-API engine).`]
+  const lines = [`Local accounts: ${account.accountName} sessionState ${state} (Facebook's own page, read by the direct-API engine).`]
   if (state === 'checkpoint' && account.status !== 'deactivated') {
-    await setStatusAndReplace(twenty, account, 'deactivated', 'checkpointed', "the direct-API engine's bootstrap read is_checkpointed", now)
-    lines.push(`${accountStore(account.id)}: ${account.accountName} is checkpointed, so it is DEACTIVATED and its listings are marked lost.`)
+    await setStatusAndReplace(store, account, 'deactivated', 'checkpointed', "the direct-API engine's bootstrap read is_checkpointed", now)
+    lines.push(`Local accounts: ${account.accountName} is checkpointed, so it is DEACTIVATED and its listings are marked lost.`)
   }
   return lines
 }

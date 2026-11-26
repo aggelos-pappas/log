@@ -123,7 +123,7 @@ describe('connectMachine', () => {
     expect(output.result).toBe('timedOut')
   })
 
-  test('without Twenty details (connect without --noPrompt) every page is the person\'s', async () => {
+  test('without saved details (connect without --noPrompt) every page is the person\'s', async () => {
     const { output, calls } = await runConnect([page('loginForm'), page('twoStepCode'), page('loggedIn')], { hasPassword: false, hasTotp: false })
     expect(output.result).toBe('connected')
     expect(calls).toEqual(['open', 'save'])

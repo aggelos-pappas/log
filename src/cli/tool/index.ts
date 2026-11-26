@@ -33,7 +33,7 @@ export const TOOL_INPUT: CommandInput = {
         { name: "flags", kind: "list", description: "Its inputs, a,b" },
         { name: "area", kind: "string", description: "Use case folder (inbox)" },
         { name: "asks", kind: "list", description: "The owner's asks, a,b" },
-        { name: "guide", kind: "string", description: "Guide group (knowledgeAndSearch)" },
+        { name: "guide", kind: "string", description: "Guide group (memoryAndSearch)" },
         { name: "apply", kind: "boolean", live: true, description: "Write it (without it, only list what it would do)" },
         JSON_FLAG,
       ],

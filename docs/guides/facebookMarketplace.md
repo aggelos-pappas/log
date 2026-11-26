@@ -20,27 +20,27 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 
 | Tool | What it does | Usage |
 |---|---|---|
-| `facebookListings` | List the Twenty listings | `log facebook listings [--status <STATUS>] [--account <accountName>] [--campaign <campaignId>] [--json]` |
-| `facebookListing` | One listing in full | `log facebook listing <agencyListingId> [--json]` |
-| `facebookListingCreate` | Create a listing in Twenty from a listing.json | `log facebook listing create --account <accountName> --file <listing.json> [--json]` |
-| `facebookListingRemove` | Delete a listing on Facebook from its account's Selling page, then… | `log facebook listing remove <agencyListingId\|facebookListingId> [--live] [--bypass] [--now] [--json]   (delete it on Facebook through the recorded flow marketplaceListingDelete, then REMOVED in Twenty; a dry run unless --live)` |
-| `facebookListingRemoveLive` | Delete a listing on Facebook from its account's…, live on Facebook | `log facebook listing remove <agencyListingId\|facebookListingId> [--live] [--bypass] [--now] [--json]   (delete it on Facebook through the recorded flow marketplaceListingDelete, then REMOVED in Twenty; a dry run unless --live)` |
-| `facebookListingSweep` | Mark every listing of a blocked account ACCOUNT_LOST | `log facebook listing sweep [--apply] [--json]   (every listing whose account is blocked (checkpoint, restricted, banned, dead, deactivated, or a wrong password) is marked ACCOUNT_LOST, and a campaign's copy goes to another account; a dry run unless --apply)` |
-| `facebookListingSweepLive` | Mark every listing of a blocked account ACCOUNT_LOST, live on Facebook | `log facebook listing sweep [--apply] [--json]   (every listing whose account is blocked (checkpoint, restricted, banned, dead, deactivated, or a wrong password) is marked ACCOUNT_LOST, and a campaign's copy goes to another account; a dry run unless --apply)` |
+| `facebookListings` | Retired: #339) | `log facebook listings [--status <STATUS>] [--account <accountName>] [--campaign <campaignId>] [--json]` |
+| `facebookListing` | Retired: #339) | `log facebook listing <agencyListingId> [--json]` |
+| `facebookListingCreate` | Retired: #339) | `log facebook listing create --account <accountName> --file <listing.json> [--json]` |
+| `facebookListingRemove` | Retired: #339) | `log facebook listing remove <agencyListingId\|facebookListingId> [--live] [--bypass] [--now] [--json]   (delete it on Facebook through the recorded flow marketplaceListingDelete, then REMOVED; a dry run unless --live)` |
+| `facebookListingRemoveLive` | Retired: #339), live on Facebook | `log facebook listing remove <agencyListingId\|facebookListingId> [--live] [--bypass] [--now] [--json]   (delete it on Facebook through the recorded flow marketplaceListingDelete, then REMOVED; a dry run unless --live)` |
+| `facebookListingSweep` | Retired: #339) | `log facebook listing sweep [--apply] [--json]   (every listing whose account is blocked (checkpoint, restricted, banned, dead, deactivated, or a wrong password) is marked ACCOUNT_LOST, and a campaign's copy goes to another account; a dry run unless --apply)` |
+| `facebookListingSweepLive` | Retired: #339), live on Facebook | `log facebook listing sweep [--apply] [--json]   (every listing whose account is blocked (checkpoint, restricted, banned, dead, deactivated, or a wrong password) is marked ACCOUNT_LOST, and a campaign's copy goes to another account; a dry run unless --apply)` |
 | `facebookListingLint` | Check a listing.json against the copy rules and the create form… | `log facebook listing lint --file <listing.json> [--json]   (the copy rules on the file's copy versions, and whether it would publish; nothing is saved)` |
-| `facebookPublish` | Post one Twenty listing | `log facebook publish --listing <agencyListingId> [--live] [--json] [--formUrl <url>] [--bypass] [--now]` |
-| `facebookPublishLive` | Post one Twenty listing, live on Facebook | `log facebook publish --listing <agencyListingId> [--live] [--json] [--formUrl <url>] [--bypass] [--now]` |
-| `facebookCampaignFill` | Put one ad on N accounts in the campaign's place, each with its own… | `log facebook campaign fill --campaign <agencyCampaignId> --from <agencyListingId> --accounts <n>` |
-| `facebookCampaignHeal` | Hand each ACCOUNT_LOST listing in the campaign to another account | `log facebook campaign heal --campaign <agencyCampaignId>` |
-| `facebookCampaignRun` | Publish the campaign's READY listings | `log facebook campaign run  --campaign <agencyCampaignId> [--live] [--bypass]` |
-| `facebookCampaignRunLive` | Publish the campaign's READY listings, live on Facebook | `log facebook campaign run  --campaign <agencyCampaignId> [--live] [--bypass]` |
-| `facebookCampaignShow` | The campaign's listings and the account each is on | `log facebook campaign show --campaign <agencyCampaignId> [--json]` |
-| `facebookConversations` | List the buyers' conversations | `log facebook conversations [--account <name>] [--listing <agencyListingId>] [--json]` |
-| `facebookConversationShow` | A conversation and its messages | `log facebook conversation show <id> [--json]` |
-| `facebookConversationRead` | Mark its messages read | `log facebook conversation read <id>` |
-| `facebookConversationLead` | Set its lead status | `log facebook conversation lead <id> <NEW\|CONTACTED\|QUALIFIED\|BOOKED\|LOST\|SPAM>` |
-| `facebookConversationLink` | Link it to its listing | `log facebook conversation link <id> --listing <agencyListingId>` |
-| `facebookConversationRecord` | Store scanned threads | `log facebook conversation record --account <name> --file <threads.json>` |
+| `facebookPublish` | Retired: #339) | `log facebook publish --listing <agencyListingId> [--live] [--json] [--formUrl <url>] [--bypass] [--now]` |
+| `facebookPublishLive` | Retired: #339), live on Facebook | `log facebook publish --listing <agencyListingId> [--live] [--json] [--formUrl <url>] [--bypass] [--now]` |
+| `facebookCampaignFill` | Retired: #339) | `log facebook campaign fill --campaign <agencyCampaignId> --from <agencyListingId> --accounts <n>` |
+| `facebookCampaignHeal` | Retired: #339) | `log facebook campaign heal --campaign <agencyCampaignId>` |
+| `facebookCampaignRun` | Retired: #339) | `log facebook campaign run  --campaign <agencyCampaignId> [--live] [--bypass]` |
+| `facebookCampaignRunLive` | Retired: #339), live on Facebook | `log facebook campaign run  --campaign <agencyCampaignId> [--live] [--bypass]` |
+| `facebookCampaignShow` | Retired: #339) | `log facebook campaign show --campaign <agencyCampaignId> [--json]` |
+| `facebookConversations` | Retired: #339) | `log facebook conversations [--account <name>] [--listing <agencyListingId>] [--json]` |
+| `facebookConversationShow` | Retired: #339) | `log facebook conversation show <id> [--json]` |
+| `facebookConversationRead` | Retired: #339) | `log facebook conversation read <id>` |
+| `facebookConversationLead` | Retired: #339) | `log facebook conversation lead <id> <NEW\|CONTACTED\|QUALIFIED\|BOOKED\|LOST\|SPAM>` |
+| `facebookConversationLink` | Retired: #339) | `log facebook conversation link <id> --listing <agencyListingId>` |
+| `facebookConversationRecord` | Retired: #339) | `log facebook conversation record --account <name> --file <threads.json>` |
 
 ## The work, step by step: accountToDryRun
 
@@ -52,6 +52,10 @@ Every step is an `mcp__log__*` tool (the `log` MCP server, `bun run mcp`).
 The same thing works in a terminal as `log <command> <args>`.
 Nothing here posts to Facebook. Going live is the last step, and only when
 The owner says so.
+
+**Retired (#339).** Listings were kept only in Twenty, which log no longer
+uses, so `listing`, `publish` and `scan` refuse with `twentyRemoved` until
+they are rebuilt on log.db. The account steps still work.
 
 ### Hard boundaries
 
@@ -113,10 +117,8 @@ CHECKPOINT), `wrongPassword`, `disabled` (BANNED) or `signInNotFinished`
 (NEEDSLOGIN), each naming the last page.
 
 Before the first connect, the account needs `email`, `password` and
-`totpSecret` on its account row. The vendor import writes them to a Twenty workspace:
-`node scripts/twenty/importVendorAccounts.mjs` (dry run, each field `<set>`/`<empty>`),
-then `--apply`. It reads every `docs/vendors/*.txt`. With `LOG_ACCOUNTS=local`, copy them into
-the local account store afterwards with `log localAccount pull`.
+`totpSecret` on its row in the account store. `log localAccount login --platform facebook
+--account <a>` saves the email and password from masked prompts, in a terminal.
 
 Check it:
 
@@ -133,7 +135,7 @@ names. Run step 3 again with someone at the window.
 mcp__log__facebookScan      args ["--account", "<a>"]    Marketplace > Selling loads
 ```
 
-#### 5. The listing row in Twenty (legacy Marketplace agency)
+#### 5. The listing row (retired, #339)
 
 Write the ad as JSON. Photos are local paths or URLs, and the first one is
 the cover:
@@ -639,13 +641,15 @@ listing and account. Each message is an `agencyMessage` in it. The shape,
 and where each field came from, is in
 `docs/conversations.md`.
 
+**Retired (#339).** Conversations were kept only in Twenty, which log no
+longer uses, so these commands refuse with `twentyRemoved` until they are
+rebuilt on log.db.
+
 ### Hard boundaries
 
-1. **Twenty only.** These commands never open a browser and never write to
+1. **Stored records only.** These commands never open a browser and never write to
    Facebook (rule 8). Replying waits for the owner.
-2. **Additive**. A field is only ever added through
-   `scripts/twenty/twentySetup.mjs`, then the client is regenerated
-   (`bun run twenty:client`). blaster's SMS fields are never
+2. **Additive**. A field is only ever added. blaster's SMS fields are never
    renamed or retyped.
 3. **Never guess the listing.** A thread is tied to a listing by the
    Facebook listing id, or by a title only one listing on the account has.

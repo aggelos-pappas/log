@@ -85,7 +85,7 @@ function usageOf(shape: SendShape): string {
     `Usage: log twitter ${shape.action} --account <accountName>${target ? ` ${target}` : ""}${text} [--approvedBy <who>]${skip} [--force] [--live] [--json]`,
     `${shape.summary.replace(", on the direct-API engine; a dry run unless --live", "")}, on the direct-API engine (no browser; direct unless it has a proxy, rule 80).`,
     `Without --live it is a dry run: the target${shape.text ? ", the text and its house style" : ""} are checked and X is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). The session is checked first, and the account's governor counts it as a write (${writesPerDayOf("twitter")} a day). --force goes past the governor's pause and caps for this one call, only when the owner asked (rule 86): X still answers, and its answer still decides.`,
-    `${shape.says}. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to Twenty.`,
+    `${shape.says}. Every answer is one event: sent, dropped, throttled, dailyLimit (344), gone (385/433), automated (226), duplicate (187), sessionDead (401), restricted. The session state and X's refreshed cookies go back to the account store.`,
   ].join("\n");
 }
 
@@ -223,7 +223,7 @@ function sendCommand(shape: SendShape): Command {
         context.err(`${account.accountName}: ${shape.action === "post" ? "new post" : `${shape.action} ${plan.target}`}${split ? ` ${splitLine(split)}` : ""} on the direct-API engine, X called directly, approved by ${plan.spec.approvedBy}`);
         if (split) {
           const group = /^g\d+$/.test(plan.target);
-          const groupPin = group ? String((await context.twenty.loginSecrets(account.id).catch(() => null))?.messengerPin ?? "") : "";
+          const groupPin = group ? String((await context.accounts.loginSecrets(account.id).catch(() => null))?.messengerPin ?? "") : "";
           if (group && !groupPin) return refuse(label, "xchatPinMissing", `${account.accountName} has no X Chat PIN saved, so the X Chat group ${plan.target} can't be opened to send: the owner saves it once with log twitter chat pin --account ${account.accountName}`);
           const spec = { ...(parsed.flags["force"] === true ? { ...plan.spec, force: true } : plan.spec), ...(groupPin ? { chatPin: groupPin } : {}) };
           const acted = await runAction<HeldGuard, DmParts>({

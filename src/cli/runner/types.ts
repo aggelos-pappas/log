@@ -4,7 +4,7 @@ import type { ConnectTiming } from "../../platformKit/connect/index.ts";
 import type { WorkerClient } from "../../camofox/worker/index.ts";
 import type { ConnectionRecord } from "../../platformKit/account/index.ts";
 import type { ListingRecord } from "../../facebook/marketplace/listing/index.ts";
-import type { TwentyClient } from "../../twenty/graphql/index.ts";
+import type { AccountStore } from "../../accounts/store/index.ts";
 import type { AdsPowerClient } from "../../browser/adsPower/index.ts";
 import type { DecisionsClient } from "../../subq/decisions/index.ts";
 import type { Embedder } from "../../search/conversations/types.ts";
@@ -25,7 +25,7 @@ export interface MarketplaceData {
 
 export interface CommandContext {
   load: () => MarketplaceData;
-  twenty: TwentyClient;
+  accounts: AccountStore;
   worker: WorkerClient;
   session: SessionFactory;
   connectSession: ConnectSessionFactory;

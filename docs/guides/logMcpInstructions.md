@@ -105,7 +105,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 |---|---|
 | `logCatalog` | Finding and running any log command with three tools: logSearch by what you want done, logGet for its inputs and a call that works, logCall to run it |
 | `accountBrowser` | An account's one browser on any platform: opening it through its gates, inspecting a page step by step, where every open browser is, the live view for signing in, AdsPower profiles and local accounts |
-| `sessions` | Whether each account's saved session still works, from the platform's own answer, with the next step to sign it back in; and log's own sign-in for a team (login, logout, whoami) |
+| `sessions` | Whether each account's saved session still works, from the platform's own answer, with the next step to sign it back in |
 | `flows` | Recorded flows and the warm-up on any platform: a recording turned into steps that run in the account's open browser, each step checked against the call it must cause |
 | `inbox` | All chats as one inbox: listing, reading, watching, sending, reacting, voice notes, who waits on a reply, claiming a chat, and every action's log |
 | `voiceGate` | The voice gate on every send as the owner: the draft checked against his writing, and its indexes |
@@ -122,7 +122,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `linkedin` | A LinkedIn account: saving its cookies, checking its session, posting or deleting its own posts, inviting people LinkedIn suggests, liking and reposting posts, seeing how its own posts are doing, and reading and writing in its conversations |
 | `accountsAndProxies` | Every account in the workspace with its session state, and each account's proxy: checking it, giving it one from a provider in its home city, and providers' traffic; and the interactive launcher and agent setup command that set log up and add accounts |
 | `runsAndEvidence` | What runs leave behind: run folders and pruning, captures and request docs, error codes, jobs, every call's timings, log.db's typed tables checked and rebuilt from its events, and the MCP server itself, including turning its hooks, pushes and tools off and on from inside a harness |
-| `knowledgeAndSearch` | Knowledge base, search, Relate graph, people, voice notes |
+| `memoryAndSearch` | Memory, search, Relate graph, people, voice notes |
 | `extensions` | Extensions that make an account more human: Memelord's memes sent in context, the owner's cloned voice (Inworld or Fish Audio) for voice notes, every paid provider's balance, and treg's catalog of endpoints for every lookup |
 | `console` | The local console: this machine's log.db, MCP, accounts, usage, events, AI client config, settings and provider keys, read in the terminal, as JSON per screen, or in the web console on loopback with no sign-in |
 | `governor` | Every platform account's governor: its daily count of requests and writes, reading it, and putting it back to 0 when the owner says so, recorded in log.db |

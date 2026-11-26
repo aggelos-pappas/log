@@ -1,11 +1,11 @@
-%% The browser layer. log-cli is browser-agnostic: each account's browser is a driver picked from Twenty, AdsPower first, and every driver opens through the same gates. Whether the gate needs a proxy is the platform's (`PLATFORM_SITES`). From `BROWSER_DRIVERS` (`src/browser/driver`) and `commandBrowser` (`src/browser/run`).
+%% The browser layer. log-cli is browser-agnostic: each account's browser is a driver picked from the account store, AdsPower first, and every driver opens through the same gates. Whether the gate needs a proxy is the platform's (`PLATFORM_SITES`). From `BROWSER_DRIVERS` (`src/browser/driver`) and `commandBrowser` (`src/browser/run`).
 %% Written by `bun run docs:build` from the code (rule 56). Not edited by hand.
 flowchart LR
-  twenty["Twenty socialAccounts: platform, browserDriver, adsPowerProfileId"]
+  accounts["Account store socialAccounts: platform, browserDriver, adsPowerProfileId"]
   pick{"driverNameOf"}
   gates["Every driver: the proxy gate (Facebook: a proxy in the home country, rule 12. Reddit, Discord, LinkedIn, Slack, Instagram, TikTok: no proxy, rule 84), self-check, HAR, human mouse (rules 17, 22, 32)"]
   session["One Playwright context: python/browser/browserDriver.py"]
-  twenty --> pick
+  accounts --> pick
   pick -->|"browserDriver camoufox, or nothing set"| d_camoufox["camoufox"]
   pick -->|"a linked profile, or browserDriver adsPower"| d_adsPower["adsPower"]
   pick -->|"browserDriver brave, or LOG_BROWSER_DRIVER=brave"| d_brave["brave"]

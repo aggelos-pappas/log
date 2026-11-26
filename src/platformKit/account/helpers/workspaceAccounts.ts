@@ -1,4 +1,4 @@
-import { readLocalAccounts } from '../../../twenty/graphql/index'
+import { readLocalAccounts } from '../../../accounts/store/index'
 
 export const WORKSPACE_ACCOUNTS_DEFAULT_LIMIT = 50
 export const WORKSPACE_ACCOUNTS_MAX_LIMIT = 200

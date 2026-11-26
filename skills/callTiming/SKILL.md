@@ -15,7 +15,7 @@ description: Find where a log call spends its time from stored timings, never a 
    - `host.queue` or `account.lock`: another call held the account.
    - `spacing` or `governor`: pacing, which is there on purpose.
    - `inbox.waitCaughtUp`: the account was behind.
-   - `voice.*` or `fetch …`: SubQ, Jina or Twenty.
+   - `voice.*` or `fetch …`: SubQ or Jina.
    - `http …`: the platform itself.
    - `unaccounted`: our own code with no span yet. Add one.
 4. **Go deeper only when a span can't explain it.** Run `py-spy record --native --pid <host pid>` on the Python host, or `bun --cpu-prof` on Bun, to see which function and library the time is in.

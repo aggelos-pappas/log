@@ -51,7 +51,7 @@ export const instagramSessionCommand: Command = {
   name: "session",
   effect: "read",
   input: INSTAGRAM_SESSION_INPUT,
-  summary: "Check that Instagram still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty",
+  summary: "Check that Instagram still accepts an account's saved session, on the direct-API engine, sending nothing; the answer is saved",
   args: "check --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(INSTAGRAM_SESSION_INPUT));
@@ -60,13 +60,13 @@ export const instagramSessionCommand: Command = {
     const ref = parsed.flags["account"];
     if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log instagram session check: --account is needed\n${INSTAGRAM_SESSION_USAGE}` };
     try {
-      const account = await findInstagramAccount(context.twenty, ref);
+      const account = await findInstagramAccount(context.accounts, ref);
       const gate = instagramGate(account);
       if (!gate.ok) return refuse("instagram session check", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directInstagram) return { code: 1, stderr: "log instagram session check: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: session check on the direct-API engine (instagrapi)`);
       const run = context.directInstagram(account, { action: "ping" });
-      for (const line of await recordInstagramSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordInstagramSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "instagram", account: account.accountName, ...run.answer }, null, 2) };
       return { code, stdout: render(account.accountName, run.answer) };
@@ -162,7 +162,7 @@ export const instagramDmsCommand: Command = {
     const limit = numberOf(parsed, "limit") ?? (said ? 30 : 20);
     if (limit > most) return { code: 1, error: "inputInvalid", stderr: `log instagram dms: --limit must be 1 to ${most}\n${INSTAGRAM_DMS_USAGE}` };
     try {
-      const account = await findInstagramAccount(context.twenty, String(parsed.flags["account"]));
+      const account = await findInstagramAccount(context.accounts, String(parsed.flags["account"]));
       const gate = instagramGate(account);
       if (!gate.ok) return refuse("instagram dms", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directInstagram) return { code: 1, stderr: "log instagram dms: the direct-API engine isn't wired in this context" };
@@ -249,7 +249,7 @@ export const instagramSendCommand: Command = {
     const lines = asOne ? (text.trim() ? [text.trim()] : []) : text.split("\n").map((l) => l.trim()).filter(Boolean);
     const plan = [...(photo ? [`(photo) ${photo}`] : []), ...lines];
     try {
-      const account = await findInstagramAccount(context.twenty, String(parsed.flags["account"]));
+      const account = await findInstagramAccount(context.accounts, String(parsed.flags["account"]));
       const gate = instagramGate(account);
       if (!gate.ok) return refuse("instagram send", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directInstagram) return { code: 1, stderr: "log instagram send: the direct-API engine isn't wired in this context" };
@@ -357,7 +357,7 @@ export const instagramWatchCommand: Command = {
     const seconds = numberOf(parsed, "seconds") ?? 0;
     if (seconds !== 0 && seconds < 5) return refuse("instagram watch", "secondsInvalid", "--seconds must be at least 5");
     try {
-      const account = await findInstagramAccount(context.twenty, String(parsed.flags["account"]));
+      const account = await findInstagramAccount(context.accounts, String(parsed.flags["account"]));
       const gate = instagramGate(account);
       if (!gate.ok) return refuse("instagram watch", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directInstagramLive) return { code: 1, stderr: "log instagram watch: the direct-API engine isn't wired in this context" };

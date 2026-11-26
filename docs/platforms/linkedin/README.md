@@ -6,7 +6,7 @@ Made by `log new platform linkedin`. LinkedIn is a platform of its own: every co
 
 | Part | Where |
 | --- | --- |
-| The accounts | `socialAccounts` with platform `LINKEDIN`, in the local account store `~/.logCli/localAccounts.json` (or Twenty if you keep accounts there) |
+| The accounts | `socialAccounts` with platform `LINKEDIN`, in the local account store `~/.logCli/localAccounts.json` |
 | The session (find the account, its gate, its engine, the answer back to the account row) | `src/linkedin/account/session`, on the shared `src/platformKit/session` |
 | The commands | `src/cli/linkedin/index.ts`: `log linkedin session check` (MCP `linkedinSessionCheck`) |
 | The engine | `python/linkedinApi/engine.py`, on the shared `python/platformKit/engine.py`; each account's governor is under `~/.logCli/linkedin/<account>` |

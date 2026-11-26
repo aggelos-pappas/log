@@ -3,14 +3,14 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ledgerRows } from "../../storage/ledger/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 
-async function run(argv: string[], twenty = marketplaceFixture()) {
+async function run(argv: string[], store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await runCli(argv, { twenty, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), twenty };
+  const code = await runCli(argv, { accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
+  return { code, out: out.join("\n"), err: err.join("\n"), accounts: store };
 }
 
 function keptRun(accountName: string) {
@@ -22,13 +22,13 @@ function keptRun(accountName: string) {
 }
 
 describe("log facebook account resave", () => {
-  test("saves a kept run's session to Twenty, then removes the folder", async () => {
+  test("saves a kept run's session to the account store, then removes the folder", async () => {
     const dir = keptRun("needsLogin");
     const result = await run(["facebook", "account", "resave", "needsLogin", "--from", dir]);
     expect(result.code).toBe(0);
-    expect(result.out).toContain("Saved needsLogin's session (2 cookies) to Twenty.");
+    expect(result.out).toContain("Saved needsLogin's session (2 cookies) to the account store.");
     expect(existsSync(dir)).toBe(false);
-    const row = result.twenty.rows.socialAccounts.find((r) => r.id === "needsLogin")!;
+    const row = result.accounts.rows.socialAccounts.find((r) => r.id === "needsLogin")!;
     expect((row.cookies as { name: string }[]).map((c) => c.name).sort()).toEqual(["c_user", "xs"]);
   });
 

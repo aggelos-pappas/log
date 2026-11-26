@@ -90,8 +90,8 @@ export const preflightCommand: Command = liveThroughAction<Command>({
     try {
       const homes = typeof parsed.flags["homes"] === "string" ? homesOf(parsed.flags["homes"]) : adsPowerHomes();
       const accounts = typeof parsed.flags["account"] === "string"
-        ? [await findAccount(context.twenty, parsed.flags["account"])]
-        : (await listFacebookAccounts(context.twenty)).filter((a) => a.status !== "deactivated" && (!homes || homes.includes((a.homeCountry ?? "").toUpperCase())));
+        ? [await findAccount(context.accounts, parsed.flags["account"])]
+        : (await listFacebookAccounts(context.accounts)).filter((a) => a.status !== "deactivated" && (!homes || homes.includes((a.homeCountry ?? "").toUpperCase())));
       const now = (context.now ?? (() => new Date()))();
       context.err(`preflight: ${accounts.length} account(s), each AdsPower profile's kernel first`);
       const profileIds = accounts.map((a) => a.adsPowerProfileId).filter((id): id is string => !!id);

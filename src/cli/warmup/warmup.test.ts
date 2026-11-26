@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { stagesDeps } from "./helpers/index.ts";
 
@@ -11,7 +11,7 @@ process.env.LOG_WARMUP_STAGE_LOG = join(mkdtempSync(join(tmpdir(), "logWarmupFee
 async function run(argv: string[], overrides: Record<string, unknown> = {}) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await runCli(argv, { twenty: marketplaceFixture(), out: (l) => out.push(l), err: (l) => err.push(l), ...overrides });
+  const code = await runCli(argv, { accounts: marketplaceFixture(), out: (l) => out.push(l), err: (l) => err.push(l), ...overrides });
   return { code, out: out.join("\n"), err: err.join("\n") };
 }
 
@@ -72,7 +72,7 @@ describe("log facebook warmup reel (rule 49)", () => {
   test("record runs every step in the open browser, checks each, and writes the outline", async () => {
     const { runCli } = await import("../runner/index.ts");
     const { writeCurrentInspect, clearCurrentInspect } = await import("../../browser/inspect/index.ts");
-    const { marketplaceFixture } = await import("../../twenty/graphql/index.ts");
+    const { marketplaceFixture } = await import("../../accounts/store/index.ts");
     const { mkdtempSync, readFileSync } = await import("node:fs");
     const { tmpdir } = await import("node:os");
     const { join } = await import("node:path");
@@ -83,7 +83,7 @@ describe("log facebook warmup reel (rule 49)", () => {
     try {
       const out: string[] = [];
       const code = await runCli(["facebook", "warmup", "reel", "--account", "galwayOne", "--live"], {
-        twenty: marketplaceFixture(),
+        accounts: marketplaceFixture(),
         sendInspect: async (_c, action) => (sent.push(action), { ok: true, url: "https://www.facebook.com/reel/1" }),
         out: (l) => out.push(l),
         err: () => {},

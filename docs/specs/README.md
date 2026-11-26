@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 57 domains, 686 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 57 domains, 683 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -361,13 +361,13 @@ Every Facebook account goes out through its own proxy, kept as one URL on the ac
 
 ## [Facebook groups](./facebookGroups.md)
 
-Facebook group listening is OpenMagpie's triage job: an account joins a group, OpenMagpie polls it through log-cli's worker (`log facebook poll --request`), keeps every post and sends only the matches to Twenty. log-cli writes only the group's read state to Twenty. A group's members are read from its People tab, a scroll at a time, into files on disk. Rules 65 and 77 (rule 65 replaces rules 61 and 62).
+Facebook group listening is OpenMagpie's triage job: an account joins a group, OpenMagpie polls it through log-cli's worker (`log facebook poll --request`), keeps every post and sends on only the matches. log-cli writes only the group's read state, to the group record. Group records were kept in Twenty, which log no longer uses, so the join, read and poll commands are retired until they are rebuilt on log.db (#339). A group's members are read from its People tab, a scroll at a time, into files on disk. Rules 65 and 77 (rule 65 replaces rules 61 and 62).
 
 - **REQ-GROUP-01** The poll worker answers OpenMagpie's groups.search
 - **REQ-GROUP-02** Each group is read in an open browser of an account in it
 - **REQ-GROUP-03** A poll clicks nothing and reads no comments
 - **REQ-GROUP-04** A sign-in problem is auth_required to OpenMagpie
-- **REQ-GROUP-05** Only the group's read state and identity are written to Twenty
+- **REQ-GROUP-05** Only the group's read state and identity are written to the group record
 - **REQ-GROUP-06** The cursor moves only when the feed read finished
 - **REQ-GROUP-07** Members are read from the People tab, nothing clicked
 - **REQ-GROUP-08** Members come from the page and each scroll's refetch answer
@@ -375,7 +375,7 @@ Facebook group listening is OpenMagpie's triage job: an account joins a group, O
 - **REQ-GROUP-10** secondsPerScroll is the wait before each scroll
 - **REQ-GROUP-11** It stops at the count, the end of the list or maxScrolls
 - **REQ-GROUP-12** --owners keeps owners and pages
-- **REQ-GROUP-13** Members go to files, never to Twenty
+- **REQ-GROUP-13** Members go to files, never to a stored record
 - **REQ-GROUP-14** A members page that answered is a known state that needs nothing
 
 ## [Warm-up](./warmup.md)
@@ -599,7 +599,7 @@ Who liked, reposted, replied to, quoted or followed an X account, read through t
 
 ## [Platform scaffold](./platformScaffold.md)
 
-A new platform is made whole with one command, `log new platform <name>` (MCP `newPlatform`), and one table, `PLATFORM_SITES`, says what each platform is: its Twenty value, cookie domain, hosts, home page, whether it needs a proxy and whether it has a browser path. `log inspect`, the account's browser and the AdsPower sync read that table, so a new platform is explored the same way as Facebook. Rules 83 and 84.
+A new platform is made whole with one command, `log new platform <name>` (MCP `newPlatform`), and one table, `PLATFORM_SITES`, says what each platform is: its account platform value (`accountPlatform`), cookie domain, hosts, home page, whether it needs a proxy and whether it has a browser path. `log inspect`, the account's browser and the AdsPower sync read that table, so a new platform is explored the same way as Facebook. Rules 83 and 84.
 
 - **REQ-PLATFORM-01** One command writes the platform's files
 - **REQ-PLATFORM-02** The repo is wired by editing each file through its syntax tree
@@ -607,7 +607,6 @@ A new platform is made whole with one command, `log new platform <name>` (MCP `n
 - **REQ-PLATFORM-04** Without --apply it only lists what it would do
 - **REQ-PLATFORM-05** Nothing is overwritten
 - **REQ-PLATFORM-06** The name is camelCase
-- **REQ-PLATFORM-07** It names what Twenty is missing and never changes Twenty
 - **REQ-PLATFORM-08** The command writes the platform's row in the table
 - **REQ-PLATFORM-09** The check refuses a platform half wired
 - **REQ-PLATFORM-10** Each platform's row says what it is
@@ -631,20 +630,20 @@ Finding context in conversations is a search, never reading every thread. `log s
 - **REQ-SEARCH-09** Search fuses keyword, meaning and relationship as evidence
 - **REQ-SEARCH-10** The relationship retriever votes from the Relate graph
 
-## [Knowledge base](./knowledgeBase.md)
+## [Memory](./memory.md)
 
-The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in your own Twenty server (optional: the knowledge base is off when `KB_TWENTY_URL` is unset) and is searched through your own Redis by keyword and meaning at once. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
+log's memory holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in the workspace `log.db`, beside the rest of log's private records (rule 134), and is searched there by keyword and meaning at once, on this machine. It needs no server and no setting, so it always works. `log memory sync`, `log memory search`, `log memory remember` and `log memory show` (MCP `memorySync`, `memorySearch`, `memoryRemember`, `memoryShow`); `log kb …` is a hidden alias for one release. Rule 93 (with rule 38 for the pages it leaves out).
 
-- **REQ-KB-01** The articles live in Twenty's knowledgeArticles
-- **REQ-KB-02** The logins are files outside the repo
-- **REQ-KB-03** Search is keyword and meaning at once, fused
-- **REQ-KB-04** Sync collects every source
-- **REQ-KB-05** Some pages and fields are never collected
-- **REQ-KB-06** Sync writes only what changed
-- **REQ-KB-07** Redis is re-indexed from Twenty, only what changed
-- **REQ-KB-08** Remember saves a note to Twenty and Redis at once
-- **REQ-KB-09** Show reads one article in full
-- **REQ-KB-10** Secrets are scrubbed before anything is written
+- **REQ-MEMORY-01** The articles live in log.db's kbArticles
+- **REQ-MEMORY-02** It needs no server, login or setting
+- **REQ-MEMORY-03** Search is keyword and meaning at once, fused
+- **REQ-MEMORY-04** Sync collects every source
+- **REQ-MEMORY-05** Some pages and fields are never collected
+- **REQ-MEMORY-06** Sync writes only what changed
+- **REQ-MEMORY-07** Chunks are re-indexed from the articles, only what changed
+- **REQ-MEMORY-08** Remember saves a note and indexes it at once
+- **REQ-MEMORY-09** Show reads one article in full
+- **REQ-MEMORY-10** Secrets are scrubbed before anything is written
 
 ## [Relate graph](./relateGraph.md)
 
@@ -703,17 +702,15 @@ log keeps lasting facts about the people the owner talks to: their job, where th
 
 ## [Local accounts](./localAccounts.md)
 
-Accounts live in a local file, on every platform, so log runs everything locally; Twenty is deprecated for accounts (#337). `log localAccount pull|add|list|login` (MCP `localAccountPull`, `localAccountAdd`, `localAccountList`; `login` is terminal-only) fills and reads the file, and `LOG_ACCOUNTS=local` leaves Twenty out of accounts entirely. Listings, groups and conversations (the deferred Marketplace agency objects) stay in Twenty. Rule 97, which narrows rule 13 for accounts only.
+Accounts live in a local file, on every platform, so log runs everything locally; log no longer uses Twenty. `log localAccount add|list|login` (MCP `localAccountAdd`, `localAccountList`; `login` is terminal-only) fills and reads the file. Listings, groups and conversations (the deferred Marketplace agency objects) were kept only in Twenty and are retired until rebuilt on log.db (#339). Rule 97, which narrows rule 13 for accounts only.
 
 - **REQ-LOCAL-01** Accounts live in one local file
-- **REQ-LOCAL-02** Pull copies every Twenty account in, keeping its Twenty id
-- **REQ-LOCAL-03** Add makes an account Twenty never had
+- **REQ-LOCAL-03** Add makes an account
 - **REQ-LOCAL-04** List shows the local accounts
 - **REQ-LOCAL-10** Login saves an account's email and password from masked prompts
-- **REQ-LOCAL-05** A local row wins over Twenty's of the same name
-- **REQ-LOCAL-06** LOG_ACCOUNTS=local leaves Twenty out of accounts
+- **REQ-LOCAL-05** Every command reads accounts from the file
 - **REQ-LOCAL-07** A session a run saves goes back to the file
-- **REQ-LOCAL-08** Everything else stays in Twenty
+- **REQ-LOCAL-08** Everything else is retired
 - **REQ-LOCAL-09** The tool names the rule it falls under
 
 ## [Memelord extension](./memelord.md)
@@ -909,7 +906,7 @@ log-cli is read-only on Facebook except where the owner asked for an action. Pos
 - **REQ-LISTING-19** A live publish stops at the account's daily cap
 - **REQ-LISTING-20** The check reads three pages and clicks nothing
 - **REQ-LISTING-21** Anything but full access is the account's suspended issue
-- **REQ-LISTING-22** Each listing's state on Selling goes into Twenty
+- **REQ-LISTING-22** Each listing's state on Selling goes into its stored row
 - **REQ-LISTING-23** Seller chats are counted and kept as sent
 
 ## [Who each person is and where they are](./pipeline.md)

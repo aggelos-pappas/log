@@ -15,7 +15,7 @@ Instagram is a platform of its own: every command is `log instagram <command> â€
 
 | Part | Where |
 | --- | --- |
-| The accounts | `socialAccounts` with platform `INSTAGRAM`, in the local account store `~/.logCli/localAccounts.json` (or Twenty if you keep accounts there) |
+| The accounts | `socialAccounts` with platform `INSTAGRAM`, in the local account store `~/.logCli/localAccounts.json` |
 | The session | `src/instagram/account/session`, on the shared `src/platformKit/session` |
 | The commands | `src/cli/instagram/index.ts` |
 | The engine | `python/instagramApi/engine.py`, on `python/platformKit/engine.py`; each account's governor is under `~/.logCli/instagram/<account>` |
