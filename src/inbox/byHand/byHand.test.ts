@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openDatabase } from "../../storage/schema/index.ts";
 import { handLines, ownerLabel, readByHand, sentByLogIds } from "./index.ts";
+import { recordLogWrite, storeOwnItems } from "../../twitter/ownActivity/index.ts";
 
 let dir = "";
 let path = "";
@@ -43,7 +44,7 @@ describe("what the owner sent himself, outside log", () => {
   test("a new reader starts from now and sees nothing old", () => {
     const c = chat("twitter", "100-200", "grace_ships");
     message(c, "m1", true, "old line by hand", clock - 60_000);
-    expect(readByHand("fakeReader", deps)).toEqual({ sends: [], text: null });
+    expect(readByHand("fakeReader", deps)).toEqual({ sends: [], public: [], text: null });
   });
 
   test("a line he typed himself is told once, a line log sent is not, nor what they wrote", () => {
@@ -78,6 +79,19 @@ describe("what the owner sent himself, outside log", () => {
     clock += 60_000;
     const read = readByHand("fakeReader", deps);
     expect(read.sends.map((s) => [s.with, s.text])).toEqual([["linus_k", "yo whats good"]]);
+  });
+
+  test("a reply, like or follow he did on X himself reaches the hook too, and one log did doesn't", () => {
+    storeOwnItems("fakeAccount", [
+      { kind: "reply", id: "900", tweetId: "850", userId: "777", handle: "linus_k", text: "this is clean", at: null, url: "https://x.com/me/status/900" },
+      { kind: "like", id: "851", tweetId: "851", userId: "777", handle: "linus_k", text: "his post", at: null },
+    ], handle, new Date(clock));
+    recordLogWrite("fakeAccount", { action: "like", tweetUrl: "https://x.com/linus_k/status/851" }, { answer: { ok: true, event: "sent" }, refreshed: null }, handle);
+    clock += 60_000;
+    const read = readByHand("fakeReader", deps);
+    expect(read.public.map((o) => o.item.id)).toEqual(["900"]);
+    expect(read.text).toContain('in public: ');
+    expect(read.text).toContain('he replied to @linus_k: "this is clean" https://x.com/me/status/900');
   });
 
   test("labels and the id set are per platform", () => {

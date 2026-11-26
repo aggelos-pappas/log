@@ -1,6 +1,6 @@
 # xAccount
 
-An X account's session: saving and checking its cookies, who follows whom, its notifications (who liked, reposted, replied to, quoted or followed it), and reading one person's posts.
+An X account's session: saving and checking its cookies, who follows whom, its notifications (who liked, reposted, replied to, quoted or followed it), what the owner did on it himself by hand, and reading one person's posts.
 
 Written by `bun run docs:build` from the code, the skills and AGENTS.md. Not edited by hand: change the command's usage, its skill or the rule, and rebuild.
 
@@ -34,6 +34,7 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `twitterFollows` | Read whether each handle follows the account and the account follows… | `log twitter follows --account <accountName> --handles <handle,handle…> [--json]` |
 | `twitterFollowers` | Read an X account's own followers, newest first, sending nothing | `log twitter followers --account <accountName> [--limit <n>] [--json]` |
 | `twitterPosts` | Read one person's recent posts on X, newest first, sending nothing | `log twitter posts --account <accountName> --user <handle> [--limit <n>] [--media] [--json]` |
+| `twitterOwn` | Read what the owner did on X himself | `log twitter own --account <accountName> [--with <handle>] [--json]` |
 | `twitterNotifications` | Read who liked, reposted, replied to, quoted or followed an X… | `log twitter notifications --account <accountName> [--type likes\|reposts\|replies\|quotes\|follows\|all] [--since <date>] [--post <id\|url>] [--full] [--pages <n>] [--stored] [--limit <n>] [--json]` |
 
 ## The rules these tools fall under
@@ -51,3 +52,4 @@ Each by its number and first line. The full text is in AGENTS.md (`log://agents`
 - **Rule 73.** For an unknown platform state, collate the goal, account/runtime, action, sent requests, answers, timing and page evidence.
 - **Rule 94.** Every platform call goes through Log and its governor, never a scratch client with account tokens/cookies.
 - **Rule 105.** One platform/account owns one continuous engine session and push connection.
+- **Rule 109.** Read the full relevant chat and current private context before drafting or sending.

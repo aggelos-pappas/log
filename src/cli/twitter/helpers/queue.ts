@@ -10,6 +10,9 @@ import { guardSend, sentPartHashes, textHashOf } from "../../../inbox/claims/ind
 import { waitCaughtUp } from "../../../inbox/catchUp/index.ts";
 import { chatContextOf } from "../../../inbox/context/index.ts";
 import { gateDeps } from "./voice.ts";
+import { ownChangesSince, refreshOwnActivity } from "../../../twitter/ownActivity/index.ts";
+
+export const ownActivityDeps = { refresh: refreshOwnActivity, changes: ownChangesSince };
 import {
   addToQueue,
   approvalProblem,
@@ -234,7 +237,12 @@ async function runCommand(context: CommandContext, path: string, flags: Record<s
     const activity = activityOf(held.activity as unknown as TwitterNotification[], who, since);
     const ownTexts = queue.items.map((queued) => queued.text).filter((text) => text.trim());
     const sentParts = sentPartHashes("twitter", queue.account, since);
-    const changed = contextChangesSince(held.messages, activity, since, ownTexts, (text) => sentParts.has(textHashOf(text)));
+    const own = await ownActivityDeps.refresh(queue.account, opened.engine, nowMs());
+    if (!own.ok) {
+      log(`#${item.n}: couldn't read what the owner did by hand on X (${own.refused}), so it's held rather than sent blind`);
+      return [`couldn't check what the owner did by hand on X: ${own.refused}`];
+    }
+    const changed = [...contextChangesSince(held.messages, activity, since, ownTexts, (text) => sentParts.has(textHashOf(text))), ...ownActivityDeps.changes(queue.account, who, since)];
     if (!changed.length && item.text?.trim()) {
       const voiced = await gateDeps.gate(context, { platform: "twitter", account: queue.account, to: item.handle ? `@${item.handle.replace(/^@/, "")}` : namedLabel("twitter", queue.account, String(item.userId ?? ""), String(item.userId ?? "")), text: item.text, handle: item.handle ?? null, userId: item.userId ?? null, ...(item.postText?.trim() ? { said: item.postText } : {}), ...(item.action === "voice" ? { spoken: true } : {}), ...((item.action ?? "reply") === "reply" || item.action === "quote" ? { publicReply: true } : {}) });
       if (!voiced.ok) {
@@ -243,7 +251,7 @@ async function runCommand(context: CommandContext, path: string, flags: Record<s
       }
       log(`#${item.n} @${item.handle ?? "?"}: ${voiced.line}`);
     }
-    log(`#${item.n} @${item.handle ?? "?"}: context read from the .db right before sending (their messages both ways and what they did on the account's posts since the draft at ${since}, the account caught up): ${changed.length ? `${changed.length} new` : "nothing new"}`);
+    log(`#${item.n} @${item.handle ?? "?"}: context read from the .db right before sending (their messages both ways, what they did on the account's posts and what the owner did with them by hand since the draft at ${since}, the account caught up): ${changed.length ? `${changed.length} new` : "nothing new"}`);
     return changed;
   };
   try {
