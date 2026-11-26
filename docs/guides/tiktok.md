@@ -23,7 +23,7 @@ This guide describes the current command implementation. Legacy storage names an
 Check that TikTok still accepts one account's saved session, sending nothing.
 Check that TikTok still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty
 log tiktok session check --account <accountName> [--json]
-Checks that TikTok still accepts the account's saved session, on the direct-API engine (no client vendored yet, no browser). Sends nothing.
+Checks that TikTok still accepts the account's saved session, on the direct-API engine (login check not implemented yet, no browser). Sends nothing.
 TikTok's own answer decides. The result goes to socialAccounts.sessionState, and refreshed cookies are merged back into the row.
 Fill the named fields; each value goes through whole.
 Before first using this tool in a session, load its guide: getGuide({ topic: "tiktok" }) (TikTok search, full video exports and account sessions).
@@ -42,9 +42,9 @@ AGENTS.md (log://agents): rules 8, 19, 26, 29, 35, 63, 73, 94, 30, 38, 39, 40, 4
 ### `tiktokScrape`
 
 Export full TikTok video details from a query, hashtag or video link.
-Collect full video details from TikTok search or a video link using the local omkarcloud scraper, retaining its output format
-log tiktok scrape --account <name> (--query <text or #hashtag> | --url <video link>) [--limit <1-100>] [--pages <1-10>] [--apiUrl <http://127.0.0.1:8000>] [--output <file.json>] [--json]
-Searches through the open Log browser, then extracts each video through the local omkarcloud/tiktok-scraper service. Each videos entry preserves the service response exactly. The collection includes failures, pending links and bounded search coverage. Saves progress after every video when --output is given.
+Collect full video details from TikTok search or a video link using the bundled omkarcloud scraper, retaining its output format
+log tiktok scrape --account <name> (--query <text or #hashtag> | --url <video link>) [--limit <1-100>] [--pages <1-10>] [--output <file.json>] [--json]
+Searches through the open Log browser, then extracts each video through Log’s bundled omkarcloud/tiktok-scraper engine. Each videos entry preserves the upstream parser output exactly. The collection includes failures, pending links and bounded search coverage. Saves progress after every video when --output is given.
 Fill the named fields; each value goes through whole.
 Before first using this tool in a session, load its guide: getGuide({ topic: "tiktok" }) (TikTok search, full video exports and account sessions).
 AGENTS.md (log://agents): rules 8, 19, 26, 29, 35, 63, 73, 94, 30, 38, 39, 40, 41. When matt says to do something, do it completely (rule 30).

@@ -1,6 +1,7 @@
 import { mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
+import type { PlatformAnswer } from '../../platformKit/session/index'
 
 export function videoId(link: string): string {
   const url = new URL(link)
@@ -10,21 +11,11 @@ export function videoId(link: string): string {
   return id
 }
 
-export function localApiUrl(base: string, link: string): string {
-  const url = new URL(base)
-  if (!['http:', 'https:'].includes(url.protocol) || !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) || url.username || url.password) throw Error('The scraper API must be a local HTTP service')
-  url.pathname = '/videos/details'
-  url.search = ''
-  url.hash = ''
-  url.searchParams.set('video', videoId(link))
-  return url.href
-}
-
-export async function fetchDetails(base: string, link: string, fetcher: typeof fetch = fetch) {
-  const response = await fetcher(localApiUrl(base, link), { signal: AbortSignal.timeout(120000), redirect: 'error' })
-  if (!response.ok) return { ok: false as const, status: response.status, error: `Scraper returned HTTP ${response.status}`, stop: [401, 403, 429].includes(response.status) || response.status >= 500 }
-  const data = await response.json()
-  if (!data || typeof data !== 'object' || Array.isArray(data) || !('id' in data) || data.id !== videoId(link)) return { ok: false as const, status: response.status, error: 'The scraper returned no matching video-detail object', stop: true }
+export function fetchDetails(link: string, extract: (id: string) => PlatformAnswer) {
+  const answer = extract(videoId(link))
+  if (!answer.ok) return { ok: false as const, status: typeof answer.status === 'number' ? answer.status : null, error: `${answer.code ?? 'extractionFailed'}: ${answer.detail ?? 'Video extraction failed'}`, stop: answer.code !== 'videoNotFound' }
+  const data = answer.data
+  if (!data || typeof data !== 'object' || Array.isArray(data) || !('id' in data) || data.id !== videoId(link)) return { ok: false as const, status: null, error: 'The scraper returned no matching video-detail object', stop: true }
   return { ok: true as const, data: data as Record<string, unknown> }
 }
 

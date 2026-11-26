@@ -7,7 +7,7 @@ export { tiktokScrapeCommand } from './scrape'
 
 export const TIKTOK_SESSION_USAGE = [
   "Usage: log tiktok session check --account <accountName> [--json]",
-  "Checks that TikTok still accepts the account's saved session, on the direct-API engine (no client vendored yet, no browser). Sends nothing.",
+  "Checks that TikTok still accepts the account's saved session, on the direct-API engine (login check not implemented yet, no browser). Sends nothing.",
   "TikTok's own answer decides. The result goes to socialAccounts.sessionState, and refreshed cookies are merged back into the row.",
 ].join("\n");
 
@@ -26,7 +26,7 @@ export const TIKTOK_SESSION_INPUT: CommandInput = {
 };
 
 function render(accountName: string, answer: PlatformAnswer): string {
-  if (answer.ok) return `log tiktok session check: ${accountName} is loggedIn${answer.screenName ? ` as ${answer.screenName}` : ""}, via the direct-API engine (no client vendored yet, no browser).`;
+  if (answer.ok) return `log tiktok session check: ${accountName} is loggedIn${answer.screenName ? ` as ${answer.screenName}` : ""}, via the direct-API engine (login check not implemented yet, no browser).`;
   return `log tiktok session check: ${accountName}: ${answer.code}${answer.loginState ? ` (${answer.loginState})` : ""}: ${answer.detail ?? ""}`;
 }
 

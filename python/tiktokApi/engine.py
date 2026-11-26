@@ -24,7 +24,13 @@ async def ping(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:
     return kit.not_built(PLATFORM, "ping")
 
 
-ACTIONS = {"ping": ping}
+async def details(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:
+    from tiktokApi.details import extractDetails
+
+    return extractDetails(spec, cookies)
+
+
+ACTIONS = {"ping": ping, "details": details}
 
 
 if __name__ == "__main__":

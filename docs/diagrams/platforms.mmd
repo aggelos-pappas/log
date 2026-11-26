@@ -51,8 +51,8 @@ flowchart LR
   e_no_client_vendored_yet --> api
   p_tiktok -->|"direct API: tiktok session"| e_shared_inspect_browser["shared inspect browser"]
   e_shared_inspect_browser --> api
-  p_tiktok -->|"direct API: tiktok session"| e_local_omkarcloud_scraper_service["local omkarcloud scraper service"]
-  e_local_omkarcloud_scraper_service --> api
+  p_tiktok -->|"direct API: tiktok session"| e_bundled_omkarcloud_tiktok_scraper["bundled omkarcloud/tiktok-scraper"]
+  e_bundled_omkarcloud_tiktok_scraper --> api
   p_tiktok -->|"browser: the any-platform commands"| b_tiktok["TikTok's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_tiktok --> drivers
   anyB["Any platform with a browser path: inspect, flow"]

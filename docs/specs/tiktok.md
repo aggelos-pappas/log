@@ -8,11 +8,11 @@ TikTok account sessions and recorded browser video search. Rules 83, 117 and 123
 
 ## Recorded browser search
 
-### REQ-TIKTOK-07: Full video exports preserve the local scraper schema
+### REQ-TIKTOK-07: Full video exports preserve the bundled upstream scraper schema
 
-`log tiktok scrape` accepts either a query or a canonical video/photo link. Query discovery uses the existing browser search command. Each discovered link is extracted sequentially by the local omkarcloud service's `/videos/details` endpoint. Detail records are returned unchanged inside one collection's `videos` array. Missing fields are not synthesized. Collection metadata records failures, pending links and bounded search coverage. An output file is atomically checkpointed after every attempted extraction. Refusals, rate limits, server errors and connection failures stop further service calls.
+`log tiktok scrape` accepts either a query or a canonical video/photo link. Query discovery uses the existing browser search command. Each discovered link is extracted sequentially by the shared governed TikTok engine using the bundled omkarcloud signer, single-request transport and `parsers.video` normalizer. The adapter sends the selected account’s cookies and configured proxy. No HTTP service or second checkout is required. Upstream retry and country/identity rotation paths are excluded. Detail records are returned unchanged inside one collection's `videos` array. Missing fields are not synthesized. Collection metadata records failures, pending links and bounded search coverage. An output file is atomically checkpointed after every attempted extraction. Refusals, rate limits, server errors and connection failures stop further engine calls. Platform blocks update the shared governor cooldown.
 
-Checked by: code, schema-preservation tests and live local service
+Checked by: code, schema-preservation checks and live bundled extraction
 
 ### REQ-TIKTOK-05: Text and hashtag searches use the existing account browser
 

@@ -68,8 +68,8 @@ flowchart LR
   e_no_client_vendored_yet --> api
   p_tiktok -->|"direct API: tiktok session"| e_shared_inspect_browser["shared inspect browser"]
   e_shared_inspect_browser --> api
-  p_tiktok -->|"direct API: tiktok session"| e_local_omkarcloud_scraper_service["local omkarcloud scraper service"]
-  e_local_omkarcloud_scraper_service --> api
+  p_tiktok -->|"direct API: tiktok session"| e_bundled_omkarcloud_tiktok_scraper["bundled omkarcloud/tiktok-scraper"]
+  e_bundled_omkarcloud_tiktok_scraper --> api
   p_tiktok -->|"browser: the any-platform commands"| b_tiktok["TikTok's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_tiktok --> drivers
   anyB["Any platform with a browser path: inspect, flow"]
@@ -123,7 +123,7 @@ Each browser's capabilities, built or not: [`docs/browsers.md`](browsers.md) (ge
 
 ### Engines: the direct API first, the browser behind it
 
-A command on the direct-API engine calls the platform's internal API with the account's saved session, paced by its own governor, and opens no browser. Each platform has its own vendored client: Facebook through fbk (`vendor/fbk`), X through twikit (`vendor/twikit`), Reddit through reverseChud (`vendor/reverseChud`), Discord through endcord (`vendor/endcord`), LinkedIn through openLinkedinApi (`vendor/openLinkedinApi`), Slack through gabrielSlack (`vendor/gabrielSlack`), Instagram through instagrapi (`vendor/instagrapi`), TikTok through no client vendored yet (`vendor/no client vendored yet`), shared inspect browser (`vendor/shared inspect browser`), local omkarcloud scraper service (`vendor/local omkarcloud scraper service`). Every one reaches the network through one pinned browser-impersonating session: curl_cffi for the Python clients (`check:twikitTransport`), wreq-js for reverseChud (`check:reverseChudTransport`). Which engine runs each command is code (`DIRECT_ROUTES` and `commandEngine` in `src/directApi/engine`), and this section, the Engine column and every MCP tool's description are generated from it (10 clients, 50 commands).
+A command on the direct-API engine calls the platform's internal API with the account's saved session, paced by its own governor, and opens no browser. Each platform has its own vendored client: Facebook through fbk (`vendor/fbk`), X through twikit (`vendor/twikit`), Reddit through reverseChud (`vendor/reverseChud`), Discord through endcord (`vendor/endcord`), LinkedIn through openLinkedinApi (`vendor/openLinkedinApi`), Slack through gabrielSlack (`vendor/gabrielSlack`), Instagram through instagrapi (`vendor/instagrapi`), TikTok through no client vendored yet (`vendor/no client vendored yet`), shared inspect browser (`vendor/shared inspect browser`), bundled omkarcloud/tiktok-scraper (`vendor/bundled omkarcloud/tiktok-scraper`). Every one reaches the network through one pinned browser-impersonating session: curl_cffi for the Python clients (`check:twikitTransport`), wreq-js for reverseChud (`check:reverseChudTransport`). Which engine runs each command is code (`DIRECT_ROUTES` and `commandEngine` in `src/directApi/engine`), and this section, the Engine column and every MCP tool's description are generated from it (10 clients, 50 commands).
 
 **Facebook.** Facebook's own page decides, not accountStatus: loggedIn reads; checkpoint stops and deactivates the account; loggedOut or accountWarning hands over to the browser path. Each account has its own governor (gaps of 4 s or more, 120 an hour, 500 a day, 40 writes a day, a 15-minute pause on a soft block, 6 hours on a checkpoint) and its result is written to socialAccounts.sessionState.
 
@@ -213,7 +213,7 @@ flowchart LR
   runCli["runCli: 105 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
   engine{"commandEngine: DIRECT_ROUTES"}
-  direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi, no client vendored yet, shared inspect browser, local omkarcloud scraper service (vendor/), the account's saved session, a governor per account"]
+  direct["Direct-API engine: fbk, twikit, reverseChud, endcord, openLinkedinApi, gabrielSlack, instagrapi, no client vendored yet, shared inspect browser, bundled omkarcloud/tiktok-scraper (vendor/), the account's saved session, a governor per account"]
   browser["The account's browser (one per day, rule 35)"]
   api["The platform's internal API: its answer decides (rule 73)"]
   twenty[("Twenty: socialAccounts.sessionState, refreshed cookies")]
@@ -369,7 +369,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log twitter voice`](#log-twitter-voice) | Send a voice note in matt's cloned voice as Twitter's own voice note, from text; a dry run unless --live | `twitter` first | `--account <accountName>` `--with <with>` `--text` `--provider` `--mattsWords` `--translationOf` `--language <code>` `--approvedBy <who>` `--live` `--json` | direct API only | none | `twitterVoice`, `twitterVoiceLive` | PreToolUse, PostToolUse · PostToolUse | no | 8, 175, 63, 2, 73, 83, 89, 94, 105, 133, 109, 137, 142, 30, 38, 39, 40, 41 |
 | [`log tiktok session`](#log-tiktok-session) | Check that TikTok still accepts an account's saved session, on the direct-API engine, sending nothing; the answer goes to Twenty | `tiktok` first | `--account <accountName>` `--json` | direct API only | none | `tiktokSessionCheck` | PreToolUse, PostToolUse · PostToolUse | no | 175, 63, 2, 73, 83, 30, 38, 39, 40, 41 |
 | [`log tiktok search`](#log-tiktok-search) | Search TikTok videos through the account’s open browser and return video links, captions, creators and available display metadata | `tiktok` first | `--account <name>` `--query <text or #hashtag>` `--limit <1-100>` `--pages <1-10>` `--json` | browser | none | `tiktokSearch` | PreToolUse, PostToolUse · PostToolUse | no | 8, 19, 26, 29, 35, 63, 73, 94, 30, 38, 39, 40, 41 |
-| [`log tiktok scrape`](#log-tiktok-scrape) | Collect full video details from TikTok search or a video link using the local omkarcloud scraper, retaining its output format | `tiktok` first | `--account <name>` `--query <text or #hashtag>` `--url <video link>` `--limit <1-100>` `--pages <1-10>` `--apiUrl <http://127.0.0.1:8000>` `--output <file.json>` `--json` | browser | none | `tiktokScrape` | PreToolUse, PostToolUse · PostToolUse | no | 8, 19, 26, 29, 35, 63, 73, 94, 30, 38, 39, 40, 41 |
+| [`log tiktok scrape`](#log-tiktok-scrape) | Collect full video details from TikTok search or a video link using the bundled omkarcloud scraper, retaining its output format | `tiktok` first | `--account <name>` `--query <text or #hashtag>` `--url <video link>` `--limit <1-100>` `--pages <1-10>` `--output <file.json>` `--json` | browser | none | `tiktokScrape` | PreToolUse, PostToolUse · PostToolUse | no | 8, 19, 26, 29, 35, 63, 73, 94, 30, 38, 39, 40, 41 |
 
 ### Saved flows: MCP tools of their own (rule 31)
 
@@ -2067,7 +2067,7 @@ Check that TikTok still accepts an account's saved session, on the direct-API en
 
 ```text
 log tiktok session check --account <accountName> [--json]
-Checks that TikTok still accepts the account's saved session, on the direct-API engine (no client vendored yet, no browser). Sends nothing.
+Checks that TikTok still accepts the account's saved session, on the direct-API engine (login check not implemented yet, no browser). Sends nothing.
 TikTok's own answer decides. The result goes to socialAccounts.sessionState, and refreshed cookies are merged back into the row.
 ```
 
@@ -2082,11 +2082,11 @@ Uses the account’s open Log inspect browser. Pages counts recorded browser bat
 
 #### log tiktok scrape
 
-Collect full video details from TikTok search or a video link using the local omkarcloud scraper, retaining its output format MCP tools: `tiktokScrape`, one per form, with named fields.
+Collect full video details from TikTok search or a video link using the bundled omkarcloud scraper, retaining its output format MCP tools: `tiktokScrape`, one per form, with named fields.
 
 ```text
-log tiktok scrape --account <name> (--query <text or #hashtag> | --url <video link>) [--limit <1-100>] [--pages <1-10>] [--apiUrl <http://127.0.0.1:8000>] [--output <file.json>] [--json]
-Searches through the open Log browser, then extracts each video through the local omkarcloud/tiktok-scraper service. Each videos entry preserves the service response exactly. The collection includes failures, pending links and bounded search coverage. Saves progress after every video when --output is given.
+log tiktok scrape --account <name> (--query <text or #hashtag> | --url <video link>) [--limit <1-100>] [--pages <1-10>] [--output <file.json>] [--json]
+Searches through the open Log browser, then extracts each video through Log’s bundled omkarcloud/tiktok-scraper engine. Each videos entry preserves the upstream parser output exactly. The collection includes failures, pending links and bounded search coverage. Saves progress after every video when --output is given.
 ```
 
 <!-- surface:end -->

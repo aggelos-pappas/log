@@ -74,7 +74,7 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   instagramWatch: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'websocket', method: 'realtime_connect', when: 'watch (Instagram pushes each DM over its realtime MQTT, edge-mqtt.facebook.com, nothing polled)', seam: 'directInstagramLive' },
   tiktokSession: { platform: 'tiktok', library: 'no client vendored yet', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directTiktok' },
   tiktokSearch: { engine: 'browser', platform: 'tiktok', library: 'shared inspect browser', only: false, surface: 'search', method: 'videos', when: 'text or hashtag video searches', seam: 'sendInspect' },
-  tiktokScrape: { engine: 'browser', platform: 'tiktok', library: 'local omkarcloud scraper service', only: false, surface: 'videos', method: 'details', when: 'query discovery and local-service video extraction; a supplied video link uses only the local service', seam: 'sendInspect' }
+  tiktokScrape: { engine: 'browser', platform: 'tiktok', library: 'bundled omkarcloud/tiktok-scraper', only: false, surface: 'videos', method: 'details', when: 'browser query discovery followed by governed internal video extraction; a supplied link uses the internal engine', seam: 'directTiktok' }
 }
 
 export function commandEngine(command: string): CommandEngine {

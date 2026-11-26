@@ -48,7 +48,7 @@ export const tiktok = {
     ],
   },
   rubrics: {
-    'REQ-TIKTOK-07': noul('Does the query or video-link export retain the local scraper response objects unchanged, checkpoint results atomically, report pending and failed links, and stop on service failures or refusals?'),
+    'REQ-TIKTOK-07': noul('Does the query or video-link export retain the bundled upstream parser objects unchanged, checkpoint results atomically, report pending and failed links, and stop on engine failures or refusals?'),
     'REQ-TIKTOK-05': noul('Does TikTok search use the existing account inspect browser for text and hashtag queries, refusing absent sessions and preserving shared recording?'),
     'REQ-TIKTOK-06': noul('Are results deduplicated by string video ID, bounded by validated limits, and returned with source metadata and explicit stopping reasons including failures?'),
     'REQ-TIKTOK-01': noul('Does findTiktokAccount find the account through findPlatformAccount with TIKTOK_PLATFORM, whose twentyPlatform is TIKTOK, and does tiktokGate check it with platformGate before the engine runs?'),

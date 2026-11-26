@@ -731,7 +731,7 @@ How log keeps what it reads and does: one SQLite database, `~/.logCli/log.db`, w
 
 TikTok account sessions and recorded browser video search. Rules 83, 117 and 123.
 
-- **REQ-TIKTOK-07** Full video exports preserve the local scraper schema
+- **REQ-TIKTOK-07** Full video exports preserve the bundled upstream scraper schema
 - **REQ-TIKTOK-05** Text and hashtag searches use the existing account browser
 - **REQ-TIKTOK-06** Search results preserve source identifiers and collection limits
 - **REQ-TIKTOK-01** The account is found on its own platform's row and gated

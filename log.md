@@ -11,6 +11,7 @@ Entries before the AST hook existed were rebuilt from each commit with
 
 | Day | Commits |
 | --- | --- |
+| [2026-11-26](log/2026-11-26.md) | 1 |
 | [2026-11-24](log/2026-11-24.md) | 1 |
 | [2026-11-11](log/2026-11-11.md) | 5 |
 | [2026-11-10](log/2026-11-10.md) | 11 |
