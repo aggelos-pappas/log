@@ -1,15 +1,12 @@
 export const KB_KINDS = ['rule', 'section', 'skill', 'doc', 'infra', 'memory', 'pageState', 'account', 'note'] as const
 export type KbKind = (typeof KB_KINDS)[number]
 
-export const KB_OBJECT = 'knowledgeArticle'
-export const KB_OBJECT_PLURAL = 'knowledgeArticles'
-export const KB_INDEX = 'kbIdx'
-export const KB_CHUNK_PREFIX = 'kb:chunk:'
-export const KB_ARTICLE_PREFIX = 'kb:article:'
+export const KB_ARTICLES_TABLE = 'kbArticles'
+export const KB_CHUNKS_TABLE = 'kbChunks'
 export const KB_CHUNK_CHARS = 1200
 export const KB_CHUNK_OVERLAP = 150
 export const KB_SEARCH_DEPTH = 50
-export const KB_TWENTY_URL_ENV = 'KB_TWENTY_URL'
+export const KB_SAVE_BATCH = 200
 
 export interface KbArticle {
   key: string
@@ -22,8 +19,8 @@ export interface KbArticle {
 }
 
 export interface KbStoredArticle extends KbArticle {
-  id: string
   hash: string
+  syncedAt: string
 }
 
 export interface KbChunk {
@@ -33,6 +30,10 @@ export interface KbChunk {
   title: string
   source: string
   text: string
+}
+
+export interface KbChunkRow extends KbChunk {
+  vector: Float32Array
 }
 
 export interface KbHit {
@@ -47,29 +48,15 @@ export interface KbHit {
   text: string
 }
 
-export interface KbConfig {
-  twentyUrl: string
-  twentyKey: string
-  redisUrl: string
-}
-
 export interface KbStore {
-  ensure(): Promise<string[]>
-  list(): Promise<KbStoredArticle[]>
-  get(key: string): Promise<KbStoredArticle | null>
-  save(article: KbArticle, hash: string, id: string | null): Promise<KbStoredArticle>
-  createMany(items: { article: KbArticle; hash: string }[]): Promise<KbStoredArticle[]>
-}
-
-export interface KbIndex {
-  ensure(dimensions: number): Promise<boolean>
-  hashes(): Promise<Map<string, string>>
-  put(article: KbStoredArticle, chunks: KbChunk[], vectors: Float32Array[]): Promise<void>
-  drop(key: string): Promise<void>
-  keyword(query: string, kind: KbKind | undefined, depth: number): Promise<string[]>
-  meaning(vector: Float32Array, kind: KbKind | undefined, depth: number): Promise<string[]>
-  chunks(ids: string[]): Promise<KbChunk[]>
-  close(): void
+  list(): KbStoredArticle[]
+  get(key: string): KbStoredArticle | null
+  saveMany(items: { article: KbArticle; hash: string }[], now?: Date): KbStoredArticle[]
+  indexed(model: string): Map<string, string>
+  putChunks(article: KbStoredArticle, model: string, chunks: KbChunk[], vectors: Float32Array[]): void
+  dropChunks(key: string): void
+  chunkRows(model: string, kind?: KbKind): KbChunkRow[]
+  counts(): { articles: number; chunks: number }
 }
 
 export interface KbSources {
@@ -86,6 +73,5 @@ export interface KbSyncReport {
   chunks: number
   dropped: number
   byKind: Record<string, number>
-  setup: string[]
   ms: number
 }

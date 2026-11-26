@@ -84,13 +84,13 @@ export const ${n.name}SessionCommand: Command = {
     const ref = parsed.flags["account"];
     if (typeof ref !== "string") return { code: 1, stderr: \`log ${n.name} session check: --account is needed\\n\${${n.constant}_SESSION_USAGE}\` };
     try {
-      const account = await find${n.pascal}Account(context.twenty, ref);
+      const account = await find${n.pascal}Account(context.accounts, ref);
       const gate = ${n.name}Gate(account);
       if (!gate.ok) return refuse("${n.name} session check", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.${n.seam}) return { code: 1, stderr: "log ${n.name} session check: the direct-API engine isn't wired in this context" };
       context.err(\`\${account.accountName}: session check on the direct-API engine (${n.libraryText})\`);
       const run = context.${n.seam}(account, { action: "ping" });
-      for (const line of await record${n.pascal}Session(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await record${n.pascal}Session(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "${n.name}", account: account.accountName, ...run.answer }, null, 2) };
       return { code, stdout: render(account.accountName, run.answer) };

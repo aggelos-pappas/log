@@ -2,78 +2,18 @@ import { describe, expect, test } from 'bun:test'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { Database } from 'bun:sqlite'
+import { logHome } from '../../config/logHome/index'
 import { hashEmbedder } from '../../search/conversations/helpers/embed'
-import { articleHash, chunksOf, collectAll, collectRules, kbConfig, keywordQuery, kindOf, kindValue, noteArticle, rememberKnowledge, scrubSecrets, searchKnowledge, splitText, syncKnowledge } from './index'
-import type { KbArticle, KbChunk, KbIndex, KbStore, KbStoredArticle } from './index'
+import { openDatabase, schemaVersionOf, SCHEMA_VERSION } from '../../storage/schema/index'
+import { articleHash, chunksOf, collectAll, collectRules, kbChunkCount, kindOf, logDbKbStore, noteArticle, rememberKnowledge, scrubSecrets, searchKnowledge, splitText, syncKnowledge, vectorBytes, vectorOf } from './index'
+import type { KbArticle, KbStore } from './index'
 
-function memoryStore(): KbStore & { rows: Map<string, KbStoredArticle> } {
-  const rows = new Map<string, KbStoredArticle>()
-  let next = 1
-  return {
-    rows,
-    async ensure() {
-      return []
-    },
-    async list() {
-      return [...rows.values()]
-    },
-    async get(key) {
-      return rows.get(key) ?? null
-    },
-    async save(article, hash, id) {
-      const saved = { ...article, hash, id: id ?? `row${next++}` }
-      rows.set(article.key, saved)
-      return saved
-    },
-    async createMany(items) {
-      return Promise.all(items.map(({ article, hash }) => this.save(article, hash, null)))
-    },
-  }
-}
+let opened = 0
 
-function memoryIndex(): KbIndex & { chunkMap: Map<string, { chunk: KbChunk; vector: Float32Array }> } {
-  const chunkMap = new Map<string, { chunk: KbChunk; vector: Float32Array }>()
-  const articles = new Map<string, { hash: string; ids: string[] }>()
-  const cosine = (a: Float32Array, b: Float32Array) => a.reduce((s, x, i) => s + x * b[i], 0)
-  return {
-    chunkMap,
-    async ensure() {
-      return false
-    },
-    async hashes() {
-      return new Map([...articles].map(([k, v]) => [k, v.hash]))
-    },
-    async put(article, chunks, vectors) {
-      await this.drop(article.key)
-      chunks.forEach((chunk, i) => chunkMap.set(chunk.id, { chunk, vector: vectors[i] }))
-      articles.set(article.key, { hash: article.hash, ids: chunks.map((c) => c.id) })
-    },
-    async drop(key) {
-      for (const id of articles.get(key)?.ids ?? []) chunkMap.delete(id)
-      articles.delete(key)
-    },
-    async keyword(query, kind, depth) {
-      const words = (keywordQuery(query) ?? '').replace(/[()]/g, '').split('|').filter(Boolean)
-      return [...chunkMap.values()]
-        .filter(({ chunk }) => !kind || chunk.kind === kind)
-        .map(({ chunk }) => ({ id: chunk.id, n: words.filter((w) => `${chunk.title} ${chunk.text}`.toLowerCase().includes(w)).length }))
-        .filter((x) => x.n > 0)
-        .sort((a, b) => b.n - a.n)
-        .slice(0, depth)
-        .map((x) => x.id)
-    },
-    async meaning(vector, kind, depth) {
-      return [...chunkMap.values()]
-        .filter(({ chunk }) => !kind || chunk.kind === kind)
-        .sort((a, b) => cosine(b.vector, vector) - cosine(a.vector, vector))
-        .slice(0, depth)
-        .map(({ chunk }) => chunk.id)
-    },
-    async chunks(ids) {
-      return ids.flatMap((id) => (chunkMap.get(id) ? [chunkMap.get(id)!.chunk] : []))
-    },
-    close() {},
-  }
+function freshStore(): KbStore & { handle: Database } {
+  const handle = openDatabase(join(logHome(), 'kbTests', `kb${++opened}.db`))
+  return Object.assign(logDbKbStore(handle), { handle })
 }
 
 const note = (key: string, title: string, body: string, kind: KbArticle['kind'] = 'doc'): KbArticle => ({ key, kind, title, body, source: 'test', tags: [], author: 'sync' })
@@ -129,62 +69,67 @@ describe('knowledge base', () => {
     expect(keys.some((k) => k.startsWith('pageState:'))).toBe(true)
   })
 
-  test('Twenty select values round-trip', () => {
-    expect(kindValue('pageState')).toBe('PAGE_STATE')
-    expect(kindOf('PAGE_STATE')).toBe('pageState')
+  test('log.db holds the knowledge base tables at the latest schema version', () => {
+    const store = freshStore()
+    expect(schemaVersionOf(store.handle)).toBe(SCHEMA_VERSION)
+    expect(kbChunkCount(store.handle)).toBe(0)
+    expect(store.counts()).toEqual({ articles: 0, chunks: 0 })
+  })
+
+  test('kinds and vectors round-trip through log.db', () => {
+    expect(kindOf('pageState')).toBe('pageState')
     expect(kindOf('SOMETHING')).toBe('note')
+    const v = new Float32Array([0.25, -1, 3.5])
+    expect([...vectorOf(vectorBytes(v))]).toEqual([0.25, -1, 3.5])
   })
 
   test('sync writes only what changed and indexes only what changed', async () => {
-    const store = memoryStore()
-    const index = memoryIndex()
+    const store = freshStore()
     const embedder = hashEmbedder()
     const articles = [note('doc:a', 'Proxy gate', 'No browser opens without its proxy in the home country.'), note('doc:b', 'Launch budget', 'At most 8 opens a day, 10 minutes apart.')]
-    const first = await syncKnowledge(articles, store, index, embedder)
+    const first = await syncKnowledge(articles, store, embedder, { now: new Date('2026-11-01T00:00:00Z') })
     expect([first.created, first.updated, first.unchanged, first.indexed]).toEqual([2, 0, 0, 2])
-    const second = await syncKnowledge(articles, store, index, embedder)
+    expect(store.get('doc:a')).toMatchObject({ title: 'Proxy gate', tags: [], author: 'sync', hash: articleHash(articles[0]), syncedAt: '2026-11-01T00:00:00.000Z' })
+    const second = await syncKnowledge(articles, store, embedder)
     expect([second.created, second.updated, second.unchanged, second.indexed]).toEqual([0, 0, 2, 0])
-    const third = await syncKnowledge([articles[0], { ...articles[1], body: 'At most 8 opens a day.' }], store, index, embedder)
+    const third = await syncKnowledge([articles[0], { ...articles[1], body: 'At most 8 opens a day.' }], store, embedder)
     expect([third.updated, third.indexed]).toEqual([1, 1])
+    expect(store.get('doc:b')?.body).toBe('At most 8 opens a day.')
+    expect(store.counts().articles).toBe(2)
   })
 
-  test('an article written in Twenty by a person is indexed too, and a gone one dropped', async () => {
-    const store = memoryStore()
-    const index = memoryIndex()
+  test('an article in log.db without chunks is indexed, a changed model re-indexes, and orphan chunks are dropped', async () => {
+    const store = freshStore()
     const embedder = hashEmbedder()
-    await store.save(note('note:the owner', 'Pricing', 'Charge per listing.', 'note'), '', null)
-    const report = await syncKnowledge([], store, index, embedder)
-    expect(report.indexed).toBe(1)
-    store.rows.delete('note:the owner')
-    expect((await syncKnowledge([], store, index, embedder)).dropped).toBe(1)
+    store.saveMany([{ article: note('note:pricing', 'Pricing', 'Charge per listing.', 'note'), hash: '' }])
+    expect((await syncKnowledge([], store, embedder)).indexed).toBe(1)
+    expect((await syncKnowledge([], store, { ...hashEmbedder(32), model: 'other' })).indexed).toBe(1)
+    store.handle.prepare('DELETE FROM kbArticles WHERE key = ?').run('note:pricing')
+    expect((await syncKnowledge([], store, embedder)).dropped).toBe(1)
+    expect(kbChunkCount(store.handle)).toBe(0)
   })
 
   test('search fuses keyword and meaning and returns each article once', async () => {
-    const store = memoryStore()
-    const index = memoryIndex()
+    const store = freshStore()
     const embedder = hashEmbedder()
     const long = Array.from({ length: 40 }, () => 'The tunnel needs its token in the env file to connect.').join('\n\n')
-    await syncKnowledge([note('doc:tunnel', 'Cloudflare tunnel', long, 'infra'), note('doc:proxy', 'Proxy gate', 'The proxy must exit in the home country.'), note('rule:12', 'Rule 12', 'No browser opens unless its proxy is attached.', 'rule')], store, index, embedder)
-    const hits = await searchKnowledge(index, embedder, 'tunnel token env', { limit: 5 })
+    await syncKnowledge([note('doc:tunnel', 'Cloudflare tunnel', long, 'infra'), note('doc:proxy', 'Proxy gate', 'The proxy must exit in the home country.'), note('rule:12', 'Rule 12', 'No browser opens unless its proxy is attached.', 'rule')], store, embedder)
+    const hits = await searchKnowledge(store, embedder, 'tunnel token env', { limit: 5 })
     expect(hits[0].key).toBe('doc:tunnel')
+    expect(hits[0].keywordRank).toBe(1)
     expect(new Set(hits.map((h) => h.key)).size).toBe(hits.length)
-    const rules = await searchKnowledge(index, embedder, 'proxy browser', { kind: 'rule' })
+    const rules = await searchKnowledge(store, embedder, 'proxy browser', { kind: 'rule' })
     expect(rules.map((h) => h.key)).toEqual(['rule:12'])
+    expect(await searchKnowledge(freshStore(), embedder, 'anything')).toEqual([])
   })
 
-  test('remember saves a scrubbed note in both stores', async () => {
-    const store = memoryStore()
-    const index = memoryIndex()
-    const saved = await rememberKnowledge({ text: 'server kb-redis password=abcdef123456 lives in the env', tags: ['infra'], now: new Date('2026-10-27T03:00:00Z') }, store, index, hashEmbedder())
+  test('remember saves a scrubbed note and indexes it at once', async () => {
+    const store = freshStore()
+    const saved = await rememberKnowledge({ text: 'server kb-redis password=abcdef123456 lives in the env', tags: ['infra'], now: new Date('2026-10-27T03:00:00Z') }, store, hashEmbedder())
     expect(saved.key).toBe('note:20261027T030000Z-serverKbRedisPasswordRedactedLives')
     expect(saved.body).not.toContain('abcdef123456')
-    expect([...index.chunkMap.values()].some(({ chunk }) => chunk.key === saved.key)).toBe(true)
-  })
-
-  test('config comes from the env or the private files, and says what is missing', () => {
-    expect(kbConfig({ KB_TWENTY_API_KEY: 'k', KB_REDIS_URL: 'redis://x' })).toEqual({ missing: 'KB_TWENTY_URL (the URL of your own Twenty server; there is no default host)' })
-    expect(kbConfig({ KB_TWENTY_URL: 'https://t', KB_TWENTY_API_KEY_FILE: '/nope', KB_REDIS_URL_FILE: '/nope' })).toEqual({ missing: 'KB_TWENTY_API_KEY (or the file ~/.config/listeningkit/twenty-listeningkit-api-key.txt)' })
-    expect(kbConfig({ KB_TWENTY_API_KEY: 'k', KB_REDIS_URL: 'redis://x', KB_TWENTY_URL: 'https://t' })).toEqual({ twentyUrl: 'https://t', twentyKey: 'k', redisUrl: 'redis://x' })
+    expect(store.get(saved.key)?.tags).toEqual(['infra'])
+    expect(store.chunkRows('hash').some((c) => c.key === saved.key)).toBe(true)
   })
 
   test('article hash and chunks are stable', () => {

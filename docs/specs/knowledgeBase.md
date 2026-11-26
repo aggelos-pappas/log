@@ -4,19 +4,19 @@ title: "Knowledge base"
 
 # Knowledge base
 
-The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in your own Twenty server (optional: the knowledge base is off when `KB_TWENTY_URL` is unset) and is searched through your own Redis by keyword and meaning at once. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
+The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in the workspace `log.db`, beside the rest of log's private records (rule 134), and is searched there by keyword and meaning at once, on this machine. It needs no server and no setting, so it always works. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
 
 ## Where it lives
 
-### REQ-KB-01: The articles live in Twenty's knowledgeArticles
+### REQ-KB-01: The articles live in log.db's kbArticles
 
-Every article is a `knowledgeArticles` row in ListeningKit's Twenty, with its key, kind, title, body, source, tags, author and content hash. Twenty is reached at the URL in `KB_TWENTY_URL`, over a private network rather than a public login gate. There is no default host: without `KB_TWENTY_URL`, `kbConfig` says it is missing.
+Every article is a `kbArticles` row in the workspace `log.db`, keyed by its `key`, with its kind, title, body, source, tags, author, content hash and when it was last written (`syncedAt`). The table and its chunk table `kbChunks` are added by schema migration 33 (`knowledgeBase`), through log.db's own versioned migrations.
 
 Checked by: code (anchors)
 
-### REQ-KB-02: The logins are files outside the repo
+### REQ-KB-02: It needs no server, login or setting
 
-The Twenty API key and the Redis URL come from the environment or from files in `~/.config/listeningkit/`, never from the repo, and a command that can't find one says which is missing.
+The knowledge base opens the workspace `log.db` that every other log command uses. There is no host to reach, no API key and no setting that turns it off, so `log kb` never refuses for want of setup.
 
 Checked by: code and SubQ
 
@@ -24,7 +24,7 @@ Checked by: code and SubQ
 
 ### REQ-KB-03: Search is keyword and meaning at once, fused
 
-`log kb search "<query>"` runs Redis's BM25 keyword search and its HNSW vector search (over the query's local all-MiniLM-L6-v2 embedding) on the `kbIdx` index in parallel, and fuses them with reciprocal rank fusion. `--kind` keeps one kind of article. Each article appears once, at its best chunk.
+`log kb search "<query>"` reads the chunks indexed with the current embedder from `kbChunks`, ranks them by BM25 keyword score (the `bm25s` library `log search` uses) and by cosine similarity to the query's local all-MiniLM-L6-v2 embedding, and fuses the two lists with reciprocal rank fusion. `--kind` keeps one kind of article. Each article appears once, at its best chunk.
 
 Checked by: code and SubQ
 
@@ -44,27 +44,27 @@ Checked by: code and SubQ
 
 ### REQ-KB-06: Sync writes only what changed
 
-Each article's content hash decides: a new key is created in Twenty, a changed hash is updated, and an unchanged one is left alone.
+Each article's content hash decides: a new key is inserted into `kbArticles`, a changed hash is updated, and an unchanged one is left alone. Writes go in transactions of a few hundred articles.
 
 Checked by: code and SubQ
 
-### REQ-KB-07: Redis is re-indexed from Twenty, only what changed
+### REQ-KB-07: Chunks are re-indexed from the articles, only what changed
 
-After writing, every article Twenty holds (including one a person wrote or edited there) is re-indexed into Redis when its hash differs from the one Redis holds, and an article Redis holds that Twenty no longer has is dropped from Redis.
+After writing, every article `kbArticles` holds is re-indexed into `kbChunks` (split into chunks of about 1,200 characters, each embedded) when its hash differs from the one its chunks carry or its chunks were embedded by another model. Chunks whose article `kbArticles` no longer has are dropped.
 
 Checked by: SubQ
 
 ## Notes and reading
 
-### REQ-KB-08: Remember saves a note to Twenty and Redis at once
+### REQ-KB-08: Remember saves a note and indexes it at once
 
-`log kb remember "<text>"` saves the text as a `note` article with a dated key in Twenty and indexes it in Redis in the same call.
+`log kb remember "<text>"` saves the text as a `note` article with a dated key in `kbArticles` and indexes its chunks in the same call.
 
 Checked by: code and SubQ
 
 ### REQ-KB-09: Show reads one article in full
 
-`log kb show <key>` prints one article in full, and a key that doesn't exist is refused with `kbArticleMissing`.
+`log kb show <key>` prints one article in full from `kbArticles`, and a key that doesn't exist is refused with `kbArticleMissing`.
 
 Checked by: SubQ
 

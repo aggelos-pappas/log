@@ -632,16 +632,16 @@ Finding context in conversations is a search, never reading every thread. `log s
 
 ## [Knowledge base](./knowledgeBase.md)
 
-The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in your own Twenty server (optional: the knowledge base is off when `KB_TWENTY_URL` is unset) and is searched through your own Redis by keyword and meaning at once. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
+The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in the workspace `log.db`, beside the rest of log's private records (rule 134), and is searched there by keyword and meaning at once, on this machine. It needs no server and no setting, so it always works. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
 
-- **REQ-KB-01** The articles live in Twenty's knowledgeArticles
-- **REQ-KB-02** The logins are files outside the repo
+- **REQ-KB-01** The articles live in log.db's kbArticles
+- **REQ-KB-02** It needs no server, login or setting
 - **REQ-KB-03** Search is keyword and meaning at once, fused
 - **REQ-KB-04** Sync collects every source
 - **REQ-KB-05** Some pages and fields are never collected
 - **REQ-KB-06** Sync writes only what changed
-- **REQ-KB-07** Redis is re-indexed from Twenty, only what changed
-- **REQ-KB-08** Remember saves a note to Twenty and Redis at once
+- **REQ-KB-07** Chunks are re-indexed from the articles, only what changed
+- **REQ-KB-08** Remember saves a note and indexes it at once
 - **REQ-KB-09** Show reads one article in full
 - **REQ-KB-10** Secrets are scrubbed before anything is written
 
