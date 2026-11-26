@@ -42,7 +42,7 @@ describe("log tool scaffold", () => {
     const root = copyOfRepo();
     const plan = planNewTool(root, { name: PROBE, summary: SUMMARY, flags: ["name"], asks: ["find his messages"] });
     applyPlan(root, plan);
-    const read = (p: string) => readFileSync(join(root, p), "utf8");
+    const read = (p: string) => readFileSync(join(root, p), "utf8").replace(/\r\n/g, "\n");
     expect(read("src/cli/runner/index.ts")).toContain(`import { ${PROBE}Command } from "../${PROBE}/index.ts";`);
     expect(read("src/cli/runner/index.ts")).toContain(`  ${PROBE}Command,\n`);
     expect(read("src/mcp/server/helpers/agentRules.ts")).toContain(`${PROBE}: [30, 163]`);

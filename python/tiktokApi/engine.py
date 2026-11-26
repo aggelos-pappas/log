@@ -241,7 +241,13 @@ async def delete_post(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str
         return {"ok": True, "itemId": item, "deleted": True, "refreshedCookies": transport.refreshed(session, cookies)}
 
 
-ACTIONS = {"ping": ping, "stats": stats, "post": post, "deletePost": delete_post}
+async def details(spec: dict[str, Any], cookies: dict[str, str]) -> dict[str, Any]:
+    from tiktokApi.details import extractDetails
+
+    return extractDetails(spec, cookies)
+
+
+ACTIONS = {"details": details, "ping": ping, "stats": stats, "post": post, "deletePost": delete_post}
 
 
 if __name__ == "__main__":

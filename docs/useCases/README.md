@@ -48,6 +48,7 @@ What log-cli is built to do, one page each, by platform. Each page gives the ide
 | Discord | [Finding a conversation in a Discord server](discord/serverSearch.md) | finds what someone said in a server with Discord's own search, then reads around it, sends nothing |
 | Discord | [Going through a Discord forum for posts worth answering](discord/forumPosts.md) | lists a server forum's posts and says which are worth answering and why, sends nothing |
 | Reddit | [Contributor maxxing: finding talented builders through what they share](reddit/contributorMaxxing.md) | finds builders through the GitHub repos they post in a subreddit, ranked, reads only |
+| TikTok | [Researching public TikTok videos](tiktok/videoResearch.md) | searches public video cards and exports full video details into one JSON file |
 | TikTok | [Posting a video on TikTok, and deleting it](tiktok/post.md) | posts one video with a caption, or deletes one of the account's posts, on the direct-API engine |
 | Every chat | [Triage: scoping someone's job and handing it to whoever does it](inbox/triage.md) | reads what someone needs built, gets the scope out of them and hands it to whoever does it |
 | Every chat | [Scoping a job out of someone in a DM](inbox/scopeAJob.md) | gets the scope of a job out of someone in a DM |

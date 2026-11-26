@@ -7,6 +7,8 @@ import { commandTools, toolsFromCommands } from "../../mcp/server/helpers/toolsF
 import type { CommandTool } from "../../mcp/server/helpers/toolsFromCommands.ts";
 import { instrumentFetch } from "../../observability/timing/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { searchDeps } from "../search/index.ts";
+import { hashEmbedder } from "../../search/conversations/index.ts";
 import { tregDeps } from "../treg/index.ts";
 import { argvOfInput, isPlatform } from "./helpers/index.ts";
 import { COMMANDS, runCli } from "./index.ts";
@@ -176,6 +178,7 @@ const saved: Record<string, string | undefined> = {};
 let fetchBefore: typeof fetch;
 let cwdBefore: string;
 let clientBefore: typeof tregDeps.client;
+let embedderBefore: typeof searchDeps.embedder;
 
 beforeAll(() => {
   const home = mkdtempSync(join(tmpdir(), "logRoundTrip"));
@@ -194,6 +197,8 @@ beforeAll(() => {
   globalThis.fetch = (async () => {
     throw Object.assign(new Error("the network is blocked in this test"), { code: "stubEngine" });
   }) as unknown as typeof fetch;
+  embedderBefore = searchDeps.embedder;
+  searchDeps.embedder = () => hashEmbedder();
   clientBefore = tregDeps.client;
   const none = async () => ({ ok: false, code: 1, stdout: "", stderr: "stubbed" });
   tregDeps.client = () => ({ search: none, get: none, call: none });
@@ -207,6 +212,7 @@ afterAll(() => {
   }
   globalThis.fetch = fetchBefore;
   tregDeps.client = clientBefore;
+  searchDeps.embedder = embedderBefore;
 });
 
 describe("every form tool, driven through its command's own run", () => {

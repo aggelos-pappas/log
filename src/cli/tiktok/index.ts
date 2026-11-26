@@ -281,3 +281,6 @@ export const tiktokDeleteCommand: Command = {
     }
   },
 };
+
+export { tiktokSearchCommand } from './search'
+export { tiktokScrapeCommand } from './scrape'

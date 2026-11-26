@@ -58,6 +58,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "reddit/contributorMaxxing" })` | Contributor maxxing: finding talented builders through what they share |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM |
 | `getGuide({ useCase: "tiktok/post" })` | Posting a video on TikTok, and deleting it |
+| `getGuide({ useCase: "tiktok/videoResearch" })` | Researching public TikTok videos |
 | `getGuide({ useCase: "twitter/affiliateMarketing" })` | Affiliate marketing through your DMs |
 | `getGuide({ useCase: "twitter/collabMaxxing" })` | Collab maxxing: turn open conversations into collabs |
 | `getGuide({ useCase: "twitter/dmInbox" })` | Reading the DM inbox: who is waiting on you |
@@ -127,7 +128,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `newPlatform` | Making a new platform whole with one command, and where every new file goes |
 | `instagram` | An Instagram account: its session, reading its DMs, sending text and photos, and the live realtime watch |
 | `ui` | Generative UI in the chat: the report tool, where you write a small React view against log's kit and log draws it with data from log.db, or send just data for a starter view; text everywhere else |
-| `tiktok` | A TikTok account's session, and how it is doing: followers and each post's views, likes, comments, shares and saves |
+| `tiktok` | TikTok search, full video exports, account sessions and TikTok Studio commands |
 
 ## How a run reports back
 

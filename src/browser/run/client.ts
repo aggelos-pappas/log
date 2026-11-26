@@ -36,7 +36,7 @@ export function captureDirFor(accountName: string, action: string, now: Date, ro
 
 export const OPENER_ACTIONS: ReadonlySet<string> = new Set(['inspect', 'flow', 'warmup', 'host'])
 
-export const IN_OPEN_BROWSER: ReadonlySet<string> = new Set(['join', 'read', 'poll', 'check'])
+export const IN_OPEN_BROWSER: ReadonlySet<string> = new Set(['join', 'read', 'poll', 'check', 'tiktokSearch', 'tiktokScrape'])
 
 export const CAMOUFOX_ONLY: ReadonlySet<string> = new Set(['doctor', 'connect', 'scan', 'status', 'watch', 'publish', 'profile', 'campaign'])
 

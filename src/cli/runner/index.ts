@@ -73,6 +73,7 @@ import { instagramDmsCommand, instagramSendCommand, instagramSessionCommand, ins
 import { discordReactCommand, instagramReactCommand, slackReactCommand, twitterReactCommand } from "../react/index.ts";
 import { saidByCommand } from "../saidBy/index.ts";
 import { tiktokDeleteCommand, tiktokPostCommand, tiktokSessionCommand, tiktokStatsCommand } from "../tiktok/index.ts";
+import { tiktokSearchCommand, tiktokScrapeCommand } from "../tiktok/index.ts";
 
 export * from "./helpers/index.ts";
 export { ALIASES, createContext, defaultSendInspect, runFast, takeProxyMs } from "./client.ts";
@@ -225,6 +226,8 @@ export const COMMANDS: Command[] = [
   tiktokStatsCommand,
   tiktokPostCommand,
   tiktokDeleteCommand,
+  tiktokSearchCommand,
+  tiktokScrapeCommand,
 ];
 
 export async function runCli(argv: string[], context?: Partial<CommandContext>): Promise<number> {
