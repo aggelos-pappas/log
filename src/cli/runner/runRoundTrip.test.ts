@@ -197,11 +197,11 @@ beforeAll(() => {
   globalThis.fetch = (async () => {
     throw Object.assign(new Error("the network is blocked in this test"), { code: "stubEngine" });
   }) as unknown as typeof fetch;
+  embedderBefore = searchDeps.embedder;
+  searchDeps.embedder = () => hashEmbedder();
   clientBefore = tregDeps.client;
   const none = async () => ({ ok: false, code: 1, stdout: "", stderr: "stubbed" });
   tregDeps.client = () => ({ search: none, get: none, call: none });
-  embedderBefore = searchDeps.embedder;
-  searchDeps.embedder = () => hashEmbedder();
 });
 
 afterAll(() => {

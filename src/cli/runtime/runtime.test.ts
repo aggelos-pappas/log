@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { REPORT_URI } from "../../mcp/apps/index.ts";
 import { guideOperation, reportOperation, toolManifest, toolRunner, uiResources } from "./index.ts";
+import { LOADS_EVERY_TOOL_MS } from "../../../scripts/tests/timeouts.ts";
 
 const SPEC = { title: "Fake report", blocks: [{ type: "barChart", title: "Messages by person", data: [{ label: "Fake One", value: 3 }] }] };
 
@@ -38,7 +39,7 @@ describe("the hosted relay serves the report widget", () => {
     expect(result.spec.compiled).toContain("require('log')");
     expect(result.markdown).toContain("Messages by person");
     expect(result.text).not.toBe(result.markdown);
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("the report resource is listed and readable", async () => {
     const listed = await uiResources("uiResourcesList", {});

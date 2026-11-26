@@ -24,7 +24,7 @@ What log-cli is built to do, one page each, by platform. Each page gives the ide
 | X | [Getting people to do the thing](twitter/getTheAction.md) | explains each conversation in a line, then a reply that answers them and asks for the one action (retweet, like, try it) |
 | Facebook | [From accounts to live Marketplace listings](facebook/marketplaceListings.md) | one local profile per town, each posting a listing, clicks counted into Twenty |
 | Facebook | [Listening to local Facebook groups](facebook/groups.md) | joins local groups and passes the posts asking for the service to Twenty |
-| Discord | [Reading a Discord group chat without Twenty](discord/groupChatRead.md) | catches up on a group over the last few hours with a local account, sends nothing |
+| Discord | [Reading a Discord group chat](discord/groupChatRead.md) | catches up on a group over the last few hours with a local account, sends nothing |
 | Discord | [Replying with a meme in a Discord chat](discord/memeReply.md) | reads the chat, finds a [Memelord](https://www.memelord.com/sign-up?ref=kfwut9wc) meme that fits the moment, gates it and sends it inline |
 | Slack | [Reading and answering a Slack DM](slack/dmReply.md) | finds the chat by who it is with, reads it, drafts in the owner's voice, gates it and sends it one line at a time |
 | Instagram | [Reading and answering an Instagram DM](instagram/dmReply.md) | reads the thread, drafts in the owner's voice or picks a meme, gates it and sends it through the engine, never the browser |
@@ -48,6 +48,7 @@ What log-cli is built to do, one page each, by platform. Each page gives the ide
 | Discord | [Finding a conversation in a Discord server](discord/serverSearch.md) | finds what someone said in a server with Discord's own search, then reads around it, sends nothing |
 | Discord | [Going through a Discord forum for posts worth answering](discord/forumPosts.md) | lists a server forum's posts and says which are worth answering and why, sends nothing |
 | Reddit | [Contributor maxxing: finding talented builders through what they share](reddit/contributorMaxxing.md) | finds builders through the GitHub repos they post in a subreddit, ranked, reads only |
+| TikTok | [Researching public TikTok videos](tiktok/videoResearch.md) | searches public video cards and exports full video details into one JSON file |
 | TikTok | [Posting a video on TikTok, and deleting it](tiktok/post.md) | posts one video with a caption, or deletes one of the account's posts, on the direct-API engine |
 | Every chat | [Triage: scoping someone's job and handing it to whoever does it](inbox/triage.md) | reads what someone needs built, gets the scope out of them and hands it to whoever does it |
 | Every chat | [Scoping a job out of someone in a DM](inbox/scopeAJob.md) | gets the scope of a job out of someone in a DM |
@@ -58,6 +59,7 @@ What log-cli is built to do, one page each, by platform. Each page gives the ide
 | Every chat | [Ignoring a server or a chat](inbox/ignoreServer.md) | stops the live push alerting on a server or chat; its messages are still stored |
 | Every chat | [Quieting the live push](inbox/quietPush.md) | quiets the live push for as many minutes as the owner says |
 | Every platform | [Resetting an account's governor count](inbox/governorReset.md) | puts an account's daily governor count back to 0 when the owner says so, kept as a log.db ledger row |
+| log itself | [Set up log in one pass](log/agentSetup.md) | wires what an agent can wire and names the sign-ins only the owner can finish |
 | log itself | [Moving accounts to another browser](log/browserMove.md) | moves accounts to another browser with their signed-in session, done when the platform says signed in |
 | log itself | [Encrypted account store](log/secretStore.md) | shows what is sealed and what is still plain, and tells the owner when no recovery passphrase is set |
 | log itself | [Local models](log/localModels.md) | shows which local models this release pins and fetches the missing ones after the owner's yes |
@@ -66,7 +68,7 @@ What log-cli is built to do, one page each, by platform. Each page gives the ide
 
 ## The parts every use case is built from
 
-- **An account in Twenty** (`socialAccounts`): its home, its session, its status. Or a local account in `~/.logCli/localAccounts.json` (`log localAccount add`), which wins over a Twenty row of the same name; `LOG_ACCOUNTS=local` leaves Twenty out.
+- **An account** (`socialAccounts`): its home, its session, its status, in the local account store `~/.logCli/localAccounts.json` (`log localAccount add`, or `log localAccount pull` from a Twenty workspace). `LOG_ACCOUNTS=local` uses only that store; without it, a configured Twenty workspace's rows are added after the local ones, and a local row wins over a Twenty row of the same name.
 - **An engine:** the direct API where there is one (twikit for X, fbk for Facebook reads), the account's own browser otherwise. The [reference](../reference.md)'s Engines section says which command uses which.
 - **The platform's own answer decides:** every step reads what the platform sent back, never the screen or a timer.
 - **A dry run first:** anything that acts on a platform does nothing without `--live`, and over MCP it is a separate `…Live` tool that needs `confirmLive`.

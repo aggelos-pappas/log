@@ -4,7 +4,7 @@ title: "Knowledge base"
 
 # Knowledge base
 
-The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in your own Twenty server and is searched through your own Redis by keyword and meaning at once. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
+The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in your own Twenty server (optional: the knowledge base is off when `KB_TWENTY_URL` is unset) and is searched through your own Redis by keyword and meaning at once. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
 
 ## Where it lives
 
@@ -32,7 +32,7 @@ Checked by: code and SubQ
 
 ### REQ-KB-04: Sync collects every source
 
-`log kb sync` collects AGENTS.md's numbered rules and its other sections, every skill, every doc under `docs/` (those under `docs/infra/` as infra), every Claude memory file, the known page states, and the accounts from log-cli's Twenty (unless `--noAccounts`).
+`log kb sync` collects AGENTS.md's numbered rules and its other sections, every skill, every doc under `docs/` (those under `docs/infra/` as infra), every Claude memory file, the known page states, and log-cli's accounts (the local account store; unless `--noAccounts`).
 
 Checked by: code and SubQ
 

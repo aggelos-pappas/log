@@ -4,13 +4,13 @@ title: "Local accounts"
 
 # Local accounts
 
-Accounts can live in a local file instead of Twenty, on every platform, so log can run everything locally. `log localAccount pull|add|list|login` (MCP `localAccountPull`, `localAccountAdd`, `localAccountList`; `login` is terminal-only) fills and reads the file, and `LOG_ACCOUNTS=local` leaves Twenty out of accounts entirely. Listings, groups and conversations stay in Twenty. Rule 97, which narrows rule 13 for accounts only.
+Accounts live in a local file, on every platform, so log runs everything locally; Twenty is deprecated for accounts (#337). `log localAccount pull|add|list|login` (MCP `localAccountPull`, `localAccountAdd`, `localAccountList`; `login` is terminal-only) fills and reads the file, and `LOG_ACCOUNTS=local` leaves Twenty out of accounts entirely. Listings, groups and conversations (the deferred Marketplace agency objects) stay in Twenty. Rule 97, which narrows rule 13 for accounts only.
 
 ## The file
 
 ### REQ-LOCAL-01: Accounts live in one local file
 
-Local accounts are kept in `~/.logCli/localAccounts.json`, and `LOG_LOCAL_ACCOUNTS` moves it. The file is written readable by its owner only, since it holds cookies and logins.
+Local accounts are kept in `~/.logCli/localAccounts.json`, and `LOG_LOCAL_ACCOUNTS` moves it. The file is written readable by its owner only, since it holds cookies and logins. Its secret fields (cookies, storage origins, proxy, email, password, two-step secret, PIN) are moved out of the file into log.db, encrypted through the secret store (`src/storage/secrets`) with the key held by the OS keyring (Windows DPAPI, the macOS Keychain or Linux Secret Service), and the row keeps only a `sealedSecrets` reference, when the store is ready; otherwise they stay in the file and a warning says so once.
 
 Checked by: code and SubQ
 
@@ -44,7 +44,7 @@ Checked by: code and SubQ
 
 ### REQ-LOCAL-05: A local row wins over Twenty's of the same name
 
-Every command reads accounts through one wrapper over Twenty: a list of accounts holds the local rows and then Twenty's rows, minus any Twenty row with the same platform and name as a local one.
+Every command reads accounts through one wrapper (`withLocalAccounts`). Without `LOG_ACCOUNTS=local` and with a Twenty workspace configured, a list of accounts holds the local rows and then Twenty's rows, minus any Twenty row with the same platform and name as a local one.
 
 Checked by: code and SubQ
 

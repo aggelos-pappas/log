@@ -2,7 +2,7 @@ import { assign, fromPromise, setup } from 'xstate'
 import type { TwitterSessionAnswer } from '../../account/session/index'
 import { spaceOut } from '../plan/index'
 import type { EventKind, PlanEvent, QueueItem } from '../plan/index'
-import { ADDED, CANCELLED, atSeconds, awaitAdded, dropPost, failureOf, iso, mergeAdded, refusalOf, saidOf, sentUrlOf, succeeded, uniform, waitUntil } from './helpers/index'
+import { ADDED, CANCELLED, DMS_CLOSED, atSeconds, awaitAdded, dropPost, failureOf, iso, mergeAdded, refusalOf, saidOf, sentUrlOf, succeeded, uniform, waitUntil } from './helpers/index'
 import type { RunContext, RunDeps, RunEvent, RunInput, RunOutput, RunResult } from './types'
 import { DROP_WAIT_MAX_SECONDS, DROP_WAIT_MIN_SECONDS, LATE_SECONDS, MAX_DROPS } from './types'
 
@@ -88,6 +88,7 @@ export const queueRunMachine = setup({
     waitCancelled: (_, waited: number) => waited === CANCELLED,
     waitAdded: (_, waited: number) => waited === ADDED,
     waitNudged: (_, waited: number) => Boolean(waited),
+    closedBefore: ({ context }) => context.item!.status === 'pending' && DMS_CLOSED.test(context.item!.result ?? ''),
     notReady: ({ context }) => context.item!.status !== (context.event!.kind === 'like' && context.item!.sentAtRun === context.plan.planned ? 'sent' : 'pending'),
     cancelled: ({ context }) => Boolean(context.deps.cancelled?.()),
     isLike: ({ context }) => context.event!.kind === 'like',
@@ -95,6 +96,7 @@ export const queueRunMachine = setup({
     answerSent: ({ context }, answer: TwitterSessionAnswer) => succeeded(answer, context.event!.kind),
     postGone: (_, answer: TwitterSessionAnswer) => failureOf(answer) === 'gone',
     authorTooBig: (_, answer: TwitterSessionAnswer) => failureOf(answer) === 'tooBig',
+    dmsClosed: (_, answer: TwitterSessionAnswer) => failureOf(answer) === 'dmsClosed',
     refusedByX: (_, answer: TwitterSessionAnswer) => failureOf(answer) !== 'network',
     droppedTooOften: ({ context }) => context.drops > MAX_DROPS,
   },
@@ -136,10 +138,10 @@ export const queueRunMachine = setup({
       const { item, event, todo, deps } = context
       item!.status = 'held'
       item!.heldFor = changed
-      item!.result = `contextChanged: ${changed.length} new since the draft`
+      const gateOnly = changed.length > 0 && changed.every((c) => c.startsWith('voice gate: '))
+      item!.result = gateOnly ? 'voiceGateRefused' : `contextChanged: ${changed.filter((c) => !c.startsWith('voice gate: ')).length} new since the draft`
       event!.skipped = 'held'
       dropPost(todo, event!.n, 'held')
-      const gateOnly = changed.length > 0 && changed.every((c) => c.startsWith('voice gate: '))
       deps.alert(`HELD #${event!.n} ${who(context)}: ${gateOnly ? 'the voice gate refused the draft' : 'something happened with them since the draft'}, so it wasn't sent. Redraft it from their full context (\`twitterDms\` { with }) and put it back with \`twitterQueueEdit\`. What changed: ${changed.join(' | ')}`, false)
     },
     keepAnswer: assign(({ context }, answer: TwitterSessionAnswer) => ({ answer, answeredAt: new Date(context.deps.nowMs()).toISOString() })),
@@ -173,6 +175,13 @@ export const queueRunMachine = setup({
       event!.skipped = 'gone'
       dropPost(todo, event!.n, 'gone')
       deps.log(`GONE ${whatOf(context)}: post deleted, hidden or replies off, skipping it`)
+    },
+    skipDmsClosed: ({ context }) => {
+      const { item, event, todo, deps } = context
+      if (item!.status === 'pending') item!.status = 'skipped'
+      event!.skipped = 'dmsClosed'
+      dropPost(todo, event!.n, 'dmsClosed')
+      deps.alert(`DMS CLOSED ${whatOf(context)}: X answered that they take no messages from @${context.queue.account} (code 349), so they are skipped and the run carries on with the rest. Reach them another way (a reply to their post) or leave them.`, false)
     },
     skipTooBig: ({ context }) => {
       const { item, event, todo, deps, answer } = context
@@ -284,6 +293,7 @@ export const queueRunMachine = setup({
         },
         ready: {
           always: [
+            { guard: 'closedBefore', target: '#twitterQueueRun.waiting', actions: ['skipDmsClosed', 'saveQueue'] },
             { guard: 'notReady', target: '#twitterQueueRun.halted', actions: 'haltNotReady' },
             { guard: 'cancelled', target: '#twitterQueueRun.stopped', actions: 'stopBeforeSend' },
             { guard: 'isLike', target: '#twitterQueueRun.liking' },
@@ -313,6 +323,7 @@ export const queueRunMachine = setup({
           { guard: { type: 'answerSent', params: answerOf }, target: 'waiting', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'recordSent', 'countSent', 'markDone', 'saveQueue'] },
           { guard: { type: 'postGone', params: answerOf }, target: 'waiting', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'noteFailure', 'skipGone', 'saveQueue'] },
           { guard: { type: 'authorTooBig', params: answerOf }, target: 'waiting', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'noteFailure', 'skipTooBig', 'saveQueue'] },
+          { guard: { type: 'dmsClosed', params: answerOf }, target: 'waiting', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'noteFailure', 'skipDmsClosed', 'saveQueue'] },
           { guard: { type: 'refusedByX', params: answerOf }, target: 'halted', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'noteFailure', 'keepRefusal'] },
           { target: 'retrying', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'noteFailure', 'countDrop'] },
         ],
@@ -328,6 +339,7 @@ export const queueRunMachine = setup({
           { guard: { type: 'answerSent', params: answerOf }, target: 'waiting', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'recordSent', 'countSent', 'markDone', 'saveQueue'] },
           { guard: { type: 'postGone', params: answerOf }, target: 'waiting', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'noteFailure', 'skipGone', 'saveQueue'] },
           { guard: { type: 'authorTooBig', params: answerOf }, target: 'waiting', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'noteFailure', 'skipTooBig', 'saveQueue'] },
+          { guard: { type: 'dmsClosed', params: answerOf }, target: 'waiting', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'noteFailure', 'skipDmsClosed', 'saveQueue'] },
           { guard: { type: 'refusedByX', params: answerOf }, target: 'halted', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'noteFailure', 'keepRefusal'] },
           { target: 'retrying', actions: [{ type: 'keepAnswer', params: answerOf }, 'markAttempt', 'noteFailure', 'countDrop'] },
         ],

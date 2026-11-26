@@ -3,7 +3,8 @@
 `log login` signs the CLI in to your workspace, so commands can act as you.
 It uses a standard OAuth flow with PKCE: Twenty is the identity provider, and a
 companion web app runs the sign-in page. You only need this when log talks to a
-shared workspace rather than local accounts.
+shared Twenty workspace (deprecated) rather than the local account
+store, which is the default.
 
 ## How it works
 

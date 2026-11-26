@@ -71,7 +71,7 @@ Every flow below is in `src/browser/flow/definitions/`, has its doc in `docs/pla
 | `groupTabs` | 9 | Opens each tab of a group and comes back to Discussion, read-only |
 | `marketplaceListingDelete` | 6 | Deletes one Marketplace listing from Selling and answers the survey |
 | `marketplaceListingPublish` | 15 | Publishes one Marketplace listing in the account's open browser |
-| `messengerPinCreate` | 4 | Creates the Messenger PIN from Twenty (rule 67) |
+| `messengerPinCreate` | 4 | Creates the Messenger PIN from the account row (rule 67) |
 | `postComment` | 3 | Comments on the newest post on the account's own profile |
 | `profilePhotoPost` | 3 | Posts a photo on the account's own profile |
 | `profilePost` | 4 | Posts text on the account's own profile |

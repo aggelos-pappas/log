@@ -27,7 +27,7 @@ Starts the identity check wizard on a checkpoint (`ixt_authenticity_wizard_trigg
 
 ## What our machine does with it
 
-It marks the video selfie state that only a person can clear (rules 10, 23, 54): `pageStateOf` maps that page to `videoSelfie`, and the account is set CHECKPOINT (videoSelfieRequired) in Twenty. No machine of ours goes past it; the dialog's Upload stays disabled without a camera.
+It marks the video selfie state that only a person can clear (rules 10, 23, 54): `pageStateOf` maps that page to `videoSelfie`, and the account is set CHECKPOINT (videoSelfieRequired) on its account row. No machine of ours goes past it; the dialog's Upload stays disabled without a camera.
 
 ## What can go wrong
 

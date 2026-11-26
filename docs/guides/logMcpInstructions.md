@@ -19,7 +19,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "discord/channelReply" })` | Answering someone in a Discord DM or group DM |
 | `getGuide({ useCase: "discord/coldOutbound" })` | First DMs from a Discord channel |
 | `getGuide({ useCase: "discord/forumPosts" })` | Going through a Discord forum for posts worth answering |
-| `getGuide({ useCase: "discord/groupChatRead" })` | Reading a Discord group chat without Twenty |
+| `getGuide({ useCase: "discord/groupChatRead" })` | Reading a Discord group chat |
 | `getGuide({ useCase: "discord/memeReply" })` | Replying with a meme in a Discord chat |
 | `getGuide({ useCase: "discord/serverReply" })` | Replying in a Discord server channel |
 | `getGuide({ useCase: "discord/serverSearch" })` | Finding a conversation in a Discord server |
@@ -45,6 +45,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "instagram/newPlatform" })` | Bringing a new platform up, then vendoring its client |
 | `getGuide({ useCase: "linkedin/network" })` | Growing a LinkedIn network, and reading and answering its inbox |
 | `getGuide({ useCase: "linkedin/posts" })` | Posting on LinkedIn, liking or reposting, and taking a post down |
+| `getGuide({ useCase: "log/agentSetup" })` | Set up log in one pass |
 | `getGuide({ useCase: "log/browserMove" })` | Moving accounts to another browser |
 | `getGuide({ useCase: "log/localModels" })` | Local models |
 | `getGuide({ useCase: "log/secretStore" })` | Secret store status |
@@ -58,6 +59,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "reddit/contributorMaxxing" })` | Contributor maxxing: finding talented builders through what they share |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM |
 | `getGuide({ useCase: "tiktok/post" })` | Posting a video on TikTok, and deleting it |
+| `getGuide({ useCase: "tiktok/videoResearch" })` | Researching public TikTok videos |
 | `getGuide({ useCase: "twitter/affiliateMarketing" })` | Affiliate marketing through your DMs |
 | `getGuide({ useCase: "twitter/collabMaxxing" })` | Collab maxxing: turn open conversations into collabs |
 | `getGuide({ useCase: "twitter/dmInbox" })` | Reading the DM inbox: who is waiting on you |
@@ -118,7 +120,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `reddit` | A Reddit account: its session, reading subreddits, the home feed and posts with their comments, and posting, commenting and voting |
 | `slack` | A Slack account: its session and workspaces, chats, reading, the live websocket watch and sending |
 | `linkedin` | A LinkedIn account: saving its cookies, checking its session, posting or deleting its own posts, inviting people LinkedIn suggests, liking and reposting posts, seeing how its own posts are doing, and reading and writing in its conversations |
-| `accountsAndProxies` | Every account in the workspace with its session state, and each account's proxy: checking it, giving it one from a provider in its home city, and providers' traffic; and the interactive launcher that sets log up and adds accounts |
+| `accountsAndProxies` | Every account in the workspace with its session state, and each account's proxy: checking it, giving it one from a provider in its home city, and providers' traffic; and the interactive launcher and agent setup command that set log up and add accounts |
 | `runsAndEvidence` | What runs leave behind: run folders and pruning, captures and request docs, error codes, jobs, every call's timings, log.db's typed tables checked and rebuilt from its events, and the MCP server itself, including turning its hooks, pushes and tools off and on from inside a harness |
 | `knowledgeAndSearch` | Knowledge base, search, Relate graph, people, voice notes |
 | `extensions` | Extensions that make an account more human: Memelord's memes sent in context, the owner's cloned voice (Inworld or Fish Audio) for voice notes, every paid provider's balance, and treg's catalog of endpoints for every lookup |
@@ -127,7 +129,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `newPlatform` | Making a new platform whole with one command, and where every new file goes |
 | `instagram` | An Instagram account: its session, reading its DMs, sending text and photos, and the live realtime watch |
 | `ui` | Generative UI in the chat: the report tool, where you write a small React view against log's kit and log draws it with data from log.db, or send just data for a starter view; text everywhere else |
-| `tiktok` | A TikTok account's session, and how it is doing: followers and each post's views, likes, comments, shares and saves |
+| `tiktok` | TikTok search, full video exports, account sessions and TikTok Studio commands |
 
 ## How a run reports back
 

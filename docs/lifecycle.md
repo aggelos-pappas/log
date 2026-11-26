@@ -23,7 +23,7 @@ The machine is `lifecycleMachine` (XState) in `src/platformKit/lifecycle/`.
 `proxying → opening → next → signingIn → checkingAccount → settingProfile → settingName → settingLocation → warming → attached`
 
 `next` is a router: it picks the first step not done yet. So an account loaded
-from Twenty starts where it is, and an interruption comes back to the exact
+from its row starts where it is, and an interruption comes back to the exact
 step it left.
 
 **Host** looks after a ready account every day:
@@ -78,11 +78,11 @@ Compared with the warm-up this was based on:
 | Outcome of any step | Goes to | Then |
 | --- | --- | --- |
 | `needsLogin` issue (login wall, session expired) | `onboarding.signingIn`, in the same browser | `next`, back to where it was |
-| `checkpointed` issue (a `/checkpoint` page) | `deactivating`: closed for `checkpoint` → `deactivated` (final); the checkpoint watch has set the account DEACTIVATED in Twenty | kept in Twenty |
+| `checkpointed` issue (a `/checkpoint` page) | `deactivating`: closed for `checkpoint` → `deactivated` (final); the checkpoint watch has set the account DEACTIVATED on its row | row kept |
 | `checkpoint` issue a person clears (video selfie, ID) | `needsPerson`, with the window kept open for a person | `PERSON_DONE` → `checkingAccount` → `next` |
 | `limited` issue (rate limited) | `cooling`: closed for `rateLimited`, rested for `limitedRestMs` | `opening` |
-| `restricted` issue (for example "everything you manage is restricted") | closed for `restricted` → `restricted` (final) | kept in Twenty |
-| `banned` issue (account disabled) | closed for `restricted` → `banned` (final) | kept in Twenty |
+| `restricted` issue (for example "everything you manage is restricted") | closed for `restricted` → `restricted` (final) | row kept |
+| `banned` issue (account disabled) | closed for `restricted` → `banned` (final) | row kept |
 | a retryable error | the same step once more after `retryMs` | then `stuck` |
 | `browserGone` in the host (crash, window closed) | `crashed` (close logged) → `opening` | one reopen a day; a second goes to `stuck` (`opensSpent`) |
 | `PAUSE` / `RESUME` | `paused` | `opening` |
@@ -93,9 +93,9 @@ Compared with the warm-up this was based on:
 Opens are counted per local day: one, plus one reopen after a crash
 (`OPENS_PER_DAY = 2`).
 
-## What Twenty records
+## What the account row records
 
-These fields on `socialAccounts` are all additions; none replaces an older
+These fields on `socialAccounts` (the local account store, or Twenty if you keep accounts there) are all additions; none replaces an older
 field.
 
 | Field | Set when |
@@ -132,11 +132,11 @@ in `skills/host/SKILL.md`).
 - It takes `PERSON_DONE`, `PAUSE`, `RESUME`, `SHUTDOWN` and `LOST` from
   `log facebook host send`.
 - Signed in is decided by the `c_user` and `xs` cookies, and the session is
-  saved to Twenty as soon as it is.
+  saved to the account row as soon as it is.
 - Every step's landing page is checked (`pageProblem`: checkpointed,
   loginWall, pageNotReached).
 - Every page the browser lands on is watched (`navigations.jsonl`, between
-  steps too): a `/checkpoint` page sets the account to DEACTIVATED in Twenty
+  steps too): a `/checkpoint` page sets the account to DEACTIVATED on its row
   with the reason `checkpointed` and marks its listings lost (`watchCheckpoint`,
   rule 82). The same watch runs for `log inspect`, flow runs and the warm-up
   stages.

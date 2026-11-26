@@ -49,6 +49,7 @@ export interface VoiceReading {
   pass: boolean
   model: string | null
   firstContact?: boolean
+  opensOnTheirPost?: boolean
 }
 
 export const VOICE_PASS = 0.8

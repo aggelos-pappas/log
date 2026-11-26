@@ -457,7 +457,6 @@
     "docs/platforms/slack/telemetry/slackBeaconError.md",
     "docs/platforms/slack/telemetry/slackClogTrack.md",
     "docs/platforms/slack/telemetry/workspaceClogTrack.md",
-    "docs/platforms/tiktok/README.md",
     "docs/platforms/tiktok/flows/tiktokDelete.md",
     "docs/platforms/tiktok/flows/tiktokPost.md",
     "docs/platforms/x/compose.md",

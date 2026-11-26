@@ -9,6 +9,7 @@ export interface CommandIndexEntry {
 
 export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "launch", platform: "any", module: "src/cli/launch/index.ts", exportName: "launchCommand", terminalOnly: "prompts in a terminal (Clack). Call the commands it wraps directly." },
+  { name: "setup", platform: "any", module: "src/cli/setup/index.ts", exportName: "setupCommand" },
   { name: "console", platform: "any", module: "src/cli/console/index.ts", exportName: "consoleCommand" },
   { name: "credentials", platform: "any", module: "src/cli/credentials/index.ts", exportName: "credentialsCommand" },
   { name: "listings", platform: "facebook", module: "src/cli/listing/index.ts", exportName: "listingsCommand" },
@@ -155,4 +156,6 @@ export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "stats", platform: "tiktok", module: "src/cli/tiktok/index.ts", exportName: "tiktokStatsCommand" },
   { name: "post", platform: "tiktok", module: "src/cli/tiktok/index.ts", exportName: "tiktokPostCommand" },
   { name: "delete", platform: "tiktok", module: "src/cli/tiktok/index.ts", exportName: "tiktokDeleteCommand" },
+  { name: "search", platform: "tiktok", module: "src/cli/tiktok/index.ts", exportName: "tiktokSearchCommand" },
+  { name: "scrape", platform: "tiktok", module: "src/cli/tiktok/index.ts", exportName: "tiktokScrapeCommand" },
 ]

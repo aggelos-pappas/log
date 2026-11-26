@@ -1,6 +1,6 @@
 # X (Twitter) in log
 
-log runs X accounts without a browser: it calls X's internal API directly with the account's saved session, through the vendored twikit library. This page explains how X fits into log's usual shape (command, engine, library, Twenty), which commands exist, how sends and queues work, and how X's answers are read. Read it if you work on the X commands or want to know how a reply or DM actually goes out.
+log runs X accounts without a browser: it calls X's internal API directly with the account's saved session, through the vendored twikit library. This page explains how X fits into log's usual shape (command, engine, library, account store), which commands exist, how sends and queues work, and how X's answers are read. Read it if you work on the X commands or want to know how a reply or DM actually goes out.
 
 ## Status
 
@@ -18,7 +18,7 @@ Two things are vendored:
 
 ## The idea in one line
 
-The X controller already does on X what log does on Facebook through fbk: it calls the platform's internal API with an account's saved session, with no browser. So X goes in the same way. twikit is the engine in `vendor/`, and log's commands, MCP tools, hooks and Twenty sit around it, as `log twitter <command> …`.
+The X controller already does on X what log does on Facebook through fbk: it calls the platform's internal API with an account's saved session, with no browser. So X goes in the same way. twikit is the engine in `vendor/`, and log's commands, MCP tools, hooks and the account store sit around it, as `log twitter <command> …`.
 
 ## What the X controller does
 
@@ -36,7 +36,7 @@ Its habits match log's:
 
 - Finding people and posts is done by a separate search tool, never through twikit.
 - Nothing is sent without a named approver.
-- Cookies come from Twenty `socialAccounts` and are never printed.
+- Cookies come from the account's `socialAccounts` row (the local account store, or Twenty if you keep accounts there) and are never printed.
 - Copy is checked against the house style before it goes out: lowercase (a capital may open a line), no commas, no full stops, no em dashes.
 
 ### How X answers
@@ -57,17 +57,17 @@ The same three layers Facebook has, platform first:
 
 ```mermaid
 flowchart LR
-  cli["log twitter reply / dm / queue …<br/>CLI and MCP tool"] --> src["src/twitter/&lt;area&gt;/&lt;domain&gt;<br/>gates, Twenty, XState machines"]
+  cli["log twitter reply / dm / queue …<br/>CLI and MCP tool"] --> src["src/twitter/&lt;area&gt;/&lt;domain&gt;<br/>gates, account store, XState machines"]
   src --> engine["python/twitterApi/engine.py<br/>one session host, governor, no proxy"]
   engine --> twikit["vendor/twikit<br/>X's internal API"]
-  src --> twenty["Twenty socialAccounts<br/>platform TWITTER"]
+  src --> twenty["socialAccounts (local store or Twenty)<br/>platform TWITTER"]
 ```
 
 | Layer | Facebook | X |
 | --- | --- | --- |
 | The library | `vendor/fbk` (one surface per family) | `vendor/twikit` (one `Client`, 114 calls) |
 | The engine | `python/directApi/engine.py`: reads the session's login state first, then calls one surface | `python/twitterApi/engine.py`, run inside the account's one session host (`python/twitterApi/host.py`, rule 105): one call at a time, sends 4 to 11 s apart and reads 0.8 to 2.5 s apart (rules 104, 110), the session checked first, then one twikit call |
-| Per account | `~/.logCli/fbk/<account>`: governor and token cache | `~/.logCli/twitter/<account>`: governor, `engine.lock`, the session host (`host.json`, `host.lock`), the transaction key (`clientTransaction.json`, 3 hours); refreshed cookies merged back into Twenty |
+| Per account | `~/.logCli/fbk/<account>`: governor and token cache | `~/.logCli/twitter/<account>`: governor, `engine.lock`, the session host (`host.json`, `host.lock`), the transaction key (`clientTransaction.json`, 3 hours); refreshed cookies merged back into the account row |
 | The gate | `directGate` (session, proxy in the home country, active hours) | `twitterGate`: platform TWITTER, not deactivated, `auth_token` and `ct0` saved. No proxy. |
 | The result | `socialAccounts.sessionState` | The same field (`loggedIn`, `loggedOut` for 401/32, `restricted` for 226) |
 | Declared in | `DIRECT_ROUTES`, `commandEngine` | The same, with the engine kind `directApiOnly`: X has no browser path |
@@ -78,7 +78,7 @@ Example: `log twitter reply --account <a> --tweet <url> --text "<copy>" --approv
 2. The engine pings the session.
 3. The style check passes.
 4. twikit sends the reply.
-5. X's answer decides the result. A sent id is success. An empty result, a 429, 226, 344, a soft block or the governor is a refusal, and the run stops there until the owner starts it again (rule 94). A 401 marks the session `loggedOut` in Twenty.
+5. X's answer decides the result. A sent id is success. An empty result, a 429, 226, 344, a soft block or the governor is a refusal, and the run stops there until the owner starts it again (rule 94). A 401 marks the session `loggedOut` on the account row.
 
 ## The commands
 
@@ -114,9 +114,9 @@ What every platform's commands share stays shared: the copy rules (beside `faceb
 - **The governor** paces every call. fbk's `RequestGovernor` already paces with heavy-tailed gaps, caps and lasting cooldowns, and takes its settings as an object. X's settings are a second configuration of the same class, kept per account like Facebook's.
 - **A halt** sends an alert to the team chat with `--alertChannel`.
 
-## Twenty
+## The account row
 
-X accounts are `socialAccounts` rows with platform `TWITTER`. They need cookies set; they don't need a proxy or home country. After each run, X's refreshed cookies are merged back into the row, as the controller does.
+X accounts are `socialAccounts` rows, in the local account store (or Twenty if you keep accounts there), with platform `TWITTER`. They need cookies set; they don't need a proxy or home country. After each run, X's refreshed cookies are merged back into the row, as the controller does.
 
 ## Not yet
 
@@ -124,7 +124,7 @@ The warm-up, X listening (searching and reading posts), a browser path for X, an
 
 ## The plan, in order
 
-1. **The engine:** `python/twitterApi/engine.py` around `vendor/twikit` (the session from Twenty, the governor, the session ping, the answer read into an event), with `log twitter session check` as its first command. It changes nothing on X.
+1. **The engine:** `python/twitterApi/engine.py` around `vendor/twikit` (the account's saved session, the governor, the session ping, the answer read into an event), with `log twitter session check` as its first command. It changes nothing on X.
 2. **`follows`:** the controller's one read.
 3. **`reply`, `quote`, `like` and `dm`,** each with its `…Live` tool and the style check.
 4. **The queue** (plan, approve, run, nudge) as the XState machine above.

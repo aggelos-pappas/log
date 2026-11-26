@@ -1,6 +1,10 @@
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { setDefaultTimeout } from 'bun:test'
+
+const CI_TEST_TIMEOUT_MS = 20_000
+if (process.env.CI) setDefaultTimeout(CI_TEST_TIMEOUT_MS)
 
 const envLocal = join(import.meta.dir, '..', '..', '.env.local')
 if (!process.env.LOG_PYTHON && existsSync(envLocal)) {

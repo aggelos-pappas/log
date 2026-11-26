@@ -134,7 +134,7 @@ For platform work, read the relevant skill/use-case and current domain spec. Pla
 
 173. 2026-11-11 · The previously excluded hosting/database provider remains excluded. Follow the accepted Treg deployment reference and distinguish public deployment examples from unverified production infrastructure. Do not silently select a replacement.
 
-174. 2026-11-11 · AdsPower stays the default: provided access through the paid installation or user-owned keys. Keep the installation management key at its host, separate from single-use Log pairing authority; disclose actual browser/profile storage location.
+174. 2026-11-27 · Camoufox is the default browser and the basis of all browser work. AdsPower is an optional driver, used only for an account with an AdsPower profile linked. Keep any AdsPower installation management key at its host, separate from single-use Log pairing authority; disclose actual browser/profile storage location.
 
 175. 2026-11-11 · Use existing log.db and platform-agnostic engine contracts for native schemas. Do not copy Twenty agency prefixes or CRM/SMS structures. Old listing/campaign functionality is deferred. Add only missing account/credential and hosted execution contracts; preserve existing identity, message, queue, job and governor authorities.
 

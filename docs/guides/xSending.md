@@ -79,7 +79,7 @@ From `skills/xPosting/SKILL.md`.
 
 ## xPosting
 
-One page for everything an X account does. Each account in Twenty runs the
+One page for everything an X account does. Each account runs the
 same setup. The other skills and docs hold the detail. This page says which
 one to open, and where a new workflow or style goes.
 
@@ -88,14 +88,14 @@ one to open, and where a new workflow or style goes.
 | Step | Command | Where it lands |
 | --- | --- | --- |
 | Copy `auth_token`, `ct0` and `twid` from a browser signed in to x.com (DevTools → Application → Cookies → `https://x.com`) | none | your clipboard only |
-| Save them, checked with X first | `log twitter cookies save --account <handle> [--style house] [--name "<label>"]` in a terminal (a masked Clack prompt; never a flag, never over MCP) | Twenty `socialAccounts`: a TWITTER row with `accountName` = handle, `cookies`, `sessionState`, `copyStyle` |
-| Check it any time | `log twitter session check --account <handle>` (MCP `twitterSession`) | `sessionState` in Twenty, and the governor in `~/.logCli/twitter/<handle>` |
+| Save them, checked with X first | `log twitter cookies save --account <handle> [--style house] [--name "<label>"]` in a terminal (a masked Clack prompt; never a flag, never over MCP) | the account store: a TWITTER `socialAccounts` row with `accountName` = handle, `cookies`, `sessionState`, `copyStyle` |
+| Check it any time | `log twitter session check --account <handle>` (MCP `twitterSession`) | `sessionState` on the account's row, and the governor in `~/.logCli/twitter/<handle>` |
 | X Chat PIN, to read encrypted DMs | `log twitter chat pin --account <handle>` in a terminal | `socialAccounts.messengerPin` |
 
 The cookies are saved only when X answers loggedIn for that same handle. A
 refused or wrong-account paste saves nothing. Each check merges X's refreshed
-cookies back into the row. The cookies live in Twenty only, and are never
-printed, committed or put in the knowledge base.
+cookies back into the row. The cookies live only on the account's row (keyring-encrypted
+when it is local), and are never printed, committed or put in the knowledge base.
 
 ### 2. Original posts: the social posting playbook
 
@@ -107,7 +107,7 @@ comment, the quote an hour later).
 
 - Repo: `listeningkit-frontend`, `docs/okf/operations/social-posting-playbook.md`
   (branch `docs/social-posting-playbook`).
-- Twenty: Notes → "Social posting playbook" in your own Twenty.
+- Twenty (optional): Notes → "Social posting playbook" in your own Twenty.
 - Knowledge base: `log kb search "social posting playbook"`.
 
 Post the original with `log twitter post --account <handle> --text "<copy>" --media <video.mp4>` (MCP `twitterPost`, `twitterPostLive`).
@@ -237,13 +237,13 @@ judges by the owner's voice. For an account of your own, write in its
 ### 4. Copy styles
 
 Every send and every queue check holds its copy to the account's
-`copyStyle` (Twenty `socialAccounts.copyStyle`; empty means `house`):
+`copyStyle` (the account row's `socialAccounts.copyStyle`; empty means `house`):
 
 | Style | Rules |
 | --- | --- |
 | `house` | lowercase (a capital may open a line), no commas, semicolons, full stops or dashes, urls exempt |
 
-To give an account another style, set `copyStyle` in Twenty, or pass
+To give an account another style, set `copyStyle` on its account row, or pass
 `--style` to `cookies save`. A send names the style that failed and why.
 `--skipStyleCheck` skips the check only when the owner approved the copy
 word for word.

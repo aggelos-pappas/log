@@ -7,8 +7,8 @@ description: Give every account on a browser platform its AdsPower profile, give
 
 ## Hard boundaries
 
-1. **Twenty stays the source.** An AdsPower profile is the browser for one
-   `socialAccounts` row, linked by `adsPowerProfileId`. The Twenty row is never deleted; a DEACTIVATED
+1. **The account row stays the source.** An AdsPower profile is the browser for one
+   `socialAccounts` row in the local account store, linked by `adsPowerProfileId`. The account row is never deleted; a DEACTIVATED
    account, or one whose home is not in `LOG_ADSPOWER_HOMES`, gives its profile back (deleted from
    AdsPower, `adsPowerProfileId` cleared).
 2. **No secret in AdsPower at rest.** Profiles are made with no proxy, password or 2FA key.
@@ -32,9 +32,9 @@ description: Give every account on a browser platform its AdsPower profile, give
 
 ```bash
 log adsPower status                 # the Local API answers
-log adsPower profiles               # AdsPower's profiles, and the Twenty account of each
+log adsPower profiles               # AdsPower's profiles, and the account of each
 log adsPower sync                   # dry run: release / create / relink / linked / skip per account
-log adsPower sync --apply           # give back DEACTIVATED and out-of-home profiles, make the missing ones, link them in Twenty
+log adsPower sync --apply           # give back DEACTIVATED and out-of-home profiles, make the missing ones, link them on the account rows
 log adsPower sync --apply --homes US  # this run's homes (default LOG_ADSPOWER_HOMES)
 log adsPower sync --apply --account <accountName>
 ```

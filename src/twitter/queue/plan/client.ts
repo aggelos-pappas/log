@@ -282,8 +282,10 @@ export function addToQueue(queue: Queue, addition: QueueAddition, rng: Rng, now:
 }
 
 export function keptLink(before: string, after: string): string {
+  const statusLink = /^https:\/\/(x|twitter)\.com\/[^\s]+\/status\/\d+$/
   const first = before.split(/\r?\n/)[0]?.trim() ?? ''
-  if (!/^https:\/\/(x|twitter)\.com\/[^\s]+\/status\/\d+$/.test(first)) return after
+  const lead = after.split(/\r?\n/)[0]?.trim() ?? ''
+  if (!statusLink.test(first) || statusLink.test(lead)) return after
   return after.includes(first) ? after : `${first}\n${after}`
 }
 

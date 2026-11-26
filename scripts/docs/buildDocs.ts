@@ -7,6 +7,7 @@ import { agentsSection, commandTools, CORE_GUIDE, CORE_PRINCIPLES, GUIDE_TOOL, G
 import { catalog, flagsOf, flowEntries, GLOBAL_FLAGS } from "../../src/surface/catalog/index.ts";
 import { diagrams } from "../../src/surface/diagrams/index.ts";
 import { DIRECT_ROUTES } from "../../src/directApi/engine/index.ts";
+import { commandBrowser } from "../../src/browser/run/index.ts";
 import { renderSurface, withSurface } from "../../src/surface/readme/index.ts";
 import { withStepsDiagrams } from "../../src/surface/stepsDiagram/index.ts";
 import { SPEC_ORDER, specDomains, specsIndex, specSummary } from "../../src/specs/index.ts";
@@ -285,6 +286,10 @@ for (const dir of readdirSync(cliRoot)) {
   }
 }
 for (const [name, route] of Object.entries(DIRECT_ROUTES)) {
+  if (route.engine === 'browser') {
+    if (commandBrowser(name) !== 'accountBrowser') problems.push(`${name}: browser route is missing the shared account-browser registration`);
+    continue;
+  }
   const dir = route.platform === "facebook" ? commandWordOfKey(name, route.platform) : route.platform;
   const index = join(cliRoot, dir, "index.ts");
   if (!existsSync(index) || !readFileSync(index, "utf8").includes(`context.${route.seam}`)) problems.push(`DIRECT_ROUTES.${name} says it runs on the direct-API engine through context.${route.seam}, but src/cli/${dir}/index.ts never calls it`);

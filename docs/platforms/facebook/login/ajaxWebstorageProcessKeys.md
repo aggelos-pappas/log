@@ -183,7 +183,7 @@ The page tells Facebook which of its keys it holds in browser storage. Seen only
 
 ## What our machine does with it
 
-Nothing. Browser storage is saved back to Twenty after a run (only while it still holds a Facebook login).
+Nothing. Browser storage is saved back to the account row after a run (only while it still holds a Facebook login).
 
 ## What can go wrong
 

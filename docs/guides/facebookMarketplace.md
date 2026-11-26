@@ -86,7 +86,7 @@ retries until the exit is within 100 km of the home city, or says
 #### 2. Setup (no Facebook)
 
 ```text
-mcp__log__facebookDoctor    args ["--json"]    Python, Camoufox and Twenty OK
+mcp__log__facebookDoctor    args ["--json"]    Python, Camoufox and the accounts OK
 ```
 
 #### 3. Sign in: NEEDSLOGIN → ACTIVE
@@ -98,7 +98,7 @@ mcp__log__facebookConnect   args ["--account", "<a>"]
 The tool always runs `--noPrompt`. Camoufox opens through the proxy on the
 account's device. If the vendor cookies are still logged in, it saves them
 and ends within seconds. If not, it **signs in by itself**: it types
-the Twenty email and password, then on the two-step page the current code
+the account's email and password, then on the two-step page the current code
 from `totpSecret` (switching to "Authentication app" if Facebook offers
 another method first), and trusts the device. This is the connect machine
 (`platformKit/connect/machine.ts`): each page is printed as its kind and
@@ -106,14 +106,17 @@ state; nothing secret is. Every page takes the proven path: the
 cookie banner is accepted, "We suspect automated behaviour" dismissed, login
 puzzles solved (CaptchaKraken, then 2Captcha). Only an identity, photo, video
 or SMS checkpoint is never clicked: it waits for the owner in the window. It reads for up to 600 s
-(`--wait <s>` to change it). Signed in: the session is saved to Twenty and
+(`--wait <s>` to change it). Signed in: the session is saved to the account's row in
+the local account store and
 the account set **ACTIVE**. It can also end `checkpointed` (status
 CHECKPOINT), `wrongPassword`, `disabled` (BANNED) or `signInNotFinished`
 (NEEDSLOGIN), each naming the last page.
 
 Before the first connect, the account needs `email`, `password` and
-`totpSecret` in Twenty: `node scripts/twenty/importVendorAccounts.mjs` (dry run, each
-field `<set>`/`<empty>`), then `--apply`. It reads every `docs/vendors/*.txt`.
+`totpSecret` on its account row. The vendor import writes them to a Twenty workspace:
+`node scripts/twenty/importVendorAccounts.mjs` (dry run, each field `<set>`/`<empty>`),
+then `--apply`. It reads every `docs/vendors/*.txt`. With `LOG_ACCOUNTS=local`, copy them into
+the local account store afterwards with `log localAccount pull`.
 
 Check it:
 
@@ -130,7 +133,7 @@ names. Run step 3 again with someone at the window.
 mcp__log__facebookScan      args ["--account", "<a>"]    Marketplace > Selling loads
 ```
 
-#### 5. The listing row in Twenty
+#### 5. The listing row in Twenty (legacy Marketplace agency)
 
 Write the ad as JSON. Photos are local paths or URLs, and the first one is
 the cover:

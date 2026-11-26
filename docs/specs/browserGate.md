@@ -62,7 +62,7 @@ Checked by: code and SubQ
 
 ### REQ-GATE-09: The first launch makes the account's one device
 
-When the run has no stored device, the gate makes one Windows device (screen, fingerprint config, preferences and a geolocation pinned near the home city, or near the exit when the city has no coordinates) and marks it created so it is saved to Twenty once. Rule 15.
+When the run has no stored device, the gate makes one Windows device (screen, fingerprint config, preferences and a geolocation pinned near the home city, or near the exit when the city has no coordinates) and marks it created so it is saved to the account's row once. Rule 15.
 
 Checked by: code and SubQ
 

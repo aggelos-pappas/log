@@ -12,7 +12,7 @@ When the owner asks for one of these, follow its page step by step.
 
 | Use case | What it is | How the owner asks for it |
 |---|---|---|
-| `getGuide({ useCase: "discord/groupChatRead" })` | Reading a Discord group chat without Twenty | "read the <group> chat over the last <N> hours", "what did <someone> set up in <group>" |
+| `getGuide({ useCase: "discord/groupChatRead" })` | Reading a Discord group chat | "read the <group> chat over the last <N> hours", "what did <someone> set up in <group>" |
 | `getGuide({ useCase: "facebook/marketplaceListings" })` | From accounts to live Marketplace listings | "post a marketplace listing in <town>", "get listings up on facebook marketplace in every town", "set up the facebook accounts and publish the listings", "take the marketplace listing down". |
 | `getGuide({ useCase: "inbox/signIn" })` | Signing an account in: checking it, then the live browser | "sign in to my account", "is my x account logged in", "check my accounts", "log me back into instagram", "my session expired", "check the status of my accounts", "open the browser so I can sign in", "sign into my discord account", "sign me in", "log me in here", "open the browser in the chat", "show me the browser", "log me in in hermes" |
 | `getGuide({ useCase: "instagram/newPlatform" })` | Bringing a new platform up, then vendoring its client | "make a new platform via the MCP for <platform>", "open <platform> in AdsPower", "find me via the gh api the most likely to go into the vendor", "make it work" |
@@ -20,6 +20,7 @@ When the owner asks for one of these, follow its page step by step.
 | `getGuide({ useCase: "linkedin/posts" })` | Posting on LinkedIn, liking or reposting, and taking a post down | "post this on linkedin", "put this up on linkedin with the picture", "like <someone>'s post on linkedin", "repost that on linkedin", "delete that linkedin post" |
 | `getGuide({ useCase: "log/browserMove" })` | Moving accounts to another browser | "move my accounts off adspower", "move everything to camoufox", "switch this account to brave", "get rid of adspower" |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM | "read the messages with <someone> on slack", "reply to <someone> on slack", "what did <someone> say in <workspace>" |
+| `getGuide({ useCase: "tiktok/videoResearch" })` | Researching public TikTok videos | "export videos with this hashtag", "search TikTok for this query", "get full data from these TikTok videos" |
 
 ## The tools in this guide
 
@@ -169,8 +170,8 @@ From `skills/adsPower/SKILL.md`.
 
 ### Hard boundaries
 
-1. **Twenty stays the source.** An AdsPower profile is the browser for one
-   `socialAccounts` row, linked by `adsPowerProfileId`. The Twenty row is never deleted; a DEACTIVATED
+1. **The account row stays the source.** An AdsPower profile is the browser for one
+   `socialAccounts` row in the local account store, linked by `adsPowerProfileId`. The account row is never deleted; a DEACTIVATED
    account, or one whose home is not in `LOG_ADSPOWER_HOMES`, gives its profile back (deleted from
    AdsPower, `adsPowerProfileId` cleared).
 2. **No secret in AdsPower at rest.** Profiles are made with no proxy, password or 2FA key.
@@ -194,9 +195,9 @@ From `skills/adsPower/SKILL.md`.
 
 ```bash
 log adsPower status                 # the Local API answers
-log adsPower profiles               # AdsPower's profiles, and the Twenty account of each
+log adsPower profiles               # AdsPower's profiles, and the account of each
 log adsPower sync                   # dry run: release / create / relink / linked / skip per account
-log adsPower sync --apply           # give back DEACTIVATED and out-of-home profiles, make the missing ones, link them in Twenty
+log adsPower sync --apply           # give back DEACTIVATED and out-of-home profiles, make the missing ones, link them on the account rows
 log adsPower sync --apply --homes US  # this run's homes (default LOG_ADSPOWER_HOMES)
 log adsPower sync --apply --account <accountName>
 ```

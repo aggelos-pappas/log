@@ -4,7 +4,10 @@ import { toAPerson } from '../../plan/types'
 import { networkError } from '../../../live/feed/index'
 import type { FailureKind, XRefusal } from '../types'
 
+export const DMS_CLOSED = /"code"s*:s*349|cannot send messages to this user/i
+
 export function failureOf(answer: TwitterSessionAnswer): FailureKind {
+  if (DMS_CLOSED.test(`${answer.code ?? ''} ${answer.detail ?? ''}`)) return 'dmsClosed'
   if (answer.event === 'sessionDead' || answer.event === 'restricted' || answer.code === 'noSession') return 'auth'
   if (answer.event === 'gone') return 'gone'
   if (answer.event === 'tooBig' || answer.code === 'authorTooBig') return 'tooBig'

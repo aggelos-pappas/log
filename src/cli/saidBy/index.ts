@@ -16,7 +16,7 @@ export function saidByRows(handle: Database, input: SaidByInput): Record<string,
   if (!name) return [];
   const like = `%${name.replace(/[!%_]/g, "!$&")}%`;
   return handle
-    .query("SELECT c.platform, c.name AS chat, m.senderLabel, m.fromOwner, m.sentAt, m.text FROM messages m JOIN chats c ON c.chatId = m.chatId WHERE m.senderLabel LIKE ? ESCAPE '!' ORDER BY m.sentAt DESC LIMIT ?")
+    .query("SELECT c.platform, c.name AS chat, c.serverId, m.senderLabel, m.senderUserId, m.fromOwner, m.sentAt, m.text FROM messages m JOIN chats c ON c.chatId = m.chatId WHERE m.senderLabel LIKE ? ESCAPE '!' ORDER BY m.sentAt DESC LIMIT ?")
     .all(like, input.limit ?? 60) as Record<string, unknown>[];
 }
 

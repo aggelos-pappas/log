@@ -51,7 +51,9 @@ describe("the gate keeps the conventions detector current without waiting on it"
     conventionsDeps.start = () => (starts++, true);
     expect(trainInBackground(context, "missing")).toBe(false);
     const insert = db().prepare("INSERT INTO messages (messageKey, chatId, senderPlatform, senderUserId, fromOwner, sentAt, text, source, receivedAt) VALUES (?, 'c1', 'discord', 'me', 1, ?, ?, 'read', ?)");
-    for (let i = 0; i < OWNER_MIN_FOR_TRAINING; i++) insert.run(`k${i}`, "2026-11-01T00:00:00Z", `line ${i}`, "2026-11-01T00:00:00Z");
+    db().transaction(() => {
+      for (let i = 0; i < OWNER_MIN_FOR_TRAINING; i++) insert.run(`k${i}`, "2026-11-01T00:00:00Z", `line ${i}`, "2026-11-01T00:00:00Z");
+    })();
     process.env.LOG_VOICE_TRAIN = "off";
     expect(trainInBackground(context, "missing")).toBe(false);
     delete process.env.LOG_VOICE_TRAIN;

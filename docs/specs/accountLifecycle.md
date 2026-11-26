@@ -90,7 +90,7 @@ Checked by: code and SubQ
 
 ### REQ-LIFE-13: A checkpoint page deactivates the account
 
-While an account's browser is open, every page it lands on is read from its run's `navigations.jsonl`. The moment one is a `/checkpoint` page, the account is set to DEACTIVATED in Twenty with the reason `checkpointed`, its listings are marked lost, and the page and the time go in the detail. Rule 82.
+While an account's browser is open, every page it lands on is read from its run's `navigations.jsonl`. The moment one is a `/checkpoint` page, the account is set to DEACTIVATED on its row in the account store with the reason `checkpointed`, its listings are marked lost, and the page and the time go in the detail. Rule 82.
 
 Checked by: code and SubQ
 
@@ -102,7 +102,7 @@ Checked by: code and SubQ
 
 ### REQ-LIFE-15: An account already deactivated is left as it is
 
-When the account is already DEACTIVATED, the watch changes nothing. When saving the status to Twenty fails, the watch says so and tries again. Rule 82.
+When the account is already DEACTIVATED, the watch changes nothing. When saving the status to the account store fails, the watch says so and tries again. Rule 82.
 
 Checked by: SubQ
 

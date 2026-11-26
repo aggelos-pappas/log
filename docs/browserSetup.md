@@ -10,8 +10,8 @@ that opens a browser, such as `log inspect` or `log facebook host`.
 - Which commands run in which browser, and what each browser can do, is
   generated from the code: [the browser layer](reference.md#the-browser-layer)
   and [Browsers](browsers.md).
-- A browser profile holds no proxy, password or 2FA key. Those stay in Twenty
-  (or the local accounts file). The proxy goes on only to open the browser and
+- A browser profile holds no proxy, password or 2FA key. Those stay in the local
+  account store (or Twenty, if you keep accounts there). The proxy goes on only to open the browser and
   comes off when it closes.
 - Whichever browser runs:
   - the account must pass the account check first;
@@ -26,7 +26,7 @@ that opens a browser, such as `log inspect` or `log facebook host`.
 
 ```bash
 log adsPower status          # AdsPower's Local API answers
-log adsPower profiles        # its profiles, and the Twenty account of each
+log adsPower profiles        # its profiles, and the account of each
 log adsPower sync            # dry run: one profile per account on a platform with a browser path
 log adsPower sync --apply    # make them, and link each in socialAccounts.adsPowerProfileId
 ```

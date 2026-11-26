@@ -3,6 +3,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chatContextOf } from "../../inbox/context/index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 import { appendEvent, db, eventIdOf, vectorsFor } from "../../inbox/store/index.ts";
 import { enqueueAttachments, enqueueMedia, kindOf, mediaLine, runDescriber } from "./index.ts";
 import { QUEUE_LIMIT } from "./types.ts";
@@ -59,7 +60,7 @@ describe("one local model describes every image, meme and video (rule 138)", () 
     db().prepare("UPDATE owners SET pid = ?, status = 'streaming' WHERE platform = 'model'").run(process.ppid);
     const second = await runDescriber({ load: async () => ({ model: "x", describe: async () => "" }) });
     expect(second.ok).toBe(false);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("past its memory ceiling the describer stops loudly", async () => {
     const run = await runDescriber({ load: async () => ({ model: "m", describe: async () => "" }), sleep: async () => {}, memoryMb: () => 9999, ceilingMb: 10 });

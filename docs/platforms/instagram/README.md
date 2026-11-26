@@ -6,7 +6,7 @@ Instagram is a platform of its own: every command is `log instagram <command> â€
 
 | Command | MCP tool | What it does |
 | --- | --- | --- |
-| `log instagram session check` | `instagramSessionCheck` | Checks Instagram still accepts the saved session; the answer goes to Twenty |
+| `log instagram session check` | `instagramSessionCheck` | Checks Instagram still accepts the saved session; the answer goes to the account row |
 | `log instagram dms` | `instagramDms` | The DM threads, newest first, or one thread's messages with `--with` (kept for `log search` and the voice index) |
 | `log instagram send` | `instagramSend`, `instagramSendLive` | Text one message per line, and a photo first with `--photo` (a meme); a dry run unless `--live` with `--approvedBy`; stops the moment they write back (rule 130) |
 | `log instagram watch` | `instagramWatch` | Holds Instagram's realtime connection and pushes every new DM to the inbox (the inbox hook runs it) |
@@ -15,7 +15,7 @@ Instagram is a platform of its own: every command is `log instagram <command> â€
 
 | Part | Where |
 | --- | --- |
-| The accounts | Twenty `socialAccounts` with platform `INSTAGRAM` (or the local accounts file) |
+| The accounts | `socialAccounts` with platform `INSTAGRAM`, in the local account store `~/.logCli/localAccounts.json` (or Twenty if you keep accounts there) |
 | The session | `src/instagram/account/session`, on the shared `src/platformKit/session` |
 | The commands | `src/cli/instagram/index.ts` |
 | The engine | `python/instagramApi/engine.py`, on `python/platformKit/engine.py`; each account's governor is under `~/.logCli/instagram/<account>` |

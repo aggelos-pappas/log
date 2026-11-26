@@ -8,7 +8,7 @@ import type { Conversation, Embedder } from '../../search/conversations/index'
 import { profileOf, startRatesOf, wordCounts } from './helpers/index'
 import { buildPhraseIndex, writePhraseIndex } from '../phrases/index'
 import { sameChatId } from '../../twitter/dm/person/client'
-import { NEAR_PAIRS, SAID_MESSAGES, TIER_ORDER, VOICE_DEPTH } from './types'
+import { NEAR_PAIRS, SAID_MESSAGES, TIER_ORDER, VOICE_DEPTH, VOICE_INDEX_RETIRE_MS } from './types'
 import type { NearPair, VoicePair, VoiceProfile, VoiceTarget } from './types'
 
 type PairMeta = { platform: string; conversationId: string }
@@ -160,6 +160,11 @@ export function voiceIndexStamp(dir = voiceDir()): string {
   return ['pairs.json', 'profiles.json', 'bm25', 'vectors'].map(stampOf).join(':')
 }
 
+function retireLater(index: Promise<VoiceIndex>): void {
+  const timer = setTimeout(() => void index.then((held) => held.close()).catch(() => {}), VOICE_INDEX_RETIRE_MS)
+  timer.unref?.()
+}
+
 export async function closeSharedVoiceIndex(): Promise<void> {
   const held = shared
   shared = null
@@ -175,7 +180,7 @@ export async function openSharedVoiceIndex(embedder: Embedder, dir = voiceDir())
     opening.catch(() => {
       if (shared?.index === opening) shared = null
     })
-    if (older) void older.index.then((index) => index.close()).catch(() => {})
+    if (older) retireLater(older.index)
   }
   const index = await shared.index
   return { ...index, close: async () => {} }

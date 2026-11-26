@@ -101,7 +101,7 @@ a persona of its own:
   (accountName, homeCity, homeCountry).
 - The background check compares each picture with the last three pictures from
   the same country.
-- A picture goes into Twenty only when it passes every check:
+- A picture goes on the account's row only when it passes every check:
   `socialAccounts.profilePhoto` is set to its path (`saveProfilePhoto`), the
   field the host's profile step uploads from.
 
@@ -123,7 +123,7 @@ so a higher bar only burned tries. A picture kept after failing keeps the
 background it was taken in.
 
 On 2026-10-24 all 20 accounts (10 in Pennsylvania, 10 around Kamloops) matched,
-and each one's picture is its profilePhoto in Twenty.
+and each one's picture is its profilePhoto on its account row.
 
 ## The owner's verdict comes first
 

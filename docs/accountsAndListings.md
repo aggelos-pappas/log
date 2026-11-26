@@ -1,14 +1,17 @@
 # Accounts and listings
 
 This page explains how log keeps track of Facebook accounts, their Marketplace
-listings and campaigns, and what happens when an account is lost. Everything
-lives in Twenty: log reads it, runs it, and writes the results back. Read this
+listings and campaigns, and what happens when an account is lost. These
+Marketplace agency features are deferred legacy: listings, campaigns and
+conversations live in Twenty, and log reads them, runs them and writes the
+results back. Accounts themselves live in the local account store by default,
+and in Twenty only if you keep them there (deprecated, #337). Read this
 when you set up accounts, run a campaign, or want to know why a listing moved
 to another account.
 
 ## Where things live
 
-| What | Twenty object | Key fields log uses |
+| What | Object (local store or Twenty for accounts, Twenty for the rest) | Key fields log uses |
 |---|---|---|
 | A Facebook account | `socialAccounts`, `platform = FACEBOOK` | `accountName` (the `--account` handle), `proxy`, `homeCity`, `homeCountry`, `accountStatus`, `statusReason`, `cookies`, `dailyListingCap`, `lastPostedAt`, proxy check results, `vendor…`, `totpSecret` |
 | A listing on one account | `agencyListings` | the ad (`title`, `description`, `price`, `category`, `condition`, `photos`, `copyVersions` and the `copyVersionId` this copy took), the location (`locationQuery` such as "Galway, Ireland", `locationCity`, `locationCountry`), `status`, `socialAccount`, `campaign`, `replaces`, `generation`, Facebook's `listingId` / `listingUrl`, the last run |

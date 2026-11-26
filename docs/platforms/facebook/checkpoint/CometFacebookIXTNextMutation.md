@@ -31,4 +31,4 @@ Our machines don't call it; it fired when Pittsburgh's "See why" was opened in a
 
 ## What can go wrong
 
-It means the account is restricted: connect and publish stop on the same wording before this is ever opened. An account that shows it is RESTRICTED in Twenty and is not used.
+It means the account is restricted: connect and publish stop on the same wording before this is ever opened. An account that shows it is RESTRICTED on its account row and is not used.

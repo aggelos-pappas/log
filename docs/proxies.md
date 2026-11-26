@@ -52,7 +52,7 @@ The full sequence:
 
 ```text
 log facebook scan / status / watch / publish / campaign run / connect / proxy check
-  │  TS: findAccount (Twenty) → prepareRun (browser/run)
+  │  TS: findAccount (local account store, or Twenty) → prepareRun (browser/run)
   │      not FACEBOOK / unusable status / no proxy / no homeCountry ──▶ refused, no Python started
   │      (publish) listing country ≠ homeCountry ──▶ listingCountryMismatch
   │      no locale / timezone for the home (platformKit/home) ──▶ noHomeLocale / noHomeTimezone
@@ -61,7 +61,7 @@ log facebook scan / status / watch / publish / campaign run / connect / proxy ch
   │      (proxy check skips home, hours and device: it opens no browser)
   ▼
 browser/run writes proxy.json, device.json (pinned locale, home timezone, stored
-device) and state.json (cookies + localStorage) from Twenty to a private temp
+device) and state.json (cookies + localStorage) from the account row to a private temp
 folder; Python gets the file PATHS, never credentials on argv; deleted after
   │  proxyGate.arm(proxyPath, devicePath)     (same for every action, sign-in included)
   ▼
@@ -71,7 +71,7 @@ every Camoufox launch → visibleBrowser.launch_kwargs() → proxyGate.apply()
   2. exit IP through proxy  Camoufox public_ip(proxy)   down ──▶ proxyUnreachable, 407 ──▶ proxyAuthFailed
   3. exit country, timezone Camoufox GeoIP database      ≠ homeCountry / none ──▶ proxyCountryMismatch
      Facebook through it    best of 3 rounds over LOG_PROXY_MAX_MS (2500 ms) ──▶ proxyTooSlow
-  4. the device             device.json; first launch: make it (saved to Twenty after the run)
+  4. the device             device.json; first launch: make it (saved to the account row after the run)
   5. launch                 Camoufox(from_options=<stored device + this launch>):
                             exit timezone, webrtc:ipv4 = exit IP, pinned locale, pinned geolocation,
                             headless=False, humanize (0.6 s cap, 0.02 s per hop with HumanMouse), showcursor,
@@ -93,7 +93,7 @@ during publish: review and right before the Publish click, the exit IP is read
 through the browser again: another country ──▶ proxyCountryChanged (nothing clicked);
 a new IP in the country is recorded on the account (proxyExitIp)
 after the run: the session the browser left (only while it holds a Facebook login)
-and a newly made device are saved to Twenty
+and a newly made device are saved to the account row
 ```
 
 ### One device per account
@@ -226,7 +226,7 @@ country:
    `http://<username>-zone-custom-region-ie-st-connacht-city-galway-session-<id>-sessTime-120:<password>@eu.proxy.2captcha.com:2334`
    (SOCKS5 with `--socks5`, port 2333). The gateway is the nearest one: `eu`,
    `na` or `ap`.
-4. **Sticky session.** `<id>` is fixed per account and place (from its Twenty
+4. **Sticky session.** `<id>` is fixed per account and place (from its account
    id, state and city), so every run of that account asks for the same sticky
    session, and no two accounts share one.
    - 2Captcha keeps one IP for **120 minutes at most**: the exit stays in the

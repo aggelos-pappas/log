@@ -22,7 +22,7 @@ One account per town. Each one gets a proxy in that town, its own browser profil
 
 ```mermaid
 flowchart LR
-  buy["1. import the account<br/>Twenty socialAccounts"] --> proxy["2. a proxy near<br/>the home town"]
+  buy["1. import the account<br/>its account row"] --> proxy["2. a proxy near<br/>the home town"]
   proxy --> device["3. one AdsPower<br/>profile each"]
   device --> host["4. the host opens the browser<br/>once a day"]
   host --> setup["5. sign in, check,<br/>photo, name, location"]
@@ -33,7 +33,7 @@ flowchart LR
 
 ## One account, end to end
 
-- **Imported** into Twenty with its home town, cookies and two-step secret.
+- **Imported** into the account store with its home town, cookies and two-step secret.
 - **Proxy:** a residential proxy near the home town, checked for country and distance before it's saved.
 - **Location:** typing "City, ST" can be offered as a different place entirely (a town of the same name abroad), and a bare zip can be offered as another country first. So locations are always typed with the state written out, "City, State" ([spec](https://github.com/matthewdonsemail-lab/log/blob/main/docs/specs/marketplaceLocation.md)).
 - **Listing:** the service, a price and photos. Facebook's create answer returns the listing id, under review at first, and Twenty marks it UNDER_REVIEW, then live.
@@ -48,7 +48,7 @@ Every Facebook command starts with the platform (`log facebook …`), and each h
 
 | # | Step | MCP tool | What decides it | Command |
 | --- | --- | --- | --- | --- |
-| 1 | Import | – | the row in Twenty `socialAccounts` | `scripts/twenty/importVendorAccounts.mjs` |
+| 1 | Import | – | the account's `socialAccounts` row (the vendor import writes a Twenty workspace; `log localAccount pull` copies it into the local account store) | `scripts/twenty/importVendorAccounts.mjs` |
 | 2 | Proxy | `proxyAssign`, `proxyCheck` | the exit IP is in the home country and within 100 km of the home town | `log proxy assign --account <a> --vendor <vendor>`, `log proxy check` |
 | 3 | Browser profile | `adsPowerSync` (a dry run), then `adsPowerSyncLive` { confirmLive: true } | one [AdsPower](https://www.adspower.com/share/pD25Iu) profile per account, linked in `adsPowerProfileId` | `log adsPower sync --apply` |
 | 4 | Ready? | `facebookPreflight` | hours, proxy, kernel, opens left, photo on disk, before anything opens | `log facebook preflight` |

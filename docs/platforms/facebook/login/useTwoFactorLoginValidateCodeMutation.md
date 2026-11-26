@@ -65,7 +65,7 @@ Submits the 6-digit two-factor code (method TOTP) during login and returns wheth
 
 ## What our machine does with it
 
-The `code` step types the current TOTP from Twenty's `totpSecret` and waits on this mutation; a 200 with no error means the code passed and sign-in continues.
+The `code` step types the current TOTP from the account's `totpSecret` and waits on this mutation; a 200 with no error means the code passed and sign-in continues.
 
 ## What can go wrong
 

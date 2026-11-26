@@ -572,7 +572,7 @@ export function firstContactLine(to: string): string {
 export function failedParts(reading: GateReading): string[] {
   const out: string[] = [];
   if (reading.score && !reading.score.pass) out.push(`voice score ${reading.score.score.toFixed(2)}, needs ${reading.score.threshold.toFixed(2)}${reading.score.blocks.length ? `; blocked: ${reading.score.blocks.join("; ")}` : ""}`);
-  if (reading.firstContact && !reading.pass) out.push(firstContactLine(reading.to));
+  if (reading.firstContact && !reading.opensOnTheirPost && !reading.pass) out.push(firstContactLine(reading.to));
   if (reading.neverSays.length) out.push(`phrases the owner never says: ${reading.neverSays.join(", ")}`);
   if (reading.watermark.level === "artifacts") out.push(`AI artifacts in the text: ${watermarkLine(reading.watermark)}`);
   if (reading.voice < VOICE_PASS) out.push(`doesn't sound like the owner ${reading.buildsOn === null ? "typed" : "said"} it (voice ${reading.voice.toFixed(2)}, needs ${VOICE_PASS})`);

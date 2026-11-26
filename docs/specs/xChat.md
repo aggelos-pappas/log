@@ -4,7 +4,7 @@ title: "X Chat"
 
 # X Chat
 
-X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it only through its own engine and vendored twikit, with the account's PIN from Twenty, uses it to keep cold dms away from people the owner already talks to, and treats a reaction or a read receipt as a follow-up to send. Rules 87, 88 and 100.
+X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it only through its own engine and vendored twikit, with the account's PIN from its account row, uses it to keep cold dms away from people the owner already talks to, and treats a reaction or a read receipt as a follow-up to send. Rules 87, 88 and 100.
 
 ## Prior conversations
 
@@ -34,15 +34,15 @@ Checked by: code and SubQ
 
 ## Reading X Chat
 
-### REQ-XCHAT-05: X Chat is unlocked with the account's PIN from Twenty
+### REQ-XCHAT-05: X Chat is unlocked with the account's PIN from its account row
 
-The account's X Chat PIN is read from Twenty (`socialAccounts.messengerPin`) and handed to the engine only as a file in the run's private folder; the engine unlocks the account's keys with it (`unlock_xchat`) before decrypting. Rule 88.
+The account's X Chat PIN is read from its row in the local account store (`socialAccounts.messengerPin`, through `loginSecrets`) and handed to the engine only as a file in the run's private folder; the engine unlocks the account's keys with it (`unlock_xchat`) before decrypting. Rule 88.
 
 Checked by: code and SubQ
 
 ### REQ-XCHAT-06: The PIN is saved only from a masked prompt, after it unlocks
 
-`log twitter chat pin` asks for the PIN twice in a masked Clack prompt, checks it opens the account's keys through the engine (`xchatUnlock`), and only then saves it to Twenty. It is never printed. Rule 88.
+`log twitter chat pin` asks for the PIN twice in a masked Clack prompt, checks it opens the account's keys through the engine (`xchatUnlock`), and only then saves it to the account's row. It is never printed. Rule 88.
 
 Checked by: code and SubQ
 

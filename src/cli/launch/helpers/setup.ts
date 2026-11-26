@@ -1,5 +1,3 @@
-import { PLATFORM_SITES } from "../../runner/helpers/platforms.ts";
-import type { Platform } from "../../runner/helpers/platforms.ts";
 import { HARNESSES } from "../../../agentHooks/harness/types.ts";
 import type { HarnessId } from "../../../agentHooks/harness/types.ts";
 
@@ -48,14 +46,6 @@ export const SETUP_EXTENSIONS: readonly SetupExtension[] = [
   },
 ];
 
-export const ADSPOWER_SETUP = {
-  label: "AdsPower",
-  adds: "the browser every browser platform's account signs in and acts through, one profile per account",
-  signUpUrl: "https://www.adspower.com/share/pD25Iu",
-  keyName: "ADSPOWER_API_KEY",
-  keyHint: "AdsPower, API, the Local API key (leave empty if the Local API has no key)",
-} as const;
-
 const SETUP_ADDS: Readonly<Partial<Record<HarnessId, string>>> = {
   opencode: "log's tools as native tools (never Code Mode) and the hooks running, in ~/.config/opencode",
   hermes: "the one native log plugin in Hermes's plugins folder (HERMES_HOME, else ~/.hermes, else %LOCALAPPDATA%\\hermes on Windows): log's plays as skills, GenUI, the dashboard and Desktop halves, and the pre_llm_call hook that puts the play, pending messages and browser states before each model call; it retires the old logHooks half (then: hermes plugins enable log, and hermes mcp add log --command logMcp if config.yaml has no mcp_servers.log)",
@@ -68,10 +58,6 @@ export interface SetupHarness {
 }
 
 export const SETUP_HARNESSES: readonly SetupHarness[] = HARNESSES.filter((h) => h.installedBy === "launchSetup").map((h) => ({ id: h.id, label: h.label, adds: SETUP_ADDS[h.id] ?? `log's hooks for ${h.label}` }));
-
-export function needsBrowser(platforms: readonly Platform[]): boolean {
-  return platforms.some((platform) => PLATFORM_SITES[platform].browser);
-}
 
 export function setEnvValue(text: string, key: string, value: string): string {
   const line = `${key}=${value}`;

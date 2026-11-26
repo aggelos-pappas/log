@@ -42,6 +42,7 @@ export type DirectOutcome<Row> =
 export type CommandEngine = 'directApiFirst' | 'directApiOnly' | 'browser' | 'none'
 
 export interface DirectRoute {
+  engine?: 'browser'
   platform: string
   library: string
   only: boolean

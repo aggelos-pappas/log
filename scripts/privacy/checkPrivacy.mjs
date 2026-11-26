@@ -22,8 +22,35 @@ const paths = args.filter((a, i) => !a.startsWith("--") && args[i - 1] !== "--li
 const git = (...gitArgs) => spawnSync("git", gitArgs, { cwd: root, windowsHide: true, maxBuffer: 256 * 1024 * 1024 });
 const lines = (out) => out.toString("utf8").split(/\r?\n/).filter(Boolean);
 
+function indexedFiles(paths) {
+  const files = new Map();
+  const wanted = paths.filter((path) => !isSkippedPath(path));
+  for (let start = 0; start < wanted.length; start += 64) {
+    const batch = wanted.slice(start, start + 64);
+    const answer = spawnSync("git", ["cat-file", "--batch"], { cwd: root, windowsHide: true, maxBuffer: 256 * 1024 * 1024, input: batch.map((path) => `:${path}\n`).join("") });
+    if (answer.status !== 0) throw new Error("Could not read staged files for the privacy check");
+    let offset = 0;
+    for (const path of batch) {
+      const end = answer.stdout.indexOf(10, offset);
+      const header = answer.stdout.subarray(offset, end).toString("utf8");
+      const found = /^[a-f0-9]+ blob (\d+)$/.exec(header);
+      if (end < 0 || !found) throw new Error("Unexpected staged file response in the privacy check");
+      const size = Number(found[1]);
+      offset = end + 1;
+      if (offset + size >= answer.stdout.length || answer.stdout[offset + size] !== 10) throw new Error("Incomplete staged file response in the privacy check");
+      files.set(path, answer.stdout.subarray(offset, offset + size));
+      offset += size + 1;
+    }
+  }
+  return files;
+}
+
 function targets() {
-  if (staged) return lines(git("diff", "--cached", "--name-only", "--diff-filter=ACMR").stdout).map((path) => ({ path, read: () => git("show", `:${path}`).stdout }));
+  if (staged) {
+    const paths = lines(git("diff", "--cached", "--name-only", "--diff-filter=ACMR").stdout);
+    const files = indexedFiles(paths);
+    return paths.map((path) => ({ path, read: () => files.get(path) ?? null }));
+  }
   const list = paths.length ? paths.map(normalisePath) : lines(git("ls-files").stdout);
   return list.map((path) => ({ path, read: () => (existsSync(join(root, path)) ? readFileSync(join(root, path)) : null) }));
 }
