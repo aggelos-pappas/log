@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { serveLogMcpHttp } from "../server/index.ts";
 import { challengeOf, CLAUDE_CALLBACK, createOAuthServer, listClients, readStore, revokeClients } from "./index.ts";
 import { STARTS_SERVER_MS } from "../../../scripts/tests/timeouts.ts";
@@ -31,7 +31,7 @@ function setUp(signedInAs = OWNER) {
     return new Response("not found", { status: 404 });
   }) as typeof fetch;
   const oauth = createOAuthServer({ publicUrl: PUBLIC, twenty: { baseUrl: TWENTY, basicUser: "guard", basicPassword: "wall" }, ownerUserId: () => OWNER, storePath, fetch: fakeTwenty, now: () => clock });
-  const served = serveLogMcpHttp({ port: 0, token: "staticSecret", oauth, context: { twenty: marketplaceFixture() }, server: { logDir: null, watchFlows: false } });
+  const served = serveLogMcpHttp({ port: 0, token: "staticSecret", oauth, context: { accounts: marketplaceFixture() }, server: { logDir: null, watchFlows: false } });
   stops.push(served.stop);
   const base = served.url.replace(/\/mcp$/, "");
   return { oauth, base, mcp: served.url, storePath, seen, advance: (ms: number) => (clock += ms) };

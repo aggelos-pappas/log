@@ -1,5 +1,5 @@
-import type { AgencyListing as AgencyListingRecord } from '../../../twenty/graphql/generated/index'
-import type { AGENCY_LISTING_FIELDS } from '../../../twenty/graphql/client'
+import type { AgencyListing as AgencyListingRecord } from '../../../accounts/store/index'
+import type { AGENCY_LISTING_FIELDS } from '../../../accounts/store/index'
 import type { CopyVersion } from '../copy/types'
 
 export const LISTING_STATUSES = [

@@ -33,7 +33,7 @@ describe("the syntax-tree edits", () => {
 
 function copyOfRepo(): string {
   const root = mkdtempSync(join(tmpdir(), "newPlatform"));
-  for (const path of ["src/cli/runner/helpers/platforms.ts", "src/cli/runner/index.ts", "src/cli/runner/client.ts", "src/cli/runner/helpers/commandIndex.ts", "src/cli/runner/types.ts", "src/directApi/engine/client.ts", "src/mcp/server/helpers/agentRules.ts", "src/mcp/server/helpers/guides.ts", "src/twenty/graphql/generated/schema.ts", "src/storage/platform/helpers/extenders.ts"]) {
+  for (const path of ["src/cli/runner/helpers/platforms.ts", "src/cli/runner/index.ts", "src/cli/runner/client.ts", "src/cli/runner/helpers/commandIndex.ts", "src/cli/runner/types.ts", "src/directApi/engine/client.ts", "src/mcp/server/helpers/agentRules.ts", "src/mcp/server/helpers/guides.ts", "src/storage/platform/helpers/extenders.ts"]) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     cpSync(join(REPO, path), join(root, path));
   }
@@ -48,7 +48,6 @@ describe("log new platform", () => {
   test("the plan wires every registration through the syntax tree and writes the platform's files", () => {
     const root = copyOfRepo();
     const plan = planNewPlatform(root, { name: PROBE, sessionCookies: ["probe_session"] });
-    expect(plan.notes.join(" ")).toContain(`no ${PROBE.toUpperCase()} option`);
     applyPlan(root, plan);
     const read = (p: string) => readFileSync(join(root, p), "utf8");
     expect(read("src/cli/runner/helpers/platforms.ts")).toContain(`"${PROBE}"`);

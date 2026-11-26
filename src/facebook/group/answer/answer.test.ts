@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { createActor, fromPromise, toPromise } from 'xstate'
-import { marketplaceFixture } from '../../../twenty/graphql/index'
+import { marketplaceFixture } from '../../../accounts/store/index'
 import { draftFrom, ensureGroup, parseGroupRef, readJoinOptions, saveDraft, draftComplete } from '../join/index'
 import type { GroupStepReply } from '../join/index'
 import { recordedJoinHar } from '../join/join.test'
@@ -130,13 +130,13 @@ describe('the application in Twenty', () => {
   test('the stepper sets ready or drafting; each fill step patches it with a history line', async () => {
     expect(applicationFromDraft(OPTIONS, null, new Date()).status).toBe('notStarted')
     expect(applicationFromDraft(OPTIONS, { ...DRAFT, rulesAgreed: false }, new Date()).status).toBe('drafting')
-    const twenty = marketplaceFixture()
-    let group = await ensureGroup(twenty, 'galwayOne', (parseGroupRef(GROUP_URL) as { ok: true; group: never }).group)
+    const store = marketplaceFixture()
+    let group = await ensureGroup(store, 'galwayOne', (parseGroupRef(GROUP_URL) as { ok: true; group: never }).group)
     group = { ...group, joinSubmission: { ...group.joinSubmission, options: OPTIONS } }
     const now = new Date('2026-10-20T01:00:00Z')
-    group = await saveDraft(twenty, group, DRAFT, draftComplete(OPTIONS, DRAFT), now)
+    group = await saveDraft(store, group, DRAFT, draftComplete(OPTIONS, DRAFT), now)
     expect(group.joinSubmission.application?.status).toBe('ready')
-    group = await patchApplication(twenty, group, { status: 'submitted', filled: ['agree'], detail: 'pressed Submit' }, { step: 'submitting', folder: 'steps/30' }, now)
+    group = await patchApplication(store, group, { status: 'submitted', filled: ['agree'], detail: 'pressed Submit' }, { step: 'submitting', folder: 'steps/30' }, now)
     expect(group.joinSubmission).toMatchObject({ formPhase: 'submitted', application: { status: 'submitted', submittedAt: now.toISOString() } })
     expect(group.joinSubmission.history.at(-1)).toMatchObject({ step: 'submitting', detail: 'pressed Submit', folder: 'steps/30' })
   })

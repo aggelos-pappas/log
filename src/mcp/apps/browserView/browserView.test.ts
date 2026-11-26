@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { EXTENSION_ID, RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
-import { marketplaceFixture } from "../../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../../accounts/store/index.ts";
 import { createLogMcpServer } from "../../server/index.ts";
 import { browserViewJson } from "../../../cli/browser/index.ts";
 import { stopRelay } from "../../../browser/viewer/index.ts";
@@ -19,7 +19,7 @@ const UI = { extensions: { [UI_EXTENSION_ID]: { mimeTypes: [MCP_APP_MIME_TYPE] }
 const FIXTURE = fileURLToPath(new URL("../../../../python/fixtures/browserViewerFixture.py", import.meta.url));
 
 async function connected(capabilities: Record<string, unknown>) {
-  const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
+  const server = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false });
   const client = new Client({ name: "test", version: "0.0.0" }, { capabilities });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverSide), client.connect(clientSide)]);

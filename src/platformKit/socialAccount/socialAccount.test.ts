@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { existsSync, readFileSync } from 'node:fs'
 import { prepareRun } from '../../browser/run/index'
-import { marketplaceFixture } from '../../twenty/graphql/index'
+import { marketplaceFixture } from '../../accounts/store/index'
 import {
   checkRunnable,
   findAccount,
@@ -41,9 +41,9 @@ describe('parseProxyUrl', () => {
 
 describe('checkRunnable: every run asks this first (rule 12)', () => {
   test('refuses everything that may not open a browser, with its catalog code', async () => {
-    const twenty = marketplaceFixture()
+    const store = marketplaceFixture()
     const code = async (name: string, purpose: 'run' | 'connect' | 'check' = 'run') => {
-      const result = checkRunnable(await findAccount(twenty, name), purpose)
+      const result = checkRunnable(await findAccount(store, name), purpose)
       return result.ok ? 'ok' : result.code
     }
     expect(await code('galwayOne')).toBe('ok')
@@ -76,9 +76,9 @@ describe('prepareRun', () => {
   })
 
   test('a run needs a saved session; signing in does not', async () => {
-    const twenty = marketplaceFixture()
-    expect(prepareRun(await findAccount(twenty, 'noCookies'), 'run')).toMatchObject({ ok: false, code: 'neverConnected' })
-    const connect = prepareRun(await findAccount(twenty, 'needsLogin'), 'connect')
+    const store = marketplaceFixture()
+    expect(prepareRun(await findAccount(store, 'noCookies'), 'run')).toMatchObject({ ok: false, code: 'neverConnected' })
+    const connect = prepareRun(await findAccount(store, 'needsLogin'), 'connect')
     expect(connect.ok).toBe(true)
     if (connect.ok) {
       expect(connect.run.hasSession).toBe(false)
@@ -93,12 +93,12 @@ describe('prepareRun', () => {
 
 describe('socialAccounts in Twenty', () => {
   test('only FACEBOOK accounts are listed; lookups by name or id', async () => {
-    const twenty = marketplaceFixture()
-    const names = (await listFacebookAccounts(twenty)).map((a) => a.accountName)
+    const store = marketplaceFixture()
+    const names = (await listFacebookAccounts(store)).map((a) => a.accountName)
     expect(names).toContain('galwayOne')
     expect(names).not.toContain('twitterOne')
-    expect((await findAccount(twenty, '@galwayOne')).id).toBe('galwayOne')
-    await expect(findAccount(twenty, 'nobody')).rejects.toMatchObject({ code: 'accountNotFound' })
+    expect((await findAccount(store, '@galwayOne')).id).toBe('galwayOne')
+    await expect(findAccount(store, 'nobody')).rejects.toMatchObject({ code: 'accountNotFound' })
   })
 })
 
@@ -138,18 +138,18 @@ describe('helpers', () => {
 
 describe('DEACTIVATED: an account that is never used again', () => {
   test('takes the proxy off, keeps the row, and may neither run nor sign in', async () => {
-    const twenty = marketplaceFixture()
-    await setAccountStatus(twenty, 'galwayThree', 'deactivated', 'setByHand')
-    const row = twenty.rows.socialAccounts.find((r) => r.id === 'galwayThree')!
+    const store = marketplaceFixture()
+    await setAccountStatus(store, 'galwayThree', 'deactivated', 'setByHand')
+    const row = store.rows.socialAccounts.find((r) => r.id === 'galwayThree')!
     expect(row).toMatchObject({ accountStatus: 'DEACTIVATED', proxy: null, statusReason: 'setByHand' })
-    const account = await findAccount(twenty, 'galwayThree')
+    const account = await findAccount(store, 'galwayThree')
     expect(checkRunnable(account, 'run')).toMatchObject({ ok: false })
     expect(checkRunnable(account, 'connect')).toMatchObject({ ok: false })
   })
 
   test('any other status leaves the proxy where it is', async () => {
-    const twenty = marketplaceFixture()
-    await setAccountStatus(twenty, 'galwayThree', 'checkpoint', 'checkpointed')
-    expect(twenty.rows.socialAccounts.find((r) => r.id === 'galwayThree')!.proxy).toBeTruthy()
+    const store = marketplaceFixture()
+    await setAccountStatus(store, 'galwayThree', 'checkpoint', 'checkpointed')
+    expect(store.rows.socialAccounts.find((r) => r.id === 'galwayThree')!.proxy).toBeTruthy()
   })
 })

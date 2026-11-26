@@ -4,7 +4,7 @@ export function sessionClient(n: PlatformNames): string {
   return `import { join } from 'node:path'
 import { findPlatformAccount, platformGate, recordPlatformSession, runPlatformEngine } from '../../../platformKit/session/index'
 import type { PlatformAccount, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from '../../../platformKit/session/index'
-import type { TwentyClient } from '../../../twenty/graphql/index'
+import type { AccountStore } from '../../../accounts/store/index'
 
 export const ${n.constant}_PLATFORM: PlatformShape = {
   platform: '${n.name}',
@@ -16,7 +16,7 @@ export const ${n.constant}_PLATFORM: PlatformShape = {
 
 export const ${n.constant}_COOKIE_DOMAIN = '${n.cookieDomain}'
 
-export function find${n.pascal}Account(twenty: TwentyClient, ref: string): Promise<PlatformAccount> {
+export function find${n.pascal}Account(twenty: AccountStore, ref: string): Promise<PlatformAccount> {
   return findPlatformAccount(twenty, ${n.constant}_PLATFORM, ref)
 }
 
@@ -28,7 +28,7 @@ export function run${n.pascal}Engine(account: PlatformAccount, spec: PlatformEng
   return runPlatformEngine(${n.constant}_PLATFORM, account, spec)
 }
 
-export function record${n.pascal}Session(twenty: TwentyClient, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
+export function record${n.pascal}Session(twenty: AccountStore, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
   return recordPlatformSession(twenty, ${n.constant}_PLATFORM, account, run, now, ${n.constant}_COOKIE_DOMAIN)
 }
 `;
@@ -108,7 +108,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { ${n.constant}_PLATFORM } from "../../${n.name}/account/session/index.ts";
 import { runCli } from "../runner/index.ts";

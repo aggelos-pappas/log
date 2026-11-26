@@ -68,14 +68,14 @@ export const slackSessionCommand: Command = {
     const ref = parsed.flags["account"];
     if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log slack session check: --account is needed\n${SLACK_SESSION_USAGE}` };
     try {
-      const account = await findSlackAccount(context.twenty, ref);
+      const account = await findSlackAccount(context.accounts, ref);
       const gate = slackGate(account);
       if (!gate.ok) return refuse("slack session check", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directSlack) return { code: 1, stderr: "log slack session check: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: session check on the direct-API engine (vendor/gabrielSlack)`);
       const workspace = typeof parsed.flags["workspace"] === "string" ? parsed.flags["workspace"].trim() : "";
       const run = context.directSlack(account, { action: "ping", ...(workspace ? { workspace } : {}) });
-      for (const line of await recordSlackSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordSlackSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "slack", account: account.accountName, ...run.answer }, null, 2) };
       return { code, stdout: render(account.accountName, run.answer) };
@@ -100,7 +100,7 @@ const SLACK_CHAT_ID = /^[CDG][A-Z0-9]{6,}$/;
 type Opened = { ok: true; account: PlatformAccount; workspace: string } | { ok: false; result: CommandResult };
 
 export async function openAccount(context: CommandContext, label: string, flags: Record<string, unknown>): Promise<Opened> {
-  const account = await findSlackAccount(context.twenty, String(flags["account"]));
+  const account = await findSlackAccount(context.accounts, String(flags["account"]));
   const gate = slackGate(account);
   if (!gate.ok) return { ok: false, result: refuse(label, gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail) };
   if (!context.directSlack) return { ok: false, result: { code: 1, stderr: `log ${label}: the direct-API engine isn't wired in this context` } };

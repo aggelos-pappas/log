@@ -12,7 +12,7 @@ import { renderAccountDetail, renderAccountsTable, resaveKeptRun, resetAccountOp
 export * from "./helpers/index.ts";
 async function giveProfileBack(context: Parameters<Command["run"]>[0], accountName: string): Promise<string[]> {
   try {
-    const result = await syncProfiles(context.twenty, context.adsPower ?? createAdsPowerClient(), { apply: true, log: (line) => context.err(line) });
+    const result = await syncProfiles(context.accounts, context.adsPower ?? createAdsPowerClient(), { apply: true, log: (line) => context.err(line) });
     const released = result.entries.filter((e) => e.action === "release").map((e) => `AdsPower: released ${e.accountName}'s profile ${e.profileId ?? "-"} (${e.note}).`);
     const made = result.entries.filter((e) => e.action === "create" && e.profileId).map((e) => `AdsPower: ${e.accountName} took the freed slot, profile ${e.profileId}.`);
     const waiting = result.entries.filter((e) => e.action === "create" && !e.profileId).length;
@@ -47,7 +47,7 @@ export const accountsCommand: Command = {
     if (!parsed.ok) return refuseInput("facebook accounts", parsed.error, ACCOUNTS_USAGE);
     if (parsed.positionals.length > 0) return { code: 1, error: "inputInvalid", stderr: `log facebook accounts: unexpected argument "${parsed.positionals[0]}"\n${ACCOUNTS_USAGE}` };
     try {
-      const accounts = await listFacebookAccounts(context.twenty);
+      const accounts = await listFacebookAccounts(context.accounts);
       if (parsed.flags["json"]) {
         const safe = accounts.map(safeAccount);
         return { code: 0, stdout: JSON.stringify({ accounts: safe }, null, 2) };
@@ -91,15 +91,15 @@ export const accountCommand: Command = {
     try {
       if (action === "resetOpens") {
         const reason = typeof parsed.flags["reason"] === "string" ? parsed.flags["reason"] : "reset by the owner";
-        const accounts = ref === "all" ? await listFacebookAccounts(context.twenty) : [await findAccount(context.twenty, ref)];
+        const accounts = ref === "all" ? await listFacebookAccounts(context.accounts) : [await findAccount(context.accounts, ref)];
         const open = openInspects().filter((s) => accounts.some((a) => a.accountName === s.account));
         if (open.length) return { code: 1, stderr: `log facebook account resetOpens: close every browser first (rule 37): ${open.map((s) => `${s.account} (${s.runDir})`).join(", ")} still open` };
         return { code: 0, stdout: accounts.map((a) => resetAccountOpens(a, reason)).join("\n") };
       }
-      const account = await findAccount(context.twenty, ref);
+      const account = await findAccount(context.accounts, ref);
       if (action === "resave") {
         if (typeof parsed.flags["from"] !== "string") return { code: 1, stderr: `log facebook account resave: give --from <folder>\n${ACCOUNT_USAGE}` };
-        const saved = await resaveKeptRun(context.twenty, account, parsed.flags["from"]);
+        const saved = await resaveKeptRun(context.accounts, account, parsed.flags["from"]);
         return { code: saved.ok ? 0 : 1, stdout: saved.lines.join("\n") };
       }
       if (action === "show") {
@@ -113,7 +113,7 @@ export const accountCommand: Command = {
       const reason = typeof parsed.flags["reason"] === "string" ? parsed.flags["reason"] : "setByHand";
       if (reason !== "setByHand" && !isErrorCode(reason)) return { code: 1, error: "inputInvalid", stderr: `log facebook account status: --reason must be an error code (log errors --layer account)` };
       const detail = typeof parsed.flags["detail"] === "string" ? parsed.flags["detail"] : null;
-      const loss = await setStatusAndReplace(context.twenty, account, status as AccountStatus, reason, detail);
+      const loss = await setStatusAndReplace(context.accounts, account, status as AccountStatus, reason, detail);
       const lines = [renderLoss(loss)];
       if (status === "deactivated" && account.adsPowerProfileId) lines.push(...(await giveProfileBack(context, account.accountName)));
       return { code: 0, stdout: lines.filter(Boolean).join("\n") };

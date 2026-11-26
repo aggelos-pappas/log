@@ -5,7 +5,7 @@ import { twitterStateRoot, writeLocalSession } from "../../../directApi/engine/i
 import { findTwitterAccount } from "../../../twitter/account/session/index.ts";
 import type { TwitterAccount } from "../../../twitter/account/session/index.ts";
 import { COPY_STYLES, copyStyleOf, DEFAULT_COPY_STYLE } from "../../../twitter/copy/style/index.ts";
-import { TwentyError } from "../../../twenty/graphql/index.ts";
+import { AccountStoreError } from "../../../accounts/store/index.ts";
 import { shouldPrompt } from "../../launch/helpers/index.ts";
 import type { LaunchTTY } from "../../launch/helpers/index.ts";
 import { parseArgs, parserSpecOf, refuse, refuseError, refuseInput } from "../../runner/helpers/index.ts";
@@ -49,9 +49,9 @@ export function isCookieValue(value: unknown): value is string {
 
 async function existing(context: Parameters<Command["run"]>[0], handle: string): Promise<TwitterAccount | null> {
   try {
-    return await findTwitterAccount(context.twenty, handle);
+    return await findTwitterAccount(context.accounts, handle);
   } catch (error) {
-    if (error instanceof TwentyError && error.code === "accountNotFound" && !/ are called /.test(error.message)) return null;
+    if (error instanceof AccountStoreError && error.code === "accountNotFound" && !/ are called /.test(error.message)) return null;
     throw error;
   }
 }
@@ -110,8 +110,8 @@ export const cookiesCommand: Command = {
       const saved = { ...cookies, ...(run.refreshed ?? {}) };
       const fields = { cookies: saved, sessionState: "loggedIn", sessionCheckedAt: now.toISOString(), ...(style ? { copyStyle: style } : {}) };
       const label = typeof parsed.flags["name"] === "string" && (parsed.flags["name"] as string).trim() ? (parsed.flags["name"] as string).trim() : handle;
-      if (found) await context.twenty.update("socialAccounts", found.id, fields as never);
-      else await context.twenty.create("socialAccounts", { name: label, accountName: handle, platform: "TWITTER", ...fields } as never);
+      if (found) await context.accounts.update("socialAccounts", found.id, fields as never);
+      else await context.accounts.create("socialAccounts", { name: label, accountName: handle, platform: "TWITTER", ...fields } as never);
       writeLocalSession(handle, "loggedIn", now, twitterStateRoot());
       const styleName = style || found?.copyStyle || DEFAULT_COPY_STYLE;
       prompts.outro(`Saved to Twenty. @${handle} is loggedIn (${run.answer.userId}), copy style ${styleName}.`);

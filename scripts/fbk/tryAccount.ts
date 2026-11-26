@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createTwentyClient } from '../../src/twenty/graphql/client.ts'
+import { createAccountStore } from '../../src/accounts/store/index.ts'
 import { findAccount } from '../../src/platformKit/socialAccount/client.ts'
 
 async function main(): Promise<number> {
@@ -11,13 +11,13 @@ async function main(): Promise<number> {
     process.stderr.write('usage: tryAccount.ts <accountName>\n')
     return 1
   }
-  const twenty = createTwentyClient()
-  const account = await findAccount(twenty, name)
+  const store = createAccountStore()
+  const account = await findAccount(store, name)
   if (!account.proxy) {
     process.stderr.write(`${account.accountName}: no proxy in Twenty; refusing (a wrong-country exit burns it)\n`)
     return 1
   }
-  const secrets = await twenty.loginSecrets(account.id)
+  const secrets = await store.loginSecrets(account.id)
   if (!secrets?.email || !secrets.password) {
     process.stderr.write(`${account.accountName}: no email/password in Twenty\n`)
     return 1

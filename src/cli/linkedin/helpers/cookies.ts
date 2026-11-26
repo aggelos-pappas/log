@@ -8,7 +8,7 @@ import { toFacebookAccount } from "../../../platformKit/socialAccount/index.ts";
 import type { SocialAccountRow } from "../../../platformKit/socialAccount/index.ts";
 import { findLinkedinAccount } from "../../../linkedin/account/session/index.ts";
 import type { PlatformAccount } from "../../../platformKit/session/index.ts";
-import { TwentyError } from "../../../twenty/graphql/index.ts";
+import { AccountStoreError } from "../../../accounts/store/index.ts";
 import { shouldPrompt } from "../../launch/helpers/index.ts";
 import type { LaunchTTY } from "../../launch/helpers/index.ts";
 import { parseArgs, parserSpecOf, refuse, refuseError, refuseInput } from "../../runner/helpers/index.ts";
@@ -88,9 +88,9 @@ export function publicIdOf(raw: string): string {
 
 async function existing(context: Parameters<Command["run"]>[0], publicId: string): Promise<PlatformAccount | null> {
   try {
-    return await findLinkedinAccount(context.twenty, publicId);
+    return await findLinkedinAccount(context.accounts, publicId);
   } catch (error) {
-    if (error instanceof TwentyError && error.code === "accountNotFound" && !/ are called /.test(error.message)) return null;
+    if (error instanceof AccountStoreError && error.code === "accountNotFound" && !/ are called /.test(error.message)) return null;
     throw error;
   }
 }
@@ -184,8 +184,8 @@ export const linkedinCookiesCommand: Command = {
       const saved = { ...cookies, ...(run.refreshed ?? {}) };
       const fields = { cookies: saved, sessionState: "loggedIn", sessionCheckedAt: now.toISOString() };
       const label = typeof parsed.flags["name"] === "string" && (parsed.flags["name"] as string).trim() ? (parsed.flags["name"] as string).trim() : publicId;
-      if (found) await context.twenty.update("socialAccounts", found.id, fields as never);
-      else await context.twenty.create("socialAccounts", { name: label, accountName: publicId, platform: "LINKEDIN", ...fields } as never);
+      if (found) await context.accounts.update("socialAccounts", found.id, fields as never);
+      else await context.accounts.create("socialAccounts", { name: label, accountName: publicId, platform: "LINKEDIN", ...fields } as never);
       prompts.outro(`Saved to Twenty. ${publicId} is loggedIn.`);
       return { code: 0, stdout: `log linkedin cookies save: ${publicId} ${found ? "updated" : "added"} in Twenty as a LINKEDIN socialAccount, loggedIn as ${signedInAs}${run.answer.userId ? ` (${run.answer.userId})` : ""}, cookies <set> (${Object.keys(cookies).length} of them), browser ${request?.browser ? `${request.browser.secChUaPlatform ?? "?"} saved` : "not given"}.` };
     } catch (error) {

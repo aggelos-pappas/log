@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { DISCORD_PLATFORM } from "../../discord/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
@@ -14,17 +14,17 @@ import { takePending } from "../../inbox/watch/index.ts";
 import { backfillThread } from "../twitter/helpers/dms.ts";
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "discordOne", accountName: "discordOne", platform: "DISCORD", cookies: [], storageOrigins: [{ origin: "https://discord.com", localStorage: [{ name: "token", value: JSON.stringify("x".repeat(30)) }] }], proxy: null } as never);
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "discordOne", accountName: "discordOne", platform: "DISCORD", cookies: [], storageOrigins: [{ origin: "https://discord.com", localStorage: [{ name: "token", value: JSON.stringify("x".repeat(30)) }] }], proxy: null } as never);
+  return store;
 }
 
-async function run(argv: string[], engine?: PlatformEngineRun, twenty = fixture()) {
+async function run(argv: string[], engine?: PlatformEngineRun, store = fixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const calls: string[] = [];
   const code = await runCli(argv, {
-    twenty,
+    accounts: store,
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     directDiscord: (account, spec) => {
@@ -32,7 +32,7 @@ async function run(argv: string[], engine?: PlatformEngineRun, twenty = fixture(
       return engine ?? { answer: { ok: false, code: "notExpected" }, refreshed: null };
     },
   });
-  const row = twenty.rows.socialAccounts!.find((r) => r.accountName === "discordOne")!;
+  const row = store.rows.socialAccounts!.find((r) => r.accountName === "discordOne")!;
   return { code, out: out.join("\n"), err: err.join("\n"), calls, row };
 }
 
@@ -52,9 +52,9 @@ describe("log discord session check", () => {
   });
 
   test("an account with no Discord token saved is refused before the engine is called", async () => {
-    const twenty = fixture();
-    (twenty.rows.socialAccounts!.find((r) => r.accountName === "discordOne") as unknown as { storageOrigins: unknown }).storageOrigins = [];
-    const r = await run(["discord", "session", "check", "--account", "discordOne"], undefined, twenty);
+    const store = fixture();
+    (store.rows.socialAccounts!.find((r) => r.accountName === "discordOne") as unknown as { storageOrigins: unknown }).storageOrigins = [];
+    const r = await run(["discord", "session", "check", "--account", "discordOne"], undefined, store);
     expect(r.code).toBe(1);
     expect(r.err).toContain("localStorage token");
     expect(r.calls).toEqual([]);
@@ -103,7 +103,7 @@ describe("log discord session check", () => {
       return { answer: { ok: true, serverId: "1000000000000000009", total: 0, messages: [], places: {} }, refreshed: null };
     };
     for (const query of ["ship it", "release"]) {
-      const code = await runCli(["discord", "search", "--account", "discordOne", "--server", "demo server", "--query", query], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: engine as never });
+      const code = await runCli(["discord", "search", "--account", "discordOne", "--server", "demo server", "--query", query], { accounts: fixture(), out: () => {}, err: () => {}, directDiscord: engine as never });
       expect(code).toBe(0);
     }
     expect(calls).toEqual(["servers", "search", "search"]);
@@ -244,12 +244,12 @@ describe("log discord session check", () => {
   });
 
   test("delete --live deletes each id through the engine and stops at the first refusal", async () => {
-    const twenty = fixture();
+    const store = fixture();
     const calls: string[] = [];
     const out: string[] = [];
     const answers: PlatformEngineRun["answer"][] = [{ ok: true, event: "deleted", loginState: "loggedIn", messageId: "1566872902840619151", content: "lad im skint again" }, { ok: false, code: "notOwnMessage", detail: "someone else's" }];
     const code = await runCli(["discord", "delete", "--account", "discordOne", "--channel", "1434928149904228392", "--message", "1566872902840619151,1566872961531777095,1566873006607966331", "--approvedBy", "the owner", "--live"], {
-      twenty,
+      accounts: store,
       out: (l) => out.push(l),
       err: () => {},
       directDiscord: (_account, spec) => {
@@ -263,10 +263,10 @@ describe("log discord session check", () => {
   }, 20_000);
 
   test("send finds the chat the way the owner says it, then sends by its id", async () => {
-    const twenty = fixture();
+    const store = fixture();
     const sent: unknown[] = [];
     const code = await runCli(["discord", "send", "--account", "discordOne", "--channel", "the log community group chat", "--text", "yo", "--approvedBy", "the owner", "--live"], {
-      twenty,
+      accounts: store,
       out: () => {},
       err: () => {},
       directDiscord: (_account, spec) => {
@@ -281,7 +281,7 @@ describe("log discord session check", () => {
   test("send --userId opens the DM by the person's id first, then sends into it", async () => {
     const sent: { action?: string; user?: string; channel?: string }[] = [];
     const code = await runCli(["discord", "send", "--account", "discordOne", "--userId", "1000000000000000777", "--text", "yo", "--asOne", "--overGate", "--approvedBy", "the owner", "--live"], {
-      twenty: fixture(),
+      accounts: fixture(),
       out: () => {},
       err: () => {},
       directDiscord: (_account, spec) => {
@@ -297,10 +297,10 @@ describe("log discord session check", () => {
   });
   test("send --userId without --live opens nothing; --channel and --userId together are refused", async () => {
     const called: unknown[] = [];
-    const dry = await runCli(["discord", "send", "--account", "discordOne", "--userId", "1000000000000000777", "--text", "yo"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec); return { answer: { ok: true }, refreshed: null }; } });
+    const dry = await runCli(["discord", "send", "--account", "discordOne", "--userId", "1000000000000000777", "--text", "yo"], { accounts: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec); return { answer: { ok: true }, refreshed: null }; } });
     expect(dry).toBe(0);
     expect(called).toEqual([]);
-    const both = await runCli(["discord", "send", "--account", "discordOne", "--userId", "1000000000000000777", "--channel", "log", "--text", "yo"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec); return { answer: { ok: true }, refreshed: null }; } });
+    const both = await runCli(["discord", "send", "--account", "discordOne", "--userId", "1000000000000000777", "--channel", "log", "--text", "yo"], { accounts: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec); return { answer: { ok: true }, refreshed: null }; } });
     expect(both).toBe(1);
     expect(called).toEqual([]);
   });
@@ -309,14 +309,14 @@ describe("log discord session check", () => {
     discordDeps.wait = async () => {};
     const called: { action?: string; user?: string }[] = [];
     try {
-      const dry = await runCli(["discord", "friend", "--account", "discordOne", "--userId", "1000000000000000777"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec as never); return { answer: { ok: true }, refreshed: null }; } });
+      const dry = await runCli(["discord", "friend", "--account", "discordOne", "--userId", "1000000000000000777"], { accounts: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec as never); return { answer: { ok: true }, refreshed: null }; } });
       expect(dry).toBe(0);
       expect(called).toEqual([]);
-      const unapproved = await runCli(["discord", "friend", "--account", "discordOne", "--userId", "1000000000000000777", "--live"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec as never); return { answer: { ok: true }, refreshed: null }; } });
+      const unapproved = await runCli(["discord", "friend", "--account", "discordOne", "--userId", "1000000000000000777", "--live"], { accounts: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec as never); return { answer: { ok: true }, refreshed: null }; } });
       expect(unapproved).toBe(1);
       expect(called).toEqual([]);
       const live = await runCli(["discord", "friend", "--account", "discordOne", "--userId", "1000000000000000777,1000000000000000778,1000000000000000779", "--approvedBy", "the owner", "--live"], {
-        twenty: fixture(),
+        accounts: fixture(),
         out: () => {},
         err: () => {},
         directDiscord: (_a, spec) => {
@@ -336,7 +336,7 @@ describe("log discord session check", () => {
     const sent: Record<string, unknown>[] = [];
     try {
       const code = await runCli(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "first line here\nsecond line here", "--approvedBy", "the owner", "--live"], {
-        twenty: fixture(),
+        accounts: fixture(),
         out: () => {},
         err: () => {},
         directDiscord: (_account, spec) => {
@@ -376,7 +376,7 @@ describe("log discord session check", () => {
         gated.push(send as Record<string, unknown>);
         return { ok: true, line: "brief gate: passed (test)" };
       };
-      const code = await runCli(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "here is the guide\nhave a read", "--file", guide, "--brief", "--approvedBy", "the owner", "--live"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: engine as never }).finally(() => {
+      const code = await runCli(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "here is the guide\nhave a read", "--file", guide, "--brief", "--approvedBy", "the owner", "--live"], { accounts: fixture(), out: () => {}, err: () => {}, directDiscord: engine as never }).finally(() => {
         gateDeps.gate = gate;
       });
       expect(code).toBe(0);
@@ -386,7 +386,7 @@ describe("log discord session check", () => {
       expect(sends[1].files).toEqual([guide]);
       sent.length = 0;
       const out: string[] = [];
-      const refused = await runCli(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "here", "--file", stray, "--approvedBy", "the owner", "--live"], { twenty: fixture(), out: (l) => out.push(l), err: (l) => out.push(l), directDiscord: engine as never });
+      const refused = await runCli(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "here", "--file", stray, "--approvedBy", "the owner", "--live"], { accounts: fixture(), out: (l) => out.push(l), err: (l) => out.push(l), directDiscord: engine as never });
       expect(refused).toBe(2);
       expect(out.join("\n")).toContain("fileRefused");
       expect(sent).toHaveLength(0);
@@ -401,7 +401,7 @@ describe("log discord session check", () => {
     const err: string[] = [];
     const out: string[] = [];
     const code = await runCli(["discord", "watch", "--account", "discordOne", "--channel", "1316963626611118161", "--seconds", "30"], {
-      twenty: fixture(),
+      accounts: fixture(),
       out: (l) => out.push(l),
       err: (l) => err.push(l),
       directDiscord: () => ({ answer: { ok: false, code: "notExpected" }, refreshed: null }),

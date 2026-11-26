@@ -77,8 +77,8 @@ async function saveFirstGood(
       misses.push(`${checked.check.exitIp} ${ms} ms per Facebook file`);
       continue;
     }
-    await context.twenty.update("socialAccounts", account.id, { proxy: url });
-    await recordProxyCheck(context.twenty, account.id, { exitIp: checked.check.exitIp, exitCountry: checked.check.exitCountry });
+    await context.accounts.update("socialAccounts", account.id, { proxy: url });
+    await recordProxyCheck(context.accounts, account.id, { exitIp: checked.check.exitIp, exitCountry: checked.check.exitCountry });
     const away = km !== null ? `, ${km} km from ${account.homeCity}` : "";
     return { ok: true, line: `${account.accountName}: ${maskProxyUrl(url)} → exits at ${checked.check.exitIp} in ${countryName(checked.check.exitCountry)} (${where}${away}). Saved to Twenty.` };
   }
@@ -257,10 +257,10 @@ export const proxyCommand: Command = {
         if (summary.bytesLeft <= 0) return refuse("proxy assign", "bytefulRefused", "the residential plan has no traffic left (log proxy balance)");
         let accounts: FacebookAccount[];
         if (parsed.flags["missing"]) {
-          accounts = (await listFacebookAccounts(context.twenty)).filter((a) => !a.proxy && a.status !== "deactivated");
+          accounts = (await listFacebookAccounts(context.accounts)).filter((a) => !a.proxy && a.status !== "deactivated");
           if (accounts.length === 0) return { code: 0, stdout: "Every FACEBOOK account already has a proxy." };
         } else if (typeof parsed.flags["account"] === "string") {
-          accounts = [await findAccount(context.twenty, parsed.flags["account"])];
+          accounts = [await findAccount(context.accounts, parsed.flags["account"])];
         } else {
           return { code: 1, stderr: `log proxy assign: --account <name> or --missing\n${PROXY_USAGE}` };
         }
@@ -285,10 +285,10 @@ export const proxyCommand: Command = {
       try {
         let accounts: FacebookAccount[];
         if (parsed.flags["missing"]) {
-          accounts = (await listFacebookAccounts(context.twenty)).filter((a) => !a.proxy && a.status !== "deactivated");
+          accounts = (await listFacebookAccounts(context.accounts)).filter((a) => !a.proxy && a.status !== "deactivated");
           if (accounts.length === 0) return { code: 0, stdout: "Every FACEBOOK account already has a proxy." };
         } else if (typeof parsed.flags["account"] === "string") {
-          accounts = [await findAccount(context.twenty, parsed.flags["account"])];
+          accounts = [await findAccount(context.accounts, parsed.flags["account"])];
         } else {
           return { code: 1, stderr: `log proxy assign: --account <name> or --missing\n${PROXY_USAGE}` };
         }
@@ -318,11 +318,11 @@ export const proxyCommand: Command = {
     try {
       const checked = await checkProxy(context, account);
       if (!checked.ok) {
-        await recordProxyCheck(context.twenty, account.id, { exitIp: checked.exitIp, exitCountry: checked.exitCountry });
+        await recordProxyCheck(context.accounts, account.id, { exitIp: checked.exitIp, exitCountry: checked.exitCountry });
         return { ...checked.result, stderr: (checked.result.stderr ?? "").replace(/^log proxy:/, "log proxy check:") };
       }
       const check = checked.check;
-      await recordProxyCheck(context.twenty, account.id, { exitIp: check.exitIp, exitCountry: check.exitCountry });
+      await recordProxyCheck(context.accounts, account.id, { exitIp: check.exitIp, exitCountry: check.exitCountry });
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ accountName: account.accountName, proxy: maskProxyUrl(account.proxy), ...check }, null, 2) };
       return {
         code: 0,

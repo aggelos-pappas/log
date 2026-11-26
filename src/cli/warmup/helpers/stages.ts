@@ -174,7 +174,7 @@ async function accountIssue(context: CommandContext, account: FacebookAccount, c
   stage(context, { ...base, event: "stopped", activity, ok: false, detail: `${code}: ${detail}` });
   if (code === "pageNotReached") return;
   try {
-    await recordAccountIssue(context.twenty, account, code, `seen in the warm-up (${activity}): ${detail}`);
+    await recordAccountIssue(context.accounts, account, code, `seen in the warm-up (${activity}): ${detail}`);
   } catch (error) {
     context.err(`(could not update Twenty: ${error instanceof Error ? error.message : String(error)})`);
   }

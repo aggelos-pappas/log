@@ -9,7 +9,7 @@ import type { JsonSchemaType } from "@modelcontextprotocol/sdk/validation";
 import { openDatabase } from "../../storage/schema/index.ts";
 import { buildGraph } from "../../relate/graph/index.ts";
 import { MACHINE_NOW, seedMachineWorld } from "../../relate/machine/fixtures/machineWorld.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { MCP_APP_MIME_TYPE, UI_EXTENSION_ID } from "../apps/browserView/index.ts";
 import { CARDS } from "../apps/cards.ts";
 import { MACHINE_TOOL, REPORT_TOOL } from "../apps/report/index.ts";
@@ -58,7 +58,7 @@ afterAll(() => {
 });
 
 async function connected(name: string, capabilities: Record<string, unknown>) {
-  const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
+  const server = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false });
   const client = new Client({ name, version: "0.0.0" }, { capabilities });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverSide), client.connect(clientSide)]);

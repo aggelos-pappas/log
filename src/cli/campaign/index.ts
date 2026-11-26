@@ -56,7 +56,7 @@ export const campaignCommand: Command = liveThroughAction<Command>({
     }
     try {
       if (action === "show") {
-        const [listings, accounts] = await Promise.all([listListingsWhere(context.twenty, { campaignId: { eq: campaignId } }), listFacebookAccounts(context.twenty)]);
+        const [listings, accounts] = await Promise.all([listListingsWhere(context.accounts, { campaignId: { eq: campaignId } }), listFacebookAccounts(context.accounts)]);
         if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ campaignId, listings }, null, 2) };
         return { code: 0, stdout: renderListingsTable(listings, accounts) };
       }
@@ -67,13 +67,13 @@ export const campaignCommand: Command = liveThroughAction<Command>({
         if (typeof from !== "string" || !Number.isInteger(count) || count < 1) {
           return { code: 1, error: "inputInvalid", stderr: `log facebook campaign fill: --from <listingId> and --accounts <n> are required\n${CAMPAIGN_USAGE}` };
         }
-        const ad = await getListing(context.twenty, from);
+        const ad = await getListing(context.accounts, from);
         if (!ad) return refuse("campaign fill", "listingNotFound", from);
         const content = toPublishListing(ad);
         if (!content.ok) return refuse("campaign fill", "listingInvalid", content.problems.join("; "));
-        const shortfall = await copyVersionsShortfall(context.twenty, ad, count);
+        const shortfall = await copyVersionsShortfall(context.accounts, ad, count);
         if (shortfall) return refuse("campaign fill", "notEnoughCopyVersions", shortfall);
-        const report = await fillCampaign(context.twenty, campaignId, ad, count);
+        const report = await fillCampaign(context.accounts, campaignId, ad, count);
         const lines = report.created.map((c) => `  READY ${c.listing.id} on ${c.account.accountName} (${c.account.homeCity ?? "?"}, ${c.account.homeCountry})${c.listing.copyVersionId ? `: version ${c.listing.copyVersionId}, "${c.listing.title}"` : ""}`);
         lines.unshift(`Created ${report.created.length} of ${count} listing(s) for "${ad.title}" in ${ad.locationQuery}.`);
         if (report.short) lines.push(`${report.short} short: no more FACEBOOK accounts in ${ad.locationCountry} that are ACTIVE, proxied, under their cap and not already in this campaign.`);
@@ -82,7 +82,7 @@ export const campaignCommand: Command = liveThroughAction<Command>({
       }
 
       if (action === "heal") {
-        const replacements = await healCampaign(context.twenty, campaignId);
+        const replacements = await healCampaign(context.accounts, campaignId);
         if (replacements.length === 0) return { code: 0, stdout: "No ACCOUNT_LOST listings in this campaign." };
         const lines = replacements.map((r) =>
           r.next && r.account ? `  "${r.old.title}" → READY ${r.next.id} on ${r.account.accountName}` : `  "${r.old.title}" → still ACCOUNT_LOST: ${r.detail}`,
@@ -90,7 +90,7 @@ export const campaignCommand: Command = liveThroughAction<Command>({
         return { code: replacements.every((r) => r.next) ? 0 : 1, stdout: lines.join("\n") };
       }
 
-      const ready = (await listListingsWhere(context.twenty, { campaignId: { eq: campaignId } })).filter((l) => l.status === "ready");
+      const ready = (await listListingsWhere(context.accounts, { campaignId: { eq: campaignId } })).filter((l) => l.status === "ready");
       if (ready.length === 0) return { code: 0, stdout: "No READY listings in this campaign." };
       const summary: string[] = [];
       let failed = 0;

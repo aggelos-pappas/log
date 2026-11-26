@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
 import type { PublishSession, SessionStep } from "../../camofox/session/index.ts";
-import { FIXTURE_CAMPAIGN, marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { FIXTURE_CAMPAIGN, marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 
 let photo = "";
@@ -47,11 +47,11 @@ const GALWAY_VERSIONS = [
   { id: "officeClearout", title: "Office Clearouts Galway - Desks, Chairs and Boxes", description: galwayDescription("Moving office and the old desks can't come?") },
 ];
 
-async function run(argv: string[], twenty = marketplaceFixture(photo), session = okSession()) {
+async function run(argv: string[], store = marketplaceFixture(photo), session = okSession()) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await runCli(argv, { twenty, session: session.factory as never, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), twenty, session };
+  const code = await runCli(argv, { accounts: store, session: session.factory as never, out: (l) => out.push(l), err: (l) => err.push(l) });
+  return { code, out: out.join("\n"), err: err.join("\n"), twenty: store, session };
 }
 
 describe("log facebook campaign", () => {
@@ -64,14 +64,14 @@ describe("log facebook campaign", () => {
   });
 
   test("fill puts the ad on every eligible account in its country, each copy with the version least like what's live, and says how many it couldn't", async () => {
-    const twenty = marketplaceFixture(photo);
-    const ad = twenty.rows.agencyListings.find((r) => r.id === "adTemplate")!;
+    const store = marketplaceFixture(photo);
+    const ad = store.rows.agencyListings.find((r) => r.id === "adTemplate")!;
     ad.copyVersions = GALWAY_VERSIONS;
-    const { code, out } = await run(["facebook", "campaign", "fill", "--campaign", "campaignNew", "--from", "adTemplate", "--accounts", "5"], twenty);
+    const { code, out } = await run(["facebook", "campaign", "fill", "--campaign", "campaignNew", "--from", "adTemplate", "--accounts", "5"], store);
     expect(code).toBe(1);
     expect(out).toContain("Created 4 of 5 listing(s)");
     expect(out).toContain("1 short");
-    const created = twenty.rows.agencyListings.filter((r) => r.campaignId === "campaignNew" && r.status === "READY");
+    const created = store.rows.agencyListings.filter((r) => r.campaignId === "campaignNew" && r.status === "READY");
     expect(created).toHaveLength(4);
     const used = created.map((r) => r.copyVersionId as string);
     expect(new Set(used).size).toBe(4);
@@ -85,10 +85,10 @@ describe("log facebook campaign", () => {
   });
 
   test("a version that breaks a copy rule stops the fill", async () => {
-    const twenty = marketplaceFixture(photo);
-    const ad = twenty.rows.agencyListings.find((r) => r.id === "adTemplate")!;
+    const store = marketplaceFixture(photo);
+    const ad = store.rows.agencyListings.find((r) => r.id === "adTemplate")!;
     ad.copyVersions = GALWAY_VERSIONS.map((v, i) => (i === 2 ? { ...v, title: "CHEAP Rubbish Galway!!!" } : v));
-    const { code, err } = await run(["facebook", "campaign", "fill", "--campaign", "campaignNew", "--from", "adTemplate", "--accounts", "1"], twenty);
+    const { code, err } = await run(["facebook", "campaign", "fill", "--campaign", "campaignNew", "--from", "adTemplate", "--accounts", "1"], store);
     expect(code).toBe(1);
     expect(err).toContain("notEnoughCopyVersions");
     expect(err).toContain("houseClearance");

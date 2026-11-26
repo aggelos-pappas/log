@@ -3,7 +3,7 @@ import { isAppTool } from "../apps/index.ts";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { createLogMcpServer, serveLogMcpHttp, TOOL_RESULT_SCHEMA } from "./index.ts";
 import { reportOutputSchema } from "../apps/report/index.ts";
 import { LOADS_EVERY_TOOL_MS, STARTS_SERVER_MS } from "../../../scripts/tests/timeouts.ts";
@@ -12,7 +12,7 @@ const stops: (() => void)[] = [];
 afterEach(() => stops.splice(0).forEach((stop) => stop()));
 
 function serve(token: string | null) {
-  const served = serveLogMcpHttp({ port: 0, token, context: { twenty: marketplaceFixture() }, server: { logDir: null, watchFlows: false } });
+  const served = serveLogMcpHttp({ port: 0, token, context: { accounts: marketplaceFixture() }, server: { logDir: null, watchFlows: false } });
   stops.push(served.stop);
   return served;
 }
@@ -74,7 +74,7 @@ describe("--bypass over MCP (rule 20)", () => {
 
 describe("what a client needs from the server (MCP client best practices)", () => {
   test("every tool declares the same outputSchema, and listChanged is on", async () => {
-    const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
+    const server = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false });
     const client = new Client({ name: "test", version: "0.0.0" });
     const [a, b] = InMemoryTransport.createLinkedPair();
     await Promise.all([server.connect(b), client.connect(a)]);

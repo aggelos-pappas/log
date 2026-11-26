@@ -14,7 +14,7 @@ import { homeOf, outsideActiveHours } from "../../platformKit/home/index.ts";
 import { checkRunnable, findAccount } from "../../platformKit/socialAccount/index.ts";
 import type { FacebookAccount } from "../../platformKit/socialAccount/index.ts";
 import { createInspector, formatTraceLine } from "../../observability/trace/index.ts";
-import type { TwentyClient } from "../../twenty/graphql/index.ts";
+import type { AccountStore } from "../../accounts/store/index.ts";
 import { refuse, refuseError, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandResult } from "../runner/types.ts";
 import { directGate, recordSessionState } from "../../directApi/engine/index.ts";
@@ -40,8 +40,8 @@ export const READ_USAGE = [
   "The members go to ~/.logCli/members/<group>/<run time>.tsv and .json, never to Twenty; it prints how many, how many with a bio, owners and pages, and the files. --json gives them.",
 ].join("\n");
 
-async function renderSaved(twenty: TwentyClient, groupRowId: string, name: string): Promise<{ text: string; json: unknown }> {
-  const row = await twenty.get("agencyGroups", groupRowId);
+async function renderSaved(store: AccountStore, groupRowId: string, name: string): Promise<{ text: string; json: unknown }> {
+  const row = await store.get("agencyGroups", groupRowId);
   const cursor = cursorOf(row?.readCursor);
   const lines = [
     `Group ${name}: ${row?.lastReadAt ? `last read ${row.lastReadAt.slice(0, 16)}Z` : "never read"}.`,
@@ -83,7 +83,7 @@ export interface ReadOptions {
 }
 
 export async function readGroupOnce(context: CommandContext, current: CurrentInspect, account: FacebookAccount, group: Group, ref: GroupRef, options: ReadOptions): Promise<{ output: GroupReadOutput; saved: SavedRead }> {
-  const state = await readStateOf(context.twenty, group.id);
+  const state = await readStateOf(context.accounts, group.id);
   context.err(
     `Reading ${group.name ?? ref.key} in ${account.accountName}'s open browser (${current.runDir}): ${state.cursor.watermark === null ? "a first read" : `new since ${new Date(state.cursor.watermark * 1000).toISOString().slice(0, 16)}`}, up to ${options.scrolls} scroll(s), comments of up to ${options.commentPosts} post(s)${options.live ? ", --live: comments switched to Newest" : ", nothing clicked"}.`,
   );
@@ -128,7 +128,7 @@ export async function readGroupOnce(context: CommandContext, current: CurrentIns
   actor.start();
   const output = await toPromise(actor);
 
-  const saved = await saveRead(context.twenty, group.id, output, readReason(output, current.runDir), context.now?.() ?? new Date());
+  const saved = await saveRead(context.accounts, group.id, output, readReason(output, current.runDir), context.now?.() ?? new Date());
   context.err(`Twenty: the group's cursor ${saved.cursorMoved ? "moved" : "stayed"} (rule 65: only the cursor is kept there).`);
   return { output, saved };
 }
@@ -225,7 +225,7 @@ async function runReadMembers(context: CommandContext, parsed: ReadMembersArgs):
   if (parsed.count === null) return { code: 1, error: "inputInvalid", stderr: `log facebook read members: --count is needed\n${READ_USAGE}` };
   const ref = parseGroupRef(parsed.group ?? "");
   if (!ref.ok) return refuse("read", "groupRefInvalid", ref.error);
-  const account = await findAccount(context.twenty, parsed.account ?? "");
+  const account = await findAccount(context.accounts, parsed.account ?? "");
   const check = checkRunnable(account, "run");
   if (!check.ok) return refuse("read", check.code, check.detail);
   const home = homeOf(account);
@@ -257,12 +257,12 @@ export async function runRead(context: CommandContext, argv: string[]): Promise<
   try {
     const ref = parseGroupRef(parsed.group);
     if (!ref.ok) return refuse("read", "groupRefInvalid", ref.error);
-    const account = await findAccount(context.twenty, parsed.account);
+    const account = await findAccount(context.accounts, parsed.account);
     if (parsed.show) {
       const check = checkRunnable(account, "check");
       if (!check.ok) return refuse("read", check.code, check.detail);
-      const group = await ensureGroup(context.twenty, account.id, ref.group);
-      const shown = await renderSaved(context.twenty, group.id, group.name ?? ref.group.key);
+      const group = await ensureGroup(context.accounts, account.id, ref.group);
+      const shown = await renderSaved(context.accounts, group.id, group.name ?? ref.group.key);
       return { code: 0, stdout: parsed.json ? JSON.stringify(shown.json, null, 2) : shown.text };
     }
 
@@ -271,10 +271,10 @@ export async function runRead(context: CommandContext, argv: string[]): Promise<
       const gate = directGate(account, { bypass: parsed.bypass, now });
       if (gate.ok) {
         const direct = context.directRead(account, ref.group.key);
-        for (const line of await recordSessionState(context.twenty, account, direct.sessionState, now)) context.err(line);
+        for (const line of await recordSessionState(context.accounts, account, direct.sessionState, now)) context.err(line);
         if (direct.ok) {
-          const group = await ensureGroup(context.twenty, account.id, ref.group);
-          await context.twenty.update("agencyGroups", group.id, { lastReadAt: now.toISOString(), lastReadReason: `directApi groups.feed_read: ${direct.rows.length} post(s)` } as never);
+          const group = await ensureGroup(context.accounts, account.id, ref.group);
+          await context.accounts.update("agencyGroups", group.id, { lastReadAt: now.toISOString(), lastReadReason: `directApi groups.feed_read: ${direct.rows.length} post(s)` } as never);
           return { code: 0, stdout: parsed.json ? JSON.stringify({ engine: "directApi", sessionState: direct.sessionState, posts: direct.rows }, null, 2) : renderDirectRead(direct.rows) };
         }
         if (direct.stop) return refuse("read", direct.sessionState === "checkpoint" ? "checkpointed" : "governorBlocked", direct.detail);
@@ -286,7 +286,7 @@ export async function runRead(context: CommandContext, argv: string[]): Promise<
 
     const check = checkRunnable(account, "run");
     if (!check.ok) return refuse("read", check.code, check.detail);
-    const group = await ensureGroup(context.twenty, account.id, ref.group);
+    const group = await ensureGroup(context.accounts, account.id, ref.group);
 
     const read = await readInBrowser(context, account, group, ref.group, { scrolls: parsed.scrolls, commentPosts: parsed.commentPosts, live: parsed.live, bypass: parsed.bypass });
     if (!read.ok) return refuse("read", read.code, read.detail);

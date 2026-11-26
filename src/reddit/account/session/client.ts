@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { findPlatformAccount, platformGate, recordPlatformSession, runPlatformEngine } from '../../../platformKit/session/index'
 import type { PlatformAccount, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from '../../../platformKit/session/index'
-import type { TwentyClient } from '../../../twenty/graphql/index'
+import type { AccountStore } from '../../../accounts/store/index'
 
 export const REDDIT_PLATFORM: PlatformShape = {
   platform: 'reddit',
@@ -13,8 +13,8 @@ export const REDDIT_PLATFORM: PlatformShape = {
 
 export const REDDIT_COOKIE_DOMAIN = '.reddit.com'
 
-export function findRedditAccount(twenty: TwentyClient, ref: string): Promise<PlatformAccount> {
-  return findPlatformAccount(twenty, REDDIT_PLATFORM, ref)
+export function findRedditAccount(store: AccountStore, ref: string): Promise<PlatformAccount> {
+  return findPlatformAccount(store, REDDIT_PLATFORM, ref)
 }
 
 export function redditGate(account: PlatformAccount): PlatformGate {
@@ -25,6 +25,6 @@ export function runRedditEngine(account: PlatformAccount, spec: PlatformEngineSp
   return runPlatformEngine(REDDIT_PLATFORM, account, spec)
 }
 
-export function recordRedditSession(twenty: TwentyClient, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
-  return recordPlatformSession(twenty, REDDIT_PLATFORM, account, run, now, REDDIT_COOKIE_DOMAIN)
+export function recordRedditSession(store: AccountStore, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
+  return recordPlatformSession(store, REDDIT_PLATFORM, account, run, now, REDDIT_COOKIE_DOMAIN)
 }

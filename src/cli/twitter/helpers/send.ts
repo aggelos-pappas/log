@@ -223,7 +223,7 @@ function sendCommand(shape: SendShape): Command {
         context.err(`${account.accountName}: ${shape.action === "post" ? "new post" : `${shape.action} ${plan.target}`}${split ? ` ${splitLine(split)}` : ""} on the direct-API engine, X called directly, approved by ${plan.spec.approvedBy}`);
         if (split) {
           const group = /^g\d+$/.test(plan.target);
-          const groupPin = group ? String((await context.twenty.loginSecrets(account.id).catch(() => null))?.messengerPin ?? "") : "";
+          const groupPin = group ? String((await context.accounts.loginSecrets(account.id).catch(() => null))?.messengerPin ?? "") : "";
           if (group && !groupPin) return refuse(label, "xchatPinMissing", `${account.accountName} has no X Chat PIN saved, so the X Chat group ${plan.target} can't be opened to send: the owner saves it once with log twitter chat pin --account ${account.accountName}`);
           const spec = { ...(parsed.flags["force"] === true ? { ...plan.spec, force: true } : plan.spec), ...(groupPin ? { chatPin: groupPin } : {}) };
           const acted = await runAction<HeldGuard, DmParts>({

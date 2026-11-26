@@ -61,11 +61,11 @@ export const listingsCommand: Command = {
       filters.push({ status: { eq: toTwentyEnum(fromTwentyEnum(status)) as never } });
     }
     try {
-      const accounts = await listFacebookAccounts(context.twenty);
-      if (typeof parsed.flags["account"] === "string") filters.push({ socialAccountId: { eq: (await findAccount(context.twenty, parsed.flags["account"])).id } });
+      const accounts = await listFacebookAccounts(context.accounts);
+      if (typeof parsed.flags["account"] === "string") filters.push({ socialAccountId: { eq: (await findAccount(context.accounts, parsed.flags["account"])).id } });
       if (typeof parsed.flags["campaign"] === "string") filters.push({ campaignId: { eq: parsed.flags["campaign"] } });
       const filter: ListingFilter | undefined = filters.length > 1 ? { and: filters } : filters[0];
-      const listings = await listListingsWhere(context.twenty, filter);
+      const listings = await listListingsWhere(context.accounts, filter);
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ listings }, null, 2) };
       return { code: 0, stdout: renderListingsTable(listings, accounts) };
     } catch (error) {
@@ -144,11 +144,11 @@ export const listingCommand: Command = liveThroughAction<Command>({
     if (key === "sweep") {
       try {
         if (!parsed.flags["apply"]) {
-          const rows = await blockedListings(context.twenty);
+          const rows = await blockedListings(context.accounts);
           if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ apply: false, lost: rows.map((r) => ({ listing: r.listing.id, title: r.listing.title, account: r.account.accountName, status: r.account.status, reason: r.account.statusReason })) }, null, 2) };
           return { code: 0, stdout: [`${rows.length} listing(s) on blocked accounts would be marked ACCOUNT_LOST (dry run; --apply writes it):`, ...rows.map((r) => `  ${toTwentyEnum(r.listing.status ?? "unknown")} ${r.listing.title} on ${r.account.accountName} (${toTwentyEnum(r.account.status ?? "unknown")}${r.account.statusReason ? `, ${r.account.statusReason}` : ""})`)].join("\n") };
         }
-        const report = await sweepBlockedListings(context.twenty);
+        const report = await sweepBlockedListings(context.accounts);
         if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ apply: true, lost: report.lost.map((r) => r.listing.id), replaced: report.replacements.filter((r) => r.next).map((r) => r.next!.id) }, null, 2) };
         return { code: 0, stdout: [`${report.lost.length} listing(s) marked ACCOUNT_LOST:`, ...report.lost.map((r) => `  ${r.listing.title} on ${r.account.accountName}`), ...report.replacements.map((r) => r.next && r.account ? `  "${r.old.title}" → READY ${r.next.id} on ${r.account.accountName}` : `  "${r.old.title}" stays ACCOUNT_LOST: ${r.detail}`)].join("\n") };
       } catch (error) {
@@ -168,10 +168,10 @@ export const listingCommand: Command = liveThroughAction<Command>({
       const checked = listingFromJson(raw);
       if (!checked.ok) return { code: 1, stderr: `log facebook listing create: ${file} can't be published:\n${checked.problems.map((p) => `  - ${p}`).join("\n")}` };
       try {
-        const owner = await findAccount(context.twenty, account);
+        const owner = await findAccount(context.accounts, account);
         const mismatch = owner.homeCountry ? countryMismatch(checked.ad as unknown as AgencyListing, owner.homeCountry) : "the account has no home country";
         if (mismatch) return refuse("listing", "listingCountryMismatch", mismatch);
-        const created = await createSlot(context.twenty, checked.ad, owner.id, { campaignId: null });
+        const created = await createSlot(context.accounts, checked.ad, owner.id, { campaignId: null });
         if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ listing: created }, null, 2) };
         return { code: 0, stdout: `Created ${created.id} (READY) for ${owner.accountName}: ${created.title}\nNext: log facebook publish --listing ${created.id}` };
       } catch (error) {
@@ -182,9 +182,9 @@ export const listingCommand: Command = liveThroughAction<Command>({
     if (key === undefined) return { code: 1, error: "inputInvalid", stderr: `log facebook listing: a listing id is required\n${LISTING_USAGE}` };
     if (extra !== undefined) return { code: 1, error: "inputInvalid", stderr: `log facebook listing: unexpected argument "${extra}"\n${LISTING_USAGE}` };
     try {
-      const listing = await getListing(context.twenty, key);
+      const listing = await getListing(context.accounts, key);
       if (!listing) return refuse("listing", "listingNotFound", key);
-      const account = listing.socialAccountId ? await findAccount(context.twenty, listing.socialAccountId).catch(() => null) : null;
+      const account = listing.socialAccountId ? await findAccount(context.accounts, listing.socialAccountId).catch(() => null) : null;
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ listing, account: account ? { accountName: account.accountName, status: account.status, homeCountry: account.homeCountry } : null }, null, 2) };
       return { code: 0, stdout: renderListingDetail(listing, account) };
     } catch (error) {
@@ -198,17 +198,17 @@ export const REMOVABLE_STATUSES = ["active", "underReview", "unconfirmed", "sold
 async function removeListing(context: Parameters<Command["run"]>[0], ref: string | undefined, flags: Record<string, string | true>) {
   if (!ref) return { code: 1, stderr: `log facebook listing remove: give the listing\n${LISTING_USAGE}` };
   try {
-    const listing = (await getListing(context.twenty, ref).catch(() => null)) ?? (await listListingsWhere(context.twenty, { listingId: { eq: ref } }))[0] ?? null;
+    const listing = (await getListing(context.accounts, ref).catch(() => null)) ?? (await listListingsWhere(context.accounts, { listingId: { eq: ref } }))[0] ?? null;
     if (!listing) return refuse("listing", "listingNotFound", ref);
     if (!listing.listingId) return refuse("listing", "listingNotRemovable", `${listing.id} has no Facebook listing id: it was never published, so there is nothing to delete on Facebook`);
     if (!listing.status || !(REMOVABLE_STATUSES as readonly string[]).includes(listing.status)) return refuse("listing", "listingNotRemovable", `${listing.id} is ${toTwentyEnum(listing.status ?? "unknown")}: only ${REMOVABLE_STATUSES.map(toTwentyEnum).join(", ")} listings are deleted on Facebook`);
     if (!listing.socialAccountId) return refuse("listing", "listingNotRemovable", `${listing.id} has no account`);
-    const account = await findAccount(context.twenty, listing.socialAccountId);
+    const account = await findAccount(context.accounts, listing.socialAccountId);
     const flow = loadFlow("marketplaceListingDelete");
     if (!flow) return { code: 1, stderr: "log facebook listing remove: the flow marketplaceListingDelete is missing (src/browser/flow/definitions)" };
     const values = { listingTitle: listing.title ?? "", listingId: listing.listingId };
     const after = async () => {
-      await setListingStatus(context.twenty, listing.id, "removed", { lastRunAt: new Date().toISOString(), lastErrorCode: null, lastError: null });
+      await setListingStatus(context.accounts, listing.id, "removed", { lastRunAt: new Date().toISOString(), lastErrorCode: null, lastError: null });
       return [`Facebook answered the delete for listing ${listing.listingId}. ${listing.id} is now REMOVED in Twenty (kept, never deleted, rule 13).`];
     };
     const result = await runFlow(context, flow, values, { ...flags, account: account.accountName }, after);

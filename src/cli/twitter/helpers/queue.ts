@@ -269,7 +269,7 @@ async function runCommand(context: CommandContext, path: string, flags: Record<s
             if (!item.userId || !item.text?.trim()) return { ok: false, code: "targetMissing", detail: "a voice item needs the person's user id and the words to say" };
             const caught = await waitCaughtUp("twitter", opened.account.accountName);
             if (!caught.ok) return { ok: false, code: "accountBehind", detail: caught.refused };
-            const secrets = await context.twenty.loginSecrets(opened.account.id).catch(() => null);
+            const secrets = await context.accounts.loginSecrets(opened.account.id).catch(() => null);
             const chatPin = secrets?.messengerPin ? String(secrets.messengerPin) : "";
             if (!chatPin) return { ok: false, code: "xchatPinMissing", detail: `${opened.account.accountName} has no X Chat PIN saved, so X Chat can't be opened to send a voice note` };
             const chosen = providerOf(undefined);
@@ -409,7 +409,7 @@ export const queueCommand: Command = {
       }
       if (word === "check") {
         const queue = load(file);
-        const styleAccount = await findTwitterAccount(context.twenty, queue.account).catch(() => null);
+        const styleAccount = await findTwitterAccount(context.accounts, queue.account).catch(() => null);
         const problems = itemProblems(queue, styleAccount?.copyStyle);
         let priorSkipped: { handle: string | null; n: number }[] = [];
         if (queue.items.some((i) => i.action === "dm" && i.status === "pending") && flags["skipXChatCheck"] !== true) {

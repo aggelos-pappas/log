@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 57 domains, 686 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 57 domains, 683 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -607,7 +607,6 @@ A new platform is made whole with one command, `log new platform <name>` (MCP `n
 - **REQ-PLATFORM-04** Without --apply it only lists what it would do
 - **REQ-PLATFORM-05** Nothing is overwritten
 - **REQ-PLATFORM-06** The name is camelCase
-- **REQ-PLATFORM-07** It names what Twenty is missing and never changes Twenty
 - **REQ-PLATFORM-08** The command writes the platform's row in the table
 - **REQ-PLATFORM-09** The check refuses a platform half wired
 - **REQ-PLATFORM-10** Each platform's row says what it is
@@ -703,17 +702,15 @@ log keeps lasting facts about the people the owner talks to: their job, where th
 
 ## [Local accounts](./localAccounts.md)
 
-Accounts live in a local file, on every platform, so log runs everything locally; Twenty is deprecated for accounts (#337). `log localAccount pull|add|list|login` (MCP `localAccountPull`, `localAccountAdd`, `localAccountList`; `login` is terminal-only) fills and reads the file, and `LOG_ACCOUNTS=local` leaves Twenty out of accounts entirely. Listings, groups and conversations (the deferred Marketplace agency objects) stay in Twenty. Rule 97, which narrows rule 13 for accounts only.
+Accounts live in a local file, on every platform, so log runs everything locally; log no longer uses Twenty. `log localAccount add|list|login` (MCP `localAccountAdd`, `localAccountList`; `login` is terminal-only) fills and reads the file. Listings, groups and conversations (the deferred Marketplace agency objects) were kept only in Twenty and are retired until rebuilt on log.db (#339). Rule 97, which narrows rule 13 for accounts only.
 
 - **REQ-LOCAL-01** Accounts live in one local file
-- **REQ-LOCAL-02** Pull copies every Twenty account in, keeping its Twenty id
-- **REQ-LOCAL-03** Add makes an account Twenty never had
+- **REQ-LOCAL-03** Add makes an account
 - **REQ-LOCAL-04** List shows the local accounts
 - **REQ-LOCAL-10** Login saves an account's email and password from masked prompts
-- **REQ-LOCAL-05** A local row wins over Twenty's of the same name
-- **REQ-LOCAL-06** LOG_ACCOUNTS=local leaves Twenty out of accounts
+- **REQ-LOCAL-05** Every command reads accounts from the file
 - **REQ-LOCAL-07** A session a run saves goes back to the file
-- **REQ-LOCAL-08** Everything else stays in Twenty
+- **REQ-LOCAL-08** Everything else is retired
 - **REQ-LOCAL-09** The tool names the rule it falls under
 
 ## [Memelord extension](./memelord.md)

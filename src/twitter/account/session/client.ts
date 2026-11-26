@@ -5,8 +5,8 @@ import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { TwentyError, accountStore } from '../../../twenty/graphql/index'
-import type { TwentyClient } from '../../../twenty/graphql/index'
+import { AccountStoreError } from '../../../accounts/store/index'
+import type { AccountStore } from '../../../accounts/store/index'
 import { SOCIAL_ACCOUNTS, engineRoute, toFacebookAccount } from '../../../platformKit/socialAccount/index'
 import type { FacebookAccount, SocialAccountRow } from '../../../platformKit/socialAccount/index'
 import { twitterStateRoot, writeLocalSession, writesPerDayOf } from '../../../directApi/engine/index'
@@ -20,11 +20,11 @@ const ENGINE = join(import.meta.dir, '..', '..', '..', '..', 'python', 'twitterA
 
 export type TwitterAccount = FacebookAccount
 
-export async function findTwitterAccount(twenty: TwentyClient, ref: string): Promise<TwitterAccount> {
+export async function findTwitterAccount(store: AccountStore, ref: string): Promise<TwitterAccount> {
   const key = ref.trim().replace(/^@/, '')
-  const rows = (await twenty.list(SOCIAL_ACCOUNTS, { accountName: { eq: key } })).filter((r) => r.platform === 'TWITTER')
-  if (rows.length === 0) throw new TwentyError('accountNotFound', `no TWITTER socialAccount "${key}"`)
-  if (rows.length > 1) throw new TwentyError('accountNotFound', `${rows.length} TWITTER socialAccounts are called "${key}"`)
+  const rows = (await store.list(SOCIAL_ACCOUNTS, { accountName: { eq: key } })).filter((r) => r.platform === 'TWITTER')
+  if (rows.length === 0) throw new AccountStoreError('accountNotFound', `no TWITTER socialAccount "${key}"`)
+  if (rows.length > 1) throw new AccountStoreError('accountNotFound', `${rows.length} TWITTER socialAccounts are called "${key}"`)
   return toFacebookAccount(rows[0] as SocialAccountRow)
 }
 
@@ -237,7 +237,7 @@ function sameCookies(a: unknown, b: unknown): boolean {
   return [...names].every((name) => left[name] === right[name])
 }
 
-export async function recordTwitterSession(twenty: TwentyClient, account: TwitterAccount, run: TwitterEngineRun, now: Date): Promise<string[]> {
+export async function recordTwitterSession(store: AccountStore, account: TwitterAccount, run: TwitterEngineRun, now: Date): Promise<string[]> {
   const state = run.answer.loginState
   if (!state) return []
   const update: Record<string, unknown> = { sessionState: state, sessionCheckedAt: now.toISOString() }
@@ -260,6 +260,6 @@ export async function recordTwitterSession(twenty: TwentyClient, account: Twitte
   account.sessionState = state
   account.sessionCheckedAt = now.toISOString()
   if (cookiesChanged) account.cookies = merged as never
-  await twenty.update(SOCIAL_ACCOUNTS, account.id, update as never)
-  return [`${accountStore(account.id)}: ${account.accountName} sessionState ${state} (X's own answer)${cookiesChanged ? ', its refreshed cookies merged back' : ''}.`]
+  await store.update(SOCIAL_ACCOUNTS, account.id, update as never)
+  return [`Local accounts: ${account.accountName} sessionState ${state} (X's own answer)${cookiesChanged ? ', its refreshed cookies merged back' : ''}.`]
 }

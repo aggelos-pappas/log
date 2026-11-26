@@ -53,7 +53,6 @@ export const platformScaffold = {
     'REQ-PLATFORM-03': [{ kind: 'symbol', file: SCAFFOLD, name: 'applyPlan' }],
     'REQ-PLATFORM-04': [{ kind: 'string', file: NEW, includes: 'apply' }],
     'REQ-PLATFORM-06': [{ kind: 'symbol', file: SCAFFOLD, name: 'PLATFORM_NAME' }],
-    'REQ-PLATFORM-07': [{ kind: 'symbol', file: SCAFFOLD, name: 'twentyPlatforms' }],
     'REQ-PLATFORM-08': [
       { kind: 'symbol', file: SCAFFOLD, name: 'namesOf' },
       { kind: 'string', file: NEW, includes: 'hosts' },
@@ -88,7 +87,6 @@ export const platformScaffold = {
     'REQ-PLATFORM-04': noul('When the apply flag is not given, does newCommand return the list of planned files, edits and notes without calling applyPlan or writing anything?'),
     'REQ-PLATFORM-05': noul('Does planNewPlatform throw when PLATFORMS already has the name, and throw when any planned file path already exists, before anything is written?'),
     'REQ-PLATFORM-06': noul('Does planNewPlatform throw before planning anything when the name does not match PLATFORM_NAME, a camelCase name starting with a lowercase letter?'),
-    'REQ-PLATFORM-07': noul('Does planNewPlatform add a note when twentyPlatforms (read from the generated schema) lacks the twentyPlatform value of the new platform, and does nothing in the new platform command or applyPlan write to Twenty?'),
     'REQ-PLATFORM-08': noul('Does namesOf set hosts from the hosts option (default <name>.com), home from the home option (default https://www.<first host>/), proxy to none when noProxy is set and required otherwise, and browser to false when noBrowser is set, and does planNewPlatform refuse a home that is not https on one of the hosts?'),
     'REQ-PLATFORM-09': noul('Does checkPlatforms add a problem for a platform with no PLATFORM_SITES entry, no PLATFORM_LABELS entry, no src/<platform>, no src/cli/<platform>/index.ts, no python/<platform>Api/engine.py, no docs, no session command, no DIRECT_ROUTES.<platform>Session, or a command without its COMMAND_RULES or DIRECT_ROUTES entry under commandKey, and exit 1 when there is any problem?'),
     'REQ-PLATFORM-11': noul('Does parseInspectAction refuse goto when hostOnPlatforms is false, and does hostOnPlatforms return true only for an https URL whose hostname equals, or ends with a dot and, a host in PLATFORM_SITES?'),
@@ -104,7 +102,6 @@ export const platformScaffold = {
     'REQ-PLATFORM-04': MET,
     'REQ-PLATFORM-05': MET,
     'REQ-PLATFORM-06': MET,
-    'REQ-PLATFORM-07': MET,
     'REQ-PLATFORM-08': MET,
     'REQ-PLATFORM-09': MET,
     'REQ-PLATFORM-11': MET,

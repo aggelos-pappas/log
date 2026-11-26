@@ -16,7 +16,6 @@ const FILES = {
   routes: "src/directApi/engine/client.ts",
   rules: "src/mcp/server/helpers/agentRules.ts",
   guides: "src/mcp/server/helpers/guides.ts",
-  twentySchema: "src/twenty/graphql/generated/schema.ts",
   extenders: "src/storage/platform/helpers/extenders.ts",
 } as const;
 
@@ -47,13 +46,6 @@ export function namesOf(options: NewPlatformOptions): PlatformNames {
 
 function read(root: string, path: string): string {
   return readFileSync(join(root, path), "utf8");
-}
-
-export function twentyPlatforms(root: string): string[] {
-  const path = join(root, FILES.twentySchema);
-  if (!existsSync(path)) return [];
-  const match = /export type SocialAccountPlatformEnum = ([^\n]+)/.exec(readFileSync(path, "utf8"));
-  return match ? [...match[1].matchAll(/'([A-Z_]+)'/g)].map((m) => m[1]) : [];
 }
 
 export function planNewPlatform(root: string, options: NewPlatformOptions): PlatformPlan {
@@ -94,8 +86,6 @@ export function planNewPlatform(root: string, options: NewPlatformOptions): Plat
     { path: FILES.guides, what: `GUIDE_TOPICS gains ${n.name}`, apply: (s) => addToObject(s, "GUIDE_TOPICS", n.name, `{ about: ${JSON.stringify(`A ${n.label} account's session`)}, commands: ["${n.name}:session"], skills: [] }`), landed: (s) => objectHasKey(s, "GUIDE_TOPICS", n.name) },
   ];
   const notes: string[] = [];
-  const known = twentyPlatforms(root);
-  if (known.length && !known.includes(n.twentyPlatform)) notes.push(`Twenty's socialAccounts.platform has no ${n.twentyPlatform} option (it has ${known.join(", ")}): add it in scripts/twenty/twentySetup.mjs (fields are only added, rule 13), run it against Twenty, then bun run twenty:client. Until then no account can be found for ${n.name}.`);
   if (!n.library) notes.push(`No client is vendored: python/${n.name}Api/engine.py answers engineNotBuilt until one is (--library vendor/<folder>).`);
   return { names: n, files, edits, notes };
 }

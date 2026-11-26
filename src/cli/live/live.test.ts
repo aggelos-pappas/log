@@ -3,11 +3,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { toListingStatus } from "../../camofox/worker/index.ts";
 import type { WorkerClient, WorkerRequest } from "../../camofox/worker/index.ts";
 import type { ConnectSessionConfig } from "../../camofox/session/index.ts";
-import { FIXTURE_COOKIES, marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { FIXTURE_COOKIES, marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
-async function run(argv: string[], reply: (request: WorkerRequest) => unknown, twenty = marketplaceFixture()) {
+async function run(argv: string[], reply: (request: WorkerRequest) => unknown, store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const requests: WorkerRequest[] = [];
@@ -18,8 +18,8 @@ async function run(argv: string[], reply: (request: WorkerRequest) => unknown, t
     if (request.storage_state_path && existsSync(request.storage_state_path)) files.state = JSON.parse(readFileSync(request.storage_state_path, "utf8"));
     return reply(request);
   }) as WorkerClient;
-  const code = await runCli(argv, { worker, twenty, out: (line) => out.push(line), err: (line) => err.push(line) });
-  return { code, out: out.join("\n"), err: err.join("\n"), requests, files, twenty };
+  const code = await runCli(argv, { worker, accounts: store, out: (line) => out.push(line), err: (line) => err.push(line) });
+  return { code, out: out.join("\n"), err: err.join("\n"), requests, files, twenty: store };
 }
 
 const SCAN = {
@@ -61,9 +61,9 @@ describe("rule 12: no browser for an account that may not run", () => {
   }
 
   test("connect refuses an account with no proxy too: signing in is no exception", async () => {
-    const twenty = marketplaceFixture();
-    await twenty.update("socialAccounts", "needsLogin", { proxy: null });
-    const result = await run(["facebook", "connect", "--account", "needsLogin"], () => ({ ok: true }), twenty);
+    const store = marketplaceFixture();
+    await store.update("socialAccounts", "needsLogin", { proxy: null });
+    const result = await run(["facebook", "connect", "--account", "needsLogin"], () => ({ ok: true }), store);
     expect(result.code).toBe(1);
     expect(result.err).toContain("noProxy");
     expect(result.requests).toHaveLength(0);
@@ -143,13 +143,13 @@ describe("live commands", () => {
   const FAST_CONNECT = { pollMs: 1, codeWindowMs: 1 };
 
   test("connect runs the connect machine through the proxy and saves the cookies to Twenty", async () => {
-    const twenty = marketplaceFixture();
+    const store = marketplaceFixture();
     const session = scriptedConnect(["loggedIn"]);
     const out: string[] = [];
     const err: string[] = [];
-    const code = await runCli(["facebook", "connect", "--account", "needsLogin"], { connectSession: session.factory, connectTiming: FAST_CONNECT, twenty, out: (l) => out.push(l), err: (l) => err.push(l) });
+    const code = await runCli(["facebook", "connect", "--account", "needsLogin"], { connectSession: session.factory, connectTiming: FAST_CONNECT, accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
     expect(code).toBe(0);
-    const account = twenty.rows.socialAccounts.find((r) => r.id === "needsLogin")!;
+    const account = store.rows.socialAccounts.find((r) => r.id === "needsLogin")!;
     expect(account.cookies).toEqual([{ name: "c_user", value: "2", domain: ".facebook.com", path: "/" }]);
     expect(account.accountStatus).toBe("ACTIVE");
     expect(out.join("\n")).toContain("needsLogin is ACTIVE again");
@@ -157,15 +157,15 @@ describe("live commands", () => {
     expect(session.closed()).toBe(1);
     expect(err.join("\n")).toContain("signingIn.reading");
     expect(session.configs[0].captureDir.replaceAll("\\", "/")).toMatch(/\/connect\/\d{8}T\d{6}_needsLogin\/camoufox$/);
-    expect(await runCli(["facebook", "connect", "--account", "needsLogin", "--wait", "5"], { connectSession: session.factory, twenty, out: () => {}, err: () => {} })).toBe(1);
+    expect(await runCli(["facebook", "connect", "--account", "needsLogin", "--wait", "5"], { connectSession: session.factory, accounts: store, out: () => {}, err: () => {} })).toBe(1);
   });
 
   test("connect --noPrompt types Twenty's details from a private file, deleted after the run, through two-step", async () => {
-    const twenty = marketplaceFixture();
-    await twenty.update("socialAccounts", "needsLogin", { email: "fixture@example.com", password: "fixturePass", totpSecret: "GEZDGNBVGY3TQOJQ" } as never);
+    const store = marketplaceFixture();
+    await store.update("socialAccounts", "needsLogin", { email: "fixture@example.com", password: "fixturePass", totpSecret: "GEZDGNBVGY3TQOJQ" } as never);
     const session = scriptedConnect(["loginForm", "twoStepMethod", "twoStepCode", "trustDevice", "loggedIn"]);
     const out: string[] = [];
-    const code = await runCli(["facebook", "connect", "--account", "needsLogin", "--noPrompt"], { connectSession: session.factory, connectTiming: FAST_CONNECT, twenty, out: (l) => out.push(l), err: (l) => out.push(l) });
+    const code = await runCli(["facebook", "connect", "--account", "needsLogin", "--noPrompt"], { connectSession: session.factory, connectTiming: FAST_CONNECT, accounts: store, out: (l) => out.push(l), err: (l) => out.push(l) });
     expect(code).toBe(0);
     expect(session.handed()).toEqual({ email: "fixture@example.com", password: "fixturePass", totpSecret: "GEZDGNBVGY3TQOJQ", messengerPin: null });
     expect(require("node:fs").existsSync(session.configs[0].loginPath!)).toBe(false);
@@ -174,44 +174,44 @@ describe("live commands", () => {
     expect(out.join("\n")).not.toContain("fixturePass");
 
     const plain = scriptedConnect(["loginForm", "loggedIn"]);
-    await runCli(["facebook", "connect", "--account", "needsLogin"], { connectSession: plain.factory, connectTiming: FAST_CONNECT, twenty, out: () => {}, err: () => {} });
+    await runCli(["facebook", "connect", "--account", "needsLogin"], { connectSession: plain.factory, connectTiming: FAST_CONNECT, accounts: store, out: () => {}, err: () => {} });
     expect(plain.configs[0].loginPath).toBeNull();
     expect(plain.steps).not.toContain("submitCredentials");
   }, SPAWNS_PROCESS_MS);
 
   test("connect stuck on Facebook's checkpoint ends checkpointed: status CHECKPOINT, cookies left as they were", async () => {
-    const twenty = marketplaceFixture();
-    await twenty.update("socialAccounts", "galwayOne", { email: "fixture@example.com", password: "fixturePass" } as never);
-    const before = twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!.cookies;
+    const store = marketplaceFixture();
+    await store.update("socialAccounts", "galwayOne", { email: "fixture@example.com", password: "fixturePass" } as never);
+    const before = store.rows.socialAccounts.find((r) => r.id === "galwayOne")!.cookies;
     const session = scriptedConnect(["loginForm", "checkpoint"]);
     const out: string[] = [];
     const err: string[] = [];
-    const code = await runCli(["facebook", "connect", "--account", "galwayOne", "--noPrompt", "--wait", "10"], { connectSession: session.factory, connectTiming: { ...FAST_CONNECT, deadlineMs: 50 }, twenty, out: (l) => out.push(l), err: (l) => err.push(l) });
+    const code = await runCli(["facebook", "connect", "--account", "galwayOne", "--noPrompt", "--wait", "10"], { connectSession: session.factory, connectTiming: { ...FAST_CONNECT, deadlineMs: 50 }, accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
     expect(code).toBe(1);
     expect(err.join("\n")).toContain("checkpointed");
     expect(out.join("\n")).toContain('Checkpoint: "Confirm your identity"');
     expect(session.steps.filter((s) => s !== "read")).toEqual(["open", "submitCredentials"]);
-    const account = twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!;
+    const account = store.rows.socialAccounts.find((r) => r.id === "galwayOne")!;
     expect(account.accountStatus).toBe("CHECKPOINT");
     expect(account.cookies).toEqual(before);
   });
 
   test("signed in but restricted account-wide (Pittsburgh's notice) is RESTRICTED, never ACTIVE", async () => {
-    const twenty = marketplaceFixture();
+    const store = marketplaceFixture();
     const session = scriptedConnect(["loggedIn"], undefined, "Marketplace What happened 9 Sep 2026 You can no longer request a review");
-    const code = await runCli(["facebook", "connect", "--account", "needsLogin"], { connectSession: session.factory, connectTiming: FAST_CONNECT, twenty, out: () => {}, err: () => {} });
+    const code = await runCli(["facebook", "connect", "--account", "needsLogin"], { connectSession: session.factory, connectTiming: FAST_CONNECT, accounts: store, out: () => {}, err: () => {} });
     expect(code).toBe(1);
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "needsLogin")).toMatchObject({ accountStatus: "RESTRICTED", statusReason: "restrictedPolicy" });
+    expect(store.rows.socialAccounts.find((r) => r.id === "needsLogin")).toMatchObject({ accountStatus: "RESTRICTED", statusReason: "restrictedPolicy" });
   });
 
   test("The post-login check: signed in but unable to buy or sell is recorded, cookies kept", async () => {
-    const twenty = marketplaceFixture();
+    const store = marketplaceFixture();
     const session = scriptedConnect(["loggedIn"], undefined, "You can't buy or sell on Facebook");
     const err: string[] = [];
-    const code = await runCli(["facebook", "connect", "--account", "needsLogin"], { connectSession: session.factory, connectTiming: FAST_CONNECT, twenty, out: () => {}, err: (l) => err.push(l) });
+    const code = await runCli(["facebook", "connect", "--account", "needsLogin"], { connectSession: session.factory, connectTiming: FAST_CONNECT, accounts: store, out: () => {}, err: (l) => err.push(l) });
     expect(code).toBe(1);
     expect(err.join("\n")).toContain("suspended");
-    const account = twenty.rows.socialAccounts.find((r) => r.id === "needsLogin")!;
+    const account = store.rows.socialAccounts.find((r) => r.id === "needsLogin")!;
     expect(account.accountStatus).toBe("RESTRICTED");
     expect(account.cookies).toEqual([{ name: "c_user", value: "2", domain: ".facebook.com", path: "/" }]);
   });
@@ -279,12 +279,12 @@ describe("rules 15 and 18: the device and the local hours", () => {
     home: { city: "Galway", country: "IE", timezone: "Europe/Dublin" },
   };
 
-  async function runAt(argv: string[], now: () => Date, worker: WorkerClient, twenty = marketplaceFixture()) {
-    await twenty.update("socialAccounts", "galwayOne", { activeHoursStart: null, activeHoursEnd: null });
+  async function runAt(argv: string[], now: () => Date, worker: WorkerClient, store = marketplaceFixture()) {
+    await store.update("socialAccounts", "galwayOne", { activeHoursStart: null, activeHoursEnd: null });
     const out: string[] = [];
     const err: string[] = [];
-    const code = await runCli(argv, { worker, twenty, now, out: (l) => out.push(l), err: (l) => err.push(l) });
-    return { code, out: out.join("\n"), err: err.join("\n"), twenty };
+    const code = await runCli(argv, { worker, accounts: store, now, out: (l) => out.push(l), err: (l) => err.push(l) });
+    return { code, out: out.join("\n"), err: err.join("\n"), twenty: store };
   }
 
   test("scan at 03:00 Galway time is refused with the local time; no worker starts", async () => {
@@ -327,25 +327,25 @@ describe("rules 15 and 18: the device and the local hours", () => {
   });
 
   test("an account that has a device keeps it: it goes to Python and is never overwritten", async () => {
-    const twenty = marketplaceFixture();
-    await twenty.update("socialAccounts", "galwayOne", { deviceProfile: DEVICE });
+    const store = marketplaceFixture();
+    await store.update("socialAccounts", "galwayOne", { deviceProfile: DEVICE });
     const worker = (async (request: WorkerRequest) => {
       const file = JSON.parse(readFileSync(request.device_path!, "utf8"));
       expect(file.profile).toEqual(DEVICE);
       require("node:fs").writeFileSync(request.device_path!, JSON.stringify({ ...file, profile: { ...DEVICE, createdAt: "other" }, created: true }));
       return SCAN;
     }) as WorkerClient;
-    const result = await runAt(["facebook", "scan", "--account", "galwayOne"], DAY, worker, twenty);
+    const result = await runAt(["facebook", "scan", "--account", "galwayOne"], DAY, worker, store);
     expect(result.code).toBe(0);
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!.deviceProfile).toEqual(DEVICE);
+    expect(store.rows.socialAccounts.find((r) => r.id === "galwayOne")!.deviceProfile).toEqual(DEVICE);
   });
 
   test("accounts --json and account show never include the device", async () => {
-    const twenty = marketplaceFixture();
-    await twenty.update("socialAccounts", "galwayOne", { deviceProfile: DEVICE, storageOrigins: [{ origin: "https://www.facebook.com", localStorage: [{ name: "k", value: "storedSecret" }] }] as never });
+    const store = marketplaceFixture();
+    await store.update("socialAccounts", "galwayOne", { deviceProfile: DEVICE, storageOrigins: [{ origin: "https://www.facebook.com", localStorage: [{ name: "k", value: "storedSecret" }] }] as never });
     for (const argv of [["accounts", "--json"], ["account", "show", "galwayOne", "--json"], ["account", "show", "galwayOne"]]) {
       const out: string[] = [];
-      await runCli(argv, { twenty, out: (l) => out.push(l), err: () => {} });
+      await runCli(argv, { accounts: store, out: (l) => out.push(l), err: () => {} });
       expect(out.join("\n")).not.toContain("canvas:seed");
       expect(out.join("\n")).not.toContain("secretPass");
     }
@@ -356,7 +356,7 @@ describe("the session continues from run to run", () => {
   const origins = [{ origin: "https://www.facebook.com", localStorage: [{ name: "hb_timestamp", value: "1" }] }];
 
   test("scan saves the cookies and localStorage the browser left, and the next run starts from them", async () => {
-    const twenty = marketplaceFixture();
+    const store = marketplaceFixture();
     const fresh = [
       { name: "c_user", value: "1000", domain: ".facebook.com", path: "/" },
       { name: "xs", value: "rotated", domain: ".facebook.com", path: "/" },
@@ -366,8 +366,8 @@ describe("the session continues from run to run", () => {
       return SCAN;
     }) as WorkerClient;
     const err: string[] = [];
-    expect(await runCli(["facebook", "scan", "--account", "galwayOne"], { worker, twenty, out: () => {}, err: (l) => err.push(l) })).toBe(0);
-    const row = twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!;
+    expect(await runCli(["facebook", "scan", "--account", "galwayOne"], { worker, accounts: store, out: () => {}, err: (l) => err.push(l) })).toBe(0);
+    const row = store.rows.socialAccounts.find((r) => r.id === "galwayOne")!;
     expect(row.cookies).toEqual(fresh);
     expect(row.storageOrigins).toEqual(origins);
     expect(err.join("\n")).toContain("Saved galwayOne's browser session (2 cookies, 1 origin(s))");
@@ -378,17 +378,17 @@ describe("the session continues from run to run", () => {
       seen = JSON.parse(readFileSync(request.storage_state_path!, "utf8"));
       return SCAN;
     }) as WorkerClient;
-    await runCli(["facebook", "scan", "--account", "galwayOne"], { worker: next, twenty, out: () => {}, err: () => {} });
+    await runCli(["facebook", "scan", "--account", "galwayOne"], { worker: next, accounts: store, out: () => {}, err: () => {} });
     expect(seen).toEqual({ cookies: fresh, origins });
   });
 
   test("a logged-out jar never replaces the stored session", async () => {
-    const twenty = marketplaceFixture();
+    const store = marketplaceFixture();
     const worker = (async (request: WorkerRequest) => {
       require("node:fs").writeFileSync(request.storage_state_path!, JSON.stringify({ cookies: [{ name: "datr", value: "x", domain: ".facebook.com", path: "/" }], origins: [] }));
       return SCAN;
     }) as WorkerClient;
-    await runCli(["facebook", "scan", "--account", "galwayOne"], { worker, twenty, out: () => {}, err: () => {} });
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!.cookies).toEqual(FIXTURE_COOKIES);
+    await runCli(["facebook", "scan", "--account", "galwayOne"], { worker, accounts: store, out: () => {}, err: () => {} });
+    expect(store.rows.socialAccounts.find((r) => r.id === "galwayOne")!.cookies).toEqual(FIXTURE_COOKIES);
   });
 });

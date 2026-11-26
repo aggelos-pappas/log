@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { createAssemblyAiClient } from "../../media/voiceNotes/index.ts";
 import type { AssemblyAiClient } from "../../media/voiceNotes/index.ts";
 import { hashEmbedder, loadConversations, saveConversations } from "../../search/conversations/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineSpec } from "../../platformKit/session/index.ts";
 import { runCli } from "../runner/index.ts";
 import { searchDeps } from "../search/index.ts";
@@ -45,9 +45,9 @@ function fakeClient(said: string[]): AssemblyAiClient {
 }
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "discordOne", accountName: "discordOne", platform: "DISCORD", cookies: [], storageOrigins: [{ origin: "https://discord.com", localStorage: [{ name: "token", value: JSON.stringify("x".repeat(30)) }] }], proxy: null } as never);
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "discordOne", accountName: "discordOne", platform: "DISCORD", cookies: [], storageOrigins: [{ origin: "https://discord.com", localStorage: [{ name: "token", value: JSON.stringify("x".repeat(30)) }] }], proxy: null } as never);
+  return store;
 }
 
 function seed() {
@@ -66,7 +66,7 @@ function seed() {
 async function run(argv: string[], directDiscord?: (spec: PlatformEngineSpec) => { answer: Record<string, unknown>; refreshed: null }) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await runCli(argv, { twenty: fixture(), out: (l: string) => out.push(l), err: (l: string) => err.push(l), ...(directDiscord ? { directDiscord: (_a: unknown, spec: PlatformEngineSpec) => directDiscord(spec) } : {}) } as never);
+  const code = await runCli(argv, { accounts: fixture(), out: (l: string) => out.push(l), err: (l: string) => err.push(l), ...(directDiscord ? { directDiscord: (_a: unknown, spec: PlatformEngineSpec) => directDiscord(spec) } : {}) } as never);
   return { code, out: out.join("\n"), err: err.join("\n") };
 }
 

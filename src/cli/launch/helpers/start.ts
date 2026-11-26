@@ -33,8 +33,8 @@ export function signInRoutesOf(platform: Platform): readonly SignInRouteName[] {
 }
 
 export function platformOfTwenty(value: unknown): Platform | null {
-  const twenty = String(value ?? "").toUpperCase();
-  return PLATFORMS.find((p) => PLATFORM_SITES[p].twenty === twenty) ?? null;
+  const store = String(value ?? "").toUpperCase();
+  return PLATFORMS.find((p) => PLATFORM_SITES[p].twenty === store) ?? null;
 }
 
 export function platformOption(platform: Platform): { value: string; label: string; hint: string } {

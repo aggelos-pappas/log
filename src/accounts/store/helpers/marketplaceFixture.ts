@@ -1,4 +1,4 @@
-import { createMemoryTwenty } from './memoryTwenty'
+import { createMemoryAccountStore } from './memoryStore'
 
 export const FIXTURE_COOKIES = [
   { name: 'c_user', value: '1000', domain: '.facebook.com', path: '/' },
@@ -34,7 +34,7 @@ export function marketplaceFixture(photo = '/photos/van.png') {
     activeHoursEnd: 24,
     ...extra
   })
-  return createMemoryTwenty({
+  return createMemoryAccountStore({
     socialAccounts: [
       facebook('galwayOne', { lastPostedAt: '2026-10-01T10:00:00.000Z' }),
       facebook('galwayTwo', { lastPostedAt: '2026-09-01T10:00:00.000Z' }),

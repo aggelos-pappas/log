@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { SLACK_PLATFORM } from "../../slack/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
@@ -16,17 +16,17 @@ import { takePending } from "../../inbox/watch/index.ts";
 import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "slackOne", accountName: "slackOne", platform: "SLACK", cookies: { "d": "x".repeat(20) }, proxy: null } as never);
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "slackOne", accountName: "slackOne", platform: "SLACK", cookies: { "d": "x".repeat(20) }, proxy: null } as never);
+  return store;
 }
 
-async function run(argv: string[], engine?: PlatformEngineRun | ((spec: Record<string, unknown>) => PlatformEngineRun), twenty = fixture()) {
+async function run(argv: string[], engine?: PlatformEngineRun | ((spec: Record<string, unknown>) => PlatformEngineRun), store = fixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const calls: string[] = [];
   const code = await runCli(argv, {
-    twenty,
+    accounts: store,
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     directSlack: (account, spec) => {
@@ -35,7 +35,7 @@ async function run(argv: string[], engine?: PlatformEngineRun | ((spec: Record<s
       return engine ?? { answer: { ok: false, code: "notExpected" }, refreshed: null };
     },
   });
-  const row = twenty.rows.socialAccounts!.find((r) => r.accountName === "slackOne")!;
+  const row = store.rows.socialAccounts!.find((r) => r.accountName === "slackOne")!;
   return { code, out: out.join("\n"), err: err.join("\n"), calls, row };
 }
 

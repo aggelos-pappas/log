@@ -58,7 +58,7 @@ export const sessionCommand: Command = {
     const ref = parsed.flags["account"];
     if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log twitter session check: --account is needed\n${SESSION_USAGE}` };
     try {
-      const account = await findTwitterAccount(context.twenty, ref);
+      const account = await findTwitterAccount(context.accounts, ref);
       const gate = twitterGate(account);
       if (!gate.ok) return refuse("twitter session check", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
       if (!context.directTwitter) return { code: 1, stderr: "log twitter session check: the direct-API engine isn't wired in this context" };
@@ -72,7 +72,7 @@ export const sessionCommand: Command = {
       }
       context.err(`${account.accountName}: session check on the direct-API engine, X called directly`);
       const run = await context.directTwitter(account, { action: "ping" });
-      const lines = await recordTwitterSession(context.twenty, account, run, context.now?.() ?? new Date());
+      const lines = await recordTwitterSession(context.accounts, account, run, context.now?.() ?? new Date());
       for (const line of lines) context.err(line);
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", library: "twikit", account: account.accountName, ...run.answer }, null, 2) };

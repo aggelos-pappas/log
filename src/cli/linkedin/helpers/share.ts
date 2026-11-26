@@ -57,7 +57,7 @@ export function videoOf(flag: string, roots = imageRoots()): { ok: true; path: s
 }
 
 export async function openAccount(context: CommandContext, name: string, ref: string): Promise<{ ok: true; account: PlatformAccount } | { ok: false; result: CommandResult }> {
-  const account = await findLinkedinAccount(context.twenty, ref);
+  const account = await findLinkedinAccount(context.accounts, ref);
   const gate = linkedinGate(account);
   if (!gate.ok) return { ok: false, result: refuse(`linkedin ${name}`, gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail) };
   if (!context.directLinkedin) return { ok: false, result: refuse(`linkedin ${name}`, "engineNotBuilt", "the direct-API engine isn't wired in this context") };
@@ -168,7 +168,7 @@ export const linkedinPostCommand: Command = {
       }
       context.err(`${account.accountName}: ${plan}, approved by ${approvedBy}, on the direct-API engine`);
       const run = await actOnEngine(() => context.directLinkedin!(account, { action: "post", live: true, approvedBy, text: raw, ...(image.path ? { image: image.path } : {}), ...(video.path ? { video: video.path } : {}) }));
-      for (const line of await recordLinkedinSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordLinkedinSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       if (!run.answer.ok) return failed("post", run);
       if (json) return { code: 0, stdout: JSON.stringify({ platform: "linkedin", account: account.accountName, approvedBy, ...run.answer }, null, 2) };
       const stopped = run.answer["followUpStopped"] as { call: string; code: string } | undefined;
@@ -238,7 +238,7 @@ export const linkedinDeleteCommand: Command = {
       }
       context.err(`${account.accountName}: delete activity ${activity}, approved by ${approvedBy}, on the direct-API engine`);
       const run = await actOnEngine(() => context.directLinkedin!(account, { action: "deletePost", live: true, approvedBy, activityId: activity }));
-      for (const line of await recordLinkedinSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordLinkedinSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       if (!run.answer.ok) return failed("delete", run);
       if (json) return { code: 0, stdout: JSON.stringify({ platform: "linkedin", account: account.accountName, approvedBy, ...run.answer }, null, 2) };
       return { code: 0, stdout: `log linkedin delete: ${account.accountName} deleted activity ${activity}, approved by ${approvedBy}.` };

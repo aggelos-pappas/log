@@ -1,7 +1,7 @@
 import { hasStoredDevice } from '../../camofox/device/index'
 import type { DeviceProfile } from '../../camofox/device/index'
-import { TwentyError } from '../../twenty/graphql/index'
-import type { TwentyClient, TwentyObjects } from '../../twenty/graphql/index'
+import { AccountStoreError } from '../../accounts/store/index'
+import type { AccountStore, AccountObjects } from '../../accounts/store/index'
 import { fromTwentyEnum, hasFacebookSession, toTwentyEnum } from './helpers/index'
 import { ACCOUNT_STATUSES, DEFAULT_DAILY_LISTING_CAP } from './types'
 import type { AccountStatus, FacebookAccount, SocialAccountRow } from './types'
@@ -9,7 +9,7 @@ import type { PlaywrightCookie } from './helpers/index'
 
 export const SOCIAL_ACCOUNTS = 'socialAccounts' as const
 
-type AccountUpdate = TwentyObjects['socialAccounts']['update']
+type AccountUpdate = AccountObjects['socialAccounts']['update']
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -54,40 +54,40 @@ export function toFacebookAccount(row: SocialAccountRow): FacebookAccount {
   }
 }
 
-export async function listFacebookAccounts(twenty: TwentyClient): Promise<FacebookAccount[]> {
-  const rows = await twenty.list(SOCIAL_ACCOUNTS, { platform: { eq: 'FACEBOOK' } })
+export async function listFacebookAccounts(store: AccountStore): Promise<FacebookAccount[]> {
+  const rows = await store.list(SOCIAL_ACCOUNTS, { platform: { eq: 'FACEBOOK' } })
   return rows.map(toFacebookAccount).sort((a, b) => a.accountName.localeCompare(b.accountName))
 }
 
-export async function listBrowserAccounts(twenty: TwentyClient, platforms: readonly string[]): Promise<FacebookAccount[]> {
-  const rows = (await twenty.list(SOCIAL_ACCOUNTS, {})).filter((r) => platforms.includes(String(r.platform ?? '')))
+export async function listBrowserAccounts(store: AccountStore, platforms: readonly string[]): Promise<FacebookAccount[]> {
+  const rows = (await store.list(SOCIAL_ACCOUNTS, {})).filter((r) => platforms.includes(String(r.platform ?? '')))
   return rows.map(toFacebookAccount).sort((a, b) => a.accountName.localeCompare(b.accountName))
 }
 
-export async function findAccount(twenty: TwentyClient, ref: string): Promise<FacebookAccount> {
+export async function findAccount(store: AccountStore, ref: string): Promise<FacebookAccount> {
   const key = ref.trim().replace(/^@/, '')
   if (UUID.test(key)) {
-    const row = await twenty.get(SOCIAL_ACCOUNTS, key)
+    const row = await store.get(SOCIAL_ACCOUNTS, key)
     if (row) return toFacebookAccount(row)
   }
-  const named = await twenty.list(SOCIAL_ACCOUNTS, { accountName: { eq: key } })
-  const rows = named.length ? named : (await twenty.list(SOCIAL_ACCOUNTS, { name: { eq: key } })).filter((r) => r.platform !== 'FACEBOOK' && !r.accountName?.trim())
+  const named = await store.list(SOCIAL_ACCOUNTS, { accountName: { eq: key } })
+  const rows = named.length ? named : (await store.list(SOCIAL_ACCOUNTS, { name: { eq: key } })).filter((r) => r.platform !== 'FACEBOOK' && !r.accountName?.trim())
   const facebook = rows.filter((r) => r.platform === 'FACEBOOK')
   const match = facebook.length ? facebook : rows
-  if (match.length === 0) throw new TwentyError('accountNotFound', `no socialAccount "${key}"`)
-  if (match.length > 1) throw new TwentyError('accountNotFound', `${match.length} socialAccounts are called "${key}": use the record id`)
+  if (match.length === 0) throw new AccountStoreError('accountNotFound', `no socialAccount "${key}"`)
+  if (match.length > 1) throw new AccountStoreError('accountNotFound', `${match.length} socialAccounts are called "${key}": use the record id`)
   return toFacebookAccount(match[0])
 }
 
 export async function setAccountStatus(
-  twenty: TwentyClient,
+  store: AccountStore,
   accountId: string,
   status: AccountStatus,
   reason: string | null,
   detail: string | null = null,
   now: Date = new Date()
 ): Promise<void> {
-  await twenty.update(SOCIAL_ACCOUNTS, accountId, {
+  await store.update(SOCIAL_ACCOUNTS, accountId, {
     accountStatus: toTwentyEnum(status) as AccountUpdate['accountStatus'],
     statusReason: reason,
     statusDetail: detail ? detail.slice(0, 500) : null,
@@ -97,25 +97,25 @@ export async function setAccountStatus(
 }
 
 export async function recordProxyCheck(
-  twenty: TwentyClient,
+  store: AccountStore,
   accountId: string,
   result: { exitIp: string | null; exitCountry: string | null },
   now: Date = new Date()
 ): Promise<void> {
-  await twenty.update(SOCIAL_ACCOUNTS, accountId, {
+  await store.update(SOCIAL_ACCOUNTS, accountId, {
     proxyCheckedAt: now.toISOString(),
     proxyExitIp: result.exitIp,
     proxyExitCountry: result.exitCountry
   })
 }
 
-export async function saveCookies(twenty: TwentyClient, accountId: string, cookies: PlaywrightCookie[]): Promise<void> {
-  await twenty.update(SOCIAL_ACCOUNTS, accountId, { cookies: cookies as unknown as AccountUpdate['cookies'] })
+export async function saveCookies(store: AccountStore, accountId: string, cookies: PlaywrightCookie[]): Promise<void> {
+  await store.update(SOCIAL_ACCOUNTS, accountId, { cookies: cookies as unknown as AccountUpdate['cookies'] })
 }
 
-export async function saveSession(twenty: TwentyClient, accountId: string, state: { cookies: PlaywrightCookie[]; origins: unknown[] }): Promise<boolean> {
+export async function saveSession(store: AccountStore, accountId: string, state: { cookies: PlaywrightCookie[]; origins: unknown[] }): Promise<boolean> {
   if (!hasFacebookSession(state.cookies)) return false
-  await twenty.update(SOCIAL_ACCOUNTS, accountId, {
+  await store.update(SOCIAL_ACCOUNTS, accountId, {
     cookies: state.cookies as unknown as AccountUpdate['cookies'],
     storageOrigins: state.origins as unknown as AccountUpdate['storageOrigins']
   })
@@ -127,7 +127,7 @@ export type SessionSaveCheck = (state: { cookies: PlaywrightCookie[]; origins: u
 export type SessionSaveResult = { saved: true; code: null; detail: string } | { saved: false; code: string; detail: string }
 
 export async function savePlatformSession(
-  twenty: TwentyClient,
+  store: AccountStore,
   accountId: string,
   state: { cookies: PlaywrightCookie[]; origins: unknown[] },
   check: SessionSaveCheck,
@@ -135,7 +135,7 @@ export async function savePlatformSession(
 ): Promise<SessionSaveResult> {
   const gate = check(state)
   if (!gate.ok) return { saved: false, code: gate.code, detail: gate.detail }
-  await twenty.update(SOCIAL_ACCOUNTS, accountId, {
+  await store.update(SOCIAL_ACCOUNTS, accountId, {
     cookies: state.cookies as unknown as AccountUpdate['cookies'],
     storageOrigins: state.origins as unknown as AccountUpdate['storageOrigins'],
     sessionState: 'loggedIn',
@@ -144,24 +144,24 @@ export async function savePlatformSession(
   return { saved: true, code: null, detail: `${state.cookies.length} cookies, ${state.origins.length} origin(s)` }
 }
 
-export async function markProfileSet(twenty: TwentyClient, accountId: string, at: Date): Promise<void> {
-  await twenty.update(SOCIAL_ACCOUNTS, accountId, { profileSetAt: at.toISOString() })
+export async function markProfileSet(store: AccountStore, accountId: string, at: Date): Promise<void> {
+  await store.update(SOCIAL_ACCOUNTS, accountId, { profileSetAt: at.toISOString() })
 }
 
-export async function saveProfilePhoto(twenty: TwentyClient, accountId: string, source: string): Promise<void> {
-  await twenty.update(SOCIAL_ACCOUNTS, accountId, { profilePhoto: source })
+export async function saveProfilePhoto(store: AccountStore, accountId: string, source: string): Promise<void> {
+  await store.update(SOCIAL_ACCOUNTS, accountId, { profilePhoto: source })
 }
 
-export async function saveDeviceProfile(twenty: TwentyClient, account: FacebookAccount, profile: DeviceProfile): Promise<boolean> {
+export async function saveDeviceProfile(store: AccountStore, account: FacebookAccount, profile: DeviceProfile): Promise<boolean> {
   if (hasStoredDevice(account.deviceProfile)) return false
-  await twenty.update(SOCIAL_ACCOUNTS, account.id, { deviceProfile: profile as unknown as AccountUpdate['deviceProfile'] })
+  await store.update(SOCIAL_ACCOUNTS, account.id, { deviceProfile: profile as unknown as AccountUpdate['deviceProfile'] })
   return true
 }
 
-export async function saveAdsPowerProfileId(twenty: TwentyClient, accountId: string, profileId: string | null): Promise<void> {
-  await twenty.update(SOCIAL_ACCOUNTS, accountId, { adsPowerProfileId: profileId })
+export async function saveAdsPowerProfileId(store: AccountStore, accountId: string, profileId: string | null): Promise<void> {
+  await store.update(SOCIAL_ACCOUNTS, accountId, { adsPowerProfileId: profileId })
 }
 
-export async function markPosted(twenty: TwentyClient, accountId: string, now: Date = new Date()): Promise<void> {
-  await twenty.update(SOCIAL_ACCOUNTS, accountId, { lastPostedAt: now.toISOString() })
+export async function markPosted(store: AccountStore, accountId: string, now: Date = new Date()): Promise<void> {
+  await store.update(SOCIAL_ACCOUNTS, accountId, { lastPostedAt: now.toISOString() })
 }

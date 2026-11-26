@@ -4,7 +4,7 @@ import type { SignInPrompts } from "../../console/signIn/index.ts";
 import { isErrorCode } from "../../errors/catalog/index.ts";
 import { shouldPrompt } from "../launch/helpers/shouldPrompt.ts";
 import type { LaunchTTY } from "../launch/helpers/shouldPrompt.ts";
-import { createTwentyClient, localAccountsPath, pullLocalAccounts, readLocalAccounts, updateLocalAccount, upsertLocalAccount } from "../../twenty/graphql/index.ts";
+import { localAccountsPath, readLocalAccounts, updateLocalAccount, upsertLocalAccount } from "../../accounts/store/index.ts";
 import { BROWSER_DRIVERS, driverOrNull, isBrowserDriver } from "../../browser/driver/index.ts";
 import { PLATFORMS, PLATFORM_SITES } from "../runner/helpers/platforms.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseInput } from "../runner/helpers/index.ts";
@@ -14,8 +14,7 @@ export const LOCAL_ACCOUNT_USAGE = [
   "Usage: log localAccount add --platform <facebook|twitter|reddit|discord|linkedin|slack> --account <accountName> [--browser <name>] [--adsPower <profileId>] [--proxy <url>] [--home <CC>] [--city <city>]",
   "       log localAccount list [--json]",
   "       log localAccount login --platform <p> --account <accountName>   (saves the account's email and password to the file from two masked prompts, the same save as the console's password sign-in, on a platform that signs in from them; run in a terminal)",
-  "       log localAccount pull [--platform <p>] [--refresh] [--json]   (copies every account Twenty has, cookies and login included, into the file; an account already there is kept unless --refresh; each keeps its Twenty id, so listings and groups still find it)",
-  "A local account lives in ~/.logCli/localAccounts.json (LOG_LOCAL_ACCOUNTS moves it), not in Twenty. Every command finds it by its accountName, a local row winning over a Twenty row of the same name, and the session a run captures is saved back to the file. LOG_ACCOUNTS=local leaves Twenty out of accounts entirely.",
+  "A local account lives in ~/.logCli/localAccounts.json (LOG_LOCAL_ACCOUNTS moves it). Every command finds it by its accountName, and the session a run captures is saved back to the file.",
 ].join("\n");
 
 export const LOCAL_ACCOUNT_INPUT: CommandInput = {
@@ -44,16 +43,6 @@ export const LOCAL_ACCOUNT_INPUT: CommandInput = {
       flags: [
         { name: "platform", kind: "enum", values: PLATFORMS, required: true, description: "The account's platform" },
         { name: "account", kind: "string", required: true, description: "The account's accountName, already in the file" },
-      ],
-    },
-    {
-      words: ["pull"],
-      summary: "Copy every Twenty account, cookies and login included, into the local accounts file",
-      positionals: [],
-      flags: [
-        { name: "platform", kind: "enum", values: PLATFORMS, description: "Only this platform's accounts" },
-        { name: "refresh", kind: "boolean", description: "Replace an account already in the file" },
-        JSON_FLAG,
       ],
     },
   ],
@@ -102,13 +91,13 @@ export const localAccountCommand: Command = {
   name: "localAccount",
   effect: "write",
   input: LOCAL_ACCOUNT_INPUT,
-  summary: "Accounts kept in a local file instead of Twenty: add one, with the account's browser profile, pull every Twenty account in, or list them",
-  args: "<add|list|pull|login> [--platform <p>] [--account <a>] [--browser <name>] [--adsPower <id>] [--proxy <url>] [--home <CC>] [--refresh] [--json]",
+  summary: "Accounts kept in a local file instead of Twenty: add one, with the account's browser profile, or list them",
+  args: "<add|list|login> [--platform <p>] [--account <a>] [--browser <name>] [--adsPower <id>] [--proxy <url>] [--home <CC>] [--json]",
   async run(_context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(LOCAL_ACCOUNT_INPUT));
     if (!parsed.ok) return refuseInput("localAccount", parsed.error, LOCAL_ACCOUNT_USAGE);
     const [action, extra] = parsed.positionals;
-    if (extra !== undefined || !["add", "list", "pull", "login"].includes(action ?? "")) return { code: 1, error: "inputInvalid", stderr: `log localAccount: pick add, list, pull or login\n${LOCAL_ACCOUNT_USAGE}` };
+    if (extra !== undefined || !["add", "list", "login"].includes(action ?? "")) return { code: 1, error: "inputInvalid", stderr: `log localAccount: pick add, list or login\n${LOCAL_ACCOUNT_USAGE}` };
     const path = localAccountsPath();
     if (action === "login") return saveLogin(parsed.flags);
     if (action === "list") {
@@ -118,13 +107,6 @@ export const localAccountCommand: Command = {
       return { code: 0, stdout: [`${rows.length} local account(s) in ${path}:`, ...rows.map((r) => `  ${String(r.platform).padEnd(9)} ${String(r.accountName).padEnd(34)} ${String(r.browser ?? "unknown browser").padEnd(9)} ${r.adsPowerProfileId ? `adsPower ${r.adsPowerProfileId}` : "(no AdsPower profile)"}  ${r.sessionState ?? "no session yet"}`)].join("\n") };
     }
     const platform = String(parsed.flags["platform"] ?? "").toLowerCase();
-    if (action === "pull") {
-      if (platform && !(PLATFORMS as readonly string[]).includes(platform)) return { code: 1, error: "inputInvalid", stderr: `log localAccount pull: --platform is one of ${PLATFORMS.join(", ")}\n${LOCAL_ACCOUNT_USAGE}` };
-      const pulled = await pullLocalAccounts(createTwentyClient(), { ...(platform ? { platform: PLATFORM_SITES[platform as (typeof PLATFORMS)[number]].twenty } : {}), refresh: Boolean(parsed.flags["refresh"]) }, path);
-      const line = (r: Record<string, unknown>) => `${String(r.platform).padEnd(9)} ${String(r.accountName)}`;
-      if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ path, added: pulled.added.map(line), refreshed: pulled.refreshed.map(line), kept: pulled.kept.map(line) }, null, 2) };
-      return { code: 0, stdout: [`log localAccount pull: ${pulled.added.length} added, ${pulled.refreshed.length} refreshed, ${pulled.kept.length} already local (kept) in ${path}. Twenty is not changed.`, ...pulled.added.map((r) => `  + ${line(r)}`), ...pulled.refreshed.map((r) => `  ~ ${line(r)}`)].join("\n") };
-    }
     if (!(PLATFORMS as readonly string[]).includes(platform)) return { code: 1, error: "inputInvalid", stderr: `log localAccount add: --platform is one of ${PLATFORMS.join(", ")}\n${LOCAL_ACCOUNT_USAGE}` };
     const accountName = typeof parsed.flags["account"] === "string" ? parsed.flags["account"].trim().replace(/^@/, "") : "";
     if (!accountName) return { code: 1, error: "inputInvalid", stderr: `log localAccount add: --account is needed\n${LOCAL_ACCOUNT_USAGE}` };
@@ -132,7 +114,7 @@ export const localAccountCommand: Command = {
     const home = text("home")?.toUpperCase();
     const browser = text("browser");
     if (browser !== undefined && !isBrowserDriver(browser)) return refuse("localAccount add", "browserDriverUnknown", `--browser is one of ${BROWSER_DRIVERS.join(", ")}`);
-    const twenty = PLATFORM_SITES[platform as (typeof PLATFORMS)[number]].twenty;
+    const store = PLATFORM_SITES[platform as (typeof PLATFORMS)[number]].twenty;
     const fields = {
       ...(text("adsPower") ? { adsPowerProfileId: text("adsPower"), browserDriver: "adsPower" } : {}),
       ...(browser ? { browserDriver: browser } : {}),
@@ -140,7 +122,7 @@ export const localAccountCommand: Command = {
       ...(home ? { homeCountry: home } : {}),
       ...(text("city") ? { homeCity: text("city") } : {}),
     };
-    const row = updateLocalAccount(twenty, accountName, fields, path) ?? upsertLocalAccount({ accountName, platform: twenty, ...fields }, path);
+    const row = updateLocalAccount(store, accountName, fields, path) ?? upsertLocalAccount({ accountName, platform: store, ...fields }, path);
     return { code: 0, stdout: `log localAccount: ${row.platform} ${accountName} saved in ${path} (${row.id}), browser ${browserOfRow(row) ?? "unknown"}. Twenty is not touched.` };
   },
 };

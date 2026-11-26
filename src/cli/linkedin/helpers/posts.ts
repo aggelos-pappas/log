@@ -70,7 +70,7 @@ export const linkedinPostsCommand: Command = {
       const account = opened.account;
       context.err(`${account.accountName}: reading its own LinkedIn posts (up to ${limit})${views ? " and each one's analytics, a few seconds apart" : ""} on the direct-API engine (reads only)`);
       const run = context.directLinkedin!(account, { action: "myPosts", limit, ...(views ? { views: true } : {}) });
-      for (const line of await recordLinkedinSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordLinkedinSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       if (!run.answer.ok) return failed("posts", run);
       const viewsError = run.answer["viewsError"] as { code?: string; detail?: string } | undefined;
       if (viewsError) context.err(`linkedin posts: the posts were read, but their analytics weren't: ${viewsError.code}: ${viewsError.detail}. Nothing is retried (rule 94).`);

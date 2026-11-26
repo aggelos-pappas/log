@@ -1778,40 +1778,12 @@ export const ERROR_CATALOG = {
     action: 'Add or activate an account in that country (with a proxy there), then run log facebook campaign heal.'
   },
 
-  twentyNotConfigured: {
+  twentyRemoved: {
     layer: 'twenty',
-    meaning: 'TWENTY_BASE_URL or TWENTY_API_KEY is not set.',
+    meaning: 'This feature kept its data in Twenty, which log no longer uses; it is retired until it is rebuilt on log.db (#339).',
     retryable: false,
-    raisedIn: ['twenty/graphql'],
-    action: 'Put both in log-cli/.env.local.'
-  },
-  twentyUnreachable: {
-    layer: 'twenty',
-    meaning: "Twenty didn't answer.",
-    retryable: true,
-    raisedIn: ['twenty/graphql'],
-    action: 'Check the network and twenty.inferencesaver.com, then run again.'
-  },
-  twentyRateLimited: {
-    layer: 'twenty',
-    meaning: 'Twenty refused the call for its rate limit ("Limit reached (100 tokens per 60000 ms)"). Nothing was written.',
-    retryable: true,
-    raisedIn: ['twenty/graphql'],
-    action: 'Nothing to do: the client waits out the minute and tries again (twice). If it still fails, fewer calls per minute.'
-  },
-  twentyAuthFailed: {
-    layer: 'twenty',
-    meaning: 'Twenty refused the API key (401/403).',
-    retryable: false,
-    raisedIn: ['twenty/graphql'],
-    action: 'Make a new API key in Twenty and put it in log-cli/.env.local.'
-  },
-  twentyRequestFailed: {
-    layer: 'twenty',
-    meaning: 'Twenty answered with an error. The detail has its status and message.',
-    retryable: true,
-    raisedIn: ['twenty/graphql'],
-    action: 'Read the detail. A field error means scripts/twenty/twentySetup.mjs needs running.'
+    raisedIn: ['accounts/store'],
+    action: 'Nothing to run: the feature comes back when it is rebuilt on log.db (#339).'
   },
   accountNotFound: {
     layer: 'twenty',

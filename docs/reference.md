@@ -232,7 +232,7 @@ flowchart LR
   agent["Agent (Claude Code, Codex)"]
   owner["the owner, in a terminal"]
   shell["Bash / PowerShell / Monitor"]
-  mcp["MCP server log: 326 command tools + saved flows"]
+  mcp["MCP server log: 325 command tools + saved flows"]
   bin["bin/log.ts"]
   runCli["runCli: 150 commands (COMMANDS)"]
   live[("~/.logCli/mcp/day.log: the live log")]
@@ -300,7 +300,7 @@ Every command also takes `--proxyMs <ms>` (this run's proxy speed limit, rule 33
 | [`log facebook accounts`](#log-facebook-accounts) | List the FACEBOOK accounts in Twenty: status, home, proxy, and whether each may run | `facebook` first | `[--json]` | none | none | `facebookAccounts` | PreToolUse, PostToolUse · PostToolUse | no | 30, 38, 39, 40, 41 |
 | [`log facebook account`](#log-facebook-account) | Show one account, or set its status (banned/dead/restricted replace its campaign listings) | `facebook` first | `[--json]` `--from <folder>` `[--reason <text>]` `[--detail <text>]` | none | none | `facebookAccountShow`, `facebookAccountResave`, `facebookAccountResetOpens`, `facebookAccountStatus` | PreToolUse, PostToolUse · PostToolUse | no | 35, 30, 38, 39, 40, 41 |
 | [`log adsPower`](#log-adspower) | AdsPower: Local API status, its profiles, and one profile per Twenty account (sync) | any (none) | `[--json]` `[--apply]` `[--account <accountName>]` `[--homes <US,IE,…>]` | none | none | `adsPowerStatus`, `adsPowerProfiles`, `adsPowerSync`, `adsPowerSyncLive` | PreToolUse, PostToolUse · PostToolUse | no | 35, 44, 30, 38, 39, 40, 41 |
-| [`log localAccount`](#log-localaccount) | Accounts kept in a local file instead of Twenty: add one, with the account's browser profile, pull every Twenty account in, or list them | any (none) | `[--platform <facebook|twitter|reddit|discord|linkedin|slack|instagram|tiktok>]` `--account <accountName>` `[--browser <camoufox|adsPower|brave>]` `[--adsPower <profileId>]` `[--proxy <url>]` `[--home <CC>]` `[--city <city>]` `[--json]` `[--refresh]` | none | none | `localAccountAdd`, `localAccountList`, `localAccountPull` | PreToolUse, PostToolUse · PostToolUse | no | 35, 44, 30, 38, 39, 40, 41 |
+| [`log localAccount`](#log-localaccount) | Accounts kept in a local file instead of Twenty: add one, with the account's browser profile, or list them | any (none) | `--platform <facebook|twitter|reddit|discord|linkedin|slack|instagram|tiktok>` `--account <accountName>` `[--browser <camoufox|adsPower|brave>]` `[--adsPower <profileId>]` `[--proxy <url>]` `[--home <CC>]` `[--city <city>]` `[--json]` | none | none | `localAccountAdd`, `localAccountList` | PreToolUse, PostToolUse · PostToolUse | no | 35, 44, 30, 38, 39, 40, 41 |
 | [`log accounts`](#log-accounts) | Every social account in this workspace with its platform, status and session state, the list the hosted accountsList answers | any (none) | `[--limit <integer 1..200>]` `[--cursor <n>]` `[--json]` | none | none | `accountsList` | PreToolUse, PostToolUse · PostToolUse | no | 154, 163, 172, 30, 38, 39, 40, 41 |
 | [`log facebook lifecycle`](#log-facebook-lifecycle) | Each account's place in its lifecycle (rule 35): status, state, what onboarding has left; `states` prints the machine | `facebook` first | `[--account <name>]` `[--json]` `[--write]` | none | none | `facebookLifecycle`, `facebookLifecycleStates`, `facebookLifecycleStatesLive` | PreToolUse, PostToolUse · PostToolUse | no | 35, 30, 38, 39, 40, 41 |
 | [`log facebook preflight`](#log-facebook-preflight) | Before any browser opens, check each account will get through: home timezone, hours, proxy speed and country, the account's browser and its kernel, launches and host opens left, no session left open, its picture on disk | `facebook` first | `[--account <accountName>]` `[--homes <US,CA,…>]` `[--noProxy]` `[--apply]` `[--json]` | none | none | `facebookPreflight`, `facebookPreflightLive` | PreToolUse, PostToolUse · PostToolUse | no | 35, 79, 30, 38, 39, 40, 41 |
@@ -1305,14 +1305,13 @@ log adsPower sync [--apply] [--account <accountName>] [--homes <US,IE>] [--json]
 
 #### log localAccount
 
-Accounts kept in a local file instead of Twenty: add one, with the account's browser profile, pull every Twenty account in, or list them MCP tools: `localAccountAdd`, `localAccountList`, `localAccountPull`, one per form, with named fields.
+Accounts kept in a local file instead of Twenty: add one, with the account's browser profile, or list them MCP tools: `localAccountAdd`, `localAccountList`, one per form, with named fields.
 
 ```text
 log localAccount add --platform <facebook|twitter|reddit|discord|linkedin|slack> --account <accountName> [--browser <name>] [--adsPower <profileId>] [--proxy <url>] [--home <CC>] [--city <city>]
 log localAccount list [--json]
 log localAccount login --platform <p> --account <accountName>   (saves the account's email and password to the file from two masked prompts, the same save as the console's password sign-in, on a platform that signs in from them; run in a terminal)
-log localAccount pull [--platform <p>] [--refresh] [--json]   (copies every account Twenty has, cookies and login included, into the file; an account already there is kept unless --refresh; each keeps its Twenty id, so listings and groups still find it)
-A local account lives in ~/.logCli/localAccounts.json (LOG_LOCAL_ACCOUNTS moves it), not in Twenty. Every command finds it by its accountName, a local row winning over a Twenty row of the same name, and the session a run captures is saved back to the file. LOG_ACCOUNTS=local leaves Twenty out of accounts entirely.
+A local account lives in ~/.logCli/localAccounts.json (LOG_LOCAL_ACCOUNTS moves it). Every command finds it by its accountName, and the session a run captures is saved back to the file.
 ```
 
 #### log accounts

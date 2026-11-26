@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineRun, PlatformEngineSpec } from "../../platformKit/session/index.ts";
 import type { TwitterEngineRun, TwitterEngineSpec, TwitterSessionAnswer } from "../../twitter/account/session/index.ts";
 import type { InboxMessage } from "../../inbox/watch/index.ts";
@@ -13,14 +13,14 @@ import type { CommandContext } from "./types.ts";
 const POST = "https://x.com/fakeBird/status/1900000000000000009";
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push(
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push(
     { id: "xActs", accountName: "xActs", platform: "TWITTER", cookies: { auth_token: "a".repeat(40), ct0: "b".repeat(40) }, proxy: null },
     { id: "discordActs", accountName: "discordActs", platform: "DISCORD", cookies: [], storageOrigins: [{ origin: "https://discord.com", localStorage: [{ name: "token", value: JSON.stringify("x".repeat(30)) }] }], proxy: null } as never,
     { id: "slackActs", accountName: "slackActs", platform: "SLACK", cookies: { d: "x".repeat(20) }, proxy: null } as never,
     { id: "instagramActs", accountName: "instagramActs", platform: "INSTAGRAM", cookies: { sessionid: "x".repeat(20), ds_user_id: "x".repeat(20), csrftoken: "x".repeat(20) }, proxy: null } as never,
   );
-  return twenty;
+  return store;
 }
 
 type Engine<Spec, Run> = (spec: Spec) => Run;
@@ -35,7 +35,7 @@ async function cli(argv: string[], engines: { twitter?: Engine<TwitterEngineSpec
     return engine(spec);
   };
   const context: Partial<CommandContext> = {
-    twenty: fixture(),
+    accounts: fixture(),
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     sleep: async () => {},

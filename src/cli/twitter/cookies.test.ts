@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { TwitterEngineRun } from "../../twitter/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
 import { cookiesDeps } from "./helpers/index.ts";
@@ -23,12 +23,12 @@ function typed(values: unknown[]) {
   return said;
 }
 
-async function run(argv: string[], engine: TwitterEngineRun | null, twenty = marketplaceFixture()) {
+async function run(argv: string[], engine: TwitterEngineRun | null, store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const calls: unknown[] = [];
   const code = await runCli(argv, {
-    twenty,
+    accounts: store,
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     directTwitter: (account, spec) => {
@@ -36,7 +36,7 @@ async function run(argv: string[], engine: TwitterEngineRun | null, twenty = mar
       return engine ?? { answer: { ok: false, code: "notExpected" }, refreshed: null };
     },
   });
-  return { code, out: out.join("\n"), err: err.join("\n"), calls, twenty };
+  return { code, out: out.join("\n"), err: err.join("\n"), calls, twenty: store };
 }
 
 const TOKEN = "a".repeat(40);
@@ -61,9 +61,9 @@ describe("log twitter cookies save", () => {
 
   test("an existing handle has its cookies replaced, not a second row", async () => {
     typed([TOKEN, CT0, TWID]);
-    const twenty = marketplaceFixture();
-    twenty.rows.socialAccounts!.push({ id: "xOld", accountName: "oldOne", platform: "TWITTER", cookies: { auth_token: "z".repeat(40), ct0: "y".repeat(40) }, proxy: null });
-    const r = await run(["twitter", "cookies", "save", "--account", "oldOne"], LOGGED_IN("OldOne"), twenty);
+    const store = marketplaceFixture();
+    store.rows.socialAccounts!.push({ id: "xOld", accountName: "oldOne", platform: "TWITTER", cookies: { auth_token: "z".repeat(40), ct0: "y".repeat(40) }, proxy: null });
+    const r = await run(["twitter", "cookies", "save", "--account", "oldOne"], LOGGED_IN("OldOne"), store);
     expect(r.code).toBe(0);
     const rows = r.twenty.rows.socialAccounts!.filter((x) => x.accountName === "oldOne");
     expect(rows).toHaveLength(1);

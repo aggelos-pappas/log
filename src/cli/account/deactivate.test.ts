@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { syncProfiles } from "../../browser/adsPower/index.ts";
 import type { AdsPowerClient, AdsPowerProfile } from "../../browser/adsPower/index.ts";
 import { listFacebookAccounts } from "../../platformKit/socialAccount/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 
 function memoryAdsPower(limit: number) {
@@ -36,17 +36,17 @@ function memoryAdsPower(limit: number) {
 
 describe("log facebook account status DEACTIVATED gives the AdsPower profile back (rule 78)", () => {
   test("the deactivated account's profile is deleted and unlinked, and an account waiting for one takes the slot", async () => {
-    const twenty = marketplaceFixture();
+    const store = marketplaceFixture();
     const ads = memoryAdsPower(3);
-    await syncProfiles(twenty, ads.client, { apply: true, homes: null });
-    const before = await listFacebookAccounts(twenty);
+    await syncProfiles(store, ads.client, { apply: true, homes: null });
+    const before = await listFacebookAccounts(store);
     const holder = before.find((a) => a.adsPowerProfileId)!;
     const waiting = before.filter((a) => !a.adsPowerProfileId).length;
     const out: string[] = [];
-    const code = await runCli(["facebook", "account", "status", holder.accountName, "DEACTIVATED"], { twenty, adsPower: ads.client, out: (l) => out.push(l), err: () => {} });
+    const code = await runCli(["facebook", "account", "status", holder.accountName, "DEACTIVATED"], { accounts: store, adsPower: ads.client, out: (l) => out.push(l), err: () => {} });
     expect(code).toBe(0);
     expect(ads.deleted).toEqual([holder.adsPowerProfileId!]);
-    const after = await listFacebookAccounts(twenty);
+    const after = await listFacebookAccounts(store);
     expect(after.find((a) => a.id === holder.id)!.adsPowerProfileId).toBeNull();
     expect(ads.profiles).toHaveLength(3);
     expect(out.join("\n")).toContain(`AdsPower: released ${holder.accountName}'s profile ${holder.adsPowerProfileId} (status deactivated).`);

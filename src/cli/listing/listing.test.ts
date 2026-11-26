@@ -64,12 +64,12 @@ describe("copy versions in listing.json", () => {
 
 describe("log facebook listing remove", () => {
   async function remove(argv: string[]) {
-    const { marketplaceFixture } = await import("../../twenty/graphql/index.ts");
-    const twenty = marketplaceFixture();
+    const { marketplaceFixture } = await import("../../accounts/store/index.ts");
+    const store = marketplaceFixture();
     const out: string[] = [];
     const err: string[] = [];
-    const code = await runCli(["facebook", "listing", "remove", ...argv], { twenty, out: (l) => out.push(l), err: (l) => err.push(l) });
-    return { code, out: out.join("\n"), err: err.join("\n"), twenty };
+    const code = await runCli(["facebook", "listing", "remove", ...argv], { accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
+    return { code, out: out.join("\n"), err: err.join("\n"), twenty: store };
   }
 
   test("a dry run names the listing, its account and the recorded flow, and changes nothing", async () => {

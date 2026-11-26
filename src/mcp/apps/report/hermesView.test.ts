@@ -7,7 +7,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { openDatabase } from "../../../storage/schema/index.ts";
 import { getState, putState } from "../../../storage/state/index.ts";
-import { marketplaceFixture } from "../../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../../accounts/store/index.ts";
 import { createLogMcpServer } from "../../server/index.ts";
 import { MCP_APP_MIME_TYPE, UI_EXTENSION_ID } from "../browserView/index.ts";
 import { HERMES_VIEW_SCOPE, hermesClient, hermesViewTag, runReport } from "./index.ts";
@@ -85,7 +85,7 @@ describe("a report drawn for Hermes", () => {
     process.env.LOG_DB = path;
     try {
       const call = async (name: string) => {
-        const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
+        const server = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false });
         const client = new Client({ name, version: "0.0.0" }, { capabilities: {} });
         const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
         await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
@@ -105,7 +105,7 @@ describe("a report drawn for Hermes", () => {
     process.env.LOG_DB = path;
     try {
       const call = async (name: string, capabilities: Record<string, unknown>) => {
-        const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
+        const server = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false });
         const client = new Client({ name, version: "0.0.0" }, { capabilities });
         const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
         await Promise.all([server.connect(serverSide), client.connect(clientSide)]);

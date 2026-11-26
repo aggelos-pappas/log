@@ -185,7 +185,7 @@ export const dmsCommand: Command = {
         context.err(sourceLine(source, "X", ref, 0));
       }
       const knownId = localAccountId(ref, twitterStateRoot());
-      const early = knownId ? context.twenty.loginSecrets(knownId).catch(() => null) : null;
+      const early = knownId ? context.accounts.loginSecrets(knownId).catch(() => null) : null;
       const opened = await openTwitterAccount(context, "twitter dms", ref);
       if (!opened.ok) return opened.result;
       if (parsed.flags["force"] === true) {
@@ -193,7 +193,7 @@ export const dmsCommand: Command = {
         opened.engine = (spec) => engine({ ...spec, force: true });
         context.err(`${opened.account.accountName}: reading past the governor for this call, as the owner asked (rule 86)`);
       }
-      const secrets = early && knownId === opened.account.id ? await early : await context.twenty.loginSecrets(opened.account.id).catch(() => null);
+      const secrets = early && knownId === opened.account.id ? await early : await context.accounts.loginSecrets(opened.account.id).catch(() => null);
       const chatPin = secrets?.messengerPin ?? undefined;
       const full = parsed.flags["full"] === true;
       const read = (spec: { limit: number; conversationId?: string; withHandle?: string; export?: boolean; full?: boolean }) => opened.engine({ action: "inbox", ...spec, ...(chatPin ? { chatPin } : {}) });

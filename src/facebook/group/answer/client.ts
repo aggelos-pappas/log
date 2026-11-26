@@ -1,4 +1,4 @@
-import type { TwentyClient, TwentyObjects } from '../../../twenty/graphql/index'
+import type { AccountStore, AccountObjects } from '../../../accounts/store/index'
 import { AGENCY_GROUPS, toGroup } from '../join/client'
 import { draftComplete, patchSubmission } from '../join/helpers/index'
 import type { Group, JoinDraft, JoinOptions } from '../join/types'
@@ -13,7 +13,7 @@ export function applicationFromDraft(options: JoinOptions | null, draft: JoinDra
 }
 
 export async function patchApplication(
-  twenty: TwentyClient,
+  store: AccountStore,
   group: Group,
   next: { status: ApplicationStatus; filled: string[]; detail: string; answerState?: string | null },
   step: { step: string; folder: string | null },
@@ -34,5 +34,5 @@ export async function patchApplication(
     { application, formPhase, ...(next.status === 'submitted' ? { submittedAt: application.submittedAt, answers: group.joinSubmission.draftAnswers } : {}) },
     { at: now.toISOString(), step: step.step, detail: next.detail, folder: step.folder }
   )
-  return toGroup(await twenty.update(AGENCY_GROUPS, group.id, { joinSubmission } as unknown as TwentyObjects['agencyGroups']['update']))
+  return toGroup(await store.update(AGENCY_GROUPS, group.id, { joinSubmission } as unknown as AccountObjects['agencyGroups']['update']))
 }

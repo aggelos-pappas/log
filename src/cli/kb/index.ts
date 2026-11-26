@@ -95,7 +95,7 @@ export const kbCommand: Command = {
     try {
       if (sub === "sync") {
         context.err("kb: collecting rules, skills, docs, memory files and page states");
-        const accounts = parsed.flags["noAccounts"] === true ? [] : await listFacebookAccounts(context.twenty).catch((error) => {
+        const accounts = parsed.flags["noAccounts"] === true ? [] : await listFacebookAccounts(context.accounts).catch((error) => {
           context.err(`kb: accounts left out: ${error instanceof Error ? error.message : String(error)}`);
           return [];
         });

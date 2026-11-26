@@ -42,12 +42,12 @@ export const messengerCommand: Command = {
     if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log facebook messenger pin: --account is needed\n${MESSENGER_USAGE}` };
     let account;
     try {
-      account = await findAccount(context.twenty, ref);
+      account = await findAccount(context.accounts, ref);
     } catch (error) {
       return { code: 1, stderr: `log facebook messenger pin: ${(error as Error).message}` };
     }
     if (parsed.flags["show"]) {
-      const secrets = await context.twenty.loginSecrets(account.id);
+      const secrets = await context.accounts.loginSecrets(account.id);
       return { code: 0, stdout: `${account.accountName}: Messenger PIN ${secrets?.messengerPin ? "<set>" : "<empty>"}` };
     }
     if (!shouldPrompt(false, messengerDeps.tty())) {
@@ -69,7 +69,7 @@ export const messengerCommand: Command = {
       prompts.cancel("The two PINs differ. Nothing saved.");
       return { code: 1, stderr: "log facebook messenger pin: the two PINs differ, nothing saved" };
     }
-    await context.twenty.update("socialAccounts", account.id, { messengerPin: first } as never);
+    await context.accounts.update("socialAccounts", account.id, { messengerPin: first } as never);
     prompts.outro("Saved to Twenty. It is typed into Messenger by `log inspect do pin --live`, never printed.");
     return { code: 0, stdout: `${account.accountName}: Messenger PIN <set> in Twenty` };
   },

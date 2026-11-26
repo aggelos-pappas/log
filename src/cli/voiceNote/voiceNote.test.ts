@@ -6,7 +6,7 @@ import { clonePath, forgetClones, voiceNotesDir, writeClone } from "../../extens
 import type { Rendered, VoiceNotePlatform, VoiceProvider } from "../../extensions/voiceClone/index.ts";
 import type { PlatformEngineRun, PlatformEngineSpec } from "../../platformKit/session/index.ts";
 import { markGap, openGap } from "../../inbox/store/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
 import { voiceNoteDeps } from "./index.ts";
@@ -20,13 +20,13 @@ let gated: string[] = [];
 let gateRefuses = false;
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "discordOne", accountName: "discordOne", platform: "DISCORD", cookies: [], storageOrigins: [{ origin: "https://discord.com", localStorage: [{ name: "token", value: JSON.stringify("x".repeat(30)) }] }], proxy: null } as never);
-  twenty.rows.socialAccounts!.push({ id: "instagramOne", accountName: "instagramOne", platform: "INSTAGRAM", cookies: { sessionid: "x".repeat(20), ds_user_id: "x".repeat(20), csrftoken: "x".repeat(20) }, proxy: null } as never);
-  twenty.rows.socialAccounts!.push({ id: "slackOne", accountName: "slackOne", platform: "SLACK", cookies: { d: "x".repeat(20) }, proxy: null } as never);
-  twenty.rows.socialAccounts!.push({ id: "xOne", accountName: "xOne", platform: "TWITTER", cookies: { auth_token: "x".repeat(40), ct0: "y".repeat(40) }, messengerPin: "2580", proxy: null } as never);
-  twenty.rows.socialAccounts!.push({ id: "xNoPin", accountName: "xNoPin", platform: "TWITTER", cookies: { auth_token: "x".repeat(40), ct0: "y".repeat(40) }, proxy: null } as never);
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "discordOne", accountName: "discordOne", platform: "DISCORD", cookies: [], storageOrigins: [{ origin: "https://discord.com", localStorage: [{ name: "token", value: JSON.stringify("x".repeat(30)) }] }], proxy: null } as never);
+  store.rows.socialAccounts!.push({ id: "instagramOne", accountName: "instagramOne", platform: "INSTAGRAM", cookies: { sessionid: "x".repeat(20), ds_user_id: "x".repeat(20), csrftoken: "x".repeat(20) }, proxy: null } as never);
+  store.rows.socialAccounts!.push({ id: "slackOne", accountName: "slackOne", platform: "SLACK", cookies: { d: "x".repeat(20) }, proxy: null } as never);
+  store.rows.socialAccounts!.push({ id: "xOne", accountName: "xOne", platform: "TWITTER", cookies: { auth_token: "x".repeat(40), ct0: "y".repeat(40) }, messengerPin: "2580", proxy: null } as never);
+  store.rows.socialAccounts!.push({ id: "xNoPin", accountName: "xNoPin", platform: "TWITTER", cookies: { auth_token: "x".repeat(40), ct0: "y".repeat(40) }, proxy: null } as never);
+  return store;
 }
 
 async function run(argv: string[], answer: PlatformEngineRun["answer"] = { ok: false, code: "notExpected" }) {
@@ -37,7 +37,7 @@ async function run(argv: string[], answer: PlatformEngineRun["answer"] = { ok: f
     specs.push(spec);
     return { answer, refreshed: null };
   };
-  const code = await runCli(argv, { twenty: fixture(), out: (l) => out.push(l), err: (l) => err.push(l), directDiscord: engine, directInstagram: engine, directSlack: engine, directTwitter: engine as never });
+  const code = await runCli(argv, { accounts: fixture(), out: (l) => out.push(l), err: (l) => err.push(l), directDiscord: engine, directInstagram: engine, directSlack: engine, directTwitter: engine as never });
   return { code, out: out.join("\n"), err: err.join("\n"), specs };
 }
 

@@ -49,7 +49,7 @@ export const lifecycleCommand: Command = liveThroughAction<Command>({
     if (sub !== undefined) return { code: 1, stderr: `log facebook lifecycle: unknown "${sub}"\n${LIFECYCLE_USAGE}` };
 
     try {
-      const accounts = typeof parsed.flags["account"] === "string" ? [await findAccount(context.twenty, parsed.flags["account"])] : await listFacebookAccounts(context.twenty);
+      const accounts = typeof parsed.flags["account"] === "string" ? [await findAccount(context.accounts, parsed.flags["account"])] : await listFacebookAccounts(context.accounts);
       const rows: (LifecycleRow & { standing: ReturnType<typeof standingOf> })[] = accounts.map((account) => {
         const standing = standingOf(account);
         return { accountName: account.accountName, status: account.status, state: whereNow(standing).state, stored: account.lifecycleState, left: stepsLeft(standing), standing };

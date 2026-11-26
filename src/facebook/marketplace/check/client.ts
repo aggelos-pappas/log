@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import type { InspectAction, InspectStepResult } from '../../../browser/inspect/index.ts'
 import { AGENCY_LISTINGS, listListingsWhere, SYNCABLE } from '../agencyListing/index.ts'
 import { toTwentyEnum } from '../../../platformKit/socialAccount/helpers/index.ts'
-import type { TwentyClient } from '../../../twenty/graphql/index.ts'
+import type { AccountStore } from '../../../accounts/store/index.ts'
 import { accessProblem, IDENTITY_HOLD, marketplaceAccessOf, sellerInboxOf, sellingListingsOf } from './helpers/index.ts'
 import type { CheckReport, MarketplaceCheck } from './types.ts'
 
@@ -36,7 +36,7 @@ export async function readMarketplace(send: Send, log: (line: string) => void = 
   return { access, listings: listings ? sellingListingsOf(listings) : null, inbox }
 }
 
-export async function keepCheck(twenty: TwentyClient, accountId: string, accountName: string, check: MarketplaceCheck, keepDir: string, now = new Date()): Promise<CheckReport> {
+export async function keepCheck(store: AccountStore, accountId: string, accountName: string, check: MarketplaceCheck, keepDir: string, now = new Date()): Promise<CheckReport> {
   const lines: string[] = []
   let issue: CheckReport['issue'] = null
   if (!check.access) lines.push(`${accountName}: Marketplace status didn't load`)
@@ -47,7 +47,7 @@ export async function keepCheck(twenty: TwentyClient, accountId: string, account
   }
   if (!check.listings) lines.push(`${accountName}: Selling didn't load`)
   else {
-    const rows = await listListingsWhere(twenty, { socialAccountId: { eq: accountId } })
+    const rows = await listListingsWhere(store, { socialAccountId: { eq: accountId } })
     for (const listing of check.listings) {
       const row = rows.find((r) => r.listingId === listing.listingId)
       const said = `${listing.title} (${listing.listingId}): ${listing.status}${listing.notice ? `, "${listing.notice}"` : ''}${listing.clicks === null ? '' : `, ${listing.clicks} click${listing.clicks === 1 ? '' : 's'} in 14 days`}`
@@ -57,7 +57,7 @@ export async function keepCheck(twenty: TwentyClient, accountId: string, account
       }
       const moved = row.status !== listing.status
       if (!row.status || SYNCABLE.includes(row.status)) {
-        await twenty.update(AGENCY_LISTINGS, row.id, { lastCheckedAt: now.toISOString(), ...(moved ? { status: toTwentyEnum(listing.status) } : {}), ...(listing.clicks === null ? {} : { clicksCount: listing.clicks }) } as never)
+        await store.update(AGENCY_LISTINGS, row.id, { lastCheckedAt: now.toISOString(), ...(moved ? { status: toTwentyEnum(listing.status) } : {}), ...(listing.clicks === null ? {} : { clicksCount: listing.clicks }) } as never)
       }
       lines.push(`  listing ${said}${moved ? `; Twenty ${row.status ?? 'empty'} → ${listing.status}` : ''}${listing.clicks !== null && row.clicksCount !== listing.clicks ? `; clicks ${row.clicksCount ?? 'empty'} → ${listing.clicks}` : ''}`)
     }

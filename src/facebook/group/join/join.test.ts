@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { createActor, fromPromise, toPromise } from 'xstate'
-import { marketplaceFixture } from '../../../twenty/graphql/index'
+import { marketplaceFixture } from '../../../accounts/store/index'
 import { draftComplete, draftFrom, emptySubmission, ensureGroup, groupJoinMachine, hashQuestionSet, inferJoinState, stepsFor, parseGroupRef, patchGroupStep, patchSubmission, readGroupPage, readJoinDialog, readJoinOptions, readSubmission, recordGroupRead } from './index'
 import type { GroupStepInput, GroupStepReply } from './index'
 import recordedJoins from './fixtures/recordedJoins.json'
@@ -342,18 +342,18 @@ describe('groupJoinMachine', () => {
 
 describe('agencyGroups in Twenty', () => {
   test('one row per account and group, patched per step, keyed on the id the page gave', async () => {
-    const twenty = marketplaceFixture()
+    const store = marketplaceFixture()
     const ref = (parseGroupRef('bethlehemcommunity') as { ok: true; group: never }).group
-    let group = await ensureGroup(twenty, 'galwayOne', ref)
+    let group = await ensureGroup(store, 'galwayOne', ref)
     expect(group.joinSubmission).toEqual(emptySubmission())
-    expect((await ensureGroup(twenty, 'galwayOne', ref)).id).toBe(group.id)
+    expect((await ensureGroup(store, 'galwayOne', ref)).id).toBe(group.id)
     const now = new Date('2026-10-20T10:00:00.000Z')
-    group = await patchGroupStep(twenty, group, { formPhase: 'idle', dialog: null, options: null, inference: null, questions: [], submittedAt: null }, { step: 'opening', detail: 'gate join', folder: 'steps/01' }, now)
+    group = await patchGroupStep(store, group, { formPhase: 'idle', dialog: null, options: null, inference: null, questions: [], submittedAt: null }, { step: 'opening', detail: 'gate join', folder: 'steps/01' }, now)
     expect(group.joinSubmission.history).toHaveLength(1)
     const { output } = await run(false, [recordedGroupPage()])
-    group = await recordGroupRead(twenty, group, { ...output, group: ref }, '/runs/x', now)
+    group = await recordGroupRead(store, group, { ...output, group: ref }, '/runs/x', now)
     expect(group).toMatchObject({ facebookGroupId: '4191018610937243', joinStatus: 'notMember', membersLabel: '17.3K members', name: 'Recommendations of Bethlehem, PA and Greater Lehigh Valley Region' })
-    expect(twenty.rows.agencyGroups).toHaveLength(1)
-    expect(twenty.rows.agencyGroups[0].joinStatus).toBe('NOT_MEMBER')
+    expect(store.rows.agencyGroups).toHaveLength(1)
+    expect(store.rows.agencyGroups[0].joinStatus).toBe('NOT_MEMBER')
   })
 })

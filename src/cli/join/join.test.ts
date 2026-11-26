@@ -6,7 +6,7 @@ import { clearCurrentInspect, writeCurrentInspect } from "../../browser/inspect/
 import type { InspectAction, InspectStepResult } from "../../browser/inspect/index.ts";
 import { readJoinOptions } from "../../facebook/group/join/index.ts";
 import { recordedAfterJoin, recordedGroupPage, recordedJoinHar } from "../../facebook/group/join/join.test.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { joinDeps, parseJoinArgs } from "./index.ts";
 
@@ -27,7 +27,7 @@ function openBrowser() {
   writeCurrentInspect({ account: "galwayOne", runDir: "/runs/inspect/galwayOne", commandsPath: "/c", repliesPath: "/r", startedAt: "2026-10-20T10:00:00.000Z" });
 }
 
-async function run(argv: string[], replies: InspectStepResult[] = [], twenty = marketplaceFixture()) {
+async function run(argv: string[], replies: InspectStepResult[] = [], store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const sent: { action: InspectAction; args: string[] }[] = [];
@@ -35,8 +35,8 @@ async function run(argv: string[], replies: InspectStepResult[] = [], twenty = m
     sent.push({ action, args });
     return replies.shift() ?? null;
   };
-  const code = await runCli(argv, { twenty, sendInspect, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), sent, twenty };
+  const code = await runCli(argv, { accounts: store, sendInspect, out: (l) => out.push(l), err: (l) => err.push(l) });
+  return { code, out: out.join("\n"), err: err.join("\n"), sent, twenty: store };
 }
 
 describe("parseJoinArgs", () => {
@@ -130,10 +130,10 @@ describe("log facebook join group", () => {
     openBrowser();
     const folder = mkdtempSync(join(tmpdir(), "logJoinClick"));
     const click = { ok: true, url: GROUP, folder } as InspectStepResult;
-    const twenty = marketplaceFixture();
-    const joined = await run(["facebook", "join", "group", "--account", "galwayOne", "--group", GROUP, "--live"], [recordedGroupPage() as InspectStepResult, click, { ok: true, url: GROUP } as InspectStepResult], twenty);
+    const store = marketplaceFixture();
+    const joined = await run(["facebook", "join", "group", "--account", "galwayOne", "--group", GROUP, "--live"], [recordedGroupPage() as InspectStepResult, click, { ok: true, url: GROUP } as InspectStepResult], store);
     expect(joined.code).toBe(0);
-    const row = twenty.rows.agencyGroups[0] as unknown as { joinSubmission: Record<string, unknown> };
+    const row = store.rows.agencyGroups[0] as unknown as { joinSubmission: Record<string, unknown> };
     row.joinSubmission = { ...row.joinSubmission, options: readJoinOptions(recordedJoinHar("complainersOfBethlehem")) };
 
     joinDeps.tty = () => ({ stdinTTY: true, stdoutTTY: true });
@@ -157,7 +157,7 @@ describe("log facebook join group", () => {
         return true;
       },
     };
-    const answered = await run(["facebook", "join", "group", "--account", "galwayOne", "--group", "4191018610937243", "--answer"], [], twenty);
+    const answered = await run(["facebook", "join", "group", "--account", "galwayOne", "--group", "4191018610937243", "--answer"], [], store);
     expect(answered.code).toBe(0);
     expect(answered.sent).toEqual([]);
     expect(asked).toEqual([
@@ -168,7 +168,7 @@ describe("log facebook join group", () => {
       "confirm I agree to the group rules",
       "outro Saved to Twenty. Not sent to Facebook.",
     ]);
-    const saved = (twenty.rows.agencyGroups[0] as unknown as { joinSubmission: { formPhase: string; draft: { answers: Record<string, unknown>; rulesAgreed: boolean } } }).joinSubmission;
+    const saved = (store.rows.agencyGroups[0] as unknown as { joinSubmission: { formPhase: string; draft: { answers: Record<string, unknown>; rulesAgreed: boolean } } }).joinSubmission;
     expect(saved.formPhase).toBe("incomplete");
     expect(saved.draft).toMatchObject({ answers: { "2345806658994243": ["2345806655660910"], "2345807182327524": "Parking on Main Street" }, rulesAgreed: true });
     expect(answered.out).toContain("→ Yes");
@@ -182,16 +182,16 @@ describe("log facebook join group", () => {
 
   test("outside the account's hours a step in the browser is refused, even with the browser open (rule 18); --bypass runs it (rule 20)", async () => {
     openBrowser();
-    const twenty = marketplaceFixture();
-    const row = twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!;
+    const store = marketplaceFixture();
+    const row = store.rows.socialAccounts.find((r) => r.id === "galwayOne")!;
     Object.assign(row, { activeHoursStart: 8, activeHoursEnd: 22 });
     const late = () => new Date("2026-10-20T22:30:00Z");
-    const refused = await runCli(["facebook", "join", "group", "--account", "galwayOne", "--group", GROUP], { twenty, now: late, sendInspect: async () => null, out: () => {}, err: () => {} });
+    const refused = await runCli(["facebook", "join", "group", "--account", "galwayOne", "--group", GROUP], { accounts: store, now: late, sendInspect: async () => null, out: () => {}, err: () => {} });
     expect(refused).toBe(1);
     const err: string[] = [];
     const sent: string[] = [];
     const code = await runCli(["facebook", "join", "group", "--account", "galwayOne", "--group", GROUP, "--bypass"], {
-      twenty,
+      accounts: store,
       now: late,
       sendInspect: async (_c, action) => (sent.push(action), recordedGroupPage() as InspectStepResult),
       out: () => {},
@@ -200,7 +200,7 @@ describe("log facebook join group", () => {
     expect(code).toBe(0);
     expect(sent).toEqual(["goto"]);
     expect(err.join("\n")).toContain("--bypass: the waking-hours gate is skipped for this run only");
-    expect(await runCli(["facebook", "join", "group", "--account", "galwayOne", "--group", GROUP, "--show"], { twenty, now: late, out: () => {}, err: () => {} })).toBe(0);
+    expect(await runCli(["facebook", "join", "group", "--account", "galwayOne", "--group", GROUP, "--show"], { accounts: store, now: late, out: () => {}, err: () => {} })).toBe(0);
   });
 
   test("an unknown account is refused", async () => {

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
 import type { ProfileSessionConfig } from "../../camofox/session/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 
 function scriptedProfile(kind = "loggedIn") {
@@ -27,11 +27,11 @@ function scriptedProfile(kind = "loggedIn") {
   return { factory, steps, configs, closed: () => closed };
 }
 
-async function run(argv: string[], session = scriptedProfile(), twenty = marketplaceFixture()) {
+async function run(argv: string[], session = scriptedProfile(), store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await runCli(argv, { profileSession: session.factory, twenty, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), session, twenty };
+  const code = await runCli(argv, { profileSession: session.factory, accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
+  return { code, out: out.join("\n"), err: err.join("\n"), session, twenty: store };
 }
 
 describe("log facebook profile setup", () => {
@@ -60,14 +60,14 @@ describe("log facebook profile setup", () => {
     const cover = join(dir, "cover.png");
     writeFileSync(face, await sharp({ create: { width: 400, height: 400, channels: 3, background: "#8a6" } }).png().toBuffer());
     writeFileSync(cover, await sharp({ create: { width: 820, height: 312, channels: 3, background: "#468" } }).png().toBuffer());
-    const twenty = marketplaceFixture();
-    await twenty.update("socialAccounts", "galwayOne", { profilePhoto: face, coverPhoto: cover } as never);
-    const result = await run(["facebook", "profile", "setup", "--account", "galwayOne", "--live"], scriptedProfile(), twenty);
+    const store = marketplaceFixture();
+    await store.update("socialAccounts", "galwayOne", { profilePhoto: face, coverPhoto: cover } as never);
+    const result = await run(["facebook", "profile", "setup", "--account", "galwayOne", "--live"], scriptedProfile(), store);
     expect(result.code).toBe(0);
     expect(result.session.steps).toEqual(["open", "read", "uploadProfilePhoto photo1.jpg", "uploadCoverPhoto photo2.jpg"]);
     expect(result.out).toContain("Profile photo: uploaded");
     expect(result.out).toContain("Cover photo: uploaded");
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!.profileSetAt).toBeTruthy();
+    expect(store.rows.socialAccounts.find((r) => r.id === "galwayOne")!.profileSetAt).toBeTruthy();
   });
 
   test("not signed in: stops and says to connect first", async () => {

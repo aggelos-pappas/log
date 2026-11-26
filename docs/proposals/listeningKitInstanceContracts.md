@@ -68,7 +68,7 @@ The immediate implementation work is to finish native workspace repositories, pr
 - DDIA Part III, “Systems of record” / “Derived data systems” (local book lines 4356–4362); chapter 2 relationships; chapter 7 retry ambiguity (line 1769).
 - [Current SQLite path and transactional migrations](../../src/storage/schema/client.ts).
 - [Existing event record and identity migrations](../../src/storage/schema/helpers/migrations.ts).
-- [Local accounts adapter and remaining remote forwarding](../../src/twenty/graphql/helpers/localAccounts.ts).
+- [Local accounts adapter and remaining remote forwarding](../../src/accounts/store/helpers/localAccounts.ts).
 - [Platform session export and refresh persistence](../../src/platformKit/session/client.ts).
 - [Account/profile binding](../../src/browser/adsPower/helpers/planSync.ts).
 
@@ -156,9 +156,9 @@ Completion: a concrete manifest can deploy the control service/gateway, and a cl
 
 Pinned inspected Log revision: `4004558bdafcace630686df994d91254130659ab`.
 
-- [Local-account adapter](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/twenty/graphql/helpers/localAccounts.ts): account-only override plus remote forwarding for other object types.
+- [Local-account adapter](../../src/accounts/store/helpers/localAccounts.ts): account-only override plus remote forwarding for other object types.
 - [Command context](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/cli/runner/types.ts) and [runner construction](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/cli/runner/client.ts): replace runtime vendor coupling and global configuration assumptions.
-- [Existing persistence interface](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/twenty/graphql/types.ts): inventory object contracts and login-secret reads.
+- [Existing persistence interface](../../src/accounts/store/types.ts): inventory object contracts and login-secret reads.
 - [SQLite schema/migration client](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/storage/schema/client.ts): reuse existing DB path and schema compatibility behavior.
 - [MCP server](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/mcp/server/index.ts) and [jobs](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/mcp/jobs/client.ts): scoped resources/logging, local results and recovery.
 - [Platform scaffolding](https://github.com/matthewdonsemail-lab/log/blob/4004558bdafcace630686df994d91254130659ab/src/scaffold/platform/helpers/templates.ts): generated future platform code must target native repositories too.

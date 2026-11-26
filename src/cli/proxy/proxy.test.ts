@@ -2,10 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { countryOfLocation } from "../../browser/proxy/index.ts";
 import type { WorkerClient, WorkerRequest } from "../../camofox/worker/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 
-async function run(argv: string[], reply: (request: WorkerRequest) => unknown, twenty = marketplaceFixture()) {
+async function run(argv: string[], reply: (request: WorkerRequest) => unknown, store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const requests: WorkerRequest[] = [];
@@ -15,8 +15,8 @@ async function run(argv: string[], reply: (request: WorkerRequest) => unknown, t
     if (request.proxy_path) proxyFiles.push(JSON.parse(readFileSync(request.proxy_path, "utf8")));
     return reply(request);
   }) as WorkerClient;
-  const code = await runCli(argv, { worker, twenty, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), requests, proxyFiles, twenty };
+  const code = await runCli(argv, { worker, accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
+  return { code, out: out.join("\n"), err: err.join("\n"), requests, proxyFiles, twenty: store };
 }
 
 describe("countryOfLocation", () => {
@@ -118,16 +118,16 @@ describe("log proxy assign (2Captcha, fetch stubbed)", () => {
   test("a DEACTIVATED account gets no proxy: --missing skips it and --account refuses it", async () => {
     stub2Captcha();
     try {
-      const twenty = marketplaceFixture();
-      twenty.rows.socialAccounts.find((r) => r.id === "noProxy")!.accountStatus = "DEACTIVATED";
-      const missing = await run(["proxy", "assign", "--missing"], () => ({ ok: true, exitCountry: "IE", country: "IE" }), twenty);
+      const store = marketplaceFixture();
+      store.rows.socialAccounts.find((r) => r.id === "noProxy")!.accountStatus = "DEACTIVATED";
+      const missing = await run(["proxy", "assign", "--missing"], () => ({ ok: true, exitCountry: "IE", country: "IE" }), store);
       expect(missing.code).toBe(0);
       expect(missing.out).toContain("Every FACEBOOK account already has a proxy.");
       expect(missing.requests).toHaveLength(0);
-      const one = await run(["proxy", "assign", "--account", "noProxy"], () => ({ ok: true, exitCountry: "IE", country: "IE" }), twenty);
+      const one = await run(["proxy", "assign", "--account", "noProxy"], () => ({ ok: true, exitCountry: "IE", country: "IE" }), store);
       expect(one.code).toBe(1);
       expect(one.out).toContain("noProxy: accountNotUsable (DEACTIVATED: it gets no proxy)");
-      expect(twenty.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy).toBeNull();
+      expect(store.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy).toBeNull();
     } finally {
       restore();
     }
@@ -204,13 +204,13 @@ describe("log proxy assign (2Captcha, fetch stubbed)", () => {
   test("a city 2Captcha doesn't have is refused, unless --anyCity", async () => {
     stub2Captcha();
     try {
-      const twenty = marketplaceFixture();
-      await twenty.update("socialAccounts", "noProxy", { homeCity: "Nowhereville" });
-      const refused = await run(["proxy", "assign", "--account", "noProxy"], () => ({ ok: true, exitIp: "1", exitCountry: "IE", country: "IE" }), twenty);
+      const store = marketplaceFixture();
+      await store.update("socialAccounts", "noProxy", { homeCity: "Nowhereville" });
+      const refused = await run(["proxy", "assign", "--account", "noProxy"], () => ({ ok: true, exitIp: "1", exitCountry: "IE", country: "IE" }), store);
       expect(refused.out).toContain("twoCaptchaNoPlace");
-      const anywhere = await run(["proxy", "assign", "--account", "noProxy", "--anyCity"], () => ({ ok: true, exitIp: "1", exitCountry: "IE", country: "IE" }), twenty);
+      const anywhere = await run(["proxy", "assign", "--account", "noProxy", "--anyCity"], () => ({ ok: true, exitIp: "1", exitCountry: "IE", country: "IE" }), store);
       expect(anywhere.code).toBe(0);
-      expect(String(twenty.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy)).toContain("-region-ie-session-");
+      expect(String(store.rows.socialAccounts.find((r) => r.id === "noProxy")!.proxy)).toContain("-region-ie-session-");
     } finally {
       restore();
     }

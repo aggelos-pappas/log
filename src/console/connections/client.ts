@@ -3,7 +3,7 @@ import { userEnvPath } from "../../config/userEnv/index.ts";
 import { platformOfTwenty, signInRouteOf } from "../../cli/launch/helpers/start.ts";
 import { PLATFORM_LABELS, PLATFORM_SITES, PLATFORMS } from "../../cli/runner/helpers/platforms.ts";
 import type { Platform } from "../../cli/runner/helpers/platforms.ts";
-import { localAccountsPath, readLocalAccounts, updateLocalAccount } from "../../twenty/graphql/index.ts";
+import { localAccountsPath, readLocalAccounts, updateLocalAccount } from "../../accounts/store/index.ts";
 import { driverOrNull, isBrowserDriver } from "../../browser/driver/index.ts";
 import { readCheckRows } from "../accountCheck/index.ts";
 import { browserChoices, readConnectionAccounts } from "./helpers/accounts.ts";

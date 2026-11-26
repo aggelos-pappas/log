@@ -7,13 +7,13 @@ import { recordSlackSession } from "../../slack/account/session/index.ts";
 import { recordTwitterSession } from "../../twitter/account/session/index.ts";
 import type { PlatformAccount, PlatformAnswer } from "../../platformKit/session/index.ts";
 import type { TwitterAccount, TwitterSessionAnswer } from "../../twitter/account/session/index.ts";
-import type { TwentyClient } from "../../twenty/graphql/index.ts";
+import type { AccountStore } from "../../accounts/store/index.ts";
 import { migrate } from "../schema/client.ts";
 import { MIGRATIONS, SCHEMA_VERSION } from "../schema/index.ts";
 import { blobCodecOf, derivedFingerprint, insertEventRow, profileSeenEvent, putBlob, readBlob, readBlobBytes, rebuildDerived, sessionProfileOf, twitterFollowerProfile, verifyDerived } from "./index.ts";
 
 const NOW = new Date("2026-11-14T10:00:00Z");
-const twenty = { update: async () => ({}) } as unknown as TwentyClient;
+const store = { update: async () => ({}) } as unknown as AccountStore;
 
 function fresh(): Database {
   const handle = new Database(":memory:");
@@ -123,22 +123,22 @@ describe("writers keep the profile fields the engines already return", () => {
   test("X: the session check keeps the account's display name, with no profile row", async () => {
     const answer: TwitterSessionAnswer = { ok: true, loginState: "loggedIn", userId: "5001", screenName: "fakeOwner", name: "Fake Owner" };
     const account = { id: "acc1", accountName: "fakeOwner", cookies: {} } as unknown as TwitterAccount;
-    await recordTwitterSession(twenty, account, { answer, refreshed: null }, NOW);
+    await recordTwitterSession(store, account, { answer, refreshed: null }, NOW);
     expect(identityOf(db(), "twitter", "5001")).toEqual({ handle: "fakeOwner", displayName: "Fake Owner" });
     expect(profileOf(db(), "twitter", "5001")).toBeNull();
   });
 
   test("X: an answer naming someone else is never taken as the account's own id, the twid cookie is", async () => {
     const account = { id: "acc1", accountName: "xAccount", cookies: { twid: "u%3D5001" } } as unknown as TwitterAccount;
-    await recordTwitterSession(twenty, account, { answer: { ok: true, loginState: "loggedIn", userId: "5001", screenName: "xAccount", name: "X Account" }, refreshed: null }, NOW);
-    await recordTwitterSession(twenty, account, { answer: { ok: true, loginState: "loggedIn", userId: "7777", screenName: "someoneElse", name: "Someone Else" }, refreshed: null }, NOW);
+    await recordTwitterSession(store, account, { answer: { ok: true, loginState: "loggedIn", userId: "5001", screenName: "xAccount", name: "X Account" }, refreshed: null }, NOW);
+    await recordTwitterSession(store, account, { answer: { ok: true, loginState: "loggedIn", userId: "7777", screenName: "someoneElse", name: "Someone Else" }, refreshed: null }, NOW);
     expect(db().prepare("SELECT userId FROM accounts WHERE platform = 'twitter' AND account = 'xAccount'").get()).toEqual({ userId: "5001" });
     expect(identityOf(db(), "twitter", "7777")).toBeNull();
   });
 
   test("Discord: the session check keeps the global name and the verified flag", async () => {
     const answer: PlatformAnswer = { ok: true, loginState: "loggedIn", httpStatus: 200, screenName: "fakeguilder", userId: "6001", globalName: "Fake Guilder", verified: true, mfaEnabled: false, avatar: "0123456789abcdef0123456789abcdef" };
-    await recordDiscordSession(twenty, { id: "acc2", accountName: "fakeGuild", cookies: {} } as unknown as PlatformAccount, { answer, refreshed: null }, NOW);
+    await recordDiscordSession(store, { id: "acc2", accountName: "fakeGuild", cookies: {} } as unknown as PlatformAccount, { answer, refreshed: null }, NOW);
     expect(profileOf(db(), "discord", "6001")).toMatchObject({ verified: 1, bio: null, avatarHash: null });
     expect(JSON.parse(profileOf(db(), "discord", "6001")!.extra!)).toEqual({ pictureUrl: "https://cdn.discordapp.com/avatars/6001/0123456789abcdef0123456789abcdef.png" });
     expect(identityOf(db(), "discord", "6001")).toEqual({ handle: "fakeguilder", displayName: "Fake Guilder" });
@@ -146,7 +146,7 @@ describe("writers keep the profile fields the engines already return", () => {
 
   test("LinkedIn: the session check keeps the name and premium", async () => {
     const answer: PlatformAnswer = { ok: true, loginState: "loggedIn", httpStatus: 200, screenName: "fakeLinker", name: "Fake Linker", userId: "ACoFake", premium: true };
-    await recordLinkedinSession(twenty, { id: "acc3", accountName: "fakeLinker", cookies: {} } as unknown as PlatformAccount, { answer, refreshed: null }, NOW);
+    await recordLinkedinSession(store, { id: "acc3", accountName: "fakeLinker", cookies: {} } as unknown as PlatformAccount, { answer, refreshed: null }, NOW);
     expect(JSON.parse(profileOf(db(), "linkedin", "ACoFake")!.extra!)).toEqual({ premium: true });
     expect(identityOf(db(), "linkedin", "ACoFake")).toEqual({ handle: "fakeLinker", displayName: "Fake Linker" });
   });
@@ -154,7 +154,7 @@ describe("writers keep the profile fields the engines already return", () => {
   test("Slack: the session answer carries no profile field, so no row is written", async () => {
     const answer: PlatformAnswer = { ok: true, loginState: "loggedIn", screenName: "fakeslacker", userId: "U0FAKE" };
     expect(sessionProfileOf("slack", answer)).toBeNull();
-    await recordSlackSession(twenty, { id: "acc4", accountName: "fakeSlack", cookies: {} } as unknown as PlatformAccount, { answer, refreshed: null }, NOW);
+    await recordSlackSession(store, { id: "acc4", accountName: "fakeSlack", cookies: {} } as unknown as PlatformAccount, { answer, refreshed: null }, NOW);
     expect(profileOf(db(), "slack", "U0FAKE")).toBeNull();
   });
 

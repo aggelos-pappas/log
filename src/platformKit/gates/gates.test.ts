@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 import { dualEraTransport, META_KEYS } from "../../mcp/stateless/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { join } from "node:path";
 import { capabilityDeps } from "../../cli/capabilities/index.ts";
 import { COMMANDS, runCli } from "../../cli/runner/index.ts";
@@ -273,9 +273,9 @@ describe("a 2026-07-28 tools/call goes through the same gate pipeline", () => {
   const META = { [META_KEYS.protocolVersion]: "2026-07-28", [META_KEYS.clientCapabilities]: {}, [META_KEYS.clientInfo]: { name: "fakeHost", version: "1" } };
 
   async function modern() {
-    const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
+    const server = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false });
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
-    await server.connect(dualEraTransport(serverSide, statelessLogHandlers({ twenty: marketplaceFixture() }, { logDir: null })));
+    await server.connect(dualEraTransport(serverSide, statelessLogHandlers({ accounts: marketplaceFixture() }, { logDir: null })));
     const got = new Map<string | number, Record<string, unknown>>();
     clientSide.onmessage = (message) => {
       if ("id" in message && message.id !== undefined) got.set(message.id, message as unknown as Record<string, unknown>);

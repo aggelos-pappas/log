@@ -57,7 +57,7 @@ export const adsPowerCommand: Command = liveThroughAction<Command>({
       const apply = parsed.flags["apply"] === true;
       const account = typeof parsed.flags["account"] === "string" ? parsed.flags["account"] : undefined;
       const homes = typeof parsed.flags["homes"] === "string" ? homesOf(parsed.flags["homes"]) : adsPowerHomes();
-      const result = await syncProfiles(context.twenty, adsPower, { apply, account, homes, log: (line) => context.err(line) });
+      const result = await syncProfiles(context.accounts, adsPower, { apply, account, homes, log: (line) => context.err(line) });
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify(result, null, 2) };
       const counts = result.entries.reduce<Record<string, number>>((n, e) => ({ ...n, [e.action]: (n[e.action] ?? 0) + 1 }), {});
       const failed = result.entries.filter((e) => apply && (e.action === "create" || e.action === "relink") && !e.profileId);

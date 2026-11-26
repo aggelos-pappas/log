@@ -1,4 +1,4 @@
-import type { LoginSecrets, TwentyClient, TwentyObject, TwentyObjects } from '../types'
+import type { AccountObject, AccountObjects, AccountStore, LoginSecrets } from '../types'
 
 type Row = Record<string, unknown> & { id: string }
 
@@ -19,43 +19,49 @@ export function matchesFilter(row: Row, filter: Record<string, unknown> | undefi
       if (op === 'neq' && String(value) === String(expected)) return false
       if (op === 'in' && !(expected as unknown[]).map(String).includes(String(value))) return false
       if (op === 'is' && (expected === 'NULL' ? value != null : value == null)) return false
-      if (!['eq', 'neq', 'in', 'is'].includes(op)) throw new Error(`memoryTwenty: unsupported filter op "${op}"`)
+      if (!['eq', 'neq', 'in', 'is'].includes(op)) throw new Error(`accountStore: unsupported filter op "${op}"`)
     }
   }
   return true
 }
 
-export function createMemoryTwenty(seed: Partial<Record<TwentyObject, Row[]>> = {}): TwentyClient & { rows: Record<string, Row[]> } {
+export function textOf(value: unknown): string | null {
+  return typeof value === 'string' && value ? value : null
+}
+
+export function secretsOf(row: Record<string, unknown>): LoginSecrets {
+  return { email: textOf(row.email), password: textOf(row.password), totpSecret: textOf(row.totpSecret), messengerPin: textOf(row.messengerPin) }
+}
+
+export function createMemoryAccountStore(seed: Partial<Record<AccountObject, Row[]>> = {}): AccountStore & { rows: Record<string, Row[]> } {
   const rows: Record<string, Row[]> = Object.fromEntries(Object.entries(seed).map(([k, v]) => [k, (v ?? []).map((r) => ({ ...r }))]))
   let next = 1
   const table = (name: string) => (rows[name] ??= [])
   return {
     rows,
-    async list<K extends TwentyObject>(object: K, filter?: TwentyObjects[K]['filter']) {
+    async list<K extends AccountObject>(object: K, filter?: AccountObjects[K]['filter']) {
       return table(object)
         .filter((row) => matchesFilter(row, filter as Record<string, unknown> | undefined))
-        .map((row) => ({ ...row })) as unknown as TwentyObjects[K]['row'][]
+        .map((row) => ({ ...row })) as unknown as AccountObjects[K]['row'][]
     },
-    async get<K extends TwentyObject>(object: K, id: string) {
+    async get<K extends AccountObject>(object: K, id: string) {
       const row = table(object).find((r) => r.id === id)
-      return (row ? { ...row } : null) as unknown as TwentyObjects[K]['row'] | null
+      return (row ? { ...row } : null) as unknown as AccountObjects[K]['row'] | null
     },
-    async create<K extends TwentyObject>(object: K, data: TwentyObjects[K]['create']) {
+    async create<K extends AccountObject>(object: K, data: AccountObjects[K]['create']) {
       const row: Row = { createdAt: new Date().toISOString(), ...(data as Record<string, unknown>), id: `mem${String(next++).padStart(4, '0')}` }
       table(object).push(row)
-      return { ...row } as unknown as TwentyObjects[K]['row']
+      return { ...row } as unknown as AccountObjects[K]['row']
     },
-    async update<K extends TwentyObject>(object: K, id: string, data: TwentyObjects[K]['update']) {
+    async update<K extends AccountObject>(object: K, id: string, data: AccountObjects[K]['update']) {
       const row = table(object).find((r) => r.id === id)
-      if (!row) throw new Error(`memoryTwenty: no ${object} ${id}`)
+      if (!row) throw new Error(`memoryAccountStore: no ${object} ${id}`)
       Object.assign(row, data)
-      return { ...row } as unknown as TwentyObjects[K]['row']
+      return { ...row } as unknown as AccountObjects[K]['row']
     },
     async loginSecrets(accountId: string): Promise<LoginSecrets | null> {
       const row = table('socialAccounts').find((r) => r.id === accountId)
-      if (!row) return null
-      const text = (value: unknown) => (typeof value === 'string' && value ? value : null)
-      return { email: text(row.email), password: text(row.password), totpSecret: text(row.totpSecret), messengerPin: text(row.messengerPin) }
+      return row ? secretsOf(row) : null
     }
   }
 }

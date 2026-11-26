@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { findAccount } from '../../platformKit/socialAccount/index'
-import { marketplaceFixture } from '../../twenty/graphql/index'
+import { marketplaceFixture } from '../../accounts/store/index'
 import { captureDirFor, lastLaunchReset, listLaunches, overLaunchBudget, prepareRun, recordLaunchReset, runBrowserOf } from './index'
 
 const DAY = new Date('2026-10-18T10:00:00Z')
@@ -12,9 +12,9 @@ const ROOT = mkdtempSync(join(tmpdir(), 'logCliRunTest'))
 afterAll(() => rmSync(ROOT, { recursive: true, force: true }))
 
 async function account(name: string, changes: Record<string, unknown> = {}) {
-  const twenty = marketplaceFixture()
-  await twenty.update('socialAccounts', name, { activeHoursStart: null, activeHoursEnd: null, ...changes })
-  return findAccount(twenty, name)
+  const store = marketplaceFixture()
+  await store.update('socialAccounts', name, { activeHoursStart: null, activeHoursEnd: null, ...changes })
+  return findAccount(store, name)
 }
 
 describe('run.keep: a save Twenty refused never loses the device or the session (Harrisburg, 2026-10-19)', () => {

@@ -5,7 +5,7 @@ import { startConnectSession, startProfileSession, startSession } from "../../ca
 import { runWorker } from "../../camofox/worker/index.ts";
 import { listAccounts } from "../../platformKit/account/index.ts";
 import { listListings } from "../../facebook/marketplace/listing/index.ts";
-import { createTwentyClient, withLocalAccounts } from "../../twenty/graphql/index.ts";
+import { createAccountStore } from "../../accounts/store/index.ts";
 import { runRedditEngine } from "../../reddit/account/session/index.ts";
 import { runDiscordEngine, runDiscordEngineLive } from "../../discord/account/session/index.ts";
 import { isPlatform, renderUsage, resolvePlatformForm, resultCodeOf, RETIRED_COMMANDS } from "./helpers/index.ts";
@@ -29,7 +29,7 @@ export const ALIASES: Record<string, string> = {
 export function createContext(overrides: Partial<CommandContext> = {}): CommandContext {
   return {
     load: overrides.load ?? (() => ({ listings: listListings(), accounts: listAccounts() })),
-    twenty: overrides.twenty ?? withLocalAccounts(createTwentyClient()),
+    accounts: overrides.accounts ?? createAccountStore(),
     worker: overrides.worker ?? runWorker,
     session: overrides.session ?? startSession,
     connectSession: overrides.connectSession ?? startConnectSession,

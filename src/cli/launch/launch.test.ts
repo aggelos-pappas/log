@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { listAccounts } from "../../platformKit/account/index.ts";
 import { listListings } from "../../facebook/marketplace/listing/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { CommandContext } from "../runner/types.ts";
 import { launchDeps, parseLaunchArgs, runLaunch, setEnvValue, setupSummary, shouldPrompt, SETUP_HARNESSES } from "./index.ts";
 
@@ -13,7 +13,7 @@ function capture() {
   const err: string[] = [];
   const context: CommandContext = {
     load: () => ({ listings: listListings(), accounts: listAccounts() }),
-    twenty: marketplaceFixture(),
+    accounts: marketplaceFixture(),
     worker: async () => ({ ok: false, code: "crashed", detail: "worker not stubbed" }),
     session: () => {
       throw new Error("session not stubbed");
@@ -248,7 +248,7 @@ describe("runLaunch: start here, no Twenty", () => {
     const { offered } = stubPrompts(["check", "0"]);
     const delegated = recordRuns();
     const { context } = capture();
-    const accounts = (await context.twenty.list("socialAccounts")) as unknown as { platform?: string }[];
+    const accounts = (await context.accounts.list("socialAccounts")) as unknown as { platform?: string }[];
     expect(accounts.some((a) => a.platform === "TWITTER")).toBe(true);
     expect((await runLaunch(context, [])).code).toBe(0);
     expect(offered[1]).toEqual(["0"]);

@@ -8,8 +8,7 @@ import { browserSessionGate, BROWSER_SESSION_NEEDS } from '../../platformKit/sig
 import { listBrowserAccounts, SOCIAL_ACCOUNTS } from '../../platformKit/socialAccount/index'
 import type { FacebookAccount, PlaywrightCookie } from '../../platformKit/socialAccount/index'
 import { SESSION_CHECK_PLATFORMS } from '../../platformKit/sessionCheck/types'
-import type { TwentyClient } from '../../twenty/graphql/index'
-import { accountStore } from '../../twenty/graphql/index'
+import type { AccountStore } from '../../accounts/store/index'
 import { MOVE_NOT_CARRIED } from './types'
 import type { MoveCheck, MoveDeps, MoveLedgerEntry, MoveOptions, MovePlan, MovePlanEntry, MoveResult, MoveSession, MoveSource, MoveTarget } from './types'
 
@@ -90,8 +89,8 @@ export function orderMoves(entries: MovePlanEntry[]): MovePlanEntry[] {
   return [...entries].sort((a, b) => rank(a) - rank(b) || PLATFORM_ORDER(a.platform) - PLATFORM_ORDER(b.platform) || a.accountName.localeCompare(b.accountName))
 }
 
-async function accountsOf(twenty: TwentyClient): Promise<FacebookAccount[]> {
-  return listBrowserAccounts(twenty, PLATFORMS.map((p) => PLATFORM_SITES[p].twenty))
+async function accountsOf(store: AccountStore): Promise<FacebookAccount[]> {
+  return listBrowserAccounts(store, PLATFORMS.map((p) => PLATFORM_SITES[p].twenty))
 }
 
 export function pickAccount(accounts: FacebookAccount[], ref: string): FacebookAccount {
@@ -102,9 +101,9 @@ export function pickAccount(accounts: FacebookAccount[], ref: string): FacebookA
   return found[0]
 }
 
-export async function planMoves(deps: Pick<MoveDeps, 'twenty' | 'adsPower' | 'ledger' | 'env'>, options: MoveOptions): Promise<MovePlan & { reach: { up: boolean; code: string | null; detail: string | null } }> {
+export async function planMoves(deps: Pick<MoveDeps, 'accounts' | 'adsPower' | 'ledger' | 'env'>, options: MoveOptions): Promise<MovePlan & { reach: { up: boolean; code: string | null; detail: string | null } }> {
   const env = deps.env ?? process.env
-  const accounts = await accountsOf(deps.twenty)
+  const accounts = await accountsOf(deps.accounts)
   const scope = options.account ? [pickAccount(accounts, options.account)] : accounts.filter((a) => driverOrNull(a, env) === 'adsPower' || Boolean(a.adsPowerProfileId))
   const reach = await adsPowerReach(deps.adsPower)
   const entries = orderMoves(scope.map((a) => entryOf(a, options.to, env, reach)))
@@ -146,7 +145,7 @@ async function readProfile(deps: MoveDeps, profileId: string, platform: Platform
 type Snapshot = Record<string, unknown>
 
 function snapshotOf(account: FacebookAccount): Snapshot {
-  return { browserDriver: account.browserDriver, adsPowerProfileId: account.adsPowerProfileId, ...(accountStore(account.id) === 'Local accounts' ? { formerAdsPowerProfileId: (account as unknown as Record<string, unknown>).formerAdsPowerProfileId ?? null } : {}), cookies: account.cookies, storageOrigins: account.storageOrigins, sessionState: account.sessionState, sessionCheckedAt: account.sessionCheckedAt }
+  return { browserDriver: account.browserDriver, adsPowerProfileId: account.adsPowerProfileId, formerAdsPowerProfileId: (account as unknown as Record<string, unknown>).formerAdsPowerProfileId ?? null, cookies: account.cookies, storageOrigins: account.storageOrigins, sessionState: account.sessionState, sessionCheckedAt: account.sessionCheckedAt }
 }
 
 export async function moveOne(deps: MoveDeps, entry: MovePlanEntry): Promise<MoveResult> {
@@ -154,7 +153,7 @@ export async function moveOne(deps: MoveDeps, entry: MovePlanEntry): Promise<Mov
   const now = deps.now ?? (() => new Date())
   const done = (outcome: MoveResult['outcome'], code: string | null, detail: string, carried: MoveSource | null = null, check: MoveCheck | null = null): MoveResult => ({ ...entry, outcome, code, detail, carried, check })
   if (entry.action !== 'move') return done('skipped', null, entry.note)
-  const account = pickAccount(await accountsOf(deps.twenty), entry.accountId)
+  const account = pickAccount(await accountsOf(deps.accounts), entry.accountId)
   const platform = knownPlatformOfAccount(account)!
   let session: MoveSession
   let carried: MoveSource
@@ -175,8 +174,8 @@ export async function moveOne(deps: MoveDeps, entry: MovePlanEntry): Promise<Mov
   const before = snapshotOf(account)
   const former = account.adsPowerProfileId
   const ledgerEntry = (state: MoveLedgerEntry['state']): MoveLedgerEntry => ({ accountId: account.id, accountName: account.accountName, platform, from: entry.from, to: entry.to, formerAdsPowerProfileId: former, state, at: now().toISOString() })
-  const fields: Record<string, unknown> = { browserDriver: entry.to, adsPowerProfileId: null, ...(former && accountStore(account.id) === 'Local accounts' ? { formerAdsPowerProfileId: former } : {}), ...(carried === 'adsPowerProfile' ? { cookies: session.cookies, storageOrigins: session.origins } : {}) }
-  await deps.twenty.update(SOCIAL_ACCOUNTS, account.id, fields as never)
+  const fields: Record<string, unknown> = { browserDriver: entry.to, adsPowerProfileId: null, ...(former ? { formerAdsPowerProfileId: former } : {}), ...(carried === 'adsPowerProfile' ? { cookies: session.cookies, storageOrigins: session.origins } : {}) }
+  await deps.accounts.update(SOCIAL_ACCOUNTS, account.id, fields as never)
   deps.ledger.put(ledgerEntry('checking'))
   log(`${account.accountName}: driver set to ${entry.to} (${carried === 'adsPowerProfile' ? `${session.cookies.length} cookies, ${session.origins.length} origin(s) from AdsPower` : 'the saved session'}); checking with ${platform}`)
   let check: MoveCheck
@@ -189,7 +188,7 @@ export async function moveOne(deps: MoveDeps, entry: MovePlanEntry): Promise<Mov
     deps.ledger.put(ledgerEntry('moved'))
     return done('moved', null, `${platform} says signed in on ${entry.to}. ${MOVE_NOT_CARRIED}`, carried, check)
   }
-  await deps.twenty.update(SOCIAL_ACCOUNTS, account.id, before as never)
+  await deps.accounts.update(SOCIAL_ACCOUNTS, account.id, before as never)
   deps.ledger.put(ledgerEntry('rolledBack'))
   return done('rolledBack', 'browserMoveNotSignedIn', `${platform} did not say signed in (${check.verdict}${check.code ? `, ${check.code}` : ''}${check.detail ? `: ${check.detail}` : ''}); the driver, profile link and session were put back`, carried, check)
 }

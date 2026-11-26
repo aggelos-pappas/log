@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { MCP_APP_MIME_TYPE, UI_EXTENSION_ID } from "../apps/browserView/index.ts";
 import { dualEraTransport, META_KEYS } from "../stateless/index.ts";
 import { createLogMcpServer, serveLogMcpHttp, statelessLogHandlers, statelessTools } from "./index.ts";
@@ -11,7 +11,7 @@ import { LOADS_EVERY_TOOL_MS } from "../../../scripts/tests/timeouts.ts";
 const UI = { extensions: { [UI_EXTENSION_ID]: { mimeTypes: [MCP_APP_MIME_TYPE] } } };
 const meta = (capabilities: Record<string, unknown> = {}, name = "fakeHost") => ({ [META_KEYS.protocolVersion]: "2026-07-28", [META_KEYS.clientCapabilities]: capabilities, [META_KEYS.clientInfo]: { name, version: "1" } });
 const call = (id: string | number, method: string, params: Record<string, unknown> = {}, capabilities: Record<string, unknown> = {}, name = "fakeHost") => ({ jsonrpc: "2.0", id, method, params: { ...params, _meta: meta(capabilities, name) } });
-const context = () => ({ twenty: marketplaceFixture() });
+const context = () => ({ accounts: marketplaceFixture() });
 
 const stops: (() => void)[] = [];
 afterEach(() => stops.splice(0).forEach((stop) => stop()));

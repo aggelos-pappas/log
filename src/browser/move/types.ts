@@ -1,7 +1,7 @@
 import type { AdsPowerClient } from '../adsPower/types'
 import type { BrowserDriverName } from '../driver/types'
 import type { FacebookAccount, PlaywrightCookie } from '../../platformKit/socialAccount/index'
-import type { TwentyClient } from '../../twenty/graphql/index'
+import type { AccountStore } from '../../accounts/store/index'
 
 export const MOVE_TARGETS = ['camoufox', 'brave'] as const satisfies readonly BrowserDriverName[]
 export type MoveTarget = (typeof MOVE_TARGETS)[number]
@@ -65,7 +65,7 @@ export interface MoveCheck {
 }
 
 export interface MoveDeps {
-  twenty: TwentyClient
+  accounts: AccountStore
   adsPower: AdsPowerClient
   readState: (cdpUrl: string, origins: string[]) => Promise<MoveSession>
   check: (account: FacebookAccount) => Promise<MoveCheck>

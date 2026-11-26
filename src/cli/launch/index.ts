@@ -129,7 +129,7 @@ export interface PickedAccount {
 }
 
 async function pickAccount(context: CommandContext, message: string, keep: (account: PickedAccount) => boolean): Promise<PickedAccount | null | string> {
-  const rows = (await context.twenty.list("socialAccounts")) as unknown as Record<string, unknown>[];
+  const rows = (await context.accounts.list("socialAccounts")) as unknown as Record<string, unknown>[];
   const accounts = rows
     .flatMap((row): PickedAccount[] => {
       const platform = platformOfTwenty(row.platform);
@@ -398,7 +398,7 @@ export async function runLaunch(context: CommandContext, argv: string[]): Promis
 async function runMarketplace(context: CommandContext): Promise<CommandResult> {
   const prompts = launchDeps.prompts;
   {
-    const [accounts, listings] = await Promise.all([listFacebookAccounts(context.twenty), listListingsWhere(context.twenty)]);
+    const [accounts, listings] = await Promise.all([listFacebookAccounts(context.accounts), listListingsWhere(context.accounts)]);
 
     const action = await pick({
       message: "What do you want to look at?",
@@ -484,7 +484,7 @@ async function runMarketplace(context: CommandContext): Promise<CommandResult> {
     } else if (action === "answer") {
       const withQuestions: { account: string; group: Group }[] = [];
       for (const account of accounts) {
-        for (const group of await listGroups(context.twenty, account.id)) {
+        for (const group of await listGroups(context.accounts, account.id)) {
           const options = group.joinSubmission.options;
           if (options && (options.questions.length || options.rulesAgreementRequired)) withQuestions.push({ account: account.accountName, group });
         }
@@ -504,7 +504,7 @@ async function runMarketplace(context: CommandContext): Promise<CommandResult> {
     } else if (action === "fill") {
       const ready: { account: string; group: Group }[] = [];
       for (const account of accounts) {
-        for (const group of await listGroups(context.twenty, account.id)) {
+        for (const group of await listGroups(context.accounts, account.id)) {
           if (group.joinSubmission.application?.status === "ready" || group.joinSubmission.application?.status === "filled") ready.push({ account: account.accountName, group });
         }
       }

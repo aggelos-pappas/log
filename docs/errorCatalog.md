@@ -341,11 +341,7 @@ stateDiagram-v2
 
 | Code | Retry | Raised in | Ends in | Meaning | Do |
 | --- | --- | --- | --- | --- | --- |
-| `twentyNotConfigured` | no | `twenty/graphql` | command exits | TWENTY_BASE_URL or TWENTY_API_KEY is not set. | Put both in log-cli/.env.local. |
-| `twentyUnreachable` | yes | `twenty/graphql` | command exits | Twenty didn't answer. | Check the network and twenty.inferencesaver.com, then run again. |
-| `twentyRateLimited` | yes | `twenty/graphql` | command exits | Twenty refused the call for its rate limit ("Limit reached (100 tokens per 60000 ms)"). Nothing was written. | Nothing to do: the client waits out the minute and tries again (twice). If it still fails, fewer calls per minute. |
-| `twentyAuthFailed` | no | `twenty/graphql` | command exits | Twenty refused the API key (401/403). | Make a new API key in Twenty and put it in log-cli/.env.local. |
-| `twentyRequestFailed` | yes | `twenty/graphql` | command exits | Twenty answered with an error. The detail has its status and message. | Read the detail. A field error means scripts/twenty/twentySetup.mjs needs running. |
+| `twentyRemoved` | no | `accounts/store` | command exits | This feature kept its data in Twenty, which log no longer uses; it is retired until it is rebuilt on log.db (#339). | Nothing to run: the feature comes back when it is rebuilt on log.db (#339). |
 | `accountNotFound` | no | `platformKit/socialAccount` | command exits | No socialAccount with that accountName or id in Twenty. | Check the accountName in Twenty (log facebook accounts lists the Facebook ones). An inbox watcher for an account gone from Twenty is not restarted. |
 
 ## proxyVendor

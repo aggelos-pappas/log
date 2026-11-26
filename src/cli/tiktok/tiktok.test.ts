@@ -2,22 +2,22 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { runCli } from "../runner/index.ts";
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "tiktokOne", accountName: "tiktokOne", platform: "TIKTOK", cookies: { "sessionid": "x".repeat(20), "sid_tt": "x".repeat(20) }, proxy: null } as never);
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "tiktokOne", accountName: "tiktokOne", platform: "TIKTOK", cookies: { "sessionid": "x".repeat(20), "sid_tt": "x".repeat(20) }, proxy: null } as never);
+  return store;
 }
 
-async function run(argv: string[], engine?: PlatformEngineRun, twenty = fixture()) {
+async function run(argv: string[], engine?: PlatformEngineRun, store = fixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const calls: string[] = [];
   const code = await runCli(argv, {
-    twenty,
+    accounts: store,
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     directTiktok: (account, spec) => {
@@ -25,7 +25,7 @@ async function run(argv: string[], engine?: PlatformEngineRun, twenty = fixture(
       return engine ?? { answer: { ok: false, code: "notExpected" }, refreshed: null };
     },
   });
-  const row = twenty.rows.socialAccounts!.find((r) => r.accountName === "tiktokOne")!;
+  const row = store.rows.socialAccounts!.find((r) => r.accountName === "tiktokOne")!;
   return { code, out: out.join("\n"), err: err.join("\n"), calls, row };
 }
 
@@ -90,8 +90,8 @@ describe("log tiktok stats", () => {
 
   test("--limit reaches the engine", async () => {
     const seen: unknown[] = [];
-    const twenty = fixture();
-    await runCli(["tiktok", "stats", "--account", "tiktokOne", "--limit", "2"], { twenty, out: () => {}, err: () => {}, directTiktok: (_a, spec) => (seen.push(spec), { answer, refreshed: null }) });
+    const store = fixture();
+    await runCli(["tiktok", "stats", "--account", "tiktokOne", "--limit", "2"], { accounts: store, out: () => {}, err: () => {}, directTiktok: (_a, spec) => (seen.push(spec), { answer, refreshed: null }) });
     expect(seen).toEqual([{ action: "stats", limit: 2 }]);
   });
 });
@@ -128,11 +128,11 @@ describe("log tiktok post", () => {
 
   test("live, the engine posts and its answer names the new post", async () => {
     const seen: Record<string, unknown>[] = [];
-    const twenty = fixture();
+    const store = fixture();
     const out: string[] = [];
     const path = clip();
     const code = await runCli(["tiktok", "post", "--account", "tiktokOne", "--video", path, "--caption", "hello", "--visibility", "onlyMe", "--live", "--approvedBy", "mandeep"], {
-      twenty,
+      accounts: store,
       out: (l) => out.push(l),
       err: () => {},
       directTiktok: (_a, spec) => (seen.push(spec), { answer: { ok: true, itemId: "7709617645145902356", videoId: "v1c025", url: "https://www.tiktok.com/@tiktokOne/video/7709617645145902356" }, refreshed: null }),

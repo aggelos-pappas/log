@@ -8,7 +8,7 @@ import scrollOneHar from "../../facebook/group/members/fixtures/membersScrollOne
 import scrollTwoHar from "../../facebook/group/members/fixtures/membersScrollTwo.json";
 import { membersGoto, membersScroll } from "../../facebook/group/members/membersMachine.test.ts";
 import { comment, commentAnswer, feedScroll, groupPage, postPage, unit } from "../../facebook/group/read/readMachine.test.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { DEFAULT_COMMENT_POSTS, DEFAULT_SCROLLS, parseReadArgs } from "./index.ts";
 
@@ -25,7 +25,7 @@ function step(reply: { ok: boolean; url?: string; har?: unknown }): InspectStepR
   return { ok: reply.ok, url: reply.url, folder };
 }
 
-async function run(argv: string[], replies: InspectStepResult[] = [], twenty = marketplaceFixture()) {
+async function run(argv: string[], replies: InspectStepResult[] = [], store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const sent: { action: InspectAction; args: string[] }[] = [];
@@ -33,8 +33,8 @@ async function run(argv: string[], replies: InspectStepResult[] = [], twenty = m
     sent.push({ action, args });
     return replies.shift() ?? null;
   };
-  const code = await runCli(argv, { twenty, sendInspect, out: (l) => out.push(l), err: (l) => err.push(l), directRead: () => ({ ok: false, code: "disabledInTests", detail: "disabled in tests", sessionState: null, stop: false }) });
-  return { code, out: out.join("\n"), err: err.join("\n"), sent, twenty };
+  const code = await runCli(argv, { accounts: store, sendInspect, out: (l) => out.push(l), err: (l) => err.push(l), directRead: () => ({ ok: false, code: "disabledInTests", detail: "disabled in tests", sessionState: null, stop: false }) });
+  return { code, out: out.join("\n"), err: err.join("\n"), sent, twenty: store };
 }
 
 describe("parseReadArgs", () => {
@@ -109,17 +109,17 @@ describe("log facebook read group", () => {
     expect(first.out).toContain("comments on 2: 1 of 1");
     expect(first.out).toContain("Twenty: the cursor moved; no post or comment is saved there (rule 65)");
     expect(first.err).toContain("a first read");
-    const twenty = first.twenty;
-    expect(twenty.rows.agencyGroupPosts).toBeUndefined();
-    expect(twenty.rows.agencyGroups![0]).toMatchObject({ facebookGroupId: GROUP_ID, readCursor: { lastPostId: "2", watermark: T + 20 } });
+    const store = first.twenty;
+    expect(store.rows.agencyGroupPosts).toBeUndefined();
+    expect(store.rows.agencyGroups![0]).toMatchObject({ facebookGroupId: GROUP_ID, readCursor: { lastPostId: "2", watermark: T + 20 } });
 
-    const second = await run(["facebook", "read", "group", "--account", "galwayOne", "--group", GROUP], [step(groupPage([unit("2", T + 20, 1), unit("1", T + 10)]))], twenty);
+    const second = await run(["facebook", "read", "group", "--account", "galwayOne", "--group", GROUP], [step(groupPage([unit("2", T + 20, 1), unit("1", T + 10)]))], store);
     expect(second.code).toBe(0);
     expect(second.sent.map((s) => s.action)).toEqual(["goto"]);
     expect(second.out).toContain("0 new post(s) of 2");
-    expect(twenty.rows.agencyGroupComments).toBeUndefined();
+    expect(store.rows.agencyGroupComments).toBeUndefined();
 
-    const shown = await run(["facebook", "read", "group", "--account", "galwayOne", "--group", GROUP, "--show"], [], twenty);
+    const shown = await run(["facebook", "read", "group", "--account", "galwayOne", "--group", GROUP, "--show"], [], store);
     expect(shown.out).toContain("Cursor: newest post 2");
     expect(shown.out).toContain("2 post id(s) already seen");
     expect(shown.sent).toEqual([]);
@@ -135,19 +135,19 @@ describe("log facebook read group", () => {
 type Direct = NonNullable<Parameters<typeof runCli>[1]>["directRead"];
 
 async function direct(answer: ReturnType<NonNullable<Direct>>, prepare?: (twenty: ReturnType<typeof marketplaceFixture>) => Promise<void>) {
-  const twenty = marketplaceFixture();
-  if (prepare) await prepare(twenty);
+  const store = marketplaceFixture();
+  if (prepare) await prepare(store);
   const out: string[] = [];
   const err: string[] = [];
   const sent: { action: InspectAction; args: string[] }[] = [];
   const code = await runCli(["facebook", "read", "group", "--account", "galwayOne", "--group", GROUP, "--bypass"], {
-    twenty,
+    accounts: store,
     sendInspect: async (_c: unknown, action: InspectAction, args: string[]) => { sent.push({ action, args }); return null; },
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     directRead: () => answer,
   });
-  const account = twenty.rows.socialAccounts!.find((r) => r.accountName === "galwayOne")!;
+  const account = store.rows.socialAccounts!.find((r) => r.accountName === "galwayOne")!;
   return { code, out: out.join("\n"), err: err.join("\n"), sent, account };
 }
 
@@ -162,9 +162,9 @@ describe("the direct-API engine serves read group when Facebook's own page says 
   });
 
   test("accountStatus doesn't gate it: a needsLogin account whose session Facebook accepts still reads", async () => {
-    const r = await direct({ ok: true, rows: [], sessionState: "loggedIn" }, async (twenty) => {
-      const row = twenty.rows.socialAccounts!.find((a) => a.accountName === "galwayOne")!;
-      await twenty.update("socialAccounts", row.id as string, { accountStatus: "NEEDS_LOGIN" } as never);
+    const r = await direct({ ok: true, rows: [], sessionState: "loggedIn" }, async (store) => {
+      const row = store.rows.socialAccounts!.find((a) => a.accountName === "galwayOne")!;
+      await store.update("socialAccounts", row.id as string, { accountStatus: "NEEDS_LOGIN" } as never);
     });
     expect(r.code).toBe(0);
     expect(r.out).toContain("0 post(s) via the direct-API engine");

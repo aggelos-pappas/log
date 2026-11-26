@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { findPlatformAccount, platformGate, recordPlatformSession, runPlatformEngine } from '../../../platformKit/session/index'
 import type { PlatformAccount, PlatformEngineRun, PlatformEngineSpec, PlatformGate, PlatformShape } from '../../../platformKit/session/index'
-import type { TwentyClient } from '../../../twenty/graphql/index'
+import type { AccountStore } from '../../../accounts/store/index'
 
 export const TIKTOK_PLATFORM: PlatformShape = {
   platform: 'tiktok',
@@ -13,8 +13,8 @@ export const TIKTOK_PLATFORM: PlatformShape = {
 
 export const TIKTOK_COOKIE_DOMAIN = '.tiktok.com'
 
-export function findTiktokAccount(twenty: TwentyClient, ref: string): Promise<PlatformAccount> {
-  return findPlatformAccount(twenty, TIKTOK_PLATFORM, ref)
+export function findTiktokAccount(store: AccountStore, ref: string): Promise<PlatformAccount> {
+  return findPlatformAccount(store, TIKTOK_PLATFORM, ref)
 }
 
 export function tiktokGate(account: PlatformAccount): PlatformGate {
@@ -25,6 +25,6 @@ export function runTiktokEngine(account: PlatformAccount, spec: PlatformEngineSp
   return runPlatformEngine(TIKTOK_PLATFORM, account, spec)
 }
 
-export function recordTiktokSession(twenty: TwentyClient, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
-  return recordPlatformSession(twenty, TIKTOK_PLATFORM, account, run, now, TIKTOK_COOKIE_DOMAIN)
+export function recordTiktokSession(store: AccountStore, account: PlatformAccount, run: PlatformEngineRun, now: Date): Promise<string[]> {
+  return recordPlatformSession(store, TIKTOK_PLATFORM, account, run, now, TIKTOK_COOKIE_DOMAIN)
 }

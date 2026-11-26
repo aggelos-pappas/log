@@ -57,7 +57,7 @@ export const linkedinInboxCommand: Command = {
       const account = opened.account;
       context.err(`${account.accountName}: reading the LinkedIn inbox on the direct-API engine (reads only)`);
       const run = context.directLinkedin!(account, { action: "inbox" });
-      for (const line of await recordLinkedinSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordLinkedinSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       if (!run.answer.ok) return failed("inbox", run);
       const conversations = (Array.isArray(run.answer["conversations"]) ? run.answer["conversations"] : []) as LinkedinConversation[];
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ platform: "linkedin", account: account.accountName, conversations }, null, 2) };
@@ -113,7 +113,7 @@ export const linkedinMessagesCommand: Command = {
       const account = opened.account;
       context.err(`${account.accountName}: reading the LinkedIn conversation ${withWhom ? `with ${withWhom}` : conversation} on the direct-API engine (reads only)`);
       const run = context.directLinkedin!(account, { action: "messages", ...(withWhom ? { with: withWhom } : { conversation }) });
-      for (const line of await recordLinkedinSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordLinkedinSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       if (!run.answer.ok) return failed("messages", run);
       const found = (run.answer["conversation"] ?? {}) as Partial<LinkedinConversation>;
       const messages = (Array.isArray(run.answer["messages"]) ? run.answer["messages"] : []) as LinkedinMessage[];
@@ -188,7 +188,7 @@ export const linkedinMessageCommand: Command = {
       }
       context.err(`${account.accountName}: write ${plan.parts.length} message(s) in ${target}, approved by ${approvedBy}, on the direct-API engine`);
       const run = await actOnEngine(() => context.directLinkedin!(account, { action: "message", live: true, approvedBy, parts: plan.parts, ...(withWhom ? { with: withWhom } : { conversation }) }));
-      for (const line of await recordLinkedinSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordLinkedinSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       if (!run.answer.ok) return failed("message", run);
       if (json) return { code: 0, stdout: JSON.stringify({ platform: "linkedin", account: account.accountName, approvedBy, ...run.answer }, null, 2) };
       const sent = Array.isArray(run.answer["sent"]) ? (run.answer["sent"] as { at?: string | null; deliveredAt?: string | null; text: string }[]) : [];

@@ -1,5 +1,5 @@
-import type { AgencyConversation as ConversationRecord, AgencyMessage as MessageRecord } from '../../../twenty/graphql/generated/index'
-import type { AGENCY_CONVERSATION_FIELDS, AGENCY_MESSAGE_FIELDS } from '../../../twenty/graphql/client'
+import type { AgencyConversation as ConversationRecord, AgencyMessage as MessageRecord } from '../../../accounts/store/index'
+import type { AGENCY_CONVERSATION_FIELDS, AGENCY_MESSAGE_FIELDS } from '../../../accounts/store/index'
 
 export const CHANNELS = ['sms', 'facebookMarketplace'] as const
 export type ConversationChannel = (typeof CHANNELS)[number]

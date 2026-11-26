@@ -1,6 +1,6 @@
 import type { ErrorCode } from '../../errors/catalog/index'
-import type { SocialAccount } from '../../twenty/graphql/generated/index'
-import type { SOCIAL_ACCOUNT_FIELDS } from '../../twenty/graphql/client'
+import type { SocialAccount } from '../../accounts/store/index'
+import type { SOCIAL_ACCOUNT_FIELDS } from '../../accounts/store/index'
 
 export const ACCOUNT_STATUSES = [
   'active',

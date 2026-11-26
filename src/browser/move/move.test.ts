@@ -12,7 +12,7 @@ const DISCORD_ORIGINS = [{ origin: 'https://discord.com', localStorage: [{ name:
 
 function world(rows: Row[]) {
   const writes: { id: string; data: Record<string, unknown> }[] = []
-  const twenty = {
+  const store = {
     rows,
     writes,
     async list() {
@@ -34,7 +34,7 @@ function world(rows: Row[]) {
       return null
     }
   }
-  return twenty
+  return store
 }
 
 function fakeAdsPower(options: { up?: boolean; keyMismatch?: boolean; startFails?: boolean } = {}) {
@@ -67,11 +67,11 @@ const reddit = (over: Partial<Row> = {}): Row => ({ id: 'r1', accountName: 'grac
 const discord = (over: Partial<Row> = {}): Row => ({ id: 'd1', accountName: 'linus_k', platform: 'DISCORD', cookies: [], storageOrigins: DISCORD_ORIGINS, adsPowerProfileId: null, browserDriver: 'adsPower', ...over })
 
 function depsOf(rows: Row[], ads = fakeAdsPower(), verdict: (name: string) => MoveCheck = () => ({ verdict: 'signedIn', code: null, detail: null })) {
-  const twenty = world(rows)
+  const store = world(rows)
   const checked: string[] = []
   const ledger = memoryMoveLedger()
   const deps: MoveDeps = {
-    twenty: twenty as never,
+    accounts: store as never,
     adsPower: ads.client,
     readState: async (cdpUrl) => ({ cookies: [{ name: 'reddit_session', value: `fresh ${cdpUrl}`, domain: '.reddit.com', path: '/' }, { name: 'other', value: 'x', domain: '.example.com', path: '/' }], origins: [] }),
     check: async (account) => (checked.push(account.accountName), verdict(account.accountName)),
@@ -79,7 +79,7 @@ function depsOf(rows: Row[], ads = fakeAdsPower(), verdict: (name: string) => Mo
     env: {},
     now: () => new Date('2026-11-20T10:00:00Z')
   }
-  return { deps, twenty, checked, ledger, ads }
+  return { deps, twenty: store, checked, ledger, ads }
 }
 
 describe('browser move', () => {

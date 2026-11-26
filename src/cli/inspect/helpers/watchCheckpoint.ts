@@ -44,7 +44,7 @@ export function watchCheckpoint(context: CommandContext, account: FacebookAccoun
     const landed = navigations[index];
     const problem = pageProblem({ action: "navigated" }, { url: landed.url })!;
     const detail = `${problem.detail} at ${landed.at}, while its browser was open (${runDir})`;
-    pending = setStatusAndReplace(context.twenty, account, "deactivated", "checkpointed", detail, context.now?.() ?? new Date()).then(
+    pending = setStatusAndReplace(context.accounts, account, "deactivated", "checkpointed", detail, context.now?.() ?? new Date()).then(
       () => context.err(`>>> ${account.accountName} is checkpointed, so it is DEACTIVATED in Twenty and its listings are marked lost: ${detail}`),
       (error) => {
         recorded = false;

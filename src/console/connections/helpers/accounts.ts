@@ -7,7 +7,7 @@ import { PLATFORMS } from "../../../cli/runner/helpers/platforms.ts";
 import type { Platform } from "../../../cli/runner/helpers/platforms.ts";
 import { fromTwentyEnum } from "../../../platformKit/socialAccount/helpers/twentyEnum.ts";
 import { vendorOfProxy } from "../../../proxyVendor/vendor/helpers/vendorOfProxy.ts";
-import { localAccountsPath, readLocalAccounts } from "../../../twenty/graphql/index.ts";
+import { localAccountsPath, readLocalAccounts } from "../../../accounts/store/index.ts";
 import { ACCOUNT_STATUSES, SESSION_STATES } from "../types.ts";
 import type { AccountStatus, BrowserChoice, ConnectionAccount, ProxyProvider, SessionState } from "../types.ts";
 import { BROWSER_BRANDS, BROWSER_DRIVERS, DEFAULT_BROWSER_DRIVER, DEPRECATED_BROWSER_DRIVERS, driverOrNull } from "../../../browser/driver/index.ts";

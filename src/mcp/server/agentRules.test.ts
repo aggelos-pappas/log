@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { COMMANDS } from "../../cli/runner/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { isAppTool } from "../apps/index.ts";
 import { AGENTS_MD, AGENTS_URI, citedRules, COMMAND_RULES, createLogMcpServer, DEVELOPER_RULES, GUIDES_DIR, MAX_RESULT_CHARS, RULES_REVIEWED_THROUGH, SERVER_INSTRUCTIONS } from "./index.ts";
 import { LOADS_EVERY_TOOL_MS, SCANS_REPO_MS } from "../../../scripts/tests/timeouts.ts";
@@ -14,7 +14,7 @@ const agents = readFileSync(AGENTS_MD, "utf8");
 const rules = [...agents.matchAll(/^(\d+)\. 20\d\d-\d\d-\d\d/gm)].map((m) => Number(m[1]));
 
 async function connected(name = "test") {
-  const server = createLogMcpServer({ twenty: marketplaceFixture() }, { logDir: null, watchFlows: false });
+  const server = createLogMcpServer({ accounts: marketplaceFixture() }, { logDir: null, watchFlows: false });
   const client = new Client({ name, version: "0.0.0" });
   const [a, b] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(b), client.connect(a)]);

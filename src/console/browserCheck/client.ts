@@ -3,7 +3,7 @@ import type { ViewerView } from "../../browser/viewer/index.ts";
 import { BROWSER_BRANDS, driverOrNull } from "../../browser/driver/index.ts";
 import type { BrowserDriverName } from "../../browser/driver/index.ts";
 import { browserViewLocation } from "../../cli/browser/index.ts";
-import { localAccountsPath, readLocalAccounts } from "../../twenty/graphql/index.ts";
+import { localAccountsPath, readLocalAccounts } from "../../accounts/store/index.ts";
 import { credentialValue } from "../connections/index.ts";
 import type { ConnectionAccount } from "../connections/index.ts";
 import { recordCheck } from "../accountCheck/index.ts";

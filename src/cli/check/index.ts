@@ -42,7 +42,7 @@ export const checkCommand: Command = {
     if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log facebook check: --account is needed\n${CHECK_USAGE}` };
     let account;
     try {
-      account = await findAccount(context.twenty, ref);
+      account = await findAccount(context.accounts, ref);
     } catch (error) {
       return { code: 1, stderr: `log facebook check: ${(error as Error).message}` };
     }
@@ -54,8 +54,8 @@ export const checkCommand: Command = {
     if (!current) return { code: 1, stderr: `log facebook check: no open browser for ${account.accountName}: open it with log inspect start --account ${account.accountName} --detach, or run the host` };
     context.err(`Checking ${account.accountName} in its open browser (${current.runDir}).`);
     const found = await marketplaceCheck.readMarketplace((action, args = []) => context.sendInspect(current, action, args, 240_000), context.err);
-    const report = await marketplaceCheck.keepCheck(context.twenty, account.id, account.accountName, found, current.runDir, context.now?.() ?? new Date());
-    const lost = report.issue ? await recordAccountIssue(context.twenty, account, report.issue.code, report.issue.detail) : null;
+    const report = await marketplaceCheck.keepCheck(context.accounts, account.id, account.accountName, found, current.runDir, context.now?.() ?? new Date());
+    const lost = report.issue ? await recordAccountIssue(context.accounts, account, report.issue.code, report.issue.detail) : null;
     if (lost) report.lines.push(`${account.accountName} is now ${lost.status} (${report.issue!.code}): ${lost.lost.length} listing(s) marked ACCOUNT_LOST, ${lost.replacements.filter((r) => r.next).length} handed to another account`);
     if (parsed.flags["json"]) return { code: report.issue ? 1 : 0, stdout: JSON.stringify({ ...found, report }, null, 2) };
     return { code: report.issue ? 1 : 0, stdout: [...report.lines, ...(report.issue ? [`Issue: ${report.issue.code}: ${report.issue.detail}`] : [])].join("\n") };

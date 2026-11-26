@@ -8,8 +8,7 @@ import { homeOf, outsideActiveHours } from '../../platformKit/home/index'
 import { engineRoute, parseProxyUrl } from '../../platformKit/socialAccount/index'
 import type { FacebookAccount } from '../../platformKit/socialAccount/index'
 import { setStatusAndReplace } from '../../facebook/marketplace/replacement/index'
-import { accountStore } from '../../twenty/graphql/index'
-import type { TwentyClient } from '../../twenty/graphql/index'
+import type { AccountStore } from '../../accounts/store/index'
 import { accountHasSession, cookiesOf, lastJsonLine, netscape, sessionStateOf } from './helpers/index'
 import type { LocalEngineState, CommandEngine, DirectGate, DirectOutcome, DirectRoute, EngineAnswer, EngineSpec, GovernorStatus, SessionState } from './types'
 import { WRITES_PER_DAY_DEFAULT, writesPerDayOf } from './types'
@@ -267,14 +266,14 @@ export function outcomeOf<Row>(answer: EngineAnswer<Row>): DirectOutcome<Row> {
   }
 }
 
-export async function recordSessionState(twenty: TwentyClient, account: FacebookAccount, state: SessionState | null, now: Date): Promise<string[]> {
+export async function recordSessionState(store: AccountStore, account: FacebookAccount, state: SessionState | null, now: Date): Promise<string[]> {
   if (!state) return []
-  await twenty.update('socialAccounts', account.id, { sessionState: state, sessionCheckedAt: now.toISOString() } as never)
+  await store.update('socialAccounts', account.id, { sessionState: state, sessionCheckedAt: now.toISOString() } as never)
   writeLocalSession(account.accountName, state, now)
-  const lines = [`${accountStore(account.id)}: ${account.accountName} sessionState ${state} (Facebook's own page, read by the direct-API engine).`]
+  const lines = [`Local accounts: ${account.accountName} sessionState ${state} (Facebook's own page, read by the direct-API engine).`]
   if (state === 'checkpoint' && account.status !== 'deactivated') {
-    await setStatusAndReplace(twenty, account, 'deactivated', 'checkpointed', "the direct-API engine's bootstrap read is_checkpointed", now)
-    lines.push(`${accountStore(account.id)}: ${account.accountName} is checkpointed, so it is DEACTIVATED and its listings are marked lost.`)
+    await setStatusAndReplace(store, account, 'deactivated', 'checkpointed', "the direct-API engine's bootstrap read is_checkpointed", now)
+    lines.push(`Local accounts: ${account.accountName} is checkpointed, so it is DEACTIVATED and its listings are marked lost.`)
   }
   return lines
 }

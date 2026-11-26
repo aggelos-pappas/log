@@ -19,7 +19,7 @@ import { checkRunnable, findAccount, listFacebookAccounts, saveCookies, saveDevi
 import type { FacebookAccount, RunPurpose } from "../../platformKit/socialAccount/index.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseError, refuseInput } from "../runner/helpers/index.ts";
 import { settleInBackground } from "../../rea/capture/index.ts";
-import type { LoginSecrets } from "../../twenty/graphql/index.ts";
+import type { LoginSecrets } from "../../accounts/store/index.ts";
 import type { Command, CommandContext, CommandInput, CommandResult, FlagSpec } from "../runner/types.ts";
 import { renderConnect, renderDoctor, renderLoss, renderScan, summarizeConnect } from "./helpers/index.ts";
 
@@ -81,14 +81,14 @@ export async function openAccount(
   if (typeof value !== "string") return { code: 1, error: "inputInvalid", stderr: `log ${name}: --account is required (log facebook accounts lists them)\n${usage}` };
   let account: FacebookAccount;
   try {
-    account = await findAccount(context.twenty, value);
+    account = await findAccount(context.accounts, value);
   } catch (error) {
     return refuseError(name, error);
   }
   let login: LoginSecrets | null = null;
   if (withLogin) {
     try {
-      login = await context.twenty.loginSecrets(account.id);
+      login = await context.accounts.loginSecrets(account.id);
     } catch (error) {
       return refuseError(name, error);
     }
@@ -102,7 +102,7 @@ export async function keepNewDevice(context: CommandContext, account: FacebookAc
   const profile = run.newDeviceProfile();
   if (!profile) return null;
   try {
-    return (await saveDeviceProfile(context.twenty, account, profile)) ? `Pinned a new device for ${account.accountName} in Twenty.` : null;
+    return (await saveDeviceProfile(context.accounts, account, profile)) ? `Pinned a new device for ${account.accountName} in Twenty.` : null;
   } catch (error) {
     return `Could not save ${account.accountName}'s new device to Twenty: ${refuseError("device", error).stderr}`;
   }
@@ -116,8 +116,8 @@ export async function keepSession(context: CommandContext, account: FacebookAcco
   let outcome: SaveOutcome;
   try {
     const saved = facebook
-      ? (await saveSession(context.twenty, account.id, state)) ? { saved: true, code: null, detail: null } : { saved: false, code: "noPlatformSession", detail: "the browser has no Facebook c_user and xs cookies" }
-      : await savePlatformSession(context.twenty, account.id, state, (held) => browserSessionGate(knownPlatformOfAccount(account), held), now);
+      ? (await saveSession(context.accounts, account.id, state)) ? { saved: true, code: null, detail: null } : { saved: false, code: "noPlatformSession", detail: "the browser has no Facebook c_user and xs cookies" }
+      : await savePlatformSession(context.accounts, account.id, state, (held) => browserSessionGate(knownPlatformOfAccount(account), held), now);
     outcome = { ...saved, at: now.toISOString() };
   } catch (error) {
     const said = refuseError("session", error).stderr ?? "";
@@ -166,7 +166,7 @@ export async function workerFailed(context: CommandContext, name: string, accoun
   const notes: string[] = [];
   if (ERROR_CATALOG[code].layer === "account") {
     try {
-      const loss = await recordAccountIssue(context.twenty, account, code, failure.detail ?? null);
+      const loss = await recordAccountIssue(context.accounts, account, code, failure.detail ?? null);
       if (loss) notes.push(renderLoss(loss));
     } catch (error) {
       notes.push(`(could not update Twenty: ${refuseError(name, error).stderr})`);
@@ -196,7 +196,7 @@ export const doctorCommand: Command = {
     let accounts: { accountName: string; ready: boolean; why: string | null; hasCookies: boolean }[] = [];
     let twentyError: string | null = null;
     try {
-      accounts = (await listFacebookAccounts(context.twenty)).map((account) => {
+      accounts = (await listFacebookAccounts(context.accounts)).map((account) => {
         const check = checkRunnable(account, "run");
         return {
           accountName: account.accountName,
@@ -285,17 +285,17 @@ async function connectEnded(context: CommandContext, account: FacebookAccount, r
   if (output.result === "connected") {
     const cookies = run.readCookies();
     if (cookies.length === 0) return refuse("connect", "neverConnected", "the browser saved no cookies");
-    await saveCookies(context.twenty, account.id, cookies);
+    await saveCookies(context.accounts, account.id, cookies);
     lines.push(`Saved ${cookies.length} Facebook cookies for ${account.accountName} to Twenty.`);
     const issue = classifySignal({ url: output.page?.path ?? "", text: output.bodySample ?? "" });
     if (issue && issue !== "loginWall" && issue !== "sessionExpired" && issue !== "readOnlyLimited") {
-      const loss = await recordAccountIssue(context.twenty, account, issue, "seen on Marketplace right after signing in");
+      const loss = await recordAccountIssue(context.accounts, account, issue, "seen on Marketplace right after signing in");
       lines.push(`Signed in, but Marketplace shows ${issue}.`);
       if (loss) lines.push(renderLoss(loss));
       return { code: 1, stdout: lines.join("\n"), stderr: refuse("connect", issue, "seen on Marketplace right after signing in").stderr };
     }
     if (account.status === "needsLogin" || account.status === "checkpoint") {
-      await setAccountStatus(context.twenty, account.id, "active", "connected", "signed in through its proxy");
+      await setAccountStatus(context.accounts, account.id, "active", "connected", "signed in through its proxy");
       lines.push(`${account.accountName} is ACTIVE again.`);
     }
     return { code: 0, stdout: lines.join("\n") };
@@ -303,7 +303,7 @@ async function connectEnded(context: CommandContext, account: FacebookAccount, r
   const failure = output.failure!;
   if (ERROR_CATALOG[failure.code].layer === "account") {
     try {
-      const loss = await recordAccountIssue(context.twenty, account, failure.code, failure.detail ?? null);
+      const loss = await recordAccountIssue(context.accounts, account, failure.code, failure.detail ?? null);
       if (loss) lines.push(renderLoss(loss));
     } catch (error) {
       lines.push(`(could not update Twenty: ${refuseError("connect", error).stderr})`);
@@ -339,8 +339,8 @@ export const scanCommand: Command = {
       if (!raw.ok) return await workerFailed(context, "scan", account, raw);
       const result = raw as ScanResult;
       const issue = classifySignal({ url: result.url, text: result.bodySample });
-      const loss = issue && issue !== "loginWall" && issue !== "readOnlyLimited" ? await recordAccountIssue(context.twenty, account, issue, "seen on Marketplace > Selling") : null;
-      const updated = await syncDashboard(context.twenty, account.id, result.listings);
+      const loss = issue && issue !== "loginWall" && issue !== "readOnlyLimited" ? await recordAccountIssue(context.accounts, account, issue, "seen on Marketplace > Selling") : null;
+      const updated = await syncDashboard(context.accounts, account.id, result.listings);
       if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ accountName: account.accountName, ...result, issue, updated }, null, 2) };
       return { code: 0, stdout: [renderScan(result), `Updated ${updated} listing(s) in Twenty.`, ...(loss ? [renderLoss(loss)] : [])].join("\n") };
     });

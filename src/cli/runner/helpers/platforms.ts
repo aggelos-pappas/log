@@ -47,8 +47,8 @@ export const PLATFORM_SITES: Readonly<Record<Platform, PlatformSite>> = {
 };
 
 export function knownPlatformOfAccount(account: { platform?: string | null }): Platform | null {
-  const twenty = String(account.platform ?? "").toUpperCase();
-  return PLATFORMS.find((p) => PLATFORM_SITES[p].twenty === twenty) ?? null;
+  const store = String(account.platform ?? "").toUpperCase();
+  return PLATFORMS.find((p) => PLATFORM_SITES[p].twenty === store) ?? null;
 }
 
 export function platformOfAccount(account: { platform?: string | null }): Platform {

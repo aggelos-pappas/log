@@ -5,7 +5,7 @@ import { join } from "node:path";
 import sharp from "sharp";
 import type { PublishSession, SessionConfig, SessionStep } from "../../camofox/session/index.ts";
 import { readAttempts } from "../../captcha/router/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
@@ -70,14 +70,14 @@ function fakeSession(script: Partial<Record<SessionStep, Array<Record<string, un
   return { factory, calls, configs, proxyFiles, closedCount: () => closed };
 }
 
-async function run(argv: string[], session = fakeSession(), twenty = marketplaceFixture(photo)) {
+async function run(argv: string[], session = fakeSession(), store = marketplaceFixture(photo)) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await runCli(argv, { session: session.factory, twenty, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), outLines: out, session, twenty };
+  const code = await runCli(argv, { session: session.factory, accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
+  return { code, out: out.join("\n"), err: err.join("\n"), outLines: out, session, twenty: store };
 }
 
-const row = (twenty: ReturnType<typeof marketplaceFixture>, object: string, id: string) => twenty.rows[object].find((r) => r.id === id)!;
+const row = (store: ReturnType<typeof marketplaceFixture>, object: string, id: string) => store.rows[object].find((r) => r.id === id)!;
 
 describe("log facebook publish", () => {
   test("dry run by default: fills, reviews, never clicks Publish, records the run in Twenty", async () => {
@@ -126,8 +126,8 @@ describe("log facebook publish", () => {
   });
 
   test("a login wall on the form is signed through in the same browser, then the form opens again (rule 24)", async () => {
-    const twenty = marketplaceFixture(photo);
-    await twenty.update("socialAccounts", "galwayOne", { email: "fixture@example.com", password: "fixturePass" } as never);
+    const store = marketplaceFixture(photo);
+    await store.update("socialAccounts", "galwayOne", { email: "fixture@example.com", password: "fixturePass" } as never);
     const session = fakeSession({
       open: [{ kind: "issue", issue: "sessionExpired", detail: "login" }, { kind: "ready", url: "x" }],
       signInRead: [{ ok: true, kind: "loginForm", path: "/login" }, { ok: true, kind: "loggedIn", path: "/marketplace/you/selling" }],
@@ -137,7 +137,7 @@ describe("log facebook publish", () => {
     });
     const out: string[] = [];
     const errs: string[] = [];
-    const code = await runCli(["facebook", "publish", "--listing", "readyOne"], { session: session.factory, twenty, connectTiming: { pollMs: 1, codeWindowMs: 1 }, out: (l) => out.push(l), err: (l) => errs.push(l) });
+    const code = await runCli(["facebook", "publish", "--listing", "readyOne"], { session: session.factory, accounts: store, connectTiming: { pollMs: 1, codeWindowMs: 1 }, out: (l) => out.push(l), err: (l) => errs.push(l) });
     expect(code).toBe(0);
     expect(session.configs).toHaveLength(1);
     expect(session.calls.map((c) => c.step)).toEqual(["open", "signInOpen", "signInRead", "signInSubmitCredentials", "signInRead", "signInSave", "open", "setCategory", "uploadPhotos", "fillFields", "review"]);
@@ -145,16 +145,16 @@ describe("log facebook publish", () => {
   });
 
   test("a sign-in that ends on a checkpoint stops the run once: no second sign-in, nothing uploaded", async () => {
-    const twenty = marketplaceFixture(photo);
+    const store = marketplaceFixture(photo);
     const session = fakeSession({
       open: [{ kind: "issue", issue: "checkpointed", detail: "/checkpoint/1" }],
       signInRead: [{ ok: true, kind: "videoSelfie", path: "/checkpoint/1", heading: "Confirm your identity" }],
       signInOpen: [{ ok: true }],
     });
-    const code = await runCli(["facebook", "publish", "--listing", "readyOne"], { session: session.factory, twenty, connectTiming: { pollMs: 1, codeWindowMs: 1 }, out: () => {}, err: () => {} });
+    const code = await runCli(["facebook", "publish", "--listing", "readyOne"], { session: session.factory, accounts: store, connectTiming: { pollMs: 1, codeWindowMs: 1 }, out: () => {}, err: () => {} });
     expect(code).toBe(1);
     expect(session.calls.map((c) => c.step)).toEqual(["open", "signInOpen", "signInRead"]);
-    expect(row(twenty, "socialAccounts", "galwayOne").accountStatus).toBe("CHECKPOINT");
+    expect(row(store, "socialAccounts", "galwayOne").accountStatus).toBe("CHECKPOINT");
   });
 
   test("Facebook disabling the account mid-run makes it BANNED and replaces its campaign listings", async () => {
@@ -207,13 +207,13 @@ describe("log facebook publish refuses before any browser opens", () => {
   });
 
   test("--live stops at the account's daily cap", async () => {
-    const twenty = marketplaceFixture(photo);
-    await twenty.update("socialAccounts", "galwayOne", { dailyListingCap: 1 });
-    await twenty.update("agencyListings", "liveOne", { publishedAt: new Date().toISOString() });
-    const live = await run(["facebook", "publish", "--listing", "readyOne", "--live"], fakeSession(), twenty);
+    const store = marketplaceFixture(photo);
+    await store.update("socialAccounts", "galwayOne", { dailyListingCap: 1 });
+    await store.update("agencyListings", "liveOne", { publishedAt: new Date().toISOString() });
+    const live = await run(["facebook", "publish", "--listing", "readyOne", "--live"], fakeSession(), store);
     expect(live.code).toBe(1);
     expect(live.err).toContain("dailyCapReached");
-    expect((await run(["facebook", "publish", "--listing", "readyOne"], fakeSession(), twenty)).code).toBe(0);
+    expect((await run(["facebook", "publish", "--listing", "readyOne"], fakeSession(), store)).code).toBe(0);
   });
 });
 
@@ -264,13 +264,13 @@ describe("log facebook publish: device, exit IP and local hours (rules 12, 15, 1
   });
 
   test("at 03:00 in Galway nothing opens, dry run included", async () => {
-    const twenty = marketplaceFixture(photo);
-    await twenty.update("socialAccounts", "galwayOne", { activeHoursStart: null, activeHoursEnd: null });
+    const store = marketplaceFixture(photo);
+    await store.update("socialAccounts", "galwayOne", { activeHoursStart: null, activeHoursEnd: null });
     const session = fakeSession();
     const err: string[] = [];
     const code = await runCli(["facebook", "publish", "--listing", "readyOne"], {
       session: session.factory,
-      twenty,
+      accounts: store,
       now: () => new Date("2026-10-18T02:00:00Z"),
       out: () => {},
       err: (l) => err.push(l),

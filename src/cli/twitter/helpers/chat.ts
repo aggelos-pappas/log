@@ -81,7 +81,7 @@ export const chatCommand: Command = {
     if (!opened.ok) return opened.result;
     const account = opened.account;
     if (parsed.flags["show"]) {
-      const secrets = await context.twenty.loginSecrets(account.id);
+      const secrets = await context.accounts.loginSecrets(account.id);
       return { code: 0, stdout: `${account.accountName}: X Chat PIN ${secrets?.messengerPin ? "<set>" : "<empty>"}` };
     }
     if (!shouldPrompt(false, chatDeps.tty())) {
@@ -109,7 +109,7 @@ export const chatCommand: Command = {
       prompts.cancel("X Chat didn't unlock with that PIN. Nothing saved.");
       return { code: 1, stderr: `log twitter chat pin: ${check.answer.code}: ${check.answer.detail ?? ""}` };
     }
-    await context.twenty.update("socialAccounts", account.id, { messengerPin: first } as never);
+    await context.accounts.update("socialAccounts", account.id, { messengerPin: first } as never);
     prompts.outro("Saved to Twenty. `log twitter dms` opens X Chat with it, never printed.");
     return { code: 0, stdout: `${account.accountName}: X Chat PIN <set> in Twenty` };
   },
@@ -141,7 +141,7 @@ async function watchChat(context: CommandContext, argv: string[]): Promise<Comma
   const live = context.directTwitterLive;
   if (!live) return { code: 1, stderr: "log twitter chat watch: the live direct-API engine isn't wired in this context" };
   const account = opened.account;
-  const secrets = await context.twenty.loginSecrets(account.id).catch(() => null);
+  const secrets = await context.accounts.loginSecrets(account.id).catch(() => null);
   const chatPin = secrets?.messengerPin ?? undefined;
   const toInbox = parsed.flags["inbox"] === true;
   const json = parsed.flags["json"] === true;
@@ -170,7 +170,7 @@ async function watchChat(context: CommandContext, argv: string[]): Promise<Comma
   if ("refused" in owned) return refuse("twitter chat watch", "watcherAlreadyRunning", owned.refused);
   if (!owned.owner) return { code: owned.attached.ok ? 0 : 1, stdout: `log twitter chat watch: @${account.accountName}: attached to the one owner, ${owned.attached.events} event(s) received; ${owned.attached.reason}` };
   const run = owned.result;
-  for (const line of await recordTwitterSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+  for (const line of await recordTwitterSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
   const messages = events.filter(isChatMessage);
   if (json) return { code: run.answer.ok ? 0 : 1, stdout: JSON.stringify({ engine: "directApi", library: "twikit", account: account.accountName, ...run.answer, events: messages }, null, 2) };
   if (!run.answer.ok) return { code: 1, stdout: `log twitter chat watch: ${account.accountName}: ${run.answer.code}: ${run.answer.detail ?? ""}` };

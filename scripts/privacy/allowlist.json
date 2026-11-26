@@ -2,6 +2,12 @@
   "emails": [],
   "findings": [
     {
+      "path": "src/cli/live/live.test.ts",
+      "rule": "gitleaks",
+      "fingerprint": "94a15c7068d7",
+      "why": "Dummy login and two-step secret written to a fixture account in a test"
+    },
+    {
       "path": "docs/platforms/discord/background/discordApiApplicationsPublic.md",
       "rule": "denylist",
       "fingerprint": "e48a0f97045f",
@@ -83,7 +89,7 @@
       "why": "Dummy proxy password in a test"
     },
     {
-      "path": "src/twenty/graphql/helpers/marketplaceFixture.ts",
+      "path": "src/accounts/store/helpers/marketplaceFixture.ts",
       "rule": "urlCredentials",
       "fingerprint": "96b193cdedf2",
       "why": "Dummy proxy password in a fixture"

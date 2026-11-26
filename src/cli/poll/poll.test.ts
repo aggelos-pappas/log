@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { clearCurrentInspect, writeCurrentInspect } from "../../browser/inspect/index.ts";
 import type { InspectAction, InspectStepResult } from "../../browser/inspect/index.ts";
 import { feedScroll, groupPage, unit } from "../../facebook/group/read/readMachine.test.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { durationMs, parsePollArgs, POLL_EVERY_MS, pollDeps } from "./index.ts";
 
@@ -26,7 +26,7 @@ function step(reply: { ok: boolean; url?: string; har?: unknown }): InspectStepR
   return { ok: reply.ok, url: reply.url, folder };
 }
 
-async function run(argv: string[], replies: InspectStepResult[] = [], twenty = marketplaceFixture(), now?: () => Date) {
+async function run(argv: string[], replies: InspectStepResult[] = [], store = marketplaceFixture(), now?: () => Date) {
   const out: string[] = [];
   const err: string[] = [];
   const sent: { action: InspectAction; args: string[] }[] = [];
@@ -34,8 +34,8 @@ async function run(argv: string[], replies: InspectStepResult[] = [], twenty = m
     sent.push({ action, args });
     return replies.shift() ?? null;
   };
-  const code = await runCli(argv, { twenty, sendInspect, out: (l) => out.push(l), err: (l) => err.push(l), ...(now ? { now } : {}) });
-  return { code, out, err: err.join("\n"), sent, twenty };
+  const code = await runCli(argv, { accounts: store, sendInspect, out: (l) => out.push(l), err: (l) => err.push(l), ...(now ? { now } : {}) });
+  return { code, out, err: err.join("\n"), sent, twenty: store };
 }
 
 const openBrowser = () => writeCurrentInspect({ account: "galwayOne", runDir: "/runs/inspect/galwayOne", commandsPath: "/c", repliesPath: "/r", startedAt: "2026-10-22T10:00:00.000Z" });
@@ -96,10 +96,10 @@ describe("log facebook poll", () => {
 
   test("--request answers OpenMagpie's groups.search from an account in the group with its browser open", async () => {
     openBrowser();
-    const twenty = marketplaceFixture();
-    twenty.rows.agencyGroups = [{ id: "g1", name: "Recommendations of Bethlehem", socialAccountId: "galwayOne", facebookGroupId: GROUP_ID, groupUrl: GROUP, joinStatus: "MEMBER" }];
+    const store = marketplaceFixture();
+    store.rows.agencyGroups = [{ id: "g1", name: "Recommendations of Bethlehem", socialAccountId: "galwayOne", facebookGroupId: GROUP_ID, groupUrl: GROUP, joinStatus: "MEMBER" }];
     const request = JSON.stringify({ action: "groups.search", params: { group_ids: [GROUP_ID, "123"], terms: ["post 2"], limit: 3 } });
-    const { code, out, sent } = await run(["facebook", "poll", "--request", request], [step(groupPage([unit("2", T + 20), unit("1", T + 10)])), step(feedScroll([], false))], twenty);
+    const { code, out, sent } = await run(["facebook", "poll", "--request", request], [step(groupPage([unit("2", T + 20), unit("1", T + 10)])), step(feedScroll([], false))], store);
     expect(code).toBe(0);
     expect(sent.map((s) => s.action)).toEqual(["goto", "scroll"]);
     const answer = JSON.parse(out[0]!);

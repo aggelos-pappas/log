@@ -10,7 +10,7 @@ import { cancel, intro, isCancel, outro, password } from "@clack/prompts";
 import { sealedSecrets, secretStoreState, setRecoveryPassphrase } from "../../storage/secrets/index.ts";
 import { shouldPrompt } from "../launch/helpers/shouldPrompt.ts";
 import type { LaunchTTY } from "../launch/helpers/shouldPrompt.ts";
-import { localAccountsPath, plainLocalAccounts } from "../../twenty/graphql/index.ts";
+import { localAccountsPath, plainLocalAccounts } from "../../accounts/store/index.ts";
 import { parseEnvFile, plainEnvSecrets, userEnvPath } from "../../config/userEnv/index.ts";
 import { authDir } from "../../auth/session/client.ts";
 import { oauthStorePath } from "../../mcp/oauth/client.ts";

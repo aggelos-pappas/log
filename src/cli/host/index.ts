@@ -78,7 +78,7 @@ export const hostCommand: Command = {
     if (typeof flags["account"] !== "string") return { code: 1, error: "inputInvalid", stderr: `log facebook host: --account is required\n${HOST_USAGE}` };
     let account;
     try {
-      account = await findAccount(context.twenty, flags["account"]);
+      account = await findAccount(context.accounts, flags["account"]);
     } catch (error) {
       return refuseError("host", error);
     }
@@ -100,7 +100,7 @@ export const hostCommand: Command = {
       standing: standingOf(account),
       liveActions: Boolean(flags["live"]),
       actors: hostActors(context, account, browser, { bypassHours: Boolean(flags["bypass"]), now: Boolean(flags["now"]), likes: Boolean(flags["likes"]), log }) as never,
-      saveFields: async (fields: Partial<Record<MilestoneField, string>>) => void (await context.twenty.update("socialAccounts", account.id, fields)),
+      saveFields: async (fields: Partial<Record<MilestoneField, string>>) => void (await context.accounts.update("socialAccounts", account.id, fields)),
       today: dayOf(account).today,
       timing: { activityGapMs: gap * 1000, watchIntervalMs: watch * 60_000 },
       onLine: log,
@@ -118,7 +118,7 @@ export const hostCommand: Command = {
       `  opens today: ${result.context.browser.opensToday}; closes: ${closes}; warm-up done: ${result.context.warmup.done.join(", ") || "none"}`,
     ];
     if (result.context.issue) lines.push(`  account issue: ${result.context.issue.code}${result.context.issue.detail ? ` (${result.context.issue.detail})` : ""}`);
-    const blocked = result.context.issue ? await recordAccountIssue(context.twenty, account, result.context.issue.code, result.context.issue.detail ?? null) : null;
+    const blocked = result.context.issue ? await recordAccountIssue(context.accounts, account, result.context.issue.code, result.context.issue.detail ?? null) : null;
     if (blocked) lines.push(`  ${account.accountName} is now ${toTwentyEnum(blocked.status)} (${result.context.issue!.code}): ${blocked.lost.length} listing(s) marked ACCOUNT_LOST, ${blocked.replacements.filter((r) => r.next).length} handed to another account`);
     if (result.context.lastError) lines.push(`  last error: ${result.context.lastError.code}${result.context.lastError.detail ? ` (${result.context.lastError.detail})` : ""}`);
     lines.push(`  progress: ${hostDir(account.accountName)}/progress.json (log facebook host status); restart carries on from it.`);

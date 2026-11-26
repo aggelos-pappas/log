@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineRun, PlatformEngineSpec } from "../../platformKit/session/index.ts";
 import { runCli } from "../runner/index.ts";
 import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
@@ -10,9 +10,9 @@ const CHANNEL = "1434928149904228392";
 const MESSAGE = "1566872902840619151";
 
 function fixture() {
-  const twenty = marketplaceFixture();
-  twenty.rows.socialAccounts!.push({ id: "discordOne", accountName: "discordOne", platform: "DISCORD", cookies: [], storageOrigins: [{ origin: "https://discord.com", localStorage: [{ name: "token", value: JSON.stringify("x".repeat(30)) }] }], proxy: null } as never);
-  return twenty;
+  const store = marketplaceFixture();
+  store.rows.socialAccounts!.push({ id: "discordOne", accountName: "discordOne", platform: "DISCORD", cookies: [], storageOrigins: [{ origin: "https://discord.com", localStorage: [{ name: "token", value: JSON.stringify("x".repeat(30)) }] }], proxy: null } as never);
+  return store;
 }
 
 async function run(argv: string[], answer: PlatformEngineRun["answer"] = { ok: false, code: "notExpected" }) {
@@ -20,7 +20,7 @@ async function run(argv: string[], answer: PlatformEngineRun["answer"] = { ok: f
   const err: string[] = [];
   const specs: PlatformEngineSpec[] = [];
   const code = await runCli(argv, {
-    twenty: fixture(),
+    accounts: fixture(),
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     directDiscord: (_account, spec) => {
@@ -70,7 +70,7 @@ describe("log discord react (rule 140)", () => {
     let calls = 0;
     const err: string[] = [];
     const code = await runCli(["discord", "react", "--account", "discordOne", "--channel", CHANNEL, "--message", MESSAGE, "--emoji", "fire", "--approvedBy", "the owner", "--live"], {
-      twenty: fixture(),
+      accounts: fixture(),
       out: () => {},
       err: (l) => err.push(l),
       directDiscord: () => {

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { runCli } from "../runner/index.ts";
 import { linkedinCookiesDeps, publicIdOf } from "./helpers/index.ts";
@@ -44,12 +44,12 @@ function typed(clip: string, ready: unknown = true) {
   return { said, state };
 }
 
-async function run(argv: string[], engine: PlatformEngineRun | null, twenty = marketplaceFixture()) {
+async function run(argv: string[], engine: PlatformEngineRun | null, store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
   const calls: unknown[] = [];
   const code = await runCli(argv, {
-    twenty,
+    accounts: store,
     out: (l) => out.push(l),
     err: (l) => err.push(l),
     directLinkedin: (account, spec) => {
@@ -57,7 +57,7 @@ async function run(argv: string[], engine: PlatformEngineRun | null, twenty = ma
       return engine ?? { answer: { ok: false, code: "notExpected" }, refreshed: null };
     },
   });
-  return { code, out: out.join("\n"), err: err.join("\n"), calls, twenty };
+  return { code, out: out.join("\n"), err: err.join("\n"), calls, twenty: store };
 }
 
 const LOGGED_IN = (screenName: string): PlatformEngineRun => ({ answer: { ok: true, loginState: "loggedIn", screenName, userId: "ACoAAB" }, refreshed: null });

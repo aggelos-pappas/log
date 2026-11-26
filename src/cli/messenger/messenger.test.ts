@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "../runner/index.ts";
 import { isMessengerPin, messengerDeps } from "./index.ts";
 
@@ -18,11 +18,11 @@ function prompted(answers: string[]) {
   return said;
 }
 
-async function run(argv: string[], twenty = marketplaceFixture()) {
+async function run(argv: string[], store = marketplaceFixture()) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await runCli(argv, { twenty, out: (l) => out.push(l), err: (l) => err.push(l) });
-  return { code, out: out.join("\n"), err: err.join("\n"), twenty };
+  const code = await runCli(argv, { accounts: store, out: (l) => out.push(l), err: (l) => err.push(l) });
+  return { code, out: out.join("\n"), err: err.join("\n"), twenty: store };
 }
 
 describe("log facebook messenger pin", () => {

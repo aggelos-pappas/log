@@ -56,7 +56,7 @@ export const linkedinLikeCommand: Command = {
       }
       context.err(`${account.accountName}: like activity ${activity}, approved by ${approvedBy}, on the direct-API engine`);
       const run = await actOnEngine(() => context.directLinkedin!(account, { action: "like", live: true, approvedBy, post: activity }));
-      for (const line of await recordLinkedinSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordLinkedinSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       if (!run.answer.ok) return failed("like", run);
       if (json) return { code: 0, stdout: JSON.stringify({ platform: "linkedin", account: account.accountName, approvedBy, ...run.answer }, null, 2) };
       return { code: 0, stdout: `log linkedin like: ${account.accountName} liked activity ${activity}; LinkedIn committed the reaction. Approved by ${approvedBy}.` };
@@ -119,7 +119,7 @@ export const linkedinRepostCommand: Command = {
       }
       context.err(`${account.accountName}: repost activity ${activity}, approved by ${approvedBy}, on the direct-API engine`);
       const run = await actOnEngine(() => context.directLinkedin!(account, { action: "repost", live: true, approvedBy, post: activity }));
-      for (const line of await recordLinkedinSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
+      for (const line of await recordLinkedinSession(context.accounts, account, run, context.now?.() ?? new Date())) context.err(line);
       if (!run.answer.ok) return failed("repost", run);
       if (json) return { code: 0, stdout: JSON.stringify({ platform: "linkedin", account: account.accountName, approvedBy, ...run.answer }, null, 2) };
       return { code: 0, stdout: `log linkedin repost: ${account.accountName} reposted activity ${activity}; LinkedIn committed it. Approved by ${approvedBy}.` };

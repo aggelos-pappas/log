@@ -1,4 +1,4 @@
-import type { TwentyClient, TwentyObjects } from '../../../twenty/graphql/index'
+import type { AccountStore, AccountObjects } from '../../../accounts/store/index'
 import { listListingsWhere } from '../agencyListing/index'
 import type { AgencyListing } from '../agencyListing/index'
 import { fromTwentyEnum, toTwentyEnum } from '../../../platformKit/socialAccount/helpers/index'
@@ -24,10 +24,10 @@ import { AI_STATUSES, LEAD_STATUSES, MESSAGE_STATUS_RANK, SENT_BY } from './type
 export const AGENCY_CONVERSATIONS = 'agencyConversations' as const
 export const AGENCY_MESSAGES = 'agencyMessages' as const
 
-type ConversationCreate = TwentyObjects['agencyConversations']['create']
-type ConversationUpdate = TwentyObjects['agencyConversations']['update']
-type MessageCreate = TwentyObjects['agencyMessages']['create']
-export type ConversationFilter = TwentyObjects['agencyConversations']['filter']
+type ConversationCreate = AccountObjects['agencyConversations']['create']
+type ConversationUpdate = AccountObjects['agencyConversations']['update']
+type MessageCreate = AccountObjects['agencyMessages']['create']
+export type ConversationFilter = AccountObjects['agencyConversations']['filter']
 
 const MARKETPLACE = toTwentyEnum('facebookMarketplace')
 
@@ -103,21 +103,21 @@ export function toMessage(row: MessageRow): Message {
   }
 }
 
-export async function listConversations(twenty: TwentyClient, where: { socialAccountId?: string; agencyListingId?: string } = {}): Promise<Conversation[]> {
+export async function listConversations(store: AccountStore, where: { socialAccountId?: string; agencyListingId?: string } = {}): Promise<Conversation[]> {
   const and: ConversationFilter[] = [{ channel: { eq: MARKETPLACE as never } }]
   if (where.socialAccountId) and.push({ socialAccountId: { eq: where.socialAccountId } })
   if (where.agencyListingId) and.push({ agencyListingId: { eq: where.agencyListingId } })
-  const rows = await twenty.list(AGENCY_CONVERSATIONS, { and })
+  const rows = await store.list(AGENCY_CONVERSATIONS, { and })
   return rows.map(toConversation).sort((a, b) => (b.latestMessageAt ?? '').localeCompare(a.latestMessageAt ?? ''))
 }
 
-export async function getConversation(twenty: TwentyClient, id: string): Promise<Conversation | null> {
-  const row = await twenty.get(AGENCY_CONVERSATIONS, id)
+export async function getConversation(store: AccountStore, id: string): Promise<Conversation | null> {
+  const row = await store.get(AGENCY_CONVERSATIONS, id)
   return row ? toConversation(row) : null
 }
 
-export async function messagesOf(twenty: TwentyClient, conversationId: string): Promise<Message[]> {
-  const rows = await twenty.list(AGENCY_MESSAGES, { agencyConversationId: { eq: conversationId } })
+export async function messagesOf(store: AccountStore, conversationId: string): Promise<Message[]> {
+  const rows = await store.list(AGENCY_MESSAGES, { agencyConversationId: { eq: conversationId } })
   return rows.map(toMessage).sort((a, b) => (a.sentAt ?? a.createdAt ?? '').localeCompare(b.sentAt ?? b.createdAt ?? ''))
 }
 
@@ -130,22 +130,22 @@ export function matchListing(listings: AgencyListing[], thread: Pick<ScannedThre
   return byTitle.length === 1 ? { listing: byTitle[0], by: 'title' } : { listing: null, by: 'none' }
 }
 
-export async function recordThread(twenty: TwentyClient, socialAccountId: string, thread: ScannedThread, now = new Date()): Promise<RecordThreadResult> {
+export async function recordThread(store: AccountStore, socialAccountId: string, thread: ScannedThread, now = new Date()): Promise<RecordThreadResult> {
   const pairKey = conversationKey(socialAccountId, thread.facebookThreadId)
-  const [existingRow] = await twenty.list(AGENCY_CONVERSATIONS, { pairKey: { eq: pairKey } })
+  const [existingRow] = await store.list(AGENCY_CONVERSATIONS, { pairKey: { eq: pairKey } })
   let conversation = existingRow ? toConversation(existingRow) : null
 
   let listingMatchedBy: ListingMatch = conversation?.agencyListingId ? 'kept' : 'none'
   let agencyListingId = conversation?.agencyListingId ?? null
   if (!agencyListingId) {
-    const match = matchListing(await listListingsWhere(twenty, { socialAccountId: { eq: socialAccountId } }), thread)
+    const match = matchListing(await listListingsWhere(store, { socialAccountId: { eq: socialAccountId } }), thread)
     agencyListingId = match.listing?.id ?? null
     listingMatchedBy = match.by
   }
 
   const created = !conversation
   if (!conversation) {
-    const row = await twenty.create(AGENCY_CONVERSATIONS, {
+    const row = await store.create(AGENCY_CONVERSATIONS, {
       name: [thread.buyerName, thread.listingTitle].filter(Boolean).join(' · ') || thread.facebookThreadId,
       channel: MARKETPLACE as ConversationCreate['channel'],
       pairKey,
@@ -159,7 +159,7 @@ export async function recordThread(twenty: TwentyClient, socialAccountId: string
     conversation = toConversation(row)
   }
 
-  const stored = new Set((await messagesOf(twenty, conversation.id)).map((m) => m.messageKey))
+  const stored = new Set((await messagesOf(store, conversation.id)).map((m) => m.messageKey))
   const fresh = thread.messages
     .map((message) => ({ message, key: messageKey(message) }))
     .filter(({ key }) => {
@@ -175,7 +175,7 @@ export async function recordThread(twenty: TwentyClient, socialAccountId: string
   let phoneSeen = false
   for (const { message, key } of fresh) {
     const inbound = message.direction === 'inbound'
-    const row = await twenty.create(AGENCY_MESSAGES, {
+    const row = await store.create(AGENCY_MESSAGES, {
       name: previewOf(message.body).slice(0, 60) || key,
       agencyConversationId: conversation.id,
       channel: MARKETPLACE as MessageCreate['channel'],
@@ -231,21 +231,21 @@ export async function recordThread(twenty: TwentyClient, socialAccountId: string
     respondedAt,
     lastScannedAt: now.toISOString()
   }
-  const saved = toConversation(await twenty.update(AGENCY_CONVERSATIONS, conversation.id, update))
+  const saved = toConversation(await store.update(AGENCY_CONVERSATIONS, conversation.id, update))
   return { conversation: saved, created, added: fresh.length, skipped: thread.messages.length - fresh.length, listingMatchedBy }
 }
 
-export async function markRead(twenty: TwentyClient, conversationId: string, now = new Date()): Promise<number> {
-  const unread = (await messagesOf(twenty, conversationId)).filter((m) => m.direction === 'inbound' && !m.isRead)
-  for (const message of unread) await twenty.update(AGENCY_MESSAGES, message.id, { isRead: true })
-  await twenty.update(AGENCY_CONVERSATIONS, conversationId, { unreadCount: 0, lastReadAt: now.toISOString() })
+export async function markRead(store: AccountStore, conversationId: string, now = new Date()): Promise<number> {
+  const unread = (await messagesOf(store, conversationId)).filter((m) => m.direction === 'inbound' && !m.isRead)
+  for (const message of unread) await store.update(AGENCY_MESSAGES, message.id, { isRead: true })
+  await store.update(AGENCY_CONVERSATIONS, conversationId, { unreadCount: 0, lastReadAt: now.toISOString() })
   return unread.length
 }
 
-export async function setLeadStatus(twenty: TwentyClient, conversationId: string, status: LeadStatus): Promise<Conversation> {
-  return toConversation(await twenty.update(AGENCY_CONVERSATIONS, conversationId, { leadStatus: toTwentyEnum(status) as ConversationUpdate['leadStatus'] }))
+export async function setLeadStatus(store: AccountStore, conversationId: string, status: LeadStatus): Promise<Conversation> {
+  return toConversation(await store.update(AGENCY_CONVERSATIONS, conversationId, { leadStatus: toTwentyEnum(status) as ConversationUpdate['leadStatus'] }))
 }
 
-export async function linkListing(twenty: TwentyClient, conversationId: string, agencyListingId: string): Promise<Conversation> {
-  return toConversation(await twenty.update(AGENCY_CONVERSATIONS, conversationId, { agencyListingId }))
+export async function linkListing(store: AccountStore, conversationId: string, agencyListingId: string): Promise<Conversation> {
+  return toConversation(await store.update(AGENCY_CONVERSATIONS, conversationId, { agencyListingId }))
 }

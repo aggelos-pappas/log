@@ -7,7 +7,7 @@ import { commandTools, toolsFromCommands } from "../../mcp/server/helpers/toolsF
 import type { CommandTool } from "../../mcp/server/helpers/toolsFromCommands.ts";
 import { instrumentFetch } from "../../observability/timing/index.ts";
 import { hashEmbedder } from "../../search/conversations/index.ts";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { searchDeps } from "../search/index.ts";
 import { tregDeps } from "../treg/index.ts";
 import { argvOfInput, isPlatform } from "./helpers/index.ts";
@@ -18,7 +18,6 @@ const SKIP: Readonly<Record<string, string>> = {
   inspectStart: "opens the account's browser as its own process",
   facebookHostStart: "runs the host loop, which drives a browser for minutes",
   mediaDescriber: "starts the describer process",
-  localAccountPull: "pulls every account from Twenty with its own client, not the context's",
   facebookWatch: "with checks 0 it watches until stopped",
 };
 
@@ -104,11 +103,11 @@ function minimalInput(form: InputForm, platform: string): Record<string, unknown
 }
 
 function twentyFixture() {
-  const twenty = marketplaceFixture();
+  const store = marketplaceFixture();
   for (const platform of ["twitter", "discord", "slack", "instagram", "reddit", "linkedin"]) {
-    twenty.rows.socialAccounts!.push({ id: accountOf(platform), accountName: accountOf(platform), platform: platform.toUpperCase(), cookies: {}, proxy: null, activeHoursStart: 0, activeHoursEnd: 24 });
+    store.rows.socialAccounts!.push({ id: accountOf(platform), accountName: accountOf(platform), platform: platform.toUpperCase(), cookies: {}, proxy: null, activeHoursStart: 0, activeHoursEnd: 24 });
   }
-  return twenty;
+  return store;
 }
 
 function stubContext(err: string[]): Partial<CommandContext> {
@@ -117,7 +116,7 @@ function stubContext(err: string[]): Partial<CommandContext> {
     throw Object.assign(new Error("stubbed"), { code: "stubEngine" });
   };
   return {
-    twenty: twentyFixture() as never,
+    accounts: twentyFixture() as never,
     out: () => {},
     err: (line) => err.push(line),
     now: () => new Date("2026-11-14T12:00:00Z"),

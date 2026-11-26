@@ -29,7 +29,7 @@ export const tiktokScrapeCommand: Command = {
     if (Boolean(query) === Boolean(link) || parsed.positionals.length || parsed.flags.output === '' || !Number.isInteger(limit) || limit < 1 || limit > 100 || !Number.isInteger(pages) || pages < 1 || pages > 10) return refuseInput('tiktok scrape', 'Invalid query, URL or collection bounds', TIKTOK_SCRAPE_USAGE)
     try {
       if (link) videoId(link)
-      const account = await findTiktokAccount(context.twenty, String(parsed.flags.account))
+      const account = await findTiktokAccount(context.accounts, String(parsed.flags.account))
       const gate = tiktokGate(account)
       if (!gate.ok) return refuseGated('tiktok scrape', gate, 'accountNotUsable')
       if (!context.directTiktok) return refuseInput('tiktok scrape', 'The TikTok detail engine is not wired in this context')

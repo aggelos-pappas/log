@@ -2,13 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { marketplaceFixture } from "../../twenty/graphql/index.ts";
+import { marketplaceFixture } from "../../accounts/store/index.ts";
 import { runCli } from "./index.ts";
 
 async function run(argv: string[]) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await runCli(argv, { twenty: marketplaceFixture(), out: (line) => out.push(line), err: (line) => err.push(line) });
+  const code = await runCli(argv, { accounts: marketplaceFixture(), out: (line) => out.push(line), err: (line) => err.push(line) });
   return { code, out: out.join("\n"), err: err.join("\n") };
 }
 
@@ -55,13 +55,13 @@ describe("runCli", () => {
     try {
       const good = join(dir, "good.json");
       writeFileSync(good, JSON.stringify({ title: "Junk removal", description: "We haul it", price: 99, priceCurrency: "EUR", category: "Miscellaneous", condition: "new", photos: ["a.jpg"], locationQuery: "Galway, Ireland", locationCity: "galway", locationCountry: "ie" }));
-      const twenty = marketplaceFixture();
+      const store = marketplaceFixture();
       const out: string[] = [];
-      const code = await runCli(["facebook", "listing", "create", "--account", "galwayOne", "--file", good, "--json"], { twenty, out: (l) => out.push(l), err: () => {} });
+      const code = await runCli(["facebook", "listing", "create", "--account", "galwayOne", "--file", good, "--json"], { accounts: store, out: (l) => out.push(l), err: () => {} });
       expect(code).toBe(0);
       const created = JSON.parse(out.join("\n")).listing;
       expect(created).toMatchObject({ title: "Junk removal", status: "ready", price: 99, locationCountry: "IE", photos: ["a.jpg"], generation: 0 });
-      expect(twenty.rows.agencyListings.some((r) => r.id === created.id)).toBe(true);
+      expect(store.rows.agencyListings.some((r) => r.id === created.id)).toBe(true);
 
       const bad = join(dir, "bad.json");
       writeFileSync(bad, JSON.stringify({ title: "No price", category: "Miscellaneous", photos: [] }));
@@ -71,10 +71,10 @@ describe("runCli", () => {
       expect((await run(["facebook", "listing", "create", "--file", good])).code).toBe(1);
       const abroad = join(dir, "abroad.json");
       writeFileSync(abroad, JSON.stringify({ title: "Junk removal", description: "We haul it", price: 99, priceCurrency: "USD", category: "Miscellaneous", condition: "new", photos: ["a.jpg"], locationQuery: "Philadelphia, PA", locationCity: "philadelphia", locationCountry: "US" }));
-      const before = twenty.rows.agencyListings.length;
-      const elsewhere = await runCli(["facebook", "listing", "create", "--account", "galwayOne", "--file", abroad], { twenty, out: () => {}, err: () => {} });
+      const before = store.rows.agencyListings.length;
+      const elsewhere = await runCli(["facebook", "listing", "create", "--account", "galwayOne", "--file", abroad], { accounts: store, out: () => {}, err: () => {} });
       expect(elsewhere).toBe(1);
-      expect(twenty.rows.agencyListings.length).toBe(before);
+      expect(store.rows.agencyListings.length).toBe(before);
       expect((await run(["facebook", "listing", "liveOne", "--account", "galwayOne"])).code).toBe(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -91,15 +91,15 @@ describe("runCli", () => {
   });
 
   test("account status BANNED keeps the account and replaces its campaign listings", async () => {
-    const twenty = marketplaceFixture();
+    const store = marketplaceFixture();
     const out: string[] = [];
-    const code = await runCli(["facebook", "account", "status", "galwayTwo", "BANNED", "--reason", "accountDisabled"], { twenty, out: (l) => out.push(l), err: () => {} });
+    const code = await runCli(["facebook", "account", "status", "galwayTwo", "BANNED", "--reason", "accountDisabled"], { accounts: store, out: (l) => out.push(l), err: () => {} });
     expect(code).toBe(0);
     expect(out.join("\n")).toContain("galwayTwo is now BANNED");
-    expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayTwo")).toMatchObject({ accountStatus: "BANNED", statusReason: "accountDisabled" });
-    expect(twenty.rows.agencyListings.find((r) => r.id === "liveTwo")!.status).toBe("REPLACED");
-    expect(twenty.rows.agencyListings.some((r) => r.replacesId === "liveTwo" && r.status === "READY")).toBe(true);
-    expect((await runCli(["facebook", "account", "status", "galwayTwo", "NOPE"], { twenty, out: () => {}, err: () => {} }))).toBe(1);
+    expect(store.rows.socialAccounts.find((r) => r.id === "galwayTwo")).toMatchObject({ accountStatus: "BANNED", statusReason: "accountDisabled" });
+    expect(store.rows.agencyListings.find((r) => r.id === "liveTwo")!.status).toBe("REPLACED");
+    expect(store.rows.agencyListings.some((r) => r.replacesId === "liveTwo" && r.status === "READY")).toBe(true);
+    expect((await runCli(["facebook", "account", "status", "galwayTwo", "NOPE"], { accounts: store, out: () => {}, err: () => {} }))).toBe(1);
   });
 });
 

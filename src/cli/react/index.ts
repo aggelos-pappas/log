@@ -134,7 +134,7 @@ export const discordReactCommand = reactCommandOf({
   emoji: "Discord takes any emoji, a name (joy, fire, eyes) turned into it, or a server's own emoji as name:id.",
   engine: "vendor/endcord",
   async resolve(context, label, flags) {
-    const account = await findDiscordAccount(context.twenty, String(flags["account"]));
+    const account = await findDiscordAccount(context.accounts, String(flags["account"]));
     const gate = discordGate(account);
     if (!gate.ok) return { ok: false, result: refuse(label, gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail) };
     const direct = context.directDiscord;
@@ -181,7 +181,7 @@ export const instagramReactCommand = reactCommandOf({
   emoji: "Instagram takes any emoji; a name (joy, fire, heart) is turned into it. It goes through instagrapi's direct_send_reaction (direct_delete_reaction with --remove) in the account's one session (rule 129).",
   engine: "vendor/instagrapi",
   async resolve(context, label, flags) {
-    const account = await findInstagramAccount(context.twenty, String(flags["account"]));
+    const account = await findInstagramAccount(context.accounts, String(flags["account"]));
     const gate = instagramGate(account);
     if (!gate.ok) return { ok: false, result: refuse(label, gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail) };
     const direct = context.directInstagram;
