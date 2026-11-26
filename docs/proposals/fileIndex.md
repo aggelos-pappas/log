@@ -36,7 +36,7 @@ Status: reference, generated. A script read the five proposal documents, collect
 | `src/cli/instagram/index.ts` | file | 14 | plan, parity |
 | `src/cli/join/` | folder | 12 | plan |
 | `src/cli/join/**` | pattern |  | parity |
-| `src/cli/kb/index.ts` | file |  | context |
+| `src/cli/memory/index.ts` | file |  | context |
 | `src/cli/launch/helpers/setup.ts` | file | 19 | plan, context |
 | `src/cli/launch/helpers/start.ts` | file | 19 | plan |
 | `src/cli/launch/index.ts` | file | 19 | plan, context |
@@ -181,7 +181,7 @@ Status: reference, generated. A script read the five proposal documents, collect
 | Path | State | Slices | Named in |
 |---|---|---|---|
 | `src/<platform>/<area>/<domain>` | pattern |  | plan |
-| `src/knowledge/base/helpers/collect.ts` | file | 1 | plan |
+| `src/memory/helpers/collect.ts` | file | 1 | plan |
 
 ## Python: engines, browser and the hosted control service
 

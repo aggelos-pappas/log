@@ -1,5 +1,5 @@
 import { BM25, tokenize } from 'bm25s'
-import type { KbChunkRow } from '../types'
+import type { MemoryChunkRow } from '../types'
 
 export function queryTerms(query: string): string[] {
   const tokens = tokenize([query])
@@ -7,7 +7,7 @@ export function queryTerms(query: string): string[] {
   return tokens.ids[0].map((id) => words.get(id) ?? '').filter(Boolean)
 }
 
-export function keywordRanks(rows: readonly KbChunkRow[], query: string, depth: number): string[] {
+export function keywordRanks(rows: readonly MemoryChunkRow[], query: string, depth: number): string[] {
   const terms = queryTerms(query)
   const k = Math.min(depth, rows.length)
   if (!terms.length || !k) return []
@@ -32,7 +32,7 @@ function cosine(a: Float32Array, b: Float32Array): number {
   return na && nb ? dot / Math.sqrt(na * nb) : 0
 }
 
-export function meaningRanks(rows: readonly KbChunkRow[], vector: Float32Array, depth: number): string[] {
+export function meaningRanks(rows: readonly MemoryChunkRow[], vector: Float32Array, depth: number): string[] {
   return rows
     .filter((r) => r.vector.length === vector.length)
     .map((r) => ({ id: r.id, score: cosine(r.vector, vector) }))

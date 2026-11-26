@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { knowledgeContext } from '../../src/knowledge/base/index'
+import { memoryContext } from '../../src/memory/index'
 import { contextOutput, hookHostOf } from '../../src/agentHooks/harness/index'
 
 const raw = await Bun.stdin.text().catch(() => '')
@@ -8,4 +8,4 @@ try {
   event = (JSON.parse(raw || '{}') as { hook_event_name?: string }).hook_event_name ?? event
 } catch {}
 
-process.stdout.write(contextOutput(event, knowledgeContext(), hookHostOf(process.argv)))
+process.stdout.write(contextOutput(event, memoryContext(), hookHostOf(process.argv)))

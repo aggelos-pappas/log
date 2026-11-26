@@ -21,9 +21,9 @@ The existing test (`src/cli/runner/commandInput.test.ts:36-50`) only round-trips
 
 | Mismatch | Tools affected | Where |
 |---|---|---|
-| Schema says string, `run` needs a number | `limit` on inboxWaiting, inboxActions, twitterDms, twitterFollowers, twitterNotifications, search, kbSearch, memelordSearch, memelordTrending, tregSearch, discordPosts, discordSearch, discordRead, slackChats, slackRead, instagramDms, redditReadPost. Also `seconds` on the three watches, `rounds`, `pages`, `hours`, `wait`, `days`, `maxItems`, `likeChance`, `window`, `start`. Only reportData and twitterQueuePlan type `limit` as an integer. | e.g. `src/cli/discord/index.ts:230-231` |
+| Schema says string, `run` needs a number | `limit` on inboxWaiting, inboxActions, twitterDms, twitterFollowers, twitterNotifications, search, memorySearch, memelordSearch, memelordTrending, tregSearch, discordPosts, discordSearch, discordRead, slackChats, slackRead, instagramDms, redditReadPost. Also `seconds` on the three watches, `rounds`, `pages`, `hours`, `wait`, `days`, `maxItems`, `likeChance`, `window`, `start`. Only reportData and twitterQueuePlan type `limit` as an integer. | e.g. `src/cli/discord/index.ts:230-231` |
 | Boolean typed as string | `discordPosts.archived` | discord usage |
-| Comma lists sent as one string | twitterFollows.handles, discordSend.file, discordDelete.message, twitterQueueBuild.variations, tregCall.fields, kbRemember.tags, newPlatform.hosts and sessionCookies, the `media` inputs, cloneVoice.from | `src/cli/discord/index.ts:442,503` |
+| Comma lists sent as one string | twitterFollows.handles, discordSend.file, discordDelete.message, twitterQueueBuild.variations, tregCall.fields, memoryRemember.tags, newPlatform.hosts and sessionCookies, the `media` inputs, cloneVoice.from | `src/cli/discord/index.ts:442,503` |
 | A repeated flag: the last one wins silently | every `parseArgs` flag | `src/cli/runner/helpers/parseArgs.ts:25-27` |
 | `pairs` and `global` flags are not in `parserSpecOf` | proxyMs, `--set` | `commandInput.ts:17`, `src/cli/runner/client.ts:59-73` |
 | A one-of requirement the schema can't express | redditVote (`url` or `target`), instagramSend (`text` or `photo`), twitterListAdd (`handle` or `userId`), voice (`text` or `with`), proxy (`--account` or `--missing`, `--city` or `--anyCity`) | refusals seen in the run |

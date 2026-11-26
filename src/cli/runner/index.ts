@@ -25,7 +25,7 @@ import { messengerCommand } from "../messenger/index.ts";
 import { discordSecretsCommand } from "../discord/index.ts";
 import { searchCommand } from "../search/index.ts";
 import { factsCommand, indexCommand } from "../indexPass/index.ts";
-import { kbCommand } from "../kb/index.ts";
+import { memoryCommand } from "../memory/index.ts";
 import { runtimeCommand } from "../runtime/index.ts";
 import { memelordCommand } from "../memelord/index.ts";
 import { tregCommand } from "../treg/index.ts";
@@ -142,7 +142,7 @@ export const COMMANDS: Command[] = [
   searchCommand,
   indexCommand,
   factsCommand,
-  kbCommand,
+  memoryCommand,
   runtimeCommand,
   memelordCommand,
   tregCommand,

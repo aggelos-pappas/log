@@ -24,17 +24,17 @@ const syntaxErrors = (source: string) => (ts.transpileModule(source, { reportDia
 
 describe("the nested-array syntax-tree edit", () => {
   test("a guide group's commands gain one entry, on one line or many", () => {
-    const one = `export const G: Readonly<Record<string, T>> = {\n  a: { about: "x", commands: ["any:kb", "any:search"], skills: [] },\n};\n`;
-    expect(addToPropertyArray(one, "G", "a", "commands", `"any:saidBy"`)).toContain(`commands: ["any:kb", "any:search", "any:saidBy"]`);
+    const one = `export const G: Readonly<Record<string, T>> = {\n  a: { about: "x", commands: ["any:memory", "any:search"], skills: [] },\n};\n`;
+    expect(addToPropertyArray(one, "G", "a", "commands", `"any:saidBy"`)).toContain(`commands: ["any:memory", "any:search", "any:saidBy"]`);
     expect(propertyArrayHasText(addToPropertyArray(one, "G", "a", "commands", `"any:saidBy"`), "G", "a", "commands", `"any:saidBy"`)).toBe(true);
-    expect(() => addToPropertyArray(one, "G", "a", "commands", `"any:kb"`)).toThrow(AstEditError);
-    expect(() => addToPropertyArray(one, "G", "b", "commands", `"any:kb"`)).toThrow(AstEditError);
+    expect(() => addToPropertyArray(one, "G", "a", "commands", `"any:memory"`)).toThrow(AstEditError);
+    expect(() => addToPropertyArray(one, "G", "b", "commands", `"any:memory"`)).toThrow(AstEditError);
   });
 });
 
 describe("log tool scaffold", () => {
   test("names follow the tool's name; acting on data adds a Live tool", () => {
-    expect(toolNamesOf({ name: "saidBy", summary: SUMMARY, flags: ["name"] })).toMatchObject({ command: "saidByCommand", usage: "SAID_BY_USAGE", rows: "saidByRows", tools: ["saidBy"], area: "inbox", guide: "knowledgeAndSearch" });
+    expect(toolNamesOf({ name: "saidBy", summary: SUMMARY, flags: ["name"] })).toMatchObject({ command: "saidByCommand", usage: "SAID_BY_USAGE", rows: "saidByRows", tools: ["saidBy"], area: "inbox", guide: "memoryAndSearch" });
     expect(toolNamesOf({ name: "linkTargets", summary: "x", acts: true }).tools).toEqual(["linkTargets", "linkTargetsLive"]);
   });
 

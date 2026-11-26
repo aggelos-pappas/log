@@ -630,20 +630,20 @@ Finding context in conversations is a search, never reading every thread. `log s
 - **REQ-SEARCH-09** Search fuses keyword, meaning and relationship as evidence
 - **REQ-SEARCH-10** The relationship retriever votes from the Relate graph
 
-## [Knowledge base](./knowledgeBase.md)
+## [Memory](./memory.md)
 
-The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in the workspace `log.db`, beside the rest of log's private records (rule 134), and is searched there by keyword and meaning at once, on this machine. It needs no server and no setting, so it always works. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
+log's memory holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in the workspace `log.db`, beside the rest of log's private records (rule 134), and is searched there by keyword and meaning at once, on this machine. It needs no server and no setting, so it always works. `log memory sync`, `log memory search`, `log memory remember` and `log memory show` (MCP `memorySync`, `memorySearch`, `memoryRemember`, `memoryShow`); `log kb …` is a hidden alias for one release. Rule 93 (with rule 38 for the pages it leaves out).
 
-- **REQ-KB-01** The articles live in log.db's kbArticles
-- **REQ-KB-02** It needs no server, login or setting
-- **REQ-KB-03** Search is keyword and meaning at once, fused
-- **REQ-KB-04** Sync collects every source
-- **REQ-KB-05** Some pages and fields are never collected
-- **REQ-KB-06** Sync writes only what changed
-- **REQ-KB-07** Chunks are re-indexed from the articles, only what changed
-- **REQ-KB-08** Remember saves a note and indexes it at once
-- **REQ-KB-09** Show reads one article in full
-- **REQ-KB-10** Secrets are scrubbed before anything is written
+- **REQ-MEMORY-01** The articles live in log.db's kbArticles
+- **REQ-MEMORY-02** It needs no server, login or setting
+- **REQ-MEMORY-03** Search is keyword and meaning at once, fused
+- **REQ-MEMORY-04** Sync collects every source
+- **REQ-MEMORY-05** Some pages and fields are never collected
+- **REQ-MEMORY-06** Sync writes only what changed
+- **REQ-MEMORY-07** Chunks are re-indexed from the articles, only what changed
+- **REQ-MEMORY-08** Remember saves a note and indexes it at once
+- **REQ-MEMORY-09** Show reads one article in full
+- **REQ-MEMORY-10** Secrets are scrubbed before anything is written
 
 ## [Relate graph](./relateGraph.md)
 

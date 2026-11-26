@@ -20,6 +20,7 @@ import { runTiktokEngine } from "../../tiktok/account/session/index.ts";
 
 export const ALIASES: Record<string, string> = {
   firefoxCapture: "capture",
+  kb: "memory",
   "--help": "help",
   "--version": "version",
   "-h": "help",

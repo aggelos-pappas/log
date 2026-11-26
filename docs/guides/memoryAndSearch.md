@@ -1,6 +1,6 @@
-# knowledgeAndSearch
+# memoryAndSearch
 
-Knowledge base, search, Relate graph, people, voice notes.
+Memory, search, Relate graph, people, voice notes.
 
 Written by `bun run docs:build` from the code, the skills and AGENTS.md. Not edited by hand: change the command's usage, its skill or the rule, and rebuild.
 
@@ -58,21 +58,21 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `search` | Find where someone talked about something | `log search "<query>" [--limit <n>] [--fusion <rrf\|bayes>] [--platform <p>] [--account <a>] [--with <handle>] [--after <YYYY-MM-DD>] [--kind <k>] [--server <s>] [--channel <c>] [--full] [--json]` |
 | `searchIndex` | Read every conversation through the platform's engine | `log search index [--platform <twitter\|discord>] [--account <a>] [--saved] [--rebuild]   (embeds only new or changed chunks, --rebuild all; --saved indexes what log.db holds, else reads every DM and group through the platform's engine first)` |
 | `searchBench` | Time realistic queries on the built index, cold and warm, with p50… | `log search bench [--rounds <n>]   (times realistic queries on the built index, cold and warm, and prints p50, p95 and p99 beside a plain linear scan)` |
-| `kbSearch` | Search the knowledge base | `log kb search "<query>" [--kind <kind>] [--limit <n>] [--json]` |
-| `kbSync` | Collect every source into the knowledge base in log.db and index what… | `log kb sync [--noAccounts] [--json]   (collects rules, skills, docs, infra notes, memory files, page states and accounts into the knowledge base in log.db, and indexes what changed)` |
-| `kbRemember` | Save an agent memory as a knowledge base note in log.db, indexed at… | `log kb remember "<text>" [--title <t>] [--tags <a,b>] [--json]   (saves an agent memory as a note in log.db and indexes it at once)` |
-| `kbShow` | Show one knowledge base article in full | `log kb show <key> [--json]   (one article in full, e.g. rule:73, skill:inspect, pageState:messengerPinCreate)` |
+| `memorySearch` | Search log's memory | `log memory search "<query>" [--kind <kind>] [--limit <n>] [--json]` |
+| `memorySync` | Collect every source into memory in log.db and index what changed | `log memory sync [--noAccounts] [--json]   (collects rules, skills, docs, infra notes, memory files, page states and accounts into memory in log.db, and indexes what changed)` |
+| `memoryRemember` | Save an agent memory as a note in log.db, indexed at once | `log memory remember "<text>" [--title <t>] [--tags <a,b>] [--json]   (saves an agent memory as a note in log.db and indexes it at once)` |
+| `memoryShow` | Show one memory article in full | `log memory show <key> [--json]   (one article in full, e.g. rule:73, skill:inspect, pageState:messengerPinCreate)` |
 | `transcribe` | Transcribe every voice note in the saved X and Discord conversations… | `log transcribe [--platform twitter\|discord] [--account <a>] [--list] [--noIndex] [--json]` |
 | `transcribeFile` | Transcribe one audio file with AssemblyAI, kept by its hash | `log transcribe file <path> [--json]   (one audio file, transcribed and kept by its hash)` |
 | `saidBy` | Someone's messages on every platform, found by name, newest first | `log saidBy [--name <name>] [--limit <n>] [--json]` |
 
-## The work, step by step: knowledgeBase
+## The work, step by step: memory
 
-From `skills/knowledgeBase/SKILL.md`.
+From `skills/memory/SKILL.md`.
 
-## knowledgeBase
+## memory
 
-The knowledge base is one place for everything log-cli knows: the owner's rules,
+log's memory is one place for everything log-cli knows: the owner's rules,
 the skills, the docs, the infra notes, every agent's memory files, the known
 page states, the accounts, and the notes agents save. It lives in the
 workspace `log.db` and is searched there, on this machine. It needs no server
@@ -111,23 +111,23 @@ or setting, so it always works.
 | `memory` | every Claude Code memory file in `~/.claude/projects/*/memory` (`memory:log-cli/cloudflare-access`) |
 | `pageState` | `PAGE_STATES` (`pageState:messengerPinCreate`) |
 | `account` | log-cli's accounts (the local account store), status and setup only (`account:10000000000001`) |
-| `note` | `log kb remember` |
+| `note` | `log memory remember` |
 
 ### Commands
 
-Agents call the MCP tools, never a hand-run `log kb …` (rule 163):
+Agents call the MCP tools, never a hand-run `log memory …` (rule 163):
 
 ```
-kbSearch { query: "why did the tunnel go down" }               best articles, keyword + meaning
-kbSearch { query: "messenger pin", kind: "pageState", limit: 3 }
-kbShow { key: "rule:73" }                                      one article in full
-kbRemember { text: "…", tags: ["infra", "server"] }            a note, saved and indexed at once
-kbSync {}                                                      refresh from every source (Monitor it, rule 26)
-kbSync { noAccounts: true }                                    without reading log-cli's accounts
+memorySearch { query: "why did the tunnel go down" }           best articles, keyword + meaning
+memorySearch { query: "messenger pin", kind: "pageState", limit: 3 }
+memoryShow { key: "rule:73" }                                  one article in full
+memoryRemember { text: "…", tags: ["infra", "server"] }        a note, saved and indexed at once
+memorySync {}                                                  refresh from every source (Monitor it, rule 26)
+memorySync { noAccounts: true }                                without reading log-cli's accounts
 ```
 
-In a terminal the same commands are `log kb search|show|remember|sync`. What
-each one must do is in the spec, [Knowledge base](../../docs/specs/knowledgeBase.md).
+In a terminal the same commands are `log memory search|show|remember|sync`. What
+each one must do is in the spec, [Memory](../../docs/specs/memory.md).
 
 ### How a sync works
 
@@ -152,7 +152,7 @@ Save it before the session ends, in one or two plain sentences with where it
 came from:
 
 ```
-kbRemember { text: "The tunnel drops when its token file is replaced while it runs; restart the tunnel after changing the token (found 2026-10-27 in the tunnel's own log).", title: "Restart the tunnel after a token change", tags: ["infra", "server"] }
+memoryRemember { text: "The tunnel drops when its token file is replaced while it runs; restart the tunnel after changing the token (found 2026-10-27 in the tunnel's own log).", title: "Restart the tunnel after a token change", tags: ["infra", "server"] }
 ```
 
 ## The rules these tools fall under

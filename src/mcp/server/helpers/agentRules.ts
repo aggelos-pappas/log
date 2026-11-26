@@ -91,7 +91,7 @@ const SOURCE_COMMAND_RULES: Readonly<Record<string, number[]>> = {
   twitterCookies: [13, 21, 63, 64, 73, 80, 81, 104, 105],
   voice: [30, 39, 41, 63, 64, 98, 112, 127, 149],
   search: [13, 26, 63, 64, 88, 89, 105],
-  kb: [13, 26, 30, 93],
+  memory: [13, 26, 30, 93],
   relate: [89, 134, 154, 163],
   people: [30, 89, 134, 154, 163],
   peopleBots: [30, 89, 94],

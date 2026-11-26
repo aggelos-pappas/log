@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto'
-import { KB_CHUNK_CHARS, KB_CHUNK_OVERLAP } from '../types'
-import type { KbArticle, KbChunk } from '../types'
+import { MEMORY_CHUNK_CHARS, MEMORY_CHUNK_OVERLAP } from '../types'
+import type { MemoryArticle, MemoryChunk } from '../types'
 
-export function articleHash(article: KbArticle): string {
+export function articleHash(article: MemoryArticle): string {
   return createHash('sha256').update(JSON.stringify([article.kind, article.title, article.body, article.source, article.tags])).digest('hex').slice(0, 16)
 }
 
@@ -10,7 +10,7 @@ export function chunkKey(key: string): string {
   return createHash('sha256').update(key).digest('hex').slice(0, 20)
 }
 
-export function splitText(text: string, size = KB_CHUNK_CHARS, overlap = KB_CHUNK_OVERLAP): string[] {
+export function splitText(text: string, size = MEMORY_CHUNK_CHARS, overlap = MEMORY_CHUNK_OVERLAP): string[] {
   const clean = text.replace(/\r\n/g, '\n').trim()
   if (clean.length <= size) return clean ? [clean] : []
   const parts: string[] = []
@@ -28,7 +28,7 @@ export function splitText(text: string, size = KB_CHUNK_CHARS, overlap = KB_CHUN
   return parts.filter(Boolean)
 }
 
-export function chunksOf(article: KbArticle): KbChunk[] {
+export function chunksOf(article: MemoryArticle): MemoryChunk[] {
   const base = chunkKey(article.key)
   return splitText(article.body).map((text, i) => ({ id: `${base}:${i}`, key: article.key, kind: article.kind, title: article.title, source: article.source, text }))
 }

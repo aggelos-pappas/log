@@ -41,7 +41,7 @@ flowchart TB
     c_search["search"]
     c_index["index"]
     c_facts["facts"]
-    c_kb["kb"]
+    c_memory["memory"]
     c_runtime["runtime"]
     c_memelord["memelord"]
     c_treg["treg"]
@@ -314,8 +314,8 @@ flowchart TB
   c_index -.- terminal
   cli --> c_facts
   c_facts -.- terminal
-  cli --> c_kb
-  mcp --> c_kb
+  cli --> c_memory
+  mcp --> c_memory
   cli --> c_runtime
   c_runtime -.- terminal
   cli --> c_memelord

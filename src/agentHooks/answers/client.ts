@@ -13,7 +13,7 @@ import { agentNotice, refreshInBackground } from '../../release/check/index'
 import { engineContext } from '../../directApi/engine/index'
 import { codeStampWatcher, localChangesLine, staleServerLine, uncommittedFiles, uncommittedFilesAsync } from '../../mcp/freshness/index'
 import type { StampWatcher } from '../../mcp/freshness/index'
-import { knowledgeContext } from '../../knowledge/base/index'
+import { memoryContext } from '../../memory/index'
 import { newQueueEvents, queueContext } from '../../twitter/queue/events/index'
 import { newLiveEvents, xLiveContext } from '../../twitter/live/feed/index'
 import { clearDeadQueueLocks, ensureLiveWatchers, hookReaderOf, startDescriber } from '../../inbox/watch/index'
@@ -132,7 +132,7 @@ export function enginesAnswer(event: HookEvent, repo: string, raw = '', accounts
 }
 
 export async function knowledgeAnswer(): Promise<HookAnswer> {
-  return { context: knowledgeContext() }
+  return { context: memoryContext() }
 }
 
 export function queueAnswer(raw: string): HookAnswer {

@@ -71,7 +71,7 @@ export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "search", platform: "any", module: "src/cli/search/index.ts", exportName: "searchCommand" },
   { name: "index", platform: "any", module: "src/cli/indexPass/index.ts", exportName: "indexCommand", terminalOnly: "runs the local CPU models over minutes of history and holds no chat context; the owner runs it in a terminal, and the graph owner's tick runs the same pass by itself" },
   { name: "facts", platform: "any", module: "src/cli/indexPass/index.ts", exportName: "factsCommand", terminalOnly: "fine-tunes a local model on CPU for minutes as its own job; the owner runs it in a terminal, never inside the pass" },
-  { name: "kb", platform: "any", module: "src/cli/kb/index.ts", exportName: "kbCommand" },
+  { name: "memory", platform: "any", module: "src/cli/memory/index.ts", exportName: "memoryCommand" },
   { name: "runtime", platform: "any", module: "src/cli/runtime/index.ts", exportName: "runtimeCommand", terminalOnly: "pairs this workspace with hosted log and keeps its outbound bridge open as a long-lived service. Run `log runtime init --origin <url>`, `log runtime pair --token <t>` and `log runtime connect` in the workspace's terminal or its service manager." },
   { name: "memelord", platform: "any", module: "src/cli/memelord/index.ts", exportName: "memelordCommand" },
   { name: "treg", platform: "any", module: "src/cli/treg/index.ts", exportName: "tregCommand" },

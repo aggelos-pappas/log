@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite'
-import { KB_KINDS } from '../types'
-import type { KbArticle, KbChunk, KbKind, KbStore, KbStoredArticle } from '../types'
+import { MEMORY_KINDS } from '../types'
+import type { MemoryArticle, MemoryChunk, MemoryKind, MemoryStore, MemoryStoredArticle } from '../types'
 
 interface ArticleRow {
   key: string
@@ -24,8 +24,8 @@ interface ChunkRow {
   vector: Uint8Array
 }
 
-export function kindOf(value: unknown): KbKind {
-  return KB_KINDS.find((k) => k === value) ?? 'note'
+export function kindOf(value: unknown): MemoryKind {
+  return MEMORY_KINDS.find((k) => k === value) ?? 'note'
 }
 
 function tagsOf(raw: string): string[] {
@@ -37,7 +37,7 @@ function tagsOf(raw: string): string[] {
   }
 }
 
-function toStored(row: ArticleRow): KbStoredArticle {
+function toStored(row: ArticleRow): MemoryStoredArticle {
   return { key: row.key, kind: kindOf(row.kind), title: row.title, body: row.body, source: row.source, tags: tagsOf(row.tags), author: row.author, hash: row.contentHash, syncedAt: row.syncedAt }
 }
 
@@ -51,17 +51,17 @@ export function vectorOf(bytes: Uint8Array): Float32Array {
 
 const ARTICLE_COLUMNS = 'key, kind, title, body, source, tags, author, contentHash, syncedAt'
 
-export function logDbKbStore(handle: Database): KbStore {
+export function logDbMemoryStore(handle: Database): MemoryStore {
   const upsert = handle.prepare(`INSERT INTO kbArticles (${ARTICLE_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET kind = excluded.kind, title = excluded.title, body = excluded.body, source = excluded.source, tags = excluded.tags, author = excluded.author, contentHash = excluded.contentHash, syncedAt = excluded.syncedAt`)
   const insertChunk = handle.prepare('INSERT OR REPLACE INTO kbChunks (id, key, kind, title, source, text, contentHash, model, vector) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
   const deleteChunks = handle.prepare('DELETE FROM kbChunks WHERE key = ?')
-  const saveAll = handle.transaction((items: { article: KbArticle; hash: string }[], syncedAt: string) =>
+  const saveAll = handle.transaction((items: { article: MemoryArticle; hash: string }[], syncedAt: string) =>
     items.map(({ article, hash }) => {
       upsert.run(article.key, article.kind, article.title, article.body, article.source, JSON.stringify(article.tags), article.author, hash, syncedAt)
       return { ...article, hash, syncedAt }
     }),
   )
-  const putAll = handle.transaction((article: KbStoredArticle, model: string, chunks: KbChunk[], vectors: Float32Array[]) => {
+  const putAll = handle.transaction((article: MemoryStoredArticle, model: string, chunks: MemoryChunk[], vectors: Float32Array[]) => {
     deleteChunks.run(article.key)
     chunks.forEach((chunk, i) => insertChunk.run(chunk.id, chunk.key, chunk.kind, chunk.title, chunk.source, chunk.text, article.hash, model, vectorBytes(vectors[i])))
   })
@@ -98,7 +98,7 @@ export function logDbKbStore(handle: Database): KbStore {
   }
 }
 
-export function kbChunkCount(handle: Database): number | null {
+export function memoryChunkCount(handle: Database): number | null {
   const table = handle.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'kbChunks'").get()
   if (!table) return null
   return (handle.prepare('SELECT COUNT(*) AS n FROM kbChunks').get() as { n: number }).n

@@ -1,13 +1,13 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { basename, join, relative, sep } from 'node:path'
-import { PAGE_STATES } from '../../../browser/flow/helpers/pageState'
-import type { FacebookAccount } from '../../../platformKit/socialAccount/types'
+import { PAGE_STATES } from '../../browser/flow/helpers/pageState'
+import type { FacebookAccount } from '../../platformKit/socialAccount/types'
 import { scrubSecrets } from './scrub'
-import type { KbArticle, KbKind, KbSources } from '../types'
+import type { MemoryArticle, MemoryKind, MemorySources } from '../types'
 
 const SKIPPED_DOCS = [/^docs\/vendors\//, /Enforcement/i]
 
-function article(key: string, kind: KbKind, title: string, body: string, source: string, tags: string[] = []): KbArticle {
+function article(key: string, kind: MemoryKind, title: string, body: string, source: string, tags: string[] = []): MemoryArticle {
   return { key, kind, title: title.trim().slice(0, 200), body: scrubSecrets(body.trim()), source, tags, author: 'sync' }
 }
 
@@ -51,11 +51,11 @@ function walk(dir: string, keep: (path: string) => boolean): string[] {
 
 const posix = (path: string) => path.split(sep).join('/')
 
-export function collectRules(repo: string): KbArticle[] {
+export function collectRules(repo: string): MemoryArticle[] {
   const file = join(repo, 'AGENTS.md')
   if (!existsSync(file)) return []
   const text = readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
-  const out: KbArticle[] = []
+  const out: MemoryArticle[] = []
   const hard = text.indexOf('\n## Hard rules')
   const rulesText = hard >= 0 ? text.slice(hard, text.indexOf('\n## ', hard + 5) > 0 ? text.indexOf('\n## ', hard + 5) : undefined) : ''
   for (const m of rulesText.matchAll(/^(\d+)\. (\d{4}-\d{2}-\d{2}) · ([\s\S]*?)(?=^\d+\. \d{4}-\d{2}-\d{2} · |(?![\s\S]))/gm)) {
@@ -69,7 +69,7 @@ export function collectRules(repo: string): KbArticle[] {
   return out
 }
 
-export function collectSkills(repo: string): KbArticle[] {
+export function collectSkills(repo: string): MemoryArticle[] {
   const dir = join(repo, 'skills')
   if (!existsSync(dir)) return []
   return readdirSync(dir)
@@ -81,7 +81,7 @@ export function collectSkills(repo: string): KbArticle[] {
     })
 }
 
-export function collectDocs(repo: string): KbArticle[] {
+export function collectDocs(repo: string): MemoryArticle[] {
   const root = join(repo, 'docs')
   return walk(root, (path) => path.endsWith('.md'))
     .map((path) => posix(relative(repo, path)))
@@ -89,13 +89,13 @@ export function collectDocs(repo: string): KbArticle[] {
     .map((path) => {
       const text = readFileSync(join(repo, path), 'utf8')
       const heading = /^#\s+(.+)$/m.exec(text)?.[1] ?? basename(path, '.md')
-      const kind: KbKind = path.startsWith('docs/infra/') ? 'infra' : 'doc'
+      const kind: MemoryKind = path.startsWith('docs/infra/') ? 'infra' : 'doc'
       const area = path.split('/').slice(1, -1)
       return article(`doc:${path}`, kind, heading, text, path, area.length ? area : ['docs'])
     })
 }
 
-export function collectMemories(memoryRoot: string | null): KbArticle[] {
+export function collectMemories(memoryRoot: string | null): MemoryArticle[] {
   if (!memoryRoot || !existsSync(memoryRoot)) return []
   return readdirSync(memoryRoot).flatMap((project) => {
     const dir = join(memoryRoot, project, 'memory')
@@ -112,7 +112,7 @@ export function collectMemories(memoryRoot: string | null): KbArticle[] {
   })
 }
 
-export function collectPageStates(): KbArticle[] {
+export function collectPageStates(): MemoryArticle[] {
   return PAGE_STATES.map((s) =>
     article(
       `pageState:${s.id}`,
@@ -125,7 +125,7 @@ export function collectPageStates(): KbArticle[] {
   )
 }
 
-export function collectAccounts(accounts: readonly FacebookAccount[]): KbArticle[] {
+export function collectAccounts(accounts: readonly FacebookAccount[]): MemoryArticle[] {
   return accounts.map((a) => {
     const lines = [
       `Account: ${a.accountName}${a.label && a.label !== a.accountName ? ` (${a.label})` : ''}`,
@@ -149,7 +149,7 @@ export function collectAccounts(accounts: readonly FacebookAccount[]): KbArticle
   })
 }
 
-export function collectAll(sources: KbSources, accounts: readonly FacebookAccount[] = []): KbArticle[] {
+export function collectAll(sources: MemorySources, accounts: readonly FacebookAccount[] = []): MemoryArticle[] {
   const all = [...collectRules(sources.repo), ...collectSkills(sources.repo), ...collectDocs(sources.repo), ...collectMemories(sources.memoryRoot), ...collectPageStates(), ...collectAccounts(accounts)]
   const seen = new Set<string>()
   return all.filter((a) => a.body && !seen.has(a.key) && (seen.add(a.key), true))

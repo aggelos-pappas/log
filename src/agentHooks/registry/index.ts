@@ -19,7 +19,7 @@ const LIVE_LOGS = "scripts/hooks/liveLogs.ts";
 const STORAGE = "scripts/hooks/storage.ts";
 const ENGINES = "scripts/hooks/engines.ts";
 const INBOX = "scripts/hooks/inbox.ts";
-const KNOWLEDGE = "scripts/hooks/knowledge.ts";
+const MEMORY = "scripts/hooks/knowledge.ts";
 const QUEUE = "scripts/hooks/queue.ts";
 const X_LIVE = "scripts/hooks/xLive.ts";
 const CHAT_NAMES = "scripts/hooks/chatNames.ts";
@@ -35,7 +35,7 @@ export const AGENT_HOOKS: readonly AgentHook[] = [
   { event: "UserPromptSubmit", script: STORAGE, timeout: 30, why: "the same storage check with each of the owner's prompts (measured at most every 15 minutes), and once per session a newer log release to ask the owner about (docs/updates.md)" },
   { event: "SessionStart", matcher: "startup|resume|clear|compact", script: ENGINES, timeout: 10, why: "which commands run on the direct-API engine (from DIRECT_ROUTES) and each account's session state and governor use, so a session coming back from compaction knows the engines; and, loudly, when the log MCP server runs older code than the checkout, and which code files have uncommitted local changes (rule 163)" },
   { event: "UserPromptSubmit", script: ENGINES, timeout: 10, why: "the same engine line with the owner's prompt, only when an account's session state, its governor use or the MCP server's freshness changed" },
-  { event: "SessionStart", matcher: "startup|resume|clear|compact", script: KNOWLEDGE, timeout: 10, why: "the knowledge base is there and how to search it and save to it, with how many chunks Redis holds, so a session looks things up before it guesses" },
+  { event: "SessionStart", matcher: "startup|resume|clear|compact", script: MEMORY, timeout: 10, why: "log's memory is there and how to search it and save to it, with how many chunks log.db holds, so a session looks things up before it guesses" },
   { event: "SessionStart", matcher: "startup|resume|clear|compact", script: INBOX, timeout: 15, why: "anyone who wrote to a signed-in account's inbox since the last look (every platform's inbox, incl. X Chat, read in the background every 4 to 8 minutes, and what each account's live watcher pushed: X Chat's socket, Discord's gateway, Slack's websocket in every workspace, rule 123), said loudly so a reply is never missed; and, from each X account's local inbox store with no network, who wrote last and is waiting on a reply" },
   { event: "UserPromptSubmit", script: INBOX, timeout: 15, why: "the same inbox check with each of the owner's prompts: a poll starts when one is due, and new messages from the last poll are put in front of the agent" },
   { event: "PostToolUse", matcher: TOOL_MATCHER, script: INBOX, timeout: 15, why: "the same inbox check after a log tool or shell call, so a reply that lands mid-task is said at once" },

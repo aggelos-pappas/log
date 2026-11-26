@@ -38,7 +38,7 @@ log keeps every account session (cookies, the Discord token in storage origins, 
 
 ## Not covered yet
 
-- log's own sign-in tokens (`auth/sessions.json`) and MCP OAuth tokens (`mcp/oauth.json`): still 0600 files; `log storage status` lists them.
+- `auth/sessions.json` and `mcp/oauth.json`: leftover token files from the Twenty sign-in that `log login` used before it was removed. log no longer reads or writes them; `log storage status` lists them as leftovers that are safe to delete.
 - Persistent browser profiles (Camoufox, Brave) and Playwright `storage_state` files: they rely on OS file permissions and full-disk encryption (BitLocker, FileVault, LUKS).
 - A long-running engine host still receives a 0600 temp cookies file, so hosts started by older code keep working.
 - The direct-API engine (`python/directApi`) still reads a temp cookies file.

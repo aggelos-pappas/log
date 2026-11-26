@@ -31,6 +31,6 @@ export const TOOL_NAME = /^[a-z][a-zA-Z0-9]*$/
 
 export const DEFAULT_TOOL_AREA = 'inbox'
 
-export const DEFAULT_TOOL_GUIDE = 'knowledgeAndSearch'
+export const DEFAULT_TOOL_GUIDE = 'memoryAndSearch'
 
 export const NEW_TOOL_RULES: readonly number[] = [30, 163]
