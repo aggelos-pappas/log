@@ -10,6 +10,7 @@ import { queueLockHolder, queueLogLines, takeQueueLock } from "../../twitter/que
 import { runCli } from "../runner/index.ts";
 import type { CommandContext } from "../runner/types.ts";
 import { gateDeps } from "./helpers/voice.ts";
+import { ownActivityDeps } from "./helpers/queue.ts";
 import { EXPECTED } from "./queueRunExpected.ts";
 
 const START = Date.parse("2026-11-14T10:00:00Z");
@@ -111,6 +112,8 @@ afterAll(() => {
 });
 
 beforeEach(() => {
+  ownActivityDeps.refresh = async () => ({ ok: true, fresh: true, added: 0 });
+  ownActivityDeps.changes = () => [];
   dir = mkdtempSync(join(root, "q"));
   process.env.LOG_INBOX_STATE = root;
   delete process.env.LOG_DB;
@@ -260,5 +263,24 @@ describe("log twitter queue run --live, recorded end to end on a stubbed engine 
     const path = queueFile(dir, "reply", 2, [{ n: 1, kind: "reply", s: 10 }, { n: 2, kind: "reply", s: 40 }], 20);
     await cli(["twitter", "queue", "run", path]);
     await check("dryRun", path);
+  });
+
+  test("what the owner did with them by hand holds that one, and a failed check holds rather than sends blind", async () => {
+    const path = queueFile(dir, "reply", 2, [{ n: 1, kind: "reply", s: 10 }, { n: 2, kind: "reply", s: 40 }], 20);
+    gateDeps.gate = async (_context, send) => ({ ok: true, line: `voice gate: passed for ${send.to} (test)` });
+    ownActivityDeps.changes = (_account, who) => (who.handle === "fakeBird" ? ["by hand, outside log: he replied to @fakeBird: \"already on it\""] : []);
+    await cli(run(path));
+    const first = loadQueue(path).items;
+    expect(first.find((i) => i.handle === "fakeBird")?.status).toBe("held");
+    expect(first.find((i) => i.handle === "fakeBird")?.heldFor).toEqual(["by hand, outside log: he replied to @fakeBird: \"already on it\""]);
+    expect(first.find((i) => i.handle !== "fakeBird")?.status).toBe("sent");
+
+    const blind = queueFile(mkdtempSync(join(root, "q")), "reply", 1, [{ n: 1, kind: "reply", s: 10 }], 20);
+    ownActivityDeps.changes = () => [];
+    ownActivityDeps.refresh = async () => ({ ok: false, fresh: false, added: 0, refused: "governorBlocked: 500/500" });
+    await cli(run(blind));
+    const held = loadQueue(blind).items[0];
+    expect(held.status).toBe("held");
+    expect(held.heldFor).toEqual(["couldn't check what the owner did by hand on X: governorBlocked: 500/500"]);
   });
 });

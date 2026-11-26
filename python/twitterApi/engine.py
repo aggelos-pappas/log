@@ -25,7 +25,7 @@ import secretStore
 from identity import accountRoute as _route
 
 SECRET_KEYS = ("auth_token", "ct0", "twid", "kdt", "att", "password", "cookie")
-READS = ("ping", "follows", "inbox", "followers", "userPosts", "notifications", "postEngagers", "webClient", "xchatContacts", "xchatUnlock", "xchatWatch", "lists")
+READS = ("ping", "follows", "inbox", "followers", "userPosts", "notifications", "postEngagers", "webClient", "xchatContacts", "xchatUnlock", "xchatWatch", "lists", "ownActivity")
 WRITES = ("reply", "quote", "like", "repost", "delete", "dm", "follow", "post", "react", "listCreate", "listAdd", "xchatVoice")
 ACTIONS = READS + WRITES
 
@@ -1471,12 +1471,54 @@ async def badge_poll(client: Any, cookies: dict[str, str], spec: dict[str, Any],
         await asyncio.sleep(every * random.uniform(0.95, 1.05))
 
 
+def own_activity_path(account: str) -> Path:
+    return state_dir(account) / "ownActivity.json"
+
+
+async def own_activity(client: Any, cookies: dict[str, str], spec: dict[str, Any], governor: Any = None) -> dict[str, Any]:
+    from twitterApi.ownActivity import KINDS, new_activity, reader_for
+
+    me = own_user_id(cookies) or ""
+    kinds = tuple(k for k in (spec.get("kinds") or KINDS) if k in KINDS) or KINDS
+
+    def count() -> None:
+        if governor is not None:
+            governor.before_request(is_mutation=False, quiet=True)
+
+    found = await new_activity(reader_for(client, me), own_activity_path(str(spec["account"])), count, kinds)
+    return {"ok": True, "loginState": "loggedIn", "userId": me, "kinds": list(kinds), **found}
+
+
+async def own_poll(client: Any, cookies: dict[str, str], spec: dict[str, Any], governor: Any) -> None:
+    from twitterApi.ownActivity import next_wait
+
+    step = 0
+    await asyncio.sleep(60)
+    while True:
+        found = False
+        try:
+            answer = await asyncio.wait_for(own_activity(client, cookies, spec, governor), timeout=BADGE_POLL_TIMEOUT_SECONDS * 3)
+            for item in answer["items"]:
+                live_line({"type": "ownActivity", **item})
+            found = bool(answer["items"])
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            error = (redact(e, cookies) or type(e).__name__)[:200]
+            live_line({"type": "ownActivityRefused", "error": error})
+            if not network_only(error):
+                return
+        wait, step = next_wait(step, found)
+        await asyncio.sleep(wait)
+
+
 async def xchat_watch(client: Any, cookies: dict[str, str], spec: dict[str, Any], governor: Any = None) -> dict[str, Any]:
-    poll = asyncio.create_task(badge_poll(client, cookies, spec, governor)) if spec.get("live") is not False else None
+    live = spec.get("live") is not False
+    polls = [asyncio.create_task(badge_poll(client, cookies, spec, governor)), asyncio.create_task(own_poll(client, cookies, spec, governor))] if live else []
     try:
         return await xchat_stream(client, cookies, spec)
     finally:
-        if poll is not None:
+        for poll in polls:
             poll.cancel()
 
 
@@ -1878,6 +1920,8 @@ async def act(client: Any, cookies: dict[str, str], spec: dict[str, Any], govern
         return await web_client(client, spec)
     if action == "xchatContacts":
         return await xchat_contacts(client, cookies)
+    if action == "ownActivity":
+        return await own_activity(client, cookies, spec, governor)
     if action == "xchatUnlock":
         if not spec.get("pinPath"):
             return {"ok": False, "code": "xchatPinMissing", "detail": "no PIN was given to check", "loginState": "loggedIn"}

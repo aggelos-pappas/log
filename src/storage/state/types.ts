@@ -44,6 +44,7 @@ export type StateScope =
   | 'factTraining'
   | 'botBackfill'
   | 'byHandSeen'
+  | 'byHandOwnSeen'
 
 export interface StateRow<T> {
   body: T

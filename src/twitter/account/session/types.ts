@@ -11,7 +11,7 @@ export interface TwitterGovernor {
   cooldown_remaining_s: number
 }
 
-export type TwitterAction = 'ping' | 'follows' | 'inbox' | 'followers' | 'userPosts' | 'notifications' | 'postEngagers' | 'webClient' | 'xchatContacts' | 'xchatUnlock' | 'xchatWatch' | 'reply' | 'quote' | 'like' | 'repost' | 'delete' | 'dm' | 'follow' | 'post' | 'react' | 'lists' | 'listCreate' | 'listAdd'
+export type TwitterAction = 'ping' | 'follows' | 'inbox' | 'followers' | 'userPosts' | 'notifications' | 'postEngagers' | 'webClient' | 'xchatContacts' | 'xchatUnlock' | 'xchatWatch' | 'reply' | 'quote' | 'like' | 'repost' | 'delete' | 'dm' | 'follow' | 'post' | 'react' | 'lists' | 'listCreate' | 'listAdd' | 'ownActivity'
 
 export const TWITTER_WRITES: readonly TwitterAction[] = ['reply', 'quote', 'like', 'dm', 'follow', 'post', 'react', 'listCreate', 'listAdd']
 

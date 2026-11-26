@@ -89,6 +89,7 @@ export const COMMAND_INDEX: CommandIndexEntry[] = [
   { name: "transcribe", platform: "any", module: "src/cli/transcribe/index.ts", exportName: "transcribeCommand" },
   { name: "followers", platform: "twitter", module: "src/cli/twitter/index.ts", exportName: "followersCommand" },
   { name: "posts", platform: "twitter", module: "src/cli/twitter/index.ts", exportName: "postsCommand" },
+  { name: "own", platform: "twitter", module: "src/cli/twitter/index.ts", exportName: "ownCommand" },
   { name: "notifications", platform: "twitter", module: "src/cli/twitter/index.ts", exportName: "notificationsCommand" },
   { name: "reply", platform: "twitter", module: "src/cli/twitter/index.ts", exportName: "replyCommand" },
   { name: "quote", platform: "twitter", module: "src/cli/twitter/index.ts", exportName: "quoteCommand" },

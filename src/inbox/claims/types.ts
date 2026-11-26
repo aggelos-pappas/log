@@ -22,7 +22,7 @@ export interface ChatRef {
 
 export interface ActionRecord {
   at: string
-  kind: 'claimed' | 'renewed' | 'released' | 'refused' | 'sent' | 'interrupted' | 'failed' | 'intent' | 'partSent'
+  kind: 'claimed' | 'renewed' | 'released' | 'refused' | 'sent' | 'interrupted' | 'failed' | 'intent' | 'partSent' | 'logWrite'
   platform: string
   account: string
   conversationId: string

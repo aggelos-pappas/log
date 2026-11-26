@@ -1,5 +1,6 @@
 import { findTwitterAccount, recordTwitterSession, twitterGate } from "../../../twitter/account/session/index.ts";
 import type { TwitterAccount, TwitterEngineRun, TwitterEngineSpec } from "../../../twitter/account/session/index.ts";
+import { recordLogWrite } from "../../../twitter/ownActivity/index.ts";
 import { refuse } from "../../runner/helpers/index.ts";
 import type { CommandContext, CommandResult } from "../../runner/types.ts";
 
@@ -13,6 +14,7 @@ export async function openTwitterAccount(context: CommandContext, label: string,
   if (!direct) return { ok: false, result: { code: 1, stderr: `log ${label}: the direct-API engine isn't wired in this context` } };
   const engine: Engine = async (spec) => {
     const run = await direct(account, spec);
+    recordLogWrite(account.accountName, spec, run);
     for (const line of await recordTwitterSession(context.twenty, account, run, context.now?.() ?? new Date())) context.err(line);
     return run;
   };

@@ -113,7 +113,7 @@ Each tool's description names its guide. Load it with `getGuide({ topic })` befo
 | `facebookGroups` | Facebook groups: joining and answering their questions, reading posts and members, and serving OpenMagpie's polls |
 | `xInbox` | Reading an X account's DMs and X Chat as one inbox, synced by sequence id, and watching X Chat live |
 | `xSending` | Sending as an X account: original posts with a video or images, dms one message per line, replies, quotes, likes, deleting a post, follows, lists, queues and voice notes |
-| `xAccount` | An X account's session: saving and checking its cookies, who follows whom, its notifications (who liked, reposted, replied to, quoted or followed it), and reading one person's posts |
+| `xAccount` | An X account's session: saving and checking its cookies, who follows whom, its notifications (who liked, reposted, replied to, quoted or followed it), what the owner did on it himself by hand, and reading one person's posts |
 | `discord` | A Discord account: session, DMs, servers, forums, search, reading, watching, sending, friend requests and deleting |
 | `reddit` | A Reddit account: its session, reading subreddits, the home feed and posts with their comments, and posting, commenting and voting |
 | `slack` | A Slack account: its session and workspaces, chats, reading, the live websocket watch and sending |

@@ -18,12 +18,14 @@ flowchart TD
   s2["2. The first time only, page back through the history<br/><i>twitterNotifications</i>"]
   s3["3. Unroll a post: read its whole likers and reposters lists, past…<br/><i>twitterNotifications</i>"]
   s4["4. Ask what you need from what is kept, calling nothing<br/><i>twitterNotifications</i>"]
-  s5["5. Act on who engaged through the page for that job<br/><i>engagerDms.md, engagementReplies.md, ne…</i>"]
+  s5["5. What the owner did himself, outside log, so nobody gets the sam…<br/><i>twitterOwn</i>"]
+  s6["6. Act on who engaged through the page for that job<br/><i>engagerDms.md, engagementReplies.md, ne…</i>"]
   s0 --> s1
   s1 --> s2
   s2 --> s3
   s3 --> s4
   s4 --> s5
+  s5 --> s6
 ```
 <!-- /stepsDiagram -->
 
@@ -34,7 +36,8 @@ flowchart TD
 | 2 | The first time only, page back through the history | `twitterNotifications` { account, full: true } | `historyDone`, or run it again later for the rest |
 | 3 | Unroll a post: read its whole likers and reposters lists, past the few a notification names | `twitterNotifications` { account, post } for one post, or { account, full: true, since } for every post with an "and N others" notification | `unroll.state` is `done` and the post's `likes` and `reposts` say `readToTheEnd`; `stopped` means run it again later for the rest |
 | 4 | Ask what you need from what is kept, calling nothing | `twitterNotifications` { account, stored: true, type, since, post } | the rows, `counts` by kind, `engagerPosts` for a post and `engagers` ranked by how much each person did |
-| 5 | Act on who engaged through the page for that job | [engagerDms.md](engagerDms.md), [engagementReplies.md](engagementReplies.md), [networkMaxing.md](networkMaxing.md) | that page's own done |
+| 5 | What the owner did himself, outside log, so nobody gets the same thing twice | `twitterOwn` { account, with } | his own new items, or none |
+| 6 | Act on who engaged through the page for that job | [engagerDms.md](engagerDms.md), [engagementReplies.md](engagementReplies.md), [networkMaxing.md](networkMaxing.md) | that page's own done |
 
 Each row is one person doing one thing: `kind` (like, repost, reply, quote, follow, mention, other), `handle` and `userId`, `followsYou`, which of the account's posts (`postId`, `postUrl`, `postText`), when (`at`), and for a reply or quote their own tweet (`tweetUrl`, `text`). `type` is likes, reposts, replies, quotes, follows or all; `post` takes a post id or url. `source` says where the row came from: `notification`, or `engagements` for a person only the post's likers or reposters list names (their `at` is null, because the list gives no time, so `since` leaves them out).
 

@@ -2640,6 +2640,13 @@ export const ERROR_CATALOG = {
     raisedIn: ['relate/graph'],
     action: 'Run log relate build to write a fresh graph, then ask again.'
   },
+  ownActivityRefused: {
+    layer: 'tool',
+    meaning: "The platform didn't answer the read of the owner's own replies, likes or follows, so what he did by hand is unknown.",
+    retryable: true,
+    raisedIn: ['twitter/ownActivity'],
+    action: "Read the platform's answer: a governor refusal waits for tomorrow's budget, a 429 waits for its reset, a dead session needs the account's session check. A queue holds its sends until this read works.",
+  },
 } as const satisfies Record<string, ErrorEntry>
 
 export type ErrorCode = keyof typeof ERROR_CATALOG
