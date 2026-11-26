@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { isPlatform } from "../../../cli/runner/helpers/platforms.ts";
+import { getState, putState } from "../../../storage/state/index.ts";
 
 export interface PlayStep {
   n: string;
@@ -46,9 +47,47 @@ export const LIVE_TOOL_SUFFIX = "Live";
 
 const STEP_TEXT_MAX = 160;
 
-const plays = new Map<string, ActivePlay>();
+const PLAY_STORE_KEY = "all";
 
-const defaults = new Map<string, string>();
+class KeptMap<V> extends Map<string, V> {
+  constructor(private readonly onChange: () => void) {
+    super();
+  }
+  override set(key: string, value: V): this {
+    super.set(key, value);
+    this.onChange?.();
+    return this;
+  }
+  override delete(key: string): boolean {
+    const had = super.delete(key);
+    if (had) this.onChange();
+    return had;
+  }
+  override clear(): void {
+    super.clear();
+    this.onChange();
+  }
+}
+
+function keepPlays(): void {
+  try {
+    putState("activePlays", PLAY_STORE_KEY, { plays: [...plays], defaults: [...defaults] });
+  } catch {}
+}
+
+const plays = new KeptMap<ActivePlay>(keepPlays);
+
+const defaults = new KeptMap<string>(keepPlays);
+
+function restorePlays(): void {
+  try {
+    const kept = getState<{ plays: [string, ActivePlay][]; defaults: [string, string][] }>("activePlays", PLAY_STORE_KEY)?.body;
+    for (const [handle, play] of kept?.plays ?? []) Map.prototype.set.call(plays, handle, play);
+    for (const [owner, handle] of kept?.defaults ?? []) Map.prototype.set.call(defaults, owner, handle);
+  } catch {}
+}
+
+restorePlays();
 
 const cellsOf = (line: string) => line.split("|").slice(1, -1).map((cell) => cell.trim());
 
@@ -126,7 +165,10 @@ export function activePlay(scope: PlayScope = processPlayScope(), given: unknown
 }
 
 export function touchPlay(play: ActivePlay | null, now: Date = new Date()): void {
-  if (play && plays.get(play.handle) === play) play.usedAt = now.toISOString();
+  if (play && plays.get(play.handle) === play) {
+    play.usedAt = now.toISOString();
+    keepPlays();
+  }
 }
 
 export function clearActivePlay(scope?: PlayScope, given: unknown = null): boolean {

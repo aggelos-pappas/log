@@ -9,6 +9,11 @@ import { watermarkLine, watermarkReadingOf } from "../../twitter/copy/watermark/
 import { roomFromRead } from "../../voice/room/index.ts";
 import { findDiscordAccount, recordDiscordSession, discordGate } from "../../discord/account/session/index.ts";
 import { labelOf, matchChat, normalizedName } from "../../discord/chat/match/index.ts";
+const withChannels = (account: string) => (chats: DiscordChat[], said: string) => {
+  const kept = new Map(chats.map((c) => [c.id, c.name?.trim().toLowerCase() ?? ""]));
+  const aliases = savedServerChannels("discord", account).filter((c) => c.name?.trim() && kept.get(c.id) !== c.name.trim().toLowerCase());
+  return matchChat([...chats, ...aliases], said);
+};
 import { closestNamed } from "../../inbox/nameHints/index.ts";
 import { embeddableXLinks } from "../../discord/chat/embed/index.ts";
 import { addPending, incomingSince, interruptedLines, watchLogMark } from "../../inbox/watch/index.ts";
@@ -22,7 +27,7 @@ import type { ReadMessage } from "../../inbox/catchUp/index.ts";
 import { guardSend } from "../../inbox/claims/index.ts";
 import type { SendGuard } from "../../inbox/claims/index.ts";
 import { confirmParts, passGate, rethrowFailure, runAction } from "../../platformKit/action/index.ts";
-import { cachedChatList, chatMessageCount, chatMessages, findInChatList, isVisualAttachment, markBackfilled, mediaNotSaved, readSourceFor, sourceLine } from "../../inbox/dbRead/index.ts";
+import { cachedChatList, savedServerChannels, chatMessageCount, chatMessages, findInChatList, isVisualAttachment, markBackfilled, mediaNotSaved, readSourceFor, sourceLine } from "../../inbox/dbRead/index.ts";
 import type { ReadSource } from "../../inbox/dbRead/index.ts";
 import type { MessageAttachment } from "../../inbox/catchUp/index.ts";
 import type { InboxMessage } from "../../inbox/watch/index.ts";
@@ -288,7 +293,7 @@ export const discordReadCommand: Command = {
       let target = channel;
       let kind = cachedChatList<DiscordChat>("discord", account.accountName)?.find((c) => c.id === channel)?.kind ?? (chatMessageCount("discord", account.accountName, channel) ? "dm" : "channel");
       if (!/^\d{15,22}$/.test(channel)) {
-        const looked = findInChatList<DiscordChat, ReturnType<typeof matchChat>>("discord", account.accountName, channel, matchChat, () => {
+        const looked = findInChatList<DiscordChat, ReturnType<typeof matchChat>>("discord", account.accountName, channel, withChannels(account.accountName), () => {
           const listed = direct(account, { action: "chats" });
           return listed.answer.ok ? { ok: true, chats: (listed.answer.chats as DiscordChat[] | undefined) ?? [] } : { ok: false, detail: `${listed.answer.code}: ${listed.answer.detail ?? ""}` };
         });
@@ -532,7 +537,7 @@ export const discordDeleteCommand: Command = {
       if (!context.directDiscord) return { code: 1, stderr: "log discord delete: the direct-API engine isn't wired in this context" };
       let target = channel;
       if (!/^\d{15,22}$/.test(channel)) {
-        const looked = findInChatList<DiscordChat, ReturnType<typeof matchChat>>("discord", account.accountName, channel, matchChat, () => {
+        const looked = findInChatList<DiscordChat, ReturnType<typeof matchChat>>("discord", account.accountName, channel, withChannels(account.accountName), () => {
           const listed = context.directDiscord!(account, { action: "chats" });
           return listed.answer.ok ? { ok: true, chats: (listed.answer.chats as DiscordChat[] | undefined) ?? [] } : { ok: false, detail: `${listed.answer.code}: ${listed.answer.detail ?? ""}` };
         });
@@ -763,7 +768,7 @@ export const discordSendCommand: Command = {
         context.err(`${account.accountName}: opened the DM with ${label}`);
       } else if (!/^\d{15,22}$/.test(channel)) {
         if (!context.directDiscord) return { code: 1, stderr: "log discord send: the direct-API engine isn't wired in this context" };
-        const looked = findInChatList<DiscordChat, ReturnType<typeof matchChat>>("discord", account.accountName, channel, matchChat, () => {
+        const looked = findInChatList<DiscordChat, ReturnType<typeof matchChat>>("discord", account.accountName, channel, withChannels(account.accountName), () => {
           const listed = context.directDiscord!(account, { action: "chats" });
           return listed.answer.ok ? { ok: true, chats: (listed.answer.chats as DiscordChat[] | undefined) ?? [] } : { ok: false, detail: `${listed.answer.code}: ${listed.answer.detail ?? ""}` };
         });
@@ -909,7 +914,7 @@ function serverByName(direct: DirectDiscord, account: DiscordAccount, said: stri
 }
 
 function channelByName(direct: DirectDiscord, account: DiscordAccount, said: string) {
-  return findInChatList<DiscordChat, ReturnType<typeof matchChat>>("discord", account.accountName, said, matchChat, () => {
+  return findInChatList<DiscordChat, ReturnType<typeof matchChat>>("discord", account.accountName, said, withChannels(account.accountName), () => {
     const listed = direct(account, { action: "chats" });
     return listed.answer.ok ? { ok: true, chats: (listed.answer.chats as DiscordChat[] | undefined) ?? [] } : { ok: false, detail: `${listed.answer.code}: ${listed.answer.detail ?? ""}` };
   });

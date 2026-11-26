@@ -123,7 +123,12 @@ export function readConventions(loaded: LoadedConventions, text: string, embeddi
   return { band, words, probability: probability === null ? null : Number(probability.toFixed(4)), threshold: calibration && !abstain ? calibration.threshold : null, abstain, flagged: overLine || flags.some((f) => f.kind === 'habit'), flags, hits, value: value === null ? null : Number(value.toFixed(4)), ms: Number((options.ms ?? performance.now() - started).toFixed(2)) }
 }
 
-export async function readConventionsOf(loaded: LoadedConventions, texts: readonly string[], embed: (texts: string[]) => Promise<ArrayLike<number>[]>): Promise<ConventionsReading[]> {
+export function withoutLinks(text: string): string {
+  return text.split(/\r?\n/).map((line) => line.replace(/https?:\/\/\S+/g, ' ').replace(/[ \t]+/g, ' ').trim()).filter(Boolean).join('\n')
+}
+
+export async function readConventionsOf(loaded: LoadedConventions, linked: readonly string[], embed: (texts: string[]) => Promise<ArrayLike<number>[]>): Promise<ConventionsReading[]> {
+  const texts = linked.map(withoutLinks)
   const repeats = repeatedOpeners(texts)
   return Promise.all(texts.map(async (text, i) => {
     const started = performance.now()

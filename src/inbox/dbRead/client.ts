@@ -98,6 +98,15 @@ export function cachedChatList<T>(platform: string, account: string, now: number
   return kept && now - kept.savedAt < CHAT_LIST_FRESH_MS ? kept.chats : null
 }
 
+export function savedServerChannels(platform: string, account: string): { id: string; kind: string; name: string | null; members: string[] }[] {
+  try {
+    const rows = db().prepare("SELECT conversationId AS id, kind, name FROM chats WHERE platform = ? AND account = ? AND kind IN ('channel', 'thread', 'forumPost') AND name IS NOT NULL AND name <> ''").all(platform, account) as { id: string; kind: string; name: string }[]
+    return rows.map((r) => ({ ...r, members: [] }))
+  } catch {
+    return []
+  }
+}
+
 export function saveChatList<T>(platform: string, account: string, chats: readonly T[], now: number = Date.now()): void {
   putState('chatList', `${platform}:${account}`, { savedAt: now, chats }, now)
 }

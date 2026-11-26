@@ -98,6 +98,13 @@ export function voiceRequestOf(draft: VoiceDraft, guide: string): DecisionReques
   }
 }
 
+export function opensOnPostOf(text: string, to: string): boolean {
+  const first = text.trim().split(/\r?\n/)[0]?.trim() ?? ''
+  const them = to.replace(/^@/, '').toLowerCase()
+  const post = /^https?:\/\/(?:www\.)?(?:x|twitter)\.com\/([^/\s]+)\/status\/\d+/i.exec(first)
+  return !!post && post[1].toLowerCase() === them
+}
+
 export function voiceReadingOf(draft: VoiceDraft, raw: Record<string, unknown>, model: string | null, suffix = ''): VoiceReading {
   const answers = raw as Record<string, { noul?: number }>
   const of = (key: string) => answers[`${key}${suffix}`]?.noul ?? 0
@@ -105,6 +112,7 @@ export function voiceReadingOf(draft: VoiceDraft, raw: Record<string, unknown>, 
   const publicReply = draft.publicReply === true
   const alreadyTalked = alreadyTalkedIn(draft)
   const coldDm = !alreadyTalked && !publicReply
+  const opensOnTheirPost = coldDm && opensOnPostOf(draft.text, draft.to)
   const voice = of('voice')
   const inContext = of('inContext')
   const friendLike = of('friendLike')
@@ -114,7 +122,7 @@ export function voiceReadingOf(draft: VoiceDraft, raw: Record<string, unknown>, 
   const fitsTheRoom = draft.room ? of('fitsTheRoom') : null
   const watermark = watermarkReadingOf(draft.text)
   const answerRequired = !nobodyToAnswer(draft) && (draft.cardAnswerOwed ?? !nothingWaiting(draft))
-  return { firstContact: coldDm, to: draft.to, voice, inContext, answerRequired, friendLike, openerOnly, toThem, buildsOn, fitsTheRoom, neverSays, watermark, pass: !neverSays.length && watermark.level !== 'artifacts' && voice >= VOICE_PASS && (!answerRequired || inContext >= CONTEXT_PASS) && friendLike >= CONTEXT_PASS && openerOnly >= CONTEXT_PASS && (toThem === null || toThem >= CONTEXT_PASS) && (buildsOn === null || buildsOn >= CONTEXT_PASS) && (fitsTheRoom === null || fitsTheRoom >= CONTEXT_PASS), model }
+  return { firstContact: coldDm, opensOnTheirPost, to: draft.to, voice, inContext, answerRequired, friendLike, openerOnly, toThem, buildsOn, fitsTheRoom, neverSays, watermark, pass: !neverSays.length && watermark.level !== 'artifacts' && voice >= VOICE_PASS && (!answerRequired || inContext >= CONTEXT_PASS) && friendLike >= CONTEXT_PASS && openerOnly >= CONTEXT_PASS && (toThem === null || toThem >= CONTEXT_PASS) && (buildsOn === null || buildsOn >= CONTEXT_PASS) && (fitsTheRoom === null || fitsTheRoom >= CONTEXT_PASS), model }
 }
 
 export async function readVoice(draft: VoiceDraft, guide: string, decide: DecisionsClient): Promise<VoiceReading> {

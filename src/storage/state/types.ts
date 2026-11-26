@@ -1,4 +1,5 @@
 export type StateScope =
+  | 'activePlays'
   | 'postInstallVendors'
   | 'hookMemory'
   | 'lastHook'

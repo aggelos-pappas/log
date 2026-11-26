@@ -51,3 +51,5 @@ export const NEAR_PAIRS = 8
 export const PROFILE_WORDS = 12
 export const VOICE_DEPTH = 400
 export const TIER_ORDER = ['sameChat', 'samePerson', 'samePlatform', 'anywhere'] as const
+
+export const VOICE_INDEX_RETIRE_MS = 120_000
