@@ -1,0 +1,57 @@
+name: roadmap
+
+on:
+  issues:
+    types: [closed, reopened]
+  pull_request_target:
+    types: [closed]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: roadmap
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    env:
+      ROADMAP_ISSUE: "200"
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const roadmap = Number(process.env.ROADMAP_ISSUE)
+            const { owner, repo } = context.repo
+            const { data: issue } = await github.rest.issues.get({ owner, repo, issue_number: roadmap })
+            const lines = (issue.body ?? '').split('\n')
+            const box = /^(\s*[-*] \[)( |x|X)(\] )(.*)$/
+            const refsOf = (text) => [...new Set([...text.matchAll(/(?<![\w/])#(\d+)\b/g)].map((m) => Number(m[1])).filter((n) => n !== roadmap))]
+            const wanted = new Set(lines.flatMap((line) => (box.test(line) ? refsOf(line) : [])))
+            const closed = new Map()
+            for (const n of wanted) {
+              try {
+                const { data } = await github.rest.issues.get({ owner, repo, issue_number: n })
+                closed.set(n, data.state === 'closed')
+              } catch {
+                closed.set(n, false)
+              }
+            }
+            let changed = 0
+            const next = lines.map((line) => {
+              const m = box.exec(line)
+              if (!m) return line
+              const refs = refsOf(m[4])
+              if (!refs.length) return line
+              const done = refs.every((n) => closed.get(n))
+              const mark = done ? 'x' : ' '
+              if ((m[2].toLowerCase() === 'x') === done) return line
+              changed++
+              return `${m[1]}${mark}${m[3]}${m[4]}`
+            })
+            if (!changed) return core.info('roadmap: nothing to tick')
+            await github.rest.issues.update({ owner, repo, issue_number: roadmap, body: next.join('\n') })
+            core.info(`roadmap: ${changed} line(s) ticked or unticked`)
