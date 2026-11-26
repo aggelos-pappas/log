@@ -1,6 +1,6 @@
-# Reading a Discord group chat without Twenty
+# Reading a Discord group chat
 
-Catch up on what was said in a Discord group DM over the last few hours, on the account's own session, with the account kept in a local file instead of Twenty. This page reads and sends nothing. A channel inside a server is read the same way by `"<server> #<channel>"`, but always live from Discord, since log.db keeps only its mentions and replies: see [serverReply](serverReply.md) for how a server channel differs from a group DM.
+Catch up on what was said in a Discord group DM over the last few hours, on the account's own session, with the account kept in the local account store (`~/.logCli/localAccounts.json`). This page reads and sends nothing. A channel inside a server is read the same way by `"<server> #<channel>"`, but always live from Discord, since log.db keeps only its mentions and replies: see [serverReply](serverReply.md) for how a server channel differs from a group DM.
 
 How the owner asks for it: "read the <group> chat over the last <N> hours", "what did <someone> set up in <group>"
 
@@ -13,7 +13,7 @@ Say: **"go on docs/useCases/discord/groupChatRead.md for <group>, last <N> hours
 <!-- stepsDiagram: written by `bun run docs:build` from the steps table below, not edited by hand -->
 ```mermaid
 flowchart TD
-  s0["0. The account is known: a local row if it isn't in Twenty<br/><i>localAccountAdd</i>"]
+  s0["0. The account is known: a row in the local account store<br/><i>localAccountAdd</i>"]
   s1["1. Session check<br/><i>discordSessionCheck</i>"]
   s2["2. If logged out: open the account's own browser, the owner signs…<br/><i>inspectStart, inspectDoLive</i>"]
   s3["3. Find the group or channel by its name<br/><i>discordChats</i>"]
@@ -29,7 +29,7 @@ flowchart TD
 
 | # | Step | Tool | Done when |
 | --- | --- | --- | --- |
-| 0 | The account is known: a local row if it isn't in Twenty | `localAccountAdd` { platform: "discord", account: "<account>", adsPower: "<profileId>" } | `log localAccount list` shows it |
+| 0 | The account is known: a row in the local account store | `localAccountAdd` { platform: "discord", account: "<account>", adsPower: "<profileId>" } | `log localAccount list` shows it |
 | 1 | Session check | `discordSessionCheck` | `loggedIn` |
 | 2 | If logged out: open the account's own browser, the owner signs in, then stop it to save the session | `inspectStart` { account }, then `inspectDoLive` stop | the session check answers `loggedIn` |
 | 3 | Find the group or channel by its name | `discordChats` | the group by its name, with its members; a server channel as "<server> #<channel>" |
@@ -40,7 +40,7 @@ A busy group runs about 100 messages an hour, so a 5 hour window needs a limit n
 
 ## What the runs taught
 
-- **Twenty doesn't have to hold the account.** `LOG_ACCOUNTS=local` leaves Twenty out entirely, and a session captured by `inspectStart` saves back to the local file.
+- **The account lives in the local account store.** `LOG_ACCOUNTS=local` leaves Twenty out entirely, and a session captured by `inspectStart` saves back to the local file.
 - **A 429 stops the read.** The answer keeps what was read and says `stopped`, with Discord's status, and a 429 pauses the account. Nothing retries (rule 94), and no script calls Discord with the account's token. Any refusal stops `log search index` across every chat the same way, keeping what it had read.
 - **A browser profile that won't start for low disk** needs space freed and the browser app restarted, never its cache deleted: that can wipe the session.
 - **A chat is named, never passed by id.** A `discordRead` with a bare id is refused by the chat-names hook: pass "A", "aeo" or "<server> #<channel>", and the tool finds the id in the kept chat list.

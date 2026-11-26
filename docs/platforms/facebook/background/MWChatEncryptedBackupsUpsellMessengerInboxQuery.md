@@ -91,7 +91,7 @@ Whether Messenger's inbox should show the encrypted-backups onboarding or the re
 
 ## What our machine does with it
 
-Nothing reads it directly. The screen it decides is the page state `messengerPinCreate` (or `messengerPinEnter`), which the hook resolves with the recorded flow when the account's PIN is in Twenty (rule 67).
+Nothing reads it directly. The screen it decides is the page state `messengerPinCreate` (or `messengerPinEnter`), which the hook resolves with the recorded flow when the account's PIN is on its account row (rule 67).
 
 ## What can go wrong
 

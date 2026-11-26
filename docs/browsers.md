@@ -15,8 +15,8 @@ browser is one setting, read in this order by `driverNameOf`
 1. **Per account:** `browserDriver` on the account. Set it with
    `log localAccount add --platform <p> --account <a> --browser brave`, the
    `localAccountAdd` MCP tool, or the browser picker on the console's
-   Connections page (table and cards). In Twenty it is
-   `socialAccounts.browserDriver`.
+   Connections page (table and cards). It is
+   `socialAccounts.browserDriver`, in the local store or Twenty.
 2. **A linked AdsPower profile:** an account with
    `socialAccounts.adsPowerProfileId` and no `browserDriver` opens on AdsPower.
 3. **For the whole machine:** `LOG_BROWSER_DRIVER=brave` (or `adsPower`) in
@@ -81,7 +81,7 @@ and are kept here:
 | One AdsPower window per account, held open | `log facebook host` opens the account's profile once a day and keeps it open; every action is a tab |
 | Never close the AdsPower context | Sessions close only their own tabs. The profile is stopped through the Local API at the end, never by `context.close()` |
 | No stealth scripts | Nothing is injected into any page |
-| No cookie injection: the profile keeps its own cookies | The profile keeps its own. Twenty's session is carried in once, only into a profile that has no Facebook login yet |
+| No cookie injection: the profile keeps its own cookies | The profile keeps its own. The account's saved session is carried in once, only into a profile that has no Facebook login yet |
 | The login check still applies | The connect steps, the page check and `signIn` run the same in either browser |
 | Keep a fallback | Camoufox stays: an account without `browserDriver` runs on it |
 
@@ -90,7 +90,7 @@ and are kept here:
 AdsPower is deprecated: an account opens on it only when its `browserDriver` names `adsPower` (a linked `adsPowerProfileId` no longer picks it), and then log writes an `adsPowerDeprecated` line naming the move below. Camoufox is the default. The same procedure moves any account from one browser to another.
 
 1. **Dry run.** `log browser move --all --to camoufox` (MCP `browserMove`; the console's **Move to…** on the account's browser entry shows the same plan first). It lists each account, its browser now, its AdsPower profile, the target, whether AdsPower's Local API answers (`adsPowerUnavailable`, `adsPowerKeyMismatch` when the app refuses the saved key, `adsPowerPlanLapsed` when the plan has lapsed), and what will happen. Nothing changes.
-2. **Move one.** `log browser move <account> --to camoufox --apply --approvedBy "<who>"` (MCP `browserMoveLive` with `confirmLive`). When AdsPower answers, the profile is started (headless first, else headed), its cookies and the platform's localStorage are read over CDP with every request answered locally (`python/browser/cdpState.py`), and it is stopped. When it doesn't, the session already saved for the account (what `saveState` keeps in Twenty) carries instead, and the result says so. Then `browserDriver` is set to the target, `adsPowerProfileId` is cleared and kept as the former profile (log.db's `browserMove` ledger, plus `formerAdsPowerProfileId` on a local account), and the platform's own session check runs.
+2. **Move one.** `log browser move <account> --to camoufox --apply --approvedBy "<who>"` (MCP `browserMoveLive` with `confirmLive`). When AdsPower answers, the profile is started (headless first, else headed), its cookies and the platform's localStorage are read over CDP with every request answered locally (`python/browser/cdpState.py`), and it is stopped. When it doesn't, the session already saved for the account (what `saveState` keeps on the account row) carries instead, and the result says so. Then `browserDriver` is set to the target, `adsPowerProfileId` is cleared and kept as the former profile (log.db's `browserMove` ledger, plus `formerAdsPowerProfileId` on a local account), and the platform's own session check runs.
 3. **Check.** Only the platform saying signed in reports `moved`. Anything else rolls back the driver, the profile link and the session (`browserMoveNotSignedIn`) and says why. Facebook has no read-only check, so it is skipped: it opens on Camoufox anyway now and is checked in its browser.
 4. **Move all.** The same with `--all`: one account after another, accounts to move first in platform order.
 5. **Release.** `log browser move --release` lists the moved accounts' former AdsPower profiles; `--release --apply` deletes them, only once the owner says so. A move never deletes a profile.

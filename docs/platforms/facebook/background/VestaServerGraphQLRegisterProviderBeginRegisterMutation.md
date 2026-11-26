@@ -81,7 +81,7 @@ The PIN registration's first exchange: it sends the client's blinded PIN materia
 
 ## What our machine does with it
 
-It is the confirming request of the `messengerPinCreate` flow's last step (`flowFromRecording` picked it from the recording): once it answers 200 the PIN is being registered. log-cli sends nothing of its own here: the page derives it from the PIN `log inspect do pin` typed from Twenty (rule 67).
+It is the confirming request of the `messengerPinCreate` flow's last step (`flowFromRecording` picked it from the recording): once it answers 200 the PIN is being registered. log-cli sends nothing of its own here: the page derives it from the PIN `log inspect do pin` typed from the account row (rule 67).
 
 ## What can go wrong
 

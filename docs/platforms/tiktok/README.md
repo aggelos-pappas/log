@@ -6,8 +6,8 @@ Made by `log new platform tiktok`. TikTok is a platform of its own: every comman
 
 | Part | Where |
 | --- | --- |
-| The accounts | Twenty `socialAccounts` with platform `TIKTOK` |
-| The session (find the account, its gate, its engine, the answer back to Twenty) | `src/tiktok/account/session`, on the shared `src/platformKit/session` |
+| The accounts | `socialAccounts` with platform `TIKTOK`, in the local account store `~/.logCli/localAccounts.json` (or Twenty if you keep accounts there) |
+| The session (find the account, its gate, its engine, the answer back to the account row) | `src/tiktok/account/session`, on the shared `src/platformKit/session` |
 | The commands | `src/cli/tiktok/index.ts`: `log tiktok session check` (MCP `tiktokSessionCheck`), `log tiktok stats` (MCP `tiktokStats`), `log tiktok post` and `log tiktok delete` (MCP `tiktokPost`, `tiktokDelete`, each with its live twin) |
 | The engine | `python/tiktokApi/engine.py`, on the shared `python/platformKit/engine.py`; each account's governor is under `~/.logCli/tiktok/<account>` |
 | The client | `python/tiktokApi/transport.py`: one curl_cffi session pinned to Chrome 150, sending TikTok Studio's own query and headers |

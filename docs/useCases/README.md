@@ -24,7 +24,7 @@ What log-cli is built to do, one page each, by platform. Each page gives the ide
 | X | [Getting people to do the thing](twitter/getTheAction.md) | explains each conversation in a line, then a reply that answers them and asks for the one action (retweet, like, try it) |
 | Facebook | [From accounts to live Marketplace listings](facebook/marketplaceListings.md) | one local profile per town, each posting a listing, clicks counted into Twenty |
 | Facebook | [Listening to local Facebook groups](facebook/groups.md) | joins local groups and passes the posts asking for the service to Twenty |
-| Discord | [Reading a Discord group chat without Twenty](discord/groupChatRead.md) | catches up on a group over the last few hours with a local account, sends nothing |
+| Discord | [Reading a Discord group chat](discord/groupChatRead.md) | catches up on a group over the last few hours with a local account, sends nothing |
 | Discord | [Replying with a meme in a Discord chat](discord/memeReply.md) | reads the chat, finds a [Memelord](https://www.memelord.com/sign-up?ref=kfwut9wc) meme that fits the moment, gates it and sends it inline |
 | Slack | [Reading and answering a Slack DM](slack/dmReply.md) | finds the chat by who it is with, reads it, drafts in the owner's voice, gates it and sends it one line at a time |
 | Instagram | [Reading and answering an Instagram DM](instagram/dmReply.md) | reads the thread, drafts in the owner's voice or picks a meme, gates it and sends it through the engine, never the browser |
@@ -66,7 +66,7 @@ What log-cli is built to do, one page each, by platform. Each page gives the ide
 
 ## The parts every use case is built from
 
-- **An account in Twenty** (`socialAccounts`): its home, its session, its status. Or a local account in `~/.logCli/localAccounts.json` (`log localAccount add`), which wins over a Twenty row of the same name; `LOG_ACCOUNTS=local` leaves Twenty out.
+- **An account** (`socialAccounts`): its home, its session, its status, in the local account store `~/.logCli/localAccounts.json` (`log localAccount add`, or `log localAccount pull` from a Twenty workspace). `LOG_ACCOUNTS=local` uses only that store; without it, a configured Twenty workspace's rows are added after the local ones, and a local row wins over a Twenty row of the same name.
 - **An engine:** the direct API where there is one (twikit for X, fbk for Facebook reads), the account's own browser otherwise. The [reference](../reference.md)'s Engines section says which command uses which.
 - **The platform's own answer decides:** every step reads what the platform sent back, never the screen or a timer.
 - **A dry run first:** anything that acts on a platform does nothing without `--live`, and over MCP it is a separate `…Live` tool that needs `confirmLive`.

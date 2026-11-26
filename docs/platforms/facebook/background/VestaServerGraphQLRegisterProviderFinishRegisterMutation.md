@@ -86,4 +86,4 @@ Completes the PIN registration: it sends the client's answer to Begin's challeng
 
 ## What can go wrong
 
-None seen: one call, 200 in 809 ms. If `register_success` were false, Messenger would ask again; the page state would still be `messengerPinCreate`, and the PIN in Twenty would be checked before another try.
+None seen: one call, 200 in 809 ms. If `register_success` were false, Messenger would ask again; the page state would still be `messengerPinCreate`, and the account's saved PIN would be checked before another try.

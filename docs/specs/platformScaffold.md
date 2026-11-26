@@ -46,7 +46,7 @@ Checked by: code and SubQ
 
 ### REQ-PLATFORM-07: It names what Twenty is missing and never changes Twenty
 
-When Twenty's `socialAccounts.platform` has no option for the new platform, the plan says so in a note (add it in the Twenty setup script, then regenerate the client). The command never writes to Twenty.
+When a configured Twenty workspace's `socialAccounts.platform` has no option for the new platform, the plan says so in a note (add it in the Twenty setup script, then regenerate the client). The command never writes to Twenty.
 
 Checked by: code and SubQ
 

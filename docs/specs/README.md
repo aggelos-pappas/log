@@ -302,7 +302,7 @@ Before a run opens an account's browser, `prepareRun` checks when it may open: o
 
 ## [AdsPower](./adsPower.md)
 
-AdsPower is the account's browser. Each account holds one AdsPower profile, linked in Twenty, which keeps its own fingerprint and cookies but never the proxy or the login. log opens it through the same gate and self-check as every browser and drives it with Playwright over CDP. A deactivated account, or one whose home is not in `LOG_ADSPOWER_HOMES`, gives its profile back. Rules 42, 44, 59, 78 and 84.
+AdsPower is the account's browser. Each account holds one AdsPower profile, linked on its account row, which keeps its own fingerprint and cookies but never the proxy or the login. log opens it through the same gate and self-check as every browser and drives it with Playwright over CDP. A deactivated account, or one whose home is not in `LOG_ADSPOWER_HOMES`, gives its profile back. Rules 42, 44, 59, 78 and 84.
 
 - **REQ-ADSPOWER-01** Each account is linked to one profile
 - **REQ-ADSPOWER-02** A profile holds no proxy
@@ -344,7 +344,7 @@ Every account runs one lifecycle machine (`lifecycleMachine`, XState) that holds
 
 ## [Proxies](./proxies.md)
 
-Every Facebook account goes out through its own proxy, kept as one URL in Twenty whichever provider it came from. log-cli reads the provider from the proxy's host, gives an account a proxy from 2Captcha or Byteful in its home city after checking it, sets the proxy speed limit per run, meters each account's proxy traffic against a 24 hour budget, and never buys from a provider. Rules 33, 43, 51 and 52 (rule 52 widens rule 43 to Byteful).
+Every Facebook account goes out through its own proxy, kept as one URL on the account's row in the local account store whichever provider it came from. log-cli reads the provider from the proxy's host, gives an account a proxy from 2Captcha or Byteful in its home city after checking it, sets the proxy speed limit per run, meters each account's proxy traffic against a 24 hour budget, and never buys from a provider. Rules 33, 43, 51 and 52 (rule 52 widens rule 43 to Byteful).
 
 - **REQ-PROXY-01** --proxyMs sets the speed limit for one run
 - **REQ-PROXY-02** The speed limit defaults to 2500 ms
@@ -558,13 +558,13 @@ How a message to a person goes out: a draft on several lines goes out one messag
 
 ## [X Chat](./xChat.md)
 
-X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it only through its own engine and vendored twikit, with the account's PIN from Twenty, uses it to keep cold dms away from people the owner already talks to, and treats a reaction or a read receipt as a follow-up to send. Rules 87, 88 and 100.
+X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it only through its own engine and vendored twikit, with the account's PIN from its account row, uses it to keep cold dms away from people the owner already talks to, and treats a reaction or a read receipt as a follow-up to send. Rules 87, 88 and 100.
 
 - **REQ-XCHAT-01** A dm queue check reads the account's X Chat inbox
 - **REQ-XCHAT-02** A pending dm to someone already in a conversation is dropped
 - **REQ-XCHAT-03** A failed X Chat read refuses the check
 - **REQ-XCHAT-04** --skipXChatCheck is the only way past it
-- **REQ-XCHAT-05** X Chat is unlocked with the account's PIN from Twenty
+- **REQ-XCHAT-05** X Chat is unlocked with the account's PIN from its account row
 - **REQ-XCHAT-06** The PIN is saved only from a masked prompt, after it unlocks
 - **REQ-XCHAT-07** A person's old DM thread and X Chat thread are one conversation
 - **REQ-XCHAT-08** A reaction as their last event is a follow-up
@@ -633,7 +633,7 @@ Finding context in conversations is a search, never reading every thread. `log s
 
 ## [Knowledge base](./knowledgeBase.md)
 
-The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in your own Twenty server and is searched through your own Redis by keyword and meaning at once. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
+The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in your own Twenty server (optional: the knowledge base is off when `KB_TWENTY_URL` is unset) and is searched through your own Redis by keyword and meaning at once. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
 
 - **REQ-KB-01** The articles live in Twenty's knowledgeArticles
 - **REQ-KB-02** The logins are files outside the repo
@@ -703,7 +703,7 @@ log keeps lasting facts about the people the owner talks to: their job, where th
 
 ## [Local accounts](./localAccounts.md)
 
-Accounts can live in a local file instead of Twenty, on every platform, so log can run everything locally. `log localAccount pull|add|list|login` (MCP `localAccountPull`, `localAccountAdd`, `localAccountList`; `login` is terminal-only) fills and reads the file, and `LOG_ACCOUNTS=local` leaves Twenty out of accounts entirely. Listings, groups and conversations stay in Twenty. Rule 97, which narrows rule 13 for accounts only.
+Accounts live in a local file, on every platform, so log runs everything locally; Twenty is deprecated for accounts (#337). `log localAccount pull|add|list|login` (MCP `localAccountPull`, `localAccountAdd`, `localAccountList`; `login` is terminal-only) fills and reads the file, and `LOG_ACCOUNTS=local` leaves Twenty out of accounts entirely. Listings, groups and conversations (the deferred Marketplace agency objects) stay in Twenty. Rule 97, which narrows rule 13 for accounts only.
 
 - **REQ-LOCAL-01** Accounts live in one local file
 - **REQ-LOCAL-02** Pull copies every Twenty account in, keeping its Twenty id

@@ -54,7 +54,7 @@ Settings live in `~/.logCli/.env`. Two are set for you:
 - `LOG_PYTHON`: the Python the engines run on
 - `LOG_ACCOUNTS=local`: your accounts live in `~/.logCli/localAccounts.json`
 
-Everything else is optional: captcha solvers, proxies, AdsPower (for platforms that run in a browser) and [Twenty](twenty.md) (for many accounts). Every key is listed in [`.env.example`](../.env.example). A `.env.local` in the folder you run from wins over `~/.logCli/.env`.
+Everything else is optional: captcha solvers, proxies, AdsPower (for platforms that run in a browser) and [Twenty](twenty.md) (legacy, only to share accounts across machines; accounts live in the local account store by default). Every key is listed in [`.env.example`](../.env.example). A `.env.local` in the folder you run from wins over `~/.logCli/.env`.
 
 ## Setup
 

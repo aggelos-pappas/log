@@ -144,7 +144,7 @@ Rebuild Facebook's request docs after a run: `log capture docs`.
 
 | Flow | Recorded | Does |
 | --- | --- | --- |
-| `profileSetup` | Lancaster, 2026-10-19; the picture steps checked on Exeter, 2026-10-24 | Profile picture, cover photo, name (13 steps). The picture steps wait on the dialog query, the upload and the set mutation, inside "Choose profile picture". The host runs only the parts Twenty has data for (`flowWithParams`). |
+| `profileSetup` | Lancaster, 2026-10-19; the picture steps checked on Exeter, 2026-10-24 | Profile picture, cover photo, name (13 steps). The picture steps wait on the dialog query, the upload and the set mutation, inside "Choose profile picture". The host runs only the parts the account's row has data for (`flowWithParams`). |
 | `marketplaceListingDelete` | Bethlehem, 2026-10-23 | Delete one Marketplace listing from Selling: More options, Delete listing, Delete, then "No, haven't sold" on Facebook's survey (6 steps). The menu answer must name the listing id given, and so must the delete answer (`commerce_for_sale_item_delete.deleted_for_sale_item_id`). Run it through `log facebook listing remove`, which then sets the Twenty row REMOVED. |
 
 ## The work, step by step: facebookWarmup
@@ -339,7 +339,7 @@ a persona of its own:
   (accountName, homeCity, homeCountry).
 - The background check compares each picture with the last three pictures from
   the same country.
-- A picture goes into Twenty only when it passes every check:
+- A picture goes on the account's row only when it passes every check:
   `socialAccounts.profilePhoto` is set to its path (`saveProfilePhoto`), the
   field the host's profile step uploads from.
 
@@ -361,7 +361,7 @@ so a higher bar only burned tries. A picture kept after failing keeps the
 background it was taken in.
 
 On 2026-10-24 all 20 accounts (10 in Pennsylvania, 10 around Kamloops) matched,
-and each one's picture is its profilePhoto in Twenty.
+and each one's picture is its profilePhoto on its account row.
 
 ### The owner's verdict comes first
 

@@ -1,6 +1,6 @@
 # Running log on servers
 
-This page describes one way to run log in production: Twenty on its own server, and [AdsPower](https://www.adspower.com/share/pD25Iu) plus log together on a browser server, with your laptop as the development machine. It explains how the pieces talk to each other, why the browser and log must share a machine, how to keep development and production from opening the same account twice, and how to reach log's MCP server remotely. Read it if you're moving log off a single machine.
+This page describes one way to run log in production: [AdsPower](https://www.adspower.com/share/pD25Iu) plus log together on a browser server, with your laptop as the development machine. It explains how the pieces talk to each other, why the browser and log must share a machine, how to keep development and production from opening the same account twice, and how to reach log's MCP server remotely. Accounts live in the local account store on the browser server; a Twenty server is deprecated (#337, #338, #339), used only if you share accounts through it, run the knowledge base, or use the deferred Marketplace agency features ([Twenty](twenty.md)). Read it if you're moving log off a single machine.
 
 ## The one constraint: log runs beside AdsPower
 
@@ -26,26 +26,26 @@ Don't expose port 50325 or the CDP ports to the internet:
                 └─────┼─────────────────┬────────────────────────────┬──────────────────────────────┬───────────────────────────────┘
                       │ HTTPS (API key) │ HTTP(S)/SOCKS5 outbound     │ HTTPS outbound               │ HTTPS outbound
                       ▼                 ▼                             ▼                              ▼
-              Twenty (its server)   Proxy gateway                 CaptchaKraken, 2Captcha        facebook.com, through the
+              Twenty (optional)     Proxy gateway                 CaptchaKraken, 2Captcha        facebook.com, through the
               socialAccounts,       (e.g. 2Captcha residential)   solving APIs                   proxy only (all the browser's
               agencyListings        → a residential exit IP                                      traffic goes via the gateway)
                                       in the account's city
 ```
 
-- **Twenty** is reached the same way from anywhere: `TWENTY_BASE_URL` (HTTPS) plus `TWENTY_API_KEY`, through the generated client. If AdsPower runs on Twenty's own server, the only change is that `TWENTY_BASE_URL` can point at Twenty locally. Twenty and AdsPower are separate programs on separate ports.
-- **The browser server only makes outbound connections:** to Twenty, the proxy gateway and the captcha APIs. Nothing needs to reach it from outside, except your own access over a private network (below).
+- **Twenty**, if you use it, is reached the same way from anywhere: `TWENTY_BASE_URL` (HTTPS) plus `TWENTY_API_KEY`, through the generated client. If AdsPower runs on Twenty's own server, the only change is that `TWENTY_BASE_URL` can point at Twenty locally. Twenty and AdsPower are separate programs on separate ports.
+- **The browser server only makes outbound connections:** to the proxy gateway and the captcha APIs (and Twenty, if you use it). Nothing needs to reach it from outside, except your own access over a private network (below).
 - **Proxies:**
   - The browser's traffic goes from the browser server to the proxy gateway, and leaves from a residential IP in the account's city.
   - The proxy gate checks the exit IP from the same server, through the same proxy, before the profile starts.
   - 2Captcha's proxies sign in by username and password, so the server's own IP doesn't matter. An IP allow-list is optional.
 - **AdsPower licence:** with an API key and headless mode, one AdsPower account can run Local API automation on several devices at once. In GUI mode it can only be signed in on one device. GUI and headless can't both run on the same machine (help.adspower.com/docs/api).
-- **Profiles are AdsPower cloud records.** Profiles that `log adsPower sync` made on your development machine show up on the server under the same AdsPower account, so their ids, and the `adsPowerProfileId` links in Twenty, are the same in development and production.
+- **Profiles are AdsPower cloud records.** Profiles that `log adsPower sync` made on your development machine show up on the server under the same AdsPower account, so their ids, and the `adsPowerProfileId` links on the accounts, are the same in development and production.
 
 ## Development (your own machine)
 
 - **AdsPower:** the GUI app, so the browsers open on your screen.
 - **`.env.local`:** `ADSPOWER_HOST=http://local.adspower.net:50325` and `ADSPOWER_API_KEY`.
-- **Twenty:** the same Twenty as production, over HTTPS. Tests use the in-memory Twenty (`marketplaceFixture`).
+- **Twenty (optional):** the same Twenty as production, over HTTPS. Tests use the in-memory Twenty (`marketplaceFixture`).
 - **Proxies:** the same gateway, so a development run exits from the account's city just like production.
 - **AdsPower's MCP server:** added at local scope, so its key stays out of git.
 
@@ -70,7 +70,9 @@ LOG_MCP_TOKEN=<a long random token> logMcp --http --host <private network ip> --
 - **The same guards:** a live action needs `confirmLive: true`, and a join, fill or check runs in the account's open browser, opened with `log inspect start --account <a> --detach`.
 - **What a client gets:** every tool declares one `outputSchema` and returns `structuredContent` (`exit`, `ok`, `stdout`, `stderr`, `log`, and `json` when the command printed JSON). Failures come back as `isError`. `tools.listChanged` is on, and saving a flow (a tool of its own) sends `notifications/tools/list_changed`.
 
-## Connecting from Claude's connectors: OAuth through Twenty
+## Connecting from Claude's connectors: OAuth through Twenty (older path)
+
+The hosted connector now signs in through the control service (`python/controlService`, see [Connect your agent](mcp.md)). This older `logMcp --http` path still exists for a server that keeps a Twenty sign-in.
 
 Claude's custom connectors (claude.ai) reach an MCP server from Anthropic's cloud over the public internet and sign in with OAuth (`oauth_dcr`); a static bearer token is a beta only some organisations have (claude.com/docs/connectors/building/authentication). So `logMcp` is also its own OAuth authorization server, and the only person who may sign in is the Twenty user who ran `log login` on it (`src/mcp/oauth`):
 

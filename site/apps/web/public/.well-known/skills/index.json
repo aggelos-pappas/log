@@ -38,11 +38,11 @@
     },
     {
       "name": "log-discord-group-chat-read",
-      "description": "Reading a Discord group chat without Twenty. A log play (docs/useCases/discord/groupChatRead.md): Catch up on what was said in a Discord group DM over the last few hours, on the account's own session, with the account kept in a local file instead of Twenty. This page reads and sends nothing. A channel inside a server is read the same way by `\"<server> #<channel>\"`, but always live from Discord, since log.db keeps only its mentions and replies: see [serverReply](serverReply.md) for how a server channel differs from a group DM.",
+      "description": "Reading a Discord group chat. A log play (docs/useCases/discord/groupChatRead.md): Catch up on what was said in a Discord group DM over the last few hours, on the account's own session, with the account kept in the local account store (`~/.logCli/localAccounts.json`). This page reads and sends nothing. A channel inside a server is read the same way by `\"<server> #<channel>\"`, but always live from Discord, since log.db keeps only its mentions and replies: see [serverReply](serverReply.md) for how a server channel differs from a group DM.",
       "files": [
         "SKILL.md"
       ],
-      "summary": "Reading a Discord group chat without Twenty"
+      "summary": "Reading a Discord group chat"
     },
     {
       "name": "log-discord-meme-reply",

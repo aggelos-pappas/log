@@ -174,7 +174,7 @@ Then ask in plain words: *"read my X DMs and tell me who's waiting on me"*. log'
 - **Turn aware.** On Discord and Slack a multi-line reply waits while they are typing, and holds the rest if they write back or keep typing ([#199](https://github.com/matthewdonsemail-lab/log/pull/199), [#202](https://github.com/matthewdonsemail-lab/log/pull/202)).
 - **Search knows where it was said.** Every hit names a DM, a group or a server channel, and you can search only one of them ([#198](https://github.com/matthewdonsemail-lab/log/pull/198)).
 - **It watches its own tools.** Tool health shows which tools are used, which fail and which guides went stale, and suggests the fix ([#203](https://github.com/matthewdonsemail-lab/log/pull/203)).
-- **Your machine, your data.** Accounts and sessions stay in `~/.logCli`. Many accounts? Keep them in [Twenty](docs/twenty.md), an open-source CRM, so every machine, agent and teammate sees the same ones.
+- **Your machine, your data.** Accounts and sessions stay in `~/.logCli`, in the local account store (`localAccounts.json`, secrets sealed).
 
 ## Works in every harness
 
@@ -509,7 +509,7 @@ Every call is timed: `log timing` shows p50, p95 and p99 for every tool and each
 - **Fast.** Your agent reads a conversation in milliseconds, not seconds.
 - **Gentle on your accounts.** The platform isn't asked again every time your agent looks something up. One account was disabled after an agent read a server too much, too fast (rule 94), and reading from `log.db` keeps that from happening.
 - **Yours.** Your messages, sessions and media text stay on your machine in one file you can back up.
-- **Shareable when you need it.** Accounts can live in [Twenty](docs/twenty.md) so several machines share them. A hosted version, with a login per user, is planned.
+- **Shareable when you need it.** Accounts live in the local account store. A hosted version, with a login per user, is planned. ([Twenty](docs/twenty.md) is deprecated.)
 
 ## Roadmap
 
@@ -577,7 +577,7 @@ The full docs are at **[log.listeningkit.com/docs](https://log.listeningkit.com/
 | Use cases | [the plays, step by step](docs/useCases/README.md) |
 | Platforms | [X](docs/platformGuides/x.md), [Discord](docs/platformGuides/discord.md), [Slack](docs/platformGuides/slack.md), [Facebook](docs/platformGuides/facebook.md), [Reddit](docs/platformGuides/reddit.md) and [LinkedIn](docs/platformGuides/linkedin.md) |
 | Reference | [every command, MCP tool and hook](docs/reference.md), [error codes](docs/errorCatalog.md), [agent guides](docs/guides) |
-| How it works | [how log decides what happened](docs/howItWorks.md), [the models it uses](docs/models.md), Twenty, browsers, proxies, each platform's API and the diagrams |
+| How it works | [how log decides what happened](docs/howItWorks.md), [the models it uses](docs/models.md), Twenty (deprecated), browsers, proxies, each platform's API and the diagrams |
 
 Where each page sits is set in [docs/site.json](docs/site.json), and a commit check refuses a page that isn't placed.
 

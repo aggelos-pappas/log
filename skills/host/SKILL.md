@@ -14,7 +14,7 @@ description: Run an account's whole lifecycle (rule 35) in ONE browser kept open
    page's wording. Signed out with no form: `/login/`. Two failed sign-ins in a
    row go to a person (`signInSpent`), never round again.
 3. **Every page is checked for where it landed** (`pageProblem`): a checkpoint,
-   a sign-out or a restriction is the step's outcome and goes to Twenty.
+   a sign-out or a restriction is the step's outcome and goes to the account's row.
    **The warm-up decides each step on Facebook's answer** (rule 73): it waits
    for the step's call and applies its flow's `answers` with the account's
    home. The create page answering `marketplace_new_seller_can_post_item:
@@ -49,7 +49,7 @@ Run `start` through Monitor (rule 26). A restart reads
 done, today's opens; a fresh browser opens and the router walks to the next
 step. Too soon after the last launch (rule 35), the host waits the gap out.
 
-A save Twenty refused keeps the run's device and session in
+A save the account store refused keeps the run's device and session in
 `~/.logCli/runs/unsaved/` (login removed): `log facebook account resave <a> --from <dir>`.
 
 `opensSpent` or `launchBudgetSpent` ends the day. Only when the owner asks, close
@@ -106,8 +106,8 @@ Some accounts land on `Use face scan, fingerprint or screen lock to confirm it's
 another way", waits for `TwoStepVerificationChallengePickerDialogQuery`, and
 goes on only when its answer lists `TOTP` not disabled (`authAppOffered`; else
 `twoStepNoAuthApp`, for the owner). On the picker (`twoStepMethodPicker`) it chooses
-"Authentication app", then Continue, and the code is typed from Twenty as
-usual. Mountain Top, host 20261024T222706, steps 12-26.
+"Authentication app", then Continue, and the code is typed from the account's
+`totpSecret` as usual. Mountain Top, host 20261024T222706, steps 12-26.
 
 ## The Marketplace location is the account's home
 

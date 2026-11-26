@@ -27,8 +27,8 @@ searches it.
   (Knowledge base): `name` (title), `key`, `kind`, `body` (Markdown),
   `source`, `tags`, `author`, `contentHash`, `syncedAt`. log-cli reaches it at
   `KB_TWENTY_URL` (`https://<your-twenty-host>`, over a private network such
-  as Tailscale). There is no default host. People read and edit it in Twenty's
-  own web app.
+  as Tailscale). There is no default host: with `KB_TWENTY_URL` unset the
+  knowledge base is off. People read and edit it in Twenty's own web app.
 - **Redis:** `kb-redis` (Redis 8.2.11 with the search module), on the same
   private network at `<your-redis-host>:6380`, index `kbIdx` over
   `kb:chunk:*` hashes (title, text, key, kind, source, a 384-dimension
@@ -48,7 +48,7 @@ searches it.
 | `infra` | `docs/infra/*.md` (`doc:docs/infra/server.md`) |
 | `memory` | every Claude Code memory file in `~/.claude/projects/*/memory` (`memory:log-cli/cloudflare-access`) |
 | `pageState` | `PAGE_STATES` (`pageState:messengerPinCreate`) |
-| `account` | log-cli's Twenty socialAccounts, status and setup only (`account:10000000000001`) |
+| `account` | log-cli's accounts (the local account store), status and setup only (`account:10000000000001`) |
 | `note` | `log kb remember`, or written by a person in Twenty |
 
 ## Commands
@@ -61,7 +61,7 @@ kbSearch { query: "messenger pin", kind: "pageState", limit: 3 }
 kbShow { key: "rule:73" }                                      one article in full
 kbRemember { text: "…", tags: ["infra", "server"] }                 a note, in Twenty and Redis at once
 kbSync {}                                                      refresh from every source (Monitor it, rule 26)
-kbSync { noAccounts: true }                                    without reading log-cli's Twenty
+kbSync { noAccounts: true }                                    without reading log-cli's accounts
 ```
 
 In a terminal the same commands are `log kb search|show|remember|sync`. What

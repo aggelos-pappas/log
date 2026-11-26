@@ -16,7 +16,7 @@ Checked by: code and SubQ
 
 ### REQ-GROUP-02: Each group is read in an open browser of an account in it
 
-For each group in the request, the worker picks an account in Twenty that is in that group (members first) whose browser is open, and reads the group as a step in that open browser. With no account in the group it answers `groupNoAccount`; with none whose browser is open, `groupBrowserNotOpen`. It never opens a browser of its own.
+For each group in the request, the worker picks an account (from the account store) that is in that group (members first) whose browser is open, and reads the group as a step in that open browser. With no account in the group it answers `groupNoAccount`; with none whose browser is open, `groupBrowserNotOpen`. It never opens a browser of its own.
 
 Checked by: code and SubQ
 

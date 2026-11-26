@@ -1,13 +1,13 @@
 # Knowledge base
 
-`log kb` keeps everything log knows (its rules, skills, docs, agent memories, known page states and accounts) in one searchable place that people and agents share. People read and edit the articles in a Twenty server; agents search them through a Redis index in milliseconds. Use it when an agent needs context fast, or when you want to save something it should remember. This page describes one way to run it: Twenty and Redis on a private server, reached over a private network.
+`log kb` keeps everything log knows (its rules, skills, docs, agent memories, known page states and accounts) in one searchable place that people and agents share. People read and edit the articles in a Twenty server; agents search them through a Redis index in milliseconds. Use it when an agent needs context fast, or when you want to save something it should remember. It is optional: it needs your own Twenty server (`KB_TWENTY_URL`) and Redis, and is off when `KB_TWENTY_URL` is unset. This Twenty is only for the knowledge base; accounts live in the local account store. This page describes one way to run it: Twenty and Redis on a private server, reached over a private network.
 
 ```mermaid
 flowchart LR
   repo["AGENTS.md rules and sections<br/>skills, docs, docs/infra"] --> collect
   memory["Agent memory files<br/>~/.claude/projects/*/memory"] --> collect
   states["Known page states"] --> collect
-  accounts["log's Twenty<br/>socialAccounts"] --> collect
+  accounts["log's accounts<br/>socialAccounts"] --> collect
   collect["log kb sync<br/>collect and scrub secrets"] -->|new and changed, by content hash| twenty["Knowledge Twenty<br/>knowledgeArticles"]
   person["a person in Twenty"] --> twenty
   remember["log kb remember"] --> twenty

@@ -4,13 +4,13 @@ title: "AdsPower"
 
 # AdsPower
 
-AdsPower is the account's browser. Each account holds one AdsPower profile, linked in Twenty, which keeps its own fingerprint and cookies but never the proxy or the login. log opens it through the same gate and self-check as every browser and drives it with Playwright over CDP. A deactivated account, or one whose home is not in `LOG_ADSPOWER_HOMES`, gives its profile back. Rules 42, 44, 59, 78 and 84.
+AdsPower is the account's browser. Each account holds one AdsPower profile, linked on its account row, which keeps its own fingerprint and cookies but never the proxy or the login. log opens it through the same gate and self-check as every browser and drives it with Playwright over CDP. A deactivated account, or one whose home is not in `LOG_ADSPOWER_HOMES`, gives its profile back. Rules 42, 44, 59, 78 and 84.
 
 ## One profile per account
 
 ### REQ-ADSPOWER-01: Each account is linked to one profile
 
-`log adsPower sync --apply` gives each account on a browser platform one profile and saves its id in `socialAccounts.adsPowerProfileId`. An account already linked to a live profile keeps it, and one whose link is gone is relinked to the profile whose remark names its Twenty id, before a new one is made. Rule 42.
+`log adsPower sync --apply` gives each account on a browser platform one profile and saves its id in `socialAccounts.adsPowerProfileId`. An account already linked to a live profile keeps it, and one whose link is gone is relinked to the profile whose remark names its account id, before a new one is made. Rule 42.
 
 Checked by: code and SubQ
 
@@ -70,7 +70,7 @@ Checked by: code and SubQ
 
 ### REQ-ADSPOWER-11: The profile keeps its own cookies
 
-Twenty's saved session is carried into the profile only when the profile has no login of its own (for Facebook, no `c_user` cookie). Otherwise the profile's cookies are left as they are. Rule 44.
+The account row's saved session is carried into the profile only when the profile has no login of its own (for Facebook, no `c_user` cookie). Otherwise the profile's cookies are left as they are. Rule 44.
 
 Checked by: code and SubQ
 
@@ -78,7 +78,7 @@ Checked by: code and SubQ
 
 ### REQ-ADSPOWER-12: A deactivated account gives its profile back
 
-When an account is DEACTIVATED, the sync deletes its profile from AdsPower and clears `adsPowerProfileId`. The account's Twenty row stays. Rule 78.
+When an account is DEACTIVATED, the sync deletes its profile from AdsPower and clears `adsPowerProfileId`. The account's row stays. Rule 78.
 
 Checked by: code and SubQ
 

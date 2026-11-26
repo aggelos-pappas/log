@@ -4,7 +4,7 @@ title: "Proxies"
 
 # Proxies
 
-Every Facebook account goes out through its own proxy, kept as one URL in Twenty whichever provider it came from. log-cli reads the provider from the proxy's host, gives an account a proxy from 2Captcha or Byteful in its home city after checking it, sets the proxy speed limit per run, meters each account's proxy traffic against a 24 hour budget, and never buys from a provider. Rules 33, 43, 51 and 52 (rule 52 widens rule 43 to Byteful).
+Every Facebook account goes out through its own proxy, kept as one URL on the account's row in the local account store whichever provider it came from. log-cli reads the provider from the proxy's host, gives an account a proxy from 2Captcha or Byteful in its home city after checking it, sets the proxy speed limit per run, meters each account's proxy traffic against a 24 hour budget, and never buys from a provider. Rules 33, 43, 51 and 52 (rule 52 widens rule 43 to Byteful).
 
 ## Speed limit
 
@@ -30,7 +30,7 @@ Checked by: code and SubQ
 
 ### REQ-PROXY-04: An assigned proxy is checked before it is saved
 
-`log proxy assign` saves a proxy to the account's `proxy` field in Twenty only after it exits in the account's home country, within 100 km of its home city, and fast enough for Facebook. It tries up to 3 sessions, and saves none when every one is too far or too slow.
+`log proxy assign` saves a proxy to the account's `proxy` field only after it exits in the account's home country, within 100 km of its home city, and fast enough for Facebook. It tries up to 3 sessions, and saves none when every one is too far or too slow.
 
 Checked by: code and SubQ
 

@@ -47,7 +47,7 @@ flowchart LR
 | 4 Deliver | The service | Its `webhook` action POSTs each match to Twenty. | Twenty `socialListening`: one row per `item.key` (`dedupeKey`), with `sourceKind` `facebook_group`, `platform` FACEBOOK, `watchId`, `actionId` and `routingStatus` NEW. |
 | 5 Act | log | log reads the NEW rows, acts on each from the account that saw it, in the same browser, and moves `routingStatus` on (ROUTED, DELIBERATED, DELEGATED, REJECTED). | Twenty `socialListening`. |
 
-**Twenty holds three things for this:** the joined groups and their read cursor (`agencyGroup`), the matches (`socialListening`), and the accounts (`socialAccounts`). Posts that didn't match are never written to Twenty.
+**Twenty holds these for this (group listening is a deferred legacy feature):** the joined groups and their read cursor (`agencyGroup`), the matches (`socialListening`), and, if you keep accounts there, the accounts (`socialAccounts`). Posts that didn't match are never written to Twenty.
 
 ## log's part
 
@@ -60,7 +60,7 @@ flowchart LR
 The service runs the script at `FACEBOOK_WORKER_PATH` with one JSON request on stdin, and gives up after 300 seconds.
 
 - **Script:** `python/openMagpie/facebookWorker.py`. It calls `log facebook poll --request <request>`.
-- **Input:** `{"action": "groups.search", "params": {"group_ids", "terms", "limit"}, "account_id", "cookies", "proxy"}`. The script drops `cookies`, `proxy` and `account_id`. log uses the session the account's open browser already holds, and takes the account, proxy and device from Twenty.
+- **Input:** `{"action": "groups.search", "params": {"group_ids", "terms", "limit"}, "account_id", "cookies", "proxy"}`. The script drops `cookies`, `proxy` and `account_id`. log uses the session the account's open browser already holds, and takes the account, proxy and device from the account row (the local account store, or Twenty).
 - **For each group:**
   1. **Pick the account.** It needs an `agencyGroup` row for the group (members first) whose account may run, is inside its active hours (never bypassed here), and has its browser open. Nothing is launched: with no open browser, that group answers an error.
   2. **Read in that browser** with the group read machine (`src/facebook/group/read/machine.ts`): open the group and scroll. It stops when the feed has shown 3 posts the cursor has already seen (about one scroll's worth), when the feed ends, or at the scroll limit (worked out from `limit`, about three posts a scroll, at most 6 scrolls). Nothing is clicked.

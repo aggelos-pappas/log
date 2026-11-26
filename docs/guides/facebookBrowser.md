@@ -118,7 +118,7 @@ From `skills/host/SKILL.md`.
    page's wording. Signed out with no form: `/login/`. Two failed sign-ins in a
    row go to a person (`signInSpent`), never round again.
 3. **Every page is checked for where it landed** (`pageProblem`): a checkpoint,
-   a sign-out or a restriction is the step's outcome and goes to Twenty.
+   a sign-out or a restriction is the step's outcome and goes to the account's row.
    **The warm-up decides each step on Facebook's answer** (rule 73): it waits
    for the step's call and applies its flow's `answers` with the account's
    home. The create page answering `marketplace_new_seller_can_post_item:
@@ -153,7 +153,7 @@ Run `start` through Monitor (rule 26). A restart reads
 done, today's opens; a fresh browser opens and the router walks to the next
 step. Too soon after the last launch (rule 35), the host waits the gap out.
 
-A save Twenty refused keeps the run's device and session in
+A save the account store refused keeps the run's device and session in
 `~/.logCli/runs/unsaved/` (login removed): `log facebook account resave <a> --from <dir>`.
 
 `opensSpent` or `launchBudgetSpent` ends the day. Only when the owner asks, close
@@ -210,8 +210,8 @@ Some accounts land on `Use face scan, fingerprint or screen lock to confirm it's
 another way", waits for `TwoStepVerificationChallengePickerDialogQuery`, and
 goes on only when its answer lists `TOTP` not disabled (`authAppOffered`; else
 `twoStepNoAuthApp`, for the owner). On the picker (`twoStepMethodPicker`) it chooses
-"Authentication app", then Continue, and the code is typed from Twenty as
-usual. Mountain Top, host 20261024T222706, steps 12-26.
+"Authentication app", then Continue, and the code is typed from the account's
+`totpSecret` as usual. Mountain Top, host 20261024T222706, steps 12-26.
 
 ### The Marketplace location is the account's home
 
@@ -240,7 +240,7 @@ From `skills/lifecycle/SKILL.md`.
 2. **The machine is the spec.** Change the lifecycle in
    `src/platformKit/lifecycle/machine.ts` and its tests, then regenerate the
    doc: `log facebook lifecycle states --write`. Never hand-edit the generated tree.
-3. **Final is final.** Restricted, banned, lost and deactivated: the record stays in Twenty;
+3. **Final is final.** Restricted, banned, lost and deactivated: the account row stays in the account store;
    nothing resumes them. A `/checkpoint` page is never pressed through: the
    checkpoint watch sets the account DEACTIVATED and the machine closes the browser for
    `checkpoint` and ends in `deactivated`. Only a video selfie or ID waits in
@@ -256,8 +256,8 @@ log facebook lifecycle --account <name>      # one, with its standing
 log facebook lifecycle states                # the state tree from the machine itself
 ```
 
-A field the lifecycle reads is added through `scripts/twenty/twentySetup.mjs` and the
-client regenerated. A fact it reads from a past run (a rename, a
+A field the lifecycle reads is added to the account row (for a Twenty workspace, through
+`scripts/twenty/twentySetup.mjs` and the client regenerated). A fact it reads from a past run (a rename, a
 location) is backfilled only from that run's recording (rule 25), never guessed.
 
 Full description: `docs/lifecycle.md`. Requirements: `docs/specs/accountLifecycle.md`.
@@ -290,7 +290,7 @@ of its warm-up. This does that for one account, both photos in one run (the owne
 
 ### The routine
 
-1. Put the photos in Twenty: `socialAccounts.profilePhoto` (a real-looking
+1. Put the photos on the account's row in the local account store: `socialAccounts.profilePhoto` (a real-looking
    face, not a logo) and `coverPhoto` (business-related is fine), each a URL
    or a local path. URLs are fetched through the account's proxy, never from
    this machine, and every file is varied so its bytes are new
@@ -313,7 +313,7 @@ of its warm-up. This does that for one account, both photos in one run (the owne
 5. When the owner says go: `--live`. The machine uploads the profile photo, then
    the cover; any failed step stops the run (nothing is retried on
    Facebook). A failed step saves `<item>Failed.txt` with what the page had.
-   On success `profileSetAt` is set in Twenty.
+   On success `profileSetAt` is set on the account's row.
 6. Rebuild the Facebook client docs: the profile requests are new.
 
    ```bash
@@ -324,7 +324,7 @@ of its warm-up. This does that for one account, both photos in one run (the owne
 
 | Code | Means | Do |
 | --- | --- | --- |
-| `profilePhotoMissing` | `--live` without both photos, or a photo that can't be read | Set both fields in Twenty |
+| `profilePhotoMissing` | `--live` without both photos, or a photo that can't be read | Set both fields on the account's row |
 | `profileControlNotFound` | No opener, no "Upload photo" item, no file input | Read `profileFound.txt` / `<item>Failed.txt`, fix the pattern |
 | `profileUploadNotSaved` | Save never enabled, or the dialog stayed open | Read the capture; run again after the gap |
 | `sessionExpired` | The profile wasn't signed in | `log facebook connect --account <a>` first |

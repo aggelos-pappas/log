@@ -152,14 +152,14 @@ What the warm-up must do, requirement by requirement: [docs/specs/warmup.md](../
    that answers it, and the run fails the step with its code when the answer
    isn't right (`runFlowInSession`, `answersIssue`). Dwells and steps whose
    recording shows no call have nothing to read. A home check is skipped
-   when Twenty has no home for the account. Each flow's doc shows what every
+   when the account's row has no home. Each flow's doc shows what every
    step must answer, and recording a flow again keeps the checks
    (`keepAnswers`).
 5. **Live and watched** (rule 26): run through Monitor; every step goes to the
    stage log as it happens.
 6. **Stops on the wrong page.** Every step's landing page is checked
    (`pageProblem`): a checkpoint, a login wall or another section ends the
-   activity (`blocked`), and the account's issue is written to Twenty.
+   activity (`blocked`), and the account's issue is written to its row.
 7. **Scrolls like a hand** (`python/human/scrollMotion.py`, ported from the Robotic
    VSL repo): bell-curve wheel steps, overshoot and recoil, mid-pauses. No
    `scrollBy` or `scroll_into_view_if_needed` anywhere.

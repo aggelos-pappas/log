@@ -182,7 +182,7 @@ Fetches the logout link's hash (`viewer.logout_hash`) so the menu's Log out work
 
 ## What our machine does with it
 
-Nothing. We never log out from the page; `log logout` clears the saved session in Twenty instead.
+Nothing. We never log out from the page.
 
 ## What can go wrong
 

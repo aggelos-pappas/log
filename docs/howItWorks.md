@@ -52,10 +52,13 @@ log inspect goal --account <a>                           # the goal, whether it 
 
 ## Where accounts live
 
-Accounts live in [Twenty](twenty.md) as `socialAccounts`: one row per account,
-with its platform, session and proxy. Marketplace listings are
-`agencyListings`. log reads the row before a run and writes the result back
-after it. A single user can keep accounts in a local file instead.
+Accounts live in the local account store, `~/.logCli/localAccounts.json`, as
+`socialAccounts` rows: one per account, with its platform, session and proxy,
+secrets sealed in the secret store. log reads the row before a run and writes
+the result back after it. With `LOG_ACCOUNTS=local` that store is the only
+one; otherwise a [Twenty](twenty.md) workspace, if configured, adds its
+accounts (deprecated). The deferred Marketplace listings are Twenty
+`agencyListings`.
 
 ## Platforms
 
@@ -81,8 +84,8 @@ The current list of platforms, and which commands run where, is in
 
 ## Browsers
 
-log is **browser-agnostic** too. Each account's browser is a driver chosen in
-Twenty: [AdsPower](https://www.adspower.com/share/pD25Iu) first (one profile per account), Camoufox kept, and more to
+log is **browser-agnostic** too. Each account's browser is a driver chosen on
+its account row: [AdsPower](https://www.adspower.com/share/pD25Iu) first (one profile per account), Camoufox kept, and more to
 come, each one more driver (`src/browser/<name>`). Every driver opens through
 the same gates:
 

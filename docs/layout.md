@@ -12,8 +12,8 @@ src/reddit/                     Reddit: account/session
 src/platformKit/                what every platform's account session shares (find, gate, run the engine, record)
 src/scaffold/platform/          `log new platform <name>`: writes and wires in a new platform
 src/directApi/engine/           DIRECT_ROUTES, commandEngine, the direct-API engine runner and governors
-src/twenty/graphql/             the generated Twenty client (generated/), its seam, and an in-memory Twenty for tests
-src/platformKit/socialAccount/  accounts in Twenty, and the check that an account may run (checkRunnable)
+src/twenty/graphql/             the local account store (helpers/localAccounts.ts), the optional generated Twenty client (generated/), its seam, and an in-memory Twenty for tests
+src/platformKit/socialAccount/  accounts (local store, or optional Twenty), and the check that an account may run (checkRunnable)
 src/facebook/marketplace/agencyListing/  listings in Twenty, writing run results back, dashboard sync
 src/facebook/marketplace/replacement/    losing an account, replacements, campaign fill
 src/facebook/marketplace/publish/        the XState publish machine

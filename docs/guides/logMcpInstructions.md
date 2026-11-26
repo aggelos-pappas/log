@@ -19,7 +19,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "discord/channelReply" })` | Answering someone in a Discord DM or group DM |
 | `getGuide({ useCase: "discord/coldOutbound" })` | First DMs from a Discord channel |
 | `getGuide({ useCase: "discord/forumPosts" })` | Going through a Discord forum for posts worth answering |
-| `getGuide({ useCase: "discord/groupChatRead" })` | Reading a Discord group chat without Twenty |
+| `getGuide({ useCase: "discord/groupChatRead" })` | Reading a Discord group chat |
 | `getGuide({ useCase: "discord/memeReply" })` | Replying with a meme in a Discord chat |
 | `getGuide({ useCase: "discord/serverReply" })` | Replying in a Discord server channel |
 | `getGuide({ useCase: "discord/serverSearch" })` | Finding a conversation in a Discord server |

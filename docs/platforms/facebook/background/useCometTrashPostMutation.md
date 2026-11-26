@@ -27,7 +27,7 @@ Moves a post to the account's bin (`move_to_trash_story.trashed_story_id`, `succ
 
 ## What our machine does with it
 
-The `deletePost` flow waits for it after "Move" (`expect`). The flow names the post's menu by the account's own name (`Actions for this post by {profileName}`, filled from Twenty), and acts on the newest post on the account's own profile. A write on Facebook: `--live` only (rule 8).
+The `deletePost` flow waits for it after "Move" (`expect`). The flow names the post's menu by the account's own name (`Actions for this post by {profileName}`, filled from the account row), and acts on the newest post on the account's own profile. A write on Facebook: `--live` only (rule 8).
 
 ## What can go wrong
 

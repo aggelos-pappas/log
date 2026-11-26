@@ -6,13 +6,13 @@ Made by `log new platform discord`. Discord is a platform of its own: every comm
 
 | Part | Where |
 | --- | --- |
-| The accounts | Twenty `socialAccounts` with platform `DISCORD` (added 2026-10-28 by `scripts/twenty/twentySetup.mjs`). First account: `<name:1>`, AdsPower profile `k1ifqe1s` |
-| The session (find the account, its gate, its engine, the answer back to Twenty) | `src/discord/account/session`, on the shared `src/platformKit/session` |
+| The accounts | `socialAccounts` with platform `DISCORD`, in the local account store `~/.logCli/localAccounts.json` (or Twenty if you keep accounts there; the Twenty option was added 2026-10-28 by `scripts/twenty/twentySetup.mjs`). First account: `<name:1>`, AdsPower profile `k1ifqe1s` |
+| The session (find the account, its gate, its engine, the answer back to the account row) | `src/discord/account/session`, on the shared `src/platformKit/session` |
 | The commands | `src/cli/discord/index.ts`: `log discord session check` (MCP `discordSessionCheck`) |
 | The engine | `python/discordApi/engine.py`, on the shared `python/platformKit/engine.py`; each account's governor is under `~/.logCli/discord/<account>` |
 | The client | `vendor/endcord` (sparklost/endcord at `d6765b0`, the owner's pick 2026-10-28 from `clients.md`): its `endcord/discord.py` REST client, `gateway.py` gateway and `auth.py` sign-in |
-| The session | the account's discord.com localStorage `token`, saved to Twenty (`storageOrigins`) when its browser closes (`savePlatformSession`, for every platform but Facebook) and handed to the engine with the cookies (`sessionStorage` on the platform's shape). Never printed |
-| The session | the account's discord.com localStorage `token`, saved to Twenty (`storageOrigins`) when its browser closes (`savePlatformSession`, for every platform but Facebook) and handed to the engine with the cookies (`sessionStorage` on the platform's shape). Never printed |
+| The session | the account's discord.com localStorage `token`, saved to the account row (`storageOrigins`) when its browser closes (`savePlatformSession`, for every platform but Facebook) and handed to the engine with the cookies (`sessionStorage` on the platform's shape). Never printed |
+| The session | the account's discord.com localStorage `token`, saved to the account row (`storageOrigins`) when its browser closes (`savePlatformSession`, for every platform but Facebook) and handed to the engine with the cookies (`sessionStorage` on the platform's shape). Never printed |
 | Proxy | none, like Reddit (the owner, 2026-10-28): the gate reads this machine's own exit and the profile's timezone follows it |
 
 ## What the inspect found (2026-10-28, `log inspect` on `<name:1>`)

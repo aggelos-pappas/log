@@ -1,45 +1,41 @@
-# Twenty: one home for many accounts
+# Twenty: deprecated
 
-[Twenty](https://twenty.com) is an open-source CRM. log can use it as the one
-place every account, and everything about it, lives. You need it when many
-accounts, machines or people are involved; one person with a few accounts can
-skip it and keep accounts in a local file.
+[Twenty](https://twenty.com) is an open-source CRM. log no longer uses it, and what still touches it is being removed: accounts ([#337](https://github.com/matthewdonsemail-lab/log/issues/337)), the knowledge base ([#338](https://github.com/matthewdonsemail-lab/log/issues/338)), and the Marketplace and group features ([#339](https://github.com/matthewdonsemail-lab/log/issues/339)). Don't set up Twenty for new work.
+Accounts live in the local account store, `~/.logCli/localAccounts.json`
+(`LOG_LOCAL_ACCOUNTS` moves it), with cookies, proxy, login and PINs sealed
+in the [secret store](security/encryptedStore.md). With `LOG_ACCOUNTS=local`
+log uses only that store and never asks Twenty for an account. Hosted log is
+moving away from Twenty too: the private workspace (`log.db` plus protected
+files) owns accounts, sessions and messages.
 
-## What Twenty gives you
+Until those land, Twenty is still read, only if it is set up, for:
 
-Twenty is a database you can see and edit in a normal app (tables, filters,
-boards), with a REST and GraphQL API. You can use it hosted, or run it
-yourself with Docker.
+- **the knowledge base** (`log kb`), which keeps its articles in a Twenty
+  server and is off when `KB_TWENTY_URL` is unset ([Knowledge base](knowledgeBase.md));
+- **sharing accounts across machines**, if you choose to keep them in a
+  Twenty workspace instead of the local store;
+- **the old Marketplace agency features** (listings, campaigns,
+  conversations, groups), which read and write Twenty objects and are
+  deferred.
 
-In Twenty, every account is one row in `socialAccounts`, holding:
+## How the two stores work together
 
-- its platform and handle;
-- its cookies and proxy;
-- its status (ACTIVE, NEEDS_LOGIN, CHECKPOINT, BANNED…);
-- its home city and country;
-- its browser profile.
+Without `LOG_ACCOUNTS=local`, and with a Twenty workspace configured
+(`LOG_TWENTY_BASE_URL`, `LOG_TWENTY_API_KEY`), log reads local accounts first
+and adds Twenty's: a local account wins over a Twenty account of the same
+name. A run saves back to the store its account came from. In this mode new
+accounts are created in Twenty; with `LOG_ACCOUNTS=local` they go in the
+local store. `log localAccount pull` copies Twenty's accounts, cookies and
+login included, into the local store.
 
-Listings (`agencyListings`), campaigns (`agencyCampaigns`) and conversations
-(`agencyConversations`, `agencyMessages`) are rows linked to the account they
-belong to.
+In Twenty, every account is one row in `socialAccounts`, holding its platform
+and handle, cookies and proxy, status (ACTIVE, NEEDS_LOGIN, CHECKPOINT,
+BANNED…), home city and country, and browser profile. The local store keeps
+the same fields. Listings (`agencyListings`), campaigns (`agencyCampaigns`)
+and conversations (`agencyConversations`, `agencyMessages`) are Twenty rows
+linked to the account they belong to.
 
-Before each run log reads the row. After it, log writes back what happened:
-refreshed cookies, a new status, a listing's state. So the row is always the
-truth. Because it is one shared database, every machine, agent and person on
-your team sees the same accounts, and you can check or fix one by hand in
-Twenty's app.
-
-## Local file or Twenty?
-
-- **One person with a few accounts:** stay local (`LOG_ACCOUNTS=local`). It is
-  simpler and needs nothing else.
-- **Switch to Twenty when:**
-  - you run many accounts across platforms;
-  - more than one machine or person works on them;
-  - you group listings into campaigns;
-  - you want every account's status in one place you can edit.
-
-## Setting it up
+## Setting it up (optional)
 
 1. Get a Twenty workspace: [hosted](https://twenty.com), or
    [self-hosted](https://twenty.com/developers) with Docker.
@@ -56,15 +52,16 @@ Twenty's app.
 
    It only ever adds. It never renames or deletes a field, so it is safe on a
    workspace you already use.
-5. Add your accounts: as rows in Twenty, or with `cookies save`.
-   `log localAccount pull` copies Twenty's accounts into the local file if you
-   ever want to work offline.
+5. Add your accounts as rows in Twenty, or with `cookies save`.
+   `log localAccount pull` copies them into the local store whenever you want
+   to go back to local only.
 
 Every command takes `--json` and never prompts, so scripts and agents can use
 it.
 
 ## Where to read next
 
+- Adding accounts to the local store: [Accounts](accounts.md).
 - Every command, its flags, its MCP tool and the hooks that fire on it:
   [the reference](reference.md), generated from the code.
 - How accounts, statuses, replacements and campaigns work:
@@ -74,6 +71,8 @@ it.
 
 ## Working on the Twenty code
 
+- `src/twenty/graphql/helpers/localAccounts.ts` is the local account store and
+  its merge with Twenty (`withLocalAccounts`).
 - `scripts/twenty/twentySetup.mjs` creates the objects, fields and relations
   log needs on any workspace, a fresh one included. It only adds; it prints the
   plan, and `--apply` creates them.

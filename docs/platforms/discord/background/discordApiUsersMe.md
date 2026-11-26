@@ -105,7 +105,7 @@ Reads the signed-in account itself (`GET /api/v9/users/@me`): its id, username, 
 
 ## What our machine does with it
 
-It is the session check: `log discord session check` sends this one call through `vendor/endcord` with the account's saved token, and Discord's answer decides `sessionState` in Twenty (rule 73). 200 with the account is loggedIn.
+It is the session check: `log discord session check` sends this one call through `vendor/endcord` with the account's saved token, and Discord's answer decides `sessionState` on the account row (rule 73). 200 with the account is loggedIn.
 
 ## What can go wrong
 

@@ -27,7 +27,7 @@ of its warm-up. This does that for one account, both photos in one run (the owne
 
 ## The routine
 
-1. Put the photos in Twenty: `socialAccounts.profilePhoto` (a real-looking
+1. Put the photos on the account's row in the local account store: `socialAccounts.profilePhoto` (a real-looking
    face, not a logo) and `coverPhoto` (business-related is fine), each a URL
    or a local path. URLs are fetched through the account's proxy, never from
    this machine, and every file is varied so its bytes are new
@@ -50,7 +50,7 @@ of its warm-up. This does that for one account, both photos in one run (the owne
 5. When the owner says go: `--live`. The machine uploads the profile photo, then
    the cover; any failed step stops the run (nothing is retried on
    Facebook). A failed step saves `<item>Failed.txt` with what the page had.
-   On success `profileSetAt` is set in Twenty.
+   On success `profileSetAt` is set on the account's row.
 6. Rebuild the Facebook client docs: the profile requests are new.
 
    ```bash
@@ -61,7 +61,7 @@ of its warm-up. This does that for one account, both photos in one run (the owne
 
 | Code | Means | Do |
 | --- | --- | --- |
-| `profilePhotoMissing` | `--live` without both photos, or a photo that can't be read | Set both fields in Twenty |
+| `profilePhotoMissing` | `--live` without both photos, or a photo that can't be read | Set both fields on the account's row |
 | `profileControlNotFound` | No opener, no "Upload photo" item, no file input | Read `profileFound.txt` / `<item>Failed.txt`, fix the pattern |
 | `profileUploadNotSaved` | Save never enabled, or the dialog stayed open | Read the capture; run again after the gap |
 | `sessionExpired` | The profile wasn't signed in | `log facebook connect --account <a>` first |
