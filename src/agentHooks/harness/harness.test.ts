@@ -91,6 +91,17 @@ describe("the hook files, generated from AGENT_HOOKS", () => {
     expect(hermesPluginYaml("0.2.0")).not.toContain("listeningkit");
   });
 
+  test("Hermes manifest accepts release formatting and rejects changed or malformed content", () => {
+    const file = hookFiles(undefined, "0.5.0").find((file) => file.path === `${HERMES_PLUGIN_DIR}/plugin.yaml`)!;
+    const yaml = hermesPluginYaml("0.5.0");
+    const folded = yaml.replace(/^description: "(.*)"$/m, (_, text) => `description: >-\n  ${text}`);
+    expect(file.same(folded)).toBe(true);
+    expect(file.same(folded.replace("pre_llm_call", "unknown_hook"))).toBe(false);
+    expect(file.same(folded.replace("version: 0.5.0", "version: 0.4.0"))).toBe(false);
+    expect(file.same("name: [")).toBe(false);
+    expect(file.same(null)).toBe(false);
+  });
+
   test("every generated file in the repo matches", () => {
     const version = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version: string }).version;
     for (const file of hookFiles(undefined, version)) {
