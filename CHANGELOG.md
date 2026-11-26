@@ -2,6 +2,67 @@
 
 Every release, newest first. release-please writes each new section from the commits; `bun run docs:releases` adds its `Models:` line from `src/models/manifest` and rebuilds the Releases table in the README.
 
+## [0.5.0](https://github.com/matthewdonsemail-lab/log/compare/v0.4.0...v0.5.0) (2026-11-26)
+
+Models: patronus-studio/wolf-defender-prompt-injection-small@2484cc9a13550aa4f2c29b577ff3ef331dc6ba07, Xenova/all-MiniLM-L6-v2@751bff37182d3f1213fa05d7196b954e230abad9, SamLowe/roberta-base-go_emotions-onnx@90ee0c1c4796d370e68968687b8ba51fc11224f4, onnx-community/LFM2.5-VL-450M-ONNX@24e63007ff1aaafbde27c89eb01a0513f4f61482, myuri@5.0.0, fastino/gliner2.5-small-v1@b5d42bf7dc7d01c40304ae4ed43c2f13c325a75b
+
+
+### Features
+
+* **genui:** the relationship state machine as a Hermes GenUI block, its states explaining each point ([#287](https://github.com/matthewdonsemail-lab/log/issues/287)) ([a1f347a](https://github.com/matthewdonsemail-lab/log/commit/a1f347a3249d67ba57092a17af9d1b222507a115))
+* **governor:** count each account's requests by caller, and governor show prints the split ([8e91a2d](https://github.com/matthewdonsemail-lab/log/commit/8e91a2da49c6b1d302e801c340b1e170641a8d5b))
+* **harness:** add an in-harness off switch for log hooks and tools ([#318](https://github.com/matthewdonsemail-lab/log/issues/318)) ([359646c](https://github.com/matthewdonsemail-lab/log/commit/359646c388f9784c84ce5c7b88547453db2094dd))
+* **index:** one CPU pass per conversation that embeds, voices and screens it ([#299](https://github.com/matthewdonsemail-lab/log/issues/299)) ([88c740b](https://github.com/matthewdonsemail-lab/log/commit/88c740bb3658d6230b26a0ba8b5931e0a141a3c2))
+* **index:** the owner status line shows what the index pass is doing ([#301](https://github.com/matthewdonsemail-lab/log/issues/301)) ([def0a0e](https://github.com/matthewdonsemail-lab/log/commit/def0a0eb9aa4fbed3800a45efa48b8b4695ce033))
+* **network:** live rings from every stored event, and the Relate graph updated in place ([#272](https://github.com/matthewdonsemail-lab/log/issues/272)) ([16789ec](https://github.com/matthewdonsemail-lab/log/commit/16789ec39342bb2838b7bd5977bd2532139650aa))
+* **network:** your network in log.db and the Relate graph, and a who-to-talk-to play ([#268](https://github.com/matthewdonsemail-lab/log/issues/268)) ([39ea853](https://github.com/matthewdonsemail-lab/log/commit/39ea853a63528e906f4a57eee1b4c5cab9ecfdbe))
+* **people:** backfill who is automated from each platform's own answer ([#293](https://github.com/matthewdonsemail-lab/log/issues/293)) ([8d1dc2a](https://github.com/matthewdonsemail-lab/log/commit/8d1dc2a2b7832202fa3e5002859f6f86c7fb55f7))
+* **people:** durable person facts with their source messages, two tiers, through the graph owner ([#285](https://github.com/matthewdonsemail-lab/log/issues/285)) ([55aaf94](https://github.com/matthewdonsemail-lab/log/commit/55aaf94c7306c1bb322f7dc283c3245dbe6e58e0))
+* **relate:** relationship state machine block and relateMachine tool ([#267](https://github.com/matthewdonsemail-lab/log/issues/267)) ([aab1a48](https://github.com/matthewdonsemail-lab/log/commit/aab1a4896bd1a0ec597391ee1ef1ac85a2cd88b8))
+* **relate:** the network map as a live GenUI card map, MCP App and tool ([#313](https://github.com/matthewdonsemail-lab/log/issues/313)) ([978247f](https://github.com/matthewdonsemail-lab/log/commit/978247feb54e0e41c79724fef077a473bd18f843))
+* **relate:** the network state machine puts its people inside each state cell ([#292](https://github.com/matthewdonsemail-lab/log/issues/292)) ([234edbc](https://github.com/matthewdonsemail-lab/log/commit/234edbc86bb1b1e5a26e822419d5cbb426bf75dc))
+* **relate:** the relationship machine has each platform's own states and moves, linked people as per-platform lanes, and a layout that fits ([#289](https://github.com/matthewdonsemail-lab/log/issues/289)) ([5fa170d](https://github.com/matthewdonsemail-lab/log/commit/5fa170d71d21654522518003dc7e1dd7d9a231d7))
+* **relate:** the state machine in stately's measured look, a platform filter and one person across linked accounts ([#275](https://github.com/matthewdonsemail-lab/log/issues/275)) ([27df187](https://github.com/matthewdonsemail-lab/log/commit/27df1872a605571db8324b555b42af4926ddc423))
+* **relate:** the state machine view in log's own font, Satoshi ([3a9d258](https://github.com/matthewdonsemail-lab/log/commit/3a9d258a0f40c161fa3280efb4ff3a75b20d7861))
+* **setup:** one-pass, agent-driveable setup command ([7b9dd62](https://github.com/matthewdonsemail-lab/log/commit/7b9dd62b005be276522436ed0ade08874fb6dbec))
+* **tui:** strengthen the clack setup wizard and drop AdsPower and Twenty from setup ([7982697](https://github.com/matthewdonsemail-lab/log/commit/79826975fed85e0dc4219210c786126d5f511fd3))
+
+
+### Bug Fixes
+
+* browser line only when one is open; affected tests on pre-push, isolated test runs ([da2e3e5](https://github.com/matthewdonsemail-lab/log/commit/da2e3e55f125443ff4563fb9b21661210736d5b8))
+* browser line only when one is open; affected tests on pre-push, isolated test runs ([86c2eaa](https://github.com/matthewdonsemail-lab/log/commit/86c2eaae25ed6ed6cd8e4d77daa87db4c33d0205))
+* fair cold-DM gating, closed-DM skips, server-channel lookup, plays that survive reloads; docs off Twenty ([f43a4b4](https://github.com/matthewdonsemail-lab/log/commit/f43a4b4427b66e5e4ea6355413538fe4774da3e6))
+* governor resets hold across processes, and six other defects from the coupling review ([5218303](https://github.com/matthewdonsemail-lab/log/commit/5218303681b2ba52c74f84abb849b2d8f05c1d22))
+* governor resets hold across processes, plus 8 more fixes from the coupling review ([5faa293](https://github.com/matthewdonsemail-lab/log/commit/5faa293d5087daf98044323d31becb5798e4627f))
+* **hermesPlugin:** a spilled log result is known by its exit line, not only a leading browser line ([77a5480](https://github.com/matthewdonsemail-lab/log/commit/77a54805f04bcff90fb8d11b3e7019ad5eb0f5f6))
+* **hermesPlugin:** know a saved log result by its exit line ([5ba7123](https://github.com/matthewdonsemail-lab/log/commit/5ba71232ea9fccf8014d644534e43d8f4495b29d))
+* house style lets a capital open a line, cold dms drop the "saw t… ([ca2c58e](https://github.com/matthewdonsemail-lab/log/commit/ca2c58e919275d22cd54051b53dab2e5b80ac5b1))
+* house style lets a capital open a line, cold dms drop the "saw this" template ([#321](https://github.com/matthewdonsemail-lab/log/issues/321)) ([0f9d922](https://github.com/matthewdonsemail-lab/log/commit/0f9d922b417eaa4945bd6a627e91d310140e3d4b))
+* **mcp:** relateMachine answers with the result envelope its outputSchema lists, and platform:handle resolves on that platform ([#286](https://github.com/matthewdonsemail-lab/log/issues/286)) ([06e706b](https://github.com/matthewdonsemail-lab/log/commit/06e706b122e65b9a3a4b8472d5279aeebd597dfa))
+* **opencode:** make log's MCP server start and expose tools in Code Mode ([705cc4a](https://github.com/matthewdonsemail-lab/log/commit/705cc4a1d2ca2b115517eaef96d43bdc4a344c02))
+* **people:** a governor block stops the sweep instead of blaming every server ([#297](https://github.com/matthewdonsemail-lab/log/issues/297)) ([fa12dcd](https://github.com/matthewdonsemail-lab/log/commit/fa12dcdf4e8f15d9e74091448e926ea2c429e352))
+* **people:** ask about new people each run, not the same twenty ([#298](https://github.com/matthewdonsemail-lab/log/issues/298)) ([6666596](https://github.com/matthewdonsemail-lab/log/commit/66665961bfdaa1a76883a6c711716f51da40de56))
+* **people:** link accepts the X handles suggest builds from shared links, and writes say when LOG_DB points elsewhere ([8c58680](https://github.com/matthewdonsemail-lab/log/commit/8c586804f8d018c769e925af4a4b82e5d13defe8))
+* **people:** link takes the X handles suggest finds in shared links; writes say when LOG_DB points elsewhere ([f4993a7](https://github.com/matthewdonsemail-lab/log/commit/f4993a73dbdc711ce18b14d3fb1a6c1ae156f2d8))
+* **people:** read every server whose member list it can, and skip the rest ([#294](https://github.com/matthewdonsemail-lab/log/issues/294)) ([ea04ada](https://github.com/matthewdonsemail-lab/log/commit/ea04adab7bb422763848686592108f026176994c))
+* **profiles:** save avatar bytes and draw them in the network map ([#314](https://github.com/matthewdonsemail-lab/log/issues/314)) ([2df7205](https://github.com/matthewdonsemail-lab/log/commit/2df72052453b2f585df0059d7d2c338707826304))
+* **relate:** cap a network cell's people at 6 so the view always draws ([#322](https://github.com/matthewdonsemail-lab/log/issues/322)) ([621f8d7](https://github.com/matthewdonsemail-lab/log/commit/621f8d7d142ce117755a7f338aa0f0bc820adb01))
+* **relate:** the state machine view in the stately editor's exact computed look ([#284](https://github.com/matthewdonsemail-lab/log/issues/284)) ([2450a32](https://github.com/matthewdonsemail-lab/log/commit/2450a3213afe31f397537441bf76650397ccc501))
+* **release:** release-please bumps the Hermes plugin version ([3dc39b9](https://github.com/matthewdonsemail-lab/log/commit/3dc39b965bdc211f4ac3e3e77d90411173a78e57))
+* **release:** release-please bumps the Hermes plugin version, so check:agentHooks stays green after a release ([9796fca](https://github.com/matthewdonsemail-lab/log/commit/9796fca65a91f42f019cad13a8a967afc85e2065))
+* **storage:** a chat takes its kind and name from the channel catalog, with a repair migration ([c45f572](https://github.com/matthewdonsemail-lab/log/commit/c45f572c8030e879a66f5899442287c81cfe7f30))
+* the queue never holds an item for its own send, and the fact screen says why it stopped ([#323](https://github.com/matthewdonsemail-lab/log/issues/323)) ([64681e8](https://github.com/matthewdonsemail-lab/log/commit/64681e84c608d10166aa6a157967e3e64ae68d8d))
+* voice gate reads cold DMs fairly, queue skips closed DMs, chat lookup finds server channels ([9a82d2e](https://github.com/matthewdonsemail-lab/log/commit/9a82d2e6f18ca991f707a44431cbd550cf1f9c08))
+* **voice:** find the chat by any X conversation id and read his own sent words as his ([#224](https://github.com/matthewdonsemail-lab/log/issues/224)) ([511643f](https://github.com/matthewdonsemail-lab/log/commit/511643f79c469a4558c2a8aba65cec67cf138f6f))
+* **voice:** find the chat by any X conversation id and read his own sent words as his ([#224](https://github.com/matthewdonsemail-lab/log/issues/224)) ([2ea3316](https://github.com/matthewdonsemail-lab/log/commit/2ea3316dcf7e13753a2eda82cd412778f5a634b1))
+* **x:** read profile pictures from conversations and engagement ([#315](https://github.com/matthewdonsemail-lab/log/issues/315)) ([8cb97a3](https://github.com/matthewdonsemail-lab/log/commit/8cb97a36936cf29681f302bdec3b1cf584b45ebb))
+
+
+### Performance Improvements
+
+* **hooks:** parallel, path-scoped, cached commit checks; devlog from the commit message; test:affected by import distance ([#290](https://github.com/matthewdonsemail-lab/log/issues/290)) ([17b6cf5](https://github.com/matthewdonsemail-lab/log/commit/17b6cf5e41f68d0dece12be53d38e2dc990c36ec))
+
 ## [0.4.0](https://github.com/matthewdonsemail-lab/log/compare/v0.3.0...v0.4.0) (2026-11-21)
 
 Models: patronus-studio/wolf-defender-prompt-injection-small@2484cc9a13550aa4f2c29b577ff3ef331dc6ba07, Xenova/all-MiniLM-L6-v2@751bff37182d3f1213fa05d7196b954e230abad9, SamLowe/roberta-base-go_emotions-onnx@90ee0c1c4796d370e68968687b8ba51fc11224f4, onnx-community/LFM2.5-VL-450M-ONNX@24e63007ff1aaafbde27c89eb01a0513f4f61482, myuri@5.0.0
