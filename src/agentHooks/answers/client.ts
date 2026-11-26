@@ -13,7 +13,7 @@ import { agentNotice, refreshInBackground } from '../../release/check/index'
 import { engineContext } from '../../directApi/engine/index'
 import { codeStampWatcher, localChangesLine, staleServerLine, uncommittedFiles, uncommittedFilesAsync } from '../../mcp/freshness/index'
 import type { StampWatcher } from '../../mcp/freshness/index'
-import { kbConfig } from '../../knowledge/base/index'
+import { knowledgeContext } from '../../knowledge/base/index'
 import { newQueueEvents, queueContext } from '../../twitter/queue/events/index'
 import { newLiveEvents, xLiveContext } from '../../twitter/live/feed/index'
 import { clearDeadQueueLocks, ensureLiveWatchers, hookReaderOf, startDescriber } from '../../inbox/watch/index'
@@ -131,23 +131,8 @@ export function enginesAnswer(event: HookEvent, repo: string, raw = '', accounts
   return fresh ? { context: fresh } : {}
 }
 
-async function chunkCount(url: string): Promise<number | null> {
-  const redis = new Bun.RedisClient(url, { connectionTimeout: 3000, autoReconnect: false })
-  try {
-    const info = (await Promise.race([redis.send('FT.INFO', ['kbIdx']), new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))])) as Record<string, unknown>
-    return Number(info.num_docs ?? NaN)
-  } catch {
-    return null
-  } finally {
-    redis.close()
-  }
-}
-
 export async function knowledgeAnswer(): Promise<HookAnswer> {
-  const config = kbConfig()
-  const count = 'missing' in config ? null : await chunkCount(config.redisUrl)
-  const reach = 'missing' in config ? `not set up on this machine (${config.missing})` : count === null ? 'not reachable right now (the KB_TWENTY_URL host)' : `${count} indexed chunks`
-  return { context: `log-cli knowledge base: every AGENTS.md rule, skill, doc, infra note, memory file, page state, account and agent note, kept in Twenty and searched through Redis, ${reach}. The MCP tools read it: \`kbSearch\` { query } finds what an earlier session found or how something works, \`kbShow\` { key } reads one entry, and \`kbRemember\` { text } saves what this session learns, never a secret.` }
+  return { context: knowledgeContext() }
 }
 
 export function queueAnswer(raw: string): HookAnswer {

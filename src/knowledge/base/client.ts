@@ -1,90 +1,85 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { join } from 'node:path'
 import { reciprocalRankFusion } from '../../search/conversations/helpers/fuse'
 import type { Embedder } from '../../search/conversations/types'
+import { defaultDbPath, openDatabase } from '../../storage/schema/index'
 import { articleHash, chunksOf } from './helpers/chunk'
 import { scrubSecrets } from './helpers/scrub'
-import { KB_SEARCH_DEPTH, KB_TWENTY_URL_ENV } from './types'
-import type { KbArticle, KbConfig, KbHit, KbIndex, KbKind, KbStore, KbStoredArticle, KbSyncReport } from './types'
+import { keywordRanks, meaningRanks } from './helpers/search'
+import { kbChunkCount, logDbKbStore } from './helpers/store'
+import { KB_SAVE_BATCH, KB_SEARCH_DEPTH } from './types'
+import type { KbArticle, KbHit, KbKind, KbStore, KbStoredArticle, KbSyncReport } from './types'
 
-const CONFIG_DIR = join(homedir(), '.config', 'listeningkit')
-
-function fromFile(path: string): string {
-  return existsSync(path) ? readFileSync(path, 'utf8').trim() : ''
+export function openKnowledge(path: string = defaultDbPath()): KbStore {
+  return logDbKbStore(openDatabase(path))
 }
 
-export function kbConfig(env: Record<string, string | undefined> = process.env): KbConfig | { missing: string } {
-  const twentyUrl = (env[KB_TWENTY_URL_ENV] || '').trim()
-  const twentyKey = (env.KB_TWENTY_API_KEY || fromFile(env.KB_TWENTY_API_KEY_FILE || join(CONFIG_DIR, 'twenty-listeningkit-api-key.txt'))).trim()
-  const redisUrl = (env.KB_REDIS_URL || fromFile(env.KB_REDIS_URL_FILE || join(CONFIG_DIR, 'kb-redis-url.txt'))).trim()
-  if (!twentyUrl) return { missing: `${KB_TWENTY_URL_ENV} (the URL of your own Twenty server; there is no default host)` }
-  if (!twentyKey) return { missing: 'KB_TWENTY_API_KEY (or the file ~/.config/listeningkit/twenty-listeningkit-api-key.txt)' }
-  if (!redisUrl) return { missing: 'KB_REDIS_URL (or the file ~/.config/listeningkit/kb-redis-url.txt)' }
-  return { twentyUrl, twentyKey, redisUrl }
+export function knowledgeContext(path: string = defaultDbPath()): string {
+  let reach: string
+  try {
+    const count = kbChunkCount(openDatabase(path))
+    reach = count ? `${count} indexed chunks` : 'empty until the first kbSync'
+  } catch (error) {
+    reach = `not readable right now (${error instanceof Error ? error.message : String(error)})`
+  }
+  return `log-cli knowledge base: every AGENTS.md rule, skill, doc, infra note, memory file, page state, account and agent note, kept in the workspace log.db and searched there by keyword and meaning, ${reach}. The MCP tools read it: \`kbSearch\` { query } finds what an earlier session found or how something works, \`kbShow\` { key } reads one entry, and \`kbRemember\` { text } saves what this session learns, never a secret.`
 }
 
-const embedText = (title: string, text: string) => `${title}\n${text}`
+const embedText = (title: string, text: string) => `${title}
+${text}`
 
-async function indexArticle(index: KbIndex, embedder: Embedder, article: KbStoredArticle): Promise<number> {
+async function indexArticle(store: KbStore, embedder: Embedder, article: KbStoredArticle): Promise<number> {
   const chunks = chunksOf(article)
   if (!chunks.length) {
-    await index.drop(article.key)
+    store.dropChunks(article.key)
     return 0
   }
   const vectors: Float32Array[] = []
   for (let i = 0; i < chunks.length; i += 32) vectors.push(...(await embedder.embed(chunks.slice(i, i + 32).map((c) => embedText(c.title, c.text)))))
-  await index.put(article, chunks, vectors)
+  store.putChunks(article, embedder.model, chunks, vectors)
   return chunks.length
 }
 
 export interface SyncOptions {
   progress?: (line: string) => void
+  now?: Date
 }
 
-export async function syncKnowledge(collected: readonly KbArticle[], store: KbStore, index: KbIndex, embedder: Embedder, options: SyncOptions = {}): Promise<KbSyncReport> {
+export async function syncKnowledge(collected: readonly KbArticle[], store: KbStore, embedder: Embedder, options: SyncOptions = {}): Promise<KbSyncReport> {
   const started = performance.now()
   const say = options.progress ?? (() => {})
-  const report: KbSyncReport = { collected: collected.length, created: 0, updated: 0, unchanged: 0, indexed: 0, chunks: 0, dropped: 0, byKind: {}, setup: [], ms: 0 }
-  report.setup.push(...(await store.ensure()))
-  if (await index.ensure(embedder.dimensions)) report.setup.push('created Redis index kbIdx')
-  say(`kb: ${collected.length} articles collected; reading what Twenty already holds`)
-  const existing = new Map((await store.list()).map((a) => [a.key, a]))
-  const fresh: { article: KbArticle; hash: string }[] = []
-  const changed: { article: KbArticle; hash: string; id: string }[] = []
+  const report: KbSyncReport = { collected: collected.length, created: 0, updated: 0, unchanged: 0, indexed: 0, chunks: 0, dropped: 0, byKind: {}, ms: 0 }
+  say(`kb: ${collected.length} articles collected; reading what log.db already holds`)
+  const existing = new Map(store.list().map((a) => [a.key, a]))
+  const writes: { article: KbArticle; hash: string }[] = []
   for (const article of collected) {
     report.byKind[article.kind] = (report.byKind[article.kind] ?? 0) + 1
     const hash = articleHash(article)
     const have = existing.get(article.key)
-    if (!have) fresh.push({ article, hash })
-    else if (have.hash !== hash) changed.push({ article, hash, id: have.id })
-    else report.unchanged++
+    if (!have) report.created++
+    else if (have.hash !== hash) report.updated++
+    else {
+      report.unchanged++
+      continue
+    }
+    writes.push({ article, hash })
   }
-  say(`kb: ${fresh.length} new and ${changed.length} changed articles to write to Twenty, ${report.unchanged} unchanged`)
-  for (let i = 0; i < fresh.length; i += 60) {
-    for (const saved of await store.createMany(fresh.slice(i, i + 60))) existing.set(saved.key, saved)
-    report.created = Math.min(fresh.length, i + 60)
-    say(`kb: Twenty created ${report.created}/${fresh.length}`)
+  say(`kb: ${report.created} new and ${report.updated} changed articles to write to log.db, ${report.unchanged} unchanged`)
+  for (let i = 0; i < writes.length; i += KB_SAVE_BATCH) {
+    for (const saved of store.saveMany(writes.slice(i, i + KB_SAVE_BATCH), options.now)) existing.set(saved.key, saved)
   }
-  for (const { article, hash, id } of changed) {
-    existing.set(article.key, await store.save(article, hash, id))
-    report.updated++
-    if (report.updated % 25 === 0) say(`kb: Twenty updated ${report.updated}/${changed.length}`)
-  }
-  say(`kb: Twenty done: ${report.created} new, ${report.updated} changed, ${report.unchanged} unchanged; indexing into Redis`)
-  const indexed = await index.hashes()
+  say(`kb: log.db articles written; indexing what changed with ${embedder.model}`)
+  const indexed = store.indexed(embedder.model)
   const all = [...existing.values()].map((a) => ({ ...a, hash: articleHash(a) }))
   let i = 0
   for (const article of all) {
     i++
     if (indexed.get(article.key) === article.hash) continue
-    report.chunks += await indexArticle(index, embedder, article)
+    report.chunks += await indexArticle(store, embedder, article)
     report.indexed++
-    if (report.indexed % 25 === 0) say(`kb: Redis ${i}/${all.length} (${report.indexed} indexed, ${report.chunks} chunks)`)
+    if (report.indexed % 25 === 0) say(`kb: indexed ${i}/${all.length} (${report.indexed} articles, ${report.chunks} chunks)`)
   }
   for (const key of indexed.keys()) {
     if (existing.has(key)) continue
-    await index.drop(key)
+    store.dropChunks(key)
     report.dropped++
   }
   report.ms = performance.now() - started
@@ -97,12 +92,13 @@ export interface KbSearchOptions {
   depth?: number
 }
 
-export async function searchKnowledge(index: KbIndex, embedder: Embedder, query: string, options: KbSearchOptions = {}): Promise<KbHit[]> {
+export async function searchKnowledge(store: KbStore, embedder: Embedder, query: string, options: KbSearchOptions = {}): Promise<KbHit[]> {
   const depth = options.depth ?? KB_SEARCH_DEPTH
+  const rows = store.chunkRows(embedder.model, options.kind)
+  if (!rows.length) return []
   const [vector] = await embedder.embed([query])
-  const [keyword, meaning] = await Promise.all([index.keyword(query, options.kind, depth), index.meaning(vector, options.kind, depth)])
-  const fused = reciprocalRankFusion([keyword, meaning])
-  const chunks = new Map((await index.chunks(fused.slice(0, depth).map((f) => f.id))).map((c) => [c.id, c]))
+  const fused = reciprocalRankFusion([keywordRanks(rows, query, depth), meaningRanks(rows, vector, depth)])
+  const chunks = new Map(rows.map((c) => [c.id, c]))
   const hits: KbHit[] = []
   const seen = new Set<string>()
   for (const f of fused) {
@@ -132,12 +128,9 @@ export function noteArticle(input: RememberInput): KbArticle {
   return { key: `note:${stamp}${slug ? `-${slug}` : ''}`, kind: 'note', title, body, source: 'agent', tags: input.tags ?? [], author: input.author ?? 'agent' }
 }
 
-export async function rememberKnowledge(input: RememberInput, store: KbStore, index: KbIndex, embedder: Embedder): Promise<KbStoredArticle> {
-  await store.ensure()
-  await index.ensure(embedder.dimensions)
+export async function rememberKnowledge(input: RememberInput, store: KbStore, embedder: Embedder): Promise<KbStoredArticle> {
   const article = noteArticle(input)
-  const hash = articleHash(article)
-  const saved = await store.save(article, hash, null)
-  await indexArticle(index, embedder, { ...saved, hash })
+  const [saved] = store.saveMany([{ article, hash: articleHash(article) }], input.now)
+  await indexArticle(store, embedder, saved)
   return saved
 }

@@ -59,8 +59,8 @@ Each tool's own description carries its full usage, notes, live line and rules; 
 | `searchIndex` | Read every conversation through the platform's engine | `log search index [--platform <twitter\|discord>] [--account <a>] [--saved] [--rebuild]   (embeds only new or changed chunks, --rebuild all; --saved indexes what log.db holds, else reads every DM and group through the platform's engine first)` |
 | `searchBench` | Time realistic queries on the built index, cold and warm, with p50… | `log search bench [--rounds <n>]   (times realistic queries on the built index, cold and warm, and prints p50, p95 and p99 beside a plain linear scan)` |
 | `kbSearch` | Search the knowledge base | `log kb search "<query>" [--kind <kind>] [--limit <n>] [--json]` |
-| `kbSync` | Collect every source into the knowledge base in Twenty and index what… | `log kb sync [--noAccounts] [--json]   (collects rules, skills, docs, infra notes, memory files, page states and accounts into the knowledge base, and indexes what changed into Redis)` |
-| `kbRemember` | Save an agent memory as a knowledge base note, in Twenty and Redis at… | `log kb remember "<text>" [--title <t>] [--tags <a,b>] [--json]   (saves an agent memory as a note in Twenty and Redis at once)` |
+| `kbSync` | Collect every source into the knowledge base in log.db and index what… | `log kb sync [--noAccounts] [--json]   (collects rules, skills, docs, infra notes, memory files, page states and accounts into the knowledge base in log.db, and indexes what changed)` |
+| `kbRemember` | Save an agent memory as a knowledge base note in log.db, indexed at… | `log kb remember "<text>" [--title <t>] [--tags <a,b>] [--json]   (saves an agent memory as a note in log.db and indexes it at once)` |
 | `kbShow` | Show one knowledge base article in full | `log kb show <key> [--json]   (one article in full, e.g. rule:73, skill:inspect, pageState:messengerPinCreate)` |
 | `transcribe` | Transcribe every voice note in the saved X and Discord conversations… | `log transcribe [--platform twitter\|discord] [--account <a>] [--list] [--noIndex] [--json]` |
 | `transcribeFile` | Transcribe one audio file with AssemblyAI, kept by its hash | `log transcribe file <path> [--json]   (one audio file, transcribed and kept by its hash)` |
@@ -74,8 +74,9 @@ From `skills/knowledgeBase/SKILL.md`.
 
 The knowledge base is one place for everything log-cli knows: the owner's rules,
 the skills, the docs, the infra notes, every agent's memory files, the known
-page states, the accounts, and the notes agents save. Twenty holds it, Redis
-searches it.
+page states, the accounts, and the notes agents save. It lives in the
+workspace `log.db` and is searched there, on this machine. It needs no server
+or setting, so it always works.
 
 ### Hard boundaries
 
@@ -85,24 +86,18 @@ searches it.
   recognise, but it is a safety net, not permission.
 - **Never mention Meta's or Facebook's rules from it** (rule 38).
   `docs/vendors` and the enforcement research are never collected.
-- **Rows are never deleted by log-cli.** An article removed from the repo
-  stays in Twenty; Redis drops only what Twenty no longer has.
+- **Articles are never deleted by a sync.** An article removed from the repo
+  stays in `kbArticles`; only chunks whose article is gone are dropped.
 
 ### Where it lives
 
-- **Twenty:** your own Twenty workspace, object `knowledgeArticles`
-  (Knowledge base): `name` (title), `key`, `kind`, `body` (Markdown),
-  `source`, `tags`, `author`, `contentHash`, `syncedAt`. log-cli reaches it at
-  `KB_TWENTY_URL` (`https://<your-twenty-host>`, over a private network such
-  as Tailscale). There is no default host: with `KB_TWENTY_URL` unset the
-  knowledge base is off. People read and edit it in Twenty's own web app.
-- **Redis:** `kb-redis` (Redis 8.2.11 with the search module), on the same
-  private network at `<your-redis-host>:6380`, index `kbIdx` over
-  `kb:chunk:*` hashes (title, text, key, kind, source, a 384-dimension
-  vector) and `kb:article:*` (each article's hash and chunk ids).
-- **Logins:** `~/.config/listeningkit/twenty-listeningkit-api-key.txt` and
-  `~/.config/listeningkit/kb-redis-url.txt` (or `KB_TWENTY_API_KEY`,
-  `KB_REDIS_URL`, `KB_TWENTY_URL`).
+- **Articles:** table `kbArticles` in the workspace `log.db`: `key`, `kind`,
+  `title`, `body` (Markdown), `source`, `tags`, `author`, `contentHash`,
+  `syncedAt`.
+- **Search index:** table `kbChunks` in the same `log.db`: each chunk's text,
+  article key, kind, title, source, the content hash and embedding model it
+  came from, and its 384-dimension vector.
+- Both come from `log.db`'s versioned schema (migration 33, `knowledgeBase`).
 
 ### Kinds
 
@@ -116,7 +111,7 @@ searches it.
 | `memory` | every Claude Code memory file in `~/.claude/projects/*/memory` (`memory:log-cli/cloudflare-access`) |
 | `pageState` | `PAGE_STATES` (`pageState:messengerPinCreate`) |
 | `account` | log-cli's accounts (the local account store), status and setup only (`account:10000000000001`) |
-| `note` | `log kb remember`, or written by a person in Twenty |
+| `note` | `log kb remember` |
 
 ### Commands
 
@@ -126,7 +121,7 @@ Agents call the MCP tools, never a hand-run `log kb …` (rule 163):
 kbSearch { query: "why did the tunnel go down" }               best articles, keyword + meaning
 kbSearch { query: "messenger pin", kind: "pageState", limit: 3 }
 kbShow { key: "rule:73" }                                      one article in full
-kbRemember { text: "…", tags: ["infra", "server"] }                 a note, in Twenty and Redis at once
+kbRemember { text: "…", tags: ["infra", "server"] }            a note, saved and indexed at once
 kbSync {}                                                      refresh from every source (Monitor it, rule 26)
 kbSync { noAccounts: true }                                    without reading log-cli's accounts
 ```
@@ -138,14 +133,18 @@ each one must do is in the spec, [Knowledge base](../../docs/specs/knowledgeBase
 
 1. Collect every source (about 600 articles, under a second), scrubbing
    secrets from each body.
-2. Read what Twenty holds, compare each article's content hash, then create
-   the new ones in batches of 60 and update the changed ones one by one.
-   Twenty allows 100 API requests a minute; a 429 waits a minute and
-   retries, so a first sync takes a few minutes and later ones seconds.
-3. Index into Redis every article whose hash differs from what Redis holds,
-   including the ones a person wrote or edited in Twenty, in chunks of about
+2. Read what `kbArticles` holds, compare each article's content hash, and
+   write the new and changed ones in transactions of 200.
+3. Re-index every article whose hash differs from the one its chunks carry,
+   or whose chunks came from another embedding model, in chunks of about
    1,200 characters embedded with all-MiniLM-L6-v2 on this machine; drop
-   from Redis what Twenty no longer has.
+   chunks whose article is gone.
+
+### How a search works
+
+The chunks of the current model are ranked twice, by BM25 keyword score and
+by cosine similarity to the query's embedding, and the two lists are fused
+with reciprocal rank fusion. Each article appears once, at its best chunk.
 
 ### When a session learns something
 
@@ -153,7 +152,7 @@ Save it before the session ends, in one or two plain sentences with where it
 came from:
 
 ```
-kbRemember { text: "Twenty v2.49 signs API keys with a key encrypted by ENCRYPTION_KEY; a changed ENCRYPTION_KEY gives 'No encryption key matches keyId'. Fixed 2026-10-27 by restoring the Oct 21 secrets.", title: "Twenty API keys need the original ENCRYPTION_KEY", tags: ["twenty", "server"] }
+kbRemember { text: "The tunnel drops when its token file is replaced while it runs; restart the tunnel after changing the token (found 2026-10-27 in the tunnel's own log).", title: "Restart the tunnel after a token change", tags: ["infra", "server"] }
 ```
 
 ## The rules these tools fall under
