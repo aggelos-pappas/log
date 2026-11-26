@@ -10,7 +10,7 @@ Accounts live in a local file, on every platform, so log runs everything locally
 
 ### REQ-LOCAL-01: Accounts live in one local file
 
-Local accounts are kept in `~/.logCli/localAccounts.json`, and `LOG_LOCAL_ACCOUNTS` moves it. The file is written readable by its owner only, since it holds cookies and logins. Its secret fields (cookies, storage origins, proxy, email, password, two-step secret, PIN) are encrypted through the secret store (`src/storage/secrets`), with the key held by the OS keyring (Windows DPAPI, the macOS Keychain or Linux Secret Service), when it is ready; otherwise they stay in the file and a warning says so once.
+Local accounts are kept in `~/.logCli/localAccounts.json`, and `LOG_LOCAL_ACCOUNTS` moves it. The file is written readable by its owner only, since it holds cookies and logins. Its secret fields (cookies, storage origins, proxy, email, password, two-step secret, PIN) are moved out of the file into log.db, encrypted through the secret store (`src/storage/secrets`) with the key held by the OS keyring (Windows DPAPI, the macOS Keychain or Linux Secret Service), and the row keeps only a `sealedSecrets` reference, when the store is ready; otherwise they stay in the file and a warning says so once.
 
 Checked by: code and SubQ
 

@@ -54,7 +54,7 @@ log inspect goal --account <a>                           # the goal, whether it 
 
 Accounts live in the local account store, `~/.logCli/localAccounts.json`, as
 `socialAccounts` rows: one per account, with its platform, session and proxy,
-secrets encrypted, with the key held by your OS keyring ([encrypted account store](security/encryptedStore.md)). log reads the row before a run and writes
+and its secrets taken out of the file and kept encrypted in log.db, with the key held by your OS keyring ([encrypted account store](security/encryptedStore.md)); the row keeps only a `sealedSecrets` reference. log reads the row before a run and writes
 the result back after it. With `LOG_ACCOUNTS=local` that store is the only
 one; otherwise a Twenty workspace (deprecated, #337), if configured, adds its
 accounts (deprecated). The deferred Marketplace listings are Twenty

@@ -174,7 +174,7 @@ Then ask in plain words: *"read my X DMs and tell me who's waiting on me"*. log'
 - **Turn aware.** On Discord and Slack a multi-line reply waits while they are typing, and holds the rest if they write back or keep typing ([#199](https://github.com/matthewdonsemail-lab/log/pull/199), [#202](https://github.com/matthewdonsemail-lab/log/pull/202)).
 - **Search knows where it was said.** Every hit names a DM, a group or a server channel, and you can search only one of them ([#198](https://github.com/matthewdonsemail-lab/log/pull/198)).
 - **It watches its own tools.** Tool health shows which tools are used, which fail and which guides went stale, and suggests the fix ([#203](https://github.com/matthewdonsemail-lab/log/pull/203)).
-- **Your machine, your data.** Accounts and sessions stay in `~/.logCli`, in the local account store (`localAccounts.json`), its secrets encrypted, with the key held by your OS keyring ([encrypted account store](docs/security/encryptedStore.md)).
+- **Your machine, your data.** Accounts and sessions stay in `~/.logCli`, in the local account store (`localAccounts.json`). Its cookies, passwords and PINs are taken out of that file and kept encrypted in log.db, with the key held by your OS keyring ([encrypted account store](docs/security/encryptedStore.md)).
 
 ## Works in every harness
 
