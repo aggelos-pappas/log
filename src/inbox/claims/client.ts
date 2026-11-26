@@ -159,10 +159,33 @@ export function echoedBefore(handle: Database, ref: ChatRef, text: string, opId:
     if (detail.op === opId || detail.hash !== hash) continue
     const finished = handle.prepare("SELECT 1 FROM actions WHERE kind = 'partSent' AND platform = ? AND account = ? AND conversationId = ? AND detail LIKE ?").get(ref.platform, ref.account, ref.conversationId, `%"op":"${detail.op}"%"hash":"${hash}"%`)
     if (finished) continue
-    const echo = handle.prepare("SELECT 1 FROM events WHERE platform = ? AND account = ? AND conversationId = ? AND type = 'ownMessage' AND trim(text) = ? AND appendedAt >= ?").get(ref.platform, ref.account, ref.conversationId, text.trim(), intent.at)
-    if (echo) return true
+    const echoes = handle.prepare("SELECT text FROM events WHERE platform = ? AND account = ? AND conversationId = ? AND type = 'ownMessage' AND appendedAt >= ?").all(ref.platform, ref.account, ref.conversationId, intent.at) as { text: string | null }[]
+    const sent = echoTextOf(text)
+    if (echoes.some((row) => echoTextOf(row.text ?? '') === sent)) return true
   }
   return false
+}
+
+export function sentPartHashes(platform: string, account: string, since: string, handle: Database = db()): Set<string> {
+  const rows = handle.prepare("SELECT detail FROM actions WHERE platform = ? AND account = ? AND kind = 'partSent' AND at >= ?").all(platform, account, since) as { detail: string | null }[]
+  const hashes = new Set<string>()
+  for (const row of rows) {
+    try {
+      const hash = (JSON.parse(row.detail ?? '{}') as { hash?: string }).hash
+      if (hash) hashes.add(hash)
+    } catch {}
+  }
+  return hashes
+}
+
+export function echoTextOf(text: string): string {
+  return text
+    .replace(/<((?:https?|mailto):[^|>]+)(?:\|[^>]*)?>/g, '$1')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 export function heardAfter(handle: Database, ref: ChatRef, readUpTo: number): string[] {

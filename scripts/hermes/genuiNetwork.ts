@@ -1,4 +1,4 @@
-import { MAP_BLOCK, MAP_FORMS, MAP_LIMITS, MAP_PLATFORMS, MAP_TONES, MAP_VIEWS } from "../../src/relate/map/types.ts";
+import { MAP_BLOCK, MAP_FORMS, MAP_KEYS, MAP_LIMITS, MAP_PLATFORMS, MAP_TONES, MAP_VIEWS } from "../../src/relate/map/types.ts";
 import { MAP_GENUI_CATALOG, MAP_GENUI_FILE } from "../../src/relate/map/genui.ts";
 
 export const GENUI_NETWORK_OUT = MAP_GENUI_FILE.join("/");
@@ -12,7 +12,7 @@ export function genuiNetworkJson(): string {
     forms: MAP_FORMS,
     tones: MAP_TONES,
     platforms: MAP_PLATFORMS,
-    keys: { node: ["key", "handle", "name", "initials", "platform", "platforms", "ring", "tone", "why", "rooms", "facts", "next", "lanes", "quiet", "talk", "at", "machine"], room: ["key", "name", "server", "kind", "platform", "meaning", "at", "members"], edge: ["a", "b", "kind", "room", "at"], ring: ["id", "label", "tone", "count", "nodes"], hop: ["key", "handle", "room", "at"] },
+    keys: MAP_KEYS,
   };
   return `${JSON.stringify(spec, null, 2)}\n`;
 }

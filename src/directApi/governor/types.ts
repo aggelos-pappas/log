@@ -38,3 +38,7 @@ export interface GovernorResetRequest {
 }
 
 export const GOVERNOR_FILE = 'governor_state.json'
+export const GOVERNOR_DAILY_CAP = 500
+export const GOVERNOR_LOCK_SUFFIX = '.lock'
+export const GOVERNOR_LOCK_WAIT_MS = 2_000
+export const GOVERNOR_LOCK_STALE_MS = 10_000

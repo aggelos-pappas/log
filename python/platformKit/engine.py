@@ -70,7 +70,7 @@ def poisoned(out: dict[str, Any]) -> bool:
 def governor_for(state_root: str, account: str, writes_per_day: int | None = None, continues_send: bool = False, read: bool = False) -> Any:
     from dataclasses import replace
 
-    from governor import GovernorConfig, RequestGovernor
+    from governor import GOVERNOR_STATE_FILE, GovernorConfig, RequestGovernor
 
     folder = Path(state_root) / account
     folder.mkdir(parents=True, exist_ok=True)
@@ -82,7 +82,7 @@ def governor_for(state_root: str, account: str, writes_per_day: int | None = Non
         config = replace(config, mean_gap_s=config.min_gap_s)
     if read:
         config = replace(config, min_gap_s=READ_MIN_GAP_S, mean_gap_s=READ_MEAN_GAP_S, warmup_requests=0)
-    return RequestGovernor(config=config, state_path=folder / "governor_state.json")
+    return RequestGovernor(config=config, state_path=folder / GOVERNOR_STATE_FILE)
 
 
 def not_built(platform: str, action: str) -> dict[str, Any]:

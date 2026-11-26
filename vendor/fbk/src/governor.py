@@ -67,7 +67,8 @@ import os
 import random
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -200,6 +201,44 @@ class GovernorState:
             self.day, self.day_count, self.mutation_count = day, 0, 0
         if hour != self.hour_bucket:
             self.hour_bucket, self.hour_count = hour, 0
+
+
+GOVERNOR_STATE_FILE = "governor_state.json"
+STATE_LOCK_WAIT_S = 2.0
+STATE_LOCK_STALE_S = 10.0
+
+
+@contextmanager
+def state_file_lock(state_path: Path) -> Iterator[bool]:
+    lock = state_path.with_name(state_path.name + ".lock")
+    deadline = time.monotonic() + STATE_LOCK_WAIT_S
+    held = False
+    while True:
+        try:
+            lock.parent.mkdir(parents=True, exist_ok=True)
+            os.close(os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+            held = True
+            break
+        except FileExistsError:
+            try:
+                if time.time() - lock.stat().st_mtime > STATE_LOCK_STALE_S:
+                    lock.unlink()
+                    continue
+            except OSError:
+                pass
+            if time.monotonic() >= deadline:
+                break
+            time.sleep(0.02)
+        except OSError:
+            break
+    try:
+        yield held
+    finally:
+        if held:
+            try:
+                lock.unlink()
+            except OSError:
+                pass
 
 
 class RequestGovernor:
@@ -343,6 +382,7 @@ class RequestGovernor:
         lock.
         """
         now = self._clock()
+        self._refresh()
         self.state._roll(now)
 
         if now < self.state.cooldown_until:
@@ -399,13 +439,17 @@ class RequestGovernor:
                 slept = gap - elapsed
                 self._sleep(slept)
 
-        self.state.last_request_ts = self._clock()
-        self.state.hour_count += 1
-        self.state.day_count += 1
-        if is_mutation:
-            self.state.mutation_count += 1
-            self.state.last_mutation_ts = self.state.last_request_ts
-        self._persist()
+        stamp = self._clock()
+
+        def count(state: GovernorState) -> None:
+            state.last_request_ts = stamp
+            state.hour_count += 1
+            state.day_count += 1
+            if is_mutation:
+                state.mutation_count += 1
+                state.last_mutation_ts = stamp
+
+        self._commit(count)
         return slept
 
     # ----------------------------------------------------------------- signals
@@ -423,9 +467,13 @@ class RequestGovernor:
             next gate tick.
         """
         with self._lock:
-            self.state.soft_blocks_seen += 1
-            self.state.cooldown_until = self._clock() + self.config.cooldown_s
-            self._persist()
+            until = self._clock() + self.config.cooldown_s
+
+            def block(state: GovernorState) -> None:
+                state.soft_blocks_seen += 1
+                state.cooldown_until = max(state.cooldown_until, until)
+
+            self._commit(block)
 
     def observe_checkpoint(self) -> None:
         """Record a checkpoint: disengage for the day (6 hours).
@@ -439,8 +487,12 @@ class RequestGovernor:
             :meth:`observe_soft_block`.
         """
         with self._lock:
-            self.state.cooldown_until = self._clock() + 6 * 3600.0
-            self._persist()
+            until = self._clock() + 6 * 3600.0
+
+            def checkpoint(state: GovernorState) -> None:
+                state.cooldown_until = max(state.cooldown_until, until)
+
+            self._commit(checkpoint)
 
     # ------------------------------------------------------------------ status
     def status(self) -> dict[str, Any]:
@@ -462,6 +514,7 @@ class RequestGovernor:
         """
         now = self._clock()
         with self._lock:
+            self._refresh()
             self.state._roll(now)
             try:
                 self._gate_quiet_hours()
@@ -485,6 +538,37 @@ class RequestGovernor:
             }
 
     # ------------------------------------------------------------------- plumbing
+    _SHARED_FIELDS = ("day", "hour_bucket", "hour_count", "day_count",
+                      "mutation_count", "cooldown_until", "soft_blocks_seen")
+
+    def _read_disk(self) -> GovernorState | None:
+        if not self.state_path or not self.state_path.is_file():
+            return None
+        try:
+            raw = json.loads(self.state_path.read_text(encoding="utf-8"))
+            return GovernorState(**{
+                k: v for k, v in raw.items()
+                if k in GovernorState.__dataclass_fields__})
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            return None
+
+    def _refresh(self) -> None:
+        disk = self._read_disk()
+        if disk is None:
+            return
+        for field in self._SHARED_FIELDS:
+            setattr(self.state, field, getattr(disk, field))
+
+    def _commit(self, change: Callable[[GovernorState], None]) -> None:
+        if not self.state_path:
+            change(self.state)
+            return
+        with state_file_lock(self.state_path):
+            self._refresh()
+            self.state._roll(self._clock())
+            change(self.state)
+            self._persist()
+
     def _persist(self) -> None:
         """Write the state file atomically (best-effort).
 
@@ -501,7 +585,7 @@ class RequestGovernor:
         # already suspicious. os.replace is atomic on POSIX and Windows.
         try:
             self.state_path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.state_path.with_suffix(".json.tmp")
+            tmp = self.state_path.with_suffix(f".json.{os.getpid()}.tmp")
             tmp.write_text(
                 json.dumps(self.state.__dict__, indent=1), encoding="utf-8")
             os.replace(tmp, self.state_path)
@@ -545,7 +629,7 @@ def default_governor(state_path: Path | str | None = None) -> RequestGovernor:
             if state_path is None:
                 from config import Config
                 journal_dir = Config.discover().journal_dir
-                state_path = journal_dir / "governor_state.json"
+                state_path = journal_dir / GOVERNOR_STATE_FILE
                 log_path = journal_dir / "healing.jsonl"
             else:
                 log_path = Path(state_path).parent / "healing.jsonl"

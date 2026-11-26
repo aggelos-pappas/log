@@ -6,7 +6,7 @@ import { closeSync, existsSync, openSync, readFileSync, rmSync, writeFileSync } 
 import type { TwitterSessionAnswer } from "../../../twitter/account/session/index.ts";
 import { planSend } from "../../../twitter/post/send/index.ts";
 import { dmInterruptedLines, dmSplit, localMedia, sendDmParts, splitLine } from "./send.ts";
-import { guardSend } from "../../../inbox/claims/index.ts";
+import { guardSend, sentPartHashes, textHashOf } from "../../../inbox/claims/index.ts";
 import { waitCaughtUp } from "../../../inbox/catchUp/index.ts";
 import { chatContextOf } from "../../../inbox/context/index.ts";
 import { gateDeps } from "./voice.ts";
@@ -233,7 +233,8 @@ async function runCommand(context: CommandContext, path: string, flags: Record<s
     const held = chatContextOf("twitter", queue.account, who, since);
     const activity = activityOf(held.activity as unknown as TwitterNotification[], who, since);
     const ownTexts = queue.items.map((queued) => queued.text).filter((text) => text.trim());
-    const changed = contextChangesSince(held.messages, activity, since, ownTexts);
+    const sentParts = sentPartHashes("twitter", queue.account, since);
+    const changed = contextChangesSince(held.messages, activity, since, ownTexts, (text) => sentParts.has(textHashOf(text)));
     if (!changed.length && item.text?.trim()) {
       const voiced = await gateDeps.gate(context, { platform: "twitter", account: queue.account, to: item.handle ? `@${item.handle.replace(/^@/, "")}` : namedLabel("twitter", queue.account, String(item.userId ?? ""), String(item.userId ?? "")), text: item.text, handle: item.handle ?? null, userId: item.userId ?? null, ...(item.postText?.trim() ? { said: item.postText } : {}), ...(item.action === "voice" ? { spoken: true } : {}), ...((item.action ?? "reply") === "reply" || item.action === "quote" ? { publicReply: true } : {}) });
       if (!voiced.ok) {

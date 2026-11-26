@@ -13,6 +13,8 @@ import type { TwentyClient } from '../../twenty/graphql/index'
 import { accountHasSession, cookiesOf, lastJsonLine, netscape, sessionStateOf } from './helpers/index'
 import type { LocalEngineState, CommandEngine, DirectGate, DirectOutcome, DirectRoute, EngineAnswer, EngineSpec, GovernorStatus, SessionState } from './types'
 import { WRITES_PER_DAY_DEFAULT, writesPerDayOf } from './types'
+import { governorDailyCap, governorDay } from '../governor/helpers/index'
+import { GOVERNOR_FILE } from '../governor/types'
 import { timedEngineSync } from '../../observability/timing/index'
 import { logHome } from '../../config/logHome/index'
 
@@ -166,7 +168,7 @@ export function localEngineStates(root = fbkStateRoot(), now: Date = new Date())
   const out: LocalEngineState[] = []
   for (const name of readdirSync(root).sort()) {
     const session = readJson<{ sessionState: string; checkedAt: string }>(join(root, name, 'session.json'))
-    const governor = readJson<{ day: string; hour_count: number; day_count: number; mutation_count: number; cooldown_until: number; soft_blocks_seen: number }>(join(root, name, 'governor_state.json'))
+    const governor = readJson<{ day: string; hour_count: number; day_count: number; mutation_count: number; cooldown_until: number; soft_blocks_seen: number }>(join(root, name, GOVERNOR_FILE))
     if (!session && !governor) continue
     const cooldown = governor ? Math.max(0, Math.round(governor.cooldown_until - now.getTime() / 1000)) : 0
     out.push({ account: name, sessionState: session?.sessionState ?? null, checkedAt: session?.checkedAt ?? null, day: governor?.day ?? null, today: governor?.day_count ?? 0, mutations: governor?.mutation_count ?? 0, cooldownSeconds: cooldown, softBlocks: governor?.soft_blocks_seen ?? 0, session: openSession(join(root, name, 'host.json')) })
@@ -185,12 +187,12 @@ export function openSession(path: string): { pid: number; since: string; calls: 
   return { pid: host.pid, since: new Date(host.startedAt * 1000).toISOString(), calls: host.calls ?? 0 }
 }
 
-export function engineContext(states: LocalEngineState[] = allEngineStates(), now: Date = new Date()): string {
-  const today = now.toISOString().slice(0, 10)
+export function engineContext(states: LocalEngineState[] = allEngineStates(), now: Date = new Date(), dailyCap: number = governorDailyCap()): string {
+  const today = governorDay(now)
   const lines = ['log-cli accounts: each one\'s session (the platform\'s own answer) and what its governor allowed today:']
   for (const s of states) {
     const pause = s.cooldownSeconds > 0 ? `, PAUSED ${Math.ceil(s.cooldownSeconds / 60)} min (governor cooldown)` : ''
-    const used = s.day === today ? `${s.today}/500 requests, ${s.mutations}/${s.writesPerDay ?? WRITES_PER_DAY_DEFAULT} writes today` : 'no requests today'
+    const used = s.day === today ? `${s.today}/${dailyCap} requests, ${s.mutations}/${s.writesPerDay ?? WRITES_PER_DAY_DEFAULT} writes today` : 'no requests today'
     const open = s.session ? `, its one session open (pid ${s.session.pid} since ${localClock(s.session.since)}, ${s.session.calls} calls)` : ''
     lines.push(`  ${s.account}: session ${s.sessionState ?? 'not read yet'}${s.checkedAt ? ` (${localClock(s.checkedAt)})` : ''}, ${used}${pause}${open}`)
   }

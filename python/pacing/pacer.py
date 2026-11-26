@@ -9,7 +9,7 @@ FBK_SRC = Path(__file__).resolve().parents[2] / "vendor" / "fbk" / "src"
 if str(FBK_SRC) not in sys.path:
     sys.path.insert(0, str(FBK_SRC))
 
-from governor import GovernorBlockedError, GovernorConfig, RequestGovernor
+from governor import GOVERNOR_STATE_FILE, GovernorBlockedError, GovernorConfig, RequestGovernor
 from logHome import log_home
 
 STATE_DIR = log_home() / "fbk"
@@ -23,7 +23,7 @@ def governor_for(account: str, config: GovernorConfig | None = None) -> RequestG
         if found is None:
             folder = STATE_DIR / account
             folder.mkdir(parents=True, exist_ok=True)
-            found = RequestGovernor(config or GovernorConfig.from_env(), folder / "governor_state.json")
+            found = RequestGovernor(config or GovernorConfig.from_env(), folder / GOVERNOR_STATE_FILE)
             _governors[account] = found
         return found
 

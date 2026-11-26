@@ -4,6 +4,8 @@ import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync
 import { hostname } from 'node:os'
 import { dirname, join } from 'node:path'
 import { twitterStateRoot } from '../../directApi/engine/index'
+import { governorDailyCap, governorDay } from '../../directApi/governor/helpers/index'
+import { GOVERNOR_FILE } from '../../directApi/governor/types'
 import { personKeyOf, sameChatId } from '../../twitter/dm/person/index'
 import { SHARED_SESSION } from '../../agentHooks/sessionOffsets/index'
 import { mediaLine, mediaOf } from '../../media/describer/index'
@@ -212,14 +214,10 @@ export function sameProcess(storedStartedAt: string | null | undefined, actualSt
   return Math.abs(Date.parse(storedStartedAt) - Date.parse(actualStartedAt)) <= toleranceMs
 }
 
-export const GOVERNOR_DAILY_CAP = 500
-
-const localDay = (now: Date) => `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-
-export function coolingDown(stateRoot: string, account: string, now: Date = new Date(), dailyCap: number = Number(process.env.FBK_GOVERNOR_DAILY) || GOVERNOR_DAILY_CAP): boolean {
-  const state = readJson<{ cooldown_until?: number; day?: string; day_count?: number }>(join(stateRoot, account, 'governor_state.json'), {})
+export function coolingDown(stateRoot: string, account: string, now: Date = new Date(), dailyCap: number = governorDailyCap()): boolean {
+  const state = readJson<{ cooldown_until?: number; day?: string; day_count?: number }>(join(stateRoot, account, GOVERNOR_FILE), {})
   if (typeof state.cooldown_until === 'number' && state.cooldown_until * 1000 > now.getTime()) return true
-  return state.day === localDay(now) && typeof state.day_count === 'number' && state.day_count >= dailyCap
+  return state.day === governorDay(now) && typeof state.day_count === 'number' && state.day_count >= dailyCap
 }
 
 const ALERTS_READER = (reader: string) => `alerts:${reader}`
