@@ -141,7 +141,7 @@ describe('the router text', () => {
 const toolGolden = JSON.parse(readFileSync(join(import.meta.dir, 'fixtures', TOOL_GOLDEN_FILE), 'utf8')) as ToolGolden[]
 
 describe('the tool ranking', () => {
-  test('words alone rank the expected tool first in 31 of the 49 tool asks and in the top 3 in 32, and inject nothing for status questions or asks that are not about log', () => {
+  test('words alone rank the expected tool first in 32 of the 50 tool asks and in the top 3 in 33, and inject nothing for status questions or asks that are not about log', () => {
     const facts = loadToolFacts()
     const names = new Set(facts.map((f) => f.name))
     for (const g of toolGolden) for (const name of g.expect) expect(names.has(name)).toBe(true)
@@ -149,9 +149,9 @@ describe('the tool ranking', () => {
     const shown = (prompt: string) => toolMatchText(prompt, useCases).tools
     const first = asks.filter((g) => g.expect.includes(shown(g.prompt)[0] ?? '')).length
     const three = asks.filter((g) => shown(g.prompt).slice(0, 3).some((name) => g.expect.includes(name))).length
-    expect(asks.length).toBe(49)
-    expect(first).toBe(31)
-    expect(three).toBe(32)
+    expect(asks.length).toBe(50)
+    expect(first).toBe(32)
+    expect(three).toBe(33)
     for (const g of (toolGolden as RouterGolden[]).filter((g) => !g.expect.length && !g.skills?.length)) expect(shown(g.prompt)).toEqual([])
   })
 
@@ -285,7 +285,7 @@ describe('the meaning router', () => {
     expect(fused[0].score).toBeCloseTo(1 / 62 + 1 / 61, 10)
   })
 
-  test('on the 49 tool asks, words alone rank the tool first in 31 and in the top 3 in 32; fused with the recorded local meaning, 31 and 35; skills 8 and 9 of 18; no status or chat question gets a line', () => {
+  test('on the 50 tool asks, words alone rank the tool first in 32 and in the top 3 in 33; fused with the recorded local meaning, 32 and 36; skills 8 and 9 of 18; no status or chat question gets a line', () => {
     const facts = loadToolFacts()
     const skills = shippedSkills()
     const names = new Set(facts.map((f) => f.name))
@@ -300,9 +300,9 @@ describe('the meaning router', () => {
       const shown = (g: RouterGolden) => fuseTools(g.prompt, useCases, fusion === 'lexical' ? null : recorded(g.prompt), fusion, facts).matches.map((m) => m.name)
       return { first: asks.filter((g) => g.expect.includes(shown(g)[0] ?? '')).length, three: asks.filter((g) => shown(g).slice(0, 3).some((n) => g.expect.includes(n))).length }
     }
-    expect(asks.length).toBe(49)
-    expect(count('lexical')).toEqual({ first: 31, three: 32 })
-    expect(count('rrf')).toEqual({ first: 31, three: 35 })
+    expect(asks.length).toBe(50)
+    expect(count('lexical')).toEqual({ first: 32, three: 33 })
+    expect(count('rrf')).toEqual({ first: 32, three: 36 })
     const skillAsks = routerGolden.filter((g) => g.skills?.length)
     const chosen = (g: RouterGolden) => fuseSkills(g.prompt, recorded(g.prompt), skills, 'rrf')
     expect(skillAsks.filter((g) => g.skills!.includes(chosen(g)[0] ?? '')).length).toBe(8)

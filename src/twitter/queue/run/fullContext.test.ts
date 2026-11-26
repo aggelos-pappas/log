@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { approveQueue, buildQueue, editItem, keptLink, seededRandom } from '../plan/index'
+import { approveQueue, buildQueue, editItem, keptLink, keptPostLink, seededRandom } from '../plan/index'
 import type { Queue } from '../plan/index'
 import { runQueue } from './index'
 import type { RunDeps } from './types'
@@ -83,5 +83,11 @@ describe('full context before every send (rule 109)', () => {
     expect(keptLink(`${link}\nsaw this`, 'saw this again')).toBe(`${link}\nsaw this again`)
     expect(keptLink(`${link}\nsaw this`, `${link}\nnew`)).toBe(`${link}\nnew`)
     expect(keptLink('cheers lad', 'cheers again')).toBe('cheers again')
+    expect(keptPostLink(`${link}
+saw this`, 'saw this again')).toBe(link)
+    expect(keptPostLink(`${link}
+saw this`, `${link}
+new`)).toBeNull()
+    expect(keptPostLink('cheers lad', 'cheers again')).toBeNull()
   })
 })

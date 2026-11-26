@@ -6,11 +6,12 @@ import { openDatabase } from '../../storage/schema/index'
 import { markAutomatedIdentity } from '../../storage/platform/index'
 import { buildGraph } from '../../relate/graph/index'
 import { relateMachine } from '../../relate/machine/index'
-import { botKnowledge } from '../../relate/machine/helpers/bots'
+import { botKnowledge, namedBot } from '../../relate/machine/helpers/bots'
+import { writeIdentityProfile } from '../../storage/platform/index'
 import { DISCORD_CHANNELS, DISCORD_PEOPLE, seedDiscordWorld } from '../../relate/machine/fixtures/discordWorld'
 import { DEMO_OWNER } from '../../relate/graph/fixtures/demoWorld'
 import { MACHINE_NOW } from '../../relate/machine/fixtures/machineWorld'
-import { backfillBots, botSources } from './client'
+import { BOT_DISCORD_REQUESTS_PER_RUN, backfillBots, botSources } from './client'
 import type { BotSources } from './types'
 
 const iso = (ms: number): string => new Date(ms).toISOString()
@@ -103,6 +104,27 @@ describe('backfilling the flag from a member list', () => {
   })
 })
 
+describe('a name that only ends in the letters b-o-t', () => {
+  test('is a person: only bot as its own word, a -bot or _bot suffix or a camel-case Bot names a bot', () => {
+    for (const person of ['abbot', 'talbot', 'sherbot', 'Botanist', 'Robotics Rob', 'Mr Talbot']) expect(namedBot(person)).toBe(false)
+    for (const bot of ['VIBE BOT', 'helper_bot', 'build-bot', 'WelcomeBot', 'MEE6Bot', 'bot']) expect(namedBot(bot)).toBe(true)
+  })
+
+  test('stays visible, and a platform that says not a bot wins over a bot-looking name', () => {
+    const on = openDatabase(join(mkdtempSync(join(tmpdir(), 'botsName-')), 'log.db'))
+    const at = iso(MACHINE_NOW)
+    const add = (userId: string, handle: string) => on.prepare("INSERT INTO identities (platform, userId, handle, displayName, firstSeenAt, lastSeenAt) VALUES ('twitter', ?, ?, NULL, ?, ?)").run(userId, handle, at, at)
+    add('42', 'sherbot')
+    add('43', 'helper_bot')
+    add('44', 'deploy_bot')
+    writeIdentityProfile(on, { platform: 'twitter', userId: '44', bio: null, avatarHash: null, followerCount: null, verified: null, extra: { bot: false }, fetchedAt: at })
+    const knowledge = botKnowledge(on)
+    expect(knowledge.keys.has('twitter:42')).toBe(false)
+    expect(knowledge.keys.has('twitter:43')).toBe(true)
+    expect(knowledge.keys.has('twitter:44')).toBe(false)
+  })
+})
+
 describe('a Discord server that refuses its member list', () => {
   test('does not stop the sweep: the next server is still read, and the refusal is said in the summary', async () => {
     const on = openDatabase(join(mkdtempSync(join(tmpdir(), 'botsRefused-')), 'log.db'))
@@ -128,6 +150,25 @@ describe('a Discord server that refuses its member list', () => {
     expect(account.read).toBe(2)
     expect(account.stopped).toContain('1 place(s) refused')
     expect(account.account).toBe('sourcedand')
+  })
+
+  test('a member list that fails still counts against the run budget, so 57 refusing servers stop at the cap', async () => {
+    const on = openDatabase(join(mkdtempSync(join(tmpdir(), 'botsFailBudget-')), 'log.db'))
+    let members = 0
+    const sources = botSources({
+      handle: on,
+      accounts: () => [{ platform: 'discord', account: 'sourcedand', session: true }],
+      now: () => MACHINE_NOW,
+      discord: async (_account: unknown, spec: Record<string, unknown>) => {
+        if (spec.action === 'servers') return { ok: true, members: [], servers: Array.from({ length: 57 }, (_, i) => ({ id: String(i + 1), name: `server ${i + 1}` })) }
+        members++
+        return { ok: false, code: 'platformError', detail: 'Discord answered 403: Missing Access', members: [] }
+      },
+      slack: async () => ({ ok: true, members: [], places: 0, stopped: null }),
+    })
+    const report = await backfillBots(on, sources, { now: new Date(MACHINE_NOW) })
+    expect(members).toBe(BOT_DISCORD_REQUESTS_PER_RUN)
+    expect(report.platforms.find((p) => p.platform === 'discord')!.accounts[0].stopped).toContain(`stopped at ${BOT_DISCORD_REQUESTS_PER_RUN} requests`)
   })
 
   test('a governor block stops the sweep and is never remembered as a place refusing, so the next run asks again', async () => {

@@ -281,12 +281,17 @@ export function addToQueue(queue: Queue, addition: QueueAddition, rng: Rng, now:
   return events
 }
 
-export function keptLink(before: string, after: string): string {
+export function keptPostLink(before: string, after: string): string | null {
   const statusLink = /^https:\/\/(x|twitter)\.com\/[^\s]+\/status\/\d+$/
   const first = before.split(/\r?\n/)[0]?.trim() ?? ''
   const lead = after.split(/\r?\n/)[0]?.trim() ?? ''
-  if (!statusLink.test(first) || statusLink.test(lead)) return after
-  return after.includes(first) ? after : `${first}\n${after}`
+  if (!statusLink.test(first) || statusLink.test(lead) || after.includes(first)) return null
+  return first
+}
+
+export function keptLink(before: string, after: string): string {
+  const kept = keptPostLink(before, after)
+  return kept ? `${kept}\n${after}` : after
 }
 
 export function editItem(queue: Queue, n: number, text: string, by: string, rng: Rng, now: Date, window = '30m'): PlanEvent | null {

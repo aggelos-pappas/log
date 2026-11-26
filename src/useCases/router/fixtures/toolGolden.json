@@ -66,5 +66,6 @@
   {"prompt": "log me into discord here", "expect": ["sessionsSignIn", "browserView"], "skills": ["log-inbox-sign-in"]},
   {"prompt": "show me the browser so i can sign in", "expect": ["sessionsSignIn", "browserView"], "skills": ["log-inbox-sign-in"]},
   {"prompt": "open the browser in the chat so i can log in", "expect": ["sessionsSignIn", "browserView"], "skills": ["log-inbox-sign-in"]},
-  {"prompt": "sign me in in hermes", "expect": ["sessionsSignIn", "browserView"], "skills": ["log-inbox-sign-in"]}
+  {"prompt": "sign me in in hermes", "expect": ["sessionsSignIn", "browserView"], "skills": ["log-inbox-sign-in"]},
+  {"prompt": "search everything for the retainer", "expect": ["search"], "never": ["saidBy"]}
 ]

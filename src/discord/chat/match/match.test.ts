@@ -1,6 +1,29 @@
 import { describe, expect, test } from 'bun:test'
-import { matchChat, normalizedName } from './index'
+import { matchChat, normalizedName, withSavedChannels } from './index'
 import type { DiscordChat } from './index'
+
+describe('a server channel log.db holds but the kept list does not', () => {
+  const kept: DiscordChat[] = [
+    { id: '1000000000000000101', kind: 'channel', name: 'Scraping Enthusiasts #general', members: [], server: 'Scraping Enthusiasts', serverId: '7100000000000000001' },
+    { id: '1000000000000000002', kind: 'dm', name: 'Jon', members: ['Jon'] },
+  ]
+  const saved = [
+    { id: '1000000000000000102', kind: 'channel', name: 'Hendrvxx', serverId: '7100000000000000001' },
+    { id: '1000000000000000101', kind: 'channel', name: 'general', serverId: '7100000000000000001' },
+    { id: '1000000000000000103', kind: 'channel', name: 'lobby', serverId: '7100000000000000009' },
+  ]
+  test('matches by its own name and by "<server> #<channel>", taking the server name from the kept list', () => {
+    const chats = withSavedChannels(kept, saved)
+    expect(chats.filter((c) => c.id === '1000000000000000101')).toHaveLength(1)
+    const bare = matchChat(chats, 'Hendrvxx')
+    expect(bare.ok && bare.chat.id).toBe('1000000000000000102')
+    const full = matchChat(chats, 'Scraping Enthusiasts #Hendrvxx')
+    expect(full.ok && full.chat.id).toBe('1000000000000000102')
+    expect(full.ok && full.chat.server).toBe('Scraping Enthusiasts')
+    const unknownServer = matchChat(chats, 'lobby')
+    expect(unknownServer.ok && unknownServer.label).toBe('lobby')
+  })
+})
 
 const CHATS: DiscordChat[] = [
   { id: '1000000000000000001', kind: 'group', name: 'log', members: ['QuietSparrow', 'Kira', 'Jon', 'dex'] },

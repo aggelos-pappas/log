@@ -167,7 +167,7 @@ export interface FreshModel {
 }
 
 export const CONVENTIONS_KEY = 'owner'
-export const ABSTAIN_BELOW_WORDS = 3
+export const ABSTAIN_BELOW_WORDS = 6
 export const OWNER_PASS = 0.95
 export const OWNER_SAMPLE = 6000
 export const OWNER_PROFILE_SAMPLE = 30000

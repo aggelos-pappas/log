@@ -76,6 +76,10 @@
   { "prompt": "contributormaxxing", "expect": "reddit/contributorMaxxing" },
   { "prompt": "find talented people out there on reddit who are interested in the same things we are", "expect": "reddit/contributorMaxxing" },
   { "prompt": "post in the subreddit", "expect": "none" },
+  { "prompt": "find the good contributors across my messages so this goes viral", "expect": "reddit/contributorMaxxing", "note": "it once loaded inbox/saidBy on find his messages" },
+  { "prompt": "find contributors across my messages", "expect": "reddit/contributorMaxxing" },
+  { "prompt": "search everything for pricing", "expect": "none", "note": "the search tool, never inbox/saidBy" },
+  { "prompt": "find his messages", "expect": "inbox/saidBy" },
 
   { "prompt": "reply to her on slack", "expect": "slack/dmReply" },
   { "prompt": "read the messages with the designer on slack", "expect": "slack/dmReply" },

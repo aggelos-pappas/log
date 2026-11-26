@@ -2,7 +2,7 @@
 
 Someone's messages on every platform, found by name, newest first. Made from a hand-rolled one-off with log tool scaffold (getGuide({ useCase: "log/toolFromOneOff" })), so it is a log tool from now on and the one-off is never written again.
 
-How the owner asks for it: "what did he say", "find his messages", "everything they said"
+How the owner asks for it: "what did he say", "find all his messages", "all he ever said"
 
 ## The steps
 

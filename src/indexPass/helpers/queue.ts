@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite'
 import { getState, putState } from '../../storage/state/index'
-import { PASS_BACKLOG_CHATS, PASS_CHAT_LINES, PASS_CURSOR, PASS_SCOPE, PASS_SLICE_CHATS, PASS_SLICE_LINES } from '../types'
+import { PASS_BACKLOG_CHATS, PASS_CHAT_LINES, PASS_CURSOR, PASS_DEFERRED, PASS_SCOPE, PASS_SLICE_CHATS, PASS_SLICE_LINES } from '../types'
 import type { PassChat, PassLine } from '../types'
 
 interface Row {
@@ -28,6 +28,16 @@ export function saveCursor(handle: Database, throughSeq: number, now: number): v
   putState(PASS_SCOPE, PASS_CURSOR, { throughSeq }, now, handle)
 }
 
+export type DeferredChats = Record<string, { from: number; through: number }>
+
+export function deferredOf(handle: Database): DeferredChats {
+  return { ...(getState<DeferredChats>(PASS_SCOPE, PASS_DEFERRED, {}, handle)?.body ?? {}) }
+}
+
+export function saveDeferred(handle: Database, deferred: DeferredChats, now: number): void {
+  putState(PASS_SCOPE, PASS_DEFERRED, deferred, now, handle)
+}
+
 export function backlogOf(handle: Database, cursor: number): number {
   return (handle.prepare('SELECT COUNT(DISTINCT chatId) AS n FROM (SELECT chatId FROM messages WHERE seq > ? LIMIT ?)').get(cursor, PASS_BACKLOG_CHATS * 40) as { n: number }).n
 }
@@ -38,6 +48,7 @@ export interface SliceOptions {
   platform?: string
   account?: string
   since?: string
+  until?: number
   chats?: number
   lines?: number
 }
@@ -62,6 +73,10 @@ export function sliceOf(handle: Database, cursor: number, options: SliceOptions 
   if (options.since) {
     where.push('m.sentAt >= ?')
     values.push(options.since)
+  }
+  if (options.until !== undefined) {
+    where.push('m.seq <= ?')
+    values.push(options.until)
   }
   const rows = handle.prepare(`SELECT m.seq, m.messageKey, m.chatId, m.fromOwner, m.sentAt, m.text, c.platform, c.account, c.conversationId, c.kind FROM messages m JOIN chats c ON c.chatId = m.chatId WHERE ${where.join(' AND ')} ORDER BY m.seq LIMIT ?`).all(...values, lineBudget) as Row[]
   if (!rows.length) return { chats: [], throughSeq: cursor }

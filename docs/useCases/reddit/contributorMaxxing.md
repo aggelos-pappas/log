@@ -1,8 +1,8 @@
-# Contributor maxxing: finding talented builders through what they share
+# Contributor maxxing: builders by what they share
 
 Find talented people who are into the same things as the owner, through the GitHub repos they post on Reddit. Read a subreddit's last few days through the owner's Reddit account, keep the posts that link to GitHub, and rank them. It reads only. It posts, votes and messages nothing.
 
-How the owner asks for it: "contributormaxxing", "find talented people who are out there who are interested in the same things that we're interested in", "use our reddit to load up gotomarketengineering", "find people who are posting on github inside of that subreddit", "find me all of the best githubs that have been posted in the past 7 days"
+How the owner asks for it: "contributormaxxing", "find contributors", "find talented people who are out there who are interested in the same things that we're interested in", "use our reddit to load up gotomarketengineering", "find people who are posting on github inside of that subreddit", "find me all of the best githubs that have been posted in the past 7 days"
 
 ## Run it from a fresh context
 

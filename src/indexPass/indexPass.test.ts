@@ -140,7 +140,7 @@ describe('one pass per conversation', () => {
     void dirs
   })
 
-  test('an account with no signed-in session is left alone, and the cursor still passes it', async () => {
+  test('an account with no signed-in session is left alone, and the cursor still passes it while the chat waits', async () => {
     const { on } = world('session')
     const dm = chat(on, 'discord', 'builder', '111', 'dm')
     say(on, dm, 'discord', '9000000002', false, 'i am working at vercel now', 5)
@@ -148,6 +148,29 @@ describe('one pass per conversation', () => {
     expect(report.chats).toBe(0)
     expect(report.waiting).toContain('no signed-in session')
     expect(cursorOf(on)).toBe(headOf(on))
+    on.close()
+  })
+
+  test('a chat passed while its account was signed out is read once the account signs in', async () => {
+    const { on } = world('deferred')
+    const away = chat(on, 'slack', 'other', '111', 'dm')
+    const here = chat(on, 'discord', 'builder', '222', 'dm')
+    say(on, away, 'slack', 'U2', false, 'i am working at stripe now', 6)
+    say(on, here, 'discord', '9000000002', false, 'i am working at vercel now', 5)
+    const decider = () => ({ ok: false as const, code: 'factDeciderUnavailable', problem: 'no key' })
+    const first = await runIndexPass(on, { only: 'facts', screener: () => screener, decider, signedIn: session, embedder: () => hashEmbedder() })
+    expect(first.chats).toBe(1)
+    expect(cursorOf(on)).toBe(headOf(on))
+    expect(chatOffsetOf(on, away)).toBe(0)
+    const still = await runIndexPass(on, { only: 'facts', screener: () => screener, decider, signedIn: session, embedder: () => hashEmbedder() })
+    expect(still.chats).toBe(0)
+    const both = () => new Set(['discord:builder', 'slack:other'])
+    const later = await runIndexPass(on, { only: 'facts', screener: () => screener, decider, signedIn: both, embedder: () => hashEmbedder() })
+    expect(later.chats).toBe(1)
+    expect(later.screened).toBe(1)
+    expect(chatOffsetOf(on, away)).toBeGreaterThan(0)
+    const done = await runIndexPass(on, { only: 'facts', screener: () => screener, decider, signedIn: both, embedder: () => hashEmbedder() })
+    expect(done.chats).toBe(0)
     on.close()
   })
 })

@@ -10,7 +10,7 @@ When the owner asks for one of these, follow its page step by step.
 
 | Use case | What it is | How the owner asks for it |
 |---|---|---|
-| `getGuide({ useCase: "reddit/contributorMaxxing" })` | Contributor maxxing: finding talented builders through what they share | "contributormaxxing", "find talented people who are out there who are interested in the same things that we're interested in", "use our reddit to load up gotomarketengineering", "find people who are posting on github inside of that subreddit", "find me all of the best githubs that have been posted in the past 7 days" |
+| `getGuide({ useCase: "reddit/contributorMaxxing" })` | Contributor maxxing: builders by what they share | "contributormaxxing", "find contributors", "find talented people who are out there who are interested in the same things that we're interested in", "use our reddit to load up gotomarketengineering", "find people who are posting on github inside of that subreddit", "find me all of the best githubs that have been posted in the past 7 days" |
 
 ## The tools in this guide
 

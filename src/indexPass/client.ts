@@ -10,8 +10,8 @@ import { percentile } from '../people/facts/helpers/extract'
 import type { FactDecider, Screener } from '../people/facts/types'
 import { SCREEN_MODEL_KEY, SCREEN_SETTING } from '../people/facts/types'
 import { PASS_SETTING, PASS_SLICE_MS } from './types'
-import type { PassOptions, PassReport, PassStage, PassTick } from './types'
-import { backlogOf, cursorOf, headOf, saveCursor, sliceOf } from './helpers/queue'
+import type { PassChat, PassOptions, PassReport, PassStage, PassTick } from './types'
+import { backlogOf, cursorOf, deferredOf, headOf, saveCursor, saveDeferred, sliceOf } from './helpers/queue'
 import { markChatOffset, screenChat } from './helpers/facts'
 import { correctionBook } from './helpers/corrections'
 import { SearchStage } from './helpers/search'
@@ -50,7 +50,77 @@ export async function runIndexPass(handle: Database, options: IndexPassOptions =
   let advanced = cursor
   const book = correctionBook(handle)
   const offsets: { chatId: string; throughSeq: number }[] = []
+  const deferred = options.from === 'start' ? {} : deferredOf(handle)
+  let deferredChanged = false
+  const signed = (chat: PassChat): boolean => session.has(`${chat.platform}:${chat.account}`.toLowerCase())
+  const defer = (chat: PassChat): void => {
+    const held = deferred[chat.chatId]
+    const from = chat.lines[0].seq - 1
+    deferred[chat.chatId] = { from: held ? Math.min(held.from, from) : from, through: held ? Math.max(held.through, chat.throughSeq) : chat.throughSeq }
+    deferredChanged = true
+    report.waiting = `${chat.platform} ${chat.account} has no signed-in session`
+  }
+  const run = async (chat: PassChat): Promise<void> => {
+    const conversations = conversationsOf(handle, chat)
+    if (!conversations.length) return
+    const chatStart = clock()
+    if (stageOn('search')) {
+      const done = await search.add(conversations)
+      report.embedded += done.embedded
+    }
+    if (stageOn('voice')) {
+      const done = await voice.add(conversations)
+      report.voiced += done.embedded
+    }
+    if (stageOn('facts') && screenable) {
+      screener ??= options.screener ? options.screener() : gliner2Screener(modelDir)
+      const decider = (options.decider ?? (() => factDecider(env)))()
+      if (!decider.ok) report.waiting = decider.problem
+      const done = await screenChat(handle, chat, screener, decider, { now: new Date(clock()), book, ...(options.log ? { log: options.log } : {}) })
+      report.screened += done.screened
+      report.decided += done.added
+      report.queued += done.marked
+    }
+    report.ms.push(clock() - chatStart)
+    report.chats++
+    report.stages[stageOn('search') ? 'search' : stageOn('voice') ? 'voice' : 'facts'] += clock() - chatStart
+    offsets.push({ chatId: chat.chatId, throughSeq: chat.throughSeq })
+  }
+  const commit = async (): Promise<void> => {
+    book.flush(new Date(clock()))
+    if (search.pendingCount()) await search.flush()
+    if (voice.pendingCount()) await voice.flush()
+    if (advanced > cursor || offsets.length || deferredChanged) {
+      handle.exec('BEGIN IMMEDIATE')
+      try {
+        saveCursor(handle, advanced, clock())
+        if (deferredChanged) saveDeferred(handle, deferred, clock())
+        for (const offset of offsets.splice(0)) markChatOffset(handle, offset.chatId, offset.throughSeq, clock())
+        handle.exec('COMMIT')
+        deferredChanged = false
+      } catch (error) {
+        handle.exec('ROLLBACK')
+        throw error
+      }
+    }
+  }
   try {
+    const narrowed = Boolean(options.platform || options.account || options.since)
+    for (const [chatId, span] of narrowed ? [] : Object.entries(deferred)) {
+      if (options.chatIds?.length && !options.chatIds.includes(chatId)) continue
+      let from = span.from
+      while (report.chats < limit) {
+        const chat = sliceOf(handle, from, { chatIds: [chatId], until: span.through }).chats[0]
+        if (chat && !signed(chat)) break
+        if (chat) await run(chat)
+        from = chat ? chat.throughSeq : span.through
+        if (from >= span.through) delete deferred[chatId]
+        else deferred[chatId] = { from, through: span.through }
+        deferredChanged = true
+        if (from >= span.through) break
+      }
+    }
+    await commit()
     while (report.chats < limit) {
       const { chats } = sliceOf(handle, cursor, { chatIds: options.chatIds, platform: options.platform, account: options.account, since: options.since })
       if (!chats.length) break
@@ -58,54 +128,11 @@ export async function runIndexPass(handle: Database, options: IndexPassOptions =
       for (const chat of chats) {
         if (report.chats >= limit) break
         processed++
-        if (!session.has(`${chat.platform}:${chat.account}`.toLowerCase())) {
-          report.waiting = `${chat.platform} ${chat.account} has no signed-in session`
-          advanced = chat.throughSeq
-          continue
-        }
-        const conversations = conversationsOf(handle, chat)
-        if (!conversations.length) {
-          advanced = chat.throughSeq
-          continue
-        }
-        const chatStart = clock()
-        if (stageOn('search')) {
-          const done = await search.add(conversations)
-          report.embedded += done.embedded
-        }
-        if (stageOn('voice')) {
-          const done = await voice.add(conversations)
-          report.voiced += done.embedded
-        }
-        if (stageOn('facts') && screenable) {
-          screener ??= options.screener ? options.screener() : gliner2Screener(modelDir)
-          const decider = (options.decider ?? (() => factDecider(env)))()
-          if (!decider.ok) report.waiting = decider.problem
-          const done = await screenChat(handle, chat, screener, decider, { now: new Date(clock()), book, ...(options.log ? { log: options.log } : {}) })
-          report.screened += done.screened
-          report.decided += done.added
-          report.queued += done.marked
-        }
-        report.ms.push(clock() - chatStart)
-        report.chats++
-        report.stages[stageOn('search') ? 'search' : stageOn('voice') ? 'voice' : 'facts'] += clock() - chatStart
-        offsets.push({ chatId: chat.chatId, throughSeq: chat.throughSeq })
+        if (signed(chat)) await run(chat)
+        else defer(chat)
         advanced = chat.throughSeq
       }
-      book.flush(new Date(clock()))
-      if (search.pendingCount()) await search.flush()
-      if (voice.pendingCount()) await voice.flush()
-      if (advanced > cursor || offsets.length) {
-        handle.exec('BEGIN IMMEDIATE')
-        try {
-          saveCursor(handle, advanced, clock())
-          for (const offset of offsets.splice(0)) markChatOffset(handle, offset.chatId, offset.throughSeq, clock())
-          handle.exec('COMMIT')
-        } catch (error) {
-          handle.exec('ROLLBACK')
-          throw error
-        }
-      }
+      await commit()
       cursor = advanced
       if (processed === 0) break
       if (clock() - started > PASS_SLICE_MS * 90 * 60) break
@@ -117,7 +144,7 @@ export async function runIndexPass(handle: Database, options: IndexPassOptions =
     log(`indexpass: ${report.chats} conversation(s), ${report.embedded} chunk(s) embedded, ${report.voiced} voice pair(s), ${report.screened} line(s) screened, ${report.decided} fact(s) added`)
     return report
   } finally {
-    screener?.stop?.()
+    (screener as Screener | null)?.stop?.()
     embedder.stop?.()
     await search.close()
     await voice.close()
