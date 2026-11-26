@@ -1,32 +1,34 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { commandBrowser } from '../../browser/run/index'
 import { commandWordOfKey, isPlatform, PLATFORM_LABELS, PLATFORMS } from '../../cli/runner/helpers/platforms'
-import { homeOf, outsideActiveHours } from '../../marketplace/home/index'
-import { parseProxyUrl } from '../../marketplace/socialAccount/index'
-import type { FacebookAccount } from '../../marketplace/socialAccount/index'
-import { setStatusAndReplace } from '../../marketplace/replacement/index'
+import { homeOf, outsideActiveHours } from '../../platformKit/home/index'
+import { engineRoute, parseProxyUrl } from '../../platformKit/socialAccount/index'
+import type { FacebookAccount } from '../../platformKit/socialAccount/index'
+import { setStatusAndReplace } from '../../facebook/marketplace/replacement/index'
 import { accountStore } from '../../twenty/graphql/index'
 import type { TwentyClient } from '../../twenty/graphql/index'
 import { accountHasSession, cookiesOf, lastJsonLine, netscape, sessionStateOf } from './helpers/index'
 import type { LocalEngineState, CommandEngine, DirectGate, DirectOutcome, DirectRoute, EngineAnswer, EngineSpec, GovernorStatus, SessionState } from './types'
 import { WRITES_PER_DAY_DEFAULT, writesPerDayOf } from './types'
 import { timedEngineSync } from '../../observability/timing/index'
+import { logHome } from '../../config/logHome/index'
 
 
 function localClock(iso: string): string {
   const at = new Date(iso)
   if (Number.isNaN(at.getTime())) return iso
   const pad = (n: number) => String(n).padStart(2, '0')
-  return `${at.getMonth() + 1}/${at.getDate()} ${pad(at.getHours())}:${pad(at.getMinutes())} matt's time`
+  return `${at.getMonth() + 1}/${at.getDate()} ${pad(at.getHours())}:${pad(at.getMinutes())} the owner's time`
 }
 export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
-  read: { platform: 'facebook', library: 'fbk', only: false, surface: 'groups', method: 'feed_read', when: 'read group without --live on a numeric group id', seam: 'directRead' },
+  facebookRead: { platform: 'facebook', library: 'fbk', only: false, surface: 'groups', method: 'feed_read', when: 'read group without --live on a numeric group id', seam: 'directRead' },
   twitterSession: { platform: 'twitter', library: 'twikit', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directTwitter' },
   twitterFollows: { platform: 'twitter', library: 'twikit', only: true, surface: 'friendships', method: 'show', when: 'follows read', seam: 'directTwitter' },
   twitterFollowers: { platform: 'twitter', library: 'twikit', only: true, surface: 'friendships', method: 'followers', when: 'followers read', seam: 'directTwitter' },
+  twitterPosts: { platform: 'twitter', library: 'twikit', only: true, surface: 'tweets', method: 'get_user_tweets', when: 'posts read', seam: 'directTwitter' },
   twitterNotifications: { platform: 'twitter', library: 'twikit', only: true, surface: 'notifications', method: 'get_notifications_page', when: 'notifications read (new, or back through the history with --full)', seam: 'directTwitter' },
   twitterChat: { platform: 'twitter', library: 'twikit', only: true, surface: 'xchat', method: 'unlock_xchat', when: 'chat pin (the PIN is checked against Juicebox before it is saved), chat watch (X pushes each message over wss://chat-ws.x.com, nothing polled)', seam: 'directTwitter' },
   twitterCookies: { platform: 'twitter', library: 'twikit', only: true, surface: 'account', method: 'ping', when: 'cookies save (the cookies are checked with X before they are saved)', seam: 'directTwitter' },
@@ -38,6 +40,7 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   twitterReact: { platform: 'twitter', library: 'twikit', only: true, surface: 'messages', method: 'add_reaction_to_message', when: 'react --live (--remove takes it off)', seam: 'directTwitter' },
   twitterLike: { platform: 'twitter', library: 'twikit', only: true, surface: 'tweets', method: 'favorite_tweet', when: 'like', seam: 'directTwitter' },
   twitterRepost: { platform: 'twitter', library: 'twikit', only: true, surface: 'tweets', method: 'retweet', when: 'repost', seam: 'directTwitter' },
+  twitterDelete: { platform: 'twitter', library: 'twikit', only: true, surface: 'tweets', method: 'delete_tweet', when: 'delete', seam: 'directTwitter' },
   twitterFollow: { platform: 'twitter', library: 'twikit', only: true, surface: 'users', method: 'follow_user', when: 'follow', seam: 'directTwitter' },
   twitterDm: { platform: 'twitter', library: 'twikit', only: true, surface: 'messages', method: 'send_dm', when: 'dm', seam: 'directTwitter' },
   twitterQueue: { platform: 'twitter', library: 'twikit', only: true, surface: 'tweets', method: 'create_tweet', when: 'queue run --live (each like and reply)', seam: 'directTwitter' },
@@ -47,46 +50,65 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   redditReply: { platform: 'reddit', library: 'reverseChud', only: true, surface: 'posts', method: 'reply', when: 'a comment or reply', seam: 'directReddit' },
   redditVote: { platform: 'reddit', library: 'reverseChud', only: true, surface: 'posts', method: 'vote', when: 'a vote', seam: 'directReddit' },
   discordSession: { platform: 'discord', library: 'endcord', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directDiscord' },
+  discordSecrets: { platform: 'discord', library: 'endcord', only: true, surface: 'account', method: 'none', when: 'secrets (a Clack prompt; the email, password and 2FA secret go to Twenty, Discord is not called)', seam: 'directDiscord' },
   discordChats: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'get_dms', when: 'chats (the DMs and group DMs)', seam: 'directDiscord' },
   discordRead: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'get_messages', when: 'read (a chat or channel, paged with before)', seam: 'directDiscord' },
+  discordServers: { platform: 'discord', library: 'endcord', only: true, surface: 'account', method: 'get_guilds', when: 'servers (the servers the account is in)', seam: 'directDiscord' },
+  discordChannels: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'get_channels', when: 'channels (one server, by category and kind)', seam: 'directDiscord' },
+  discordPosts: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'get_threads', when: 'posts (a forum or media channel, threads/search)', seam: 'directDiscord' },
+  discordSearch: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'search', when: 'search (a whole server, messages/search)', seam: 'directDiscord' },
   discordWatch: { platform: 'discord', library: 'endcord', only: true, surface: 'gateway', method: 'Gateway', when: 'watch (Discord pushes each message over wss://gateway.discord.gg, nothing polled)', seam: 'directDiscordLive' },
-  discordVoice: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'send_voice_message', when: 'voice --live (a voice note in the voice cloned from matt, flags 8192)', seam: 'directDiscord' },
+  discordVoice: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'send_voice_message', when: 'voice --live (a voice note in the voice cloned from the owner, flags 8192)', seam: 'directDiscord' },
   discordReact: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'send_reaction', when: 'react --live (--remove takes it off)', seam: 'directDiscord' },
   discordSend: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'send_message', when: 'send --live', seam: 'directDiscord' },
   discordDelete: { platform: 'discord', library: 'endcord', only: true, surface: 'messages', method: 'delete_message', when: 'delete --live (only the account own messages, each read first)', seam: 'directDiscord' },
+  discordFriend: { platform: 'discord', library: 'endcord', only: true, surface: 'relationships', method: 'request', when: 'friend --live (a friend request by user id)', seam: 'directDiscord' },
   linkedinSession: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directLinkedin' },
+  linkedinPost: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'posts', method: 'post', when: 'a feed post, with an optional image (LinkedIn composer calls recorded from a real post)', seam: 'directLinkedin' },
+  linkedinDelete: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'posts', method: 'deletePost', when: 'deleting one of the accounts own posts', seam: 'directLinkedin' },
+  linkedinSuggestions: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'network', method: 'suggestions', when: 'the people LinkedIn suggests on My Network (calls recorded from a real visit)', seam: 'directLinkedin' },
+  linkedinConnect: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'network', method: 'connect', when: 'one invitation to a suggested person, the request its own Connect button carries', seam: 'directLinkedin' },
+  linkedinLike: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'posts', method: 'like', when: 'a like on one post, the request the feed Like button sends', seam: 'directLinkedin' },
+  linkedinRepost: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'posts', method: 'repost', when: 'an instant repost of one post, the request the feed Repost menu sends', seam: 'directLinkedin' },
+  linkedinMessage: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'messages', method: 'message', when: 'writing in one existing conversation, typing then createMessage per part', seam: 'directLinkedin' },
+  linkedinPosts: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'posts', method: 'get_profile_posts', when: 'the account own posts with their reactions, comments and reposts (profileUpdatesV2)', seam: 'directLinkedin' },
+  linkedinInbox: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'messages', method: 'inbox', when: 'the 20 newest conversations (messengerConversations, recorded from a real visit)', seam: 'directLinkedin' },
+  linkedinMessages: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'messages', method: 'messages', when: 'one conversation in full (messengerMessages)', seam: 'directLinkedin' },
   linkedinCookies: { platform: 'linkedin', library: 'openLinkedinApi', only: true, surface: 'account', method: 'ping', when: 'cookies save (the cookies are checked with LinkedIn before they are saved)', seam: 'directLinkedin' },
   slackSession: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'account', method: 'exchange_cookie', when: 'session check (and auth.test with --workspace)', seam: 'directSlack' },
   slackWorkspaces: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'account', method: 'exchange_cookie', when: 'workspaces (the ones the d cookie is signed in to)', seam: 'directSlack' },
   slackChats: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'conversations.list', when: 'chats (the DMs and group DMs)', seam: 'directSlack' },
   slackRead: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'conversations.history', when: 'read (a chat, paged by cursor)', seam: 'directSlack' },
   slackWatch: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'websocket', method: 'connect', when: 'watch (Slack pushes each event over wss-primary.slack.com, nothing polled)', seam: 'directSlackLive' },
-  slackVoice: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'files.completeUploadExternal', when: 'voice --live (a voice note in the voice cloned from matt, uploaded then shared)', seam: 'directSlack' },
+  slackVoice: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'files.completeUploadExternal', when: 'voice --live (a voice note in the voice cloned from the owner, uploaded then shared)', seam: 'directSlack' },
   slackReact: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'reactions.add', when: 'react --live (--remove takes it off)', seam: 'directSlack' },
   slackSend: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'messages', method: 'chat.postMessage', when: 'send --live', seam: 'directSlack' },
   slackCookies: { platform: 'slack', library: 'gabrielSlack', only: true, surface: 'account', method: 'exchange_cookie', when: 'cookies save (the d cookie is checked with Slack before it is saved)', seam: 'directSlack' },
   instagramSession: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directInstagram' },
   instagramDms: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_threads', when: 'dms (the inbox, or one thread with --with)', seam: 'directInstagram' },
-  twitterVoice: { platform: 'twitter', library: 'twikit', only: true, surface: 'messages', method: 'SendMessageCreateMutation', when: 'voice --live (a voice note in the voice cloned from matt, encrypted with chat-xdk and sent as an X Chat AUDIO attachment)', seam: 'directTwitter' },
-  instagramVoice: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send_voice', when: 'voice --live (a voice note in the voice cloned from matt, its upload on curl_cffi)', seam: 'directInstagram' },
+  twitterVoice: { platform: 'twitter', library: 'twikit', only: true, surface: 'messages', method: 'SendMessageCreateMutation', when: 'voice --live (a voice note in the voice cloned from the owner, encrypted with chat-xdk and sent as an X Chat AUDIO attachment)', seam: 'directTwitter' },
+  instagramVoice: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send_voice', when: 'voice --live (a voice note in the voice cloned from the owner, its upload on curl_cffi)', seam: 'directInstagram' },
   instagramReact: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send_reaction', when: 'react --live (--remove takes it off)', seam: 'directInstagram' },
   instagramSend: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'messages', method: 'direct_send', when: 'send --live (text one message per line, and --photo through direct_send_photo)', seam: 'directInstagram' },
   instagramWatch: { platform: 'instagram', library: 'instagrapi', only: true, surface: 'websocket', method: 'realtime_connect', when: 'watch (Instagram pushes each DM over its realtime MQTT, edge-mqtt.facebook.com, nothing polled)', seam: 'directInstagramLive' },
-  tiktokSession: { platform: 'tiktok', library: 'no client vendored yet', only: true, surface: 'account', method: 'ping', when: 'session check', seam: 'directTiktok' },
   tiktokSearch: { engine: 'browser', platform: 'tiktok', library: 'shared inspect browser', only: false, surface: 'search', method: 'videos', when: 'text or hashtag video searches', seam: 'sendInspect' },
-  tiktokScrape: { engine: 'browser', platform: 'tiktok', library: 'bundled omkarcloud/tiktok-scraper', only: false, surface: 'videos', method: 'details', when: 'browser query discovery followed by governed internal video extraction; a supplied link uses the internal engine', seam: 'directTiktok' }
+  tiktokScrape: { engine: 'browser', platform: 'tiktok', library: 'bundled omkarcloud/tiktok-scraper', only: false, surface: 'videos', method: 'details', when: 'browser query discovery followed by governed internal video extraction; a supplied link uses the internal engine', seam: 'directTiktok' },
+  tiktokSession: { platform: 'tiktok', library: 'tiktokApi (curl_cffi, TikTok Studio calls)', only: true, surface: 'account', method: 'ping', when: 'session check (/tiktokstudio/api/web/user)', seam: 'directTiktok' },
+  tiktokStats: { platform: 'tiktok', library: 'tiktokApi (curl_cffi, TikTok Studio calls)', only: true, surface: 'posts', method: 'stats', when: 'stats (multiGetFollowRelationCount, then creator/manage/item_list/v1 paged)', seam: 'directTiktok' },
+  tiktokPost: { platform: 'tiktok', library: 'tiktokApi (curl_cffi, TikTok Studio calls)', only: true, surface: 'posts', method: 'post', when: 'post --live (upload/auth, ApplyUploadInner signed AWS4, the video to TikTok storage, then project/post/v1)', seam: 'directTiktok' },
+  tiktokDelete: { platform: 'tiktok', library: 'tiktokApi (curl_cffi, TikTok Studio calls)', only: true, surface: 'posts', method: 'deletePost', when: 'delete --live (post/edit/v1 with delete_type 1)', seam: 'directTiktok' }
 }
 
-export function commandEngine(command: string): CommandEngine {
+export function commandEngine(command: string, name: string = command): CommandEngine {
   const route = DIRECT_ROUTES[command]
   if (route?.engine === 'browser') return 'browser'
   if (route) return route.only ? 'directApiOnly' : 'directApiFirst'
-  return commandBrowser(command) === 'none' ? 'none' : 'browser'
+  return commandBrowser(name) === 'none' ? 'none' : 'browser'
 }
 
 export function engineHead(route: DirectRoute): string {
   if (route.engine === 'browser') return `the account's existing Log inspect browser, with recorded navigation and scroll steps for ${route.when}`
-  if (route.platform === 'twitter') return `the direct-API engine only (twikit, vendored in vendor/twikit, ${route.surface}.${route.method} for the ${route.when}; no browser and no proxy: X accounts call X directly, rule 80)`
+  if (route.platform === 'twitter') return `the direct-API engine only (twikit, vendored in vendor/twikit, ${route.surface}.${route.method} for the ${route.when}; no browser; direct unless the account has a proxy, rule 80)`
   if (route.platform !== 'facebook') return `the direct-API engine only (${route.library}, vendored in vendor/${route.library}, ${route.surface}.${route.method} for the ${route.when}; no browser)`
   return `the direct-API engine first (fbk ${route.surface}.${route.method}, no browser) for ${route.when}, when the account has a saved c_user + xs session, a proxy in its home country and is inside its hours (--bypass skips the hours)`
 }
@@ -108,15 +130,15 @@ export function engineLine(command: string): string | null {
 }
 
 export function fbkStateRoot(): string {
-  return process.env.LOG_FBK_STATE || join(homedir(), '.logCli', 'fbk')
+  return process.env.LOG_FBK_STATE || join(logHome(), 'fbk')
 }
 
 export function twitterStateRoot(): string {
-  return process.env.LOG_TWITTER_STATE || join(homedir(), '.logCli', 'twitter')
+  return process.env.LOG_TWITTER_STATE || join(logHome(), 'twitter')
 }
 
 export function platformStateRoot(platform: string): string {
-  return process.env.LOG_PLATFORM_STATE ? join(process.env.LOG_PLATFORM_STATE, platform) : join(homedir(), '.logCli', platform)
+  return process.env.LOG_PLATFORM_STATE ? join(process.env.LOG_PLATFORM_STATE, platform) : join(logHome(), platform)
 }
 
 export function allEngineStates(now: Date = new Date()): LocalEngineState[] {
@@ -221,8 +243,9 @@ function spawnFbk(spec: object): EngineAnswer {
 }
 
 export function runEngine(account: FacebookAccount, spec: EngineSpec): EngineAnswer {
-  if (!account.proxy) return { ok: false, code: 'noProxy', detail: 'no proxy' }
-  return spawnEngine({ ...spec, account: account.accountName, proxy: account.proxy, cookies: netscape(cookiesOf(account)) })
+  const routed = engineRoute(account)
+  if (!routed.ok) return { ok: false, code: routed.code, detail: routed.detail }
+  return spawnEngine({ ...spec, account: account.accountName, route: routed.route, cookies: netscape(cookiesOf(account)) })
 }
 
 export function governorStatus(accountName: string): GovernorStatus | null {

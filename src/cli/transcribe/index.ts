@@ -8,7 +8,7 @@ import { isAudio } from "../../platformKit/media/index.ts";
 import type { MessageAttachment } from "../../platformKit/media/index.ts";
 import { loadConversations, saveConversations, updateIndex } from "../../search/conversations/index.ts";
 import type { Conversation } from "../../search/conversations/index.ts";
-import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseError } from "../runner/helpers/index.ts";
+import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseError, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandInput } from "../runner/types.ts";
 import { searchDeps } from "../search/index.ts";
 import { openTwitterAccount } from "../twitter/helpers/account.ts";
@@ -17,7 +17,7 @@ export const TRANSCRIBE_USAGE = [
   "Usage: log transcribe [--platform twitter|discord] [--account <a>] [--list] [--noIndex] [--json]",
   "       log transcribe file <path> [--json]   (one audio file, transcribed and kept by its hash)",
   "Transcribes every voice note in the saved conversations with AssemblyAI (upload, transcript, polled until done) and writes each into the conversation store as (voice note: \"<what was said>\") in place of its (audio: <name>) marker, so log search, voice and SubQ matrices see what was said. X voice notes come from the X Chat files the account's one session saved, and a missing one is fetched through that session (the conversation read again, its audio events reopened). Discord voice notes are found with Discord's own sound search, one chat at a time through log's Discord engine, and each file is fetched from its fresh attachment url there; any refusal stops it (rule 94). Each transcript is kept once by its file's hash in ~/.logCli/transcripts, so nothing is sent to AssemblyAI twice. The search index is then updated with what changed (--noIndex skips it).",
-  "--list only lists the voice notes the store holds and which have their file, calling nothing. The key is ASSEMBLYAI_API_KEY or ASSEMBLY_AI_KEY (the environment, .env.local, ~/.buzz/.env.local or ~/filmcraft/.env.local), never printed; without it the command refuses with assemblyAiKeyMissing.",
+  "--list only lists the voice notes the store holds and which have their file, calling nothing. The key is ASSEMBLYAI_API_KEY or ASSEMBLY_AI_KEY (the environment, .env.local, ~/.logCli/.env or a file in LOG_ENV_FILES), never printed; without it the command refuses with assemblyAiKeyMissing.",
 ].join("\n");
 
 const PLATFORMS = ["twitter", "discord"] as const;
@@ -154,7 +154,7 @@ export const transcribeCommand: Command = {
     const sub = argv[0] === "file" ? "file" : "all";
     const form = TRANSCRIBE_INPUT.forms[sub === "file" ? 1 : 0];
     const parsed = parseArgs(sub === "file" ? argv.slice(1) : argv, parserSpecOf({ forms: [{ ...form, words: [] }] }));
-    if (!parsed.ok) return { code: 1, stderr: `log transcribe: ${parsed.error}\n${TRANSCRIBE_USAGE}` };
+    if (!parsed.ok) return refuseInput("transcribe", parsed.error, TRANSCRIBE_USAGE);
     const json = parsed.flags["json"] === true;
     try {
       if (sub === "file") {
@@ -166,7 +166,7 @@ export const transcribeCommand: Command = {
         if (!answer.ok) return refuse("transcribe", answer.code, `${answer.status ? `HTTP ${answer.status}: ` : ""}${answer.error}`);
         return { code: 0, stdout: json ? JSON.stringify(answer, null, 2) : `log transcribe: ${basename(path)} (${answer.cached ? "cached" : "transcribed"}, ${Math.round(answer.transcript.seconds ?? 0)} s, ${answer.transcript.languageCode ?? "?"}):\n${answer.transcript.text}` };
       }
-      if (parsed.positionals.length) return { code: 1, stderr: `log transcribe: takes no words, only flags (or file <path>)\n${TRANSCRIBE_USAGE}` };
+      if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log transcribe: takes no words, only flags (or file <path>)\n${TRANSCRIBE_USAGE}` };
       const platform = typeof parsed.flags["platform"] === "string" ? parsed.flags["platform"] : undefined;
       const only = typeof parsed.flags["account"] === "string" ? parsed.flags["account"] : undefined;
       let conversations = loadConversations();
@@ -220,7 +220,7 @@ export const transcribeCommand: Command = {
         code: failed.length ? 1 : 0,
         stdout: [
           `log transcribe: ${done.length} voice note(s) transcribed (${fresh} new with AssemblyAI, ${done.length - fresh} from the cache), ${failed.length} failed, ${missing.length} without their file; ${applied.changed.length} conversation(s) rewritten in the store`,
-          ...(done.length ? ["by who said it:", ...byPerson(results, "matt")] : []),
+          ...(done.length ? ["by who said it:", ...byPerson(results, "the owner")] : []),
           ...failed.map((r) => `  failed: ${r.note.platform} ${r.note.account} ${r.note.messageId} ${r.note.name}: ${r.answer && !r.answer.ok ? `${r.answer.code}: ${r.answer.error}` : ""}`),
           ...lines,
           ...(indexed ? [indexed] : []),

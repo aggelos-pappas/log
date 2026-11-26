@@ -1,6 +1,6 @@
 # discordApiUsersMeAffinitiesUsers
 
-<!-- facts:start · written by `log facebook capture --docs` from the run captures and rea. Not edited by hand. -->
+<!-- facts:start · written by `log capture docs` from the run captures and rea. Not edited by hand. -->
 
 | | |
 | --- | --- |
@@ -10,21 +10,124 @@
 | Path | `discord.com/api/users/@me/affinities/users` |
 | Sends | — |
 | Reads | `user_affinities` |
-| Called from | `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1.js:208 app_store_parental_revocation`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1036.js:1 parse`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1221.js:2 anonymous`, `runs/inspect/20261028T074137_sourcedandsoldtothehighestbidder/script1245.js:2 anonymous` |
-| rea | `ev_065e7ad37dcb5911d240f9de7d6e2882220c5a8d7c025d92b46a23de59cf297c` |
+| Called from | `runs/inspect/20261120T115645_<name:1>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:1>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 2 time(s) in 2 run(s).
+Seen 5 time(s) in 5 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 5: click e40 | 1 | 200 | 789 ms | 6560 ms | — |
 | inspect | step 2: snapshot | 1 | 200 | 740 ms | 48694 ms | — |
+| inspect | step 1: goto /login | 3 | 200 | 567–863 ms | 32327–1045767 ms | — |
 
-### What it sent and what came back (the newest 2 from our runs)
+### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder**, step 2: snapshot: 200, 740 ms
+**runs/inspect/20261120T084152_<name:1>**, step 1: goto /login: 200, 863 ms
+
+Sent:
+
+```json
+null
+```
+
+Answered:
+
+```json
+{
+  "user_affinities": [
+    {
+      "other_user_id": "428660066716090378",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.868118679332314,
+      "dm_rank": 1,
+      "vc_probability": 0.8329808455771183,
+      "vc_rank": 1,
+      "server_message_probability": 0.0675239665545675,
+      "server_message_rank": 29,
+      "communication_probability": 0.5895411638213333,
+      "communication_rank": 1
+    },
+    {
+      "other_user_id": "541647035317747722",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.8572496179275535,
+      "dm_rank": 4,
+      "vc_probability": 0.777301929086438,
+      "vc_rank": 2,
+      "server_message_probability": 0.004113237849325427,
+      "server_message_rank": 174,
+      "communication_probability": 0.546221594954439,
+      "communication_rank": 2
+    },
+    {
+      "other_user_id": "197014787945791488",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.7729288511543547,
+      "dm_rank": 10,
+      "vc_probability": 0.0029691820358079017,
+      "vc_rank": 68,
+      "server_message_probability": 0.8030203089018778,
+      "server_message_rank": 1,
+      "communication_probability": 0.5263061140306802,
+      "communication_rank": 3
+    },
+    {
+      "other_user_id": "1186364405743624192",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.7651596067383517,
+      "dm_rank": 13,
+      "vc_probability": 0.02799853904719779,
+      "vc_rank": 13,
+      "server_message_probability": 0.7777044395461289,
+      "server_message_rank": 2,
+      "communication_probability": 0.5236208617772261,
+      "communication_rank": 4
+    },
+    {
+      "other_user_id": "1231328132427153461",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.6824153507811419,
+      "dm_rank": 18,
+      "vc_probability": 0.5801331641194938,
+      "vc_rank": 3,
+      "server_message_probability": 0.11813818451654216,
+      "server_message_rank": 17,
+      "communication_probability": 0.46022889980572596,
+      "communication_rank": 5
+    },
+    {
+      "other_user_id": "1192133857198223460",
+      "user_segment": "HFU_MAU",
+      "other_user_segment": "HFU_MAU",
+      "is_friend": true,
+      "dm_probability": 0.8486500422239412,
+      "dm_rank": 7,
+      "vc_probability": 0.40687628901240175,
+      "vc_rank": 4,
+      "server_message_probability": 0.029439592416318727,
+      "server_message_rank": 48,
+      "communication_probability": 0.4283219745508872,
+      "communication_rank": 6
+    },
+    "… 1915 more"
+  ]
+}
+```
+
+**runs/inspect/20261030T222341_<name:1>**, step 2: snapshot: 200, 740 ms
 
 Sent:
 
@@ -126,7 +229,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261028T062914_sourcedandsoldtothehighestbidder**, step 5: click e40: 200, 789 ms
+**runs/inspect/20261028T062914_<name:1>**, step 5: click e40: 200, 789 ms
 
 Sent:
 

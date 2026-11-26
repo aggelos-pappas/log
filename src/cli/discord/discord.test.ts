@@ -7,7 +7,7 @@ import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { DISCORD_PLATFORM } from "../../discord/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
-import { attachmentLines, discordDeps, discordInboxMessageOf, filesOfStored, storedAttachmentsOf, toInboxOf, UNTRUSTED_FILE_LINE } from "./index.ts";
+import { attachmentLines, discordDeps, forgetServerLists, discordInboxMessageOf, filesOfStored, storedAttachmentsOf, toInboxOf, ServerTalks, SERVER_TALK_MS, UNTRUSTED_FILE_LINE } from "./index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
 import { chatEvents } from "../../inbox/store/index.ts";
 import { takePending } from "../../inbox/watch/index.ts";
@@ -47,7 +47,7 @@ describe("log discord session check", () => {
   test("an account of another platform is refused before the engine is called", async () => {
     const r = await run(["discord", "session", "check", "--account", "galwayOne"]);
     expect(r.code).toBe(1);
-    expect(r.err).toContain("accountNotFound");
+    expect(r.err).toContain("accountPlatformMismatch");
     expect(r.calls).toEqual([]);
   });
 
@@ -65,7 +65,7 @@ describe("log discord session check", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({}));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "vote", account: "discordOne", platform: "discord", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "vote", account: "discordOne", platform: "discord", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [DISCORD_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "actionUnknown" });
@@ -73,14 +73,45 @@ describe("log discord session check", () => {
     expect(loads.stdout.trim()).toBe("Discord");
   }, 20_000);
   test("chats lists the account's DMs and groups from the engine", async () => {
-    const r = await run(["discord", "chats", "--account", "discordOne"], { answer: { ok: true, loginState: "loggedIn", chats: [{ id: "1547936265436012645", kind: "group", name: "log", members: ["QuadScorpion", "John"] }] }, refreshed: null });
+    const r = await run(["discord", "chats", "--account", "discordOne"], { answer: { ok: true, loginState: "loggedIn", chats: [{ id: "1000000000000000001", kind: "group", name: "log", members: ["QuietSparrow", "Jon"] }] }, refreshed: null });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["discordOne:chats"]);
-    expect(r.out).toContain("1547936265436012645  group  log  (QuadScorpion, John)");
+    expect(r.out).toContain("1000000000000000001  group  log  (QuietSparrow, Jon)");
+  });
+
+  test("chats --kind keeps only dms and groups, and --name finds a typo'd name in one call", async () => {
+    const chats = [
+      { id: "1000000000000000001", kind: "group", name: "build crew", members: ["grace_ships", "linus_k"] },
+      { id: "1000000000000000002", kind: "dm", name: "linus_k", members: ["linus_k"] },
+      { id: "1000000000000000003", kind: "channel", name: "demo server #general", members: [] },
+    ];
+    const kinds = await run(["discord", "chats", "--account", "discordOne", "--kind", "dm,group", "--json"], { answer: { ok: true, loginState: "loggedIn", chats }, refreshed: null });
+    expect(JSON.parse(kinds.out)).toMatchObject({ of: 3, chats: [{ kind: "group" }, { kind: "dm" }] });
+    const named = await run(["discord", "chats", "--account", "discordOne", "--kind", "dm", "--name", "lnius_k"], { answer: { ok: true, loginState: "loggedIn", chats }, refreshed: null });
+    expect(named.out).toContain("has 1 of 3 chat(s) matching");
+    expect(named.out).toContain("1000000000000000002  dm     linus_k");
+    const wrong = await run(["discord", "chats", "--account", "discordOne", "--kind", "server"], { answer: { ok: true, loginState: "loggedIn", chats }, refreshed: null });
+    expect(wrong.code).toBe(1);
+  });
+
+  test("search reads the server list once and reuses it for the next searches", async () => {
+    forgetServerLists();
+    const calls: string[] = [];
+    const engine = (_account: unknown, spec: { action: string }) => {
+      calls.push(spec.action);
+      if (spec.action === "servers") return { answer: { ok: true, servers: [{ id: "1000000000000000009", name: "demo server", owner: false }] }, refreshed: null };
+      return { answer: { ok: true, serverId: "1000000000000000009", total: 0, messages: [], places: {} }, refreshed: null };
+    };
+    for (const query of ["ship it", "release"]) {
+      const code = await runCli(["discord", "search", "--account", "discordOne", "--server", "demo server", "--query", query], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: engine as never });
+      expect(code).toBe(0);
+    }
+    expect(calls).toEqual(["servers", "search", "search"]);
+    forgetServerLists();
   });
 
   test("send without --live is a dry run and calls nothing", async () => {
-    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1547936265436012645", "--text", "yo"]);
+    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "yo"]);
     expect(r.code).toBe(0);
     expect(r.out).toContain("dry run");
     expect(r.calls).toEqual([]);
@@ -93,7 +124,7 @@ describe("log discord session check", () => {
   });
 
   test("send --live goes to the engine and Discord's message id decides", async () => {
-    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1547936265436012645", "--text", "yo", "--approvedBy", "matt", "--live"], { answer: { ok: true, event: "sent", loginState: "loggedIn", messageId: "1564911647925997649", channelId: "1547936265436012645", timestamp: "2026-10-28T08:00:11Z" }, refreshed: null });
+    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "yo", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", loginState: "loggedIn", messageId: "1564911647925997649", channelId: "1000000000000000001", timestamp: "2026-10-28T08:00:11Z" }, refreshed: null });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["discordOne:send"]);
     expect(r.out).toContain("sent message 1564911647925997649");
@@ -109,7 +140,7 @@ describe("log discord session check", () => {
       return checks < 2 ? [] : [{ platform: "discord", account, conversationId: channel, with: "x", text: "is this ai", at: "2026-11-03T19:24:13.300Z", box: "dm", seenAt: "2026-11-03T19:24:13.865Z" }];
     };
     try {
-      const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one\ntwo\nthree\nfour", "--approvedBy", "matt", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1481513072660185149", timestamp: "t" }, refreshed: null });
+      const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one\ntwo\nthree\nfour", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1481513072660185149", timestamp: "t" }, refreshed: null });
       expect(r.code).toBe(1);
       expect(r.calls).toEqual(["discordOne:send", "discordOne:send"]);
       expect(r.out).toContain(">>> INTERRUPTED");
@@ -117,6 +148,80 @@ describe("log discord session check", () => {
       expect(r.out).toContain("not sent: three");
       expect(r.out).toContain("not sent: four");
     } finally {
+      Object.assign(discordDeps, saved);
+    }
+  });
+
+  test("a message they write while a line is still being typed stops that line before it posts", async () => {
+    const saved = { ...discordDeps };
+    discordDeps.wait = async () => {};
+    discordDeps.incoming = () => [];
+    discordDeps.mark = () => ({ log: "watch.log", offset: 10 });
+    try {
+      const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one\ntwo", "--approvedBy", "the owner", "--live"], { answer: { ok: false, code: "chatMovedOn", detail: "they wrote while this was being typed, so it wasn't sent: chat 1481513072660185149 · x · 3: oops wrong one", loginState: "loggedIn", event: "held" }, refreshed: null });
+      expect(r.code).toBe(1);
+      expect(r.calls).toEqual(["discordOne:send"]);
+      expect(r.out).toContain(">>> INTERRUPTED");
+      expect(r.out).toContain("0 of 2 sent");
+      expect(r.out).toContain("oops wrong one");
+      expect(r.out).toContain("not sent: one");
+    } finally {
+      Object.assign(discordDeps, saved);
+    }
+  });
+
+  test("a line waits while they are typing, then goes out once they stop", async () => {
+    const saved = { ...discordDeps };
+    let waits = 0;
+    discordDeps.wait = async () => void waits++;
+    discordDeps.now = () => "2026-11-03T19:23:36.000Z";
+    discordDeps.incoming = () => [];
+    discordDeps.typing = () => (waits >= 1 && waits < 4 ? ["7"] : []);
+    try {
+      const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one\ntwo", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1481513072660185149", at: "2026-11-03T19:24:13.300Z" }, refreshed: null });
+      expect(r.code).toBe(0);
+      expect(r.calls).toEqual(["discordOne:send", "discordOne:send"]);
+      expect(waits).toBeGreaterThan(1);
+    } finally {
+      Object.assign(discordDeps, saved);
+    }
+  });
+
+  test("still typing at the limit holds the rest and says so", async () => {
+    const saved = { ...discordDeps };
+    let waits = 0;
+    discordDeps.wait = async () => void waits++;
+    discordDeps.now = () => "2026-11-03T19:23:36.000Z";
+    discordDeps.incoming = () => [];
+    discordDeps.typing = () => (waits ? ["7"] : []);
+    try {
+      const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one\ntwo\nthree", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1481513072660185149", at: "2026-11-03T19:24:13.300Z" }, refreshed: null });
+      expect(r.code).toBe(1);
+      expect(r.calls).toEqual(["discordOne:send"]);
+      expect(r.out).toContain(">>> STILL TYPING");
+      expect(r.out).toContain("  two");
+    } finally {
+      Object.assign(discordDeps, saved);
+    }
+  });
+
+  test("--followUp tells the gate the owner asked for this message on top of his own last one", async () => {
+    const saved = { ...discordDeps };
+    discordDeps.wait = async () => {};
+    discordDeps.incoming = () => [];
+    const gate = gateDeps.gate;
+    const gated: Record<string, unknown>[] = [];
+    gateDeps.gate = async (_context, send) => {
+      gated.push(send as Record<string, unknown>);
+      return { ok: true, line: "voice gate: passed (test)" };
+    };
+    try {
+      await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "one", "--followUp", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1481513072660185149", timestamp: "t" }, refreshed: null });
+      await run(["discord", "send", "--account", "discordOne", "--channel", "1481513072660185149", "--text", "two", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "2", channelId: "1481513072660185149", timestamp: "t" }, refreshed: null });
+      expect(gated[0]).toMatchObject({ followUp: true });
+      expect(gated[1].followUp).toBeUndefined();
+    } finally {
+      gateDeps.gate = gate;
       Object.assign(discordDeps, saved);
     }
   });
@@ -143,7 +248,7 @@ describe("log discord session check", () => {
     const calls: string[] = [];
     const out: string[] = [];
     const answers: PlatformEngineRun["answer"][] = [{ ok: true, event: "deleted", loginState: "loggedIn", messageId: "1566872902840619151", content: "lad im skint again" }, { ok: false, code: "notOwnMessage", detail: "someone else's" }];
-    const code = await runCli(["discord", "delete", "--account", "discordOne", "--channel", "1434928149904228392", "--message", "1566872902840619151,1566872961531777095,1566873006607966331", "--approvedBy", "matt", "--live"], {
+    const code = await runCli(["discord", "delete", "--account", "discordOne", "--channel", "1434928149904228392", "--message", "1566872902840619151,1566872961531777095,1566873006607966331", "--approvedBy", "the owner", "--live"], {
       twenty,
       out: (l) => out.push(l),
       err: () => {},
@@ -157,28 +262,80 @@ describe("log discord session check", () => {
     expect(out.join("\n")).toContain("1 of 3 deleted, then notOwnMessage");
   }, 20_000);
 
-  test("send finds the chat the way matt says it, then sends by its id", async () => {
+  test("send finds the chat the way the owner says it, then sends by its id", async () => {
     const twenty = fixture();
     const sent: unknown[] = [];
-    const code = await runCli(["discord", "send", "--account", "discordOne", "--channel", "the log community group chat", "--text", "yo", "--approvedBy", "matt", "--live"], {
+    const code = await runCli(["discord", "send", "--account", "discordOne", "--channel", "the log community group chat", "--text", "yo", "--approvedBy", "the owner", "--live"], {
       twenty,
       out: () => {},
       err: () => {},
       directDiscord: (_account, spec) => {
         sent.push(spec);
-        if (spec.action === "chats") return { answer: { ok: true, chats: [{ id: "1547936265436012645", kind: "group", name: "log", members: ["John"] }, { id: "1555254123148873869", kind: "dm", name: null, members: ["Jilly"] }] }, refreshed: null };
+        if (spec.action === "chats") return { answer: { ok: true, chats: [{ id: "1000000000000000001", kind: "group", name: "log", members: ["Jon"] }, { id: "1555254123148873869", kind: "dm", name: null, members: ["Jinny"] }] }, refreshed: null };
         return { answer: { ok: true, event: "sent", messageId: "1", channelId: String(spec.channel), timestamp: "t" }, refreshed: null };
       },
     });
     expect(code).toBe(0);
-    expect(sent).toMatchObject([{ action: "chats" }, { action: "send", channel: "1547936265436012645" }]);
+    expect(sent).toMatchObject([{ action: "chats" }, { action: "send", channel: "1000000000000000001" }]);
+  });
+  test("send --userId opens the DM by the person's id first, then sends into it", async () => {
+    const sent: { action?: string; user?: string; channel?: string }[] = [];
+    const code = await runCli(["discord", "send", "--account", "discordOne", "--userId", "1000000000000000777", "--text", "yo", "--asOne", "--overGate", "--approvedBy", "the owner", "--live"], {
+      twenty: fixture(),
+      out: () => {},
+      err: () => {},
+      directDiscord: (_account, spec) => {
+        sent.push(spec as never);
+        if (spec.action === "openDm") return { answer: { ok: true, event: "opened", channelId: "1000000000000000888", userId: "1000000000000000777", username: "jon" }, refreshed: null };
+        if (spec.action === "read") return { answer: { ok: true, messages: [] }, refreshed: null };
+        return { answer: { ok: true, event: "sent", messageId: "1", channelId: String(spec.channel), timestamp: "t" }, refreshed: null };
+      },
+    });
+    expect(code).toBe(0);
+    expect(sent[0]).toMatchObject({ action: "openDm", user: "1000000000000000777" });
+    expect(sent.find((s) => s.action === "send")).toMatchObject({ channel: "1000000000000000888" });
+  });
+  test("send --userId without --live opens nothing; --channel and --userId together are refused", async () => {
+    const called: unknown[] = [];
+    const dry = await runCli(["discord", "send", "--account", "discordOne", "--userId", "1000000000000000777", "--text", "yo"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec); return { answer: { ok: true }, refreshed: null }; } });
+    expect(dry).toBe(0);
+    expect(called).toEqual([]);
+    const both = await runCli(["discord", "send", "--account", "discordOne", "--userId", "1000000000000000777", "--channel", "log", "--text", "yo"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec); return { answer: { ok: true }, refreshed: null }; } });
+    expect(both).toBe(1);
+    expect(called).toEqual([]);
+  });
+  test("friend without --live calls nothing, --live needs --approvedBy, and the first refusal stops the run", async () => {
+    const wait = discordDeps.wait;
+    discordDeps.wait = async () => {};
+    const called: { action?: string; user?: string }[] = [];
+    try {
+      const dry = await runCli(["discord", "friend", "--account", "discordOne", "--userId", "1000000000000000777"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec as never); return { answer: { ok: true }, refreshed: null }; } });
+      expect(dry).toBe(0);
+      expect(called).toEqual([]);
+      const unapproved = await runCli(["discord", "friend", "--account", "discordOne", "--userId", "1000000000000000777", "--live"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: (_a, spec) => { called.push(spec as never); return { answer: { ok: true }, refreshed: null }; } });
+      expect(unapproved).toBe(1);
+      expect(called).toEqual([]);
+      const live = await runCli(["discord", "friend", "--account", "discordOne", "--userId", "1000000000000000777,1000000000000000778,1000000000000000779", "--approvedBy", "the owner", "--live"], {
+        twenty: fixture(),
+        out: () => {},
+        err: () => {},
+        directDiscord: (_a, spec) => {
+          called.push(spec as never);
+          return spec.user === "1000000000000000778" ? { answer: { ok: false, code: "captchaRequired", detail: "captcha" }, refreshed: null } : { answer: { ok: true, event: "sent", mode: "friend", userId: String(spec.user) }, refreshed: null };
+        },
+      });
+      expect(live).toBe(1);
+      expect(called.map((c) => c.user)).toEqual(["1000000000000000777", "1000000000000000778"]);
+    } finally {
+      discordDeps.wait = wait;
+    }
   });
   test("every line after the first goes as a continuation, so the governor doesn't stack its own gap on the line gap", async () => {
     const wait = discordDeps.wait;
     discordDeps.wait = async () => {};
     const sent: Record<string, unknown>[] = [];
     try {
-      const code = await runCli(["discord", "send", "--account", "discordOne", "--channel", "1547936265436012645", "--text", "first line here\nsecond line here", "--approvedBy", "matt", "--live"], {
+      const code = await runCli(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "first line here\nsecond line here", "--approvedBy", "the owner", "--live"], {
         twenty: fixture(),
         out: () => {},
         err: () => {},
@@ -219,7 +376,7 @@ describe("log discord session check", () => {
         gated.push(send as Record<string, unknown>);
         return { ok: true, line: "brief gate: passed (test)" };
       };
-      const code = await runCli(["discord", "send", "--account", "discordOne", "--channel", "1547936265436012645", "--text", "here is the guide\nhave a read", "--file", guide, "--brief", "--approvedBy", "matt", "--live"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: engine as never }).finally(() => {
+      const code = await runCli(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "here is the guide\nhave a read", "--file", guide, "--brief", "--approvedBy", "the owner", "--live"], { twenty: fixture(), out: () => {}, err: () => {}, directDiscord: engine as never }).finally(() => {
         gateDeps.gate = gate;
       });
       expect(code).toBe(0);
@@ -229,7 +386,7 @@ describe("log discord session check", () => {
       expect(sends[1].files).toEqual([guide]);
       sent.length = 0;
       const out: string[] = [];
-      const refused = await runCli(["discord", "send", "--account", "discordOne", "--channel", "1547936265436012645", "--text", "here", "--file", stray, "--approvedBy", "matt", "--live"], { twenty: fixture(), out: (l) => out.push(l), err: (l) => out.push(l), directDiscord: engine as never });
+      const refused = await runCli(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "here", "--file", stray, "--approvedBy", "the owner", "--live"], { twenty: fixture(), out: (l) => out.push(l), err: (l) => out.push(l), directDiscord: engine as never });
       expect(refused).toBe(2);
       expect(out.join("\n")).toContain("fileRefused");
       expect(sent).toHaveLength(0);
@@ -278,31 +435,53 @@ describe("log discord session check", () => {
   });
 });
 
+describe("a server channel conversation reaches the inbox past its mentions", () => {
+  test("someone who replied to the account, then wrote on without a mention, still goes to the inbox for 30 minutes", () => {
+    const talks = new ServerTalks();
+    const reply = { kind: "message", channelId: "1", guildId: "9", id: "10", fromId: "77", repliesToMe: true, text: "industrial field" };
+    talks.see(reply, 0);
+    const on = { kind: "message", channelId: "1", guildId: "9", id: "11", fromId: "77", text: "many people havent adapted yet" };
+    expect(toInboxOf(on, { with: (e: Record<string, unknown>) => talks.with(e, 60_000) } as ServerTalks)).toBe(true);
+    expect(talks.with(on, SERVER_TALK_MS + 1)).toBe(false);
+    expect(talks.with({ ...on, fromId: "88" }, 60_000)).toBe(false);
+    expect(talks.with({ ...on, channelId: "2" }, 60_000)).toBe(false);
+  });
+  test("someone the owner replied to or tagged counts too, a bot never", () => {
+    const talks = new ServerTalks();
+    talks.see({ kind: "message", channelId: "1", guildId: "9", id: "20", fromId: "55", text: "pumps" }, 0);
+    talks.see({ kind: "message", channelId: "1", guildId: "9", id: "21", fromId: "me", fromMe: true, replyTo: "20", text: "nice" }, 0);
+    talks.see({ kind: "message", channelId: "1", guildId: "9", id: "22", fromId: "me", fromMe: true, text: "<@123456789012345678> yo" }, 0);
+    expect(talks.with({ kind: "message", channelId: "1", guildId: "9", fromId: "55", text: "x" }, 1000)).toBe(true);
+    expect(talks.with({ kind: "message", channelId: "1", guildId: "9", fromId: "123456789012345678", text: "x" }, 1000)).toBe(true);
+    expect(talks.with({ kind: "message", channelId: "1", guildId: "9", fromId: "55", bot: true, text: "x" }, 1000)).toBe(false);
+  });
+});
+
 describe("log discord send reads the copy for AI artifacts (rule 111)", () => {
   test("copy with a zero-width character is refused with aiArtifacts and nothing is called, even with --live", async () => {
-    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1547936265436012645", "--text", "yo​ what's up", "--approvedBy", "matt", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1547936265436012645", timestamp: "t" }, refreshed: null });
+    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "yo​ what's up", "--approvedBy", "the owner", "--live"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1000000000000000001", timestamp: "t" }, refreshed: null });
     expect(r.code).toBe(1);
     expect(r.err).toContain("aiArtifacts");
     expect(r.calls).toEqual([]);
   });
 
   test("a dry run is refused the same way", async () => {
-    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1547936265436012645", "--text", "yo​"]);
+    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "yo​"]);
     expect(r.code).toBe(1);
     expect(r.err).toContain("aiArtifacts");
   });
 
   test("clean copy carries its reading in the dry run, its --json and the log line", async () => {
-    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1547936265436012645", "--text", "yo", "--json"]);
+    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "yo", "--json"]);
     expect(r.code).toBe(0);
     expect(JSON.parse(r.out)).toMatchObject({ dryRun: true, watermark: { level: "clean", statistical: "unknown" } });
     expect(r.err).toContain("discordOne: watermark clean");
-    const plain = await run(["discord", "send", "--account", "discordOne", "--channel", "1547936265436012645", "--text", "yo"]);
+    const plain = await run(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "yo"]);
     expect(plain.out).toContain("watermark clean");
   });
 
   test("a live send logs the reading and carries it in --json", async () => {
-    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1547936265436012645", "--text", "yo", "--approvedBy", "matt", "--live", "--json"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1547936265436012645", timestamp: "t" }, refreshed: null });
+    const r = await run(["discord", "send", "--account", "discordOne", "--channel", "1000000000000000001", "--text", "yo", "--approvedBy", "the owner", "--live", "--json"], { answer: { ok: true, event: "sent", messageId: "1", channelId: "1000000000000000001", timestamp: "t" }, refreshed: null });
     expect(r.code).toBe(0);
     expect(JSON.parse(r.out)).toMatchObject({ watermark: { level: "clean" } });
     expect(r.err).toContain("discordOne: watermark clean");
@@ -344,7 +523,7 @@ out = {
     "exportDrop": run([(DMS, 200), (None, None), (json.dumps([msg(2)]).encode(), 200), (json.dumps([msg(3)]).encode(), 200)], lambda: engine.export_of("t", 200, 0)),
     "export403": run([(DMS, 200), (b'{"message": "Missing Access"}', 403)], lambda: engine.export_of("t", 200, 0)),
     "chats429": run([(b"{}", 429)], lambda: engine.chats_of("t")),
-    "send429": run([(b"{}", 429)], lambda: engine.send_of("t", "jilly", "yo")),
+    "send429": run([(b"{}", 429)], lambda: engine.send_of("t", "jinny", "yo")),
     "read429": run([(json.dumps([msg(i) for i in range(100)]).encode(), 200), (b"{}", 429)], lambda: engine.read_of("t", "10", 300, None)),
 }
 print(json.dumps(out))
@@ -400,7 +579,7 @@ describe("the Discord engine stops the whole read on a refusal (rule 94)", () =>
 describe("reads keep the chat's history in the .db as backfill, for the gate inside a send", () => {
   test("a Discord read stores each message once, and none of it shows as new", async () => {
     const channel = String(1500000000000000000n + BigInt(Date.now()));
-    const answer = { ok: true, channelId: channel, messages: [{ id: "11", at: "2026-11-03T13:29:00Z", from: "rvaclassic", bot: false, fromMe: false, replyTo: null, text: "Tmrw i will", embeds: [] }, { id: "12", at: "2026-11-03T13:30:00Z", from: "me", bot: false, fromMe: true, replyTo: null, text: "sound lad", embeds: [] }] };
+    const answer = { ok: true, channelId: channel, messages: [{ id: "11", at: "2026-11-03T13:29:00Z", from: "handle_r1", bot: false, fromMe: false, replyTo: null, text: "Tmrw i will", embeds: [] }, { id: "12", at: "2026-11-03T13:30:00Z", from: "me", bot: false, fromMe: true, replyTo: null, text: "sound lad", embeds: [] }] };
     await run(["discord", "read", "--account", "discordOne", "--channel", channel], { answer, refreshed: null });
     await run(["discord", "read", "--account", "discordOne", "--channel", channel], { answer, refreshed: null });
     expect(chatEvents("discord", "discordOne", (id) => id === channel).map((e) => [e.type, e.text, e.source])).toEqual([["message", "Tmrw i will", "backfill"], ["ownMessage", "sound lad", "backfill"]]);
@@ -410,9 +589,9 @@ describe("reads keep the chat's history in the .db as backfill, for the gate ins
   test("an X thread read stores each message under its own conversation", () => {
     const conversation = `1974596626342686720:${Date.now()}`;
     const messages = [{ id: "a", conversationId: conversation, time: "2026-11-04T01:53:30Z", senderId: "2084617266310909952", text: "im in ecom rn" }, { id: "b", conversationId: conversation, time: "2026-11-04T01:54:00Z", senderId: "1974596626342686720", text: "yeah", fromMe: true }];
-    expect(backfillThread("matthewsoldit", messages, new Date())).toBe(2);
-    expect(backfillThread("matthewsoldit", messages, new Date())).toBe(0);
-    expect(chatEvents("twitter", "matthewsoldit", (id) => id === conversation).map((e) => [e.type, e.withWho])).toEqual([["message", "2084617266310909952"], ["ownMessage", "me"]]);
+    expect(backfillThread("xAccount", messages, new Date())).toBe(2);
+    expect(backfillThread("xAccount", messages, new Date())).toBe(0);
+    expect(chatEvents("twitter", "xAccount", (id) => id === conversation).map((e) => [e.type, e.withWho])).toEqual([["message", "2084617266310909952"], ["ownMessage", "me"]]);
   });
 });
 
@@ -429,7 +608,7 @@ describe("a Discord image is shown with where it was saved", () => {
   });
 
   test("the inbox keeps the watch's saved image path and the message id", () => {
-    const m = discordInboxMessageOf("acct", { kind: "message", channelId: "c", id: "77", from: "Kennedy", text: "", at: "2026-11-07T11:00:00Z", attachments: [{ name: "shot.png", type: "image/png", url: "https://cdn", path: "C:/media/77_shot.png" }] }, new Date("2026-11-07T11:00:01Z"));
+    const m = discordInboxMessageOf("acct", { kind: "message", channelId: "c", id: "77", from: "Kira", text: "", at: "2026-11-07T11:00:00Z", attachments: [{ name: "shot.png", type: "image/png", url: "https://cdn", path: "C:/media/77_shot.png" }] }, new Date("2026-11-07T11:00:01Z"));
     expect(m.id).toBe("77");
     expect(m.attachments).toEqual([{ name: "shot.png", type: "image/png", path: "C:/media/77_shot.png" }]);
   });
@@ -448,7 +627,7 @@ describe("a file someone sends is shown only when it was safe to keep", () => {
   });
 });
 
-describe("reads and sends are paced on their own clocks (matt: we're not achieving p99)", () => {
+describe("reads and sends are paced on their own clocks (the owner: we're not achieving p99)", () => {
   const python = process.env.LOG_PYTHON || "python";
   const script = `import sys, json, tempfile
 sys.path.insert(0, "python"); sys.path.insert(0, "vendor/fbk/src")

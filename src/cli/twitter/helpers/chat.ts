@@ -7,7 +7,7 @@ import { afterGap, appendEvent, eventIdOf, recordPosition } from "../../../inbox
 import { enqueueAttachments } from "../../../media/describer/index.ts";
 import { recordTwitterSession } from "../../../twitter/account/session/index.ts";
 import type { XChatLiveEvent } from "../../../twitter/account/session/index.ts";
-import { JSON_FLAG, parseArgs, parserSpecOf, refuse } from "../../runner/helpers/index.ts";
+import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseInput } from "../../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandInput, CommandResult } from "../../runner/types.ts";
 import { openTwitterAccount } from "./account.ts";
 import type { Engine } from "./account.ts";
@@ -15,7 +15,7 @@ import type { Engine } from "./account.ts";
 export const CHAT_USAGE = [
   "Usage: log twitter chat pin --account <accountName> [--show]",
   "       log twitter chat watch --account <accountName> [--seconds <n>] [--inbox] [--json]",
-  "Saves the account's X Chat PIN (the 4-digit code X asks for to open encrypted DMs) to Twenty, asked twice in a masked Clack prompt and never printed or passed as a flag. It is checked first: the direct-API engine (no browser, no proxy, rule 80) unlocks the account's keys with it through Juicebox (a wrong PIN uses one of X's limited guesses), and only a PIN that opens them is saved. `log twitter dms` uses it to recover the account's X Chat keys through Juicebox (vendor/chatXdk) and read the encrypted messages. --show says only whether one is set.",
+  "Saves the account's X Chat PIN (the 4-digit code X asks for to open encrypted DMs) to Twenty, asked twice in a masked Clack prompt and never printed or passed as a flag. It is checked first: the direct-API engine (no browser; direct unless it has a proxy, rule 80) unlocks the account's keys with it through Juicebox (a wrong PIN uses one of X's limited guesses), and only a PIN that opens them is saved. `log twitter dms` uses it to recover the account's X Chat keys through Juicebox (vendor/chatXdk) and read the encrypted messages. --show says only whether one is set.",
   "watch keeps one socket open to X Chat, the way X's own chat app does (read with rea from X's shipped code, issue #68): a token from GenerateXChatTokenMutation, wss://chat-ws.x.com/ws, a KeepAlive every 30 s, a fresh token and a new socket when it drops. X pushes each message the moment it lands, so nothing is polled and no inbox read can hit X's 429. Each message is decrypted with the saved PIN and printed as it arrives (who, when, what they said). --inbox also hands each new message from someone else to the inbox hook, which puts it in front of the agent with what to do next. --seconds stops it after that long; without it, it watches until stopped.",
 ].join("\n");
 
@@ -44,11 +44,12 @@ export const CHAT_INPUT: CommandInput = {
     },
     {
       words: ["watch"],
+      effect: "read",
       summary: "Watch the account's X Chat live over X's own socket: each message the moment X pushes it, nothing polled",
       positionals: [],
       flags: [
         { name: "account", kind: "string", required: true, description: "The TWITTER socialAccount's accountName (its handle)" },
-        { name: "seconds", kind: "string", description: "Stop after this many seconds (default: watch until stopped)" },
+        { name: "seconds", kind: "number", min: 5, refusal: "secondsInvalid", description: "Stop after this many seconds (default: watch until stopped)" },
         { name: "inbox", kind: "boolean", description: "Hand each new message from someone else to the inbox hook" },
         JSON_FLAG,
       ],
@@ -64,6 +65,7 @@ export const chatCommand: Command = {
   usage: CHAT_USAGE,
   platform: "twitter",
   name: "chat",
+  terminalOnly: "asks the owner for the X Chat PIN in a Clack prompt (masked). The owner runs `log twitter chat pin --account <a>` in a terminal.",
   effect: "write",
   summary: "X Chat's PIN for the account's encrypted DMs: asked in a Clack prompt, kept in Twenty, never printed",
   input: CHAT_INPUT,
@@ -72,9 +74,9 @@ export const chatCommand: Command = {
     if (argv[0] === "watch") return watchChat(context, argv.slice(1));
     if (argv[0] !== "pin") return { code: 1, stderr: `log twitter chat: pin or watch\n${CHAT_USAGE}` };
     const parsed = parseArgs(argv.slice(1), parserSpecOf({ forms: [{ ...CHAT_INPUT.forms[0], words: [] }] }));
-    if (!parsed.ok) return { code: 1, stderr: `log twitter chat: ${parsed.error}\n${CHAT_USAGE}` };
+    if (!parsed.ok) return refuseInput("twitter chat", parsed.error, CHAT_USAGE);
     const ref = parsed.flags["account"];
-    if (typeof ref !== "string") return { code: 1, stderr: `log twitter chat pin: --account is needed\n${CHAT_USAGE}` };
+    if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log twitter chat pin: --account is needed\n${CHAT_USAGE}` };
     const opened = await openTwitterAccount(context, "twitter chat pin", ref);
     if (!opened.ok) return opened.result;
     const account = opened.account;
@@ -130,12 +132,10 @@ export function inboxMessageOf(account: string, event: XChatLiveEvent, now: Date
 
 async function watchChat(context: CommandContext, argv: string[]): Promise<CommandResult> {
   const parsed = parseArgs(argv, parserSpecOf({ forms: [{ ...CHAT_INPUT.forms[1], words: [] }] }));
-  if (!parsed.ok) return { code: 1, stderr: `log twitter chat watch: ${parsed.error}\n${CHAT_USAGE}` };
+  if (!parsed.ok) return refuseInput("twitter chat watch", parsed.error, CHAT_USAGE);
   const ref = parsed.flags["account"];
-  if (typeof ref !== "string") return { code: 1, stderr: `log twitter chat watch: --account is needed\n${CHAT_USAGE}` };
-  const rawSeconds = parsed.flags["seconds"];
-  const seconds = typeof rawSeconds === "string" ? Number(rawSeconds) : undefined;
-  if (seconds !== undefined && (!Number.isFinite(seconds) || seconds < 5)) return refuse("twitter chat watch", "secondsInvalid", "--seconds is a number of seconds, at least 5");
+  if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log twitter chat watch: --account is needed\n${CHAT_USAGE}` };
+  const seconds = numberOf(parsed, "seconds");
   const opened = await openTwitterAccount(context, "twitter chat watch", ref);
   if (!opened.ok) return opened.result;
   const live = context.directTwitterLive;

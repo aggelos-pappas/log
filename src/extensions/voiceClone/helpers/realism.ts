@@ -107,7 +107,7 @@ function scaledToStd(values: Float32Array, std: number): Float32Array {
   return values.map((v) => ((v - mean) / now) * std)
 }
 
-export function shapeLikeMatt(voice: Float32Array, pieces: readonly Float32Array[], rand: () => number): Float32Array {
+export function shapeLikeOwner(voice: Float32Array, pieces: readonly Float32Array[], rand: () => number): Float32Array {
   const n = voice.length
   const out = new Float32Array(n)
   const gain = scaledToStd(smoothNoise(n, REALISM.movementHz, rand), REALISM.movementDb)
@@ -146,12 +146,12 @@ export function phoneCurveFilter(curve: readonly (readonly [number, number])[] =
   return `firequalizer=delay=0.1:gain_entry='${curve.map(([hz, db]) => `entry(${hz},${db})`).join(';')}'`
 }
 
-export function processLikeMatt(from: string, to: string, references: readonly string[], seed: number, tools: AudioTools = AUDIO_TOOLS): Done {
+export function processLikeOwner(from: string, to: string, references: readonly string[], seed: number, tools: AudioTools = AUDIO_TOOLS): Done {
   const voice = decodeSamples(from, `${REALISM.shape},${phoneCurveFilter()}`, tools)
   if (!voice?.length) return { ok: false, detail: `ffmpeg couldn't read the spoken audio in ${from}` }
   const pieces = references.flatMap((path) => {
     const samples = decodeSamples(path, null, tools)
     return samples ? quietPieces(samples) : []
   })
-  return writeSamples(shapeLikeMatt(voice, pieces, seeded(seed)), to, tools)
+  return writeSamples(shapeLikeOwner(voice, pieces, seeded(seed)), to, tools)
 }

@@ -23,7 +23,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/host/20261024T222706_61593981307720**, step 15: click e45: 200, 450 ms
+**runs/host/20261024T222706_<userId:1>**, step 15: click e45: 200, 450 ms
 
 Sent:
 
@@ -150,7 +150,7 @@ When the user takes "Try another way" on a two-step prompt, Facebook fetches the
 
 ## What our machine does with it
 
-Our sign-in (host, flow and inspect) reads the answer to confirm the authentication app (TOTP) is among the methods (`authAppOffered`) before choosing it; the state is `twoStepMethodPicker`. If TOTP is absent it raises `twoStepNoAuthApp` and stops for matt, since log-cli holds a TOTP secret, not a passkey.
+Our sign-in (host, flow and inspect) reads the answer to confirm the authentication app (TOTP) is among the methods (`authAppOffered`) before choosing it; the state is `twoStepMethodPicker`. If TOTP is absent it raises `twoStepNoAuthApp` and stops for the owner, since log-cli holds a TOTP secret, not a passkey.
 
 ## What can go wrong
 

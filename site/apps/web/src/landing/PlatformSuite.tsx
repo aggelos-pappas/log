@@ -8,6 +8,7 @@ import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import { BrandMark, type BrandMarkId } from './BrandMark'
 import { PLATFORM_DEMOS } from './PlatformDemos'
 import { pageForPlatform } from './useCases/platformPages'
+import { HARNESS_PLATFORMS, pageForHarness } from './useCases/harnessPages'
 import { TILT_QUERY, useMediaQuery } from './useMediaQuery'
 
 export type Platform = {
@@ -124,6 +125,8 @@ export const PLATFORMS: Platform[] = [
   },
 ]
 
+const SUITE: Platform[] = [...PLATFORMS, ...HARNESS_PLATFORMS]
+
 const STICKER = 'sticker-word inline-block px-[0.08em] text-[1.18em] leading-none'
 const LIP = 'shadow-[0_0_0_1px_#C9E3FF,0_3px_0_#B5D6FF]'
 
@@ -137,7 +140,8 @@ export function askAiPrompt(platform: Platform) {
     '- A free, open-source (MIT) social media tool that does the whole job, not only listening: it reads inboxes, groups and posts, then replies, DMs, posts and runs listings.',
     '- It runs on my own machine with my own accounts. Sessions and settings stay in ~/.logCli. Many accounts are kept in Twenty, an open-source CRM.',
     '- One command, `log`, and one MCP server, `logMcp`, so Claude Code, Codex or Cursor can run every command as a tool.',
-    '- Nothing acts until I say so: anything that sends, posts or likes is a dry run until `--live`.',
+    '- Nothing acts until I say so: anything that sends, posts or likes is a dry run until `--live`, and replies wait for my approval.',
+    '- Safety, with the test for each control and what is not done yet: https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md',
     '- Each account keeps its own daily limits, pacing between actions and waking hours in its home timezone.',
     '- Platforms: X, Facebook (Marketplace and groups), Discord, Slack, Instagram, Reddit and LinkedIn.',
     '- Install: curl -fsSL https://log.listeningkit.com/install.sh | sh, then `claude mcp add log -- logMcp`.',
@@ -159,13 +163,14 @@ export function askAiGeneralPrompt() {
     '- A free, open-source (MIT) social media tool that does the whole job, not only listening: it reads inboxes, groups and posts, then replies, DMs, posts and runs listings.',
     '- It runs on my own machine with my own accounts. Sessions and settings stay in ~/.logCli. Many accounts are kept in Twenty, an open-source CRM.',
     '- One command, `log`, and one MCP server, `logMcp`, so Claude Code, Codex or Cursor can run every command as a tool.',
-    '- Nothing acts until I say so: anything that sends, posts or likes is a dry run until `--live`.',
+    '- Nothing acts until I say so: anything that sends, posts or likes is a dry run until `--live`, and replies wait for my approval.',
+    '- Safety, with the test for each control and what is not done yet: https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md',
     '- Platforms: X, Facebook (Marketplace and groups), Discord, Slack, Instagram, Reddit and LinkedIn.',
     '- Install: curl -fsSL https://log.listeningkit.com/install.sh | sh, then `claude mcp add log -- logMcp`.',
     '',
     `Docs: ${SITE}/docs and the step-by-step use cases at ${SITE}/docs/useCases.`,
     '',
-    'Answer for log specifically, not other tools. Give me: 1) which platforms I should start with and why, 2) the three best ways a marketer like me would use log, 3) what I would ask my agent in plain words to run each, and 4) what I need to set up first.',
+    'Answer for log specifically, not other tools. Give me: 1) which platforms I should start with and why, 2) the three best ways a marketer like me would use log, 3) what I would ask my agent in plain words to run each, and 4) what I need to set up first. If I ask whether it is safe, read the safety page and keep three things apart: what log documents, what its tests show, and what nobody has checked yet.',
   ].join('\n')
 }
 
@@ -263,7 +268,7 @@ function PlatformCard({
 }) {
   const tilt = useMediaQuery(TILT_QUERY)
   const Demo = PLATFORM_DEMOS[platform.id]
-  const page = pageForPlatform(platform.id)
+  const page = pageForPlatform(platform.id) ?? pageForHarness(platform.id)
   return (
     <div
       className="w-full rounded-[30px] p-1.5 [background:var(--ring-y)] md:[background:var(--ring-x)]"
@@ -340,7 +345,7 @@ export function PlatformSuite() {
   const dragStart = useRef<{ x: number; y: number; id: number; horizontal: boolean | null } | null>(null)
   const dragRef = useRef(0)
   const wheelLock = useRef(0)
-  const count = PLATFORMS.length
+  const count = SUITE.length
   const go = (next: number) => setActive(Math.min(count - 1, Math.max(0, next)))
 
   const onPointerDown = (event: ReactPointerEvent) => {
@@ -417,7 +422,7 @@ export function PlatformSuite() {
         </div>
 
         <div role="tablist" aria-label="Platforms" className="flex flex-wrap justify-center gap-2">
-          {PLATFORMS.map((item, index) => (
+          {SUITE.map((item, index) => (
             <button
               key={item.id}
               type="button"
@@ -453,7 +458,7 @@ export function PlatformSuite() {
               transform: `translateX(calc(${-active} * (100% + ${SLIDE_GAP_REM}rem) + ${drag}px))`,
             }}
           >
-            {PLATFORMS.map((item, index) => (
+            {SUITE.map((item, index) => (
               <div
                 key={item.id}
                 id={`platform-slide-${item.id}`}
@@ -468,7 +473,7 @@ export function PlatformSuite() {
           </div>
         </div>
         <div className="mt-2 flex items-center justify-center gap-2" role="group" aria-label="Choose a platform">
-          {PLATFORMS.map((item, index) => (
+          {SUITE.map((item, index) => (
             <button
               key={item.id}
               type="button"

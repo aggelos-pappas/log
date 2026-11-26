@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runCli } from "../runner/index.ts";
 import { listingFromJson } from "./helpers/index.ts";
+import { FRESH_DB_MS } from "../../../scripts/tests/timeouts.ts";
 
 const desc = (opening: string) => `${opening}\n\nWhat we take:\n• Furniture, mattresses and appliances\n• Boxes, bags and clutter\n\nSmall load: $99\n\nSend a photo here and get your price.`;
 
@@ -58,7 +59,7 @@ describe("copy versions in listing.json", () => {
     const bad = await lint({ ...base, copyVersions: [versions[0], { ...versions[1], title: versions[0].title.replace("Photo", "Pic") }] });
     expect(bad.code).toBe(1);
     expect(bad.out).toContain("shares too many words");
-  });
+  }, FRESH_DB_MS);
 });
 
 describe("log facebook listing remove", () => {

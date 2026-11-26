@@ -1,17 +1,20 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { hasStoredDevice, toDeviceProfile } from '../../camofox/device/index'
 import type { DeviceProfile, DeviceRunFile } from '../../camofox/device/index'
-import { HOME_COUNTRIES, homeOf, outsideActiveHours } from '../../marketplace/home/index'
-import type { Home } from '../../marketplace/home/index'
-import { siteOfAccount } from '../../cli/runner/helpers/platforms'
-import { checkRunnable, toFacebookCookies } from '../../marketplace/socialAccount/index'
-import type { FacebookAccount, PlaywrightCookie, RunPurpose } from '../../marketplace/socialAccount/index'
+import { HOME_COUNTRIES, homeOf, outsideActiveHours } from '../../platformKit/home/index'
+import type { Home } from '../../platformKit/home/index'
+import { platformOfAccount, siteOfAccount } from '../../cli/runner/helpers/platforms'
+import { linkedinCookieDomain } from '../../linkedin/account/browser/index'
+import { checkRunnable, toFacebookCookies } from '../../platformKit/socialAccount/index'
+import type { FacebookAccount, PlaywrightCookie, RunPurpose } from '../../platformKit/socialAccount/index'
 import { LAUNCH_LIMITS, listLaunches, overLaunchBudget } from './helpers/index'
 import type { PrepareRunOptions, PrepareRunResult } from './types'
 import { driverNameOf } from '../driver/client'
+import { BrowserDriverError } from '../driver/types'
 import type { BrowserDriverName } from '../driver/types'
+import { logHome } from '../../config/logHome/index'
 
 export function toOrigins(raw: unknown): unknown[] {
   let value = raw
@@ -28,7 +31,7 @@ export function toOrigins(raw: unknown): unknown[] {
 
 export function captureDirFor(accountName: string, action: string, now: Date, root?: string, browser: BrowserDriverName = 'camoufox'): string {
   const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '')
-  return join(root ?? (process.env.LOG_RUNS_DIR || join(homedir(), '.logCli', 'runs')), action, `${stamp}_${accountName.replace(/\W/g, '')}`, browser)
+  return join(root ?? (process.env.LOG_RUNS_DIR || join(logHome(), 'runs')), action, `${stamp}_${accountName.replace(/\W/g, '')}`, browser)
 }
 
 export const OPENER_ACTIONS: ReadonlySet<string> = new Set(['inspect', 'flow', 'warmup', 'host'])
@@ -55,7 +58,10 @@ export function directHome(account: FacebookAccount): { ok: true; home: Home } {
 export function prepareRun(account: FacebookAccount, purpose: RunPurpose, options: PrepareRunOptions = {}): PrepareRunResult {
   const check = checkRunnable(account, purpose)
   if (!check.ok) return check
-  const cookies = toFacebookCookies(account.cookies, siteOfAccount(account).domain)
+  const platform = platformOfAccount(account)
+  const deadElsewhere = platform !== 'facebook' && account.sessionState === 'loggedOut'
+  const carried = deadElsewhere ? [] : toFacebookCookies(account.cookies, siteOfAccount(account).domain)
+  const cookies = platform === 'linkedin' ? carried.map((c) => ({ ...c, domain: linkedinCookieDomain(c.name, c.domain) })) : carried
   if (purpose === 'run' && cookies.length === 0) {
     return { ok: false, code: 'neverConnected', detail: `${account.accountName} has no cookies in Twenty. Run: log facebook connect --account ${account.accountName}` }
   }
@@ -91,6 +97,13 @@ export function prepareRun(account: FacebookAccount, purpose: RunPurpose, option
     }
   }
 
+  let browser: BrowserDriverName
+  try {
+    browser = runBrowserOf(account, options.action ?? purpose)
+  } catch (error) {
+    if (error instanceof BrowserDriverError) return { ok: false, code: error.code, detail: error.detail }
+    throw error
+  }
   const dir = mkdtempSync(join(options.root ?? tmpdir(), 'logCliRun'))
   let kept = false
   const proxyPath = join(dir, 'proxy.json')
@@ -98,9 +111,10 @@ export function prepareRun(account: FacebookAccount, purpose: RunPurpose, option
   const devicePath = join(dir, 'device.json')
   const loginPath = options.login ? join(dir, 'login.json') : null
   const action = options.action ?? purpose
-  const captureDir = purpose === 'check' ? null : captureDirFor(account.accountName, action, options.now ?? new Date(), options.captureRoot, runBrowserOf(account, action))
+  const captureDir = purpose === 'check' ? null : captureDirFor(account.accountName, action, options.now ?? new Date(), options.captureRoot, browser)
   writeFileSync(proxyPath, JSON.stringify(check.proxy), { mode: 0o600 })
-  if (cookies.length) writeFileSync(statePath, JSON.stringify({ cookies, origins: toOrigins(account.storageOrigins) }), { mode: 0o600 })
+  const seeded = cookies.length ? JSON.stringify({ cookies, origins: toOrigins(account.storageOrigins) }) : null
+  if (seeded) writeFileSync(statePath, seeded, { mode: 0o600 })
   if (device) writeFileSync(devicePath, JSON.stringify(device), { mode: 0o600 })
   if (loginPath) writeFileSync(loginPath, JSON.stringify(options.login), { mode: 0o600 })
   return {
@@ -119,6 +133,14 @@ export function prepareRun(account: FacebookAccount, purpose: RunPurpose, option
           return toFacebookCookies((JSON.parse(readFileSync(statePath, 'utf8')) as { cookies?: unknown }).cookies)
         } catch {
           return []
+        }
+      },
+      browserWrote(): boolean {
+        if (!existsSync(statePath)) return false
+        try {
+          return readFileSync(statePath, 'utf8') !== seeded
+        } catch {
+          return false
         }
       },
       readStorageState(): { cookies: PlaywrightCookie[]; origins: unknown[] } {
@@ -145,7 +167,7 @@ export function prepareRun(account: FacebookAccount, purpose: RunPurpose, option
       keep(): string {
         if (loginPath) rmSync(loginPath, { force: true })
         const stamp = (options.now ?? new Date()).toISOString().replace(/[-:]/g, '').slice(0, 15)
-        const target = join(process.env.LOG_UNSAVED_DIR || join(homedir(), '.logCli', 'runs', 'unsaved'), `${stamp}_${account.accountName}`)
+        const target = join(process.env.LOG_UNSAVED_DIR || join(logHome(), 'runs', 'unsaved'), `${stamp}_${account.accountName}`)
         mkdirSync(join(target, '..'), { recursive: true })
         try {
           renameSync(dir, target)

@@ -1,7 +1,10 @@
+import { consoleErrorCode, isConsoleOperation, redactConsoleArgs, redactConsoleResult, runConsoleOperation, UNJOURNALED_TOOLS } from "../../console/operations/index.ts";
+import type { ConsoleOperationDeps } from "../../console/operations/index.ts";
 import { finishPairing, keepConnected, readBinding, startPairing } from "../../runtime/bridge/index.ts";
-import type { ResultPayload, RunTool } from "../../runtime/bridge/index.ts";
+import type { Authority, ResultPayload, RunTool } from "../../runtime/bridge/index.ts";
+import type { PlayScope } from "../../mcp/server/helpers/index.ts";
 import { defaultDbPath, openDatabase, SCHEMA_VERSION } from "../../storage/schema/index.ts";
-import { readLocalAccounts } from "../../twenty/graphql/index.ts";
+import { workspaceAccounts } from "../../platformKit/account/index.ts";
 import { JSON_FLAG, parseArgs, parserSpecOf } from "../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
 
@@ -21,51 +24,128 @@ export const RUNTIME_INPUT: CommandInput = {
   ],
 };
 
-type ToolCaller = (name: string, input: Record<string, unknown>) => Promise<{ isError?: boolean; structuredContent?: unknown; content?: unknown }>;
+type ToolCaller = (name: string, input: Record<string, unknown>, scope?: PlayScope, caller?: "runtime" | "console") => Promise<{ isError?: boolean; structuredContent?: unknown; content?: unknown }>;
 
-export const runtimeDeps: { callTool: () => Promise<ToolCaller>; connect: typeof keepConnected; dbPath: () => string } = {
+export const WATCHERS_EVERY_MS = 60_000;
+
+export const runtimeDeps: { callTool: () => Promise<ToolCaller>; connect: typeof keepConnected; dbPath: () => string; startWatchers: (callTool: ToolCaller) => Promise<unknown> } = {
   callTool: async () => {
     const { runToolCall } = await import("../../mcp/server/index.ts");
-    return (name, input) => runToolCall(name, input) as Promise<{ isError?: boolean; structuredContent?: unknown }>;
+    const { settleLocation } = await import("../../mcp/apps/index.ts");
+    settleLocation("remote");
+    void import("../../mcp/apps/browserView/helpers/index.ts").then(({ widgetHtml }) => widgetHtml()).catch(() => {});
+    return (name, input, scope, caller = "runtime") => runToolCall(name, input, {}, undefined, undefined, undefined, undefined, scope, false, caller) as Promise<{ isError?: boolean; structuredContent?: unknown }>;
   },
   connect: keepConnected,
   dbPath: () => defaultDbPath(),
+  startWatchers: (callTool) => callTool("watchersStart", {}),
 };
 
 export function accountsList(args: Record<string, unknown>): ResultPayload {
-  const limit = Math.max(1, Math.min(Number(args.limit ?? 50) || 50, 200));
-  const start = Math.max(0, Number(args.cursor ?? 0) || 0);
-  const rows = readLocalAccounts();
-  const accounts = rows.slice(start, start + limit).map((row) => ({
-    id: String(row.id ?? ""),
-    platform: String(row.platform ?? "").toLowerCase(),
-    account: String(row.accountName ?? ""),
-    displayName: row.name ? String(row.name) : null,
-    status: String(row.status ?? "unknown"),
-    sessionState: row.sessionState ? String(row.sessionState) : null,
-    browserLocation: row.adsPowerProfileId ? "workspace" : null,
-    revision: 1,
-  }));
-  return { state: "succeeded", result: { accounts, cursor: start + limit < rows.length ? String(start + limit) : null } };
+  return { state: "succeeded", result: workspaceAccounts(args) };
+}
+
+type ManifestTool = { name: string; annotations?: { readOnlyHint?: boolean; destructiveHint?: boolean; idempotentHint?: boolean }; outputSchema?: unknown; _meta?: Record<string, unknown> };
+
+export function hostedRead(tool: ManifestTool): boolean {
+  const hints = tool.annotations;
+  return hints?.readOnlyHint === true && hints.destructiveHint === false && hints.idempotentHint === true;
+}
+
+export async function hostedManifest(names: Set<string>): Promise<ResultPayload> {
+  const [{ statelessTools }, { appTools, REPORT_TOOL }] = await Promise.all([import("../../mcp/server/index.ts"), import("../../mcp/apps/index.ts")]);
+  const app = new Set<string>(appTools().map((tool) => tool.name));
+  const tools = (statelessTools() as unknown as ManifestTool[])
+    .filter((tool) => app.has(tool.name) || names.has(tool.name) || hostedRead(tool))
+    .map(({ outputSchema, ...tool }) => (tool.name === REPORT_TOOL && outputSchema ? { ...tool, outputSchema } : tool));
+  return { state: "succeeded", result: { tools, reads: tools.filter((tool) => !app.has(tool.name) && hostedRead(tool)).map((tool) => tool.name) } };
 }
 
 export async function toolManifest(args: Record<string, unknown>): Promise<ResultPayload> {
   const names = new Set(Array.isArray(args.names) ? args.names.map(String) : []);
-  const [{ COMMANDS }, { toolsFromCommands }] = await Promise.all([import("../runner/index.ts"), import("../../mcp/server/helpers/index.ts")]);
-  const tools = toolsFromCommands(COMMANDS, { shell: false })
+  if (args.all === true) return hostedManifest(names);
+  const [{ COMMANDS }, { GUIDE_TOOL, guideTool, toolsFromCommands }, { catalogTools }] = await Promise.all([import("../runner/index.ts"), import("../../mcp/server/helpers/index.ts"), import("../../mcp/catalog/index.ts")]);
+  const tools = [...catalogTools(), ...toolsFromCommands(COMMANDS, { shell: false })]
     .filter((tool) => names.has(tool.name))
     .map((tool) => ({ name: tool.name, title: tool.title, description: tool.description, inputSchema: tool.inputSchema, annotations: tool.annotations }));
-  return { state: "succeeded", result: { tools } };
+  const { appTools, reportTool } = await import("../../mcp/apps/index.ts");
+  const { withCard } = await import("../../mcp/apps/cards.ts");
+  const report = [...(names.has(GUIDE_TOOL) ? [guideTool()] : []), ...(names.has("report") ? [withCard(reportTool(), args.ui === true)] : [])];
+  if (args.ui !== true && args.views !== true) return { state: "succeeded", result: { tools: [...tools, ...report] } };
+  return { state: "succeeded", result: { tools: [...tools.map((tool) => withCard(tool as typeof tool & { _meta?: Record<string, unknown> }, args.ui === true)), ...report, ...appTools()] } };
+}
+
+export async function uiResources(tool: string, args: Record<string, unknown>): Promise<ResultPayload> {
+  const { cardResources, readCard } = await import("../../mcp/apps/cards.ts");
+  if (tool === "uiResourcesList") return { state: "succeeded", result: { resources: cardResources(true) } };
+  const card = typeof args.uri === "string" ? await readCard(args.uri) : null;
+  if (card) return { state: "succeeded", result: card };
+  return { state: "failed", error: { code: "resourceNotFound", message: "no such ui resource" } };
+}
+
+export async function hostedPlayScope(authority?: Pick<Authority, "teamId" | "actorUserId" | "grantId"> | null): Promise<PlayScope> {
+  const { hostedPlayOwner, playScope } = await import("../../mcp/server/helpers/index.ts");
+  return playScope(hostedPlayOwner(authority));
+}
+
+export async function guideOperation(args: Record<string, unknown>, scope?: PlayScope): Promise<ResultPayload> {
+  const { guideAnswer, playMeta } = await import("../../mcp/server/helpers/index.ts");
+  const answer = guideAnswer(args, scope);
+  if (answer.isError) return { state: "failed", error: { code: "guideUnknown", message: answer.text.slice(0, 2000) } };
+  return { state: "succeeded", result: { text: answer.text, ...(answer.play === undefined ? {} : { play: playMeta(answer.play) }) } };
+}
+
+export async function reportOperation(args: Record<string, unknown>): Promise<ResultPayload> {
+  const { REPORT_VIEW_META_KEY, runReport } = await import("../../mcp/apps/index.ts");
+  const { ui, markdown, ...spec } = args;
+  const answer = await runReport(spec, ui === true);
+  const textOf = (result: typeof answer) => result.content.map((part) => (part.type === "text" ? part.text : "")).join("\n");
+  const text = textOf(answer);
+  if (answer.isError) return { state: "failed", error: { code: text.split(":")[0] || "reportFieldInvalid", message: text.slice(0, 2000) } };
+  const view = answer._meta?.[REPORT_VIEW_META_KEY];
+  const plain = markdown === true && ui === true ? await runReport(spec, false) : null;
+  if (view && typeof view === "object") return { state: "succeeded", result: { text, spec: view, summary: answer.structuredContent ?? null, ...(plain && !plain.isError ? { markdown: textOf(plain) } : {}) } };
+  return { state: "succeeded", result: { text, spec: answer.structuredContent ?? null } };
+}
+
+export function isolationRefusal(env: Record<string, string | undefined>): string | null {
+  if (!env.LOG_RUNTIME_DIR || env.LOG_DB || env.LOG_INBOX_STATE) return null;
+  return "a runtime paired under LOG_RUNTIME_DIR keeps its own log.db: set LOG_DB (or LOG_INBOX_STATE) to its own folder too, so it never journals into the default log.db";
+}
+
+export async function consoleOperation(tool: string, args: Record<string, unknown>, callTool: ToolCaller, deps: Omit<ConsoleOperationDeps, "callTool"> = {}): Promise<ResultPayload> {
+  try {
+    return { state: "succeeded", result: await runConsoleOperation(tool, args, { ...deps, callTool }) };
+  } catch (error) {
+    const code = consoleErrorCode(error);
+    return { state: "failed", error: { code, message: code } };
+  }
+}
+
+export async function hostedSignIn(args: Record<string, unknown>, authority: Pick<Authority, "actorUserId"> | null | undefined, call: (input: Record<string, unknown>) => Promise<unknown>, origin: string = readBinding()?.origin ?? ""): Promise<unknown> {
+  const { deferredElicitation, signInCall, withPendingElicitation } = await import("../../mcp/apps/index.ts");
+  const { ui, urlElicitation, elicitation, ...input } = args;
+  const rung = ui === true ? "app" : urlElicitation === true ? "url" : "text";
+  const deferred = deferredElicitation(typeof elicitation === "string" ? elicitation : null);
+  const ran = await signInCall(input, (given) => call(given) as never, { rung, location: "remote", requester: authority?.actorUserId ?? "", origin, ...(rung === "url" ? { elicit: deferred.elicit } : {}) });
+  return withPendingElicitation(ran, deferred.asked());
 }
 
 export function toolRunner(callTool: ToolCaller): RunTool {
-  return async (tool, args) => {
+  return async (tool, args, authority) => {
     if (tool === "accountsList") return accountsList(args);
     if (tool === "toolManifest") return toolManifest(args);
-    const answer = await callTool(tool, args);
+    if (tool === "uiResourcesList" || tool === "uiResourceRead") return uiResources(tool, args);
+    if (tool === "report") return reportOperation(args);
+    const scope = await hostedPlayScope(authority);
+    if (tool === "getGuide") return guideOperation(args, scope);
+    if (isConsoleOperation(tool)) return consoleOperation(tool, args, (name, input) => callTool(name, input, scope, "console"), { requester: authority?.actorUserId ?? "" });
+    const { withCallFooter } = await import("../../mcp/server/index.ts");
+    const ran = tool === "sessionsSignIn" ? await hostedSignIn(args, authority, (input) => callTool(tool, input, scope)) : await callTool(tool, args, scope);
+    const answer = withCallFooter(tool, args, ran as Parameters<typeof withCallFooter>[2], scope);
     const content = (answer.structuredContent ?? {}) as Record<string, unknown>;
-    const { browsers: _browsers, next: _next, ...result } = content;
-    return answer.isError ? { state: "failed", result, error: { code: "toolFailed", message: String(content.stderr ?? "the tool failed").slice(0, 2000) } } : { state: "succeeded", result };
+    const { browsers: _browsers, ...result } = content;
+    return answer.isError ? { state: "failed", result, error: { code: [content.code, content.error].find((c): c is string => typeof c === "string" && /^[a-zA-Z]{1,60}$/.test(c)) ?? "toolFailed", message: String(content.stderr ?? content.message ?? "the tool failed").slice(0, 2000) } } : { state: "succeeded", result };
   };
 }
 
@@ -75,6 +155,7 @@ export const runtimeCommand: Command = {
   usage: RUNTIME_USAGE,
   platform: "any",
   name: "runtime",
+  terminalOnly: "pairs this workspace with hosted log and keeps its outbound bridge open as a long-lived service. Run `log runtime init --origin <url>`, `log runtime pair --token <t>` and `log runtime connect` in the workspace's terminal or its service manager.",
   effect: "write",
   input: RUNTIME_INPUT,
   summary: "Pair this workspace with hosted log and keep its outbound bridge open, so the team's console and AI clients run their requests here",
@@ -112,17 +193,27 @@ export const runtimeCommand: Command = {
       return { code: 0, stdout: json ? JSON.stringify(view) : binding ? `log runtime status: paired to workspace ${binding.workspaceId} at ${binding.origin} (generation ${binding.generation}, expires ${binding.expiresAt})` : "log runtime status: not paired (log runtime init, then log runtime pair)" };
     }
     if (!binding) return { code: 1, stderr: "log runtime connect: not paired yet (log runtime init --origin <url>, then log runtime pair --token <t>)" };
+    const isolation = isolationRefusal(process.env);
+    if (isolation) return { code: 1, stderr: `log runtime connect: ${isolation}` };
     const db = openDatabase(runtimeDeps.dbPath());
-    const runTool = toolRunner(await runtimeDeps.callTool());
+    const callTool = await runtimeDeps.callTool();
+    const runTool = toolRunner(callTool);
     const onLine = (line: string) => context.err?.(line);
+    const superviseWatchers = () => void runtimeDeps.startWatchers(callTool).catch((error: unknown) => onLine(`watchersStart: ${error instanceof Error ? error.message : String(error)}`));
+    superviseWatchers();
+    const watching = setInterval(superviseWatchers, WATCHERS_EVERY_MS);
+    watching.unref?.();
     const closed = await runtimeDeps.connect({
       binding,
       db,
       runTool,
       isLive: (tool) => tool.endsWith("Live"),
+      redact: redactConsoleArgs,
+      redactResult: redactConsoleResult,
+      unjournaled: (tool) => UNJOURNALED_TOOLS.includes(tool),
       hello: () => ({ runtimeVersion: "log", schemaVersion: SCHEMA_VERSION, capabilities: { persistentStorage: true, browserAvailable: Boolean(process.env.ADSPOWER_API_KEY || process.env.ADSPOWER_HOST), driver: process.env.ADSPOWER_API_KEY || process.env.ADSPOWER_HOST ? "adsPower" : "none", protocolVersion: 1, checkedAt: new Date().toISOString(), status: "passed" } }),
       onLine,
-    });
+    }).finally(() => clearInterval(watching));
     db.close();
     return closed.code === 1000 ? { code: 0, stdout: "log runtime connect: stopped" } : { code: 1, stderr: `log runtime connect: closed ${closed.code} ${closed.reason}` };
   },

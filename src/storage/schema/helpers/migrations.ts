@@ -1,7 +1,10 @@
 import type { Database } from 'bun:sqlite'
 import type { Migration } from '../types'
-import { INBOX_TABLES } from './inbox'
+import { INBOX_TABLES, TYPING_TABLES } from './inbox'
 import { PLATFORM_TABLES } from './platformTables'
+import { repairChatPlaces } from '../../platform/helpers/places'
+import { repairChatGroups } from '../../platform/helpers/members'
+import { rebuildRingsIn, ringState } from '../../../relate/network/helpers/rings'
 
 function hasColumn(handle: Database, table: string, column: string): boolean {
   return (handle.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).some((c) => c.name === column)
@@ -96,6 +99,66 @@ export const JOB_TABLES: readonly string[] = [
   'CREATE TABLE IF NOT EXISTS jobLines (jobId TEXT NOT NULL, n INTEGER NOT NULL, at TEXT NOT NULL, source TEXT NOT NULL, line TEXT NOT NULL, PRIMARY KEY (jobId, n)) WITHOUT ROWID',
 ]
 
+export const PEOPLE_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS persons (personId TEXT PRIMARY KEY, name TEXT, createdAt TEXT NOT NULL, updatedAt TEXT NOT NULL) WITHOUT ROWID',
+  'CREATE TABLE IF NOT EXISTS identityLinks (personId TEXT NOT NULL, platform TEXT NOT NULL, userId TEXT NOT NULL, evidence TEXT, linkedBy TEXT NOT NULL, linkedAt TEXT NOT NULL, linkedEventId TEXT NOT NULL, revokedAt TEXT, revokedBy TEXT, PRIMARY KEY (personId, platform, userId, linkedEventId)) WITHOUT ROWID',
+  'CREATE UNIQUE INDEX IF NOT EXISTS identityLinksActive ON identityLinks (platform, userId) WHERE revokedAt IS NULL',
+  'CREATE INDEX IF NOT EXISTS identityLinksByPerson ON identityLinks (personId) WHERE revokedAt IS NULL',
+  'CREATE TABLE IF NOT EXISTS identityNotLinked (platformA TEXT NOT NULL, userIdA TEXT NOT NULL, platformB TEXT NOT NULL, userIdB TEXT NOT NULL, decidedBy TEXT NOT NULL, decidedAt TEXT NOT NULL, PRIMARY KEY (platformA, userIdA, platformB, userIdB)) WITHOUT ROWID',
+]
+
+export const IDENTITY_PROFILE_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS identityProfiles (platform TEXT NOT NULL, userId TEXT NOT NULL, bio TEXT, avatarHash TEXT REFERENCES blobs (hash), followerCount INTEGER, verified INTEGER, extra TEXT CHECK (extra IS NULL OR json_valid(extra)), fetchedAt TEXT NOT NULL, PRIMARY KEY (platform, userId)) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS identityProfilesByFetchedAt ON identityProfiles (fetchedAt)',
+]
+
+export const ENGINE_STATE_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS engineState (platform TEXT NOT NULL, account TEXT NOT NULL, store TEXT NOT NULL, part TEXT NOT NULL, body TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (platform, account, store, part)) WITHOUT ROWID',
+]
+
+export const SECRET_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS secrets (ref TEXT PRIMARY KEY, kind TEXT NOT NULL, keyId TEXT NOT NULL, alg TEXT NOT NULL, nonce BLOB NOT NULL, ciphertext BLOB NOT NULL, updatedAt TEXT NOT NULL) WITHOUT ROWID',
+  "CREATE TABLE IF NOT EXISTS secretKeys (keyId TEXT NOT NULL, method TEXT NOT NULL, wrapped BLOB, salt BLOB, params TEXT NOT NULL DEFAULT '{}', createdAt TEXT NOT NULL, PRIMARY KEY (keyId, method)) WITHOUT ROWID",
+]
+
+export const PIPELINE_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS chatPipeline (platform TEXT NOT NULL, account TEXT NOT NULL, person TEXT NOT NULL, lastSeq INTEGER NOT NULL, who TEXT NOT NULL, stage TEXT, confidence REAL NOT NULL, margin REAL NOT NULL, movedBySeq INTEGER, movedById TEXT, source TEXT NOT NULL, model TEXT NOT NULL, scores TEXT NOT NULL, features TEXT NOT NULL, emotions TEXT, vector BLOB, labelledAt TEXT NOT NULL, PRIMARY KEY (platform, account, person)) WITHOUT ROWID',
+  'CREATE TABLE IF NOT EXISTS pipelineHeads (id INTEGER PRIMARY KEY AUTOINCREMENT, model TEXT NOT NULL, head TEXT NOT NULL, trainedAt TEXT NOT NULL)',
+]
+
+export const CONVENTION_CORPUS_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS conventionCorpus (id TEXT PRIMARY KEY, side TEXT NOT NULL, family TEXT NOT NULL, model TEXT, source TEXT NOT NULL, chatKey TEXT NOT NULL, momentKey TEXT, text TEXT NOT NULL, at TEXT, addedAt TEXT NOT NULL) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS conventionCorpusBySide ON conventionCorpus (side, source)',
+]
+
+export const NETWORK_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS networkImports (id INTEGER PRIMARY KEY CHECK (id = 1), formatVersion INTEGER NOT NULL, mapVersion TEXT, generatedAt TEXT, source TEXT NOT NULL, account TEXT, counts TEXT NOT NULL, ms INTEGER NOT NULL, importedAt TEXT NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS networkPeople (handleLower TEXT PRIMARY KEY, handle TEXT NOT NULL, name TEXT, followers INTEGER, degree INTEGER, ring INTEGER, band TEXT, bandProbabilities TEXT, fit REAL, components TEXT, themes TEXT, topThemes TEXT, workflowStage TEXT, passesGates INTEGER, followsOwner INTEGER NOT NULL DEFAULT 0, company TEXT, rank INTEGER, role TEXT, bio TEXT, tieStrength REAL, lastPostText TEXT, lastPostAtMs INTEGER) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS networkPeopleByBand ON networkPeople (band, ring)',
+  'CREATE TABLE IF NOT EXISTS networkLeaders (handleLower TEXT PRIMARY KEY, handle TEXT NOT NULL, name TEXT, followers INTEGER, world TEXT) WITHOUT ROWID',
+  'CREATE TABLE IF NOT EXISTS networkCommunities (communityId TEXT PRIMARY KEY, name TEXT, url TEXT, platform TEXT, topic TEXT) WITHOUT ROWID',
+  'CREATE TABLE IF NOT EXISTS networkRuns (leaderLower TEXT NOT NULL, communityId TEXT NOT NULL, PRIMARY KEY (leaderLower, communityId)) WITHOUT ROWID',
+  'CREATE TABLE IF NOT EXISTS networkCircles (personLower TEXT NOT NULL, leaderLower TEXT NOT NULL, PRIMARY KEY (personLower, leaderLower)) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS networkCirclesByLeader ON networkCircles (leaderLower)',
+  'CREATE TABLE IF NOT EXISTS networkMentions (fromLower TEXT NOT NULL, toLower TEXT NOT NULL, times INTEGER NOT NULL, lastAtMs INTEGER, PRIMARY KEY (fromLower, toLower)) WITHOUT ROWID',
+]
+
+export const NETWORK_RING_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS networkRings (platform TEXT NOT NULL, userId TEXT NOT NULL, ring INTEGER NOT NULL, reason TEXT NOT NULL, sinceMs INTEGER, follows INTEGER NOT NULL DEFAULT 0, via TEXT, seq INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (platform, userId)) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS networkRingsBySeq ON networkRings (seq)',
+  'CREATE TABLE IF NOT EXISTS networkTalks (platform TEXT NOT NULL, fromId TEXT NOT NULL, toId TEXT NOT NULL, times INTEGER NOT NULL, firstAtMs INTEGER, PRIMARY KEY (platform, fromId, toId)) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS networkTalksByTo ON networkTalks (platform, toId)',
+  'CREATE TABLE IF NOT EXISTS networkRingState (id INTEGER PRIMARY KEY CHECK (id = 1), throughSeq INTEGER NOT NULL, lastAtMs INTEGER, builtAt TEXT NOT NULL, builtMs INTEGER NOT NULL)',
+]
+
+export const PERSON_FACT_TABLES: readonly string[] = [
+  'CREATE TABLE IF NOT EXISTS personFacts (factId TEXT PRIMARY KEY, eventId TEXT NOT NULL, personId TEXT, platform TEXT, userId TEXT, slot TEXT NOT NULL, text TEXT NOT NULL, quote TEXT NOT NULL, sourceMessageKeys TEXT NOT NULL, validFrom TEXT NOT NULL, validTo TEXT, recordedAt TEXT NOT NULL, closedAt TEXT, supersededBy TEXT, confidence REAL NOT NULL, extractedBy TEXT NOT NULL) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS personFactsByIdentity ON personFacts (platform, userId, slot)',
+  'CREATE INDEX IF NOT EXISTS personFactsByPerson ON personFacts (personId, slot)',
+  'CREATE TABLE IF NOT EXISTS factCandidates (messageKey TEXT PRIMARY KEY, chatId TEXT NOT NULL, kind TEXT NOT NULL, confidence REAL NOT NULL, marks TEXT NOT NULL, model TEXT NOT NULL, decided TEXT, markedAt TEXT NOT NULL) WITHOUT ROWID',
+  'CREATE INDEX IF NOT EXISTS factCandidatesOpen ON factCandidates (chatId) WHERE decided IS NULL',
+]
+
 export const MIN_READER_VERSION = 1
 
 export const MIGRATIONS: readonly Migration[] = [
@@ -157,6 +220,7 @@ export const MIGRATIONS: readonly Migration[] = [
   {
     version: 8,
     name: 'stableIdentities',
+    creates: ['accounts', 'handleAliases', 'handleAliasesByUser', 'identityMerges'],
     apply(handle) {
       for (const statement of IDENTITY_TABLES) handle.exec(statement)
     },
@@ -189,6 +253,7 @@ export const MIGRATIONS: readonly Migration[] = [
   {
     version: 12,
     name: 'queueTables',
+    creates: ['queues', 'queueLog', 'queueLogByName', 'queueIncoming', 'queueIncomingWaiting', 'queueLocks', 'queueNudges'],
     apply(handle) {
       for (const statement of QUEUE_TABLES) handle.exec(statement)
     },
@@ -196,6 +261,7 @@ export const MIGRATIONS: readonly Migration[] = [
   {
     version: 13,
     name: 'jobTables',
+    creates: ['jobs', 'jobsByAccount', 'jobsByStart', 'jobLines'],
     apply(handle) {
       for (const statement of JOB_TABLES) handle.exec(statement)
     },
@@ -211,6 +277,7 @@ export const MIGRATIONS: readonly Migration[] = [
   {
     version: 15,
     name: 'records',
+    creates: ['records', 'recordsByKind'],
     apply(handle) {
       handle.exec('CREATE TABLE IF NOT EXISTS records (seq INTEGER PRIMARY KEY, kind TEXT NOT NULL, key TEXT, at TEXT NOT NULL, body TEXT NOT NULL, source TEXT NOT NULL)')
       handle.exec('CREATE INDEX IF NOT EXISTS recordsByKind ON records (kind, key, seq)')
@@ -219,6 +286,7 @@ export const MIGRATIONS: readonly Migration[] = [
   {
     version: 16,
     name: 'state',
+    creates: ['state'],
     apply(handle) {
       handle.exec('CREATE TABLE IF NOT EXISTS state (scope TEXT NOT NULL, key TEXT NOT NULL, body TEXT NOT NULL, updatedAt INTEGER NOT NULL, PRIMARY KEY (scope, key)) WITHOUT ROWID')
     },
@@ -235,6 +303,7 @@ export const MIGRATIONS: readonly Migration[] = [
   {
     version: 18,
     name: 'operations',
+    creates: ['operations', 'operationsByState'],
     apply(handle) {
       handle.exec(`CREATE TABLE IF NOT EXISTS operations (
         id TEXT PRIMARY KEY,
@@ -261,6 +330,118 @@ export const MIGRATIONS: readonly Migration[] = [
         UNIQUE (teamId, idempotencyKey)
       )`)
       handle.exec('CREATE INDEX IF NOT EXISTS operationsByState ON operations (state, updatedAt)')
+    },
+  },
+  {
+    version: 19,
+    name: 'identityProfiles',
+    creates: ['identityProfiles', 'identityProfilesByFetchedAt'],
+    apply(handle) {
+      for (const statement of IDENTITY_PROFILE_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 20,
+    name: 'conversationCards',
+    apply(handle) {
+      if (!hasColumn(handle, 'conversationCards', 'throughSeq')) handle.exec('DROP TABLE IF EXISTS conversationCards')
+      handle.exec('CREATE TABLE IF NOT EXISTS conversationCards (key TEXT PRIMARY KEY, platform TEXT NOT NULL, account TEXT NOT NULL, throughSeq INTEGER NOT NULL, card TEXT NOT NULL, builtAt TEXT NOT NULL) WITHOUT ROWID')
+      handle.exec('DELETE FROM conversationCards')
+      handle.exec('CREATE INDEX IF NOT EXISTS conversationCardsByAccount ON conversationCards (platform, account)')
+    },
+  },
+  {
+    version: 21,
+    name: 'people',
+    creates: ['persons', 'identityLinks', 'identityLinksActive', 'identityLinksByPerson', 'identityNotLinked'],
+    apply(handle) {
+      for (const statement of PEOPLE_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 22,
+    name: 'typing',
+    creates: ['typing'],
+    apply(handle) {
+      for (const statement of TYPING_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 23,
+    name: 'engineStores',
+    creates: ['engineState'],
+    apply(handle) {
+      for (const statement of ENGINE_STATE_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 24,
+    name: 'pipeline',
+    creates: ['chatPipeline', 'pipelineHeads'],
+    apply(handle) {
+      for (const statement of PIPELINE_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 25,
+    name: 'conventionCorpus',
+    creates: ['conventionCorpus', 'conventionCorpusBySide'],
+    apply(handle) {
+      for (const statement of CONVENTION_CORPUS_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 26,
+    name: 'secrets',
+    creates: ['secrets', 'secretKeys'],
+    apply(handle) {
+      for (const statement of SECRET_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 27,
+    name: 'network',
+    creates: ['networkImports', 'networkPeople', 'networkPeopleByBand', 'networkLeaders', 'networkCommunities', 'networkRuns', 'networkCircles', 'networkCirclesByLeader', 'networkMentions'],
+    apply(handle) {
+      for (const statement of NETWORK_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 28,
+    name: 'chatPlaces',
+    apply(handle) {
+      repairChatPlaces(handle)
+    },
+  },
+  {
+    version: 29,
+    name: 'networkRings',
+    creates: ['networkRings', 'networkRingsBySeq', 'networkTalks', 'networkTalksByTo', 'networkRingState'],
+    apply(handle) {
+      for (const statement of NETWORK_RING_TABLES) handle.exec(statement)
+    },
+  },
+  {
+    version: 30,
+    name: 'networkFit',
+    apply(handle) {
+      if (hasColumn(handle, 'networkPeople', 'score')) handle.exec('ALTER TABLE networkPeople RENAME COLUMN score TO fit')
+    },
+  },
+  {
+    version: 31,
+    name: 'chatGroups',
+    apply(handle) {
+      const moved = repairChatPlaces(handle) + repairChatGroups(handle)
+      if (moved && ringState(handle)) rebuildRingsIn(handle)
+    },
+  },
+  {
+    version: 32,
+    name: 'personFacts',
+    creates: ['personFacts', 'personFactsByIdentity', 'personFactsByPerson', 'factCandidates', 'factCandidatesOpen'],
+    apply(handle) {
+      for (const statement of PERSON_FACT_TABLES) handle.exec(statement)
     },
   },
 ]

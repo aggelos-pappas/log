@@ -78,7 +78,7 @@ describe("reload proxy", () => {
     expect(r.states.at(-1)).toMatchObject({ childPid: r.children[1].pid, childStamp: 200, reloads: 1, waitingOn: null });
   });
 
-  test("a reload waits for a call in flight and for a running job", () => {
+  test("a reload waits for a call in flight", () => {
     const r = rig();
     r.init();
     r.proxy.fromClient(call(3));
@@ -87,13 +87,25 @@ describe("reload proxy", () => {
     expect(r.children).toHaveLength(1);
     expect(r.states.at(-1)?.waitingOn).toContain("1 call(s) in flight");
     r.children[0].events.onLine(answer(3));
-    r.setJobs(["job job1 (twitterQueueRunLive)"]);
-    r.proxy.tick();
-    expect(r.children).toHaveLength(1);
-    expect(r.states.at(-1)?.waitingOn).toBe("job job1 (twitterQueueRunLive)");
-    r.setJobs([]);
     r.proxy.tick();
     expect(r.children).toHaveLength(2);
+  });
+
+  test("a running job never holds the new code back: the old server keeps the job and stops when it ends", () => {
+    const r = rig();
+    r.init();
+    r.setJobs(["job job1 (twitterQueueRunLive)"]);
+    r.setStamp(200);
+    r.proxy.tick();
+    expect(r.children).toHaveLength(2);
+    r.children[1].events.onLine(answer("logMcpReload-2"));
+    expect(r.children[0].dead).toBe(false);
+    r.proxy.fromClient(call(4));
+    expect(r.children[1].lines.at(-1)).toBe(call(4));
+    r.setJobs([]);
+    r.proxy.tick();
+    expect(r.children[0].dead).toBe(true);
+    expect(r.children[1].dead).toBe(false);
   });
 
   test("a call the client cancelled no longer holds a reload back", () => {

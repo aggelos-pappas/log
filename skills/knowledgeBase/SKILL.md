@@ -1,11 +1,11 @@
 ---
 name: knowledgeBase
-description: Find and keep context in the knowledge base (rule 93). `log kb search "<query>"` searches every rule, skill, doc, infra note, Claude memory file, page state, account and agent note by keyword and meaning at once; `log kb remember "<text>"` saves what a session learned; `log kb sync` refreshes it. Use before guessing at how something works, where a login lives, what an account is doing or what an earlier session found, and at the end of a session that learned something new.
+description: Find and keep context in the knowledge base. `log kb search "<query>"` searches every rule, skill, doc, infra note, Claude memory file, page state, account and agent note by keyword and meaning at once; `log kb remember "<text>"` saves what a session learned; `log kb sync` refreshes it. Use before guessing at how something works, where a login lives, what an account is doing or what an earlier session found, and at the end of a session that learned something new.
 ---
 
 # knowledgeBase
 
-The knowledge base is one place for everything log-cli knows: matt's rules,
+The knowledge base is one place for everything log-cli knows: the owner's rules,
 the skills, the docs, the infra notes, every agent's memory files, the known
 page states, the accounts, and the notes agents save. Twenty holds it, Redis
 searches it.
@@ -23,13 +23,14 @@ searches it.
 
 ## Where it lives
 
-- **Twenty:** ListeningKit's workspace on node02, object `knowledgeArticles`
+- **Twenty:** your own Twenty workspace, object `knowledgeArticles`
   (Knowledge base): `name` (title), `key`, `kind`, `body` (Markdown),
   `source`, `tags`, `author`, `contentHash`, `syncedAt`. log-cli reaches it at
-  `https://node02.tail4fcf85.ts.net` (Tailscale Serve, tailnet only). People
-  read and edit it at `https://twenty.listeningkit.com` (Basic Auth first).
-- **Redis:** `kb-redis` on node02 (Redis 8.2.11 with the search module),
-  tailnet `node02.tail4fcf85.ts.net:6380`, index `kbIdx` over
+  `KB_TWENTY_URL` (`https://<your-twenty-host>`, over a private network such
+  as Tailscale). There is no default host. People read and edit it in Twenty's
+  own web app.
+- **Redis:** `kb-redis` (Redis 8.2.11 with the search module), on the same
+  private network at `<your-redis-host>:6380`, index `kbIdx` over
   `kb:chunk:*` hashes (title, text, key, kind, source, a 384-dimension
   vector) and `kb:article:*` (each article's hash and chunk ids).
 - **Logins:** `~/.config/listeningkit/twenty-listeningkit-api-key.txt` and
@@ -44,21 +45,21 @@ searches it.
 | `section` | each other AGENTS.md section (`agents:howWeFixProblems…`) |
 | `skill` | `skills/*/SKILL.md` (`skill:inspect`) |
 | `doc` | `docs/**/*.md`, the request docs included (`doc:docs/adsPower.md`) |
-| `infra` | `docs/infra/*.md` (`doc:docs/infra/node02.md`) |
+| `infra` | `docs/infra/*.md` (`doc:docs/infra/server.md`) |
 | `memory` | every Claude Code memory file in `~/.claude/projects/*/memory` (`memory:log-cli/cloudflare-access`) |
 | `pageState` | `PAGE_STATES` (`pageState:messengerPinCreate`) |
-| `account` | log-cli's Twenty socialAccounts, status and setup only (`account:61594285317994`) |
+| `account` | log-cli's Twenty socialAccounts, status and setup only (`account:10000000000001`) |
 | `note` | `log kb remember`, or written by a person in Twenty |
 
 ## Commands
 
-Agents call the MCP tools, never a hand-run `log kb …` (rule 106):
+Agents call the MCP tools, never a hand-run `log kb …` (rule 163):
 
 ```
 kbSearch { query: "why did the tunnel go down" }               best articles, keyword + meaning
-kbSearch { query: "messenger pin", kind: "pageState", limit: "3" }
+kbSearch { query: "messenger pin", kind: "pageState", limit: 3 }
 kbShow { key: "rule:73" }                                      one article in full
-kbRemember { text: "…", tags: "infra,node02" }                 a note, in Twenty and Redis at once
+kbRemember { text: "…", tags: ["infra", "server"] }                 a note, in Twenty and Redis at once
 kbSync {}                                                      refresh from every source (Monitor it, rule 26)
 kbSync { noAccounts: true }                                    without reading log-cli's Twenty
 ```
@@ -85,5 +86,5 @@ Save it before the session ends, in one or two plain sentences with where it
 came from:
 
 ```
-kbRemember { text: "Twenty v2.49 signs API keys with a key encrypted by ENCRYPTION_KEY; a changed ENCRYPTION_KEY gives 'No encryption key matches keyId'. Fixed 2026-10-27 by restoring the Oct 21 secrets.", title: "Twenty API keys need the original ENCRYPTION_KEY", tags: "twenty,node02" }
+kbRemember { text: "Twenty v2.49 signs API keys with a key encrypted by ENCRYPTION_KEY; a changed ENCRYPTION_KEY gives 'No encryption key matches keyId'. Fixed 2026-10-27 by restoring the Oct 21 secrets.", title: "Twenty API keys need the original ENCRYPTION_KEY", tags: ["twenty", "server"] }
 ```

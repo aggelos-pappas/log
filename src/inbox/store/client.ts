@@ -2,12 +2,15 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 import { Database } from 'bun:sqlite'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, renameSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { defaultDbPath, openDatabase } from '../../storage/schema'
-import { accountIdentifiedEvent, attachmentsSeenEvent, eventIdFrom, identityLearnedEvent, insertEventRow, isBareId, MESSAGE_TYPES, messageKeyOf, msOf, platformMessageIdOf } from '../../storage/platform'
+import { accountIdentifiedEvent, attachmentsSeenEvent, eventIdFrom, identityLearnedEvent, insertEventRow, isBareId, MESSAGE_TYPES, messageKeyOf, msOf, platformMessageIdOf, profileFieldsOf, profileSeenEvent } from '../../storage/platform'
+import type { ProfileSighting } from '../../storage/platform'
+import { refreshWorkedCards } from '../card/client'
 import { INTERNAL_TYPES, KNOWN_TYPES } from './types'
 import type { GapRow, GapStatus, Stage, StoredEvent } from './types'
+import { logHome } from '../../config/logHome/index'
+import { readEngineStore } from '../../storage/engineStore/index'
 
 let opened: { path: string; db: Database } | null = null
 
@@ -183,6 +186,22 @@ export function identifyAccount(platform: string, account: string, userId: strin
   return on.transaction(() => insertEventRow(on, accountIdentifiedEvent(platform, account, String(userId), now.toISOString()), now) !== null).immediate()
 }
 
+export function rememberProfiles(platform: string, account: string, sightings: readonly (ProfileSighting | null)[], now: Date = new Date(), on: Database = db()): number {
+  const at = now.toISOString()
+  let written = 0
+  const learn = () => {
+    for (const sighting of sightings) {
+      if (!sighting?.userId) continue
+      if (sighting.handle && !isBareId(sighting.handle)) insertEventRow(on, identityLearnedEvent(platform, account, sighting.userId, sighting.handle, sighting.displayName, at), now)
+      const fields = profileFieldsOf(sighting.fields)
+      if (fields && insertEventRow(on, profileSeenEvent(platform, account, sighting.userId, fields, at), now)) written++
+    }
+  }
+  if (on.inTransaction) learn()
+  else on.transaction(learn).immediate()
+  return written
+}
+
 export function handleOfIdentity(platform: string, userId: string, on: Database = db()): string | null {
   const alias = on.prepare('SELECT handle FROM identities WHERE platform = ? AND userId = ?').get(platform, userId) as { handle: string | null } | null
   return alias?.handle && !isBareId(alias.handle) ? alias.handle : null
@@ -221,7 +240,7 @@ export function appendEvent(input: AppendInput, now: Date = new Date()): { seq: 
   input = { ...input, with: handleGiven || (senderId ? personOf(input.platform, input.account, senderId) ?? input.with : input.with) }
   const messageKey = messageKeyOfEvent(input)
   const eventId = input.eventId ?? eventIdOf({ platform: input.platform, account: input.account, conversationId: input.conversationId ?? '', at: input.sourceAt ?? receivedAt, text: input.text ?? JSON.stringify(input.payload ?? {}), messageKey })
-  return immediate((handle) => {
+  const appended = immediate((handle) => {
     checkFence(handle, input.platform, input.account)
     const known = typeStatus(input.platform, input.type, input.payload ?? {}, now, handle) === 'known'
     const inserted = insertEventRow(handle, { eventId, platform: input.platform, account: input.account, conversationId: input.conversationId ?? '', type: input.type, with: input.with ?? '', text: input.text ?? '', box: input.box ?? '', payload: (input.payload ?? {}) as Record<string, unknown>, sourceAt: input.sourceAt ?? '', receivedAt, source: input.source ?? 'live', known }, now)
@@ -237,6 +256,14 @@ export function appendEvent(input: AppendInput, now: Date = new Date()): { seq: 
     }
     return { seq: Number(result.lastInsertRowid), eventId, known }
   })
+  if (appended && input.conversationId && MESSAGE_TYPES.includes(input.type)) {
+    try {
+      refreshWorkedCards(db(), input.platform, input.account, input.conversationId, now)
+    } catch {
+      return appended
+    }
+  }
+  return appended
 }
 
 export function latestSeq(): number {
@@ -335,7 +362,7 @@ export function markGap(id: number, status: GapStatus, detail: string | null = n
     const sql = closing ? `UPDATE gaps SET status = ?, detail = COALESCE(?, detail), appended = appended + ?, toAt = ?, closedAt = ? WHERE id = ?${guard}` : 'UPDATE gaps SET status = ?, detail = COALESCE(?, detail), appended = appended + ? WHERE id = ?'
     const args = closing ? [status, detail, appended, now.toISOString(), now.toISOString(), id, ...(guard ? [expectDrops as number] : [])] : [status, detail, appended, id]
     const changed = handle.prepare(sql).run(...args).changes > 0
-    if (gap && status === 'refused') addAlertRow({ platform: gap.platform, account: gap.account, kind: 'catchUpRefused', detail: `catching up ${gap.platform} ${gap.account} was refused: ${detail ?? ''}; it stays behind and nothing resumes until matt says so (rule 94)` }, now, handle)
+    if (gap && status === 'refused') addAlertRow({ platform: gap.platform, account: gap.account, kind: 'catchUpRefused', detail: `catching up ${gap.platform} ${gap.account} was refused: ${detail ?? ''}; it stays behind and nothing resumes until the owner says so (rule 94)` }, now, handle)
     return changed
   })
 }
@@ -357,17 +384,12 @@ export function handleOfUserId(platform: string, account: string, userId: string
   return platform === 'twitter' ? xInboxHandleOf(account, String(userId)) : null
 }
 
-export function xInboxHandleOf(account: string, userId: string, root: string = process.env.LOG_TWITTER_STATE || join(homedir(), '.logCli', 'twitter')): string | null {
-  const file = join(root, account, 'inboxSync.json')
-  if (!userId || !existsSync(file)) return null
-  try {
-    const state = JSON.parse(readFileSync(file, 'utf8')) as { xchat?: Record<string, { handles?: Record<string, string> }> }
-    for (const conversation of Object.values(state.xchat ?? {})) {
-      const handle = conversation.handles?.[userId]?.replace(/^@/, '')
-      if (handle && !isBareId(handle)) return handle
-    }
-  } catch {
-    return null
+export function xInboxHandleOf(account: string, userId: string, root: string = process.env.LOG_TWITTER_STATE || join(logHome(), 'twitter')): string | null {
+  if (!userId) return null
+  const state = readEngineStore<{ xchat?: Record<string, { handles?: Record<string, string> }> }>('xInbox', account, join(root, account, 'inboxSync.json'), db())
+  for (const conversation of Object.values(state?.xchat ?? {})) {
+    const handle = conversation?.handles?.[userId]?.replace(/^@/, '')
+    if (handle && !isBareId(handle)) return handle
   }
   return null
 }

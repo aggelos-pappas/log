@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import { SPAWNS_PROCESS_MS } from "../../../../scripts/tests/timeouts.ts";
 
 const python = join(import.meta.dir, "..", "..", "..", "..", "python");
 
@@ -52,5 +53,5 @@ describe("the X session keeps one watch per account", () => {
     expect(out.runningAfterGone).toEqual([]);
     expect(out.replaced).toBe("watchReplaced");
     expect(out.runningAfterReplace).toEqual([3]);
-  });
+  }, SPAWNS_PROCESS_MS);
 });

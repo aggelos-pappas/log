@@ -1,15 +1,15 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { PLATFORM_SITES } from "../../cli/runner/helpers/platforms";
+import { PLATFORM_LABELS, PLATFORM_SITES } from "../../cli/runner/helpers/platforms";
 import type { Platform } from "../../cli/runner/helpers/platforms";
 import { exchangesOf } from "../../subq/stepReading/helpers/exchangesOf";
 import { evidenceIdOf } from "../capture/client";
 import { parseSteps, splitHarBySteps } from "../capture/helpers/index";
 import type { ReaRunner } from "../capture/types";
-import { clientFactsPath, findRunCaptures, scriptsFromHar, writeOperationDocs } from "../facebookClient/index";
+import { clientFactsPath, findRunCaptures, PLATFORM_EVIDENCE, requestDocPrompts, scriptsFromHar, writeOperationDocs } from "../facebookClient/index";
 import type { ClientOperation, RequestSeen, RunCapture } from "../facebookClient/index";
-import { aliasHost, domainOfRequest, forgetParsed, methodNameOf, needlesOf, operationOf, requestNameOf, slicesFor, stablePath } from "./helpers/index";
+import { aliasHost, domainOfRequest, platformMachines, forgetParsed, methodNameOf, needlesOf, operationOf, requestNameOf, slicesFor, stablePath } from "./helpers/index";
 import { PLATFORM_CLIENT_RULES } from "./types";
 import type { BundleScript, PlatformClientRules, SourceSlice } from "./types";
 
@@ -29,6 +29,27 @@ interface SeenOn extends RequestSeen {
   operation: string | null;
 }
 
+const RAW_PER_REQUEST = 3;
+
+interface RawEntry {
+  startedDateTime?: string;
+  request?: { url?: string };
+}
+
+function withoutServerAddress(entry: unknown): unknown {
+  if (!entry || typeof entry !== "object") return entry;
+  const { serverIPAddress: _dropped, ...kept } = entry as Record<string, unknown>;
+  return kept;
+}
+
+function rawUrlOf(entry: RawEntry): URL | null {
+  try {
+    return new URL(entry.request?.url ?? "");
+  } catch {
+    return null;
+  }
+}
+
 export function onHosts(host: string, hosts: readonly string[]): boolean {
   return hosts.some((h) => host === h || host.endsWith(`.${h}`));
 }
@@ -37,12 +58,14 @@ function bodyOf(sent: unknown): unknown {
   return sent && typeof sent === "object" && !Array.isArray(sent) && "body" in (sent as Record<string, unknown>) ? (sent as Record<string, unknown>).body : sent;
 }
 
+const isFieldName = (key: string): boolean => /^[A-Za-z_$][\w$.-]{0,80}$/.test(key);
+
 function variablesOf(sent: unknown): string[] {
   const body = bodyOf(sent);
   if (!body || typeof body !== "object" || Array.isArray(body)) return [];
   const variables = (body as Record<string, unknown>).variables;
-  if (variables && typeof variables === "object" && !Array.isArray(variables)) return Object.keys(variables);
-  return Object.keys(body).filter((k) => k !== "operation" && k !== "operationName");
+  if (variables && typeof variables === "object" && !Array.isArray(variables)) return Object.keys(variables).filter(isFieldName);
+  return Object.keys(body).filter((k) => k !== "operation" && k !== "operationName" && isFieldName(k));
 }
 
 export function readsOf(answer: unknown, depth = 2, prefix = ""): string[] {
@@ -56,7 +79,7 @@ export function readsOf(answer: unknown, depth = 2, prefix = ""): string[] {
   return out;
 }
 
-export function platformRequestsInRun(capture: RunCapture, hosts: readonly string[], rules?: PlatformClientRules): SeenOn[] {
+export function platformRequestsInRun(capture: RunCapture, hosts: readonly string[], rules?: PlatformClientRules, rawByName?: Map<string, unknown[]>): SeenOn[] {
   const har = JSON.parse(readFileSync(join(capture.dir, "session.har"), "utf8")) as { log?: { entries?: { startedDateTime?: string }[] } };
   const stepsFile = join(capture.dir, "steps.jsonl");
   let steps = existsSync(stepsFile) ? parseSteps(readFileSync(stepsFile, "utf8")) : [];
@@ -66,14 +89,21 @@ export function platformRequestsInRun(capture: RunCapture, hosts: readonly strin
     const entries = ((part.har as { log?: { entries?: { startedDateTime?: string }[] } }).log?.entries ?? []).map((e) => Date.parse(e.startedDateTime ?? "")).filter((t) => !Number.isNaN(t));
     const t0 = entries.length ? Math.min(...entries) : Number.NaN;
     const stepAt = Date.parse(steps[part.index - 1].at);
+    const raw = ((part.har as { log?: { entries?: RawEntry[] } }).log?.entries ?? []).slice().sort((a, b) => Date.parse(a.startedDateTime ?? "") - Date.parse(b.startedDateTime ?? ""));
+    const rawT0 = raw.length ? Date.parse(raw[0].startedDateTime ?? "") : Number.NaN;
     for (const exchange of exchangesOf(part.har, new Set(), [])) {
       if (exchange.kind !== "api" || !onHosts(exchange.host, hosts)) continue;
       const host = aliasHost(exchange.host, rules?.hostAliases);
       const method = rules?.apiMethod?.exec(exchange.path)?.[1] ?? null;
       const operation = method ?? operationOf(exchange.sent, exchange.path);
       const label = host.split(".")[0];
+      const name = method ? methodNameOf(method) : requestNameOf(host, exchange.path, operation);
+      if (rawByName && (rawByName.get(name)?.length ?? 0) < RAW_PER_REQUEST) {
+        const entry = raw.find((e) => rawUrlOf(e)?.host === exchange.host && rawUrlOf(e)?.pathname === exchange.path && Date.parse(e.startedDateTime ?? "") - rawT0 === exchange.offsetMs);
+        if (entry) rawByName.set(name, [...(rawByName.get(name) ?? []), entry]);
+      }
       seen.push({
-        name: method ? methodNameOf(method) : requestNameOf(host, exchange.path, operation),
+        name,
         docId: null,
         path: method ? `/api/${method}` : label === "www" ? stablePath(exchange.path) : `${host}${stablePath(exchange.path)}`,
         graphql: !!operation,
@@ -204,6 +234,21 @@ export async function readPlatformSlices(operations: ClientOperation[], slicesBy
   });
 }
 
+export async function readOperationNetwork(operations: ClientOperation[], rawByName: Map<string, unknown[]>, outDir: string, runner: ReaRunner, log: (line: string) => void): Promise<void> {
+  const todo = operations.filter((o) => !o.reaEvidenceId && (rawByName.get(o.name)?.length ?? 0) > 0);
+  if (todo.length) log(`rea: ${todo.length} request(s) with no code in the bundles and no step reading, read from their own calls`);
+  for (const operation of todo) {
+    const dir = join(outDir, "network", operation.domain);
+    mkdirSync(dir, { recursive: true });
+    const file = join(dir, `${operation.name}.har`);
+    writeFileSync(file, JSON.stringify({ log: { version: "1.2", creator: { name: "log", version: "1" }, entries: (rawByName.get(operation.name) ?? []).map(withoutServerAddress) } }), { mode: 0o600 });
+    const read = await runner(["inspect-web-network-capture", file, "har", "--format", "json"], dir);
+    const id = read.code === 0 ? evidenceIdOf(read.stdout) : null;
+    if (id) operation.reaEvidenceId = id;
+    log(`  rea ${operation.domain}/${operation.name}: ${id ? `read its own calls (${id.slice(0, 15)}…)` : `exit ${read.code} ${read.stderr.slice(0, 160)}`}`);
+  }
+}
+
 export function platformFactsPath(platform: Platform): string {
   return clientFactsPath().replace(/clientFacts\.json$/, `clientFacts.${platform}.json`);
 }
@@ -214,11 +259,12 @@ export async function buildPlatformClientMap(options: BuildPlatformMapOptions): 
   const rules = PLATFORM_CLIENT_RULES[platform];
   const captures = findRunCaptures(options.capturesRoot);
   const seen: SeenOn[] = [];
+  const rawByName = new Map<string, unknown[]>();
   const evidence = new Map<string, string>();
   const used: RunCapture[] = [];
   for (const capture of captures) {
     try {
-      const requests = platformRequestsInRun(capture, site.hosts, rules);
+      const requests = platformRequestsInRun(capture, site.hosts, rules, rawByName);
       if (!requests.length) continue;
       used.push(capture);
       seen.push(...requests);
@@ -250,8 +296,9 @@ export async function buildPlatformClientMap(options: BuildPlatformMapOptions): 
     const sighting = operation.sightings.find((s) => evidence.has(`${s.run}\u0000${s.step}`));
     if (sighting) operation.reaEvidenceId = evidence.get(`${sighting.run}\u0000${sighting.step}`) ?? null;
   }
-  writeFileSync(join(options.outDir, "clientMap.json"), `${JSON.stringify({ builtAt: new Date().toISOString(), operations }, null, 2)}\n`, { mode: 0o600 });
-  const docs = writeOperationDocs(operations, options.docsDir, used.length, options.storePath ?? platformFactsPath(platform), rules?.reasoning);
+  if (options.runner) await readOperationNetwork(operations, rawByName, options.outDir, options.runner, log);
+  writeFileSync(join(options.outDir, "clientMap.json"), `${JSON.stringify({ operations }, null, 2)}\n`, { mode: 0o600 });
+  const docs = writeOperationDocs(operations, options.docsDir, used.length, options.storePath ?? platformFactsPath(platform), requestDocPrompts({ name: PLATFORM_LABELS[platform], evidence: PLATFORM_EVIDENCE, machines: platformMachines(platform) }));
   const sliced = operations.filter((o) => (slicesByName.get(o.name) ?? []).length).length;
   const read = operations.filter((o) => o.reaEvidenceId).length;
   return `${platform} client map: ${operations.length} requests from ${used.length} runs; ${sliced} with their code found in its bundles, ${read} read by rea (their code, or the step's network where no code was found). Docs: ${options.docsDir} (${docs.toWrite} still need their reasoning written).`;

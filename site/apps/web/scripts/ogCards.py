@@ -16,6 +16,7 @@ SHARE_CARD_PORT = 5317
 SHARE_CARD_SITE = f"http://localhost:{SHARE_CARD_PORT}"
 ARTICLES = json.loads((WEB / "src" / "landing" / "devlog" / "articles.json").read_text(encoding="utf-8"))
 SHARE_PAGES = json.loads((WEB / "src" / "landing" / "useCases" / "sharePages.json").read_text(encoding="utf-8"))
+APPLY_SHARE = json.loads((WEB / "src" / "landing" / "apply" / "applyShare.json").read_text(encoding="utf-8"))
 PHOTO = PUBLIC / "images" / "mattlistening.webp"
 def fill(card, panel, footer):
     return (
@@ -38,7 +39,7 @@ def cards(wanted):
             PUBLIC / "og" / "devlog" / f"{article['slug']}.png",
             fill(article["card"], photo_panel(), f"devlog · {article['author']} · {article['publishedLabel']}"),
         )
-    for page in SHARE_PAGES:
+    for page in [*SHARE_PAGES, APPLY_SHARE]:
         yield (
             page["slug"],
             PUBLIC / "og" / "pages" / f"{page['slug']}.png",

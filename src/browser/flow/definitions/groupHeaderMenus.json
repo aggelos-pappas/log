@@ -1,5 +1,6 @@
 {
   "name": "groupHeaderMenus",
+  "platform": "facebook",
   "summary": "Open and close the group header's search, More menu, Joined menu, Invite dialog and Share sheet; nothing inside them is picked",
   "params": [
     {
@@ -201,7 +202,7 @@
     }
   ],
   "source": {
-    "runDir": "C:/Users/0/.logCli/runs/inspect/20261020T153648_61594063207669/sequences/groupHeaderMenus",
+    "runDir": "C:/Users/tester/.logCli/runs/inspect/20261020T153648_99900000000001/sequences/groupHeaderMenus",
     "account": "groupHeaderMenus",
     "builtAt": "2026-10-20T15:51:59.614Z"
   }

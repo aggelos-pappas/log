@@ -9,6 +9,10 @@ if (!process.env.LOG_PYTHON && existsSync(envLocal)) {
 }
 
 const scratch = mkdtempSync(join(tmpdir(), 'logCliTestRuns'))
+process.env.TMPDIR = scratch
+process.env.TEMP = scratch
+process.env.TMP = scratch
+process.env.LOG_HOME = join(scratch, 'home')
 process.env.LOG_RUNS_DIR ??= join(scratch, 'runs')
 process.env.LOG_UNSAVED_DIR ??= join(scratch, 'runs', 'unsaved')
 process.env.LOG_CAPTURES_ROOT ??= scratch
@@ -18,6 +22,11 @@ process.env.LOG_INSPECT_CURRENT ??= join(scratch, 'inspect', 'current.json')
 process.env.LOG_MEMBERS_DIR ??= join(scratch, 'members')
 process.env.LOG_INBOX_STATE ??= join(scratch, 'inbox')
 process.env.LOG_INSTAGRAM_HOST ??= 'inline'
+process.env.LOG_JUDGE_MODEL_OFF ??= '1'
+process.env.LOG_UPDATE_CHECK ??= 'off'
+process.env.LOG_GRAPH_OWNER ??= 'off'
+process.env.LOG_UPDATE_STATE ??= join(scratch, 'update.json')
+process.env.LOG_UPDATE_RESUME ??= join(scratch, 'resume.json')
 delete process.env.LOG_ADSPOWER_HOMES
 process.env.LOG_FBK_STATE = mkdtempSync(join(tmpdir(), "logFbkState"));
 process.env.LOG_MCP_STAMP_FILE ??= join(scratch, 'mcpServer.json')

@@ -1,4 +1,6 @@
 import type { AnswerCheck, FlowDefinition } from '../types'
+import { flowPlatform, flowToolName } from './flowPlatform'
+import { PLATFORM_LABELS } from '../../../cli/runner/helpers/platforms'
 
 export function checkText(check: AnswerCheck): string {
   const want = check.present ? 'present' : check.home ? (check.home === 'uid' ? "the account's id" : `the account's home ${check.home}`) : check.sent ? `what we sent as \`${check.sent}\`` : `\`${JSON.stringify(check.is)}\``
@@ -11,17 +13,18 @@ export function renderFlowDoc(flow: FlowDefinition, requestDoc: (name: string) =
     '',
     flow.summary,
     '',
-    `Built by \`log flow fromInspect\` from the recording \`${flow.source.runDir}\` (account ${flow.source.account}). Run it on any account with \`log flow run ${flow.name} --account <a> --live\`, or over MCP as the tool \`${toolName(flow.name)}\` (rule 31).`,
+    `Built by \`log flow fromInspect\` from the recording \`${flow.source.runDir}\` (account ${flow.source.account}). Run it on any account with \`log flow run ${flow.name} --account <a> --live\`, or over MCP as the tool \`${flowToolName(flow)}\` (rule 31).`,
     '',
     '## Params',
     ''
   ]
   for (const p of flow.params) out.push(`- \`${p.name}\` (${p.kind}): ${p.description}`)
   if (!flow.params.length) out.push('None.')
-  out.push('', '## Steps', '', '| # | Step | Does | Confirmed by | Facebook must answer (rule 73) | Recorded |', '| --- | --- | --- | --- | --- | --- |')
+  const platform = flowPlatform(flow)
+  out.push('', '## Steps', '', `| # | Step | Does | Confirmed by | ${platform ? PLATFORM_LABELS[platform] : 'Facebook'} must answer (rule 73) | Recorded |`, '| --- | --- | --- | --- | --- | --- |')
   flow.steps.forEach((s, i) => {
     const does =
-      s.action === 'goto' ? `open \`${s.url}\`` : s.role ? `${s.action} ${s.role} "${s.name}"${s.value ? ` with \`${s.value}\`` : ''}` : s.action
+      s.action === 'goto' ? `open \`${s.url}\`` : s.role ? `${s.action} ${s.role} "${s.name}"${s.value ? ` with \`${s.value}\`` : ''}` : s.args?.length ? `${s.action} ${s.args.map((a) => `"${a}"`).join(' > ')}` : s.action
     const doc = s.expect ? requestDoc(s.expect) : null
     const confirmed = s.expect ? (doc ? `[\`${s.expect}\`](${doc})` : `\`${s.expect}\``) : '—'
     const recorded = `${s.recorded.step}${s.recorded.ms ? `, ${s.recorded.ms} ms` : ''}${s.recorded.reaEvidenceId ? `, rea \`${s.recorded.reaEvidenceId}\`` : ''}`
@@ -37,6 +40,3 @@ export function renderFlowDoc(flow: FlowDefinition, requestDoc: (name: string) =
   return out.join('\n')
 }
 
-export function toolName(flow: string): string {
-  return `flow${flow[0].toUpperCase()}${flow.slice(1)}`
-}

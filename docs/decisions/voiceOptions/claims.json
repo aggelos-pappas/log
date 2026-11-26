@@ -1,0 +1,13 @@
+[
+  { "id": "C1", "statement": "Adding the author's most-used words and contrastive examples from other authors to retrieved samples improved personalized generation by about 15% over baseline RAG, without training (arXiv 2504.08745)." },
+  { "id": "C2", "statement": "LLMs imitating everyday authors from a few samples do well on structured writing such as news and email but struggle with informal writing such as forums and blogs (arXiv 2509.14543)." },
+  { "id": "C3", "statement": "A training-free style vector added to a model's activations improved personalized generation by about 8% relative and needed about 1700 times less storage than per-user fine-tuning (arXiv 2503.05213)." },
+  { "id": "C4", "statement": "Fine-tuning a 7B model with LoRA as WeClone does needs about 16 GB of NVIDIA GPU memory, which this laptop does not have." },
+  { "id": "C5", "statement": "Today a draft passes the voice gate only when every one of its separate checks passes." },
+  { "id": "C6", "statement": "SubQ's reading near the gate's threshold varies by about 0.1 between runs, so a pre-gated pass can fail at send." },
+  { "id": "C7", "statement": "A single voice gate call took p50 2.08 s, p95 6.18 s and p99 7.05 s over 39 calls on 2026-11-20." },
+  { "id": "C8", "statement": "log already stores the embeddings of the owner's replies in log.db and has a per-chat card with his real replies in that chat." },
+  { "id": "C9", "statement": "A failed gate today returns sub-scores and the pairs he never wrote, but not a rewrite in his own words." },
+  { "id": "C10", "statement": "log already runs pinned local models through ONNX on this machine, including a 450M-parameter generative vision-language model." },
+  { "id": "C11", "statement": "Training-free critique-and-refine against the user's profile reduces drift in tone, topic and style compared with retrieval alone (arXiv 2510.24469)." }
+]

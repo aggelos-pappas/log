@@ -5,10 +5,10 @@ import { ATTACHED_TEXT_CHARS, BRIEF_CHECKS, BRIEF_MODEL, BRIEF_PASS } from './ty
 import type { BriefCheck, BriefDraft, BriefReading } from './types'
 
 const QUESTIONS: Record<BriefCheck, { instructions: string; criteria: { true: string; false: string } }> = {
-  clear: { instructions: 'This is a task matt is handing to someone who works with him (draft), not a casual chat message. Read it as that person would, with only what is in the draft, the files attached to it (attachedFiles) and this chat (thisConversation). Is it clear exactly what they have to do, in order, with any term they may not know explained, so they could start without asking anything back?', criteria: { true: 'They could start straight away without asking what to do', false: 'They would have to ask what to do, or it leans on words they may not know' } },
+  clear: { instructions: 'This is a task the owner is handing to someone who works with him (draft), not a casual chat message. Read it as that person would, with only what is in the draft, the files attached to it (attachedFiles) and this chat (thisConversation). Is it clear exactly what they have to do, in order, with any term they may not know explained, so they could start without asking anything back?', criteria: { true: 'They could start straight away without asking what to do', false: 'They would have to ask what to do, or it leans on words they may not know' } },
   why: { instructions: 'Does the brief (draft and attachedFiles) say why this work matters: what it is for and what it leads to, so they know the point of it?', criteria: { true: 'The point of the work is said', false: 'They are told what to do but not why' } },
   doneWhen: { instructions: 'Does the brief (draft and attachedFiles) say what done looks like (what they hand back, where) and by when?', criteria: { true: 'What finished means and the deadline are both said', false: 'What to hand back or by when is missing' } },
-  kind: { instructions: 'Going by howMattWrites, is the brief respectful and informative, written like matt helping someone on his team in his own casual register: warm, plain, never curt, bossy, cold or rude, and never a bare order with nothing explained?', criteria: { true: 'It reads like matt helping a teammate get it done', false: 'It reads curt, rude, bossy or like a bare order' } },
+  kind: { instructions: 'Going by howOwnerWrites, is the brief respectful and informative, written like the owner helping someone on his team in his own casual register: warm, plain, never curt, bossy, cold or rude, and never a bare order with nothing explained?', criteria: { true: 'It reads like the owner helping a teammate get it done', false: 'It reads curt, rude, bossy or like a bare order' } },
   steerable: { instructions: 'Does the brief leave them a clear way to ask, push back or say they are stuck (who to tell and when), so the work can be steered as it goes instead of going wrong in silence?', criteria: { true: 'They know how to ask or say they are stuck', false: 'Nothing says what to do when they are stuck or unsure' } },
 }
 
@@ -36,7 +36,7 @@ export async function readBrief(draft: BriefDraft, decide: DecisionsClient): Pro
   const response = await decide({
     model: BRIEF_MODEL,
     state: {
-      ...(draft.howMattWrites ? { howMattWrites: draft.howMattWrites } : {}),
+      ...(draft.howOwnerWrites ? { howOwnerWrites: draft.howOwnerWrites } : {}),
       recipient: draft.to,
       ...(draft.conversation?.length ? { thisConversation: draft.conversation } : {}),
       ...(draft.room ? { theRoom: draft.room } : {}),

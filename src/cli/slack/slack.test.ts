@@ -7,11 +7,13 @@ import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import type { PlatformEngineRun } from "../../platformKit/session/index.ts";
 import { SLACK_PLATFORM } from "../../slack/account/session/index.ts";
 import { runCli } from "../runner/index.ts";
-import { slackDeps, slackToInboxOf } from "./index.ts";
+import { slackDeps, slackToInboxOf, slackTypingOf } from "./index.ts";
+import { typingNow } from "../../inbox/typing/index.ts";
 import { withD } from "./helpers/index.ts";
 import { liveLogVerdict } from "../../agentHooks/liveLog/index.ts";
 import { chatEvents } from "../../inbox/store/index.ts";
 import { takePending } from "../../inbox/watch/index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 function fixture() {
   const twenty = marketplaceFixture();
@@ -48,7 +50,7 @@ describe("log slack session check", () => {
   test("an account of another platform is refused before the engine is called", async () => {
     const r = await run(["slack", "session", "check", "--account", "galwayOne"]);
     expect(r.code).toBe(1);
-    expect(r.err).toContain("accountNotFound");
+    expect(r.err).toContain("accountPlatformMismatch");
     expect(r.calls).toEqual([]);
   });
 
@@ -57,11 +59,11 @@ describe("log slack session check", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({ session: "x" }));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "ping", account: "slackOne", platform: "slack", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "ping", account: "slackOne", platform: "slack", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [SLACK_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error || !engine.stdout.trim()) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "sessionDead", loginState: "loggedOut" });
-  });
+  }, SPAWNS_PROCESS_MS);
 });
 
 const CHATS: PlatformEngineRun = { answer: { ok: true, loginState: "loggedIn", chats: [{ id: "D0EXAMPLE01", kind: "dm", name: null, members: ["Sam"] }, { id: "D0OTHER123", kind: "dm", name: null, members: ["Bethany"] }] }, refreshed: null };
@@ -112,7 +114,7 @@ describe("log slack chats, read and send", () => {
     slackDeps.profiles = () => ({});
     slackDeps.wait = async () => {};
     let n = 0;
-    const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo\nthree", "--live", "--approvedBy", "matt"], () => (++n === 2 ? { answer: { ok: false, code: "slackRefused", detail: "chat.postMessage answered ratelimited" }, refreshed: null } : { answer: { ok: true, sent: [{ ts: String(n) }] }, refreshed: null }));
+    const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo\nthree", "--live", "--approvedBy", "the owner"], () => (++n === 2 ? { answer: { ok: false, code: "slackRefused", detail: "chat.postMessage answered ratelimited" }, refreshed: null } : { answer: { ok: true, sent: [{ ts: String(n) }] }, refreshed: null }));
     expect(r.code).toBe(1);
     expect(r.calls).toEqual(["slackOne:send", "slackOne:send"]);
     expect(r.out).toContain("1 of 3 sent");
@@ -127,12 +129,70 @@ describe("log slack chats, read and send", () => {
     slackDeps.incoming = (account, chat) => (++checks < 2 ? [] : [{ platform: "slack", account, conversationId: chat, with: "sam", text: "wait what", at: "2026-11-03T19:00:20.000Z", box: "dm", seenAt: "2026-11-03T19:00:20.500Z" }]);
     try {
       let n = 0;
-      const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo\nthree", "--live", "--approvedBy", "matt"], () => ({ answer: { ok: true, sent: [{ ts: String(++n) }] }, refreshed: null }));
+      const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo\nthree", "--live", "--approvedBy", "the owner"], () => ({ answer: { ok: true, sent: [{ ts: String(++n) }] }, refreshed: null }));
       expect(r.code).toBe(1);
       expect(r.calls).toEqual(["slackOne:send", "slackOne:send"]);
       expect(r.out).toContain(">>> INTERRUPTED");
       expect(r.out).toContain('"wait what"');
       expect(r.out).toContain("not sent: three");
+    } finally {
+      Object.assign(slackDeps, saved);
+    }
+  });
+
+  test("a line waits while they are typing, then goes out once they stop", async () => {
+    const saved = { ...slackDeps };
+    let waits = 0;
+    slackDeps.profiles = () => ({});
+    slackDeps.wait = async () => void waits++;
+    slackDeps.now = () => "2026-11-03T19:00:00.000Z";
+    slackDeps.incoming = () => [];
+    slackDeps.typing = () => (waits >= 1 && waits < 4 ? ["U0ADA"] : []);
+    try {
+      let n = 0;
+      const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo", "--live", "--approvedBy", "the owner"], () => ({ answer: { ok: true, sent: [{ ts: String(++n) }] }, refreshed: null }));
+      expect(r.code).toBe(0);
+      expect(r.calls).toEqual(["slackOne:send", "slackOne:send"]);
+      expect(waits).toBeGreaterThan(1);
+    } finally {
+      Object.assign(slackDeps, saved);
+    }
+  });
+
+  test("a one-line send waits out their typing too", async () => {
+    const saved = { ...slackDeps };
+    let waits = 0;
+    slackDeps.profiles = () => ({});
+    slackDeps.wait = async () => void waits++;
+    slackDeps.now = () => "2026-11-03T19:00:00.000Z";
+    slackDeps.incoming = () => [];
+    slackDeps.typing = () => (waits < 3 ? ["U0ADA"] : []);
+    try {
+      const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one", "--asOne", "--live", "--approvedBy", "the owner"], { answer: { ok: true, sent: [{ ts: "1" }] }, refreshed: null });
+      expect(r.code).toBe(0);
+      expect(r.calls).toEqual(["slackOne:send"]);
+      expect(waits).toBe(3);
+    } finally {
+      Object.assign(slackDeps, saved);
+    }
+  });
+
+  test("still typing at the limit holds the rest and says so", async () => {
+    const saved = { ...slackDeps };
+    let waits = 0;
+    slackDeps.profiles = () => ({});
+    slackDeps.wait = async () => void waits++;
+    slackDeps.now = () => "2026-11-03T19:00:00.000Z";
+    slackDeps.incoming = () => [];
+    slackDeps.typing = () => (waits ? ["U0ADA"] : []);
+    try {
+      let n = 0;
+      const r = await run(["slack", "send", "--account", "slackOne", "--chat", "D0EXAMPLE01", "--text", "one\ntwo\nthree", "--live", "--approvedBy", "the owner"], () => ({ answer: { ok: true, sent: [{ ts: String(++n) }] }, refreshed: null }));
+      expect(r.code).toBe(1);
+      expect(r.calls).toEqual(["slackOne:send"]);
+      expect(r.out).toContain(">>> STILL TYPING");
+      expect(r.out).toContain("  two");
+      expect(r.out).toContain("  three");
     } finally {
       Object.assign(slackDeps, saved);
     }
@@ -148,6 +208,21 @@ describe("the Slack watch and the d cookie", () => {
     expect(slackToInboxOf({ type: "message", channel: "D1", fromMe: false, subtype: "message_changed" })).toBe(false);
   });
 
+  test("the watcher keeps their typing in a DM or group, and their message clears it", () => {
+    const at = new Date("2026-11-20T02:00:00Z");
+    const later = new Date(at.getTime() + 2_000);
+    const dm = { platform: "slack", account: "slackTyping", conversationId: "D0TYPING01" };
+    slackTypingOf("slackTyping", { type: "user_typing", channel: "D0TYPING01", user: "U0ADA", fromMe: false }, at);
+    slackTypingOf("slackTyping", { type: "user_typing", channel: "D0TYPING01", user: "U0ME", fromMe: true }, at);
+    slackTypingOf("slackTyping", { type: "user_typing", channel: "C0TYPING01", user: "U0LINUS", fromMe: false }, at);
+    slackTypingOf("slackTyping", { type: "user_typing", channel: "G0TYPING01", user: "U0LINUS", fromMe: false }, at);
+    expect(typingNow(dm, later)).toEqual(["U0ADA"]);
+    expect(typingNow({ ...dm, conversationId: "C0TYPING01" }, later)).toEqual([]);
+    expect(typingNow({ ...dm, conversationId: "G0TYPING01" }, later)).toEqual(["U0LINUS"]);
+    slackTypingOf("slackTyping", { type: "message", channel: "D0TYPING01", user: "U0ADA", fromMe: false, text: "ok" }, later);
+    expect(typingNow(dm, later)).toEqual([]);
+  });
+
   test("a saved d cookie replaces the old one and keeps the rest", () => {
     const saved = withD([{ name: "d", value: "old" }, { name: "lc", value: "1" }], "xoxdNew") as { name: string; value: string }[];
     expect(saved.filter((c) => c.name === "d").map((c) => c.value)).toEqual(["xoxdNew"]);
@@ -158,8 +233,8 @@ describe("the Slack watch and the d cookie", () => {
 
 describe("the hooks on Slack", () => {
   test("a hand-run log slack command is refused and pointed at its MCP tool, the cookie prompt is not", () => {
-    expect(liveLogVerdict("Bash", 'log slack send --account mattSlack --chat sam --text "yo"').deny).toContain("rule 106");
-    expect(liveLogVerdict("Bash", "bun bin/log.ts slack read --account mattSlack --chat sam").deny).toContain("rule 106");
-    expect(liveLogVerdict("Bash", "log slack cookies save --account mattSlack").deny).toBeNull();
+    expect(liveLogVerdict("Bash", 'log slack send --account slackAccount --chat sam --text "yo"').deny).toContain("rule 163");
+    expect(liveLogVerdict("Bash", "bun bin/log.ts slack read --account slackAccount --chat sam").deny).toContain("rule 163");
+    expect(liveLogVerdict("Bash", "log slack cookies save --account slackAccount").deny).toBeNull();
   });
 });

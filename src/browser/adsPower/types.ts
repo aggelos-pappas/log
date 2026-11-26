@@ -1,4 +1,4 @@
-import type { BrowserCapabilities } from '../driver/types'
+import type { BrowserBrand, BrowserCapabilities } from '../driver/types'
 
 export interface LocalApiConfig {
   baseUrl: string
@@ -44,7 +44,7 @@ export interface AdsPowerClient {
   createProfile(body: CreateProfileBody): Promise<{ profileId: string; profileNo: string | null }>
   updateProfile(profileId: string, fields: Record<string, unknown>): Promise<void>
   deleteProfiles(profileIds: string[]): Promise<void>
-  startBrowser(profileId: string, options?: { launchArgs?: string[] }): Promise<StartedBrowser>
+  startBrowser(profileId: string, options?: { launchArgs?: string[]; headless?: boolean }): Promise<StartedBrowser>
   activeBrowser(profileId: string): Promise<StartedBrowser | null>
   stopBrowser(profileId: string): Promise<void>
   kernels(): Promise<AdsPowerKernel[]>
@@ -64,7 +64,7 @@ export interface KernelDownload {
 
 export class AdsPowerError extends Error {
   constructor(
-    readonly code: 'adsPowerUnavailable' | 'adsPowerRequestFailed' | 'adsPowerRateLimited',
+    readonly code: 'adsPowerUnavailable' | 'adsPowerRequestFailed' | 'adsPowerRateLimited' | 'adsPowerKeyMismatch' | 'adsPowerPlanLapsed',
     readonly detail: string
   ) {
     super(`${code}: ${detail}`)
@@ -100,8 +100,10 @@ export interface ProfileSyncResult {
   entries: ProfileSyncEntry[]
 }
 
+export const adsPowerBrand = { label: 'AdsPower', logo: '/logos/adsPower.svg' } as const satisfies BrowserBrand
+
 export const adsPowerCapabilities = {
-  headedWindow: { status: 'built', how: 'Local API start with headless "0" (python/browser/adsPowerBrowser.py); on a server the window renders on Xvfb' },
+  headedWindow: { status: 'built', how: 'Local API start with headless "0" (python/browser/adsPowerBrowser.py); on a server the window renders on Xvfb; AdsPower starts its own window, so a streamed session still shows it' },
   proxyGate: { status: 'built', how: 'proxyGate.gate_attached() before the profile starts; the proxy is put on the profile only then' },
   selfCheck: { status: 'built', how: 'proxyGate.check_attached() on the CDP context, the same verdict as Camoufox' },
   sessionHar: { status: 'built', how: 'harRecorder.SessionHar from the context events, written as session.har at close' },
@@ -114,5 +116,6 @@ export const adsPowerCapabilities = {
   sessionSaved: { status: 'built', how: 'saveState writes the context storage state, saved to Twenty' },
   inspectSession: { status: 'built', how: 'python/browser/browserDriver.py open_ads_power' },
   syncSessions: { status: 'notBuilt', how: 'publishSession, connectSession and profileSession still launch Camoufox (sync API)' },
-  oneMachineAtATime: { status: 'notBuilt', how: 'cloud-active before open (docs/deployment.md)' }
+  oneMachineAtATime: { status: 'notBuilt', how: 'cloud-active before open (docs/deployment.md)' },
+  liveView: { status: 'built', how: "browserViewer.PageCast: the same page screencast over the CDP-attached page (connect_over_cdp), proven on a CDP-attached Brave, not on a live AdsPower profile" }
 } as const satisfies BrowserCapabilities

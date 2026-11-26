@@ -2,6 +2,10 @@
 import { join } from 'node:path'
 import { liveLogVerdict } from '../../src/agentHooks/liveLog/index'
 import { readService, startService } from '../../src/contextLayer/service/client'
+import { contextOutput, hookHostOf } from '../../src/agentHooks/harness/index'
+import { harnessOff } from '../../src/agentHooks/harness/off/client'
+
+if (harnessOff()) process.exit(0)
 
 if (!readService()) startService(join(import.meta.dir, '..', '..'))
 
@@ -23,4 +27,4 @@ if (verdict.deny) {
   process.stderr.write(verdict.deny)
   process.exit(2)
 }
-if (verdict.context) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', additionalContext: verdict.context } }))
+if (verdict.context) process.stdout.write(contextOutput('PreToolUse', verdict.context, hookHostOf(process.argv)))

@@ -14,7 +14,7 @@ Content-Disposition: form-data; name`, `------WebKitFormBoundaryzLndsa02haxLICiB
 Content-Disposition: form-data; name`, `------WebKitFormBoundary5wlU77uI2b5oCVMa
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `draft.id`, `draft.date_created`, `draft.user_id`, `draft.team_id`, `draft.last_updated_ts`, `draft.last_updated_client`, `draft.blocks`, `draft.file_ids`, `draft.is_from_composer`, `draft.is_deleted`, `draft.is_sent` and 4 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script3.js:2878 statement`, `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script3.js:2878 statement`, `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_ab1a20f58a433cdc1c7a9f9eff1309fec620995c3114f9dad3b6e5a543687711` |
 
 Seen 4 time(s) in 1 run(s).
@@ -30,7 +30,7 @@ Seen 4 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 11: type e1075: 200, 323 ms
+**runs/inspect/20261103T065639_slackAccount**, step 11: type e1075: 200, 323 ms
 
 Sent:
 
@@ -41,7 +41,7 @@ Sent:
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
     "_x_csid": "b3O92r22OFk",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -49,7 +49,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundary30EK4iBOD7Bfti9G\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundary30EK4iBOD7Bfti9G\r\nContent-Disposition: form-data; name=\"blocks\"\r\n\r\n[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"affiliate marketing lad, i send out links for stuff and it pays out friday\"}]}]}]\r\n---… (1432 chars)"
+    "------WebKitFormBoundary30EK4iBOD7Bfti9G\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundary30EK4iBOD7Bfti9G\r\nContent-Disposition: form-data; name=\"blocks\"\r\n\r\n[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"<messageText>\"}]}]}]\r\n---… (1432 chars)"
   }
 }
 ```
@@ -62,8 +62,8 @@ Answered:
   "draft": {
     "id": "Dr0CECL96ZMY",
     "date_created": 1793689329,
-    "user_id": "U0C4L7RF7HD",
-    "team_id": "T0C4VCD06MR",
+    "user_id": "<userId:1>",
+    "team_id": "<teamId:1>",
     "last_updated_ts": "1793689329.473815",
     "last_updated_client": "Chrome",
     "blocks": [
@@ -76,7 +76,7 @@ Answered:
             "elements": [
               {
                 "type": "text",
-                "text": "affiliate marketing lad, i send out links for stuff and it pays out friday"
+                "text": "<messageText>"
               }
             ]
           }
@@ -91,9 +91,9 @@ Answered:
     "date_scheduled": 0,
     "destinations": [
       {
-        "channel_id": "D0C8VAE7REU",
+        "channel_id": "<channelId:1>",
         "user_ids": [
-          "U0A9JFXK21L"
+          "<userId:2>"
         ]
       }
     ]
@@ -102,7 +102,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 13: type e1075: 200, 315 ms
+**runs/inspect/20261103T065639_slackAccount**, step 13: type e1075: 200, 315 ms
 
 Sent:
 
@@ -113,7 +113,7 @@ Sent:
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
     "_x_csid": "b3O92r22OFk",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -121,7 +121,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryxmY14VnyNayc0ije\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryxmY14VnyNayc0ije\r\nContent-Disposition: form-data; name=\"blocks\"\r\n\r\n[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"just need it for food till then\"}]}]}]\r\n------WebKitFormBoundaryxmY14VnyNayc0ije\r\nCont… (1389 chars)"
+    "------WebKitFormBoundaryxmY14VnyNayc0ije\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryxmY14VnyNayc0ije\r\nContent-Disposition: form-data; name=\"blocks\"\r\n\r\n[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"<messageText>\"}]}]}]\r\n------WebKitFormBoundaryxmY14VnyNayc0ije\r\nCont… (1389 chars)"
   }
 }
 ```
@@ -134,8 +134,8 @@ Answered:
   "draft": {
     "id": "Dr0CDXER4MFZ",
     "date_created": 1793689367,
-    "user_id": "U0C4L7RF7HD",
-    "team_id": "T0C4VCD06MR",
+    "user_id": "<userId:1>",
+    "team_id": "<teamId:1>",
     "last_updated_ts": "1793689367.887142",
     "last_updated_client": "Chrome",
     "blocks": [
@@ -148,7 +148,7 @@ Answered:
             "elements": [
               {
                 "type": "text",
-                "text": "just need it for food till then"
+                "text": "<messageText>"
               }
             ]
           }
@@ -163,9 +163,9 @@ Answered:
     "date_scheduled": 0,
     "destinations": [
       {
-        "channel_id": "D0C8VAE7REU",
+        "channel_id": "<channelId:1>",
         "user_ids": [
-          "U0A9JFXK21L"
+          "<userId:2>"
         ]
       }
     ]
@@ -174,7 +174,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, POST 0 /beacon/error (335 ms): 200, 373 ms
+**runs/inspect/20261103T065639_slackAccount**, POST 0 /beacon/error (335 ms): 200, 373 ms
 
 Sent:
 
@@ -185,7 +185,7 @@ Sent:
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
     "_x_csid": "Omg2iVUkYDE",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -193,7 +193,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryzLndsa02haxLICiB\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryzLndsa02haxLICiB\r\nContent-Disposition: form-data; name=\"blocks\"\r\n\r\n[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"nah they went into inferencesaver, the ai gateway\"}]}]}]\r\n------WebKitFormBoundaryzLnd… (1407 chars)"
+    "------WebKitFormBoundaryzLndsa02haxLICiB\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryzLndsa02haxLICiB\r\nContent-Disposition: form-data; name=\"blocks\"\r\n\r\n[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"<messageText>\"}]}]}]\r\n------WebKitFormBoundaryzLnd… (1407 chars)"
   }
 }
 ```
@@ -206,8 +206,8 @@ Answered:
   "draft": {
     "id": "Dr0CE6L4CUUT",
     "date_created": 1793689644,
-    "user_id": "U0C4L7RF7HD",
-    "team_id": "T0C4VCD06MR",
+    "user_id": "<userId:1>",
+    "team_id": "<teamId:1>",
     "last_updated_ts": "1793689644.928441",
     "last_updated_client": "Chrome",
     "blocks": [
@@ -220,7 +220,7 @@ Answered:
             "elements": [
               {
                 "type": "text",
-                "text": "nah they went into inferencesaver, the ai gateway"
+                "text": "<messageText>"
               }
             ]
           }
@@ -235,9 +235,9 @@ Answered:
     "date_scheduled": 0,
     "destinations": [
       {
-        "channel_id": "D0C8VAE7REU",
+        "channel_id": "<channelId:1>",
         "user_ids": [
-          "U0A9JFXK21L"
+          "<userId:2>"
         ]
       }
     ]

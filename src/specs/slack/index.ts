@@ -36,8 +36,8 @@ export const slack = {
     'REQ-SLACK-05': [
       { kind: 'symbol', file: TRANSPORT, name: 'new_session' },
       { kind: 'symbol', file: TRANSPORT, name: 'ws_connect' },
-      { kind: 'string', file: TRANSPORT, includes: 'chrome150' },
-      { kind: 'string', file: TRANSPORT, includes: 'Chrome/150.0.0.0' },
+      { kind: 'symbol', file: TRANSPORT, name: 'IMPERSONATE' },
+      { kind: 'symbol', file: TRANSPORT, name: 'USER_AGENT' },
       { kind: 'symbol', file: METADATA, name: 'DEFAULT_CLIENT_METADATA' },
       { kind: 'symbol', file: WS, name: 'default_ws_factory' },
       { kind: 'symbol', file: CHECK, name: 'touchpoints' },

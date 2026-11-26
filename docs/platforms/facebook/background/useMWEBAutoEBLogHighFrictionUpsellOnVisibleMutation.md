@@ -25,7 +25,7 @@ Seen 4 time(s) in 4 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/host/20261026T180628_61594285317994**, step 40: goto /messages/: 200, 344 ms
+**runs/host/20261026T180628_<userId:1>**, step 40: goto /messages/: 200, 344 ms
 
 Sent:
 
@@ -70,7 +70,7 @@ Logs that Messenger showed its PIN prompt for the encrypted chats (the "high fri
 
 ## What our machine does with it
 
-It is the request that confirms the PIN dialog is on the page: it marks the `messengerPinCreate` state from the network side, as the snapshot's heading does from the page side. Today nothing waits for it: the state is read from the snapshot, and only matt's PIN clears it (`log facebook messenger pin`, then `log inspect do pin --live`). The PIN flow recorded from the Create PIN screens is to use it as its first step's confirming request.
+It is the request that confirms the PIN dialog is on the page: it marks the `messengerPinCreate` state from the network side, as the snapshot's heading does from the page side. Today nothing waits for it: the state is read from the snapshot, and only the owner's PIN clears it (`log facebook messenger pin`, then `log inspect do pin --live`). The PIN flow recorded from the Create PIN screens is to use it as its first step's confirming request.
 
 ## What can go wrong
 

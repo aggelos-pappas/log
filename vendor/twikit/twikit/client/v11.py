@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from typing import TYPE_CHECKING
 
@@ -121,12 +122,14 @@ class V11Client:
             endpoint = Endpoint.UPLOAD_MEDIA
         return await self.base.request(method, endpoint, *args, **kwargs)
 
-    async def upload_media_init(self, media_type, total_bytes, media_category, is_long_video: bool):
+    async def upload_media_init(self, media_type, total_bytes, media_category, is_long_video: bool, video_duration_ms: int | None = None):
         params = {
             'command': 'INIT',
             'total_bytes': total_bytes,
             'media_type': media_type
         }
+        if video_duration_ms is not None:
+            params['video_duration_ms'] = video_duration_ms
         if media_category is not None:
             params['media_category'] = media_category
 
@@ -156,6 +159,33 @@ class V11Client:
             return await self.upload_media(
                 'POST',
                 is_long_video,
+                params=params,
+                headers=headers, multipart=multipart
+            )
+        finally:
+            multipart.close()
+
+    async def upload_media_append_multi(self, media_id, segment_index, chunk: bytes, max_segment_size: int):
+        params = {
+            'command': 'APPENDMULTI',
+            'media_id': media_id,
+            'segment_indexes': segment_index,
+            'max_segment_size': max_segment_size,
+            'media_md5': hashlib.md5(chunk).hexdigest(),
+        }
+        headers = dict(self.base._base_headers)
+        headers.pop('content-type', None)
+        multipart = CurlMime()
+        multipart.addpart(
+            name='media',
+            content_type='application/octet-stream',
+            filename='blob',
+            data=chunk,
+        )
+        try:
+            return await self.upload_media(
+                'POST',
+                True,
                 params=params,
                 headers=headers, multipart=multipart
             )

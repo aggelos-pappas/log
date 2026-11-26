@@ -6,7 +6,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { COMMANDS } from "../../cli/runner/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
-import { AGENTS_MD, AGENTS_URI, citedRules, COMMAND_RULES, createLogMcpServer, GUIDES_DIR, MAX_RESULT_CHARS, RULES_REVIEWED_THROUGH, SERVER_INSTRUCTIONS, TERMINAL_ONLY } from "./index.ts";
+import { isAppTool } from "../apps/index.ts";
+import { AGENTS_MD, AGENTS_URI, citedRules, COMMAND_RULES, createLogMcpServer, DEVELOPER_RULES, GUIDES_DIR, MAX_RESULT_CHARS, RULES_REVIEWED_THROUGH, SERVER_INSTRUCTIONS } from "./index.ts";
+import { LOADS_EVERY_TOOL_MS, SCANS_REPO_MS } from "../../../scripts/tests/timeouts.ts";
 
 const agents = readFileSync(AGENTS_MD, "utf8");
 const rules = [...agents.matchAll(/^(\d+)\. 20\d\d-\d\d-\d\d/gm)].map((m) => Number(m[1]));
@@ -30,7 +32,7 @@ describe("AGENTS.md in the MCP server", () => {
   });
 
   test("every tool has its own AGENTS.md rules (a new command can't ship without them)", () => {
-    const unmapped = COMMANDS.filter((c) => !(c.name in TERMINAL_ONLY)).map(commandKey).filter((key) => !(key in COMMAND_RULES));
+    const unmapped = COMMANDS.filter((c) => !c.terminalOnly).map(commandKey).filter((key) => !(key in COMMAND_RULES));
     expect(unmapped).toEqual([]);
   });
 
@@ -49,15 +51,20 @@ describe("AGENTS.md in the MCP server", () => {
   test("every tool's description ends with its rules and points back to AGENTS.md", async () => {
     const client = await connected();
     const { tools } = await client.listTools();
-    for (const tool of tools.filter((t) => t.name !== "getGuide")) expect((tool.description ?? "").split("\n").at(-1)).toMatch(/^AGENTS\.md \(log:\/\/agents\): rules [\d, ]+\. When matt says to do something, do it completely \(rule 30\)\.$/);
-    expect(tools.find((t) => t.name === "join")?.description).toContain("rules 8, 35, 25, 26, 29, 175, 2, 73, 30, 38, 39, 40, 41");
+    for (const tool of tools.filter((t) => t.name !== "getGuide" && !isAppTool(t.name))) expect((tool.description ?? "").split("\n").at(-1)).toMatch(/^AGENTS\.md \(log:\/\/agents\): rules [\d, ]+\.$/);
+    for (const tool of tools.filter((t) => t.name !== "getGuide" && !isAppTool(t.name))) {
+      const cited = ((tool.description ?? "").split("\n").at(-1) ?? "").replace(/^.*rules /, "").replace(/\.$/, "").split(", ");
+      expect(new Set(cited).size).toBe(cited.length);
+      if (!["newPlatform", "newPlatformLive"].includes(tool.name)) expect(cited.filter((n) => DEVELOPER_RULES.has(Number(n)))).toEqual([]);
+    }
+    expect(tools.find((t) => t.name === "facebookJoinGroup")?.description).toContain("rules 8, 35, 25, 26, 29, 73, 30, 38, 39, 40, 41.");
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("AGENTS.md itself is the resource log://agents, read from the file", async () => {
     const client = await connected();
     const { resources } = await client.listResources();
-    expect(resources.map((r) => r.uri)).toEqual([AGENTS_URI]);
+    expect(resources.map((r) => r.uri)).toEqual([AGENTS_URI, "ui://log/browserView"]);
     const read = await client.readResource({ uri: AGENTS_URI });
     expect((read.contents[0] as { text: string }).text).toBe(agents);
     await client.close();
@@ -70,35 +77,35 @@ describe("watching a long call live over MCP (rule 26)", () => {
     for (const name of ["claude-code", "codex-mcp-client"]) {
       const client = await connected(name);
       const { tools } = await client.listTools();
-      for (const tool of ["inspectStart", "inspectDo", "join", "warmup", "publish", "capture", "flowProfileSetupLive"]) expect(tools.find((t) => t.name === tool)?.description).toContain("start a Monitor on `tail -f ~/.logCli/mcp/<day>.log`");
-      expect(tools.find((t) => t.name === "accounts")?.description).not.toContain("Monitor");
+      for (const tool of ["inspectStart", "inspectDo", "facebookJoinGroup", "warmup", "facebookPublish", "captureDocs", "facebookFlowProfileSetupLive"]) expect(tools.find((t) => t.name === tool)?.description).toContain("start a Monitor on `tail -f ~/.logCli/mcp/<day>.log`");
+      expect(tools.find((t) => t.name === "facebookAccounts")?.description).not.toContain("Monitor");
       await client.close();
     }
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
-  test("for a client without a shell (a claude.ai connector, Duet), long tools say to read each result's progress and browsers instead", async () => {
+  test("for a client without a shell (a claude.ai connector), long tools say to read each result's progress and browsers instead", async () => {
     expect(SERVER_INSTRUCTIONS).toContain("A client without a shell");
     const client = await connected("claude-ai");
     const { tools } = await client.listTools();
-    for (const tool of ["inspectStart", "publish", "flowProfileSetupLive"]) {
+    for (const tool of ["inspectStart", "facebookPublish", "facebookFlowProfileSetupLive"]) {
       const description = tools.find((t) => t.name === tool)!.description!;
       expect(description).not.toContain("Monitor");
       expect(description).toContain("`progress`");
-      expect(description).toContain("`browsers`, `next`, `needsMatt`");
+      expect(description).toContain("`browsers`, `next`, `needsOwner`");
     }
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("like Paper's MCP: short instructions that say to load the core guide first, never cut by the client", () => {
     expect(SERVER_INSTRUCTIONS.length).toBeLessThan(2000);
-    expect(SERVER_INSTRUCTIONS).toContain('You MUST load the full guide before other log tools: getGuide({ topic: "logMcpInstructions" })');
+    expect(SERVER_INSTRUCTIONS).toContain('Load the core guide once per session before other log tools: getGuide({ topic: "logMcpInstructions" })');
   });
 
   test("every tool names its guide just before its rules, and getGuide serves that guide from docs/guides", async () => {
     const client = await connected();
     const { tools } = await client.listTools();
     expect(tools[0].name).toBe("getGuide");
-    for (const tool of tools.filter((t) => t.name !== "getGuide")) {
+    for (const tool of tools.filter((t) => t.name !== "getGuide" && !isAppTool(t.name))) {
       const topic = /getGuide\(\{ topic: "(\w+)" \}\)/.exec((tool.description ?? "").split("\n").at(-2) ?? "")?.[1];
       expect(topic).toBeDefined();
       expect(existsSync(join(GUIDES_DIR, `${topic}.md`))).toBe(true);
@@ -110,7 +117,7 @@ describe("watching a long call live over MCP (rule 26)", () => {
     const missing = await client.callTool({ name: "getGuide", arguments: { topic: "nope" } });
     expect(missing.isError).toBe(true);
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("every tool declares Claude Code's result limit (anthropic/maxResultSizeChars), and every guide fits under it, so a guide or a big result arrives whole instead of as a file path", async () => {
     const client = await connected();
@@ -119,12 +126,12 @@ describe("watching a long call live over MCP (rule 26)", () => {
     expect(MAX_RESULT_CHARS).toBeLessThanOrEqual(500_000);
     for (const file of readdirSync(GUIDES_DIR).filter((f) => f.endsWith(".md"))) expect(readFileSync(join(GUIDES_DIR, file), "utf8").length).toBeLessThan(MAX_RESULT_CHARS);
     await client.close();
-  });
+  }, SCANS_REPO_MS);
 
   test("no tool description carries the engine's internals: they give the agent nothing to act on", async () => {
     const client = await connected();
     const { tools } = await client.listTools();
     for (const tool of tools) expect(tool.description ?? "").not.toContain("Engine: the direct-API engine");
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 });

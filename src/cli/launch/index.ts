@@ -4,9 +4,10 @@ import { dirname } from "node:path";
 import { cancel, intro, isCancel, multiselect, outro, password, select, text } from "@clack/prompts";
 import { buildBrowserCommand } from "../../auth/session/helpers/urls.ts";
 import { DEFAULT_LOCAL_API_URL } from "../../browser/adsPower/types.ts";
+import { driverOrNull } from "../../browser/driver/index.ts";
 import { userEnvPath } from "../../config/userEnv/index.ts";
-import { LISTING_STATUSES, listListingsWhere } from "../../marketplace/agencyListing/index.ts";
-import { checkRunnable, listFacebookAccounts, toTwentyEnum } from "../../marketplace/socialAccount/index.ts";
+import { LISTING_STATUSES, listListingsWhere } from "../../facebook/marketplace/agencyListing/index.ts";
+import { checkRunnable, listFacebookAccounts, toTwentyEnum } from "../../platformKit/socialAccount/index.ts";
 import { accountsCommand } from "../account/index.ts";
 import { listGroups } from "../../facebook/group/join/index.ts";
 import type { Group } from "../../facebook/group/join/index.ts";
@@ -21,6 +22,7 @@ import type { Platform } from "../runner/helpers/platforms.ts";
 import type { Command, CommandContext, CommandResult } from "../runner/types.ts";
 import { installOpenCode, opencodeConfigDir } from "../../agentHooks/opencode/index.ts";
 import type { HarnessInstall } from "../../agentHooks/opencode/index.ts";
+import { hermesHome, installHermes } from "../../agentHooks/hermes/index.ts";
 import { ADSPOWER_SETUP, agentSetupText, browserSignInSteps, needsBrowser, parseLaunchArgs, platformOfTwenty, platformOption, setEnvValue, SETUP_EXTENSIONS, SETUP_HARNESSES, setupSummary, shouldPrompt, signInRouteOf, START_ACTIONS, START_PLATFORMS, twentyReady } from "./helpers/index.ts";
 import type { LaunchTTY, SetupExtension, SetupHarness, SetupOutcome } from "./helpers/index.ts";
 
@@ -41,6 +43,8 @@ interface LaunchPrompts {
   multiselect(option: Parameters<typeof multiselect>[0]): Promise<unknown>;
   password(option: Parameters<typeof password>[0]): Promise<unknown>;
 }
+
+const harnessHomes: Partial<Record<SetupHarness["id"], () => string>> = { opencode: opencodeConfigDir, hermes: hermesHome };
 
 export const launchDeps: {
   prompts: LaunchPrompts;
@@ -84,8 +88,8 @@ export const launchDeps: {
       return false;
     }
   },
-  harnesses: () => (existsSync(opencodeConfigDir()) ? SETUP_HARNESSES : []),
-  installHarness: () => installOpenCode(),
+  harnesses: () => SETUP_HARNESSES.filter((harness) => existsSync(harnessHomes[harness.id]?.() ?? "")),
+  installHarness: (harness) => (harness.id === "hermes" ? installHermes() : installOpenCode()),
   envFile: () => userEnvPath(),
   readEnv: (file) => (existsSync(file) ? readFileSync(file, "utf8") : ""),
   writeEnv: (file, text) => {
@@ -126,7 +130,7 @@ async function ask(message: string, placeholder?: string, optional = false): Pro
   return value.trim();
 }
 
-interface PickedAccount {
+export interface PickedAccount {
   platform: Platform;
   accountName: string;
   hasProfile: boolean;
@@ -138,7 +142,7 @@ async function pickAccount(context: CommandContext, message: string, keep: (acco
     .flatMap((row): PickedAccount[] => {
       const platform = platformOfTwenty(row.platform);
       const accountName = String(row.accountName || row.name || "");
-      return platform && accountName ? [{ platform, accountName, hasProfile: Boolean(row.adsPowerProfileId) }] : [];
+      return platform && accountName ? [{ platform, accountName, hasProfile: driverOrNull({ browserDriver: typeof row.browserDriver === "string" ? row.browserDriver : null, adsPowerProfileId: typeof row.adsPowerProfileId === "string" ? row.adsPowerProfileId : null }, process.env) !== "adsPower" || Boolean(row.adsPowerProfileId) }] : [];
     })
     .filter(keep);
   if (!accounts.length) return "no account yet: pick Add an account first.";
@@ -146,7 +150,7 @@ async function pickAccount(context: CommandContext, message: string, keep: (acco
   return picked === null ? null : accounts[Number(picked)];
 }
 
-async function signIn(context: CommandContext, account: PickedAccount): Promise<{ code: number }> {
+export async function signInAccount(context: CommandContext, account: PickedAccount): Promise<{ code: number }> {
   const route = signInRouteOf(account.platform);
   if (route.kind === "cookies") {
     context.out(`Sign in ${account.accountName}: ${route.hint}. The prompt hides what you paste.`);
@@ -178,7 +182,7 @@ async function addAccount(context: CommandContext, preset?: Platform): Promise<{
   const name = await ask(`The account's name on ${PLATFORM_LABELS[platform]}`, placeholder);
   if (name === null) return { code: 1 };
   const accountName = name.replace(/^@/, "");
-  if (signInRouteOf(platform).kind === "cookies") return signIn(context, { platform, accountName, hasProfile: false });
+  if (signInRouteOf(platform).kind === "cookies") return signInAccount(context, { platform, accountName, hasProfile: false });
   const argv = ["add", "--platform", platform, "--account", accountName];
   const profile = await ask("Its AdsPower browser profile id (leave empty if it has none yet)", undefined, true);
   if (profile === null) return { code: 1 };
@@ -194,7 +198,7 @@ async function addAccount(context: CommandContext, preset?: Platform): Promise<{
   }
   const added = await delegate(await commandFor("localAccount", "any"), context, argv);
   if (added.code !== 0) return added;
-  return signIn(context, { platform, accountName, hasProfile: Boolean(profile) });
+  return signInAccount(context, { platform, accountName, hasProfile: driverOrNull({ browserDriver: null, adsPowerProfileId: profile || null }, process.env) !== "adsPower" || Boolean(profile) });
 }
 
 async function pickMany(options: Parameters<typeof multiselect>[0]): Promise<string[] | null> {
@@ -277,7 +281,8 @@ async function setUpAdsPower(context: CommandContext): Promise<SetupOutcome | nu
 async function setUpHarness(harness: SetupHarness): Promise<SetupOutcome> {
   try {
     const got = launchDeps.installHarness(harness);
-    const detail = got.changed ? `wired: ${got.configPath}` : `already wired: ${got.configPath}`;
+    const desktop = got.desktopPlugin ? `; Desktop plugin ${got.desktopPlugin.changed ? "copied to" : "already at"} ${got.desktopPlugin.path}` : "";
+    const detail = `${got.changed ? `wired: ${got.configPath}` : `already wired: ${got.configPath}`}${desktop}`;
     return { label: harness.label, ok: true, detail: `${detail}, hooks in ${got.pluginDir}` };
   } catch (error) {
     return { label: harness.label, ok: false, detail: `couldn't wire it: ${String(error).slice(0, 200)}` };
@@ -333,14 +338,22 @@ async function runStart(context: CommandContext, action: string): Promise<Comman
     context.out(agentSetupText());
     return { code: 0 };
   }
+  if (action === "console") {
+    const { runConsoleMenu } = await import("../console/index.ts");
+    return runConsoleMenu(context);
+  }
   if (action === "signIn") {
     const account = await pickAccount(context, "Which account to sign in?", () => true);
     if (typeof account === "string") return { code: 1, stderr: `log launch: ${account}` };
-    return account === null ? { code: 1 } : signIn(context, account);
+    return account === null ? { code: 1 } : signInAccount(context, account);
   }
   const account = await pickAccount(context, "Which account to check?", (a) => a.platform !== "facebook");
   if (typeof account === "string") return { code: 1, stderr: `log launch: ${account} Facebook accounts are checked when they connect.` };
   if (account === null) return { code: 1 };
+  return checkAccountSession(context, account);
+}
+
+export async function checkAccountSession(context: CommandContext, account: Pick<PickedAccount, "platform" | "accountName">): Promise<{ code: number }> {
   return delegate(await commandFor("session", account.platform), context, ["check", "--account", account.accountName]);
 }
 
@@ -391,6 +404,7 @@ export async function runLaunch(context: CommandContext, argv: string[]): Promis
         { value: "signIn", label: "Sign in an account you added", hint: "log <platform> cookies save" },
         { value: "check", label: "Check an account is still signed in", hint: "log <platform> session check" },
         { value: "agent", label: "Connect your agent (Claude Code, Codex)", hint: "logMcp" },
+        { value: "console", label: "Console: this machine's status, accounts, usage, events and settings", hint: "log console" },
         ...(launchDeps.twentyReady() ? [{ value: "marketplace", label: "Facebook Marketplace (listings in Twenty)", hint: "log facebook listings" }] : []),
       ],
     });
@@ -581,8 +595,9 @@ export const launchCommand: Command = {
   usage: LAUNCH_USAGE,
   platform: "any",
   name: "launch",
+  terminalOnly: "prompts in a terminal (Clack). Call the commands it wraps directly.",
   effect: "write",
-  summary: "Start here: a guided menu to set log up (platforms, sign-ins, the account's browser and extensions), add an account, sign it in, check it and connect your agent (and Facebook Marketplace when Twenty is set up)",
+  summary: "Start here: a guided menu to set log up (platforms, sign-ins, the account's browser and extensions), add an account, sign it in, check it and connect your agent (and the listing tools when Twenty is set up)",
   args: "[--setup] [--json]",
   run: runLaunch,
 };

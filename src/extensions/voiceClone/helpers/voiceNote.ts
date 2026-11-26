@@ -7,9 +7,9 @@ import type { ProviderClone, SpeakFormat, SpokenReading, SpokenWord, VoiceNote, 
 import { AUDIO_TOOLS, convertFor, discordWaveform, encodeTo, instagramLevels, samplesOf } from './audio'
 import type { AudioTools } from './audio'
 import { voiceSettingsOf } from './provider'
-import { processLikeMatt, seeded } from './realism'
+import { processLikeOwner, seeded } from './realism'
 import type { Done } from './realism'
-import { mattsRecordings } from './recordings'
+import { ownersRecordings } from './recordings'
 import { readSpoken, speakableText, unknownAcronyms } from './spoken'
 import { readClone, stampOf, voiceNotesDir } from './store'
 
@@ -35,7 +35,7 @@ export async function listenTo(path: string): Promise<Listened> {
 }
 
 export const voiceSteps: VoiceSteps = {
-  process: (from, to, seed) => processLikeMatt(from, to, mattsRecordings().map((r) => r.path), seed),
+  process: (from, to, seed) => processLikeOwner(from, to, ownersRecordings().map((r) => r.path), seed),
   listen: listenTo,
   encode: (from, to) => encodeTo(from, to),
 }
@@ -52,7 +52,7 @@ export function textOnlyProblem(text: string): string | null {
   if (!said) return 'the voice note needs --text: the words to say'
   const spoken = said.replace(/\[[^\]]*\]/g, '').replace(/\s+/g, ' ').trim()
   if (spoken.length > MAX_SPEAK_CHARACTERS) return `the voice note says ${spoken.length} characters; keep it under ${MAX_SPEAK_CHARACTERS}`
-  if (AUDIO_SUFFIX.test(said) || existsSync(said)) return 'a voice note takes text only, never an audio file: it is always made from the words, in matt\'s cloned voice'
+  if (AUDIO_SUFFIX.test(said) || existsSync(said)) return 'a voice note takes text only, never an audio file: it is always made from the words, in the owner\'s cloned voice'
   return null
 }
 
@@ -61,11 +61,11 @@ export function insideVoiceNotes(path: string, root = voiceNotesDir()): boolean 
 }
 
 export async function speakToFile(client: VoiceProviderClient, text: string, format: SpeakFormat, model: string | null = null, clone: ProviderClone | null = readClone(client.provider), now: Date = new Date(), steps: VoiceSteps = voiceSteps, language?: string): Promise<Spoken> {
-  if (!clone) return { ok: false, code: 'voiceCloneMissing', detail: `there is no clone of matt's voice on ${client.provider} yet: log clone voice --provider ${client.provider} --apply makes it once from his own voice notes` }
+  if (!clone) return { ok: false, code: 'voiceCloneMissing', detail: `there is no clone of the owner's voice on ${client.provider} yet: log clone voice --provider ${client.provider} --apply makes it once from his own voice notes` }
   const problem = textOnlyProblem(text)
   if (problem) return { ok: false, code: 'voiceNoteInvalid', detail: problem }
   const unknown = unknownAcronyms(text)
-  if (unknown.length) return { ok: false, code: 'pronunciationUnknown', detail: `${unknown.map((u) => `"${u}"`).join(', ')} ${unknown.length > 1 ? 'are' : 'is'} not in the spoken lexicon (SPOKEN_LEXICON), so whether matt says ${unknown.length > 1 ? 'them' : 'it'} as a word or as letters isn't known: write ${unknown.length > 1 ? 'them' : 'it'} out the way it is said, or add ${unknown.length > 1 ? 'them' : 'it'} to the lexicon` }
+  if (unknown.length) return { ok: false, code: 'pronunciationUnknown', detail: `${unknown.map((u) => `"${u}"`).join(', ')} ${unknown.length > 1 ? 'are' : 'is'} not in the spoken lexicon (SPOKEN_LEXICON), so whether the owner says ${unknown.length > 1 ? 'them' : 'it'} as a word or as letters isn't known: write ${unknown.length > 1 ? 'them' : 'it'} out the way it is said, or add ${unknown.length > 1 ? 'them' : 'it'} to the lexicon` }
   const used = model ?? clone.model
   const answer = await client.speak({ text: speakableText(text.trim()), voiceId: clone.voiceId, model: used, format: 'wav', ...(language ?? clone.language ? { language: language ?? clone.language } : {}), accent: clone.accent ?? voiceSettingsOf().accent, speed: paceOf(voiceSettingsOf().speed, text.trim()) })
   if (!answer.ok || !answer.data) return { ok: false, code: answer.code === 'voiceKeyMissing' ? 'voiceKeyMissing' : 'voiceProviderRefused', detail: `${client.provider} answered ${answer.status || 'nothing'}${answer.code ? ` (${answer.code})` : ''}${answer.error ? `: ${answer.error}` : ''} to text to speech with ${used}` }

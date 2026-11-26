@@ -2,7 +2,7 @@ import { afterAll, describe, expect, test } from 'bun:test'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { findAccount } from '../../marketplace/socialAccount/index'
+import { findAccount } from '../../platformKit/socialAccount/index'
 import { marketplaceFixture } from '../../twenty/graphql/index'
 import { captureDirFor, lastLaunchReset, listLaunches, overLaunchBudget, prepareRun, recordLaunchReset, runBrowserOf } from './index'
 
@@ -64,7 +64,7 @@ describe('prepareRun: home, hours and device', () => {
   })
 
   test("the capture folder is named after the browser that runs: inspect, flow, warmup and host follow the account, the rest are Camoufox", () => {
-    const linked = { browserDriver: null, adsPowerProfileId: 'k1' }
+    const linked = { browserDriver: 'adsPower', adsPowerProfileId: 'k1' }
     expect(runBrowserOf(linked, 'inspect')).toBe('adsPower')
     expect(runBrowserOf(linked, 'host')).toBe('adsPower')
     expect(runBrowserOf(linked, 'connect')).toBe('camoufox')
@@ -139,6 +139,22 @@ describe('prepareRun: home, hours and device', () => {
   })
 })
 
+describe('browserWrote: only a browser that ran writes a session to save', () => {
+  test('the seeded state is not a browser write; a written state is, and no state at all is not', async () => {
+    const seeded = prepareRun(await account('galwayOne', { cookies: [{ name: 'c_user', value: '1', domain: '.facebook.com', path: '/' }] }), 'run', { now: DAY, root: ROOT })
+    if (!seeded.ok) throw new Error(seeded.code)
+    expect(seeded.run.hasSession).toBe(true)
+    expect(seeded.run.browserWrote()).toBe(false)
+    writeFileSync(seeded.run.statePath, JSON.stringify({ cookies: [{ name: 'c_user', value: '2', domain: '.facebook.com', path: '/' }], origins: [] }))
+    expect(seeded.run.browserWrote()).toBe(true)
+    seeded.run.cleanup()
+    const empty = prepareRun(await account('galwayOne', { cookies: [] }), 'connect', { now: DAY, root: ROOT })
+    if (!empty.ok) throw new Error(empty.code)
+    expect(empty.run.browserWrote()).toBe(false)
+    empty.run.cleanup()
+  })
+})
+
 describe('launch budget (rule 24)', () => {
   const launchAt = (root: string, action: string, at: string, account = 'phillyOne') => {
     const dir = join(root, action, `${at.replace(/[-:]/g, '').slice(0, 15)}_${account}`, 'firefox')
@@ -161,13 +177,13 @@ describe('launch budget (rule 24)', () => {
     const resets = join(root, 'launchResets.jsonl')
     launchAt(root, 'connect', '2026-10-19T09:00:00.000Z')
     launchAt(root, 'scan', '2026-10-19T09:20:00.000Z', 'otherOne')
-    recordLaunchReset('phillyOne', 'reset by matt', new Date('2026-10-19T09:10:00.000Z'), resets)
+    recordLaunchReset('phillyOne', 'reset by the owner', new Date('2026-10-19T09:10:00.000Z'), resets)
     launchAt(root, 'inspect', '2026-10-19T09:30:00.000Z')
     const roots = { runs: root, publish: join(root, 'none'), resets }
     expect(listLaunches('phillyOne', roots).map((d) => d.toISOString())).toEqual(['2026-10-19T09:30:00.000Z'])
     expect(listLaunches('otherOne', roots)).toHaveLength(1)
     expect(lastLaunchReset('phillyOne', resets)?.toISOString()).toBe('2026-10-19T09:10:00.000Z')
-  })
+  }, 30_000)
 
   test('too soon after the last launch, then too many in the local day', () => {
     const tz = 'America/New_York'

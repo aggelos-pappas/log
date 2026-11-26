@@ -10,7 +10,7 @@
 | Path | `/api/graphql` |
 | Sends | `device_id_for_iris_subscription`, `folder`, `__relay_internal__pv__IGDMetaAIThreadingEnabledGKrelayprovider`, `__relay_internal__pv__IGDIsProfessionalAccountGKrelayprovider`, `__relay_internal__pv__IGDPinnedThreadsRenderEnabledGKrelayprovider`, `__relay_internal__pv__IGDMaxUnreadMessagesCountrelayprovider`, `__relay_internal__pv__IGDThreadListActionsEnabledGKrelayprovider`, `newer_than_timestamp_ms`, `min_uq_seq_id`, `thread_fbid`, `__relay_internal__pv__IGDEnableOffMsysChatThemesQErelayprovider`, `__relay_internal__pv__IGDInitialMessagePageCountrelayprovider`, `data`, `scale`, `surface_nux_ids`, `trigger_context`, `_request_data`, `payload`, `metadata`, `attachment_fbid`, `thread_id`, `offline_threading_id`, `reply_to_message_id`, `forwarded_from_thread_id`, `is_forwarded_from_own_message`, `input`, `render_succeeded`, `encrypted_context`, `failure_reason`, `device_id`, `captcha_response`, `ig_thread_igid`, `recipient_igids`, `replied_to_client_context`, `replied_to_item_id`, `sampled`, `text`, `mentions`, `mentioned_user_ids`, `commands`, `send_attribution` |
 | Reads | `data.xdt_get_igd_automatic_previews_disabled`, `extensions.server_metadata`, `extensions.is_final`, `data.polling_intervals__`, `data.xfb_ix_ig_account_status_web`, `data.xfb_feature_limits`, `extensions.live_query`, `data.get_slide_mailbox_for_iris_subscription`, `data.xdt_api__v1__get__presence__disabled`, `data.xfb_viewer`, `data.viewer`, `data.get_slide_thread_nullable` and 17 more |
-| Called from | `runs/inspect/20261103T185330_mattinferencesaver/script2.js:87 anonymous`, `runs/inspect/20261103T185330_mattinferencesaver/script4.js:1309 anonymous`, `runs/inspect/20261103T185330_mattinferencesaver/script4.js:371 m` |
+| Called from | `runs/inspect/20261103T185330_instagramAccount/script2.js:87 anonymous`, `runs/inspect/20261103T185330_instagramAccount/script4.js:1309 anonymous`, `runs/inspect/20261103T185330_instagramAccount/script4.js:371 m` |
 | rea | `ev_27eceaba6115086f4af94c2fc0c0d7947c1495c9588392e6a8d948ff7f80c47b` |
 
 Seen 113 time(s) in 2 run(s).
@@ -33,7 +33,7 @@ Seen 113 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T185330_mattinferencesaver**, step 1: goto /direct/t/<id>/: 200, 199 ms
+**runs/inspect/20261103T185330_instagramAccount**, step 1: goto /direct/t/<id>/: 200, 199 ms
 
 Sent:
 
@@ -67,7 +67,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T185330_mattinferencesaver**, upload: paulie.jpg handed to the file chooser: 200, 284 ms
+**runs/inspect/20261103T185330_instagramAccount**, upload: paulie.jpg handed to the file chooser: 200, 284 ms
 
 Sent:
 
@@ -78,7 +78,7 @@ Sent:
   "fb_api_req_friendly_name": "IGDInboxInfoOffMsysQuery",
   "server_timestamps": "true",
   "variables": {
-    "thread_fbid": "1659203035864604",
+    "thread_fbid": "<id:1>",
     "__relay_internal__pv__IGDEnableOffMsysChatThemesQErelayprovider": false
   },
   "doc_id": "28792367400422466"
@@ -93,30 +93,30 @@ Answered:
     "get_slide_thread_nullable": {
       "as_ig_direct_thread": {
         "event_chat_info": null,
-        "id": "1659203035864604",
+        "id": "<id:1>",
         "isGroup": false,
-        "viewer_id": "23597386648",
+        "viewer_id": "<userId:1>",
         "users": [
           {
             "id": "65125809236",
-            "fbid_v2": "17841465077090726",
-            "interop_messaging_user_fbid": "17844200922169237",
+            "fbid_v2": "<id:2>",
+            "interop_messaging_user_fbid": "<id:3>",
             "friendship_status": {
               "blocking": false
             },
-            "username": "abelqx",
+            "username": "<name:1>",
             "profile_pic_url": "https://instagram.fdad3-6.fna.fbcdn.net/v/t51.82787-19/818172062_17969040024169237_3154656155475460693_n.jpg (577 chars)",
             "ai_agent_type": null,
-            "fullName": "abel",
+            "fullName": "<name:2>",
             "profilePicUrl": "https://instagram.fdad3-6.fna.fbcdn.net/v/t51.82787-19/818172062_17969040024169237_3154656155475460693_n.jpg (577 chars)"
           }
         ],
         "thread_subtype": "IG_BUSINESS_ACCOUNT_ONE_TO_ONE",
         "ig_thread_capabilities": {
-          "capabilities_0": "2265317209872843830",
+          "capabilities_0": "<id:4>",
           "capabilities_1": "84936834"
         },
-        "thread_fbid": "1659203035864604",
+        "thread_fbid": "<id:1>",
         "is_muted": false,
         "is_group": false,
         "mute_until": null,
@@ -125,17 +125,17 @@ Answered:
         "adminUserIds": [],
         "viewer": {
           "id": "23597386648",
-          "interop_messaging_user_fbid": "18117619519786649",
-          "fullName": "Matthew Don",
-          "username": "matthew164962",
-          "fbid_v2": "17841423599449673",
+          "interop_messaging_user_fbid": "<id:5>",
+          "fullName": "<name:3>",
+          "username": "<name:4>",
+          "fbid_v2": "<id:6>",
           "profilePicUrl": "https://instagram.fdad3-6.fna.fbcdn.net/v/t51.82787-19/818743097_18117619684786649_8701037773198366673_n.jpg (579 chars)",
           "ai_agent_type": null,
           "friendship_status": null
         },
         "nicknames": []
       },
-      "id": "1659203035864604"
+      "id": "<id:1>"
     }
   },
   "extensions": {
@@ -148,7 +148,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T185330_mattinferencesaver**, step 4: click e783: 200, 184 ms
+**runs/inspect/20261103T185330_instagramAccount**, step 4: click e783: 200, 184 ms
 
 Sent:
 
@@ -165,7 +165,7 @@ Sent:
     },
     "data": {
       "item_id": "",
-      "message_id": "mid.$7523457575324722502"
+      "message_id": "mid.$<id:7>"
     }
   },
   "doc_id": "27399783383056109",
@@ -182,7 +182,7 @@ Answered:
   "data": {
     "xig_direct_item_seen_mutation_with_slide_messaging_response": {
       "__typename": "XFBSlideReadReceipt",
-      "participant_eimu_id": "18117619519786649",
+      "participant_eimu_id": "<id:5>",
       "watermark_timestamp_ms": "1793732065239"
     }
   },

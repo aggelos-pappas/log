@@ -19,9 +19,10 @@ from pathlib import Path as _Path
 
 _sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
 from login import autoLogin
-from human import scrollMotion
+from human import myuriInput, scrollMotion
 from browser import proxyGate
 from browser import controlMatch
+from browser.browserViewer import BrowserViewer
 from location.placeName import pick_suggestion, place_problem
 from human.humanMouse import HumanMouse
 from errors.errorCodes import failure
@@ -47,6 +48,51 @@ def slug(text: str) -> str:
 
 
 FRIENDLY_NAME = re.compile(r'(?:^|&)fb_api_req_friendly_name=([^&]+)|name="fb_api_req_friendly_name"\r?\n\r?\n([^\r\n]+)')
+
+
+PATH_JS = """(el) => {
+  const parts = [];
+  for (let node = el; node && node.nodeType === 1 && node !== document.documentElement; node = node.parentElement) {
+    const parent = node.parentElement;
+    const index = parent ? Array.prototype.indexOf.call(parent.children, node) + 1 : 1;
+    parts.unshift(`${node.tagName.toLowerCase()}:nth-child(${index})`);
+  }
+  return `html > ${parts.join(' > ')}`;
+}"""
+
+ROW_MENU_BUTTON_JS = """(link) => {
+  const pathOf = """ + PATH_JS + """;
+  const unnamed = (b) => !(b.getAttribute('aria-label') || '').trim() && !(b.innerText || '').trim();
+  const shown = (b) => { const r = b.getBoundingClientRect(); const s = getComputedStyle(b); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; };
+  let row = link.parentElement;
+  for (let depth = 0; row && depth < 12; depth++, row = row.parentElement) {
+    if (row.querySelectorAll('a[href]').length > 1 && depth > 0) {
+      const links = Array.from(row.querySelectorAll('a[href]')).filter((a) => a !== link && (a.innerText || '').trim());
+      if (links.length) return null;
+    }
+    const buttons = Array.from(row.querySelectorAll('button, [role=button]')).filter((b) => !b.contains(link) && unnamed(b) && shown(b));
+    if (buttons.length) return pathOf(buttons[buttons.length - 1]);
+  }
+  return null;
+}"""
+
+MENU_ITEM_JS = """(name) => {
+  const pathOf = """ + PATH_JS + """;
+  const norm = (s) => (s || '').replace(/\\s+/g, ' ').trim().toLowerCase();
+  const want = norm(name);
+  const found = [];
+  for (const box of document.querySelectorAll('[role=dialog], [role=menu], [role=listbox], [role=tooltip]')) {
+    for (const el of box.querySelectorAll('*')) {
+      if (norm(el.innerText) !== want) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) continue;
+      if (getComputedStyle(el).cursor !== 'pointer' && el.getAttribute('role') !== 'menuitem') continue;
+      found.push(el);
+    }
+  }
+  const outer = found.filter((el) => !found.some((other) => other !== el && other.contains(el)));
+  return outer.length === 1 ? pathOf(outer[0]) : null;
+}"""
 
 
 def request_names(entries: list[dict[str, Any]]) -> set[str]:
@@ -254,6 +300,8 @@ class Inspector:
         self.opts: dict[str, Any] = {}
         self.page: Any = None
         self.context: Any = None
+        self.controlLock = asyncio.Lock()
+        self.ownerInputAt = 0.0
 
     async def step(self, action: str, label: str, act: Any, expect: str | None = None, expect_ms: int = 30_000) -> dict[str, Any]:
         self.index += 1
@@ -303,14 +351,14 @@ class Inspector:
             self.extra["openedTab"] = self.popup.url.split("?", 1)[0]
             log(f"  opened a tab: {self.extra['openedTab']}")
         landed_ms = round((time.monotonic() - started) * 1000)
-        count, quiet_since = self.recorder.seen(), time.monotonic()
+        count, quiet_since = self.recorder.work(), time.monotonic()
         limit_ms = max(settle_max_ms, expect_ms) if expect and not error else (settle_max_ms if quiet_ms else 0)
         expect_seen = False
         while (time.monotonic() - settle_start) * 1000 < limit_ms:
             await asyncio.sleep(0.25)
             if expect and not expect_seen:
                 expect_seen = expect in request_names(self.recorder.entries)
-            now_count = self.recorder.seen()
+            now_count = self.recorder.work()
             if now_count != count:
                 count, quiet_since = now_count, time.monotonic()
             elif (time.monotonic() - quiet_since) * 1000 >= quiet_ms and (not expect or expect_seen or error):
@@ -404,7 +452,7 @@ class Inspector:
         if not answer:
             raise RuntimeError("2Captcha returned an empty answer")
         await field.click()
-        await self.page.keyboard.type(answer, delay=90)
+        await myuriInput.type_text(self.page, answer, secret=True, log=log)
         await field.press("Enter")
         await asyncio.sleep(3)
         button = self.page.get_by_role("button", name=re.compile(r"^(continue|submit)$", re.I))
@@ -426,10 +474,10 @@ class Inspector:
         if email_field is not None and self.secrets.get("email"):
             await self.mouse.click(email_field, circle=False)
             await email_field.fill("")
-            await email_field.press_sequentially(str(self.secrets["email"]), delay=90)
+            await myuriInput.type_text(self.page, str(self.secrets["email"]), secret=True)
             log("  signIn: email typed")
         await self.mouse.click(pass_field, circle=False)
-        await pass_field.press_sequentially(str(password), delay=90)
+        await myuriInput.type_text(self.page, str(password), secret=True)
         log("  signIn: password typed; submitting with Enter")
         before = self.page.url
         await pass_field.press("Enter")
@@ -447,18 +495,18 @@ class Inspector:
             raise RuntimeError("no totpSecret in Twenty")
         field = await self.first_visible(autoLogin.CODE_FIELD) or await self.by_role("textbox", "Code", 10_000)
         await field.click()
-        await field.press_sequentially(autoLogin.totp(str(secret)), delay=110)
+        await myuriInput.type_text(self.page, autoLogin.totp(str(secret)), secret=True)
         log("  code: typed the current authenticator code; submitting with Enter")
         await field.press("Enter")
 
     async def enter_pin(self) -> None:
         pin = str(self.secrets.get("messengerPin") or "")
         if not re.fullmatch(r"\d{6}", pin):
-            raise RuntimeError("no 6-digit messengerPin in Twenty: matt sets it with log facebook messenger pin --account <a>")
+            raise RuntimeError("no 6-digit messengerPin in Twenty: the owner sets it with log facebook messenger pin --account <a>")
         field = await self.first_visible('input[autocomplete="one-time-code"], input[inputmode="numeric"], input[type="password"], input[type="tel"], input[type="text"]')
         if field is not None:
             await self.mouse.click(field, circle=False)
-        await self.page.keyboard.type(pin, delay=140)
+        await myuriInput.type_text(self.page, pin, secret=True)
         log("  pin: typed the account's Messenger PIN")
 
     async def shows(self, role: str, name: str) -> bool:
@@ -494,6 +542,10 @@ class Inspector:
             await asyncio.sleep(0.5)
 
     async def handle(self, command: dict[str, Any]) -> dict[str, Any]:
+        async with self.controlLock:
+            return await self.handleUnlocked(command)
+
+    async def handleUnlocked(self, command: dict[str, Any]) -> dict[str, Any]:
         action = str(command.get("action") or "")
         args = [str(a) for a in command.get("args") or []]
         page = self.page
@@ -527,7 +579,7 @@ class Inspector:
                 await self.mouse.click(field, circle=False)
                 await page.keyboard.press("Control+a")
                 text = " ".join(args[2:])
-                await field.press_sequentially(text, delay=90, timeout=typing_ms(text))
+                await myuriInput.type_text(page, text, log=log)
             return await self.step("fillRole", f'{args[0]} "{args[1]}"', fill_role, expect, expect_ms)
         if action == "uploadRole" and len(args) >= 3:
             path = " ".join(args[2:])
@@ -541,6 +593,35 @@ class Inspector:
                 await (await chooser.value).set_files(path)
                 log(f"  upload: {Path(path).name} handed to the file chooser")
             return await self.step("uploadRole", f'{args[0]} "{args[1]}"', upload_role, expect, expect_ms)
+        if action == "rowMenu" and len(args) >= 2:
+            async def row_menu() -> None:
+                link = await self.by_role("link", args[0])
+                await self.mouse.approach(link, circle=False)
+                deadline = time.monotonic() + 10
+                path = None
+                while path is None:
+                    path = await link.evaluate(ROW_MENU_BUTTON_JS)
+                    if path is None:
+                        if time.monotonic() > deadline:
+                            raise RuntimeError(f'controlMissing: no menu button in the row of link "{args[0]}"')
+                        await asyncio.sleep(0.3)
+                token = f"r{time.monotonic_ns()}"
+                if not await page.evaluate(controlMatch.TAG_JS, [path, token]):
+                    raise RuntimeError(f'controlMissing: the menu button of link "{args[0]}" moved before it could be held')
+                await self.mouse.click(page.locator(f'[{controlMatch.TAG_ATTRIBUTE}="{token}"]'))
+                deadline = time.monotonic() + 10
+                item = None
+                while item is None:
+                    item = await page.evaluate(MENU_ITEM_JS, args[1])
+                    if item is None:
+                        if time.monotonic() > deadline:
+                            raise RuntimeError(f'controlMissing: the row menu has no item "{args[1]}"')
+                        await asyncio.sleep(0.3)
+                token = f"m{time.monotonic_ns()}"
+                if not await page.evaluate(controlMatch.TAG_JS, [item, token]):
+                    raise RuntimeError(f'controlMissing: menu item "{args[1]}" moved before it could be held')
+                await self.mouse.click(page.locator(f'[{controlMatch.TAG_ATTRIBUTE}="{token}"]'))
+            return await self.step("rowMenu", f'link "{args[0]}" > "{args[1]}"', row_menu, expect, expect_ms)
         if action == "waitRole" and len(args) >= 2:
             async def wait_role() -> None:
                 await self.by_role(args[0], args[1], timeout_ms=expect_ms)
@@ -621,6 +702,18 @@ class Inspector:
                     await asyncio.sleep(random.uniform(1.0, 2.0))
                 log(f"  clickAny: {len(chosen)} {role} /{pattern}/")
             return await self.step("clickAny", f'{count} x {role} /{pattern}/', click_any)
+        if action == "clearSession":
+            async def clear_session() -> None:
+                site = self.config.get("site") or {}
+                domain = str(site.get("domain") or "").lstrip(".")
+                if not domain:
+                    raise RuntimeError("clearSession needs the platform's site")
+                domains = sorted({str(c.get("domain") or "") for c in await self.context.cookies() if domain in str(c.get("domain") or "")})
+                for d in domains:
+                    await self.context.clear_cookies(domain=d)
+                log(f"  clearSession: {site.get('platform')} cookies cleared on {len(domains)} domain(s): {', '.join(domains) or 'none'}")
+                await page.goto(f"https://www.{domain}/", wait_until="domcontentloaded")
+            return await self.step("clearSession", "", clear_session)
         if action == "saveState":
             async def save_state() -> None:
                 await self.context.storage_state(path=str(self.config["storageStatePath"]))
@@ -704,7 +797,7 @@ class Inspector:
                 await self.mouse.click(box, circle=False)
                 await page.keyboard.press("Control+a")
                 await page.keyboard.press("Backspace")
-                await page.keyboard.type(place, delay=90)
+                await myuriInput.type_text(page, place, log=log)
                 offered = await answer_for(place, answers, 20.0)
                 page.remove_listener("response", on_response)
                 index = pick_suggestion(place, offered)
@@ -715,7 +808,7 @@ class Inspector:
                 option = page.get_by_role("option", name=re.compile(r"^" + re.escape(offered[index]) + r"(\s|$)", re.I))
                 if not await option.count() or not await option.first.is_visible():
                     await page.keyboard.press("Backspace")
-                    await page.keyboard.type(place[-1], delay=90)
+                    await myuriInput.type_text(page, place[-1])
                     await asyncio.sleep(2.5)
                 await option.first.wait_for(state="visible", timeout=15_000)
                 await self.mouse.click(option.first)
@@ -747,7 +840,10 @@ class Inspector:
             return await self.step("highlight", f'{args[0]} "{args[1]}"', highlight)
         if action == "type" and len(args) >= 2:
             text = " ".join(args[1:])
-            return await self.step("type", args[0], lambda: page.locator(f"aria-ref={args[0]}").press_sequentially(text, delay=90, timeout=typing_ms(text)))
+            async def type_into() -> None:
+                await page.locator(f"aria-ref={args[0]}").focus(timeout=typing_ms(text))
+                await myuriInput.type_text(page, text, log=log)
+            return await self.step("type", args[0], type_into)
         if action == "upload" and len(args) >= 2:
             path = " ".join(args[1:])
 
@@ -801,18 +897,21 @@ class Inspector:
                 self.mouse.start_idle()
             else:
                 log("Our cursor stays still in this session (--noIdleMouse).")
+            viewer = BrowserViewer(self)
+            await viewer.start()
             log("Inspect session open. Send steps with: log inspect do <action>.")
             with replies.open("a", encoding="utf8") as out:
                 out.write(json.dumps({"id": "ready", "result": {"ok": True}}) + "\n")
             offset = commands.stat().st_size
-            start = self.config.get("startUrl")
-            if start:
-                reply = await self.handle({"action": "goto", "args": [start]})
-                with replies.open("a", encoding="utf8") as out:
-                    out.write(json.dumps({"id": "start", "result": reply}) + "\n")
             last = time.monotonic()
             try:
-                while time.monotonic() - last < IDLE_SECONDS:
+                start = self.config.get("startUrl")
+                if start:
+                    reply = await self.handle({"action": "goto", "args": [start]})
+                    with replies.open("a", encoding="utf8") as out:
+                        out.write(json.dumps({"id": "start", "result": reply}) + "\n")
+                last = time.monotonic()
+                while time.monotonic() - max(last, self.ownerInputAt) < IDLE_SECONDS:
                     await asyncio.sleep(0.3)
                     if self.closed:
                         log("The browser window was closed: stopping.")
@@ -848,6 +947,7 @@ class Inspector:
                 log("Idle for 30 minutes: stopping.")
                 return 0
             finally:
+                await viewer.close()
                 await self.mouse.stop_idle()
                 if self.rea_tasks:
                     log(f"waiting for rea on {len(self.rea_tasks)} step(s) before closing")

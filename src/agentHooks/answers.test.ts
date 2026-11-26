@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { answerEvent, cachedFreshness, hooksForEvent, mergeAnswers } from "./answers/index.ts";
+import { answerEvent, cachedFreshness, hookStages, hooksForEvent, mergeAnswers, sentAtOf, waitingHooksFirst } from "./answers/index.ts";
 import { REFUSING_HOOKS } from "./answers/index.ts";
 import type { AgentHook } from "./registry/types.ts";
 import { claudeCodeHooks, EVENT_SCRIPT, HOOK_SERVICE_URL, hooksFor, joinedMatcher } from "./registry/index.ts";
@@ -80,7 +80,7 @@ describe("the service's freshness cache", () => {
     let clock = 0;
     let listed = 0;
     const source = cachedFreshness(".", {
-      stamps: { current: () => stamp, refresh: () => false, close: () => {} },
+      stamps: { current: () => stamp, refresh: () => false, refreshAsync: async () => false, close: () => {} },
       files: () => {
         listed += 1;
         return [`file${listed}`];
@@ -98,5 +98,57 @@ describe("the service's freshness cache", () => {
     expect(source.changes()).toEqual(["file3"]);
     expect(source.stamp()).toBe(2);
     source.close();
+  });
+
+  test("in the service a hook never waits on git or the tree walk: it answers the last listing and refreshes behind", async () => {
+    let stamp = 1;
+    let clock = 0;
+    let synced = 0;
+    let walked = 0;
+    let listedLater = 0;
+    const source = cachedFreshness(".", {
+      stamps: { current: () => stamp, refresh: () => (synced += 1) > 0, refreshAsync: async () => ((walked += 1), false), close: () => {} },
+      files: () => ["first"],
+      filesAsync: async () => [`later${(listedLater += 1)}`],
+      refreshMs: 60_000,
+      now: () => clock,
+      background: true,
+    });
+    expect(source.changes()).toEqual(["first"]);
+    await source.settled();
+    expect(listedLater).toBe(0);
+    stamp = 2;
+    expect(source.changes()).toEqual(["first"]);
+    await source.settled();
+    expect(source.changes()).toEqual(["later1"]);
+    await source.settled();
+    clock = 60_000;
+    source.changes();
+    await source.settled();
+    expect(source.changes()).toEqual(["later2"]);
+    expect(synced).toBe(0);
+    expect(walked).toBeGreaterThan(0);
+    source.close();
+  });
+});
+
+describe("a hook event's own time, split into stages", () => {
+  test("hooks that wait on I/O start first so their wait overlaps the hooks that only compute", () => {
+    const hook = (script: string): AgentHook => ({ event: "UserPromptSubmit", script, timeout: 10, why: "" });
+    const order = waitingHooksFirst([hook("scripts/hooks/pageState.ts"), hook("scripts/hooks/engines.ts"), hook("scripts/hooks/useCases.ts"), hook("scripts/hooks/inbox.ts")]);
+    expect(order.map((h) => h.script.replace(/^.*\//, ""))).toEqual(["useCases.ts", "pageState.ts", "engines.ts", "inbox.ts"]);
+  });
+
+  test("the caller's send time becomes the spawn and Bun start stages of a process hook, and the sent stage of a service hook", () => {
+    const raw = JSON.stringify({ prompt: "hi", log_sent_at: 1000 });
+    expect(sentAtOf(raw)).toBe(1000);
+    expect(sentAtOf("{}")).toBeNull();
+    const timings = [{ hook: "inbox", ms: 30, ok: true, startedAt: 1300 }];
+    expect(hookStages(raw, timings, { processAt: 1100, bootedAt: 1290 })).toEqual([
+      { name: "spawn", startedAt: 1000, ms: 100 },
+      { name: "bunStart", startedAt: 1100, ms: 190 },
+      { name: "hook inbox", startedAt: 1300, ms: 30, ok: true },
+    ]);
+    expect(hookStages(raw, timings, { arrivedAt: 1004 }).map((s) => [s.name, s.ms])).toEqual([["sent", 4], ["hook inbox", 30]]);
   });
 });

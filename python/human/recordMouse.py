@@ -8,6 +8,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from logHome import log_home
 
 HZ = 120
 MOVING_PX_S = 40
@@ -34,7 +35,7 @@ def record(seconds: float) -> Path:
             print(f"  {next_note} s, {len(samples)} samples", flush=True)
             next_note += 10
         time.sleep(1 / HZ)
-    out = Path.home() / ".logCli" / "mouse" / f"{datetime.now().strftime('%Y%m%dT%H%M%S')}.json"
+    out = log_home() / "mouse" / f"{datetime.now().strftime('%Y%m%dT%H%M%S')}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"hz": HZ, "seconds": seconds, "columns": ["t", "x", "y", "left", "right"], "samples": samples}), encoding="utf8")
     print(f"Saved {len(samples)} samples: {out}", flush=True)

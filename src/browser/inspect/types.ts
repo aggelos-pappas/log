@@ -4,13 +4,14 @@ import type { BrowserDriverName } from '../driver/types'
 export const INSPECT_ACTIONS = [
   'goto', 'snapshot', 'click', 'type', 'press', 'solve', 'upload', 'signIn', 'code', 'back', 'wait', 'stop',
   'pin',
-  'clickRole', 'fillRole', 'uploadRole', 'waitRole',
+  'clickRole', 'fillRole', 'uploadRole', 'waitRole', 'rowMenu',
   'highlight',
   'scroll', 'scrollIn', 'openAny', 'clickAny',
   'closeTab',
   'nextPost', 'likePost', 'postButton',
   'dwell',
   'saveState', 'pageText', 'sellLocation', 'setLocation',
+  'clearSession',
 ] as const
 
 export type InspectAction = (typeof INSPECT_ACTIONS)[number]
@@ -28,6 +29,8 @@ export interface InspectSessionConfig {
   startUrl: string | null
   site?: { platform: string; domain: string; hosts: readonly string[] }
   browser?: { driver: BrowserDriverName; profileId: string | null }
+  window?: 'hidden' | 'visible'
+  ownerDriven?: boolean
 }
 
 export interface CurrentInspect {
@@ -115,7 +118,7 @@ export interface BrowserView {
   failed: string | null
   state: { id: string; what: string; person: boolean } | null
   next: { tool: string; input: Record<string, unknown> } | null
-  needsMatt: string | null
+  needsOwner: string | null
 }
 
 export interface GoalFinding {

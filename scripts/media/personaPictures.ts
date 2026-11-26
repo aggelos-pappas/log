@@ -6,7 +6,7 @@ import { parseArgs } from 'node:util'
 import { assignPersonas, backgroundOf, drawPersonas, nextBackground, imageOf, liveDeps, makeProfilePicture, personasDir, personasFile, readPersonas, recheckPicture, refreshPrompt, rejectPicture, writePersonas } from '../../src/media/persona/index'
 import type { PersonaRecord, PictureFacet } from '../../src/media/persona/index'
 import { readDatasets } from '../../src/warmup/persona/index'
-import { listFacebookAccounts, saveProfilePhoto } from '../../src/marketplace/socialAccount/index'
+import { listFacebookAccounts, saveProfilePhoto } from '../../src/platformKit/socialAccount/index'
 import { createTwentyClient } from '../../src/twenty/graphql/client'
 import { personaPath, seedOf } from '../../src/cli/warmup/helpers/personaRun'
 
@@ -21,7 +21,7 @@ const { values } = parseArgs({
     styleFrom: { type: 'string' },
     accounts: { type: 'boolean', default: false },
     accountsRedo: { type: 'boolean', default: false },
-    reason: { type: 'string', default: 'matt said it is bad' }
+    reason: { type: 'string', default: 'the owner said it is bad' }
   }
 })
 const log = (line: string) => console.error(`${new Date().toISOString().slice(11, 19)} ${line}`)
@@ -42,16 +42,16 @@ if (values.approve) {
   for (const id of values.approve.split(',')) {
     const record = saved.find((r) => r.personaId === id.trim())
     if (!record?.profilePicture) throw new Error(`no picture for persona ${id} in ${personasFile()}`)
-    record.approved = { at: new Date().toISOString(), by: 'matt' }
+    record.approved = { at: new Date().toISOString(), by: 'the owner' }
     log(`approved ${record.personaId}: locked, never regenerated`)
   }
   writePersonas(saved)
   process.exit(0)
 }
 
-const mattExamples = existsSync(values.examples) ? readdirSync(values.examples).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).slice(0, 2).map((f) => join(values.examples, f)) : []
+const ownerExamples = existsSync(values.examples) ? readdirSync(values.examples).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).slice(0, 2).map((f) => join(values.examples, f)) : []
 const referenceRecord = saved.find((r) => r.styleReference && r.profilePicture) ?? null
-log(`style examples for SubQ: ${mattExamples.length} of matt's${referenceRecord ? `, ${referenceRecord.personaId} as the best one` : ''}`)
+log(`style examples for SubQ: ${ownerExamples.length} of the owner's${referenceRecord ? `, ${referenceRecord.personaId} as the best one` : ''}`)
 let records: PersonaRecord[] = saved
 let todo: PersonaRecord[]
 const othersOf = (record: PersonaRecord) => {
@@ -59,7 +59,7 @@ const othersOf = (record: PersonaRecord) => {
   const near = record.account ? withPicture.filter((r) => r.account?.homeCountry === record.account!.homeCountry).slice(-3) : withPicture
   return near.map((r) => imageOf(join(personasDir(), r.profilePicture!)))
 }
-const deps = { ...liveDeps({ examples: mattExamples.map(imageOf), reference: referenceRecord ? imageOf(join(personasDir(), referenceRecord.profilePicture!)) : null, others: othersOf, log }), usedBackgrounds: (record: PersonaRecord) => records.filter((r) => r !== record).map((r) => r.characteristics.background).filter((b): b is string => Boolean(b)) }
+const deps = { ...liveDeps({ examples: ownerExamples.map(imageOf), reference: referenceRecord ? imageOf(join(personasDir(), referenceRecord.profilePicture!)) : null, others: othersOf, log }), usedBackgrounds: (record: PersonaRecord) => records.filter((r) => r !== record).map((r) => r.characteristics.background).filter((b): b is string => Boolean(b)) }
 
 async function linkInTwenty(twenty: ReturnType<typeof createTwentyClient>, accountId: string, record: PersonaRecord) {
   if (!record.matched || !record.profilePicture) {
@@ -142,7 +142,7 @@ if (values.accounts) {
   todo = []
   for (const record of records) {
     if (record.approved) {
-      log(`${record.personaId}: approved by matt, left as it is`)
+      log(`${record.personaId}: approved by the owner, left as it is`)
       continue
     }
     const check = await recheckPicture(record, deps)
@@ -156,7 +156,7 @@ if (values.accounts) {
 
   const record = records.find((r) => r.personaId === values.redo)
   if (!record) throw new Error(`no persona ${values.redo} in ${personasFile()}`)
-  if (record.approved) throw new Error(`${record.personaId} is approved by matt: it is never regenerated`)
+  if (record.approved) throw new Error(`${record.personaId} is approved by the owner: it is never regenerated`)
   rejectPicture(record, values.reason)
   log(`redo ${record.personaId}: earlier picture rejected (${values.reason})`)
   writePersonas(records)

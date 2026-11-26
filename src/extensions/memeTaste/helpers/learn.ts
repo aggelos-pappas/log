@@ -149,7 +149,7 @@ export function theirMemes(index: TasteIndex | null, recent: ReadonlySet<string>
   while (picked.length < count && pool.length) {
     const m = pool.splice(Math.floor(random() * pool.length), 1)[0]!
     const said = saidWith(m)
-    picked.push({ id: MINE + m.id, name: mineName(m), type: m.kind === 'photo' ? 'image' : m.kind, mediaUrl: m.mediaUrl ?? m.imageUrl, textSlots: null, context: null, raw: { preview_url: m.imageUrl, description: `a ${m.kind} meme matt sent himself on X (${m.style}), with the post: ${said}` } })
+    picked.push({ id: MINE + m.id, name: mineName(m), type: m.kind === 'photo' ? 'image' : m.kind, mediaUrl: m.mediaUrl ?? m.imageUrl, textSlots: null, context: null, raw: { preview_url: m.imageUrl, description: `a ${m.kind} meme the owner sent himself on X (${m.style}), with the post: ${said}` } })
   }
   return picked
 }

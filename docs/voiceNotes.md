@@ -4,7 +4,7 @@ title: "Voice notes"
 
 # Voice notes
 
-Every voice note matt was sent, or sent himself, on X, Discord and Slack is transcribed with [AssemblyAI](https://www.assemblyai.com/docs) and written into the conversation store. `log search`, `voice` and the SubQ matrices then see what was said instead of a bare file name.
+Every voice note the owner was sent, or sent himself, on X, Discord and Slack is transcribed with [AssemblyAI](https://www.assemblyai.com/docs) and written into the conversation store. `log search`, `voice` and the SubQ matrices then see what was said instead of a bare file name.
 
 ## What it looks like in the store
 
@@ -61,7 +61,7 @@ log transcribe
 ```
 
 ```bash
-log transcribe --platform discord --account sourcedandsoldtothehighestbidder
+log transcribe --platform discord --account myDiscordName
 ```
 
 ```bash
@@ -69,3 +69,7 @@ log transcribe file ~/Downloads/note.m4a
 ```
 
 The run ends by updating the search index with the conversations that changed (`--noIndex` skips it). Code: `src/media/voiceNotes`, `src/cli/transcribe`. Spec: [docs/specs/voiceNotes.md](./specs/voiceNotes.md).
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md) · [What log does on Facebook](platformGuides/facebook.md)

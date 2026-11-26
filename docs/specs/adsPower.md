@@ -20,11 +20,9 @@ A profile is created with no proxy, and with the account's name, the remark `log
 
 Checked by: code and SubQ
 
-### REQ-ADSPOWER-03: The account's browser is AdsPower when it has a profile
+### REQ-ADSPOWER-03: AdsPower is deprecated: an account opens on it only when it names it
 
-`socialAccounts.browserDriver` picks the driver. When it is empty, an account with a linked profile opens on AdsPower and one without opens on Camoufox. Rules 42 and 59.
-
-Checked by: code and SubQ
+`socialAccounts.browserDriver` picks the driver, and a name log does not drive is refused with `browserDriverUnknown`. When it is empty the account opens on the browser `LOG_BROWSER_DRIVER` names, else Camoufox; a linked `adsPowerProfileId` no longer picks AdsPower. An account (or `LOG_BROWSER_DRIVER`) that names `adsPower` still opens on it, and `driverNameOf` writes one `adsPowerDeprecated` line per process naming `log browser move <account> --to camoufox`. Rules 42 and 59.
 
 ### REQ-ADSPOWER-04: An account without a profile is refused
 
@@ -99,5 +97,11 @@ Checked by: code and SubQ
 ### REQ-ADSPOWER-15: Only the homes in LOG_ADSPOWER_HOMES hold a profile
 
 When `LOG_ADSPOWER_HOMES` (or `--homes`) names home countries, an account whose home is not one of them gives its profile back the same way and gets none. An account on a platform that runs without a proxy needs no home. Rules 78 and 84.
+
+Checked by: code and SubQ
+
+### REQ-ADSPOWER-16: Moving an account off a browser keeps its session and is confirmed by the platform
+
+`log browser move [<account>|--all] --to camoufox|brave` is a dry run unless `--apply` (with `--approvedBy`). `--all` takes every account on AdsPower or still linked to a profile. Per account, live: when AdsPower's Local API answers with the key, the profile is started (headless first, else headed), its cookies and the platform's localStorage are read over CDP (`python/browser/cdpState.py`, requests answered locally so nothing reaches the platform) and it is stopped; when the API is down or refuses the key (`adsPowerKeyMismatch`), the session already saved for the account carries instead and the result says so. Then `browserDriver` is set to the target, `adsPowerProfileId` is cleared and kept as the former profile (log.db `browserMove` ledger, and `formerAdsPowerProfileId` on a local account), and the platform's own session check runs. Only `signedIn` reports `moved`; anything else puts the driver, the profile link and the session back (`browserMoveNotSignedIn`). The AdsPower profile is never deleted by a move: `--release --apply` deletes moved accounts' former profiles once the owner says so. The fingerprint does not carry.
 
 Checked by: code and SubQ

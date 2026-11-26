@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable
 
 VERSION = 1
+STORE = "xNotifications"
 PAGE_SIZE = 40
 NEWEST_PAGES = 5
+ENGAGER_PAGE_SIZE = 40
 
 
 def iso_of_ms(ms: Any) -> str | None:
@@ -26,22 +28,41 @@ def now_iso() -> str:
 
 
 def empty_store(me: str) -> dict[str, Any]:
-    return {"version": VERSION, "userId": me, "bottomCursor": None, "historyDone": False, "syncedAt": None, "rows": {}}
+    return {"version": VERSION, "userId": me, "bottomCursor": None, "historyDone": False, "syncedAt": None, "rows": {}, "engagements": {}}
+
+
+def valid_store(store: Any) -> bool:
+    return isinstance(store, dict) and store.get("version") == VERSION and isinstance(store.get("rows"), dict)
 
 
 def read_store(path: Path) -> dict[str, Any] | None:
+    from logDb import engineStore
+
+    used, store = engineStore.read(STORE, path.parent.name, path, None, valid_store)
+    if not used:
+        store = read_file(path)
+    if store is None:
+        return None
+    if not isinstance(store.get("engagements"), dict):
+        store["engagements"] = {}
+    return store
+
+
+def read_file(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
     try:
         store = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    if not isinstance(store, dict) or store.get("version") != VERSION or not isinstance(store.get("rows"), dict):
-        return None
-    return store
+    return store if valid_store(store) else None
 
 
 def write_store(path: Path, store: dict[str, Any]) -> None:
+    from logDb import engineStore
+
+    if engineStore.write(STORE, path.parent.name, store, path, None, valid_store):
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
     temp.write_text(json.dumps(store), encoding="utf-8")
@@ -55,7 +76,7 @@ def post_url(handle: Any, tweet_id: Any) -> str | None:
 
 
 def person(user: dict[str, Any]) -> dict[str, Any]:
-    return {"userId": str(user.get("user_id") or ""), "handle": user.get("screen_name"), "name": user.get("name"), "followsYou": user.get("followed_by"), "youFollow": user.get("following"), "followers": user.get("followers_count")}
+    return {"userId": str(user.get("user_id") or ""), "handle": user.get("screen_name"), "name": user.get("name"), "followsYou": user.get("followed_by"), "youFollow": user.get("following"), "followers": user.get("followers_count"), "pictureUrl": user.get("profile_image_url_https")}
 
 
 def rows_of(page: dict[str, Any], me: str, my_handle: str | None) -> list[dict[str, Any]]:
@@ -79,6 +100,7 @@ def rows_of(page: dict[str, Any], me: str, my_handle: str | None) -> list[dict[s
                     "postUrl": post_url(my_handle if (target or {}).get("user_id") == me else None, post_id),
                     "notificationId": note["id"],
                     "message": note.get("message") or "",
+                    "source": "notification",
                 })
     for entry in page.get("tweets") or []:
         tweet = entry.get("tweet") or {}
@@ -104,6 +126,7 @@ def rows_of(page: dict[str, Any], me: str, my_handle: str | None) -> list[dict[s
             "tweetId": tweet["id"],
             "tweetUrl": post_url(who["handle"], tweet["id"]),
             "text": tweet.get("text") or "",
+            "source": "notification",
         })
     return rows
 
@@ -121,11 +144,80 @@ def add_rows(store: dict[str, Any], rows: list[dict[str, Any]]) -> int:
         for field in ("handle", "name", "followsYou", "youFollow", "followers", "postText", "text"):
             if row.get(field) is not None:
                 held[field] = row[field]
+        if row.get("source") == "notification" and held.get("source") == "engagements":
+            held["source"] = "notification"
+            for field in ("notificationId", "message"):
+                if row.get(field) is not None:
+                    held[field] = row[field]
     return added
 
 
 Fetch = Callable[[str | None], Awaitable[dict[str, Any]]]
 Pace = Callable[[], Awaitable[None]]
+
+
+def engager(user: Any) -> dict[str, Any]:
+    return {"userId": str(getattr(user, "id", "") or ""), "handle": getattr(user, "screen_name", None), "name": getattr(user, "name", None), "followsYou": None, "youFollow": None, "followers": getattr(user, "followers_count", None), "pictureUrl": getattr(user, "profile_image_url", None)}
+
+
+def engager_rows(users: list[Any], kind: str, post_id: str, me: str, my_handle: str | None, post_text: str | None) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for user in users:
+        who = engager(user)
+        if not who["userId"] or who["userId"] == me:
+            continue
+        rows.append({"key": f"{kind}:{who['userId']}:{post_id}", "kind": kind, "at": None, **who, "postId": post_id, "postText": post_text, "postUrl": post_url(my_handle, post_id), "source": "engagements"})
+    return rows
+
+
+def engager_counts(store: dict[str, Any], post_id: str, kind: str) -> dict[str, int]:
+    rows = [row for row in store["rows"].values() if row.get("kind") == kind and row.get("postId") == post_id]
+    unrolled = sum(1 for row in rows if row.get("source") == "engagements")
+    return {"fromNotifications": len(rows) - unrolled, "addedByUnroll": unrolled, "total": len(rows)}
+
+
+def empty_progress() -> dict[str, Any]:
+    return {"cursor": None, "done": False, "pages": 0, "seen": 0, "added": 0, "ownAction": False, "syncedAt": None}
+
+
+EngagerFetch = Callable[[str | None], Awaitable[Any]]
+
+
+async def unroll_engagers(fetch: EngagerFetch, pace: Pace, path: Path, me: str, my_handle: str | None, post_id: str, kind: str, max_pages: int, log: Callable[[str], None]) -> dict[str, Any]:
+    store = read_store(path) or empty_store(me)
+    post = store["engagements"].setdefault(post_id, {})
+    held = post.get(kind)
+    resumed = bool(held and not held.get("done") and held.get("cursor"))
+    progress = {**empty_progress(), **held} if resumed else empty_progress()
+    post[kind] = progress
+    post_text = next((row.get("postText") for row in store["rows"].values() if row.get("postId") == post_id and row.get("postText")), None)
+    pages = 0
+    added = 0
+    while pages < max_pages and not progress["done"]:
+        if pages:
+            await pace()
+        page = await fetch(progress["cursor"])
+        pages += 1
+        users = list(page)
+        new = add_rows(store, engager_rows(users, kind, post_id, me, my_handle, post_text))
+        added += new
+        nxt = getattr(page, "next_cursor", None)
+        progress["pages"] += 1
+        progress["seen"] += len(users)
+        progress["added"] += new
+        if any(str(getattr(user, "id", "") or "") == me for user in users):
+            progress["ownAction"] = True
+        if not users or not nxt or nxt == progress["cursor"]:
+            progress["done"] = True
+            progress["cursor"] = None
+        else:
+            progress["cursor"] = nxt
+        progress["syncedAt"] = now_iso()
+        write_store(path, store)
+        log(f"{kind} page {progress['pages']} of post {post_id}: {len(users)} people, {new} new{', the end of the list' if progress['done'] else ''}")
+    return {"postId": post_id, "kind": kind, "pages": pages, "newRows": added, "resumed": resumed, "done": progress["done"], "stoppedBy": "end" if progress["done"] else "pageCap", "counts": engager_counts(store, post_id, kind), "syncedAt": progress["syncedAt"]}
+
+
 
 
 async def sync_notifications(fetch: Fetch, pace: Pace, path: Path, me: str, my_handle: str | None, full: bool, max_pages: int, log: Callable[[str], None]) -> dict[str, Any]:

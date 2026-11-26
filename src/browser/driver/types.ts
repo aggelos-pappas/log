@@ -1,9 +1,27 @@
-export const BROWSER_DRIVERS = ['camoufox', 'adsPower'] as const
+export const BROWSER_DRIVERS = ['camoufox', 'adsPower', 'brave'] as const
 export type BrowserDriverName = (typeof BROWSER_DRIVERS)[number]
 export const DEFAULT_BROWSER_DRIVER: BrowserDriverName = 'camoufox'
 
+export const DEPRECATED_BROWSER_DRIVERS: readonly BrowserDriverName[] = ['adsPower']
+export const BROWSER_DRIVER_ENV = 'LOG_BROWSER_DRIVER'
+
+export interface BrowserBrand {
+  label: string
+  logo: string
+}
+
+export class BrowserDriverError extends Error {
+  constructor(
+    readonly code: 'browserDriverUnknown',
+    readonly detail: string
+  ) {
+    super(`${code}: ${detail}`)
+    this.name = 'BrowserDriverError'
+  }
+}
+
 export const BROWSER_CAPABILITIES = {
-  headedWindow: 'A visible window you can watch, never headless (rule 11)',
+  headedWindow: 'Always headed, never headless (rule 11); a streamed session hides its window, the owner chose that on 2026-11-20 (LOG_BROWSER_WINDOW)',
   proxyGate: "The account's proxy, exit IP in its country and speed checked before the browser starts (rule 12)",
   selfCheck: 'Timezone, language, Intl and exit IP agree in a page and a worker before Facebook loads (rule 17)',
   sessionHar: 'The raw session HAR of every request (rules 19, 22)',
@@ -16,7 +34,8 @@ export const BROWSER_CAPABILITIES = {
   sessionSaved: 'The session is saved back to Twenty (saveState)',
   inspectSession: 'log inspect, the flows, the warm-up and log facebook host run in it (python/session/inspectSession.py)',
   syncSessions: 'publishSession, connectSession and profileSession (the sync sessions) run in it',
-  oneMachineAtATime: 'It refuses to open where another machine already has the account open'
+  oneMachineAtATime: 'It refuses to open where another machine already has the account open',
+  liveView: 'The browser streams live into the console and chat views and takes clicks and typing (browserView)'
 } as const
 
 export type BrowserCapability = keyof typeof BROWSER_CAPABILITIES
@@ -75,4 +94,4 @@ export interface BrowserSessionOutput {
   failure: DriverFailure | null
 }
 
-export const CAPTURE_FOLDERS: readonly string[] = [...BROWSER_DRIVERS, 'firefox']
+export const CAPTURE_FOLDERS: readonly string[] = [...BROWSER_DRIVERS, 'firefox', 'chrome']

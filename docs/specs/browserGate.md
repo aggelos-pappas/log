@@ -10,7 +10,7 @@ Before an account's browser loads anything, it goes through one gate: a headed l
 
 ### REQ-GATE-01: A Camoufox launch is never headless
 
-Every Camoufox launch is headed, with humanize on and the cursor shown. A launch that asks for headless is refused with `unguardedLaunch`, and there is no flag that turns the headed window off. Rule 11.
+Every Camoufox launch is headed with the cursor shown. Humanize is on, except for a launch whose session moves the pointer itself (`own_trajectory`) while Myuri is installed: Myuri already paces every move, key and wheel step, so Camoufox's humanize is turned off there rather than pacing twice. A launch that asks for headless is refused with `unguardedLaunch`. Rule 11. On 2026-11-20 the owner changed rule 11 for streamed sessions: a browser opened to be streamed (the live view in a chat or the console) stays headed, with the same fingerprint and rendering, but its window is hidden (`browserWindow.WindowKeeper` hides every top-level window the session's browser opens, so it has no window and no taskbar entry, and Brave also starts off-screen). The stream is its only view. `LOG_BROWSER_WINDOW=hidden|visible` picks it for streamed sessions (default hidden); an inspect session the owner watches directly stays visible.
 
 Checked by: code and SubQ
 
@@ -121,5 +121,39 @@ Checked by: code and SubQ
 ### REQ-GATE-18: A failed self-check stops the browser before Facebook loads
 
 When the self-check refuses, the browser is closed (Camoufox) or the error is raised before anything else loads (an attached browser, which its driver then stops). Rule 17.
+
+Checked by: code and SubQ
+
+### REQ-GATE-19: Brave opens through the same gate, in the account's own profile
+
+A Brave session first passes `gate_attached` (the proxy, the exit's country and timezone, the Facebook speed limit). `chromium_launch` then builds the only launch options the guard accepts: headed, the account's proxy (none for a platform that runs direct), and `--lang` plus the context locale pinned to the home locale, with `navigator.languages` pinned to that one locale as Brave reduces it. The guarded persistent context gets the exit's timezone and geolocation and a session HAR, and runs the self-check before the caller gets it. The profile folder is the account's own under log's home (`browsers/brave/<account id>`). Brave is found at `LOG_BRAVE_PATH` or the standard install places; none there is refused with `braveNotFound`. Rules 11, 12, 17 and 44.
+
+Checked by: code and SubQ
+
+## Engine route
+
+The engines (the direct-API clients, their warm hosts and their sockets) carry the same identity as the browser: the account's own proxy when it has one, its browser identity on every HTTP client, and no way out from this machine for a proxied account. Issue 47.
+
+### REQ-GATE-20: Every engine spec carries the account's route
+
+`engineRoute` (`src/platformKit/socialAccount`) builds the route of every engine call from the account: its proxy as a URL, or none for an account on a platform that runs direct. A Facebook account without a proxy is refused with `noProxy` and an unreadable proxy with `proxyMalformed`, before Python starts. `runPlatformEngine`, the X engine and the Facebook direct API all put it in the spec as `route`, and the engines refuse a spec without it with `routeMissing` (`accountRoute.arm`). Rules 12 and 80.
+
+Checked by: code and SubQ
+
+### REQ-GATE-21: Every client in an engine goes out through that route
+
+Once armed, `python/identity/accountRoute.py` gives every curl_cffi request and socket (`Session.request`, `AsyncSession.request`, `ws_connect`) the account's proxy, and refuses with `routeBypass` a client that asks for another proxy or, for a direct account, any proxy. For a proxied account a Python socket that would resolve or dial anything but the proxy or this machine is refused, so a library's own connection (an MQTT socket, a websockets fallback) can't go out from this machine. A SOCKS5 proxy is used as `socks5h` so names resolve at the proxy. Media links are fetched through `accountRoute.download` with the platform's browser identity, and Discord's files through the account's curl_cffi session; endcord's own connections are refused.
+
+Checked by: code and SubQ
+
+### REQ-GATE-22: A direct platform's account with a proxy opens its browser through it
+
+`checkRunnable` gives an account on a platform that runs direct its own proxy when it has one (with its home country, or `noHomeCountry`); only an account with no proxy opens direct.
+
+Checked by: code and SubQ
+
+### REQ-GATE-23: A new way out without the route is refused by a check
+
+`check:identityGate` (`scripts/checks/checkIdentityGate.ts`) refuses a Python network client other than curl_cffi outside the listed non-platform services, a browser launch outside the gated launchers or the listed no-account tools, an engine that never arms the route, a TypeScript engine spawner without `engineRoute`, and Bun's `fetch` to a platform host.
 
 Checked by: code and SubQ

@@ -8,6 +8,8 @@ import sys
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
+import secretStore
+from identity import accountRoute
 from platformKit import timing
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,6 +60,11 @@ def redact(text: Any, cookies: dict[str, str]) -> str:
 
 READ_MIN_GAP_S = 0.8
 READ_MEAN_GAP_S = 1.6
+POISONED_CODES = ("ImportError", "ModuleNotFoundError")
+
+
+def poisoned(out: dict[str, Any]) -> bool:
+    return out.get("code") in POISONED_CODES or "DLL load failed" in str(out.get("detail") or "")
 
 
 def governor_for(state_root: str, account: str, writes_per_day: int | None = None, continues_send: bool = False, read: bool = False) -> Any:
@@ -92,9 +99,17 @@ async def run(spec: dict[str, Any], actions: dict[str, Action], writes: tuple[st
         return {"ok": False, "code": "notLive", "detail": f"{action} acts on {spec.get('platform')}: the engine only acts with live set (rule 8)"}
     if action in writes and not str(spec.get("approvedBy") or "").strip():
         return {"ok": False, "code": "notApproved", "detail": f"{action} needs the name of who approved it"}
-    cookies = normalize_cookies(json.loads(Path(spec["cookiesPath"]).read_text(encoding="utf-8")))
-    if spec.get("storagePath"):
-        cookies.update({str(k): str(v) for k, v in json.loads(Path(spec["storagePath"]).read_text(encoding="utf-8")).items() if v})
+    try:
+        accountRoute.arm(spec.get("platform"), spec)
+    except accountRoute.RouteError as e:
+        return {"ok": False, "code": e.code, "detail": e.detail}
+    try:
+        raw_cookies, storage = secretStore.load_session(spec)
+    except secretStore.SecretStoreError as e:
+        return {"ok": False, "code": e.code, "detail": str(e)}
+    cookies = normalize_cookies(raw_cookies)
+    if storage:
+        cookies.update({str(k): str(v) for k, v in storage.items() if v})
     governor = governor_for(spec["stateRoot"], spec["account"], spec.get("writesPerDay"), continues_send=action in writes and spec.get("continuesSend") is True, read=action not in writes)
     try:
         with timing.span("governor", write=action in writes):
@@ -104,11 +119,13 @@ async def run(spec: dict[str, Any], actions: dict[str, Action], writes: tuple[st
     try:
         with timing.span(f"action {action}"):
             out = await actions[action](spec, cookies)
+    except (accountRoute.RouteError, accountRoute.RouteRefused) as e:
+        out = {"ok": False, "code": e.code, "detail": redact(e.detail, cookies)[:300]}
     except Exception as e:
         out = {"ok": False, "code": type(e).__name__, "detail": redact(e, cookies)[:300]}
     refreshed = out.pop("refreshedCookies", None)
     if spec.get("refreshedPath") and refreshed:
-        Path(spec["refreshedPath"]).write_text(json.dumps(refreshed), encoding="utf-8")
+        secretStore.write_private(spec["refreshedPath"], json.dumps(refreshed))
     if out.get("event") in ("throttled", "dropped", "automated", "dailyLimit"):
         governor.observe_soft_block()
     out["governor"] = governor.status()

@@ -1,18 +1,27 @@
+import { cancel, intro, isCancel, outro, password, text } from "@clack/prompts";
+import { TYPING_HOLD_MS, clearTyping, recordTyping, typingNow, waitOutTyping } from "../../inbox/typing/index.ts";
+import { shouldPrompt } from "../launch/helpers/index.ts";
+import type { LaunchTTY } from "../launch/helpers/index.ts";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, isAbsolute, join, relative, resolve as resolvePath } from "node:path";
 import { watermarkLine, watermarkReadingOf } from "../../twitter/copy/watermark/index.ts";
 import { roomFromRead } from "../../voice/room/index.ts";
 import { findDiscordAccount, recordDiscordSession, discordGate } from "../../discord/account/session/index.ts";
-import { labelOf, matchChat } from "../../discord/chat/match/index.ts";
-import { addPending, incomingSince, interruptedLines } from "../../inbox/watch/index.ts";
+import { labelOf, matchChat, normalizedName } from "../../discord/chat/match/index.ts";
+import { closestNamed } from "../../inbox/nameHints/index.ts";
+import { embeddableXLinks } from "../../discord/chat/embed/index.ts";
+import { addPending, incomingSince, interruptedLines, watchLogMark } from "../../inbox/watch/index.ts";
 import { ownOrAttach } from "../../inbox/relay/index.ts";
 import { enqueueAttachments, mediaByPath, mediaLine } from "../../media/describer/index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
-import { latestSeq, recordPosition } from "../../inbox/store/index.ts";
+import { db, latestSeq, recordPosition } from "../../inbox/store/index.ts";
+import { channelSendersOf } from "../../storage/platform/index.ts";
 import { catchUpOneChat, discordCatchUp, storeRead, waitCaughtUp } from "../../inbox/catchUp/index.ts";
 import type { ReadMessage } from "../../inbox/catchUp/index.ts";
 import { guardSend } from "../../inbox/claims/index.ts";
+import type { SendGuard } from "../../inbox/claims/index.ts";
+import { confirmParts, passGate, rethrowFailure, runAction } from "../../platformKit/action/index.ts";
 import { cachedChatList, chatMessageCount, chatMessages, findInChatList, isVisualAttachment, markBackfilled, mediaNotSaved, readSourceFor, sourceLine } from "../../inbox/dbRead/index.ts";
 import type { ReadSource } from "../../inbox/dbRead/index.ts";
 import type { MessageAttachment } from "../../inbox/catchUp/index.ts";
@@ -23,8 +32,11 @@ import { profileFor, readProfiles, splitPlan } from "../../voice/pairs/index.ts"
 import type { VoiceProfile } from "../../voice/pairs/index.ts";
 import type { DiscordChat } from "../../discord/chat/match/index.ts";
 import type { PlatformAnswer } from "../../platformKit/session/index.ts";
-import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseError } from "../runner/helpers/index.ts";
-import type { Command, CommandInput, FlagSpec } from "../runner/types.ts";
+import { JSON_FLAG, listOf, numberOf, parseArgs, parserSpecOf, refuse, refuseGated, refuseError, truthOf, refuseInput } from "../runner/helpers/index.ts";
+import type { Command, CommandInput, CommandResult, FlagSpec } from "../runner/types.ts";
+import { logHome } from "../../config/logHome/index.ts";
+
+type HeldGuard = Extract<SendGuard, { ok: true }>;
 
 export const DISCORD_SESSION_USAGE = [
   "Usage: log discord session check --account <accountName> [--json]",
@@ -36,7 +48,7 @@ export const DISCORD_SESSION_INPUT: CommandInput = {
   forms: [
     {
       words: ["check"],
-      summary: "Check that Discord still accepts one account's saved session, sending nothing",
+      summary: "Check Discord still accepts an account's saved session; sends nothing",
       positionals: [],
       flags: [
         { name: "account", kind: "string", required: true, description: "The DISCORD socialAccount's accountName (its handle)" },
@@ -61,10 +73,10 @@ export const discordSessionCommand: Command = {
   args: "check --account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DISCORD_SESSION_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log discord session: ${parsed.error}\n${DISCORD_SESSION_USAGE}` };
+    if (!parsed.ok) return refuseInput("discord session", parsed.error, DISCORD_SESSION_USAGE);
     if (parsed.positionals[0] !== "check" || parsed.positionals.length > 1) return { code: 1, stderr: `log discord session: give check\n${DISCORD_SESSION_USAGE}` };
     const ref = parsed.flags["account"];
-    if (typeof ref !== "string") return { code: 1, stderr: `log discord session check: --account is needed\n${DISCORD_SESSION_USAGE}` };
+    if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log discord session check: --account is needed\n${DISCORD_SESSION_USAGE}` };
     try {
       const account = await findDiscordAccount(context.twenty, ref);
       const gate = discordGate(account);
@@ -82,23 +94,54 @@ export const discordSessionCommand: Command = {
   },
 };
 
-export const discordDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, channel: string, since: string) => InboxMessage[]; now: () => string } = {
+export const discordDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, channel: string, since: string) => InboxMessage[]; typing: (account: string, channel: string) => string[]; now: () => string; mark: (account: string) => { log: string; offset: number } } = {
   profiles: () => readProfiles(),
   wait: (ms) => new Promise((done) => setTimeout(done, ms)),
   incoming: (account, channel, since) => incomingSince("discord", account, channel, since),
+  typing: (account, channel) => typingNow({ platform: "discord", account, conversationId: channel }),
   now: () => new Date().toISOString(),
+  mark: (account) => watchLogMark("discord", account),
 };
 
 const DISCORD_ACCOUNT: FlagSpec = { name: "account", kind: "string", required: true, description: "The DISCORD socialAccount's accountName (its handle)" };
 
 export const DISCORD_CHATS_USAGE = [
-  "Usage: log discord chats --account <accountName> [--json]",
-  "Lists the account's DMs and group DMs with their ids, names and members, on the direct-API engine (no browser). Sends nothing.",
+  "Usage: log discord chats --account <accountName> [--kind <kinds>] [--name <text>] [--json]",
+  "Lists the account's chats with ids, names and members, on the direct-API engine. Sends nothing.",
 ].join("\n");
 
+export const CHAT_KINDS = ["dm", "group", "channel"] as const;
+
 export const DISCORD_CHATS_INPUT: CommandInput = {
-  forms: [{ words: [], summary: "The account's DMs and group DMs, with their ids", positionals: [], flags: [DISCORD_ACCOUNT, JSON_FLAG] }],
+  forms: [
+    {
+      words: [],
+      summary: "The account's chats with ids and members: a list, not messages (read one with discordRead)",
+      positionals: [],
+      flags: [
+        DISCORD_ACCOUNT,
+        { name: "kind", kind: "list", description: "Only these kinds: dm, group, channel" },
+        { name: "name", kind: "string", description: "Only chats named like this, typos allowed" },
+        JSON_FLAG,
+      ],
+    },
+  ],
 };
+
+export function narrowChats(chats: readonly DiscordChat[], kinds: readonly string[], name: string): DiscordChat[] {
+  const ofKind = kinds.length ? chats.filter((c) => kinds.includes(c.kind)) : [...chats];
+  return name.trim() ? closestNamed(ofKind, name, (c) => [c.name, ...c.members]) : ofKind;
+}
+
+function withSenders(chats: DiscordChat[], account: string): (DiscordChat & { senders?: string[] })[] {
+  let senders: Map<string, string[]>;
+  try {
+    senders = channelSendersOf(db(), "discord", account);
+  } catch {
+    return chats;
+  }
+  return chats.map((c) => (c.members.length || !senders.get(c.id)?.length ? c : { ...c, senders: senders.get(c.id) }));
+}
 
 export const discordChatsCommand: Command = {
   usage: DISCORD_CHATS_USAGE,
@@ -106,12 +149,16 @@ export const discordChatsCommand: Command = {
   name: "chats",
   effect: "read",
   input: DISCORD_CHATS_INPUT,
-  summary: "List the account's DMs and group DMs with their ids, on the direct-API engine, sending nothing",
+  summary: "The account's chats with their ids, on the direct-API engine; sends nothing",
   args: "--account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DISCORD_CHATS_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log discord chats: ${parsed.error}\n${DISCORD_CHATS_USAGE}` };
-    if (parsed.positionals.length) return { code: 1, stderr: `log discord chats: takes no words, only flags\n${DISCORD_CHATS_USAGE}` };
+    if (!parsed.ok) return refuseInput("discord chats", parsed.error, DISCORD_CHATS_USAGE);
+    if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log discord chats: takes no words, only flags\n${DISCORD_CHATS_USAGE}` };
+    const kinds = listOf(parsed, "kind") ?? [];
+    const wrongKind = kinds.find((k) => !(CHAT_KINDS as readonly string[]).includes(k));
+    if (wrongKind) return refuseInput("discord chats", `--kind "${wrongKind}" is not one of ${CHAT_KINDS.join(", ")}`, DISCORD_CHATS_USAGE);
+    const name = typeof parsed.flags["name"] === "string" ? String(parsed.flags["name"]) : "";
     try {
       const account = await findDiscordAccount(context.twenty, String(parsed.flags["account"]));
       const gate = discordGate(account);
@@ -119,11 +166,13 @@ export const discordChatsCommand: Command = {
       if (!context.directDiscord) return { code: 1, stderr: "log discord chats: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: chats on the direct-API engine`);
       const run = context.directDiscord(account, { action: "chats" });
-      const chats = (run.answer.chats as DiscordChat[] | undefined) ?? [];
+      const all = (run.answer.chats as DiscordChat[] | undefined) ?? [];
+      const chats = withSenders(narrowChats(all, kinds, name), account.accountName);
+      const narrowed = kinds.length > 0 || Boolean(name.trim());
       const code = run.answer.ok ? 0 : 1;
-      if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, ...run.answer }, null, 2) };
+      if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, ...run.answer, ...(run.answer.ok ? { chats, ...(narrowed ? { of: all.length } : {}) } : {}) }, null, 2) };
       if (!run.answer.ok) return { code, stdout: `log discord chats: ${account.accountName}: ${run.answer.code}: ${run.answer.detail ?? ""}` };
-      return { code, stdout: [`log discord chats: ${account.accountName} has ${chats.length} DM(s) and group(s)`, ...chats.map((c) => `  ${c.id}  ${c.kind.padEnd(5)}  ${c.name ?? "(no name)"}  (${c.members.join(", ")})`)].join("\n") };
+      return { code, stdout: [`log discord chats: ${account.accountName} has ${narrowed ? `${chats.length} of ${all.length} chat(s) matching` : `${chats.length} chat(s)`}`, ...chats.map((c) => `  ${c.id}  ${c.kind.padEnd(5)}  ${c.name ?? "(no name)"}  (${c.senders ? `last from ${c.senders.join(", ")}` : c.members.join(", ")})`)].join("\n") };
     } catch (error) {
       return refuseError("discord chats", error);
     }
@@ -131,21 +180,22 @@ export const discordChatsCommand: Command = {
 };
 
 export const DISCORD_READ_USAGE = [
-  "Usage: log discord read --account <accountName> --channel <channelId|chat name> [--limit <n>] [--after <messageId>] [--json]",
-  "Reads a DM, group DM or server channel's latest messages, oldest first, on the direct-API engine (no browser): who sent each, when, whether a bot, what it replies to, its text and embeds. --after keeps only what came after that message (a bot's answer to ours). Sends nothing.",
+  "Usage: log discord read --account <accountName> --channel <id|name> [--limit <n>] [--after <id>] [--noMedia] [--json]",
+  "Reads a DM, group DM, server channel or forum post's latest messages, oldest first, on the direct-API engine (no browser): who sent each, when, whether a bot, what it replies to, its text and embeds. A server channel is \"<server> #<channel>\" and a forum post \"<server> #<forum> > <post title>\" (from log discord posts), both read live from Discord. --after keeps only what came after that message (a bot's answer to ours). --noMedia reads text only, without saving images or transcribing voice notes, for a fast pass over a busy channel. Sends nothing.",
 ].join("\n");
 
 export const DISCORD_READ_INPUT: CommandInput = {
   forms: [
     {
       words: [],
-      summary: "A chat's latest messages, oldest first, sending nothing",
+      summary: "One chat's messages by its name (a DM with someone, a group or \"<server> #<channel>\"): who said what and when, oldest first. Use it to summarise a conversation",
       positionals: [],
       flags: [
         DISCORD_ACCOUNT,
-        { name: "channel", kind: "string", required: true, description: "The chat as matt says it, matched to one DM or group; or a channel id (a server channel by its id)" },
-        { name: "limit", kind: "string", description: "How many of the latest messages, default 20, at most 1000, read 100 a page as Discord's app scrolls back" },
+        { name: "channel", kind: "string", required: true, description: "The chat as the owner says it, matched to one DM or group; or a channel id (a server channel by its id)" },
+        { name: "limit", kind: "integer", min: 1, max: 1000, description: "How many of the latest messages, default 20, at most 1000, read 100 a page as Discord's app scrolls back" },
         { name: "after", kind: "string", description: "Only messages after this message id" },
+        { name: "noMedia", kind: "boolean", description: "Text only: skip saving images and files and transcribing voice notes, for a fast read of a busy channel" },
         JSON_FLAG,
       ],
     },
@@ -216,17 +266,17 @@ export const discordReadCommand: Command = {
   usage: DISCORD_READ_USAGE,
   platform: "discord",
   name: "read",
+  longRunning: true,
   effect: "read",
   input: DISCORD_READ_INPUT,
   summary: "Read a Discord chat or channel's latest messages, on the direct-API engine, sending nothing",
   args: "--account <a> --channel <id|name> [--limit <n>] [--after <id>] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DISCORD_READ_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log discord read: ${parsed.error}\n${DISCORD_READ_USAGE}` };
-    if (parsed.positionals.length) return { code: 1, stderr: `log discord read: takes no words, only flags\n${DISCORD_READ_USAGE}` };
+    if (!parsed.ok) return refuseInput("discord read", parsed.error, DISCORD_READ_USAGE);
+    if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log discord read: takes no words, only flags\n${DISCORD_READ_USAGE}` };
     const channel = String(parsed.flags["channel"]).trim();
-    const limit = parsed.flags["limit"] === undefined ? 20 : Number(parsed.flags["limit"]);
-    if (!Number.isInteger(limit) || limit < 1 || limit > 1000) return { code: 1, stderr: `log discord read: --limit must be 1 to 1000\n${DISCORD_READ_USAGE}` };
+    const limit = numberOf(parsed, "limit") ?? 20;
     const after = typeof parsed.flags["after"] === "string" ? parsed.flags["after"].trim() : undefined;
     try {
       const account = await findDiscordAccount(context.twenty, String(parsed.flags["account"]));
@@ -261,11 +311,11 @@ export const discordReadCommand: Command = {
         return { code: 0, stdout: [`log discord read: ${messages.length} message(s) in ${target}${after ? ` after ${after}` : ""}, from the .db`, ...messages.map((m) => [`  ${m.at} ${m.from}${m.fromMe ? " (me)" : ""} · ${m.id}`, ...(m.text ? m.text.split("\n").map((l) => `    ${l}`) : []), ...attachmentLines(m)].join("\n"))].join("\n") };
       }
       context.err(sourceLine(source, "Discord", account.accountName, 0));
-      const run = direct(account, { action: "read", channel: target, limit, ...(after ? { after } : {}) });
+      const run = direct(account, { action: "read", channel: target, limit, ...(after ? { after } : {}), ...(parsed.flags["noMedia"] ? { saveAudio: false, saveImages: false } : {}) });
       if (run.answer.ok && kind !== "channel") markBackfilled("discord", account.accountName, target, context.now?.() ?? new Date());
       const code = run.answer.ok ? 0 : 1;
       const messages = await withVoiceNotes({ platform: "discord", account: account.accountName, conversationId: target }, (run.answer.messages as DiscordRead[] | undefined) ?? [], (m) => m.audio ?? [], context.err);
-      if (run.answer.ok) for (const m of messages) storeRead("discord", account.accountName, target, "dm", { id: m.id, at: m.at, from: m.from, fromMe: m.fromMe, text: m.text, attachments: storedAttachmentsOf(m) }, context.now?.() ?? new Date(), "backfill");
+      if (run.answer.ok) for (const m of messages) storeRead("discord", account.accountName, target, "dm", { id: m.id, at: m.at, from: m.from, fromMe: m.fromMe, bot: m.bot, text: m.text, attachments: storedAttachmentsOf(m) }, context.now?.() ?? new Date(), "backfill");
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, ...run.answer, ...(run.answer.messages ? { messages } : {}) }, null, 2) };
       if (!run.answer.ok) return { code, stdout: `log discord read: ${account.accountName}: ${run.answer.code}: ${run.answer.detail ?? ""}` };
       return {
@@ -282,7 +332,7 @@ export const discordReadCommand: Command = {
 };
 
 export const DISCORD_WATCH_USAGE = [
-  "Usage: log discord watch --account <accountName> [--channel <channelId|chat name>] [--seconds <s>] [--inbox] [--json]",
+  "Usage: log discord watch --account <accountName> [--channel <id|name>] [--seconds <s>] [--inbox] [--json]",
   "Opens the account's Discord gateway on the direct-API engine (wss://gateway.discord.gg, no browser) and prints every message the moment Discord pushes it, nothing polled. --channel keeps only one chat or channel; --seconds stops after that long (at least 5), otherwise it runs until stopped. --inbox hands each new DM, group message, mention of the account or reply to it from someone else to the inbox hook, which puts it in front of the agent with what to do next. Sends nothing.",
 ].join("\n");
 
@@ -290,12 +340,12 @@ export const DISCORD_WATCH_INPUT: CommandInput = {
   forms: [
     {
       words: [],
-      summary: "Every Discord message as Discord pushes it, over the gateway, sending nothing",
+      summary: "Every Discord message as it lands, over the gateway; sends nothing",
       positionals: [],
       flags: [
         DISCORD_ACCOUNT,
-        { name: "channel", kind: "string", description: "Only this chat (as matt says it) or channel id" },
-        { name: "seconds", kind: "string", description: "Stop after this many seconds (at least 5); default: until stopped" },
+        { name: "channel", kind: "string", description: "Only this chat (as the owner says it) or channel id" },
+        { name: "seconds", kind: "number", min: 0, refusal: "secondsInvalid", description: "Stop after this many seconds (at least 5); default: until stopped" },
         { name: "inbox", kind: "boolean", description: "Hand each new DM, group message, mention or reply to the account to the inbox hook" },
         JSON_FLAG,
       ],
@@ -309,31 +359,57 @@ export function watchLine(event: Record<string, unknown>): string {
   return `${event.at ?? ""} ${event.guildId ? `channel ${event.channelId}` : `chat ${event.channelId}`} · ${event.from}${event.bot ? " [bot]" : ""}${event.fromMe ? " (me)" : ""}${event.replyTo ? ` replying to ${event.replyTo}` : ""} · ${event.id}: ${text}`;
 }
 
-export function toInboxOf(event: Record<string, unknown>): boolean {
+export function toInboxOf(event: Record<string, unknown>, talking?: ServerTalks): boolean {
   if (event.kind !== "message" || event.fromMe) return false;
   if (event.bot && String(event.text ?? "").trim() === "Thinking...") return false;
-  return !event.guildId || event.mentionsMe === true || event.repliesToMe === true;
+  return !event.guildId || event.mentionsMe === true || event.repliesToMe === true || (talking?.with(event) ?? false);
+}
+
+export const SERVER_TALK_MS = 30 * 60_000;
+
+export class ServerTalks {
+  private senders = new Map<string, string>();
+  private talks = new Map<string, number>();
+  see(event: Record<string, unknown>, at: number): void {
+    if (event.kind !== "message" || !event.guildId || !event.channelId) return;
+    const channel = String(event.channelId);
+    if (event.id && event.fromId) {
+      this.senders.set(String(event.id), String(event.fromId));
+      if (this.senders.size > 5000) this.senders.delete(this.senders.keys().next().value as string);
+    }
+    if (event.fromMe) {
+      const to = event.replyTo ? this.senders.get(String(event.replyTo)) : undefined;
+      const tagged = [...String(event.text ?? "").matchAll(/<@!?(\d{15,22})>/g)].map((m) => m[1]);
+      for (const who of [to, ...tagged]) if (who) this.talks.set(`${channel}:${who}`, at);
+    } else if (event.fromId && (event.mentionsMe === true || event.repliesToMe === true)) this.talks.set(`${channel}:${String(event.fromId)}`, at);
+  }
+  with(event: Record<string, unknown>, at = Date.now()): boolean {
+    if (!event.guildId || !event.channelId || !event.fromId || event.bot) return false;
+    const last = this.talks.get(`${String(event.channelId)}:${String(event.fromId)}`);
+    return last !== undefined && at - last <= SERVER_TALK_MS;
+  }
 }
 
 export function discordInboxMessageOf(account: string, event: Record<string, unknown>, now: Date) {
   const attachments = ((event.attachments as { name?: string; filename?: string; type?: string; content_type?: string; path?: string; error?: string }[] | undefined) ?? []).filter((a) => a.name ?? a.filename).map((a) => ({ name: String(a.name ?? a.filename), ...((a.type ?? a.content_type) ? { type: String(a.type ?? a.content_type) } : {}), ...(a.path ? { path: a.path } : {}), ...(a.error ? { error: a.error } : {}) }));
-  return { platform: "discord", account, conversationId: String(event.channelId ?? ""), with: String(event.from ?? "?"), text: String(event.text ?? ""), at: String(event.at ?? now.toISOString()), box: event.guildId ? (event.mentionsMe ? "mention" : "reply") : "dm", seenAt: now.toISOString(), ...(event.id ? { id: String(event.id) } : {}), ...(event.fromId ? { senderId: String(event.fromId) } : {}), ...(event.replyTo ? { replyTo: String(event.replyTo) } : {}), ...(event.guildId ? { serverId: String(event.guildId) } : {}), ...(attachments.length ? { attachments } : {}) };
+  return { platform: "discord", account, conversationId: String(event.channelId ?? ""), with: String(event.from ?? "?"), text: String(event.text ?? ""), at: String(event.at ?? now.toISOString()), box: event.guildId ? (event.mentionsMe ? "mention" : event.repliesToMe ? "reply" : "talk") : "dm", seenAt: now.toISOString(), ...(event.id ? { id: String(event.id) } : {}), ...(event.fromId ? { senderId: String(event.fromId) } : {}), ...(event.replyTo ? { replyTo: String(event.replyTo) } : {}), ...(event.guildId ? { serverId: String(event.guildId) } : {}), ...(attachments.length ? { attachments } : {}) };
 }
 
 export const discordWatchCommand: Command = {
   usage: DISCORD_WATCH_USAGE,
   platform: "discord",
   name: "watch",
+  longRunning: true,
   effect: "read",
   input: DISCORD_WATCH_INPUT,
   summary: "Watch the account's Discord messages as Discord pushes them over its gateway, nothing polled, sending nothing",
   args: "--account <a> [--channel <id|name>] [--seconds <s>] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DISCORD_WATCH_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log discord watch: ${parsed.error}\n${DISCORD_WATCH_USAGE}` };
-    if (parsed.positionals.length) return { code: 1, stderr: `log discord watch: takes no words, only flags\n${DISCORD_WATCH_USAGE}` };
-    const seconds = parsed.flags["seconds"] === undefined ? 0 : Number(parsed.flags["seconds"]);
-    if (!Number.isFinite(seconds) || (seconds !== 0 && seconds < 5)) return refuse("discord watch", "secondsInvalid", "--seconds must be at least 5");
+    if (!parsed.ok) return refuseInput("discord watch", parsed.error, DISCORD_WATCH_USAGE);
+    if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log discord watch: takes no words, only flags\n${DISCORD_WATCH_USAGE}` };
+    const seconds = numberOf(parsed, "seconds") ?? 0;
+    if (seconds !== 0 && seconds < 5) return refuse("discord watch", "secondsInvalid", "--seconds must be at least 5");
     try {
       const account = await findDiscordAccount(context.twenty, String(parsed.flags["account"]));
       const gate = discordGate(account);
@@ -364,14 +440,21 @@ export const discordWatchCommand: Command = {
           else if (shown(event)) context.err(parsed.flags["json"] ? JSON.stringify(event) : watchLine(event));
         },
         run: (emit) => {
-          context.err(`${account.accountName}: the one owner of Discord's gateway through vendor/endcord${only ? `, showing only ${only}` : ""}${seconds ? `, for ${seconds} s` : ", until stopped"}; new DMs, group messages, mentions and replies go to the inbox and every event to every attached subscriber`);
+          context.err(`${account.accountName}: the one owner of Discord's gateway as the account's own browser${only ? `, showing only ${only}` : ""}${seconds ? `, for ${seconds} s` : ", until stopped"}; new DMs, group messages, mentions and replies go to the inbox and every event to every attached subscriber`);
+          const talks = new ServerTalks();
           return directDiscordLive(account, { action: "watch", seconds }, (event) => {
+            if (event.kind === "typing") {
+              if (event.channelId && event.fromId) recordTyping({ platform: "discord", account: account.accountName, conversationId: String(event.channelId) }, String(event.fromId), context.now?.() ?? new Date());
+              return;
+            }
+            if (event.kind === "message" && !event.fromMe && event.channelId && event.fromId) clearTyping({ platform: "discord", account: account.accountName, conversationId: String(event.channelId) }, String(event.fromId));
             emit(event);
             if (event.kind === "message" && !event.guildId && event.channelId && event.id) {
               recordPosition("discord", account.accountName, String(event.id), String(event.channelId));
               if (event.fromMe) storeRead("discord", account.accountName, String(event.channelId), "dm", { id: String(event.id), at: String(event.at ?? ""), from: "me", fromMe: true, text: String(event.text ?? "") }, context.now?.() ?? new Date(), "live");
             }
-            const mine = toInboxOf(event);
+            const mine = toInboxOf(event, talks);
+            talks.see(event, Date.now());
             if (mine) {
               const inbox = discordInboxMessageOf(account.accountName, event, context.now?.() ?? new Date());
               enqueueAttachments(inbox, ((event.attachments as { filename?: string; name?: string; content_type?: string; type?: string; path?: string }[] | undefined) ?? []).map((a) => ({ name: a.filename ?? a.name, type: a.content_type ?? a.type ?? "", path: a.path ?? null })));
@@ -401,8 +484,8 @@ export const discordWatchCommand: Command = {
 };
 
 export const DISCORD_DELETE_USAGE = [
-  "Usage: log discord delete --account <accountName> --channel <channelId|chat name> --message <messageId>[,<messageId>...] [--approvedBy <who>] [--live] [--json]",
-  "Deletes the account's own messages by id (from log discord read) in a DM, group DM or server channel, on the direct-API engine (no browser): a duplicate or a mistake. Each message is read first and only deleted when the account sent it; someone else's is refused with notOwnMessage. Without --live it is a dry run that reads each message and deletes nothing. --live deletes, only when matt asked, and needs --approvedBy (rule 8). Discord's answer decides (204 is deleted). Each delete counts as a write, they go 4 s apart, and the first refusal stops the run with nothing retried (rule 94).",
+  "Usage: log discord delete --account <accountName> --channel <id|name> --message <id>[,<id>...] [--approvedBy <who>] [--live] [--json]",
+  "Deletes the account's own messages by id (from log discord read) in a DM, group DM or server channel, on the direct-API engine (no browser): a duplicate or a mistake. Each message is read first and only deleted when the account sent it; someone else's is refused with notOwnMessage. Without --live it is a dry run that reads each message and deletes nothing. --live deletes, only when the owner asked, and needs --approvedBy (rule 8). Discord's answer decides (204 is deleted). Each delete counts as a write, they go 4 s apart, and the first refusal stops the run with nothing retried (rule 94).",
 ].join("\n");
 
 export const DISCORD_DELETE_INPUT: CommandInput = {
@@ -410,14 +493,14 @@ export const DISCORD_DELETE_INPUT: CommandInput = {
     {
       words: [],
       effect: "write",
-      summary: "Delete the account's own Discord messages by id, on the direct-API engine; a dry run unless --live",
+      summary: "Delete the account's own Discord messages by id; a dry run unless --live",
       positionals: [],
       flags: [
         DISCORD_ACCOUNT,
-        { name: "channel", kind: "string", required: true, description: "The chat as matt says it, matched to one DM or group; or a channel id" },
-        { name: "message", kind: "string", required: true, description: "The message id to delete, or several separated by commas (ids from log discord read)" },
-        { name: "approvedBy", kind: "string", description: "Who approved it: needed with --live (rule 8)" },
-        { name: "live", kind: "boolean", live: true, description: "Delete on Discord, only when matt asked (rule 8); without it a dry run deletes nothing" },
+        { name: "channel", kind: "string", required: true, description: "The chat as the owner says it, matched to one DM or group; or a channel id" },
+        { name: "message", kind: "list", required: true, pattern: "^\\d{15,22}$", takes: "Discord message ids (15 to 22 digits)", refusal: "messageInvalid", description: "The message id to delete, or several separated by commas (ids from log discord read)" },
+        { name: "approvedBy", kind: "string", approval: true, description: "Who approved it: needed with --live (rule 8)" },
+        { name: "live", kind: "boolean", live: true, description: "Delete on Discord, only when the owner asked (rule 8); without it a dry run deletes nothing" },
         JSON_FLAG,
       ],
     },
@@ -434,10 +517,10 @@ export const discordDeleteCommand: Command = {
   args: "--account <a> --channel <id|name> --message <id>[,<id>] [--approvedBy <who>] [--live] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DISCORD_DELETE_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log discord delete: ${parsed.error}\n${DISCORD_DELETE_USAGE}` };
-    if (parsed.positionals.length) return { code: 1, stderr: `log discord delete: takes no words, only flags\n${DISCORD_DELETE_USAGE}` };
+    if (!parsed.ok) return refuseInput("discord delete", parsed.error, DISCORD_DELETE_USAGE);
+    if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log discord delete: takes no words, only flags\n${DISCORD_DELETE_USAGE}` };
     const channel = String(parsed.flags["channel"]).trim();
-    const ids = String(parsed.flags["message"]).split(",").map((s) => s.trim()).filter(Boolean);
+    const ids = listOf(parsed, "message") ?? [];
     const approvedBy = typeof parsed.flags["approvedBy"] === "string" ? parsed.flags["approvedBy"].trim() : "";
     const live = parsed.flags["live"] === true;
     if (!ids.length || ids.some((id) => !/^\d{15,22}$/.test(id))) return refuse("discord delete", "messageInvalid", "--message takes Discord message ids (from log discord read), separated by commas");
@@ -470,14 +553,24 @@ export const discordDeleteCommand: Command = {
         return { code: 0, stdout: [`log discord delete: dry run: ${account.accountName} in ${target}:`, ...rows.map((r) => `  ${r.id}  ${r.would === "delete" ? "would delete" : r.would === "notFound" ? "not in the latest 100 messages" : "refused, someone else sent it"}${r.text ? `: ${r.text.replace(/\s+/g, " ").slice(0, 160)}` : ""}`), "Nothing was deleted. --live --approvedBy <who> deletes them (rule 8)."].join("\n") };
       }
       context.err(`${account.accountName}: delete ${ids.length} message(s) in ${target} on the direct-API engine, approved by ${approvedBy}`);
-      const done: PlatformAnswer[] = [];
-      for (const [i, id] of ids.entries()) {
-        if (i) await discordDeps.wait(4000);
-        const run = context.directDiscord(account, { action: "delete", channel: target, message: id, live: true, approvedBy });
-        done.push(run.answer);
-        if (!run.answer.ok) break;
-        context.err(`  ${i + 1}/${ids.length} deleted ${id}: ${String(run.answer.content ?? "").replace(/\s+/g, " ").slice(0, 160)}`);
-      }
+      const direct = context.directDiscord;
+      const acted = await runAction<null, PlatformAnswer[]>({
+        gate: passGate,
+        act: async () => {
+          const answers: PlatformAnswer[] = [];
+          for (const [i, id] of ids.entries()) {
+            if (i) await discordDeps.wait(4000);
+            const run = direct(account, { action: "delete", channel: target, message: id, live: true, approvedBy });
+            answers.push(run.answer);
+            if (!run.answer.ok) break;
+            context.err(`  ${i + 1}/${ids.length} deleted ${id}: ${String(run.answer.content ?? "").replace(/\s+/g, " ").slice(0, 160)}`);
+          }
+          return answers;
+        },
+        confirm: (answers) => confirmParts({ sent: answers.filter((a) => a.ok && a.event === "deleted").length, total: ids.length, last: answers[answers.length - 1] }),
+      });
+      rethrowFailure(acted);
+      const done = acted.answer!;
       const deleted = done.filter((a) => a.ok && a.event === "deleted");
       const code = deleted.length === ids.length ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, approvedBy, channelId: target, deleted: done }, null, 2) };
@@ -490,15 +583,99 @@ export const discordDeleteCommand: Command = {
   },
 };
 
+export const DISCORD_FRIEND_USAGE = [
+  "Usage: log discord friend --account <accountName> --userId <id>[,<id>...] [--approvedBy <who>] [--live] [--json]",
+  "Friend requests by user id (fromId in log discord read), on the direct-API engine. A dry run unless --live, which needs --approvedBy (rule 8). 20 s apart; the first refusal stops the run (rule 94); a captcha answers captchaRequired.",
+].join("\n");
+
+export const DISCORD_FRIEND_INPUT: CommandInput = {
+  forms: [
+    {
+      words: [],
+      effect: "write",
+      summary: "Send Discord friend requests by user id; a dry run unless --live",
+      positionals: [],
+      flags: [
+        DISCORD_ACCOUNT,
+        { name: "userId", kind: "list", required: true, pattern: "^\\d+$", takes: "Discord user ids (digits)", refusal: "userInvalid", description: "The person's Discord user id, or several separated by commas (fromId in log discord read)" },
+        { name: "approvedBy", kind: "string", approval: true, description: "Who approved it: needed with --live (rule 8)" },
+        { name: "live", kind: "boolean", live: true, description: "Send the requests on Discord, only when the owner asked (rule 8); without it a dry run contacts nothing" },
+        JSON_FLAG,
+      ],
+    },
+  ],
+};
+
+export const discordFriendCommand: Command = {
+  usage: DISCORD_FRIEND_USAGE,
+  platform: "discord",
+  name: "friend",
+  effect: "write",
+  input: DISCORD_FRIEND_INPUT,
+  summary: "Send Discord friend requests by user id; a dry run unless --live",
+  args: "--account <a> --userId <id>[,<id>] [--approvedBy <who>] [--live] [--json]",
+  async run(context, argv) {
+    const parsed = parseArgs(argv, parserSpecOf(DISCORD_FRIEND_INPUT));
+    if (!parsed.ok) return refuseInput("discord friend", parsed.error, DISCORD_FRIEND_USAGE);
+    if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log discord friend: takes no words, only flags\n${DISCORD_FRIEND_USAGE}` };
+    const ids = listOf(parsed, "userId") ?? [];
+    const approvedBy = typeof parsed.flags["approvedBy"] === "string" ? parsed.flags["approvedBy"].trim() : "";
+    const live = parsed.flags["live"] === true;
+    if (!ids.length || ids.some((id) => !/^\d+$/.test(id))) return refuse("discord friend", "userInvalid", "--userId takes Discord user ids (fromId in log discord read), separated by commas");
+    if (live && !approvedBy) return refuse("discord friend", "notApproved", "--live needs --approvedBy <who> (rule 8)");
+    try {
+      const account = await findDiscordAccount(context.twenty, String(parsed.flags["account"]));
+      const gate = discordGate(account);
+      if (!gate.ok) return refuse("discord friend", gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail);
+      if (!live) {
+        if (parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, ok: true, dryRun: true, userIds: ids }, null, 2) };
+        return { code: 0, stdout: [`log discord friend: dry run: ${account.accountName} would send a friend request to:`, ...ids.map((id) => `  ${id}`), "Nothing was sent. --live --approvedBy <who> sends them (rule 8)."].join("\n") };
+      }
+      if (!context.directDiscord) return refuse("discord friend", "engineNotBuilt", "the direct-API engine isn't wired in this context");
+      context.err(`${account.accountName}: ${ids.length} friend request(s) on the direct-API engine, approved by ${approvedBy}`);
+      const direct = context.directDiscord;
+      const acted = await runAction<null, PlatformAnswer[]>({
+        gate: passGate,
+        act: async () => {
+          const answers: PlatformAnswer[] = [];
+          for (const [i, id] of ids.entries()) {
+            if (i) await discordDeps.wait(20000);
+            const run = direct(account, { action: "friend", user: id, live: true, approvedBy } as never);
+            answers.push(run.answer);
+            if (!run.answer.ok) break;
+            context.err(`  ${i + 1}/${ids.length} requested ${id}`);
+          }
+          return answers;
+        },
+        confirm: (answers) => confirmParts({ sent: answers.filter((a) => a.ok && a.event === "sent").length, total: ids.length, last: answers[answers.length - 1] }),
+      });
+      rethrowFailure(acted);
+      const done = acted.answer!;
+      const sent = done.filter((a) => a.ok && a.event === "sent");
+      const code = sent.length === ids.length ? 0 : 1;
+      if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, approvedBy, requests: done }, null, 2) };
+      if (code === 0) return { code, stdout: `log discord friend: ${account.accountName} sent ${sent.length} friend request(s) (${ids.join(", ")}).` };
+      const last = done[done.length - 1];
+      return { code, stdout: `log discord friend: ${account.accountName}: ${sent.length} of ${ids.length} sent, then ${last.code}: ${last.detail ?? ""}. Nothing is retried (rule 94).` };
+    } catch (error) {
+      return refuseError("discord friend", error);
+    }
+  },
+};
+
+export function refusedWith(answers: PlatformAnswer[]): string {
+  const last = answers.at(-1);
+  return last && !last.ok ? `, then Discord answered ${last.code}${last.httpStatus ? ` ${last.httpStatus}` : ""}: ${String(last.detail ?? "").slice(0, 200)}` : "";
+}
+
 export const FILE_MAX_BYTES = 10 * 1024 * 1024;
 
 export function fileRoots(env: Record<string, string | undefined> = process.env): string[] {
-  return [resolvePath(env.LOG_OUTBOX || join(homedir(), ".buzz", "OUTBOX")), resolvePath(join(homedir(), ".logCli"))];
+  return [resolvePath(env.LOG_OUTBOX || join(logHome(), "outbox")), resolvePath(logHome())];
 }
 
-export function filesOf(flag: unknown, roots = fileRoots()): { ok: true; paths: string[] } | { ok: false; refused: string } {
-  if (typeof flag !== "string" || !flag.trim()) return { ok: true, paths: [] };
-  const paths = flag.split(",").map((p) => p.trim()).filter(Boolean).map((p) => resolvePath(p));
+export function filesOf(given: readonly string[] | undefined, roots = fileRoots()): { ok: true; paths: string[] } | { ok: false; refused: string } {
+  const paths = (given ?? []).map((p) => resolvePath(p));
   for (const path of paths) {
     const inside = roots.some((root) => { const rel = relative(root, path); return !!rel && !rel.startsWith("..") && !isAbsolute(rel); });
     if (!inside) return { ok: false, refused: `${path} isn't under OUTBOX or ~/.logCli, so it isn't sent` };
@@ -509,11 +686,11 @@ export function filesOf(flag: unknown, roots = fileRoots()): { ok: true; paths: 
 }
 
 export const DISCORD_SEND_USAGE = [
-  'Usage: log discord send --account <accountName> --channel <channelId|chat name> --text "<message>" [--asOne] [--overGate] [--approvedBy <who>] [--live] [--json]',
-  "Sends one message to a DM, a group DM (by its id or its name, from log discord chats) or a server channel (by its id), on the direct-API engine (no browser).",
-  "--brief says the message hands someone a task, not a casual reply: the gate reads it as a brief instead of matt's chat voice (rule 162), asking SubQ whether it says clearly what to do, why, what done looks like and by when, kindly, and how to ask when stuck, with the attached files read beside it. The sameness, AI artifact and scrambler checks still run.",
+  'Usage: log discord send --account <accountName> (--channel <id|name> | --userId <id>) --text "<message>" [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]',
+  "Sends one message to a DM, a group DM (by its id or its name, from log discord chats) or a server channel (by its id), on the direct-API engine (no browser). Each message is typed first, as Discord's own app does: the typing signal (POST channels/<id>/typing, so the chat shows the account typing) goes out, then the account waits as long as the text takes to type, sending the signal again every 8 s, before the message. A typing signal Discord refuses or doesn't answer stops it before the message, nothing retried (rule 94).",
+  "--brief says the message hands someone a task, not a casual reply: the gate reads it as a brief instead of the owner's chat voice (rule 162), asking SubQ whether it says clearly what to do, why, what done looks like and by when, kindly, and how to ask when stuck, with the attached files read beside it. The sameness, AI artifact and scrambler checks still run.",
   "--file attaches files (a guide, a spreadsheet) to the last message, uploaded through the account's own session: only files under OUTBOX or ~/.logCli, at most 10 MB each, refused before anything is sent otherwise (fileRefused).",
-  "A draft written on several lines goes out one message per line, wherever it is sent (matt, 2026-10-28: stop sending as one). A one-line draft is split the way matt writes in that chat, from his own messages there (log voice index): how many he sends in a row and how many words each runs to, cut at the draft's own line breaks or punctuation, else the nearest space, and sent with his usual gap between them; a chat where he mostly sends one gets one. --asOne always sends one. Without --live it is a dry run and Discord is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). Discord's answer decides: a message id is sent, none is a drop. The account's governor counts it as a write. Before anything is sent, dry run or --live, the copy is read for what AI chat interfaces leave in text (rule 111): hidden characters, odd spaces or pasted Claude HTML refuse it with aiArtifacts, and the reading is printed and kept in --json. --overGate sends it over the voice gate's refusal when matt said to send that exact message: the gate's SubQ read is skipped and the AI artifact check still runs (rule 152).",
+  "A draft written on several lines goes out one message per line, wherever it is sent (the owner, 2026-10-28: stop sending as one). A one-line draft is split the way the owner writes in that chat, from his own messages there (log voice index): how many he sends in a row and how many words each runs to, cut at the draft's own line breaks or punctuation, else the nearest space, and sent with his usual gap between them; a chat where he mostly sends one gets one. --asOne always sends one. Without --live it is a dry run and Discord is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). Discord's answer decides: a message id is sent, none is a drop. The account's governor counts it as a write. Before anything is sent, dry run or --live, the copy is read for what AI chat interfaces leave in text (rule 111): hidden characters, odd spaces or pasted Claude HTML refuse it with aiArtifacts, and the reading is printed and kept in --json. --overGate sends it over the voice gate's refusal when the owner said to send that exact message: the gate's SubQ read is skipped and the AI artifact check still runs (rule 152). A link to an X post (x.com or twitter.com) is sent as fixupx.com, so Discord embeds the post with its video (the owner, 2026-11-13).",
 ].join("\n");
 
 export const DISCORD_SEND_INPUT: CommandInput = {
@@ -521,20 +698,23 @@ export const DISCORD_SEND_INPUT: CommandInput = {
     {
       words: [],
       effect: "write",
-      summary: "Send one message on Discord, on the direct-API engine; a dry run unless --live",
+      summary: "Send one message on Discord; a dry run unless --live",
       positionals: [],
       flags: [
         DISCORD_ACCOUNT,
-        { name: "channel", kind: "string", required: true, description: "The chat as matt says it (\"the log group\", \"jilly\", \"listaro\"), matched to one DM or group; or a channel id" },
-        { name: "text", kind: "string", required: true, description: "The message, as matt gave it" },
-        { name: "approvedBy", kind: "string", description: "Who approved it: needed with --live (rule 8)" },
-        { name: "file", kind: "string", description: "Files to attach to the last message, comma-separated paths under OUTBOX or ~/.logCli, at most 10 MB each" },
+        { name: "channel", kind: "string", description: "The chat as the owner says it (\"the log group\", \"wren\", \"the partners group\"), matched to one DM or group; or a channel id. Leave it out with --userId" },
+        { name: "userId", kind: "string", pattern: "^\\d+$", takes: "a Discord user id (digits)", refusal: "userInvalid", description: "Message someone the account has no DM with yet, by their Discord user id (fromId in log discord read): the DM is opened first, the way the app's Message button does" },
+        { name: "text", kind: "string", required: true, description: "The message, as the owner gave it" },
+        { name: "approvedBy", kind: "string", approval: true, description: "Who approved it: needed with --live (rule 8)" },
+        { name: "file", kind: "list", description: "Files to attach to the last message, comma-separated paths under OUTBOX or ~/.logCli, at most 10 MB each" },
         { name: "brief", kind: "boolean", description: "The message hands someone a task: gated as a brief (clear, why, done when, kind, how to ask), not as casual chat (rule 162)" },
         { name: "asOne", kind: "boolean", description: "Send it as one message, never split" },
-        { name: "overGate", kind: "boolean", description: "matt said to send this exact message over the voice gate's refusal: its SubQ read is skipped, the AI artifact check still runs; only when he said so for this message (rule 152)" },
-        { name: "live", kind: "boolean", live: true, description: "Send it on Discord, only when matt asked (rule 8); without it a dry run contacts nothing" },
+        { name: "overGate", kind: "boolean", description: "the owner said to send this exact message over the voice gate's refusal: its SubQ read is skipped, the AI artifact check still runs; only when he said so for this message (rule 152)" },
+        { name: "followUp", kind: "boolean", description: "the owner asked for this follow-up, so the already-answered check lets it through; the voice gate still runs" },
+        { name: "live", kind: "boolean", live: true, description: "Send it on Discord, only when the owner asked (rule 8); without it a dry run contacts nothing" },
         JSON_FLAG,
       ],
+      groups: [{ rule: "atLeastOne", names: ["channel", "userId"] }, { rule: "atMostOne", names: ["channel", "userId"] }],
     },
   ],
 };
@@ -546,18 +726,20 @@ export const discordSendCommand: Command = {
   effect: "write",
   input: DISCORD_SEND_INPUT,
   summary: "Send one message to a Discord DM, group or channel, on the direct-API engine; a dry run unless --live",
-  args: '--account <a> --channel <id|name> --text "<message>" [--file <path>[,<path>]] [--brief] [--asOne] [--overGate] [--approvedBy <who>] [--live] [--json]',
+  args: '--account <a> (--channel <id|name> | --userId <id>) --text "<message>" [--file <path>[,<path>]] [--brief] [--asOne] [--overGate] [--followUp] [--approvedBy <who>] [--live] [--json]',
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DISCORD_SEND_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log discord send: ${parsed.error}\n${DISCORD_SEND_USAGE}` };
-    if (parsed.positionals.length) return { code: 1, stderr: `log discord send: takes no words, only flags\n${DISCORD_SEND_USAGE}` };
-    const channel = String(parsed.flags["channel"]).trim();
-    const text = String(parsed.flags["text"]);
+    if (!parsed.ok) return refuseInput("discord send", parsed.error, DISCORD_SEND_USAGE);
+    if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log discord send: takes no words, only flags\n${DISCORD_SEND_USAGE}` };
+    const userId = typeof parsed.flags["userId"] === "string" ? parsed.flags["userId"].trim() : "";
+    const channel = typeof parsed.flags["channel"] === "string" ? parsed.flags["channel"].trim() : "";
+    const text = embeddableXLinks(String(parsed.flags["text"]));
     const approvedBy = typeof parsed.flags["approvedBy"] === "string" ? parsed.flags["approvedBy"].trim() : "";
     const live = parsed.flags["live"] === true;
-    if (!channel || !text.trim()) return { code: 1, stderr: `log discord send: --channel and --text can't be empty\n${DISCORD_SEND_USAGE}` };
+    if (userId && channel) return refuseInput("discord send", "--channel or --userId, not both", DISCORD_SEND_USAGE);
+    if ((!channel && !userId) || !text.trim()) return refuseInput("discord send", "--channel (or --userId) and --text can't be empty", DISCORD_SEND_USAGE);
     if (live && !approvedBy) return refuse("discord send", "notApproved", "--live needs --approvedBy <who> (rule 8)");
-    const files = filesOf(parsed.flags["file"]);
+    const files = filesOf(listOf(parsed, "file"));
     if (!files.ok) return refuse("discord send", "fileRefused", files.refused);
     const watermark = watermarkReadingOf(text);
     if (watermark.level === "artifacts") return refuse("discord send", "aiArtifacts", `the copy carries what AI chat interfaces leave in text: ${watermark.findings.filter((f) => f.deterministic).map((f) => `${f.label} ×${f.count}`).join(", ")}`);
@@ -569,7 +751,17 @@ export const discordSendCommand: Command = {
       let label = channel;
       let shown = channel;
       let kind = "unknown";
-      if (!/^\d{15,22}$/.test(channel)) {
+      if (userId) {
+        if (!live) return { code: 0, stdout: [`log discord send: dry run: ${account.accountName} would open a DM with user ${userId} and send:`, `  ${text}`, "Nothing was sent and no DM was opened. --live --approvedBy <who> sends it (rule 8)."].join("\n") };
+        if (!context.directDiscord) return refuse("discord send", "engineNotBuilt", "the direct-API engine isn't wired in this context");
+        const opened = context.directDiscord(account, { action: "openDm", user: userId, live: true, approvedBy } as never).answer;
+        if (!opened.ok) return refuse("discord send", (opened.code ?? "platformError") as Parameters<typeof refuse>[1], `opening a DM with ${userId}: ${opened.detail ?? ""}`);
+        target = String(opened.channelId);
+        shown = String(opened.globalName ?? opened.username ?? userId);
+        label = `${shown} (dm ${target})`;
+        kind = "dm";
+        context.err(`${account.accountName}: opened the DM with ${label}`);
+      } else if (!/^\d{15,22}$/.test(channel)) {
         if (!context.directDiscord) return { code: 1, stderr: "log discord send: the direct-API engine isn't wired in this context" };
         const looked = findInChatList<DiscordChat, ReturnType<typeof matchChat>>("discord", account.accountName, channel, matchChat, () => {
           const listed = context.directDiscord!(account, { action: "chats" });
@@ -594,63 +786,83 @@ export const discordSendCommand: Command = {
       if (!context.directDiscord) return { code: 1, stderr: "log discord send: the direct-API engine isn't wired in this context" };
       context.err(`${account.accountName}: send to ${label} ${planLine} on the direct-API engine, approved by ${approvedBy}`);
       const direct = context.directDiscord;
-      const caught = kind === "channel" ? await waitCaughtUp("discord", account.accountName) : catchUpOneChat("discord", account.accountName, target, () => direct(account, { action: "read", channel: target, limit: 20, saveAudio: false, saveImages: false } as never).answer as { ok: boolean; messages?: ReadMessage[] }, context.now?.() ?? new Date());
-      if (!caught.ok) return refuse("discord send", "accountBehind", caught.refused);
-      if ("how" in caught && caught.how === "chatRead") context.err(`${account.accountName}: still catching up, so this one chat was read from Discord first (${caught.stored} new message(s) stored) instead of waiting for the whole account`);
-      const chatCurrent = "how" in caught && caught.how === "chatRead";
-      const readUpTo = latestSeq();
-      if (parsed.flags["overGate"] === true) {
-        const same = gateDeps.same({ platform: "discord", account: account.accountName, to: shown, text });
-        if (!same.ok) return refuse("discord send", "sameAsSent", same.refused);
-        context.err(`${account.accountName}: --overGate: matt said to send this message over the voice gate, so its read is skipped; the AI artifact check passed (rule 152)`);
-      } else {
-        const roomSource = kind === "channel" ? null : await readSourceFor("discord", account.accountName, target, chatMessageCount("discord", account.accountName, target), 20);
-        const voiced = await gateDeps.gate(context, { platform: "discord", account: account.accountName, to: shown, text, conversationId: target, ...(parsed.flags["brief"] === true ? { brief: true, files: files.paths } : {}), readRoom: () => (roomSource?.from === "db" || chatCurrent ? roomFromRead(shown, kind, { ok: true, messages: chatMessages("discord", account.accountName, target, 20) }) : roomFromRead(shown, kind, direct(account, { action: "read", channel: target, limit: 20, saveAudio: false, saveImages: false } as never).answer)) });
-        if (!voiced.ok) return refuse("discord send", "voiceGateFailed", voiced.refused);
-        context.err(voiced.line);
+      const sending = { movedOn: [] as string[], sent: [] as PlatformAnswer[], interrupted: [] as InboxMessage[], fenced: false, stillTyping: false };
+      const acted = await runAction<HeldGuard, typeof sending>({
+        gate: async () => {
+          const caught = kind === "channel" ? await waitCaughtUp("discord", account.accountName) : catchUpOneChat("discord", account.accountName, target, () => direct(account, { action: "read", channel: target, limit: 20, saveAudio: false, saveImages: false } as never).answer as { ok: boolean; messages?: ReadMessage[] }, context.now?.() ?? new Date());
+          if (!caught.ok) return { ok: false, code: "accountBehind", detail: caught.refused };
+          if ("how" in caught && caught.how === "chatRead") context.err(`${account.accountName}: still catching up, so this one chat was read from Discord first (${caught.stored} new message(s) stored) instead of waiting for the whole account`);
+          const chatCurrent = "how" in caught && caught.how === "chatRead";
+          const readUpTo = latestSeq();
+          if (parsed.flags["overGate"] === true) {
+            const same = gateDeps.same({ platform: "discord", account: account.accountName, to: shown, text });
+            if (!same.ok) return { ok: false, code: "sameAsSent", detail: same.refused };
+            context.err(`${account.accountName}: --overGate: the owner said to send this message over the voice gate, so its read is skipped; the AI artifact check passed (rule 152)`);
+          } else {
+            const roomSource = kind === "channel" ? null : await readSourceFor("discord", account.accountName, target, chatMessageCount("discord", account.accountName, target), 20);
+            const voiced = await gateDeps.gate(context, { platform: "discord", account: account.accountName, to: shown, text, conversationId: target, ...(parsed.flags["followUp"] === true ? { followUp: true } : {}), ...(parsed.flags["brief"] === true ? { brief: true, files: files.paths } : {}), readRoom: () => (roomSource?.from === "db" || chatCurrent ? roomFromRead(shown, kind, { ok: true, messages: chatMessages("discord", account.accountName, target, 20) }) : roomFromRead(shown, kind, direct(account, { action: "read", channel: target, limit: 20, saveAudio: false, saveImages: false } as never).answer)) });
+            if (!voiced.ok) return { ok: false, code: "voiceGateFailed", detail: voiced.refused };
+            context.err(voiced.line);
+          }
+          const guard = guardSend({ platform: "discord", account: account.accountName, conversationId: target }, undefined, { readUpTo });
+          return guard.ok ? { ok: true, held: guard } : { ok: false, code: "chatClaimedElsewhere", detail: guard.refused };
+        },
+        act: async (guard) => {
+          const startedAt = discordDeps.now();
+          const holdIf = { ...discordDeps.mark(account.accountName), chat: target };
+          for (const [i, part] of plan.parts.entries()) {
+            if (i) {
+              await discordDeps.wait(plan.gapSeconds * 1000);
+              sending.interrupted = discordDeps.incoming(account.accountName, target, startedAt);
+              if (sending.interrupted.length) break;
+            }
+            const turn = await waitOutTyping({ typing: () => discordDeps.typing(account.accountName, target), wrote: () => (sending.interrupted = discordDeps.incoming(account.accountName, target, startedAt)).length > 0, wait: discordDeps.wait });
+            if (turn === "wrote") break;
+            if (turn === "stillTyping") {
+              sending.stillTyping = true;
+              break;
+            }
+            const step = guard.part(i, part);
+            if (step === "lost") {
+              sending.fenced = true;
+              break;
+            }
+            if (step === "movedOn") {
+              sending.movedOn = guard.heard();
+              break;
+            }
+            if (step === "alreadySent") {
+              sending.sent.push({ ok: true, event: "sent", messageId: "(already sent before)" } as PlatformAnswer);
+              continue;
+            }
+            const run = direct(account, { action: "send", channel: target, text: part, live: true, approvedBy, holdIf, ...(i ? { continuesSend: true } : {}), ...(files.paths.length && i === plan.parts.length - 1 ? { files: files.paths } : {}) });
+            if (!run.answer.ok && run.answer.code === "chatMovedOn") {
+              const stored = discordDeps.incoming(account.accountName, target, startedAt);
+              sending.interrupted = stored.length ? stored : [{ platform: "discord", account: account.accountName, conversationId: target, with: "they", text: String(run.answer.detail ?? ""), at: discordDeps.now(), box: "dm", seenAt: discordDeps.now() }];
+              break;
+            }
+            sending.sent.push(run.answer);
+            if (!run.answer.ok || run.answer.event !== "sent") break;
+            guard.partSent(i, part, run.answer.messageId ? String(run.answer.messageId) : null);
+            context.err(`  ${i + 1}/${plan.parts.length} sent ${run.answer.messageId}: ${part}`);
+          }
+          return sending;
+        },
+        confirm: (s) => confirmParts({ sent: s.sent.filter((a) => a.ok && a.event === "sent").length, total: plan.parts.length, interrupted: s.interrupted.length > 0 || s.stillTyping, movedOn: s.movedOn.length > 0, lost: s.fenced, last: s.sent[s.sent.length - 1] }),
+      });
+      if (acted.held) {
+        const ok = sending.sent.filter((a) => a.ok && a.event === "sent").length;
+        acted.held.done(sending.interrupted.length || sending.stillTyping ? "interrupted" : ok === plan.parts.length ? "sent" : "failed", `${ok} of ${plan.parts.length}${sending.fenced ? ", then the claim on this chat was lost, so the rest was held" : ""}${refusedWith(sending.sent)}: ${plan.parts.slice(0, ok).join(" / ").slice(0, 300)}`);
       }
-      const guard = guardSend({ platform: "discord", account: account.accountName, conversationId: target }, undefined, { readUpTo });
-      if (!guard.ok) return refuse("discord send", "chatClaimedElsewhere", guard.refused);
-      let movedOn: string[] = [];
-      const sent: PlatformAnswer[] = [];
-      const startedAt = discordDeps.now();
-      let interrupted: InboxMessage[] = [];
-      let fenced = false;
-      try {
-        for (const [i, part] of plan.parts.entries()) {
-          if (i) {
-            await discordDeps.wait(plan.gapSeconds * 1000);
-            interrupted = discordDeps.incoming(account.accountName, target, startedAt);
-            if (interrupted.length) break;
-          }
-          const step = guard.part(i, part);
-          if (step === "lost") {
-            fenced = true;
-            break;
-          }
-          if (step === "movedOn") {
-            movedOn = guard.heard();
-            break;
-          }
-          if (step === "alreadySent") {
-            sent.push({ ok: true, event: "sent", messageId: "(already sent before)" } as PlatformAnswer);
-            continue;
-          }
-          const run = context.directDiscord(account, { action: "send", channel: target, text: part, live: true, approvedBy, ...(i ? { continuesSend: true } : {}), ...(files.paths.length && i === plan.parts.length - 1 ? { files: files.paths } : {}) });
-          sent.push(run.answer);
-          if (!run.answer.ok || run.answer.event !== "sent") break;
-          guard.partSent(i, part, run.answer.messageId ? String(run.answer.messageId) : null);
-          context.err(`  ${i + 1}/${plan.parts.length} sent ${run.answer.messageId}: ${part}`);
-        }
-      } finally {
-        const ok = sent.filter((a) => a.ok && a.event === "sent").length;
-        guard.done(interrupted.length ? "interrupted" : ok === plan.parts.length ? "sent" : "failed", `${ok} of ${plan.parts.length}${fenced ? ", then the claim on this chat was lost, so the rest was held" : ""}: ${plan.parts.slice(0, ok).join(" / ").slice(0, 300)}`);
-      }
+      rethrowFailure(acted);
+      if (!acted.held) return refuseGated("discord send", acted, "chatClaimedElsewhere");
+      const { movedOn, sent, interrupted } = sending;
       if (movedOn.length) return refuse("discord send", "chatMovedOn", `>>> THEY WROTE AFTER THE GATE READ THE CHAT: nothing was sent, so answer what they said first.\n${movedOn.map((m) => `  ${m}`).join("\n")}`);
       const last = sent[sent.length - 1];
       const done = sent.filter((a) => a.ok && a.event === "sent");
       const code = done.length === plan.parts.length ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: account.accountName, approvedBy, split: { parts: plan.parts, gapSeconds: plan.gapSeconds, why: plan.why }, watermark, sent, interrupted }, null, 2) };
+      if (sending.stillTyping && !interrupted.length) return { code, stdout: `>>> STILL TYPING: ${account.accountName}: ${done.length} of ${plan.parts.length} sent, then they were typing for ${TYPING_HOLD_MS / 1000} s without sending, so the rest was held for when they finish:\n${plan.parts.slice(done.length).map((p) => `  ${p}`).join("\n")}` };
       if (interrupted.length) return { code, stdout: interruptedLines(account.accountName, interrupted, plan.parts.slice(done.length), done.length, plan.parts.length).join("\n") };
       if (code === 0) return { code, stdout: `log discord send: ${account.accountName} sent ${done.length === 1 ? `message ${last.messageId}` : `${done.length} messages (${done.map((a) => a.messageId).join(", ")})`} to ${shown}${done.length > 1 ? `, ${plan.gapSeconds} s apart` : ""}, the last at ${last.timestamp}.` };
       return { code, stdout: `log discord send: ${account.accountName}: ${done.length} of ${plan.parts.length} sent, then ${last.code}: ${last.detail ?? ""}. What was sent stays sent; nothing is retried.` };
@@ -659,3 +871,352 @@ export const discordSendCommand: Command = {
     }
   },
 };
+
+type DirectDiscord = NonNullable<Parameters<Command["run"]>[0]["directDiscord"]>;
+type DiscordAccount = Awaited<ReturnType<typeof findDiscordAccount>>;
+interface ServerRow { id: string; name: string | null; owner: boolean }
+interface KeptChannel extends DiscordChat { server?: string | null; serverId?: string }
+
+export function matchServer(servers: readonly ServerRow[], said: string): { ok: true; server: ServerRow } | { ok: false; code: "chatNotFound" | "chatAmbiguous"; detail: string } {
+  const wanted = normalizedName(said);
+  const named = servers.filter((s) => s.name);
+  const exact = named.filter((s) => normalizedName(s.name!) === wanted);
+  const pool = exact.length ? exact : named.filter((s) => wanted.split(" ").every((w) => normalizedName(s.name!).split(" ").includes(w)));
+  if (pool.length === 1) return { ok: true, server: pool[0] };
+  if (!pool.length) return { ok: false, code: "chatNotFound", detail: `no server the account is in matches "${said}"` };
+  return { ok: false, code: "chatAmbiguous", detail: `${pool.length} servers match "${said}": ${pool.slice(0, 8).map((s) => s.name).join(", ")}` };
+}
+
+export const SERVER_LIST_TTL_MS = 10 * 60_000;
+
+const serverLists = new Map<string, { at: number; servers: ServerRow[] }>();
+
+export function forgetServerLists(): void {
+  serverLists.clear();
+}
+
+function serverByName(direct: DirectDiscord, account: DiscordAccount, said: string, now: number = Date.now()) {
+  const kept = serverLists.get(account.accountName);
+  if (kept && now - kept.at < SERVER_LIST_TTL_MS) {
+    const found = matchServer(kept.servers, said);
+    if (found.ok) return { found } as const;
+  }
+  const run = direct(account, { action: "servers" });
+  if (!run.answer.ok) return { failed: `${run.answer.code}: ${run.answer.detail ?? ""}` } as const;
+  const servers = (run.answer.servers as ServerRow[] | undefined) ?? [];
+  serverLists.set(account.accountName, { at: now, servers });
+  return { found: matchServer(servers, said) } as const;
+}
+
+function channelByName(direct: DirectDiscord, account: DiscordAccount, said: string) {
+  return findInChatList<DiscordChat, ReturnType<typeof matchChat>>("discord", account.accountName, said, matchChat, () => {
+    const listed = direct(account, { action: "chats" });
+    return listed.answer.ok ? { ok: true, chats: (listed.answer.chats as DiscordChat[] | undefined) ?? [] } : { ok: false, detail: `${listed.answer.code}: ${listed.answer.detail ?? ""}` };
+  });
+}
+
+async function serverCommandStart(context: Parameters<Command["run"]>[0], accountName: string, label: string): Promise<{ refused: CommandResult } | { account: DiscordAccount; direct: DirectDiscord }> {
+  const account = await findDiscordAccount(context.twenty, accountName);
+  const gate = discordGate(account);
+  if (!gate.ok) return { refused: refuse(label, gate.code === "accountDeactivated" ? "accountNotUsable" : gate.code, gate.detail) };
+  if (!context.directDiscord) return { refused: { code: 1, stderr: `log ${label}: the direct-API engine isn't wired in this context` } };
+  return { account, direct: context.directDiscord };
+}
+
+export const DISCORD_SERVERS_USAGE = [
+  "Usage: log discord servers --account <accountName> [--json]",
+  "Lists the Discord servers the account is in, by name, on the direct-API engine (no browser). One request. Sends nothing. A server is not a group DM: a group DM is a private chat in log discord chats, while a server holds channels, forums and threads (log discord channels).",
+].join("\n");
+
+export const DISCORD_SERVERS_INPUT: CommandInput = {
+  forms: [{ words: [], summary: "The servers the account is in", positionals: [], flags: [DISCORD_ACCOUNT, JSON_FLAG] }],
+};
+
+export const discordServersCommand: Command = {
+  usage: DISCORD_SERVERS_USAGE,
+  platform: "discord",
+  name: "servers",
+  effect: "read",
+  input: DISCORD_SERVERS_INPUT,
+  summary: "List the Discord servers the account is in, on the direct-API engine, sending nothing",
+  args: "--account <a> [--json]",
+  async run(context, argv) {
+    const parsed = parseArgs(argv, parserSpecOf(DISCORD_SERVERS_INPUT));
+    if (!parsed.ok) return refuseInput("discord servers", parsed.error, DISCORD_SERVERS_USAGE);
+    try {
+      const start = await serverCommandStart(context, String(parsed.flags["account"]), "discord servers");
+      if ("refused" in start) return start.refused;
+      const run = start.direct(start.account, { action: "servers" });
+      const servers = (run.answer.servers as ServerRow[] | undefined) ?? [];
+      const code = run.answer.ok ? 0 : 1;
+      if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: start.account.accountName, ...run.answer }, null, 2) };
+      if (!run.answer.ok) return { code, stdout: `log discord servers: ${start.account.accountName}: ${run.answer.code}: ${run.answer.detail ?? ""}` };
+      return { code, stdout: [`log discord servers: ${start.account.accountName} is in ${servers.length} server(s)`, ...servers.map((s) => `  ${s.name ?? "(no name)"}${s.owner ? " (its owner)" : ""}`)].join("\n") };
+    } catch (error) {
+      return refuseError("discord servers", error);
+    }
+  },
+};
+
+interface ServerChannel { id: string; name: string; kind: string; category: string | null; topic: string | null; lastMessageAt: string | null; tags?: string[] }
+
+export const DISCORD_CHANNELS_USAGE = [
+  "Usage: log discord channels --account <accountName> --server <name> [--json]",
+  "Lists one server's channels by category, each with its kind (text, announcement, forum, media, voice, stage), its tags and when its last message came, on the direct-API engine (no browser). One request. Sends nothing. A text or announcement channel is read with log discord read and the channel \"<server> #<channel>\"; a forum or media channel holds posts, listed with log discord posts.",
+].join("\n");
+
+export const DISCORD_CHANNELS_INPUT: CommandInput = {
+  forms: [{
+    words: [],
+    summary: "One server's channels by category and kind",
+    positionals: [],
+    flags: [DISCORD_ACCOUNT, { name: "server", kind: "string", required: true, description: "The server by its name, as the owner says it" }, JSON_FLAG],
+  }],
+};
+
+export const discordChannelsCommand: Command = {
+  usage: DISCORD_CHANNELS_USAGE,
+  platform: "discord",
+  name: "channels",
+  effect: "read",
+  input: DISCORD_CHANNELS_INPUT,
+  summary: "List one Discord server's channels by category and kind (text, forum, media, voice), on the direct-API engine, sending nothing",
+  args: "--account <a> --server <name> [--json]",
+  async run(context, argv) {
+    const parsed = parseArgs(argv, parserSpecOf(DISCORD_CHANNELS_INPUT));
+    if (!parsed.ok) return refuseInput("discord channels", parsed.error, DISCORD_CHANNELS_USAGE);
+    try {
+      const start = await serverCommandStart(context, String(parsed.flags["account"]), "discord channels");
+      if ("refused" in start) return start.refused;
+      const looked = serverByName(start.direct, start.account, String(parsed.flags["server"]));
+      if ("failed" in looked) return { code: 1, stdout: `log discord channels: ${start.account.accountName}: reading its servers: ${looked.failed}` };
+      if (!looked.found.ok) return refuse("discord channels", looked.found.code, looked.found.detail);
+      const server = looked.found.server;
+      context.err(`"${parsed.flags["server"]}" is the server ${server.name}`);
+      const run = start.direct(start.account, { action: "channels", server: server.id });
+      const channels = (run.answer.channels as ServerChannel[] | undefined) ?? [];
+      const code = run.answer.ok ? 0 : 1;
+      if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: start.account.accountName, server: server.name, ...run.answer }, null, 2) };
+      if (!run.answer.ok) return { code, stdout: `log discord channels: ${start.account.accountName}: ${run.answer.code}: ${run.answer.detail ?? ""}` };
+      const lines: string[] = [];
+      let category: string | null | undefined;
+      for (const c of channels) {
+        if (c.category !== category) lines.push(`  ${c.category ?? "(no category)"}`);
+        category = c.category;
+        lines.push(`    ${c.kind.padEnd(12)} "${server.name} #${c.name}"${c.lastMessageAt ? ` · last ${c.lastMessageAt.slice(0, 16)}` : ""}${c.tags?.length ? ` · tags: ${c.tags.join(", ")}` : ""}${c.topic ? ` · ${c.topic.replace(/\s+/g, " ").slice(0, 120)}` : ""}`);
+      }
+      return { code, stdout: [`log discord channels: ${server.name} has ${channels.length} channel(s)`, ...lines].join("\n") };
+    } catch (error) {
+      return refuseError("discord channels", error);
+    }
+  },
+};
+
+interface ForumPost { id: string; title: string; kind: string; author: string | null; createdAt: string | null; lastMessageAt: string | null; replies: number | null; tags: string[]; archived: boolean; locked: boolean; opening: string }
+
+export const DISCORD_POSTS_USAGE = [
+  "Usage: log discord posts --account <accountName> --channel \"<server> #<forum>\" [--limit <n>] [--archived <true|false>] [--json]",
+  "Lists the posts in a forum or media channel (or the threads under a text channel), newest activity first, on the direct-API engine (no browser): each post's title, who opened it, when, its tags, how many replies, whether it is closed, and its opening message. 25 a request, at most 200. Sends nothing. Each post is then read by its name with log discord read and the channel \"<server> #<forum> > <post title>\".",
+].join("\n");
+
+export const DISCORD_POSTS_INPUT: CommandInput = {
+  forms: [{
+    words: [],
+    summary: "A forum's posts (or a channel's threads), newest first, with each one's opening message",
+    positionals: [],
+    flags: [
+      DISCORD_ACCOUNT,
+      { name: "channel", kind: "string", required: true, description: "The forum or channel as \"<server> #<channel>\"" },
+      { name: "limit", kind: "integer", min: 1, max: 200, description: "How many posts, default 25, at most 200" },
+      { name: "archived", kind: "booleanValue", description: "true for only closed (archived) posts, false for only open ones; both when left out" },
+      JSON_FLAG,
+    ],
+  }],
+};
+
+export const discordPostsCommand: Command = {
+  usage: DISCORD_POSTS_USAGE,
+  platform: "discord",
+  name: "posts",
+  effect: "read",
+  input: DISCORD_POSTS_INPUT,
+  summary: "List the posts in a Discord forum (or a channel's threads) with each one's opening message, on the direct-API engine, sending nothing",
+  args: "--account <a> --channel \"<server> #<forum>\" [--limit <n>] [--archived <true|false>] [--json]",
+  async run(context, argv) {
+    const parsed = parseArgs(argv, parserSpecOf(DISCORD_POSTS_INPUT));
+    if (!parsed.ok) return refuseInput("discord posts", parsed.error, DISCORD_POSTS_USAGE);
+    const limit = numberOf(parsed, "limit") ?? 25;
+    const archived = truthOf(parsed, "archived");
+    try {
+      const start = await serverCommandStart(context, String(parsed.flags["account"]), "discord posts");
+      if ("refused" in start) return start.refused;
+      const said = String(parsed.flags["channel"]).trim();
+      const looked = channelByName(start.direct, start.account, said);
+      if ("failed" in looked) return { code: 1, stdout: `log discord posts: ${start.account.accountName}: reading its channels to find "${said}": ${looked.failed}` };
+      if (!looked.found.ok) return refuse("discord posts", looked.found.code, [looked.found.detail, ...looked.found.candidates.map((c) => `  ${c.label}`)].join("\n"));
+      const chat = looked.found.chat as KeptChannel;
+      if (chat.kind !== "channel") return refuse("discord posts", "chatNotFound", `"${said}" is a ${chat.kind}, not a server channel: a DM or group DM has no posts`);
+      context.err(`"${said}" is ${labelOf(chat)}`);
+      const run = start.direct(start.account, { action: "posts", channel: chat.id, limit, serverName: chat.server ?? labelOf(chat).split(" #")[0], ...(archived !== undefined ? { archived } : {}) });
+      const posts = (run.answer.posts as ForumPost[] | undefined) ?? [];
+      const code = run.answer.ok ? 0 : 1;
+      if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: start.account.accountName, ...run.answer }, null, 2) };
+      if (!run.answer.ok) return { code, stdout: `log discord posts: ${start.account.accountName}: ${run.answer.code}: ${run.answer.detail ?? ""}` };
+      const name = String(run.answer.channel ?? labelOf(chat));
+      return {
+        code,
+        stdout: [
+          `log discord posts: ${posts.length} of ${run.answer.total ?? posts.length} post(s) in ${name} (${run.answer.channelKind}), newest activity first${run.answer.stopped ? `, stopped: ${run.answer.stopped}` : ""}`,
+          ...posts.map((p) => [`  "${name} > ${p.title}"`, `    by ${p.author ?? "?"} · opened ${p.createdAt?.slice(0, 16) ?? "?"} · ${p.replies ?? 0} replies · last ${p.lastMessageAt?.slice(0, 16) ?? "?"}${p.tags.length ? ` · tags: ${p.tags.join(", ")}` : ""}${p.archived ? " · closed" : ""}${p.locked ? " · locked" : ""}`, ...(p.opening ? [`    ${p.opening.replace(/\s+/g, " ")}`] : [])].join("\n")),
+        ].join("\n"),
+      };
+    } catch (error) {
+      return refuseError("discord posts", error);
+    }
+  },
+};
+
+interface SearchHit { id: string; at: string; channelId: string; from: string; fromId: string; fromMe: boolean; replyTo: string | null; text: string; attachments: string[] }
+
+export const DISCORD_SEARCH_USAGE = [
+  "Usage: log discord search --account <accountName> --server <name> --query \"<words>\" [--channel \"<server> #<channel>\"] [--from <name>] [--limit <n>] [--json]",
+  "Searches a whole server with Discord's own search, every channel, forum post and thread at once, on the direct-API engine (no browser): each hit's time, channel or post, who wrote it and its text, newest first. 25 a request, at most 200. --channel keeps one channel, --from one person (by name, matched to who wrote in the hits). Sends nothing. The fast way to find an old conversation in a server: no channel has to be read back.",
+].join("\n");
+
+export const DISCORD_SEARCH_INPUT: CommandInput = {
+  forms: [{
+    words: [],
+    summary: "Search a whole server for words: each hit's time, channel, author and text. To find what was said in a server, not discordRead; --from and --channel narrow it",
+    positionals: [],
+    flags: [
+      DISCORD_ACCOUNT,
+      { name: "server", kind: "string", required: true, description: "The server by its name, as the owner says it" },
+      { name: "query", kind: "string", required: true, description: "The words to look for" },
+      { name: "channel", kind: "string", description: "Only this channel, as \"<server> #<channel>\"" },
+      { name: "from", kind: "string", description: "Only messages from this person, by their name" },
+      { name: "limit", kind: "integer", min: 1, max: 200, description: "How many hits, default 25, at most 200" },
+      JSON_FLAG,
+    ],
+  }],
+};
+
+export const discordSearchCommand: Command = {
+  usage: DISCORD_SEARCH_USAGE,
+  platform: "discord",
+  name: "search",
+  effect: "read",
+  input: DISCORD_SEARCH_INPUT,
+  summary: "Search a whole Discord server (channels, forum posts and threads) with Discord's own search, on the direct-API engine, sending nothing",
+  args: "--account <a> --server <name> --query \"<words>\" [--channel \"<server> #<channel>\"] [--from <name>] [--limit <n>] [--json]",
+  async run(context, argv) {
+    const parsed = parseArgs(argv, parserSpecOf(DISCORD_SEARCH_INPUT));
+    if (!parsed.ok) return refuseInput("discord search", parsed.error, DISCORD_SEARCH_USAGE);
+    const limit = numberOf(parsed, "limit") ?? 25;
+    try {
+      const start = await serverCommandStart(context, String(parsed.flags["account"]), "discord search");
+      if ("refused" in start) return start.refused;
+      const looked = serverByName(start.direct, start.account, String(parsed.flags["server"]));
+      if ("failed" in looked) return { code: 1, stdout: `log discord search: ${start.account.accountName}: reading its servers: ${looked.failed}` };
+      if (!looked.found.ok) return refuse("discord search", looked.found.code, looked.found.detail);
+      const server = looked.found.server;
+      let channelId: string | undefined;
+      if (typeof parsed.flags["channel"] === "string") {
+        const said = parsed.flags["channel"].trim();
+        const found = channelByName(start.direct, start.account, said);
+        if ("failed" in found) return { code: 1, stdout: `log discord search: reading its channels to find "${said}": ${found.failed}` };
+        if (!found.found.ok) return refuse("discord search", found.found.code, found.found.detail);
+        channelId = found.found.chat.id;
+      }
+      const from = typeof parsed.flags["from"] === "string" ? normalizedName(parsed.flags["from"]) : "";
+      const run = start.direct(start.account, { action: "search", server: server.id, query: String(parsed.flags["query"]), limit: from ? 200 : limit, ...(channelId ? { channel: channelId } : {}) });
+      const hits = ((run.answer.messages as SearchHit[] | undefined) ?? []).filter((m) => !from || normalizedName(m.from ?? "").includes(from)).slice(0, limit);
+      const kept = cachedChatList<KeptChannel>("discord", start.account.accountName) ?? [];
+      const places = (run.answer.places as Record<string, string> | undefined) ?? {};
+      const placeOf = (id: string) => kept.find((c) => c.id === id)?.name ?? (places[id] ? `${server.name} > ${places[id]}` : `${server.name} channel ${id}`);
+      const code = run.answer.ok ? 0 : 1;
+      if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "discord", account: start.account.accountName, server: server.name, ...run.answer, messages: hits.map((h) => ({ ...h, place: placeOf(h.channelId) })) }, null, 2) };
+      if (!run.answer.ok) return { code, stdout: `log discord search: ${start.account.accountName}: ${run.answer.code}: ${run.answer.detail ?? ""}` };
+      return {
+        code,
+        stdout: [
+          `log discord search: ${hits.length} hit(s) for "${parsed.flags["query"]}" in ${server.name}${run.answer.total !== undefined ? ` (${run.answer.total} in all)` : ""}${run.answer.stopped ? `, stopped: ${run.answer.stopped}` : ""}`,
+          ...hits.map((m) => [`  ${m.at?.slice(0, 16)} ${m.from}${m.fromMe ? " (me)" : ""} in "${placeOf(m.channelId)}" · ${m.id}`, ...(m.text ? m.text.split("\n").map((l) => `    ${l}`) : []), ...m.attachments.map((a) => `    [attachment] ${a}`)].join("\n")),
+        ].join("\n"),
+      };
+    } catch (error) {
+      return refuseError("discord search", error);
+    }
+  },
+};
+
+export const DISCORD_SECRETS_USAGE = [
+  "Usage: log discord secrets --account <accountName> [--show]",
+  "Asks for the Discord account's email, password and 2FA secret (the base32 key from its authenticator setup, optional) in a Clack prompt, masked, and keeps them in Twenty (socialAccounts email, password, totpSecret) for the account's sign-in in its own browser. Nothing is printed; --show says only which are set. It never calls Discord, the direct-API engine included.",
+].join("\n");
+
+interface SecretPrompts {
+  intro(title: string): void;
+  outro(message?: string): void;
+  cancel(message?: string): void;
+  text(option: Parameters<typeof text>[0]): Promise<unknown>;
+  password(option: Parameters<typeof password>[0]): Promise<unknown>;
+}
+
+export const discordSecretsDeps: { prompts: SecretPrompts; tty: () => LaunchTTY } = {
+  prompts: { intro, outro, cancel, text: text as SecretPrompts["text"], password: password as SecretPrompts["password"] },
+  tty: () => ({ stdinTTY: process.stdin?.isTTY, stdoutTTY: process.stdout?.isTTY }),
+};
+
+export function totpSecretOf(value: string): string | null {
+  const key = value.replace(/[\s-]/g, "").toUpperCase();
+  return /^[A-Z2-7]{16,}=*$/.test(key) ? key : null;
+}
+
+const mark = (value: unknown): string => (value ? "<set>" : "<empty>");
+
+export const discordSecretsCommand: Command = {
+  usage: DISCORD_SECRETS_USAGE,
+  platform: "discord",
+  name: "secrets",
+  terminalOnly: "asks for a Discord account's email, password and 2FA secret in a Clack prompt (masked). Run `log discord secrets --account <a>` in a terminal.",
+  effect: "write",
+  summary: "The Discord account's email, password and 2FA secret, asked in a Clack prompt and kept in Twenty for its sign-in, never printed",
+  args: "--account <a> [--show]",
+  async run(context, argv) {
+    const parsed = parseArgs(argv, { boolean: ["show"], valued: ["account"] });
+    if (!parsed.ok) return refuseInput("discord secrets", parsed.error, DISCORD_SECRETS_USAGE);
+    if (parsed.positionals.length) return refuseInput("discord secrets", "takes no words, only flags", DISCORD_SECRETS_USAGE);
+    const ref = parsed.flags["account"];
+    if (typeof ref !== "string") return refuseInput("discord secrets", "--account is needed", DISCORD_SECRETS_USAGE);
+    let account;
+    try {
+      account = await findDiscordAccount(context.twenty, ref);
+    } catch (error) {
+      return refuseError("discord secrets", error);
+    }
+    if (parsed.flags["show"]) {
+      const held = await context.twenty.loginSecrets(account.id);
+      return { code: 0, stdout: `${account.accountName}: email ${mark(held?.email)}, password ${mark(held?.password)}, 2FA secret ${mark(held?.totpSecret)}` };
+    }
+    if (!shouldPrompt(false, discordSecretsDeps.tty())) {
+      return refuse("discord secrets", "terminalOnly", "they are typed in a Clack prompt, so it needs an interactive terminal: run it there (they are never passed as flags)");
+    }
+    const prompts = discordSecretsDeps.prompts;
+    prompts.intro(`log discord secrets — ${account.accountName}`);
+    const email = await prompts.text({ message: "The account's Discord email", validate: (v) => (typeof v === "string" && /^\S+@\S+\.\S+$/.test(v.trim()) ? undefined : "An email address") });
+    if (isCancel(email) || typeof email !== "string") return stopped(prompts);
+    const pass = await prompts.password({ message: "Its Discord password", mask: "•", validate: (v) => (typeof v === "string" && v.length >= 6 ? undefined : "At least 6 characters") });
+    if (isCancel(pass) || typeof pass !== "string") return stopped(prompts);
+    const totp = await prompts.password({ message: "Its 2FA secret (base32 key; leave empty if the account has no authenticator)", mask: "•", validate: (v) => (!v || totpSecretOf(String(v)) ? undefined : "A base32 key, letters A-Z and digits 2-7") });
+    if (isCancel(totp)) return stopped(prompts);
+    const totpSecret = typeof totp === "string" && totp ? totpSecretOf(totp) : null;
+    await context.twenty.update("socialAccounts", account.id, { email: email.trim(), password: pass, ...(totpSecret ? { totpSecret } : {}) } as never);
+    prompts.outro("Saved. They are typed into Discord's sign-in in the account's own browser, never printed.");
+    return { code: 0, stdout: `${account.accountName}: email <set>, password <set>, 2FA secret ${mark(totpSecret)} in Twenty` };
+  },
+};
+
+function stopped(prompts: SecretPrompts) {
+  prompts.cancel("Nothing saved.");
+  return refuseInput("discord secrets", "cancelled, nothing saved");
+}

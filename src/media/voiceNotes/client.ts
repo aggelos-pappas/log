@@ -1,3 +1,4 @@
+import { savedCredential } from '../../auth/credentials/index.ts'
 import { withCreditNote } from '../../billing/balance/helpers/answers'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
@@ -6,11 +7,14 @@ import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ASSEMBLY_AI_API, ASSEMBLY_AI_KEY_NAME, ASSEMBLY_AI_KEY_NAMES, POLL_EVERY_MS, POLL_FOR_MS } from './types'
 import type { AssemblyAiClient, AssemblyAiOptions, TranscribeAnswer } from './types'
+import { extraEnvFiles, logHome } from '../../config/logHome/index.ts'
 
 export function assemblyAiKey(env: Record<string, string | undefined> = process.env, home = homedir()): string | null {
+  const saved = savedCredential('ASSEMBLYAI_API_KEY', env)
+  if (saved) return saved
   for (const name of ASSEMBLY_AI_KEY_NAMES) if (env[name]?.trim()) return env[name]!.trim()
   const repo = resolve(fileURLToPath(new URL('../../..', import.meta.url)))
-  for (const file of [join(repo, '.env.local'), join(repo, '..', '..', '.env.local'), join(home, '.buzz', '.env.local'), join(home, 'filmcraft', '.env.local')]) {
+  for (const file of [join(repo, '.env.local'), join(repo, '..', '..', '.env.local'), join(logHome(env), '.env'), ...extraEnvFiles(env)]) {
     if (!existsSync(file)) continue
     const text = readFileSync(file, 'utf8')
     for (const name of ASSEMBLY_AI_KEY_NAMES) {
@@ -46,7 +50,7 @@ export function createAssemblyAiClient(options: AssemblyAiOptions): AssemblyAiCl
   return {
     hasKey: Boolean(key),
     async transcribe(bytes, file, hash) {
-      if (!key) return { ok: false, code: 'assemblyAiKeyMissing', status: 0, error: `${ASSEMBLY_AI_KEY_NAME} (or ASSEMBLY_AI_KEY) is not set (the environment, .env.local in the repo, ~/.buzz/.env.local or ~/filmcraft/.env.local)` }
+      if (!key) return { ok: false, code: 'assemblyAiKeyMissing', status: 0, error: `${ASSEMBLY_AI_KEY_NAME} (or ASSEMBLY_AI_KEY) is not set (the environment, .env.local in the repo, ~/.logCli/.env or a file in LOG_ENV_FILES)` }
       const headers = { authorization: key }
       const uploaded = await fetcher(`${ASSEMBLY_AI_API}/upload`, { method: 'POST', headers: { ...headers, 'content-type': 'application/octet-stream' }, body: bytes })
       const upload = await answerOf(uploaded)

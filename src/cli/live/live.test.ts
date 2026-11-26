@@ -5,6 +5,7 @@ import type { WorkerClient, WorkerRequest } from "../../camofox/worker/index.ts"
 import type { ConnectSessionConfig } from "../../camofox/session/index.ts";
 import { FIXTURE_COOKIES, marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { runCli } from "../runner/index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 async function run(argv: string[], reply: (request: WorkerRequest) => unknown, twenty = marketplaceFixture()) {
   const out: string[] = [];
@@ -102,7 +103,7 @@ describe("live commands", () => {
     expect(code).toBe(1);
     expect(err).toContain("checkpointed");
     expect(twenty.rows.socialAccounts.find((r) => r.id === "galwayOne")!.accountStatus).toBe("CHECKPOINT");
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("status opens one listing", async () => {
     const reply = { ok: true, listingId: "111", listingUrl: "https://x", status: "active", title: "Rubbish" };
@@ -110,7 +111,7 @@ describe("live commands", () => {
     expect(code).toBe(0);
     expect(requests[0].params).toEqual({ listing_id: "111" });
     expect(out).toContain("Live status active");
-  });
+  }, SPAWNS_PROCESS_MS);
 
   function scriptedConnect(pages: string[], cookies = [{ name: "c_user", value: "2", domain: ".facebook.com", path: "/" }], bodySample = "Your listings") {
     const steps: string[] = [];
@@ -176,7 +177,7 @@ describe("live commands", () => {
     await runCli(["facebook", "connect", "--account", "needsLogin"], { connectSession: plain.factory, connectTiming: FAST_CONNECT, twenty, out: () => {}, err: () => {} });
     expect(plain.configs[0].loginPath).toBeNull();
     expect(plain.steps).not.toContain("submitCredentials");
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("connect stuck on Facebook's checkpoint ends checkpointed: status CHECKPOINT, cookies left as they were", async () => {
     const twenty = marketplaceFixture();
@@ -203,7 +204,7 @@ describe("live commands", () => {
     expect(twenty.rows.socialAccounts.find((r) => r.id === "needsLogin")).toMatchObject({ accountStatus: "RESTRICTED", statusReason: "restrictedPolicy" });
   });
 
-  test("Listaro's post-login check: signed in but unable to buy or sell is recorded, cookies kept", async () => {
+  test("The post-login check: signed in but unable to buy or sell is recorded, cookies kept", async () => {
     const twenty = marketplaceFixture();
     const session = scriptedConnect(["loggedIn"], undefined, "You can't buy or sell on Facebook");
     const err: string[] = [];
@@ -237,20 +238,20 @@ cases = json.loads(sys.stdin.read())
 print(json.dumps([a.classify(u, h, t, **{"password_field": False, "code_field": False, "captcha": False, "login_markers": True, **f}) for u, h, t, f, _ in cases]))`;
     const run = require("node:child_process").spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", input: JSON.stringify(cases) });
     expect(JSON.parse(run.stdout.trim())).toEqual(cases.map((c) => c[4]));
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("auto-login hands Facebook's own checkpoints to a person and types codes only on two-step pages", () => {
     const headings = ["We suspect automated behaviour on your account", "Confirm your identity", "Your account has been locked", "Check your notifications on another device", "Go to your authentication app", "Enter the 6-digit code"];
     const script = `import sys, json; sys.path.insert(0, 'python'); from login import autoLogin as a; print(json.dumps([bool(a.TWO_STEP.search(h)) for h in ${JSON.stringify(headings)}]))`;
     const run = require("node:child_process").spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8" });
     expect(JSON.parse(run.stdout.trim())).toEqual([false, false, false, true, true, true]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("auto-login's TOTP matches RFC 6238", () => {
     const script = "import sys; sys.path.insert(0, 'python'); from login import autoLogin as a; s = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'; print(a.totp(s, 59, 8), a.totp(s, 1111111109, 8), a.totp(s, 59), a.totp('gezd gnbv gy3t qojq gezd gnbv gy3t qojq', 59))";
     const run = require("node:child_process").spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8" });
     expect(run.stdout.trim()).toBe("94287082 07081804 287082 287082");
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("doctor reports the setup and which Twenty accounts may run", async () => {
     const reply = { ok: true, checks: { python: "3.12.10", facebookCamofoxClient: "/fcc", camoufoxBrowser: "/camoufox.exe", camoufoxVersion: "152" } };

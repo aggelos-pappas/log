@@ -1,4 +1,5 @@
 import { readScreen } from '../../../rea/inspectMap/helpers/readScreen'
+import { flowPlatform } from './flowPlatform'
 import { dialogOf } from './dialogOf'
 import type { FlowAction, FlowDefinition, FlowParam, FlowStep } from '../types'
 
@@ -35,7 +36,7 @@ export function confirmingRequest(lines: string[]): string | null {
   return null
 }
 
-const ACTED: Record<string, FlowAction> = { click: 'click', clickRole: 'click', type: 'fill', upload: 'upload', uploadRole: 'upload', signIn: 'signIn', code: 'code', pin: 'pin', setLocation: 'setLocation', solve: 'solve', goto: 'goto', scroll: 'scroll', openAny: 'openAny', clickAny: 'clickAny', dwell: 'dwell', press: 'press', scrollIn: 'scrollIn' }
+const ACTED: Record<string, FlowAction> = { click: 'click', clickRole: 'click', type: 'fill', upload: 'upload', uploadRole: 'upload', signIn: 'signIn', code: 'code', pin: 'pin', setLocation: 'setLocation', solve: 'solve', goto: 'goto', scroll: 'scroll', openAny: 'openAny', clickAny: 'clickAny', dwell: 'dwell', press: 'press', scrollIn: 'scrollIn', rowMenu: 'rowMenu' }
 
 const camel = (text: string): string =>
   text
@@ -80,7 +81,7 @@ export function flowFromRecording(
       steps.push({ id: `s${String(steps.length + 1).padStart(2, '0')}_goto${camel(new URL(url).pathname.replace(/\d{6,}/g, ''))}`, action, url: grouped.replace(/\d{10,}/g, '{uid}'), recorded })
       return
     }
-    if (action === 'scroll' || action === 'openAny' || action === 'clickAny' || action === 'dwell') {
+    if (action === 'scroll' || action === 'openAny' || action === 'clickAny' || action === 'dwell' || action === 'rowMenu') {
       steps.push({ id: `s${String(steps.length + 1).padStart(2, '0')}_${action}`, action, args: command.args, recorded })
       return
     }
@@ -133,7 +134,8 @@ export function flowFromRecording(
       recorded
     })
   })
-  return { name, summary, params, steps, source: { ...source, builtAt: new Date().toISOString() } }
+  const platform = flowPlatform({ steps })
+  return { name, ...(platform ? { platform } : {}), summary, params, steps, source: { ...source, builtAt: new Date().toISOString() } }
 }
 
 export function fillStep(step: FlowStep, values: Record<string, string>): FlowStep {
@@ -143,5 +145,5 @@ export function fillStep(step: FlowStep, values: Record<string, string>): FlowSt
       return values[key]
     })
   const answers = step.answers?.map((a) => ({ ...a, says: a.says.map((c) => (typeof c.is === 'string' ? { ...c, is: fill(c.is) } : c)) }))
-  return { ...step, ...(step.url ? { url: fill(step.url) } : {}), ...(step.value ? { value: fill(step.value) } : {}), ...(step.name ? { name: fill(step.name) } : {}), ...(answers ? { answers } : {}) }
+  return { ...step, ...(step.args ? { args: step.args.map((a) => fill(a)!) } : {}), ...(step.url ? { url: fill(step.url) } : {}), ...(step.value ? { value: fill(step.value) } : {}), ...(step.name ? { name: fill(step.name) } : {}), ...(answers ? { answers } : {}) }
 }

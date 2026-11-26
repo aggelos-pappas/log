@@ -1,7 +1,8 @@
 import { pageProblem } from './helpers/pageCheck'
 import { describe, expect, test } from 'bun:test'
 import { createActor, fromPromise, toPromise } from 'xstate'
-import { confirmingRequest, createFlowMachine, fillStep, flowFromRecording, flowWithParams, loadFlow, renderFlowDoc, toolName } from './index'
+import { flowPlatform } from './helpers/flowPlatform'
+import { confirmingRequest, createFlowMachine, fillStep, flowFromRecording, flowWithParams, loadFlow, renderFlowDoc, flowToolName } from './index'
 import type { FlowActInput, FlowRunOutput, FlowStepResult } from './index'
 import type { RecordedCommand } from './helpers/index'
 
@@ -23,7 +24,7 @@ const RECORDING: RecordedCommand[] = [
   cmd('click', ['e1262'], '05_click', PROFILE),
   cmd('wait', ['12'], '06_wait', PROFILE, ['POST 200 ProfileCometProfilePictureSetMutation (3400 ms)', 'POST 200 FBScreenTimeLogger_syncMutation (1724 ms)']),
   cmd('click', ['e999'], '07_click', PROFILE, [], false),
-  cmd('goto', ['https://accountscenter.facebook.com/profiles/61593967241658/name'], '08_goto', NAME),
+  cmd('goto', ['https://accountscenter.facebook.com/profiles/99900000000004/name'], '08_goto', NAME),
   cmd('click', ['e156'], '09_click', NAME),
   cmd('press', ['Control+a'], '10_press', NAME),
   cmd('type', ['e156', 'Lancaster'], '11_type', NAME),
@@ -39,7 +40,7 @@ describe('pageProblem: where a step really landed', () => {
     expect(pageProblem(goto('https://www.facebook.com/messages/'), { url: 'https://www.facebook.com/marketplace/' })).toMatchObject({ code: 'pageNotReached' })
     expect(pageProblem(goto('https://www.facebook.com/marketplace/'), { url: 'https://www.facebook.com/marketplace/113668691977096/' })).toBeNull()
     expect(pageProblem(goto('https://www.facebook.com/'), { url: 'https://www.facebook.com/' })).toBeNull()
-    expect(pageProblem(goto('https://www.facebook.com/me'), { url: 'https://www.facebook.com/profile.php?id=61594417970255' })).toBeNull()
+    expect(pageProblem(goto('https://www.facebook.com/me'), { url: 'https://www.facebook.com/profile.php?id=99900000000005' })).toBeNull()
     expect(pageProblem(goto('https://www.facebook.com/me'), { url: 'https://www.facebook.com/harrisburg.trash' })).toBeNull()
     expect(pageProblem(goto('https://www.facebook.com/me'), { url: 'https://www.facebook.com/checkpoint/1501092823525282/' })).toMatchObject({ code: 'checkpointed' })
   })
@@ -76,7 +77,7 @@ describe('flowFromRecording: a group page recorded with clickRole (Bethlehem, 20
     cmd('scrollIn', ['dialog', 'Comments', '3', '400-600'], '05_scrollIn', ''),
     cmd('press', ['Control+a'], '06_press', ''),
     cmd('clickRole', ['button', 'Actions for this post'], '07_clickRole', '', ['POST 200 useCIXLogMutation (583 ms)'])
-  ], { runDir: '/r', account: '61594063207669' })
+  ], { runDir: '/r', account: '99900000000001' })
 
   test('clickRole keeps its own role and name, Escape and scrollIn keep their arguments, a chord and a failure are dropped', () => {
     expect(group.steps.map((s) => [s.action, s.role ?? s.url ?? s.args, s.name ?? null])).toEqual([
@@ -97,12 +98,12 @@ describe('flowFromRecording: a group page recorded with clickRole (Bethlehem, 20
 
 describe('flowFromRecording: posting and deleting on the own profile (Bethlehem, run 20261020T162343)', () => {
   const photo = flowFromRecording('profilePhotoPost', 'test', [
-    cmd('goto', ['https://www.facebook.com/profile.php?id=61594063207669'], '01_goto', ''),
+    cmd('goto', ['https://www.facebook.com/profile.php?id=99900000000001'], '01_goto', ''),
     cmd('uploadRole', ['button', 'Photo/video', 'C:/photos/garbageRoom.jpg'], '10_uploadRole', ''),
     cmd('wait', ['5'], '11_wait', '', ['POST 200 /ajax/react_composer/attachments/photo/upload (5129 ms)']),
     cmd('clickRole', ['button', 'Post'], '12_clickRole', '', [], true),
     cmd('wait', ['8'], '13_wait', '', ['POST 200 ComposerStoryCreateMutation (3802 ms)'])
-  ], { runDir: '/r', account: '61594063207669' }, { file1: 'photo' })
+  ], { runDir: '/r', account: '99900000000001' }, { file1: 'photo' })
   const remove = flowFromRecording('deletePost', 'test', [
     cmd('clickRole', ['button', 'Actions for this post by Pat Example'], '14_clickRole', ''),
     cmd('clickRole', ['button', 'Move'], '17_clickRole', '', ['POST 200 useCometTrashPostMutation (848 ms)'])
@@ -131,7 +132,7 @@ describe('flowFromRecording: posting and deleting on the own profile (Bethlehem,
 })
 
 describe('flowFromRecording', () => {
-  const flow =flowFromRecording('profileSetup', 'test', RECORDING, { runDir: '/r', account: '61593967241658' }, { text1: 'firstName', file1: 'profilePhoto' })
+  const flow =flowFromRecording('profileSetup', 'test', RECORDING, { runDir: '/r', account: '99900000000004' }, { text1: 'firstName', file1: 'profilePhoto' })
 
   test('turns refs into the role and name the step acted on, and drops looks, failures and field clicks', () => {
     expect(flow.steps.map((s) => [s.action, s.role ?? s.url, s.name ?? null])).toEqual([
@@ -159,7 +160,7 @@ describe('flowFromRecording', () => {
       { name: 'firstName', kind: 'text', description: 'typed into textbox "First name"' }
     ])
     expect(JSON.stringify(flow)).not.toContain('Lancaster')
-    expect(fillStep(flow.steps[5], { uid: '61500000000001' }).url).toBe('https://accountscenter.facebook.com/profiles/61500000000001/name')
+    expect(fillStep(flow.steps[5], { uid: '99900000000006' }).url).toBe('https://accountscenter.facebook.com/profiles/99900000000006/name')
     expect(() => fillStep(flow.steps[6], {})).toThrow('missing value for {firstName}')
   })
 
@@ -169,7 +170,10 @@ describe('flowFromRecording', () => {
     expect(doc).toContain('`ProfileCometProfilePictureSetMutation`')
     expect(doc).toContain('rea `ev_05_click`')
     expect(doc).toContain('stateDiagram-v2')
-    expect(toolName('profileSetup')).toBe('flowProfileSetup')
+    expect(flowToolName(loadFlow('profileSetup')!)).toBe('facebookFlowProfileSetup')
+    expect(flowToolName(loadFlow('facebookLanguageEnglish')!)).toBe('facebookFlowLanguageEnglish')
+    expect(flowToolName({ name: 'postReply', steps: [] })).toBe('flowPostReply')
+    expect(flowPlatform({ steps: [{ id: 's01', action: 'goto', url: 'https://www.reddit.com/r/{sub}/', recorded: { step: '01', ms: 0, requests: [] } }] } as never)).toBe('reddit')
   })
 })
 
@@ -229,5 +233,32 @@ describe('flowWithParams', () => {
   test('every section when every param is given', () => {
     const flow = flowWithParams(profileSetup, { uid: '1', profilePhoto: 'a.png', coverPhoto: 'b.png', firstName: 'A', lastName: 'B' })
     expect(flow.steps.length).toBe(profileSetup.steps.length)
+  })
+})
+
+describe('tiktokPost and tiktokDelete: TikTok Studio, recorded 2026-11-17', () => {
+  test('both are TikTok flows, run as tiktokFlowPost and tiktokFlowDelete', () => {
+    const post = loadFlow('tiktokPost')!
+    const remove = loadFlow('tiktokDelete')!
+    expect([flowPlatform(post), flowPlatform(remove)]).toEqual(['tiktok', 'tiktok'])
+    expect([flowToolName(post), flowToolName(remove)]).toEqual(['tiktokFlowPost', 'tiktokFlowDelete'])
+  })
+
+  test("Post is decided by TikTok's own answer: status_code 0 and an item_id", () => {
+    const post = loadFlow('tiktokPost')!.steps.at(-1)!
+    expect(post.expect).toBe('tiktokWebProjectPostV1')
+    expect(post.answers?.[0].says).toContainEqual({ answer: 'single_post_resp_list.0.item_id', present: true })
+  })
+
+  test('the caption box is found by the file name TikTok prefills, and the row menu by the caption', () => {
+    const [, , fill] = loadFlow('tiktokPost')!.steps
+    expect(fillStep(fill, { fileName: 'clip', caption: 'hello' })).toMatchObject({ action: 'fill', role: 'combobox', name: 'clip', value: 'hello' })
+    const row = loadFlow('tiktokDelete')!.steps[1]
+    expect(fillStep(row, { caption: 'hello' }).args).toEqual(['hello', 'Delete'])
+  })
+
+  test('a rowMenu recording keeps its arguments', () => {
+    const flow = flowFromRecording('rows', 's', [cmd('rowMenu', ['log test', 'Delete'], '06_rowMenu', '')], { runDir: 'r', account: 'a' })
+    expect(flow.steps[0]).toMatchObject({ action: 'rowMenu', args: ['log test', 'Delete'] })
   })
 })

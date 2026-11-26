@@ -16,7 +16,7 @@ const PLATFORM = 'src/cli/warmup/helpers/platformActivity.ts'
 const PERSONA_RUN = 'src/cli/warmup/helpers/personaRun.ts'
 const VIEWER = 'src/warmup/viewer/client.ts'
 const INTEREST = 'src/warmup/viewer/helpers/interestEffect.ts'
-const LIFECYCLE = 'src/marketplace/lifecycle/types.ts'
+const LIFECYCLE = 'src/platformKit/lifecycle/types.ts'
 
 const FLOWS: [string, string][] = [
   ['feedBrowse', 'warmupFeedBrowse'],
@@ -31,7 +31,7 @@ const anchors: RequirementAnchors = {
     { kind: 'value', file: LIFECYCLE, name: 'WARMUP_ACTIVITIES', equals: FLOWS.map(([activity]) => activity) },
     { kind: 'symbol', file: SCRIPTS, name: 'ACTIVITY_SCRIPTS' },
     ...FLOWS.map(([activity, flow]) => ({ kind: 'value' as const, file: SCRIPTS, name: 'ACTIVITY_SCRIPTS', path: [activity, 'flow'], equals: flow })),
-    { kind: 'string', file: SCRIPTS, includes: 'account-warmup.ts' },
+    { kind: 'string', file: SCRIPTS, includes: 'stage 1' },
   ],
   'REQ-WARMUP-02': [
     { kind: 'symbol', file: STAGES, name: 'record' },

@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { collectDeclarations, diffDeclarations, renderSummary } from "./astSummary.mjs";
-import { AST_HEADING, addedLines, astBlock, checkAdded, countEntries, dayFile, dayOf, renderDay, renderEntry, renderIndex, replaceLastAstBlock, splitEntries, newestEntryLines } from "./commitLog.mjs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
+import { join } from "node:path";
+import { AST_HEADING, addedLines, astBlock, checkAdded, countEntries, dayFile, dayOf, devlogDir, entryLines, fieldsFromMessage, fillEntry, markCommitted, pendingFile, recordFromMessage, renderDay, renderEntry, renderIndex, replaceEntryAstBlock, replaceLastAstBlock, splitEntries } from "./commitLog.mjs";
 
 describe("astSummary", () => {
   test("reports added, changed and removed declarations from the syntax tree", () => {
@@ -51,7 +54,7 @@ describe("commitLog", () => {
     const written = template.replaceAll("<fill in>", "done").split("\n");
     expect(checkAdded(written, ast)).toBeNull();
     expect(checkAdded(written, ["- `src/a.ts`: added function z"])).toBe("stale");
-    expect(checkAdded(["Why: x"], ast)).toContain("no new");
+    expect(checkAdded(["Why: x"], ast)).toContain("no \"## \" heading");
   });
 
   test("replaceLastAstBlock swaps only the newest entry's block", () => {
@@ -65,7 +68,7 @@ describe("commitLog", () => {
     expect(addedLines("--- a/log.md\n+++ b/log.md\n@@ -1 +1,2 @@\n old\n+## new\n+Why: x")).toEqual(["## new", "Why: x"]);
   });
 
-  test("the log is one file per day, indexed newest first, so GitHub can show every part of it", () => {
+  test("the log is one file per day, indexed newest first", () => {
     const entry = (when: string) => renderEntry({ when, branch: "main", ast: ["- `a.ts`: added const x"] }).replace(/<fill in>/g, "done");
     const text = `# log
 
@@ -79,28 +82,94 @@ ${entry("2026-10-19 01:00Z")}`;
     expect(days.get("2026-10-18")).toHaveLength(2);
     const day = renderDay("2026-10-18", days.get("2026-10-18")!);
     expect(countEntries(day)).toBe(2);
-    expect(day).toContain("[log.md](../log.md)");
+    expect(day).toContain("[log.md](log.md)");
     const index = renderIndex(new Map([["2026-10-18", 2], ["2026-10-19", 1]]));
     expect(index.indexOf("2026-10-19")).toBeLessThan(index.indexOf("2026-10-18"));
-    expect(index).toContain("| [2026-10-18](log/2026-10-18.md) | 2 |");
-    expect(dayFile(dayOf("2026-11-02 03:12Z"))).toBe("log/2026-11-02.md");
+    expect(index).toContain("| [2026-10-18](2026-10-18.md) | 2 |");
+    expect(dayFile(dayOf("2026-11-02 03:12Z"))).toBe("2026-11-02.md");
   });
 
-  test("the newest entry is read from the staged file, so a diff that lines it up with an older entry can't hide its AST", () => {
-    const old = renderEntry({ when: "2026-11-02 03:15Z", branch: "a", ast: ["- `a.ts`: edited"] });
-    const added = renderEntry({ when: "2026-11-02 04:47Z", branch: "b", ast: ["- `b.ts`: edited"] });
-    const head = `# log
+  test("day logs live in a private folder outside the repo, LOG_DEVLOG_DIR or ~/.logCli/devlog", () => {
+    expect(devlogDir({ LOG_DEVLOG_DIR: "D:/private/devlog" })).toBe("D:/private/devlog");
+    expect(devlogDir({})).toBe(join(homedir(), ".logCli", "devlog"));
+  });
 
-${old}`;
-    const lines = newestEntryLines(`${head}
-${added}`, head);
+  test("the pending entry is found by its heading, even when another entry was added after it", () => {
+    const mine = renderEntry({ when: "2026-11-02 04:47Z", branch: "b", ast: ["- `b.ts`: edited"] });
+    const later = renderEntry({ when: "2026-11-02 04:50Z", branch: "c", ast: ["- `c.ts`: edited"] });
+    const text = `# log\n\n${mine}\n${later}`;
+    const lines = entryLines(text, "## 2026-11-02 04:47Z · b");
     expect(lines[0]).toBe("## 2026-11-02 04:47Z · b");
     expect(astBlock(lines)).toEqual(["- `b.ts`: edited"]);
-    expect(newestEntryLines(head, head)).toEqual([]);
+    expect(entryLines(text, "## 2026-11-02 05:00Z · d")).toEqual([]);
+    const next = replaceEntryAstBlock(text, "## 2026-11-02 04:47Z · b", ["- `b.ts`: added const x"]);
+    expect(astBlock(entryLines(next, "## 2026-11-02 04:47Z · b"))).toEqual(["- `b.ts`: added const x"]);
+    expect(astBlock(entryLines(next, "## 2026-11-02 04:50Z · c"))).toEqual(["- `c.ts`: edited"]);
+    expect(next.endsWith(later)).toBe(true);
+  });
+
+  test("each checkout keeps its own pending entry, cleared once the commit lands", () => {
+    const dir = mkdtempSync(join(tmpdir(), "devlogTest-"));
+    const one = pendingFile(dir, "C:/repos/log");
+    expect(one).not.toBe(pendingFile(dir, "C:/repos/log/.claude/worktrees/a"));
+    expect(one.startsWith(join(dir, ".pending"))).toBe(true);
+    mkdirSync(join(dir, ".pending"), { recursive: true });
+    writeFileSync(one, "{}");
+    expect(existsSync(one)).toBe(true);
+    markCommitted(dir, "C:/repos/log");
+    expect(existsSync(one)).toBe(false);
+    rmSync(dir, { recursive: true, force: true });
   });
 
   test("a stale AST block is replaced on its own line, whatever the file's line endings", () => {
     const text = ["x", AST_HEADING, "- old", "", "What changed: y"].join("\r\n");
     expect(replaceLastAstBlock(text, ["- new"])).toBe(["x", AST_HEADING, "- new", "", "What changed: y"].join("\n"));
+  });
+});
+
+describe("commitLog from the commit message, so one commit lands", () => {
+  const message = "fix: a thing\n\nWhat changed: the hook reads the message\nWhy: agents committed twice\nChecked: bun test scripts/commitLog\n  and lefthook run commit-msg\n# Please enter the commit message\n";
+  const ast = ["- `a.ts`: added const x"];
+
+  test("the three fields are read from the message, a continuation line kept and git's comment lines dropped", () => {
+    expect(fieldsFromMessage(message)).toEqual({ "What changed:": "the hook reads the message", "Why:": "agents committed twice", "Checked:": "bun test scripts/commitLog\n  and lefthook run commit-msg" });
+  });
+
+  test("a message missing a field, or still carrying the placeholder, gives nothing, so the template flow runs", () => {
+    expect(fieldsFromMessage("fix: x\n\nWhat changed: y\nWhy: z\n")).toBeNull();
+    expect(fieldsFromMessage("fix: x\n\nWhat changed: <fill in>\nWhy: z\nChecked: w\n")).toBeNull();
+    expect(fieldsFromMessage("fix: x\n")).toBeNull();
+  });
+
+  test("a new entry written from the message passes the same check a hand-filled one does", () => {
+    const dir = mkdtempSync(join(tmpdir(), "devlogMessage-"));
+    const path = recordFromMessage({ dir, repoRoot: "C:/repos/log", ast, fields: fieldsFromMessage(message)!, when: "2026-11-22 01:00Z", branch: "fix/x" });
+    const text = readFileSync(path, "utf8");
+    expect(path).toBe(join(dir, "2026-11-22.md"));
+    expect(text).not.toContain("<fill in>");
+    expect(checkAdded(entryLines(text, "## 2026-11-22 01:00Z · fix/x"), ast)).toBeNull();
+    expect(existsSync(pendingFile(dir, "C:/repos/log"))).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("a template left by an earlier refused commit is filled from the message, not duplicated", () => {
+    const dir = mkdtempSync(join(tmpdir(), "devlogMessage-"));
+    const file = join(dir, "2026-11-22.md");
+    const heading = "## 2026-11-22 00:50Z · fix/x";
+    const later = renderEntry({ when: "2026-11-22 00:55Z", branch: "other", ast: ["- `b.ts`: edited"] });
+    writeFileSync(file, `# log\n\n${renderEntry({ when: "2026-11-22 00:50Z", branch: "fix/x", ast: ["- old"] })}\n${later}`);
+    mkdirSync(join(dir, ".pending"), { recursive: true });
+    writeFileSync(pendingFile(dir, "C:/repos/log"), JSON.stringify({ file, heading }));
+    recordFromMessage({ dir, repoRoot: "C:/repos/log", ast, fields: fieldsFromMessage(message)!, when: "2026-11-22 01:00Z", branch: "fix/x" });
+    const text = readFileSync(file, "utf8");
+    expect(countEntries(text)).toBe(2);
+    expect(checkAdded(entryLines(text, heading), ast)).toBeNull();
+    expect(entryLines(text, "## 2026-11-22 00:55Z · other").join("\n")).toContain("What changed: <fill in>");
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  test("filling replaces a field's old continuation lines too", () => {
+    const entry = ["## h", "", AST_HEADING, "- a", "", "What changed: old", "  more old", "Why: w", "Checked: c", ""].join("\n");
+    expect(fillEntry(entry, { "What changed:": "new", "Why:": "w2", "Checked:": "c2" })).toBe(["## h", "", AST_HEADING, "- a", "", "What changed: new", "Why: w2", "Checked: c2", ""].join("\n"));
   });
 });

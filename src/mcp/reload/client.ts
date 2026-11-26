@@ -1,6 +1,5 @@
 import { spawn } from "node:child_process";
 import { getState, putState } from "../../storage/state/index.ts";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { appendLiveLine, liveLogDir } from "../../observability/liveLog/index.ts";
@@ -9,6 +8,7 @@ import { listJobs, statusOf } from "../jobs/index.ts";
 import { callName, cancelledId, idKey, initialized, isRequest, isResponse, parseMessage, replayedInitialize, restartedMidCall, toolsChanged } from "./helpers/index.ts";
 import { CHECK_EVERY_MS, CRASH_WINDOW_MS, INIT_TIMEOUT_MS, MAX_CRASHES } from "./types.ts";
 import type { ChildEvents, ReloadChild, ReloadDeps, ReloadState, RpcId, RpcMessage } from "./types.ts";
+import { logHome } from "../../config/logHome/index.ts";
 
 interface Slot {
   child: ReloadChild;
@@ -32,6 +32,7 @@ export class ReloadProxy {
   private queue: string[] = [];
   private crashes: number[] = [];
   private killed = new Set<number>();
+  private retired: Slot[] = [];
   private failedStamp = 0;
   private state: ReloadState;
 
@@ -100,6 +101,10 @@ export class ReloadProxy {
 
   private childExit(generation: number, code: number | null): void {
     if (this.killed.delete(generation)) return;
+    if (this.retired.some((slot) => slot.generation === generation)) {
+      this.retired = this.retired.filter((slot) => slot.generation !== generation);
+      return;
+    }
     if (this.swap && generation === this.swap.slot.generation) {
       this.failSwap(`the new server exited with ${code} before it answered`);
       return;
@@ -128,13 +133,14 @@ export class ReloadProxy {
     if (stamp <= this.current.stamp || stamp === this.failedStamp) return false;
     const now = this.deps.now();
     const calls = [...this.pending.values()].map((p) => `${p.what} for ${Math.round((now - p.since) / 1000)} s`);
-    const busy = [...(calls.length ? [`${calls.length} call(s) in flight: ${calls.join(", ")}`] : []), ...this.deps.jobsRunning(this.current.child.pid)];
+    const busy = calls.length ? [`${calls.length} call(s) in flight: ${calls.join(", ")}`] : [];
     this.state.waitingOn = busy.length ? busy.join(", ") : null;
     if (busy.length) this.save();
     return busy.length === 0;
   }
 
   tick(): void {
+    this.sweepRetired();
     if (!this.current && !this.swap && this.deps.stamp() !== this.failedStamp) {
       this.reload("a crash, now the code changed");
       return;
@@ -169,8 +175,14 @@ export class ReloadProxy {
   private adopt(slot: Slot, reason: string): void {
     const old = this.current;
     if (old) {
-      this.killed.add(old.generation);
-      old.child.kill();
+      const jobs = this.deps.jobsRunning(old.child.pid);
+      if (jobs.length) {
+        this.retired.push(old);
+        this.deps.log(`the old server (pid ${old.child.pid}) keeps running ${jobs.join(", ")} until it ends; every new call goes to the new code`);
+      } else {
+        this.killed.add(old.generation);
+        old.child.kill();
+      }
     }
     this.current = slot;
     const reloaded = old !== null || reason !== "start";
@@ -207,12 +219,22 @@ export class ReloadProxy {
     this.flush();
   }
 
+  private sweepRetired(): void {
+    this.retired = this.retired.filter((slot) => {
+      if (this.deps.jobsRunning(slot.child.pid).length) return true;
+      this.killed.add(slot.generation);
+      slot.child.kill();
+      this.deps.log(`the old server (pid ${slot.child.pid}) finished its jobs and stopped`);
+      return false;
+    });
+  }
+
   private flush(): void {
     for (const line of this.queue.splice(0)) this.fromClient(line);
   }
 
   close(): void {
-    for (const slot of [this.current, this.swap?.slot]) {
+    for (const slot of [this.current, this.swap?.slot, ...this.retired]) {
       if (!slot) continue;
       this.killed.add(slot.generation);
       slot.child.kill();
@@ -221,7 +243,7 @@ export class ReloadProxy {
 }
 
 export function reloadStateFile(): string {
-  return process.env.LOG_MCP_RELOAD_FILE || join(homedir(), ".logCli", "mcp", "reload.json");
+  return process.env.LOG_MCP_RELOAD_FILE || join(logHome(), "mcp", "reload.json");
 }
 
 export function readReloadState(file = reloadStateFile()): ReloadState | null {
@@ -268,9 +290,14 @@ export function runReloadProxy(root: string): void {
     now: () => Date.now(),
   });
   proxy.start();
+  let checking = false;
   const timer = setInterval(() => {
-    stamps.refresh();
-    proxy.tick();
+    if (checking) return;
+    checking = true;
+    void stamps.refreshAsync().finally(() => {
+      checking = false;
+      proxy.tick();
+    });
   }, CHECK_EVERY_MS);
   const input = createInterface({ input: process.stdin });
   input.on("line", (line) => proxy.fromClient(line));

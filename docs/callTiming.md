@@ -62,3 +62,7 @@ The spans show which stage is slow. A profiler shows which function inside that 
 Never put a cookie, a token or message text in a name or an attribute.
 
 Research: `RESEARCH/LOG_CLI_CALL_TRACING_TOOLING_2026_11_07.md` in the workspace. Spec: [callTiming](specs/callTiming.md).
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

@@ -7,6 +7,7 @@ const TYPED = 'src/storage/platform/client.ts'
 const MIGRATIONS = 'src/storage/schema/helpers/migrations.ts'
 const BACKFILL = 'src/storage/schema/helpers/backfill.ts'
 const SCHEMA = 'src/storage/schema/client.ts'
+const INBOX_SCHEMA = 'src/storage/schema/helpers/inbox.ts'
 const STORE = 'src/inbox/store/client.ts'
 const CATCH_UP = 'src/inbox/catchUp/client.ts'
 const X_CHAT = 'src/cli/twitter/helpers/chat.ts'
@@ -17,6 +18,8 @@ const COMMAND = 'src/cli/storage/index.ts'
 const PLATFORM_SESSION = 'src/platformKit/session/client.ts'
 const X_SESSION = 'src/twitter/account/session/client.ts'
 const WATCH = 'src/inbox/watch/client.ts'
+const PLACES = 'src/storage/platform/helpers/places.ts'
+const MEMBERS = 'src/storage/platform/helpers/members.ts'
 const RELAY = 'src/inbox/relay/client.ts'
 const CLAIMS = 'src/inbox/claims/client.ts'
 const LEDGER = 'src/storage/ledger/client.ts'
@@ -32,11 +35,19 @@ const DISCORD = 'src/cli/discord/index.ts'
 const SLACK = 'src/cli/slack/index.ts'
 const X_SEND = 'src/cli/twitter/helpers/send.ts'
 const INSTAGRAM = 'src/cli/instagram/index.ts'
+const EXTENDERS = 'src/storage/platform/helpers/extenders.ts'
+const PROFILES = 'src/storage/platform/helpers/profiles.ts'
+const PLATFORM_TYPES = 'src/storage/platform/types.ts'
+const PROFILE_READ = 'src/inbox/profiles/client.ts'
+const AVATARS = 'src/inbox/profiles/avatars.ts'
+const X_FOLLOWERS = 'src/cli/twitter/helpers/followers.ts'
+const X_DMS = 'src/cli/twitter/helpers/dms.ts'
+const X_NOTIFICATIONS = 'src/cli/twitter/helpers/notifications.ts'
 
 export const storage = {
   description: 'One SQLite database: times as integer milliseconds, one stable key per message, and old rows filled in resumable batches',
   specPath: 'docs/specs/storage.md',
-  codePaths: ['src/directApi/governor/client.ts', 'src/storage/state/client.ts', 'src/agentHooks/answers/client.ts', 'scripts/hooks/engines.ts', 'scripts/hooks/pageState.ts', 'src/agentHooks/sessionOffsets/client.ts', 'src/extensions/memeTaste/client.ts', 'src/extensions/voiceClone/helpers/store.ts', 'src/mcp/freshness/client.ts', 'src/mcp/reload/client.ts', 'src/voice/passes/client.ts', TIME, BASE, TYPED, MIGRATIONS, BACKFILL, SCHEMA, STORE, CATCH_UP, X_CHAT, CONVERSATIONS, DERIVED, DB_READ, COMMAND, PLATFORM_SESSION, X_SESSION, WATCH, RELAY, CLAIMS, DISCORD, SLACK, X_SEND, INSTAGRAM, LEDGER, QUEUE_STORE, QUEUE_PLAN, QUEUE_EVENTS, JOBS, TRANSCRIPTS, RECORDS, CONTEXT, ONE_DB],
+  codePaths: ['src/directApi/governor/client.ts', 'src/storage/state/client.ts', 'src/agentHooks/answers/client.ts', 'scripts/hooks/engines.ts', 'scripts/hooks/pageState.ts', 'src/agentHooks/sessionOffsets/client.ts', 'src/extensions/memeTaste/client.ts', 'src/extensions/voiceClone/helpers/store.ts', 'src/mcp/freshness/client.ts', 'src/mcp/reload/client.ts', 'src/voice/passes/client.ts', TIME, BASE, TYPED, MIGRATIONS, BACKFILL, SCHEMA, STORE, CATCH_UP, X_CHAT, CONVERSATIONS, DERIVED, DB_READ, COMMAND, PLATFORM_SESSION, X_SESSION, WATCH, RELAY, CLAIMS, DISCORD, SLACK, X_SEND, INSTAGRAM, LEDGER, QUEUE_STORE, QUEUE_PLAN, QUEUE_EVENTS, JOBS, TRANSCRIPTS, RECORDS, CONTEXT, ONE_DB, EXTENDERS, PROFILES, PLATFORM_TYPES, PROFILE_READ, AVATARS, X_FOLLOWERS, X_DMS, X_NOTIFICATIONS, MEMBERS],
   anchors: {
     'REQ-STORAGE-01': [
       { kind: 'symbol', file: TIME, name: 'msOf' },
@@ -71,6 +82,9 @@ export const storage = {
       { kind: 'symbol', file: TYPED, name: 'putBlob' },
       { kind: 'symbol', file: TYPED, name: 'readBlob' },
       { kind: 'symbol', file: TYPED, name: 'notePairConversation' },
+      { kind: 'symbol', file: TYPED, name: 'blobCodecOf' },
+      { kind: 'symbol', file: TYPED, name: 'readBlobBytes' },
+      { kind: 'symbol', file: PLATFORM_TYPES, name: 'RAW_BLOB_KINDS' },
     ],
     'REQ-STORAGE-06': [
       { kind: 'symbol', file: TYPED, name: 'rebuildDerived' },
@@ -164,6 +178,8 @@ export const storage = {
       { kind: 'symbol', file: ONE_DB, name: 'ALLOWED' },
       { kind: 'symbol', file: ONE_DB, name: 'WHY' },
       { kind: 'string', file: ONE_DB, includes: 'oneDatabase: no new loose store' },
+      { kind: 'symbol', file: ONE_DB, name: 'TS_WRITE' },
+      { kind: 'symbol', file: ONE_DB, name: 'PY_WRITE' },
       { kind: 'symbol', file: STORE, name: 'retirePendingFile' },
     ],
     'REQ-STORAGE-17': [
@@ -175,6 +191,78 @@ export const storage = {
       { kind: 'uses', file: 'src/contextLayer/service/client.ts', name: 'claimState' },
       { kind: 'uses', file: 'src/extensions/voiceClone/helpers/store.ts', name: 'putState' },
       { kind: 'uses', file: 'src/mcp/reload/client.ts', name: 'putState' },
+    ],
+    'REQ-STORAGE-19': [
+      { kind: 'symbol', file: SCHEMA, name: 'repairSkipped' },
+      { kind: 'symbol', file: SCHEMA, name: 'missingObjectsOf' },
+      { kind: 'uses', file: SCHEMA, name: 'repairSkipped' },
+      { kind: 'uses', file: SCHEMA, name: 'missingObjectsOf' },
+      { kind: 'symbol', file: INBOX_SCHEMA, name: 'TYPING_TABLES' },
+      { kind: 'uses', file: MIGRATIONS, name: 'TYPING_TABLES' },
+      { kind: 'symbol', file: MIGRATIONS, name: 'PIPELINE_TABLES' },
+      { kind: 'uses', file: MIGRATIONS, name: 'PIPELINE_TABLES' },
+    ],
+    'REQ-STORAGE-20': [
+      { kind: 'symbol', file: MIGRATIONS, name: 'ENGINE_STATE_TABLES' },
+      { kind: 'uses', file: MIGRATIONS, name: 'ENGINE_STATE_TABLES' },
+      { kind: 'symbol', file: MIGRATIONS, name: 'CONVENTION_CORPUS_TABLES' },
+      { kind: 'symbol', file: 'src/storage/engineStore/client.ts', name: 'readEngineStore' },
+      { kind: 'uses', file: STORE, name: 'readEngineStore' },
+      { kind: 'uses', file: WATCH, name: 'readEngineStore' },
+      { kind: 'uses', file: 'src/twitter/notification/feed/client.ts', name: 'readEngineStore' },
+      { kind: 'uses', file: 'src/media/voiceNotes/helpers/notes.ts', name: 'readEngineStore' },
+    ],
+    'REQ-STORAGE-21': [
+      { kind: 'symbol', file: PLACES, name: 'placedChat' },
+      { kind: 'symbol', file: PLACES, name: 'repairChatPlaces' },
+      { kind: 'symbol', file: PLACES, name: 'roomCatalog' },
+      { kind: 'uses', file: TYPED, name: 'placedChat' },
+      { kind: 'uses', file: TYPED, name: 'PLACE_UPDATE' },
+      { kind: 'uses', file: MIGRATIONS, name: 'repairChatPlaces' },
+      { kind: 'string', file: MIGRATIONS, includes: 'chatPlaces' },
+      { kind: 'uses', file: WATCH, name: 'placeNameOf' },
+      { kind: 'uses', file: 'src/inbox/lastWord/client.ts', name: 'placeNameOf' },
+      { kind: 'uses', file: 'src/cli/discord/index.ts', name: 'channelSendersOf' },
+    ],
+    'REQ-STORAGE-22': [
+      { kind: 'symbol', file: MEMBERS, name: 'groupByMembers' },
+      { kind: 'symbol', file: MEMBERS, name: 'repairChatGroups' },
+      { kind: 'value', file: MEMBERS, name: 'GROUP_OTHERS', equals: 2 },
+      { kind: 'uses', file: TYPED, name: 'groupByMembers' },
+      { kind: 'uses', file: MIGRATIONS, name: 'repairChatGroups' },
+      { kind: 'string', file: MIGRATIONS, includes: 'chatGroups' },
+    ],
+    'REQ-STORAGE-23': [
+      { kind: 'symbol', file: SCHEMA, name: 'dbOverride' },
+      { kind: 'symbol', file: SCHEMA, name: 'writesSinceOpen' },
+      { kind: 'uses', file: 'src/cli/runner/client.ts', name: 'dbOverride' },
+      { kind: 'uses', file: 'src/cli/runner/client.ts', name: 'writesSinceOpen' },
+      { kind: 'string', file: 'src/cli/runner/client.ts', includes: 'LOG_DB is set; not your usual log.db' },
+      { kind: 'uses', file: 'src/mcp/server/index.ts', name: 'wroteTo' },
+    ],
+    'REQ-STORAGE-18': [
+      { kind: 'symbol', file: MIGRATIONS, name: 'IDENTITY_PROFILE_TABLES' },
+      { kind: 'string', file: PLATFORM_TYPES, includes: 'identityProfiles' },
+      { kind: 'symbol', file: PLATFORM_TYPES, name: 'IDENTITY_PROFILE_EXTRA_KEYS' },
+      { kind: 'symbol', file: DERIVED, name: 'profileSeenEvent' },
+      { kind: 'symbol', file: TYPED, name: 'writeIdentityProfile' },
+      { kind: 'string', file: TYPED, includes: 'profileSeen' },
+      { kind: 'symbol', file: EXTENDERS, name: 'twitterNotificationProfile' },
+      { kind: 'symbol', file: PROFILES, name: 'sessionProfileOf' },
+      { kind: 'symbol', file: PROFILES, name: 'twitterFollowerProfile' },
+      { kind: 'symbol', file: PROFILES, name: 'profileExtraOf' },
+      { kind: 'symbol', file: STORE, name: 'rememberProfiles' },
+      { kind: 'uses', file: PLATFORM_SESSION, name: 'rememberProfiles' },
+      { kind: 'uses', file: X_SESSION, name: 'rememberProfiles' },
+      { kind: 'uses', file: X_FOLLOWERS, name: 'rememberProfiles' },
+      { kind: 'symbol', file: PROFILE_READ, name: 'readIdentityProfile' },
+      { kind: 'symbol', file: AVATARS, name: 'saveProfileAvatars' },
+      { kind: 'symbol', file: AVATARS, name: 'backfillProfileAvatars' },
+      { kind: 'uses', file: PLATFORM_SESSION, name: 'saveProfileAvatars' },
+      { kind: 'uses', file: X_SESSION, name: 'saveProfileAvatars' },
+      { kind: 'uses', file: X_FOLLOWERS, name: 'saveProfileAvatars' },
+      { kind: 'uses', file: X_DMS, name: 'saveProfileAvatars' },
+      { kind: 'uses', file: X_NOTIFICATIONS, name: 'saveProfileAvatars' },
     ],
     'REQ-STORAGE-03': [
       { kind: 'symbol', file: BACKFILL, name: 'runBackfill' },
@@ -198,8 +286,14 @@ export const storage = {
     'REQ-STORAGE-13': noul('Do startJob, appendProgress, finishJob, requestCancel, readJob, readProgress, listJobs and busyJob in src/mcp/jobs/client.ts read and write the jobs and jobLines tables (cancelRequested as a column, progress lines numbered per job) instead of files, does statusOf still read a running job with a dead pid as lost, and does importJobFiles import the old json, jsonl and cancel files once, recording it in imports?'),
     'REQ-STORAGE-14': noul('Do readTranscript and writeTranscript read and write the transcripts table keyed by the audio hash with the whole answer in body, do readLinks and linkMessages read and write transcriptLinks, and does importTranscriptFiles import the old transcript files and messages.json once, recording it in imports?'),
     'REQ-STORAGE-15': noul('Do appendStageLog, readStageLog, pruneRuns, addRating and readRatings write and read records rows (kinds stageLog, prunedRun, memeRating) through appendRecord and readRecords, importing each old file once with importRecordFile, and does logTiming insert each hook timing into spans with tool hook:<event>:<provider> instead of appending to timings.jsonl?'),
-    'REQ-STORAGE-16': noul('Does checkOneDatabase count appendFileSync and writeFileSync in every tracked non-test ts and mjs file under src, scripts and bin, fail when a file not in ALLOWED writes or a listed file writes more than its count, with no notMovedYet kind for shared state, and name a listed file that no longer writes; is it run by lefthook and bun run check; and does retirePendingFile append any pending.jsonl row not already in events and then rename the file to pending.jsonl.imported, keeping a file with an unreadable line?'),
-    'REQ-STORAGE-17': noul('Apart from each engine governor count in its account governor_state.json (written by the engine and by src/directApi/governor resetGovernor, which records every reset as a governorReset ledger row), is there a state table keyed by scope and key, written only through putState, claimState, deleteState and pruneState in src/storage/state/client.ts; do the page-state and engines hooks (src/agentHooks/answers/client.ts, scripts/hooks/engines.ts, scripts/hooks/pageState.ts), the session offsets, the context service (forgetService deletes its row through deleteState) and its start claim, memeTaste readTaste and writeTaste, the voice clone store, the chat list cache, the MCP server stamp, the reload state and the voice passes read and write it instead of files; does getState import the old file at legacyFile only once, recorded in imports; and does writeSessionOffsets prune rows older than three days under its key prefix?'),
+    'REQ-STORAGE-16': noul('Does checkOneDatabase count the TS_WRITE writes (appendFileSync, writeFileSync, Bun.write, writeFile, createWriteStream, copyFileSync, cpSync) in every tracked non-test ts and mjs file and the PY_WRITE writes (write_text, write_bytes, json.dump, open for writing, os.fdopen, shutil.copy) in every tracked non-test py file under src, scripts, bin, python and hermesPlugin, fail when a file not in ALLOWED writes or a listed file writes more than its count, with no notMovedYet kind for shared state, and name a listed file that no longer writes; is it run by lefthook and bun run check; and does retirePendingFile append any pending.jsonl row not already in events and then rename the file to pending.jsonl.imported, keeping a file with an unreadable line?'),
+    'REQ-STORAGE-17': noul('Apart from each engine governor count in its account governor_state.json (written by the engine and by src/directApi/governor resetGovernor, which records every reset as a governorReset ledger row), is there a state table keyed by scope and key, written only through putState, claimState, deleteState and pruneState in src/storage/state/client.ts; do the page-state and engines hooks (src/agentHooks/answers/client.ts, scripts/hooks/engines.ts, scripts/hooks/pageState.ts), the session offsets, the context service (forgetService deletes its row through deleteState) and its start claim, memeTaste readTaste and writeTaste, the voice clone store, the chat list cache, the MCP server stamp, the reload state and the voice passes read and write it instead of files; do pollReaders, claimPoll (inside one BEGIN IMMEDIATE), releasePoll and codeStamp in src/inbox/watch/client.ts keep the inbox seen threads, the poll plan and lock and the watcher code stamp in state (inboxSeen, inboxPoll, watcherCodeStamp), and does the Hermes plugin write which session takes pushes to state scope hermesPush, falling back to its file only when log.db is missing; does getState import the old file at legacyFile only once, recorded in imports; and does writeSessionOffsets prune rows older than three days under its key prefix?'),
+    'REQ-STORAGE-18': noul('Does migration 19 create identityProfiles keyed by platform and userId with extra checked by json_valid; is identityProfiles in DERIVED_TABLES and derivedFingerprint; is every row written only by writeIdentityProfile from a profileSeen event or an extender toProfile row, merging a sighting by keeping stored fields it lacks, merging extra key by key and keeping the latest fetchedAt; is the profileSeen event id the platform, user id and fields so a repeat appends nothing; do recordPlatformSession, recordTwitterSession and the X followers command pass only fields already in the engine answer through sessionProfileOf or twitterFollowerProfile into rememberProfiles, with no new platform call except the pictureUrl fetch that saveProfileAvatars makes; does profileExtraOf keep only IDENTITY_PROFILE_EXTRA_KEYS; and do putBlob and readBlobBytes store and return a kind in RAW_BLOB_KINDS unchanged with codec raw?'),
+    'REQ-STORAGE-19': noul('After the version loop, does migrate call repairSkipped, which for each migration with creates at or below the file user_version runs it again inside BEGIN IMMEDIATE only when missingObjectsOf finds a declared table or index missing, returns it with repaired naming the missing objects, never changes user_version, never runs a migration without creates again, and is never reached for a file newer than SCHEMA_VERSION; and does every migration with creates run only CREATE ... IF NOT EXISTS statements for exactly its declared objects; and does a new table, index or column come in its own migration rather than being appended to INBOX_TABLES or PLATFORM_TABLES, with typing created by migration 22 from TYPING_TABLES, engineState by migration 23 from ENGINE_STATE_TABLES, chatPipeline and pipelineHeads by migration 24 from PIPELINE_TABLES, and conventionCorpus by migration 25 from CONVENTION_CORPUS_TABLES?'),
+    'REQ-STORAGE-20': noul('Do the X inbox sync, X notifications, X last call, Discord servers and threads and LinkedIn connects stores read and write engineState rows through python/logDb/engineStore.py, which merges the stored parts into the new state inside one BEGIN IMMEDIATE, upserts only changed parts and never deletes one, falling back to the old file only when log.db or engineState is missing; is the old file imported on first touch, recorded in imports with its modified time, kept on disk, and merged again when modified later; and do xInboxHandleOf, storedWaiting, xchatStoredMedia and readNotificationStore read through readEngineStore, which answers from the old file only while it is newer than its import?'),
+    'REQ-STORAGE-21': noul('Does the chat upsert in writeTypedRows and conversationSeen take kind, name and server id from the channel catalog through placedChat when it lists the conversation, never turn a server channel back into a dm or name it after a speaker, and does migration 28 run repairChatPlaces once over the rows stored before; and do the Discord inbox lines, log inbox waiting and log discord chats name the server, the #channel and the sender?'),
+    'REQ-STORAGE-22': noul('For a platform whose extender guesses dm (kindFromMembers: Discord, Instagram, Reddit, Facebook, LinkedIn and the default), do writeTypedRows and conversationSeen turn a dm chat into a group once it has GROUP_OTHERS or more members besides the owner, never touching X or Slack, whose conversation ids say the kind; does insertEventRow then recompute the rings so its members are not ring 1 for it; and does migration 31 run repairChatPlaces and repairChatGroups over the rows stored before and recompute the rings when any moved?'),
+    'REQ-STORAGE-23': noul('Does runOne, for every CLI and MCP command, compare writesSinceOpen on the database dbOverride names (LOG_DB when it is not logHome()/log.db) before and after the command, and when it wrote put "writing to <path> (LOG_DB is set; not your usual log.db)" on stderr, db: <path> in a JSON object result and db in the MCP tool result, adding nothing with the usual database?'),
     unspecifiedBehavior: noul('Does the storage code order messages by text times, store the same message twice when it has a platform id, or hold the write lock for a whole backfill, by a route the specification does not describe?'),
   },
   assertions: {
@@ -220,6 +314,12 @@ export const storage = {
     'REQ-STORAGE-15': MET,
     'REQ-STORAGE-16': MET,
     'REQ-STORAGE-17': MET,
+    'REQ-STORAGE-18': MET,
+    'REQ-STORAGE-19': MET,
+    'REQ-STORAGE-20': MET,
+    'REQ-STORAGE-21': MET,
+    'REQ-STORAGE-22': MET,
+    'REQ-STORAGE-23': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

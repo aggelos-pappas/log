@@ -1,17 +1,20 @@
-import { identifyAccount } from '../../../inbox/store/index'
+import { identifyAccount, rememberProfiles } from '../../../inbox/store/index'
+import { saveProfileAvatars } from '../../../inbox/profiles/index'
+import { sessionProfileOf } from '../../../storage/platform/index'
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { TwentyError, accountStore } from '../../../twenty/graphql/index'
 import type { TwentyClient } from '../../../twenty/graphql/index'
-import { SOCIAL_ACCOUNTS, toFacebookAccount } from '../../../marketplace/socialAccount/index'
-import type { FacebookAccount, SocialAccountRow } from '../../../marketplace/socialAccount/index'
+import { SOCIAL_ACCOUNTS, engineRoute, toFacebookAccount } from '../../../platformKit/socialAccount/index'
+import type { FacebookAccount, SocialAccountRow } from '../../../platformKit/socialAccount/index'
 import { twitterStateRoot, writeLocalSession, writesPerDayOf } from '../../../directApi/engine/index'
 import { timedEngine } from '../../../observability/timing/index'
 import type { EngineTrace } from '../../../observability/timing/index'
 import type { TwitterEngineRun, TwitterEngineSpec, TwitterGate, TwitterSessionAnswer, XChatLiveEvent } from './types'
 import { callHost, readHostInfo } from './helpers'
+import { sessionHandoff } from '../../../storage/secrets/index'
 
 const ENGINE = join(import.meta.dir, '..', '..', '..', '..', 'python', 'twitterApi', 'engine.py')
 
@@ -81,20 +84,36 @@ interface PreparedCall {
   spec: Record<string, unknown>
   specPath: string
   refreshedPath: string
+  cookies: unknown
 }
 
-function prepareCall(account: TwitterAccount, request: TwitterEngineSpec, trace: EngineTrace | null): PreparedCall {
-  const dir = mkdtempSync(join(tmpdir(), 'twitterApi'))
+function cookiesHandoff(dir: string, account: TwitterAccount): Record<string, unknown> {
+  const sealed = sessionHandoff('twitter', account.accountName, { cookies: account.cookies ?? {} })
+  if (sealed) return { cookiesRef: sealed }
   const cookiesPath = join(dir, 'cookies.json')
-  const refreshedPath = join(dir, 'refreshed.json')
   writeFileSync(cookiesPath, JSON.stringify(account.cookies ?? {}), { mode: 0o600 })
+  return { cookiesPath }
+}
+
+function hostSpecOf(prepared: PreparedCall): Record<string, unknown> {
+  if (!prepared.spec.cookiesRef) return prepared.spec
+  const cookiesPath = join(prepared.dir, 'cookies.json')
+  writeFileSync(cookiesPath, JSON.stringify(prepared.cookies ?? {}), { mode: 0o600 })
+  const { cookiesRef: _ref, ...rest } = prepared.spec
+  return { ...rest, cookiesPath }
+}
+
+function prepareCall(account: TwitterAccount, request: TwitterEngineSpec, trace: EngineTrace | null, route: { proxy: string | null }): PreparedCall {
+  const dir = mkdtempSync(join(tmpdir(), 'twitterApi'))
+  const refreshedPath = join(dir, 'refreshed.json')
+  const handoff = cookiesHandoff(dir, account)
   const { chatPin, ...rest } = request
   const pinPath = chatPin ? join(dir, 'chatPin.txt') : undefined
   if (pinPath) writeFileSync(pinPath, chatPin!, { mode: 0o600 })
-  const spec = { ...rest, account: account.accountName, writesPerDay: writesPerDayOf('twitter'), cookiesPath, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }
+  const spec = { ...rest, account: account.accountName, route, writesPerDay: writesPerDayOf('twitter'), ...handoff, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }
   const specPath = join(dir, 'spec.json')
   writeFileSync(specPath, JSON.stringify(spec), { mode: 0o600 })
-  return { dir, spec, specPath, refreshedPath }
+  return { dir, spec, specPath, refreshedPath, cookies: account.cookies ?? {} }
 }
 
 function refreshedOf(prepared: PreparedCall): Record<string, string> | null {
@@ -105,14 +124,16 @@ async function viaHost(account: TwitterAccount, prepared: PreparedCall, onLive?:
   if (process.env.LOG_TWITTER_HOST === 'inline') return null
   const info = readHostInfo(twitterHostFile(account.accountName))
   if (!info) return null
-  const called = await callHost(info, prepared.spec, onLive as ((event: unknown) => void) | undefined)
+  const called = await callHost(info, hostSpecOf(prepared), onLive as ((event: unknown) => void) | undefined)
   if (!called.reached) return null
   return { answer: called.answer as unknown as TwitterSessionAnswer, refreshed: refreshedOf(prepared) }
 }
 
 export function runTwitterEngine(account: TwitterAccount, request: TwitterEngineSpec): Promise<TwitterEngineRun> {
   return timedEngine(`engine twitter ${String(request.action ?? '')}`.trim(), { account: account.accountName }, async (trace) => {
-    const prepared = prepareCall(account, request, trace)
+    const routed = engineRoute(account)
+    if (!routed.ok) return { answer: { ok: false, code: routed.code, detail: routed.detail }, refreshed: null }
+    const prepared = prepareCall(account, request, trace, routed.route)
     try {
       return (await viaHost(account, prepared)) ?? spawnPrepared(prepared)
     } finally {
@@ -135,27 +156,28 @@ function spawnPrepared(prepared: PreparedCall): TwitterEngineRun {
 
 export function runTwitterEngineLive(account: TwitterAccount, request: TwitterEngineSpec, onLive: (event: XChatLiveEvent) => void): Promise<TwitterEngineRun> {
   return timedEngine(`engine twitter ${String(request.action ?? '')}`.trim(), { account: account.accountName, live: true }, async (trace) => {
-    const prepared = prepareCall(account, request, trace)
+    const routed = engineRoute(account)
+    if (!routed.ok) return { answer: { ok: false, code: routed.code, detail: routed.detail }, refreshed: null }
+    const prepared = prepareCall(account, request, trace, routed.route)
     const direct = await viaHost(account, prepared, onLive)
     if (direct) {
       rmSync(prepared.dir, { recursive: true, force: true })
       return direct
     }
     rmSync(prepared.dir, { recursive: true, force: true })
-    return spawnTwitterEngineLive(account, request, onLive, trace)
+    return spawnTwitterEngineLive(account, request, onLive, trace, routed.route)
   }, (run) => run.answer)
 }
 
-function spawnTwitterEngineLive(account: TwitterAccount, request: TwitterEngineSpec, onLive: (event: XChatLiveEvent) => void, trace: EngineTrace | null): Promise<TwitterEngineRun> {
+function spawnTwitterEngineLive(account: TwitterAccount, request: TwitterEngineSpec, onLive: (event: XChatLiveEvent) => void, trace: EngineTrace | null, route: { proxy: string | null }): Promise<TwitterEngineRun> {
   const dir = mkdtempSync(join(tmpdir(), 'twitterApi'))
-  const cookiesPath = join(dir, 'cookies.json')
   const refreshedPath = join(dir, 'refreshed.json')
-  writeFileSync(cookiesPath, JSON.stringify(account.cookies ?? {}), { mode: 0o600 })
+  const handoff = cookiesHandoff(dir, account)
   const { chatPin, ...rest } = request
   const pinPath = chatPin ? join(dir, 'chatPin.txt') : undefined
   if (pinPath) writeFileSync(pinPath, chatPin!, { mode: 0o600 })
   const spec = join(dir, 'spec.json')
-  writeFileSync(spec, JSON.stringify({ ...rest, account: account.accountName, writesPerDay: writesPerDayOf('twitter'), cookiesPath, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }), { mode: 0o600 })
+  writeFileSync(spec, JSON.stringify({ ...rest, account: account.accountName, route, writesPerDay: writesPerDayOf('twitter'), ...handoff, refreshedPath, ...(pinPath ? { pinPath } : {}), ...(trace ? { trace } : {}) }), { mode: 0o600 })
   return new Promise((resolve) => {
     const child = spawn(process.env.LOG_PYTHON || 'python', ['-u', ENGINE, spec], { windowsHide: true })
     let buffer = ''
@@ -197,6 +219,15 @@ function spawnTwitterEngineLive(account: TwitterAccount, request: TwitterEngineS
   })
 }
 
+export function ownUserIdOf(cookies: unknown): string | null {
+  const twid = twitterCookies(cookies).twid ?? ''
+  let decoded = twid
+  try {
+    decoded = decodeURIComponent(twid)
+  } catch {}
+  return /u=(\d+)/.exec(decoded)?.[1] ?? null
+}
+
 export const SESSION_REWRITE_MS = 60 * 60 * 1000
 
 function sameCookies(a: unknown, b: unknown): boolean {
@@ -217,7 +248,14 @@ export async function recordTwitterSession(twenty: TwentyClient, account: Twitte
   const checkedAt = account.sessionCheckedAt ? Date.parse(account.sessionCheckedAt) : NaN
   const fresh = state === account.sessionState && !cookiesChanged && Number.isFinite(checkedAt) && now.getTime() - checkedAt < SESSION_REWRITE_MS
   writeLocalSession(account.accountName, state, now, twitterStateRoot(), { accountId: account.id })
-  if (run.answer.ok && state === 'loggedIn' && run.answer.userId) identifyAccount('twitter', account.accountName, String(run.answer.userId), now)
+  const ownId = ownUserIdOf(account.cookies)
+  const aboutTheOwner = !ownId || !run.answer.userId || String(run.answer.userId) === ownId
+  if (run.answer.ok && state === 'loggedIn' && run.answer.userId && aboutTheOwner) identifyAccount('twitter', account.accountName, String(run.answer.userId), now)
+  if (run.answer.ok && state === 'loggedIn' && aboutTheOwner) {
+    const sighting = sessionProfileOf('twitter', run.answer as unknown as Record<string, unknown>)
+    rememberProfiles('twitter', account.accountName, [sighting], now)
+    await saveProfileAvatars('twitter', account.accountName, [sighting], now)
+  }
   if (fresh) return []
   account.sessionState = state
   account.sessionCheckedAt = now.toISOString()

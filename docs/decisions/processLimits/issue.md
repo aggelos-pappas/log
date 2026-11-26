@@ -5,7 +5,7 @@ Tool calls are slow because of processes, not data (issue #99). A SQLite read ta
 - The MCP proxy walks the source tree on every call, about 79 ms.
 - Every engine call starts a Python process: about 400 ms to start plus about 360 ms of imports. For X and Instagram that process only passes the call to an already-running host.
 
-matt wants the decisions made on the fundamentals, measured on his machine, and judged by SubQ before anything is built.
+the owner wants the decisions made on the fundamentals, measured on his machine, and judged by SubQ before anything is built.
 
 ## The two decisions
 

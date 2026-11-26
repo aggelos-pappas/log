@@ -26,7 +26,7 @@ describe('pageStateOf: the known page states and what resolves each (rule 54)', 
 describe('Messenger PIN', () => {
   const CREATE = 'heading "Create a PIN to access your chats on any device" [level=2]\nbutton "Create PIN"'
 
-  test("\"Create a PIN\" without the PIN in Twenty is matt's: he gives it in the Clack prompt", () => {
+  test("\"Create a PIN\" without the PIN in Twenty is the owner's: he gives it in the Clack prompt", () => {
     const state = pageStateOf('https://www.facebook.com/messages/', CREATE)
     expect(state?.id).toBe('messengerPinCreate')
     expect(state?.person).toBe(true)
@@ -39,7 +39,7 @@ describe('Messenger PIN', () => {
     expect(state?.resolve).toContain('log flow run messengerPinCreate')
   })
 
-  test("\"Enter your PIN\" is mapped: typed from Twenty when it is there, matt's when not", () => {
+  test("\"Enter your PIN\" is mapped: typed from Twenty when it is there, the owner's when not", () => {
     const page = 'heading "Enter your PIN to access your chats" [level=2]\ntextbox "PIN"'
     expect(pageStateOf('https://www.facebook.com/messages/', page, { messengerPin: true })).toMatchObject({ id: 'messengerPinEnter', person: false })
     expect(pageStateOf('https://www.facebook.com/messages/', page, { messengerPin: true })?.resolve).toContain('log inspect do pin --live')
@@ -107,7 +107,7 @@ describe('a group People tab that answered with its newest members', () => {
     const { resolveCallOf } = await import('./helpers/pageState')
     const state = pageStateOf(MEMBERS, '- heading "New to the group"', { exchanges: [refetch([{ node: { __typename: 'User', id: '1' } }])] })
     expect(state).toMatchObject({ id: 'groupMembersList', person: false, needsNothing: true })
-    expect(resolveCallOf(state!, { account: '61594063207669', text: '' })).toBeNull()
+    expect(resolveCallOf(state!, { account: '99900000000001', text: '' })).toBeNull()
     expect(pageStateOf(MEMBERS, '', { exchanges: [refetch([])] })).toBeNull()
     expect(pageStateOf('https://www.facebook.com/groups/junkremovalwinners', '', { exchanges: [refetch([{ node: { __typename: 'User', id: '1' } }])] })).toBeNull()
     expect(pageStateOf(MEMBERS, '- heading "New to the group"')).toBeNull()

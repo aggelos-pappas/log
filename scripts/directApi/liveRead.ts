@@ -3,7 +3,8 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createTwentyClient } from '../../src/twenty/graphql/client.ts'
-import { findAccount } from '../../src/marketplace/socialAccount/client.ts'
+import { findAccount } from '../../src/platformKit/socialAccount/client.ts'
+import { engineRoute } from '../../src/platformKit/socialAccount/index.ts'
 
 function netscape(cookies: { name: string; value: string; domain?: string; path?: string; expires?: number; httpOnly?: boolean }[]): string {
   const lines = ['# Netscape HTTP Cookie File']
@@ -22,7 +23,8 @@ async function main(): Promise<number> {
   const account = await findAccount(createTwentyClient(), name)
   const raw = (account as unknown as { cookies: unknown }).cookies
   const cookies = Array.isArray(raw) ? raw : typeof raw === 'string' && raw ? JSON.parse(raw) : []
-  if (!cookies.some((c: { name: string }) => c.name === 'c_user') || !account.proxy) {
+  const routed = engineRoute(account)
+  if (!cookies.some((c: { name: string }) => c.name === 'c_user') || !routed.ok) {
     process.stderr.write(`${account.accountName}: needs a saved session + proxy\n`)
     return 1
   }
@@ -31,7 +33,7 @@ async function main(): Promise<number> {
   const jar = join(dir, 'cookies.txt')
   writeFileSync(jar, netscape(cookies), { mode: 0o600 })
   const spec = join(dir, 'spec.json')
-  writeFileSync(spec, JSON.stringify({ surface: 'marketplace', method: 'search', args: [query], cookiesPath: jar, proxy: account.proxy }), { mode: 0o600 })
+  writeFileSync(spec, JSON.stringify({ surface: 'marketplace', method: 'search', args: [query], cookiesPath: jar, route: routed.route }), { mode: 0o600 })
   const py = process.env.LOG_PYTHON || 'python'
   const code = await new Promise<number>((resolve) => {
     const p = spawn(py, [join(import.meta.dir, '..', '..', 'python', 'directApi', 'engine.py'), spec], { windowsHide: true, stdio: 'inherit' })

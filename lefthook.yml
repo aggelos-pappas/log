@@ -1,113 +1,259 @@
 pre-commit:
-  commands:
-    noComments:
+  parallel: true
+  jobs:
+    - name: privacy
+      run: bun run check:privacy --staged
+
+    - name: noComments
       run: bun run check:noComments
+      exclude: &prose
+        - "*.md"
+        - "*.mmd"
+        - "*.txt"
+        - "*.png"
+        - "*.jpg"
+        - "*.webp"
+        - "*.gif"
+        - "*.svg"
+        - "*.webm"
 
-    twikitTransport:
+    - name: twikitTransport
       run: bun run check:twikitTransport
+      exclude: *prose
 
-    reverseChudTransport:
+    - name: reverseChudTransport
       run: bun run check:reverseChudTransport
+      exclude: *prose
 
-    linkedinTransport:
+    - name: oneIdentity
+      run: bun run check:oneIdentity
+      exclude: *prose
+
+    - name: identityGate
+      run: bun run check:identityGate
+      exclude: *prose
+
+    - name: linkedinTransport
       run: bun run check:linkedinTransport
+      exclude: *prose
 
-    slackTransport:
+    - name: slackTransport
       run: bun run check:slackTransport
-    instagramTransport:
+      exclude: *prose
+
+    - name: instagramTransport
       run: bun run check:instagramTransport
+      exclude: *prose
 
-    platforms:
+    - name: platforms
       run: bun run check:platforms
+      glob:
+        - &code "*.{ts,tsx,mts,cts,js,mjs,cjs,jsx,py,json,jsonc,toml,yml,yaml,css,html,lock}"
+        - "docs/platforms/**"
+        - "docs/*Platform.md"
 
-    layout:
+    - name: agnostic
+      run: bun scripts/checks/cachedCheck.ts check:agnostic
+      glob: &surface
+        - *code
+        - "AGENTS.md"
+        - "docs/useCases/**"
+        - "docs/guides/**"
+        - "docs/harnesses/**"
+        - "skills/**"
+
+    - name: platformNeutral
+      run: bun run check:platformNeutral
+      glob: *surface
+
+    - name: agentWording
+      run: bun run check:agentWording
+      glob:
+        - "README.md"
+        - "AGENTS.md"
+        - "llms.txt"
+        - "docs/trust.md"
+        - "docs/accounts.md"
+        - "docs/guides/**"
+        - "docs/useCases/**"
+        - "hermesPlugin/**"
+        - ".claude/skills/**"
+        - "scripts/checks/*AgentWording*"
+        - "scripts/checks/agentWordingBaseline.json"
+
+    - name: docLinks
+      run: bun run check:docLinks
+      glob:
+        - "*.md"
+        - "scripts/checks/*DocLinks*"
+
+    - name: layout
       run: bun run check:layout
 
-    oneDatabase:
+    - name: oneDatabase
       run: bun run check:oneDatabase
+      exclude: *prose
 
-    hiddenWindows:
+    - name: hiddenWindows
       run: bun run check:hiddenWindows
+      exclude: *prose
 
-    commitLog:
-      run: node scripts/commitLog/commitLog.mjs
-
-    browserParity:
+    - name: browserParity
       run: bun run check:browsers
+      glob:
+        - *code
+        - "docs/browsers.md"
+        - "site/apps/web/public/logos/**"
 
-    agentHooks:
-      run: bun run check:agentHooks
+    - name: consoleParity
+      run: bun run check:consoleParity
+      exclude: *prose
 
-    docs:
+    - name: cards
+      run: bun run check:cards
+      exclude: *prose
+
+    - name: agentHooks
+      run: bun scripts/checks/cachedCheck.ts check:agentHooks
+      glob:
+        - *code
+        - "AGENTS.md"
+        - "docs/useCases/**"
+        - "docs/guides/**"
+        - "docs/harnesses/**"
+        - "skills/**"
+        - "hermesPlugin/**"
+        - ".codex/**"
+        - ".claude/**"
+
+    - name: docs
       run: bun run check:docs
 
-    siteDocs:
-      run: bun run check:siteDocs
+    - name: siteDocs
+      run: bun scripts/checks/cachedCheck.ts check:siteDocs
+      glob:
+        - "docs/**"
+        - "site/apps/docs/**"
+        - "scripts/docs/**"
+        - "src/privacy/**"
 
-    siteSkills:
-      run: bun run check:siteSkills
+    - name: siteSkills
+      run: bun run check:siteSkills --staged
+      glob:
+        - "skills/**"
+        - "docs/useCases/**"
+        - ".claude/skills/**"
+        - "hermesPlugin/skills/**"
+        - "site/apps/web/public/.well-known/**"
+        - "scripts/docs/**"
+        - "scripts/privacy/**"
+        - "src/privacy/**"
 
-    specs:
-      run: bun run check:specs --staged
+    - name: specs
+      run: bun scripts/checks/cachedCheck.ts check:specs --staged
+      glob:
+        - *code
+        - "docs/specs/**"
+
+commit-msg:
+  jobs:
+    - name: commitLog
+      run: node scripts/commitLog/commitLog.mjs --message {1}
+
+post-commit:
+  commands:
+    commitLog:
+      run: node scripts/commitLog/commitLog.mjs --committed
 
 pre-push:
-  parallel: false
-  commands:
-    noComments:
-      run: bun run check:noComments
+  jobs:
+    - name: checks
+      group:
+        parallel: true
+        jobs:
+          - name: privacy
+            run: bun run check:privacy
 
-    twikitTransport:
-      run: bun run check:twikitTransport
+          - name: noComments
+            run: bun run check:noComments
 
-    reverseChudTransport:
-      run: bun run check:reverseChudTransport
+          - name: twikitTransport
+            run: bun run check:twikitTransport
 
-    linkedinTransport:
-      run: bun run check:linkedinTransport
+          - name: reverseChudTransport
+            run: bun run check:reverseChudTransport
 
-    slackTransport:
-      run: bun run check:slackTransport
-    instagramTransport:
-      run: bun run check:instagramTransport
+          - name: oneIdentity
+            run: bun run check:oneIdentity
 
-    platforms:
-      run: bun run check:platforms
+          - name: identityGate
+            run: bun run check:identityGate
 
-    naming:
-      run: bun run check:naming
+          - name: linkedinTransport
+            run: bun run check:linkedinTransport
 
-    layout:
-      run: bun run check:layout
+          - name: slackTransport
+            run: bun run check:slackTransport
 
-    oneDatabase:
-      run: bun run check:oneDatabase
+          - name: instagramTransport
+            run: bun run check:instagramTransport
 
-    hiddenWindows:
-      run: bun run check:hiddenWindows
+          - name: platforms
+            run: bun run check:platforms
 
-    browserParity:
-      run: bun run check:browsers
+          - name: agnostic
+            run: bun scripts/checks/cachedCheck.ts check:agnostic
 
-    agentHooks:
-      run: bun run check:agentHooks
+          - name: agentWording
+            run: bun run check:agentWording
 
-    docs:
-      run: bun run check:docs
+          - name: docLinks
+            run: bun run check:docLinks
 
-    siteDocs:
-      run: bun run check:siteDocs
+          - name: platformNeutral
+            run: bun run check:platformNeutral
 
-    siteSkills:
-      run: bun run check:siteSkills
+          - name: naming
+            run: bun run check:naming
 
-    specs:
-      run: bun run check:specs
+          - name: layout
+            run: bun run check:layout
 
-    typecheck:
+          - name: oneDatabase
+            run: bun run check:oneDatabase
+
+          - name: hiddenWindows
+            run: bun run check:hiddenWindows
+
+          - name: browserParity
+            run: bun run check:browsers
+
+          - name: consoleParity
+            run: bun run check:consoleParity
+
+          - name: cards
+            run: bun run check:cards
+
+          - name: agentHooks
+            run: bun scripts/checks/cachedCheck.ts check:agentHooks
+
+          - name: docs
+            run: bun run check:docs
+
+          - name: siteDocs
+            run: bun scripts/checks/cachedCheck.ts check:siteDocs
+
+          - name: siteSkills
+            run: bun run check:siteSkills
+
+          - name: specs
+            run: bun scripts/checks/cachedCheck.ts check:specs
+
+          - name: clientDocs
+            run: bun run check:clientDocs
+
+    - name: typecheck
       run: bun run typecheck
 
-    test:
-      run: bun test
-
-    facebookClientDocs:
-      run: bun run check:facebookClientDocs
+    - name: test
+      run: bun run test:affected

@@ -5,6 +5,10 @@ import { join } from "node:path";
 import { addPending, claimPoll, claimWatcher, ensureLiveWatchers, hookReaderOf, inboxContext, localTime, newMessages, pollReaders, releasePoll, releaseWatcher, storedInboxContext, storedWaiting, takeAlerts, takePending, watchHolder } from "./index.ts";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import type { InboxReader, InboxThread } from "./index.ts";
+import { db } from "../store/index.ts";
+import { writeEngineStore } from "../../storage/engineStore/index.ts";
+import { typeEvent } from "../../storage/platform/index.ts";
+import { FRESH_DB_MS } from "../../../scripts/tests/timeouts.ts";
 
 const thread = (id: string, who: string, at: string, fromMe: boolean, box = "inbox", text: string | null = "hey"): InboxThread => ({ conversationId: id, with: who, lastAt: at, lastFromMe: fromMe, lastText: text, box });
 
@@ -16,11 +20,11 @@ beforeEach(() => {
 describe("one watcher per account, never two (rule 131)", () => {
   test("the first watcher takes the account and a second one is refused loudly while the first lives", () => {
     const alive = (pid: number) => pid === 111 || pid === 222;
-    expect(claimWatcher("twitter", "matthewsoldit", 111, alive)).toMatchObject({ ok: true });
-    expect(watchHolder("twitter", "matthewsoldit", alive)).toBe(111);
-    expect(claimWatcher("twitter", "matthewsoldit", 222, alive)).toEqual({ ok: false, holder: 111 });
+    expect(claimWatcher("twitter", "xAccount", 111, alive)).toMatchObject({ ok: true });
+    expect(watchHolder("twitter", "xAccount", alive)).toBe(111);
+    expect(claimWatcher("twitter", "xAccount", 222, alive)).toEqual({ ok: false, holder: 111 });
     const alerts = takeAlerts("sessionA");
-    expect(alerts.join("\n")).toContain("DUPLICATEWATCHER twitter matthewsoldit");
+    expect(alerts.join("\n")).toContain("DUPLICATEWATCHER twitter xAccount");
     expect(alerts.join("\n")).toContain("pid 222");
   });
 
@@ -35,10 +39,10 @@ describe("one watcher per account, never two (rule 131)", () => {
 
   test("the hook never starts a second watcher while one holds the account", () => {
     const alive = (pid: number) => pid === 111;
-    expect(claimWatcher("slack", "mattSlack", 111, alive)).toMatchObject({ ok: true });
-    rmSync(join(process.env.LOG_INBOX_STATE!, "slack", "mattSlack", "watch.pid"), { force: true });
+    expect(claimWatcher("slack", "slackAccount", 111, alive)).toMatchObject({ ok: true });
+    rmSync(join(process.env.LOG_INBOX_STATE!, "slack", "slackAccount", "watch.pid"), { force: true });
     let started = 0;
-    expect(ensureLiveWatchers("slack", ["mattSlack"], () => ++started, alive)).toEqual([]);
+    expect(ensureLiveWatchers("slack", ["slackAccount"], () => ++started, alive)).toEqual([]);
     expect(started).toBe(0);
   });
 });
@@ -53,15 +57,15 @@ describe("inbox watch", () => {
   });
 
   test("an X Chat reply with encrypted text still surfaces, labelled", () => {
-    let threads = [thread("x1", "shwetasd19", "2026-10-26T03:00:00Z", true, "xchat", null)];
+    let threads = [thread("x1", "sample_user19", "2026-10-26T03:00:00Z", true, "xchat", null)];
     const reader: InboxReader = { platform: "twitter", accounts: () => ["acct"], read: () => threads };
     expect(pollReaders([reader])).toEqual([]);
-    threads = [thread("x1", "shwetasd19", "2026-10-26T04:12:00Z", false, "xchat", null)];
+    threads = [thread("x1", "sample_user19", "2026-10-26T04:12:00Z", false, "xchat", null)];
     const found = pollReaders([reader]);
-    expect(found.map((m) => m.with)).toEqual(["shwetasd19"]);
+    expect(found.map((m) => m.with)).toEqual(["sample_user19"]);
     const text = inboxContext(takePending());
     expect(text).toContain("(X Chat)");
-    expect(text).toContain("@shwetasd19");
+    expect(text).toContain("@sample_user19");
   });
 
   test("the first look learns what's there; the next says what arrived, once", () => {
@@ -81,9 +85,9 @@ describe("inbox watch", () => {
     expect(sub).toBe("s1_a9");
     expect(takePending(main)).toEqual([]);
     expect(takePending(sub)).toEqual([]);
-    addPending([{ platform: "twitter", account: "acct", conversationId: "c", with: "nefer", text: "what up G", at: "2026-11-02T18:57:46Z", box: "xchat", seenAt: "2026-11-02T18:57:48Z" }]);
-    expect(takePending(sub).map((m) => m.with)).toEqual(["nefer"]);
-    expect(takePending(main).map((m) => m.with)).toEqual(["nefer"]);
+    addPending([{ platform: "twitter", account: "acct", conversationId: "c", with: "handle_n1", text: "what up G", at: "2026-11-02T18:57:46Z", box: "xchat", seenAt: "2026-11-02T18:57:48Z" }]);
+    expect(takePending(sub).map((m) => m.with)).toEqual(["handle_n1"]);
+    expect(takePending(main).map((m) => m.with)).toEqual(["handle_n1"]);
     expect(takePending(main)).toEqual([]);
     expect(takePending(sub)).toEqual([]);
   });
@@ -99,22 +103,31 @@ describe("inbox watch", () => {
     expect(claimPoll(new Date(t0.getTime() + 60 * 60_000))).toBe(false);
   });
   test("a Discord message pushed by the gateway is told with the Discord steps, beside X's", () => {
-    addPending([{ platform: "discord", account: "sourcedandsoldtothehighestbidder", conversationId: "1316963626611118161", with: "VIBE BOT", text: "look beyond x", at: "2026-10-28T08:48:50Z", box: "reply", seenAt: "2026-10-28T08:48:51Z" }]);
-    addPending([{ platform: "twitter", account: "matthewsoldit", conversationId: "1-2", with: "alice", text: "hey", at: "2026-10-28T08:49:00Z", box: "xchat", seenAt: "2026-10-28T08:49:01Z" }]);
+    addPending([{ platform: "discord", account: "myDiscordName", conversationId: "1316963626611118161", with: "VIBE BOT", text: "look beyond x", at: "2026-10-28T08:48:50Z", box: "reply", seenAt: "2026-10-28T08:48:51Z" }]);
+    addPending([{ platform: "twitter", account: "xAccount", conversationId: "1-2", with: "alice", text: "hey", at: "2026-10-28T08:49:00Z", box: "xchat", seenAt: "2026-10-28T08:49:01Z" }]);
     const text = inboxContext(takePending())!;
     expect(text).toContain(">>> NEW MESSAGE (1)");
     expect(text).toContain(">>> NEW DISCORD MESSAGE (1)");
-    expect(text).toContain("VIBE BOT on discord sourcedandsoldtothehighestbidder (replied to you in a server channel)");
-    expect(text).toContain("`discordSendLive` { account: \"sourcedandsoldtothehighestbidder\", channel: \"<channel>\"");
+    expect(text).toContain("VIBE BOT on discord myDiscordName (replied to you in a server channel)");
+    expect(text).toContain("`discordSendLive` { account: \"myDiscordName\", channel: \"<channel>\"");
   });
 
+  test("a Discord message in a server channel names the server, the #channel and who sent it, even when the chat was first stored as a dm named after them", () => {
+    const handle = db();
+    typeEvent(handle, { eventId: "lantern1", platform: "discord", account: "myDiscordName", conversationId: "7200000101", type: "message", with: "Copper Kettle", text: "first", box: "dm", payload: { id: "1", senderId: "9100000101" }, sourceAt: "2026-10-28T08:40:00Z", receivedAt: "2026-10-28T08:40:01Z", source: "live" });
+    writeEngineStore("discordServers", "myDiscordName", { savedAt: 1, from: "gateway", channels: [{ id: "7200000101", kind: "channel", name: "Lantern Guild #buildNight", members: [], server: "Lantern Guild", serverId: "7100000101" }] }, handle, Date.now());
+    addPending([{ platform: "discord", account: "myDiscordName", conversationId: "7200000101", with: "Copper Kettle", text: "anyone shipping tonight?", at: "2026-10-28T08:48:50Z", box: "mention", seenAt: "2026-10-28T08:48:51Z", serverId: "7100000101" }]);
+    const text = inboxContext(takePending())!;
+    expect(text).toContain("Copper Kettle in Lantern Guild #buildNight on discord myDiscordName (mentioned you in a server channel)");
+  }, FRESH_DB_MS);
+
   test("a Slack message pushed by the workspace's websocket is told with the Slack steps", () => {
-    addPending([{ platform: "slack", account: "mattSlack", conversationId: "D0EXAMPLE01", with: "Sam", text: "yo hows it going", at: "2026-11-03T07:00:00Z", box: "dm", seenAt: "2026-11-03T07:00:01Z", workspace: "acme" }]);
+    addPending([{ platform: "slack", account: "slackAccount", conversationId: "D0EXAMPLE01", with: "Sam", text: "yo hows it going", at: "2026-11-03T07:00:00Z", box: "dm", seenAt: "2026-11-03T07:00:01Z", workspace: "acme" }]);
     const text = inboxContext(takePending())!;
     expect(text).toContain(">>> NEW SLACK MESSAGE (1)");
-    expect(text).toContain("Sam on slack mattSlack in acme (DM)");
+    expect(text).toContain("Sam on slack slackAccount in acme (DM)");
     expect(text).toContain("(chat D0EXAMPLE01)");
-    expect(text).toContain("`slackSendLive` { account: \"mattSlack\"");
+    expect(text).toContain("`slackSendLive` { account: \"slackAccount\"");
   });
 });
 
@@ -152,5 +165,19 @@ describe("an inbox watcher for an account gone from Twenty", () => {
     const out = ensureLiveWatchers("discord", ["gone", "live"], (account) => (started.push(account), 4242), () => false);
     expect(started).toEqual(["live"]);
     expect(out).toEqual(["live"]);
+  });
+
+  test("is not started again once its session died, until the session is checked loggedIn after it", () => {
+    const root = process.env.LOG_INBOX_STATE as string;
+    const dead = `dead${process.pid}${Date.now()}`;
+    mkdirSync(join(root, "discord", dead), { recursive: true });
+    writeFileSync(join(root, "discord", dead, "watch.log"), "log discord watch: discordAccount: platformError: Discord's gateway didn't send READY within 45 s\n");
+    const started: string[] = [];
+    ensureLiveWatchers("discord", [dead], (account) => (started.push(account), 4242), () => false);
+    expect(started).toEqual([]);
+    mkdirSync(join(root, "..", "discord", dead), { recursive: true });
+    writeFileSync(join(root, "..", "discord", dead, "session.json"), JSON.stringify({ sessionState: "loggedIn", checkedAt: new Date(Date.now() + 60_000).toISOString() }));
+    ensureLiveWatchers("discord", [dead], (account) => (started.push(account), 4242), () => false);
+    expect(started).toEqual([dead]);
   });
 });

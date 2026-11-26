@@ -1,6 +1,6 @@
 import { AGENT_HOOKS } from "../../agentHooks/registry/index.ts";
 import type { AgentHook } from "../../agentHooks/registry/index.ts";
-import { BROWSER_DRIVERS } from "../../browser/driver/types.ts";
+import { BROWSER_DRIVER_ENV, BROWSER_DRIVERS, DEFAULT_BROWSER_DRIVER } from "../../browser/driver/types.ts";
 import { PAGE_STATES } from "../../browser/flow/helpers/pageState.ts";
 import { PLATFORM_LABELS, PLATFORM_SITES, PLATFORMS } from "../../cli/runner/helpers/platforms.ts";
 import type { Platform } from "../../cli/runner/helpers/platforms.ts";
@@ -39,8 +39,9 @@ const proxyText = (p: Platform) => (PLATFORM_SITES[p].proxy === "required" ? "it
 const isDirect = (e: CommandEntry) => e.engine === "directApiFirst" || e.engine === "directApiOnly";
 
 export function platformsDiagram(entries: readonly CommandEntry[]): Diagram {
-  const anyBrowser = entries.filter((e) => e.platform === "any" && e.browser === "accountBrowser");
-  const anyNone = entries.filter((e) => e.platform === "any" && e.browser === "none");
+  const shared = (e: CommandEntry) => e.platform === "any" || e.platform === "byArgument";
+  const anyBrowser = entries.filter((e) => shared(e) && e.browser === "accountBrowser");
+  const anyNone = entries.filter((e) => shared(e) && e.browser === "none");
   const lines = [
     "flowchart LR",
     `  twenty[("Twenty socialAccounts: one row per account, its platform, session and proxy")]`,
@@ -48,7 +49,7 @@ export function platformsDiagram(entries: readonly CommandEntry[]): Diagram {
     `  drivers["The account's browser: AdsPower or Camoufox, through the driver (The browser layer)"]`,
   ];
   for (const p of PLATFORMS) {
-    const own = entries.filter((e) => e.platform === p || (e.platform === "byArgument" && p === PLATFORMS[0]));
+    const own = entries.filter((e) => e.platform === p);
     lines.push(`  p_${p}["${label(`${PLATFORM_LABELS[p]} (${PLATFORM_SITES[p].twenty}): ${countOf(entries.filter((e) => e.platform === p).length, "command")} of its own`)}"]`, `  twenty --> p_${p}`);
     for (const lib of platformLibraries(p)) {
       const node = `e_${lib.replace(/[^A-Za-z0-9_]/g, "_")}`;
@@ -79,7 +80,7 @@ export function surfaceDiagram(entries: readonly CommandEntry[], hooks: readonly
   const lines = [
     "flowchart LR",
     `  agent["Agent (Claude Code, Codex)"]`,
-    `  matt["matt, in a terminal"]`,
+    `  owner["the owner, in a terminal"]`,
     `  shell["Bash / PowerShell / Monitor"]`,
     `  mcp["MCP server log: ${tools} command tools + saved flows"]`,
     `  bin["bin/log.ts"]`,
@@ -91,7 +92,7 @@ export function surfaceDiagram(entries: readonly CommandEntry[], hooks: readonly
     `  api["The platform's internal API: its answer decides (rule 73)"]`,
     `  twenty[("Twenty: socialAccounts.sessionState, refreshed cookies")]`,
     "  agent --> shell",
-    "  matt --> bin",
+    "  owner --> bin",
     "  shell --> bin",
     "  agent -->|mcp__log__tool| mcp",
     "  bin --> runCli",
@@ -118,13 +119,13 @@ export function hooksDiagram(hooks: readonly AgentHook[] = AGENT_HOOKS): Diagram
   const note = (event: string) => by(event).map((h) => `  Note over Hook: ${label(h.why)}`);
   const lines = [
     "sequenceDiagram",
-    "  participant matt",
+    "  participant owner as the owner",
     "  participant Agent",
     "  participant Hook as log-cli hooks",
     "  participant Tool as Bash / PowerShell / Monitor / mcp__log__*",
     "  Agent->>Hook: SessionStart",
     ...note("SessionStart"),
-    "  matt->>Agent: a prompt",
+    "  owner->>Agent: a prompt",
     "  Agent->>Hook: UserPromptSubmit",
     ...note("UserPromptSubmit"),
     "  loop each tool call",
@@ -144,7 +145,7 @@ export function hooksDiagram(hooks: readonly AgentHook[] = AGENT_HOOKS): Diagram
     "  alt a browser sits on a state log-cli clears",
     "    Hook-->>Agent: decision block, with the state's resolver",
     "  else nothing to clear, or a person's state",
-    "    Agent-->>matt: the answer",
+    "    Agent-->>owner: the answer",
     "  end",
   ];
   return { name: "hooks", title: "The hooks in one turn", about: "Written from `AGENT_HOOKS` (`src/agentHooks/registry`); the same list gives Claude Code's `.claude/settings.json` and Codex's `.codex/hooks.json`.", mermaid: lines.join("\n") };
@@ -157,7 +158,7 @@ export function resolverStep(resolve: string): string {
 }
 
 export function pageStatesDiagram(): Diagram {
-  const lines = ["flowchart LR", `  page["A step lands on a page"]`, `  person["Stop the account, tell matt"]`];
+  const lines = ["flowchart LR", `  page["A step lands on a page"]`, `  person["Stop the account, tell the owner"]`];
   for (const s of PAGE_STATES) {
     lines.push(`  ${s.id}["${label(s.id)}: ${label(s.what)}"]`);
     lines.push(`  page --> ${s.id}`);
@@ -206,7 +207,7 @@ export function browsersDiagram(entries: readonly CommandEntry[]): Diagram {
     `  gates["${label(`Every driver: the proxy gate (${proxied.join(", ")}: a proxy in the home country, rule 12. ${open.join(", ")}: no proxy, rule 84), self-check, HAR, human mouse (rules 17, 22, 32)`)}"]`,
     `  session["One Playwright context: python/browser/browserDriver.py"]`,
     "  twenty --> pick",
-    ...BROWSER_DRIVERS.map((d) => `  pick -->|"${label(d === "adsPower" ? "a linked profile, or browserDriver adsPower" : "browserDriver camoufox, or no profile")}"| d_${d}["${label(d)}"]`),
+    ...BROWSER_DRIVERS.map((d) => `  pick -->|"${label(d === "adsPower" ? "a linked profile, or browserDriver adsPower" : d === DEFAULT_BROWSER_DRIVER ? `browserDriver ${d}, or nothing set` : `browserDriver ${d}, or ${BROWSER_DRIVER_ENV}=${d}`)}"| d_${d}["${label(d)}"]`),
     ...BROWSER_DRIVERS.map((d) => `  d_${d} --> gates`),
     `  more["Next browser provider: one more driver (src/browser/name), rule 44"] -.-> gates`,
     "  gates --> session",

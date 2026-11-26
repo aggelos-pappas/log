@@ -48,7 +48,7 @@ The reverse fields are `socialAccount.agencyConversations`, `agencyListing.agenc
 
 ## What recording a thread does
 
-`recordThread` (`src/marketplace/conversation/client.ts`) takes one thread as the inbox showed it and:
+`recordThread` (`src/facebook/marketplace/conversation/client.ts`) takes one thread as the inbox showed it and:
 
 1. **Finds the conversation** by `pairKey`, or creates it as `NEW`.
 2. **Ties it to a listing** on that account: by Facebook listing id first, then by title, but only when exactly one listing has that title. If two listings share a title, it stays unmatched and you link it with `log facebook conversation link`.
@@ -82,10 +82,14 @@ The `--file` for `record` holds one thread, a list, or `{ "threads": [...] }`:
 }
 ```
 
-Each command is also an MCP tool (`conversations`, `conversation`). None of them opens a browser or writes to Facebook.
+Each command is also an MCP tool (`facebookConversations`, and `facebookConversationShow`, `facebookConversationRead`, `facebookConversationLead`, `facebookConversationLink`, `facebookConversationRecord` for `conversation`). None of them opens a browser or writes to Facebook.
 
 ## Next
 
 - [#41](https://github.com/matthewdonsemail-lab/log/issues/41) reads the inbox from Facebook and replies to buyers. The scan is a browser launch like any other, with every launch gate, written from a `log inspect` recording of the Marketplace inbox first. A reply writes to Facebook, so it waits until the owner asks for it; its fields are in place already: `sentBy`, `aiStatus`, `aiOriginalText`, `autoReplied`, `aiTookOver`.
 
 The rules behind this are in AGENTS.md.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md) · [What log does on Facebook](platformGuides/facebook.md)

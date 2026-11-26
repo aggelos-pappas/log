@@ -3,20 +3,25 @@ import { findSlackAccount, recordSlackSession, slackGate } from "../../slack/acc
 import { labelOf, matchChat } from "../../discord/chat/match/index.ts";
 import type { DiscordChat } from "../../discord/chat/match/index.ts";
 import { addPending, incomingSince, interruptedLines } from "../../inbox/watch/index.ts";
+import { TYPING_HOLD_MS, clearTyping, recordTyping, typingNow, waitOutTyping } from "../../inbox/typing/index.ts";
 import { ownOrAttach } from "../../inbox/relay/index.ts";
 import { enqueueAttachments } from "../../media/describer/index.ts";
 import { gateDeps } from "../twitter/helpers/voice.ts";
 import { latestSeq, recordPosition } from "../../inbox/store/index.ts";
 import { slackCatchUp, storeRead, waitCaughtUp } from "../../inbox/catchUp/index.ts";
 import { guardSend } from "../../inbox/claims/index.ts";
+import type { SendGuard } from "../../inbox/claims/index.ts";
+import { confirmParts, rethrowFailure, runAction } from "../../platformKit/action/index.ts";
 import type { InboxMessage } from "../../inbox/watch/index.ts";
 import { withVoiceNotes } from "../transcribe/index.ts";
 import type { AudioOf } from "../transcribe/index.ts";
 import { profileFor, readProfiles, splitPlan } from "../../voice/pairs/index.ts";
 import type { VoiceProfile } from "../../voice/pairs/index.ts";
 import type { PlatformAccount, PlatformAnswer } from "../../platformKit/session/index.ts";
-import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseError } from "../runner/helpers/index.ts";
+import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseGated, refuseError, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandInput, CommandResult, FlagSpec } from "../runner/types.ts";
+
+type HeldGuard = Extract<SendGuard, { ok: true }>;
 
 export const SLACK_SESSION_USAGE = [
   "Usage: log slack session check --account <accountName> [--workspace <domain>] [--json]",
@@ -58,10 +63,10 @@ export const slackSessionCommand: Command = {
   args: "check --account <a> [--workspace <domain>] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(SLACK_SESSION_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log slack session: ${parsed.error}\n${SLACK_SESSION_USAGE}` };
+    if (!parsed.ok) return refuseInput("slack session", parsed.error, SLACK_SESSION_USAGE);
     if (parsed.positionals[0] !== "check" || parsed.positionals.length > 1) return { code: 1, stderr: `log slack session: give check\n${SLACK_SESSION_USAGE}` };
     const ref = parsed.flags["account"];
-    if (typeof ref !== "string") return { code: 1, stderr: `log slack session check: --account is needed\n${SLACK_SESSION_USAGE}` };
+    if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log slack session check: --account is needed\n${SLACK_SESSION_USAGE}` };
     try {
       const account = await findSlackAccount(context.twenty, ref);
       const gate = slackGate(account);
@@ -80,10 +85,11 @@ export const slackSessionCommand: Command = {
   },
 };
 
-export const slackDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, chat: string, since: string) => InboxMessage[]; now: () => string } = {
+export const slackDeps: { profiles: () => Record<string, VoiceProfile>; wait: (ms: number) => Promise<void>; incoming: (account: string, chat: string, since: string) => InboxMessage[]; typing: (account: string, chat: string) => string[]; now: () => string } = {
   profiles: () => readProfiles(),
   wait: (ms) => new Promise((done) => setTimeout(done, ms)),
   incoming: (account, chat, since) => incomingSince("slack", account, chat, since),
+  typing: (account, chat) => typingNow({ platform: "slack", account, conversationId: chat }),
   now: () => new Date().toISOString(),
 };
 
@@ -139,8 +145,8 @@ export const slackWorkspacesCommand: Command = {
   args: "--account <a> [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(SLACK_WORKSPACES_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log slack workspaces: ${parsed.error}\n${SLACK_WORKSPACES_USAGE}` };
-    if (parsed.positionals.length) return { code: 1, stderr: `log slack workspaces: takes no words, only flags\n${SLACK_WORKSPACES_USAGE}` };
+    if (!parsed.ok) return refuseInput("slack workspaces", parsed.error, SLACK_WORKSPACES_USAGE);
+    if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log slack workspaces: takes no words, only flags\n${SLACK_WORKSPACES_USAGE}` };
     try {
       const opened = await openAccount(context, "slack workspaces", parsed.flags);
       if (!opened.ok) return opened.result;
@@ -167,7 +173,7 @@ export const SLACK_CHATS_INPUT: CommandInput = {
       words: [],
       summary: "The account's DMs and group DMs in a workspace, with their ids",
       positionals: [],
-      flags: [SLACK_ACCOUNT, SLACK_WORKSPACE, { name: "limit", kind: "string", description: "How many, default 30, at most 200" }, JSON_FLAG],
+      flags: [SLACK_ACCOUNT, SLACK_WORKSPACE, { name: "limit", kind: "integer", min: 1, max: 200, description: "How many, default 30, at most 200" }, JSON_FLAG],
     },
   ],
 };
@@ -182,10 +188,9 @@ export const slackChatsCommand: Command = {
   args: "--account <a> [--workspace <domain>] [--limit <n>] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(SLACK_CHATS_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log slack chats: ${parsed.error}\n${SLACK_CHATS_USAGE}` };
-    if (parsed.positionals.length) return { code: 1, stderr: `log slack chats: takes no words, only flags\n${SLACK_CHATS_USAGE}` };
-    const limit = parsed.flags["limit"] === undefined ? 30 : Number(parsed.flags["limit"]);
-    if (!Number.isInteger(limit) || limit < 1 || limit > 200) return { code: 1, stderr: `log slack chats: --limit must be 1 to 200\n${SLACK_CHATS_USAGE}` };
+    if (!parsed.ok) return refuseInput("slack chats", parsed.error, SLACK_CHATS_USAGE);
+    if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log slack chats: takes no words, only flags\n${SLACK_CHATS_USAGE}` };
+    const limit = numberOf(parsed, "limit") ?? 30;
     try {
       const opened = await openAccount(context, "slack chats", parsed.flags);
       if (!opened.ok) return opened.result;
@@ -216,9 +221,9 @@ export const SLACK_READ_INPUT: CommandInput = {
       positionals: [],
       flags: [
         SLACK_ACCOUNT,
-        { name: "chat", kind: "string", required: true, description: "The chat as matt says it (\"sam\"), matched to one DM or group; or its id (D…, G…, C…)" },
+        { name: "chat", kind: "string", required: true, description: "The chat as the owner says it (\"sam\"), matched to one DM or group; or its id (D…, G…, C…)" },
         SLACK_WORKSPACE,
-        { name: "limit", kind: "string", description: "How many of the latest messages, default 30, at most 1000" },
+        { name: "limit", kind: "integer", min: 1, max: 1000, description: "How many of the latest messages, default 30, at most 1000" },
         JSON_FLAG,
       ],
     },
@@ -240,16 +245,16 @@ export const slackReadCommand: Command = {
   usage: SLACK_READ_USAGE,
   platform: "slack",
   name: "read",
+  longRunning: true,
   effect: "read",
   input: SLACK_READ_INPUT,
   summary: "Read a Slack chat's latest messages, on the direct-API engine, sending nothing",
   args: "--account <a> --chat <id|name> [--workspace <domain>] [--limit <n>] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(SLACK_READ_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log slack read: ${parsed.error}\n${SLACK_READ_USAGE}` };
-    if (parsed.positionals.length) return { code: 1, stderr: `log slack read: takes no words, only flags\n${SLACK_READ_USAGE}` };
-    const limit = parsed.flags["limit"] === undefined ? 30 : Number(parsed.flags["limit"]);
-    if (!Number.isInteger(limit) || limit < 1 || limit > 1000) return { code: 1, stderr: `log slack read: --limit must be 1 to 1000\n${SLACK_READ_USAGE}` };
+    if (!parsed.ok) return refuseInput("slack read", parsed.error, SLACK_READ_USAGE);
+    if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log slack read: takes no words, only flags\n${SLACK_READ_USAGE}` };
+    const limit = numberOf(parsed, "limit") ?? 30;
     try {
       const opened = await openAccount(context, "slack read", parsed.flags);
       if (!opened.ok) return opened.result;
@@ -288,8 +293,8 @@ export const SLACK_WATCH_INPUT: CommandInput = {
       flags: [
         SLACK_ACCOUNT,
         SLACK_WORKSPACE,
-        { name: "chat", kind: "string", description: "Only this chat (as matt says it) or its id" },
-        { name: "seconds", kind: "string", description: "Stop after this many seconds (at least 5); default: until stopped" },
+        { name: "chat", kind: "string", description: "Only this chat (as the owner says it) or its id" },
+        { name: "seconds", kind: "number", min: 0, refusal: "secondsInvalid", description: "Stop after this many seconds (at least 5); default: until stopped" },
         { name: "inbox", kind: "boolean", description: "Hand each new DM, group message or mention of the account to the inbox hook" },
         JSON_FLAG,
       ],
@@ -308,6 +313,15 @@ export function slackToInboxOf(event: Record<string, unknown>): boolean {
   return channel.startsWith("D") || channel.startsWith("G") || event.mentionsMe === true;
 }
 
+export function slackTypingOf(account: string, event: Record<string, unknown>, now: Date): void {
+  const channel = String(event.channel ?? "");
+  const user = String(event.user ?? "");
+  if (!user || event.fromMe || !(channel.startsWith("D") || channel.startsWith("G"))) return;
+  const ref = { platform: "slack", account, conversationId: channel };
+  if (event.type === "user_typing") recordTyping(ref, user, now);
+  else if (event.type === "message") clearTyping(ref, user);
+}
+
 export function slackInboxMessageOf(account: string, event: Record<string, unknown>, now: Date) {
   const channel = String(event.channel ?? "");
   return { platform: "slack", account, conversationId: channel, with: String(event.from ?? "?"), text: String(event.text ?? ""), at: String(event.at ?? now.toISOString()), box: channel.startsWith("D") ? "dm" : channel.startsWith("G") ? "group" : "mention", seenAt: now.toISOString(), workspace: String(event.workspace ?? ""), ...(event.ts ? { id: String(event.ts) } : {}), ...(event.user ? { senderId: String(event.user) } : {}), ...(event.threadTs ? { replyTo: String(event.threadTs) } : {}), ...(Array.isArray(event.attachments) && event.attachments.length ? { attachments: event.attachments as { name: string }[] } : {}) };
@@ -317,16 +331,17 @@ export const slackWatchCommand: Command = {
   usage: SLACK_WATCH_USAGE,
   platform: "slack",
   name: "watch",
+  longRunning: true,
   effect: "read",
   input: SLACK_WATCH_INPUT,
   summary: "Watch a Slack workspace's events as its websocket pushes them, nothing polled, sending nothing",
   args: "--account <a> [--workspace <domain>] [--chat <id|name>] [--seconds <s>] [--inbox] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(SLACK_WATCH_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log slack watch: ${parsed.error}\n${SLACK_WATCH_USAGE}` };
-    if (parsed.positionals.length) return { code: 1, stderr: `log slack watch: takes no words, only flags\n${SLACK_WATCH_USAGE}` };
-    const seconds = parsed.flags["seconds"] === undefined ? 0 : Number(parsed.flags["seconds"]);
-    if (!Number.isFinite(seconds) || (seconds !== 0 && seconds < 5)) return refuse("slack watch", "secondsInvalid", "--seconds must be at least 5");
+    if (!parsed.ok) return refuseInput("slack watch", parsed.error, SLACK_WATCH_USAGE);
+    if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log slack watch: takes no words, only flags\n${SLACK_WATCH_USAGE}` };
+    const seconds = numberOf(parsed, "seconds") ?? 0;
+    if (seconds !== 0 && seconds < 5) return refuse("slack watch", "secondsInvalid", "--seconds must be at least 5");
     try {
       const opened = await openAccount(context, "slack watch", parsed.flags);
       if (!opened.ok) return opened.result;
@@ -352,6 +367,7 @@ export const slackWatchCommand: Command = {
         run: (emit) => {
           context.err(`${opened.account.accountName}: the one owner of ${opened.workspace || "every workspace"}'s websocket through vendor/gabrielSlack${only ? `, showing only ${only}` : ""}${seconds ? `, for ${seconds} s` : ", until stopped"}; new DMs, group messages and mentions go to the inbox and every event to every attached subscriber`);
           return directSlackLive(opened.account, { action: "watch", seconds, ...inWorkspace(opened.workspace) }, (event) => {
+            slackTypingOf(opened.account.accountName, event, context.now?.() ?? new Date());
             emit(event);
             if (event.type === "message" && event.channel && event.ts && slackToInboxOf({ ...event, fromMe: false })) recordPosition("slack", opened.account.accountName, String(event.ts), String(event.channel));
             const mine = slackToInboxOf(event);
@@ -384,7 +400,7 @@ export const slackWatchCommand: Command = {
 export const SLACK_SEND_USAGE = [
   'Usage: log slack send --account <accountName> --chat <chatId|who it is with> --text "<message>" [--workspace <domain>] [--asOne] [--approvedBy <who>] [--live] [--json]',
   "Sends a message to a Slack DM, group DM or channel (by its id, or who it is with from log slack chats), on the direct-API engine (vendor/gabrielSlack, chat.postMessage, no browser).",
-  "A draft written on several lines goes out one message per line (rule 90); a one-line draft is split the way matt writes in that chat (log voice index), and --asOne always sends one. Without --live it is a dry run and Slack is not contacted. --live sends it, only when matt asked, and needs --approvedBy (rule 8). Slack's answer decides: a ts is sent, anything else stops the run with nothing retried (rule 94). The governor counts each message as a write. The copy is read for what AI chat interfaces leave in text first (rule 111): hidden characters, odd spaces or pasted Claude HTML refuse it with aiArtifacts.",
+  "A draft written on several lines goes out one message per line (rule 90); a one-line draft is split the way the owner writes in that chat (log voice index), and --asOne always sends one. Without --live it is a dry run and Slack is not contacted. --live sends it, only when the owner asked, and needs --approvedBy (rule 8). Slack's answer decides: a ts is sent, anything else stops the run with nothing retried (rule 94). The governor counts each message as a write. The copy is read for what AI chat interfaces leave in text first (rule 111): hidden characters, odd spaces or pasted Claude HTML refuse it with aiArtifacts.",
 ].join("\n");
 
 export const SLACK_SEND_INPUT: CommandInput = {
@@ -396,12 +412,12 @@ export const SLACK_SEND_INPUT: CommandInput = {
       positionals: [],
       flags: [
         SLACK_ACCOUNT,
-        { name: "chat", kind: "string", required: true, description: "The chat as matt says it (\"sam\"), matched to one DM or group; or its id (D…, G…, C…)" },
-        { name: "text", kind: "string", required: true, description: "The message, as matt gave it" },
+        { name: "chat", kind: "string", required: true, description: "The chat as the owner says it (\"sam\"), matched to one DM or group; or its id (D…, G…, C…)" },
+        { name: "text", kind: "string", required: true, description: "The message, as the owner gave it" },
         SLACK_WORKSPACE,
-        { name: "approvedBy", kind: "string", description: "Who approved it: needed with --live (rule 8)" },
+        { name: "approvedBy", kind: "string", approval: true, description: "Who approved it: needed with --live (rule 8)" },
         { name: "asOne", kind: "boolean", description: "Send it as one message, never split" },
-        { name: "live", kind: "boolean", live: true, description: "Send it on Slack, only when matt asked (rule 8); without it a dry run contacts nothing" },
+        { name: "live", kind: "boolean", live: true, description: "Send it on Slack, only when the owner asked (rule 8); without it a dry run contacts nothing" },
         JSON_FLAG,
       ],
     },
@@ -418,8 +434,8 @@ export const slackSendCommand: Command = {
   args: '--account <a> --chat <id|name> --text "<message>" [--workspace <domain>] [--asOne] [--approvedBy <who>] [--live] [--json]',
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(SLACK_SEND_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log slack send: ${parsed.error}\n${SLACK_SEND_USAGE}` };
-    if (parsed.positionals.length) return { code: 1, stderr: `log slack send: takes no words, only flags\n${SLACK_SEND_USAGE}` };
+    if (!parsed.ok) return refuseInput("slack send", parsed.error, SLACK_SEND_USAGE);
+    if (parsed.positionals.length) return { code: 1, error: "inputInvalid", stderr: `log slack send: takes no words, only flags\n${SLACK_SEND_USAGE}` };
     const said = String(parsed.flags["chat"]).trim();
     const text = String(parsed.flags["text"]);
     const approvedBy = typeof parsed.flags["approvedBy"] === "string" ? parsed.flags["approvedBy"].trim() : "";
@@ -441,54 +457,68 @@ export const slackSendCommand: Command = {
       if (!live && parsed.flags["json"]) return { code: 0, stdout: JSON.stringify({ engine: "directApi", platform: "slack", account: opened.account.accountName, ok: true, dryRun: true, chat: chat.id, split: { parts: plan.parts, gapSeconds: plan.gapSeconds, why: plan.why }, watermark }, null, 2) };
       if (!live) return { code: 0, stdout: [`log slack send: dry run: ${opened.account.accountName} would send to ${chat.label} ${planLine}:`, ...plan.parts.map((p, i) => `  ${i + 1}. ${p}`), watermarkLine(watermark), "Nothing was sent. --live --approvedBy <who> sends it (rule 8); --asOne sends it as one message."].join("\n") };
       context.err(`${opened.account.accountName}: send to ${chat.label} ${planLine} on the direct-API engine, approved by ${approvedBy}`);
-      const caught = await waitCaughtUp("slack", opened.account.accountName);
-      if (!caught.ok) return refuse("slack send", "accountBehind", caught.refused);
-      const readUpTo = latestSeq();
-      const voiced = await gateDeps.gate(context, { platform: "slack", account: opened.account.accountName, to: chat.label, text, conversationId: chat.id });
-      if (!voiced.ok) return refuse("slack send", "voiceGateFailed", voiced.refused);
-      context.err(voiced.line);
-      const guard = guardSend({ platform: "slack", account: opened.account.accountName, conversationId: chat.id }, undefined, { readUpTo });
-      if (!guard.ok) return refuse("slack send", "chatClaimedElsewhere", guard.refused);
-      let movedOn: string[] = [];
-      const sent: PlatformAnswer[] = [];
-      const startedAt = slackDeps.now();
-      let interrupted: InboxMessage[] = [];
-      let fenced = false;
-      try {
-      for (const [i, part] of plan.parts.entries()) {
-        if (i) {
-          await slackDeps.wait(plan.gapSeconds * 1000);
-          interrupted = slackDeps.incoming(opened.account.accountName, chat.id, startedAt);
-          if (interrupted.length) break;
-        }
-        const step = guard.part(i, part);
-        if (step === "lost") {
-          fenced = true;
-          break;
-        }
-        if (step === "movedOn") {
-          movedOn = guard.heard();
-          break;
-        }
-        if (step === "alreadySent") {
-          sent.push({ ok: true, event: "sent", sent: [] } as PlatformAnswer);
-          continue;
-        }
-        const run = context.directSlack!(opened.account, { action: "send", chat: chat.id, lines: [part], live: true, approvedBy, ...inWorkspace(opened.workspace) });
-        sent.push(run.answer);
-        if (!run.answer.ok) break;
-        guard.partSent(i, part, ((run.answer.sent as { ts?: string }[] | undefined) ?? [])[0]?.ts ?? null);
-        context.err(`  ${i + 1}/${plan.parts.length} sent ${((run.answer.sent as { ts?: string }[] | undefined) ?? [])[0]?.ts ?? ""}: ${part}`);
+      const sending = { movedOn: [] as string[], sent: [] as PlatformAnswer[], interrupted: [] as InboxMessage[], fenced: false, stillTyping: false };
+      const acted = await runAction<HeldGuard, typeof sending>({
+        gate: async () => {
+          const caught = await waitCaughtUp("slack", opened.account.accountName);
+          if (!caught.ok) return { ok: false, code: "accountBehind", detail: caught.refused };
+          const readUpTo = latestSeq();
+          const voiced = await gateDeps.gate(context, { platform: "slack", account: opened.account.accountName, to: chat.label, text, conversationId: chat.id });
+          if (!voiced.ok) return { ok: false, code: "voiceGateFailed", detail: voiced.refused };
+          context.err(voiced.line);
+          const guard = guardSend({ platform: "slack", account: opened.account.accountName, conversationId: chat.id }, undefined, { readUpTo });
+          return guard.ok ? { ok: true, held: guard } : { ok: false, code: "chatClaimedElsewhere", detail: guard.refused };
+        },
+        act: async (guard) => {
+          const startedAt = slackDeps.now();
+          for (const [i, part] of plan.parts.entries()) {
+            if (i) {
+              await slackDeps.wait(plan.gapSeconds * 1000);
+              sending.interrupted = slackDeps.incoming(opened.account.accountName, chat.id, startedAt);
+              if (sending.interrupted.length) break;
+            }
+            const turn = await waitOutTyping({ typing: () => slackDeps.typing(opened.account.accountName, chat.id), wrote: () => (sending.interrupted = slackDeps.incoming(opened.account.accountName, chat.id, startedAt)).length > 0, wait: slackDeps.wait });
+            if (turn === "wrote") break;
+            if (turn === "stillTyping") {
+              sending.stillTyping = true;
+              break;
+            }
+            const step = guard.part(i, part);
+            if (step === "lost") {
+              sending.fenced = true;
+              break;
+            }
+            if (step === "movedOn") {
+              sending.movedOn = guard.heard();
+              break;
+            }
+            if (step === "alreadySent") {
+              sending.sent.push({ ok: true, event: "sent", sent: [] } as PlatformAnswer);
+              continue;
+            }
+            const run = context.directSlack!(opened.account, { action: "send", chat: chat.id, lines: [part], live: true, approvedBy, ...inWorkspace(opened.workspace) });
+            sending.sent.push(run.answer);
+            if (!run.answer.ok) break;
+            guard.partSent(i, part, ((run.answer.sent as { ts?: string }[] | undefined) ?? [])[0]?.ts ?? null);
+            context.err(`  ${i + 1}/${plan.parts.length} sent ${((run.answer.sent as { ts?: string }[] | undefined) ?? [])[0]?.ts ?? ""}: ${part}`);
+          }
+          return sending;
+        },
+        confirm: (s) => confirmParts({ sent: s.sent.filter((a) => a.ok).length, total: plan.parts.length, interrupted: s.interrupted.length > 0 || s.stillTyping, movedOn: s.movedOn.length > 0, lost: s.fenced, last: s.sent[s.sent.length - 1] }),
+      });
+      if (acted.held) {
+        const ok = sending.sent.filter((a) => a.ok).length;
+        acted.held.done(sending.interrupted.length || sending.stillTyping ? "interrupted" : ok === plan.parts.length ? "sent" : "failed", `${ok} of ${plan.parts.length}${sending.fenced ? ", then the claim on this chat was lost, so the rest was held" : ""}: ${plan.parts.slice(0, ok).join(" / ").slice(0, 300)}`);
       }
-      } finally {
-        const ok = sent.filter((a) => a.ok).length;
-        guard.done(interrupted.length ? "interrupted" : ok === plan.parts.length ? "sent" : "failed", `${ok} of ${plan.parts.length}${fenced ? ", then the claim on this chat was lost, so the rest was held" : ""}: ${plan.parts.slice(0, ok).join(" / ").slice(0, 300)}`);
-      }
+      rethrowFailure(acted);
+      if (!acted.held) return refuseGated("slack send", acted, "chatClaimedElsewhere");
+      const { movedOn, sent, interrupted } = sending;
       if (movedOn.length) return refuse("slack send", "chatMovedOn", `>>> THEY WROTE AFTER THE GATE READ THE CHAT: nothing was sent, so answer what they said first.\n${movedOn.map((m) => `  ${m}`).join("\n")}`);
       const done = sent.filter((a) => a.ok);
       const last = sent[sent.length - 1];
       const code = done.length === plan.parts.length ? 0 : 1;
       if (parsed.flags["json"]) return { code, stdout: JSON.stringify({ engine: "directApi", platform: "slack", account: opened.account.accountName, approvedBy, chat: chat.id, split: { parts: plan.parts, gapSeconds: plan.gapSeconds, why: plan.why }, watermark, sent, interrupted }, null, 2) };
+      if (sending.stillTyping && !interrupted.length) return { code, stdout: `>>> STILL TYPING: ${opened.account.accountName}: ${done.length} of ${plan.parts.length} sent to ${chat.label}, then they were typing for ${TYPING_HOLD_MS / 1000} s without sending, so the rest was held for when they finish:\n${plan.parts.slice(done.length).map((p) => `  ${p}`).join("\n")}` };
       if (interrupted.length) return { code, stdout: interruptedLines(opened.account.accountName, interrupted, plan.parts.slice(done.length), done.length, plan.parts.length).join("\n") };
       if (code === 0) return { code, stdout: `log slack send: ${opened.account.accountName} sent ${done.length} message(s) to ${chat.label}${done.length > 1 ? `, ${plan.gapSeconds} s apart` : ""}.` };
       return { code, stdout: `log slack send: ${opened.account.accountName}: ${done.length} of ${plan.parts.length} sent, then ${last.code}: ${last.detail ?? ""}. What was sent stays sent; nothing is retried (rule 94).` };

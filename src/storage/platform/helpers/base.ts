@@ -1,4 +1,4 @@
-import type { AttachmentKind, AttachmentRow, ChatKind, ChatRow, EventInput, ExtenderContext, IdentityRow, InteractionRow, MessageRow, PlatformExtender } from '../types'
+import type { AttachmentKind, AttachmentRow, ChatKind, ChatRow, EventInput, ExtenderContext, IdentityProfileRow, IdentityRow, InteractionRow, MessageRow, PlatformExtender } from '../types'
 import { MESSAGE_TYPES } from '../types'
 import { chatIdOf, handleIdOf, isBareId, isOwnerLabel, selfIdOf, textOf } from './ids'
 import { messageKeyOf, messageTimeOf, platformMessageIdOf } from './time'
@@ -17,11 +17,13 @@ export function attachmentKindOf(contentType: string | null, name: string | null
 export interface BaseOptions {
   platform: string
   chatKind(event: EventInput): ChatKind
+  kindFromMembers?: boolean
   serverIdOf?(event: EventInput): string | null
   senderIdOf?(event: EventInput, context: ExtenderContext): string | null
   ownerIdOf?(event: EventInput, context: ExtenderContext): string | null
   toInteraction?(event: EventInput): InteractionRow | null
   toIdentities?(event: EventInput, context: ExtenderContext): IdentityRow[]
+  toProfile?(event: EventInput): IdentityProfileRow | null
 }
 
 function payloadSenderId(event: EventInput): string | null {
@@ -49,10 +51,11 @@ export function makeExtender(options: BaseOptions): PlatformExtender {
   }
   return {
     platform: options.platform,
+    kindFromMembers: options.kindFromMembers ?? false,
     toChat(event) {
       if (!event.conversationId) return null
       const kind = options.chatKind(event)
-      const name = textOf(event.payload.title) ?? textOf(event.payload.chatName) ?? (kind === 'dm' ? handleOf(event) : null)
+      const name = textOf(event.payload.title) ?? textOf(event.payload.chatName) ?? (kind === 'dm' && event.type !== 'ownMessage' && event.payload.fromMe !== true ? handleOf(event) : null)
       return { chatId: chatIdOf(event.platform, event.account, event.conversationId), platform: event.platform, account: event.account, conversationId: event.conversationId, kind, name, serverId: options.serverIdOf?.(event) ?? null }
     },
     toIdentities(event, context) {
@@ -94,6 +97,9 @@ export function makeExtender(options: BaseOptions): PlatformExtender {
     },
     toInteraction(event) {
       return options.toInteraction?.(event) ?? null
+    },
+    toProfile(event) {
+      return options.toProfile?.(event) ?? null
     },
   }
 }

@@ -29,7 +29,7 @@ flowchart TD
 | --- | --- | --- | --- |
 | 1 | Check the owner's Reddit account still has its session | `redditSessionCheck` { account } | Reddit's own answer says loggedIn; anything else is said to the owner and nothing more runs |
 | 2 | Find the subreddit the owner named (he may spell it loosely: "gotomarketengineering" is r/gtmengineering) | `redditReadSubreddits` { account, query }, or `tregCall` { id: "tinyfish.web.search", include_domains reddit.com } (free) when the account can't read | one subreddit, named with its link and what it's about |
-| 3 | Read its posts back the days asked, keeping only the ones that link to GitHub, ranked by score then comments | `redditReadPosts` { account, subreddit, days: "7", linksTo: "github.com" } | each post with its author, score, comments, date, Reddit link and GitHub links; a 429 or reset stops the read and keeps what was read (rule 94) |
+| 3 | Read its posts back the days asked, keeping only the ones that link to GitHub, ranked by score then comments | `redditReadPosts` { account, subreddit, days: 7, linksTo: "github.com" } | each post with its author, score, comments, date, Reddit link and GitHub links; a 429 or reset stops the read and keeps what was read (rule 94) |
 | 4 | Find who else builds on the same internals: search GitHub's code for the internal Reddit API names `vendor/reverseChud` uses (`svc/shreddit/token`, `svc/shreddit/search-typeahead`, `gql-fed.reddit.com` ...), about 7 s apart, then read each repo and its owner in parallel. Reddit is never called again for this | `gh api search/code`, `gh api repos/<repo>`, `gh api users/<login>` | every repo with the names it uses, stars, last push, and its owner's name, bio and X handle, saved in `RESEARCH/CONTRIBUTOR_MAXXING/` |
 | 5 | Show the owner the list, best first: the Reddit posts, then the repos closest to ours (most rare names), each with the person behind it | the answers from steps 3 and 4 | the owner has every repo with the person behind it |
 
@@ -37,3 +37,9 @@ flowchart TD
 
 - **r/gtmengineering is the GTM engineering subreddit** (found 2026-11-08 by TinyFish search). r/GTMbuilders ("GitHub commits over slide decks") sits next to it.
 - **Reddit's whoami can pass while its token step fails.** On 2026-11-08 `/api/me.json` answered for the account, then loading reddit.com gave no `token_v2`, then the engine's connection was reset twice while plain HTTPS to Reddit still worked. That is a refusal: stop, tell the owner, and don't read again until he says so.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on Reddit](../../platformGuides/reddit.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

@@ -10,6 +10,7 @@ import { runCli } from "../runner/index.ts";
 import { inboxContext, takePending } from "../../inbox/watch/index.ts";
 import { instagramDmsDeps } from "./index.ts";
 import type { Conversation } from "../../search/conversations/index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 function fixture() {
   const twenty = marketplaceFixture();
@@ -45,7 +46,7 @@ describe("log instagram session check", () => {
   test("an account of another platform is refused before the engine is called", async () => {
     const r = await run(["instagram", "session", "check", "--account", "galwayOne"]);
     expect(r.code).toBe(1);
-    expect(r.err).toContain("accountNotFound");
+    expect(r.err).toContain("accountPlatformMismatch");
     expect(r.calls).toEqual([]);
   });
 
@@ -54,11 +55,11 @@ describe("log instagram session check", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({ session: "x" }));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "ping", account: "instagramOne", platform: "instagram", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "ping", account: "instagramOne", platform: "instagram", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [INSTAGRAM_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "sessionDead", loginState: "loggedOut" });
-  });
+  }, SPAWNS_PROCESS_MS);
 });
 
 describe("log instagram dms", () => {
@@ -99,7 +100,7 @@ describe("log instagram dms", () => {
   });
 
   test("a limit out of range is refused before the engine is called", async () => {
-    const r = await run(["instagram", "dms", "--account", "instagramOne", "--limit", "500"]);
+    const r = await run(["instagram", "dms", "--account", "instagramOne", "--limit", "150"]);
     expect(r.code).toBe(1);
     expect(r.err).toContain("--limit must be 1 to 100");
     expect(r.calls).toEqual([]);
@@ -110,11 +111,11 @@ describe("log instagram dms", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({ sessionid: "x".repeat(40) }));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "thread", account: "instagramOne", platform: "instagram", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "thread", account: "instagramOne", platform: "instagram", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [INSTAGRAM_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "threadNeeded" });
-  });
+  }, SPAWNS_PROCESS_MS);
 });
 
 describe("log instagram send", () => {
@@ -135,7 +136,7 @@ describe("log instagram send", () => {
   });
 
   test("--live sends through the engine and reports each message's id", async () => {
-    const r = await run(["instagram", "send", "--account", "instagramOne", "--with", "someone", "--text", "yo", "--photo", "meme.jpg", "--live", "--approvedBy", "matt"], { answer: { ok: true, loginState: "loggedIn", sent: [{ id: "p1", kind: "photo" }, { id: "t1", kind: "text", text: "yo" }] }, refreshed: null });
+    const r = await run(["instagram", "send", "--account", "instagramOne", "--with", "someone", "--text", "yo", "--photo", "meme.jpg", "--live", "--approvedBy", "the owner"], { answer: { ok: true, loginState: "loggedIn", sent: [{ id: "p1", kind: "photo" }, { id: "t1", kind: "text", text: "yo" }] }, refreshed: null });
     expect(r.code).toBe(0);
     expect(r.calls).toEqual(["instagramOne:send"]);
     expect(r.out).toContain("sent 2 message(s)");
@@ -178,9 +179,9 @@ describe("log instagram watch", () => {
     const cookiesPath = join(dir, "cookies.json");
     writeFileSync(cookiesPath, JSON.stringify({ sessionid: "x".repeat(40) }));
     const spec = join(dir, "spec.json");
-    writeFileSync(spec, JSON.stringify({ action: "send", with: "someone", live: true, approvedBy: "matt", account: "instagramOne", platform: "instagram", stateRoot: join(dir, "state"), cookiesPath }));
+    writeFileSync(spec, JSON.stringify({ action: "send", with: "someone", live: true, approvedBy: "the owner", account: "instagramOne", platform: "instagram", route: { proxy: null }, stateRoot: join(dir, "state"), cookiesPath }));
     const engine = spawnSync(process.env.LOG_PYTHON || "python", [INSTAGRAM_PLATFORM.engine, spec], { encoding: "utf8" });
     if (engine.error) return;
     expect(JSON.parse(engine.stdout.trim().split("\n").pop()!)).toMatchObject({ ok: false, code: "nothingToSend" });
-  });
+  }, SPAWNS_PROCESS_MS);
 });

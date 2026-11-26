@@ -4,7 +4,7 @@ title: "X Chat"
 
 # X Chat
 
-X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it only through its own engine and vendored twikit, with the account's PIN from Twenty, uses it to keep cold dms away from people matt already talks to, and treats a reaction or a read receipt as a follow-up to send. Rules 87, 88 and 100.
+X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it only through its own engine and vendored twikit, with the account's PIN from Twenty, uses it to keep cold dms away from people the owner already talks to, and treats a reaction or a read receipt as a follow-up to send. Rules 87, 88 and 100.
 
 ## Prior conversations
 
@@ -28,7 +28,7 @@ Checked by: code and SubQ
 
 ### REQ-XCHAT-04: --skipXChatCheck is the only way past it
 
-The X Chat drop is skipped only with `--skipXChatCheck`, which is used only when matt asks. Rule 87.
+The X Chat drop is skipped only with `--skipXChatCheck`, which is used only when the owner asks. Rule 87.
 
 Checked by: code and SubQ
 
@@ -56,13 +56,13 @@ Checked by: code and SubQ
 
 ### REQ-XCHAT-08: A reaction as their last event is a follow-up
 
-When someone's last event in a thread is a reaction to matt's message, it is not a reply waiting on him: it is listed as a follow-up to send. Rule 100.
+When someone's last event in a thread is a reaction to the owner's message, it is not a reply waiting on him: it is listed as a follow-up to send. Rule 100.
 
 Checked by: code and SubQ
 
-### REQ-XCHAT-09: A read receipt past matt's last message is a follow-up
+### REQ-XCHAT-09: A read receipt past the owner's last message is a follow-up
 
-When matt sent last and their read marker (the old DM API's `last_read_event_id`, or X Chat's read-marker events) is at or past his last message, the thread is marked `openedByThem` and listed as a follow-up to send. Rule 100.
+When the owner sent last and their read marker (the old DM API's `last_read_event_id`, or X Chat's read-marker events) is at or past his last message, the thread is marked `openedByThem` and listed as a follow-up to send. Rule 100.
 
 Checked by: code and SubQ
 

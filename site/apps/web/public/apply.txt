@@ -1,0 +1,48 @@
+# Set up log apply
+
+log apply is an open-source Claude Code plugin and CLI that applies to jobs for the user.
+Page: https://log.listeningkit.com/apply
+Source: https://github.com/deepmroot/log-apply
+
+You are the user's agent. Follow these steps in order. Ask the user when a step needs them.
+
+1. Install the plugin from its marketplace, in Claude Code:
+
+   /plugin marketplace add deepmroot/log-apply
+   /plugin install log-apply@log-apply
+
+2. Run the setup command:
+
+   /apply-setup
+
+3. Fill profile.yaml with the user. Ask them for every fact: name, contact details, education, work history, projects, skills, work authorization and the jobs they want. Write only what they tell you. Never invent or embellish a fact; resumes, cover letters and form answers are built only from this file.
+
+4. Check the install:
+
+   log-apply doctor
+
+   Fix anything it reports before going on.
+
+5. Do one dry run on a single posting the user picks:
+
+   /apply <posting url>
+
+   Show the user the resume and cover letter it wrote and the answers it would enter. Nothing is submitted on a dry run.
+
+6. Ask the user before adding --submit. Submit only when they say yes.
+
+How it finds jobs:
+- It searches company job boards (Greenhouse, Ashby, Lever, SmartRecruiters and more) with treg (https://treg.to) and drops postings that were taken down.
+- Or the user pastes any posting URL: /apply <posting url>
+
+Rules log apply keeps:
+- It works in the user's own browser (Chrome, Edge or Brave through a dedicated profile, or the Aside browser), one application at a time.
+- It reads Workday verification links and Greenhouse security codes from the user's email.
+- It stops at CAPTCHAs and hands them to the user.
+- It refuses to claim citizenship the user does not have.
+- Every application goes on the user's ledger with the exact resume and cover letter sent.
+
+After setup, the user can ask for work like:
+
+   /apply software jobs Vancouver
+   /loop /apply

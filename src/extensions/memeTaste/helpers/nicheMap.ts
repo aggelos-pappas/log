@@ -2,9 +2,23 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { NichePerson, TasteRating } from '../types'
+import { logHome } from '../../../config/logHome/index.ts'
+import { networkImported, storedNetworkPeople } from '../../../relate/network/index.ts'
+import type { StoredNetworkPerson } from '../../../relate/network/index.ts'
+import { defaultDbPath, openDatabase } from '../../../storage/schema/index.ts'
+
+export function storedNetwork(dbPath: string = defaultDbPath()): { source: string; people: StoredNetworkPerson[] } | null {
+  try {
+    const handle = openDatabase(dbPath)
+    const imported = networkImported(handle)
+    return imported ? { source: imported.source, people: storedNetworkPeople(handle) } : null
+  } catch {
+    return null
+  }
+}
 
 export function nicheMapPath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_NICHE_MAP || join(homedir(), '.buzz', 'REPOS', 'whop', 'research', 'nicheMap', 'data', 'nicheMap.json')
+  return env.LOG_NICHE_MAP || join(logHome(), 'nicheMap', 'nicheMap.json')
 }
 
 export interface NicheMapEntry extends NichePerson {
@@ -105,12 +119,20 @@ export function threadOf(post: RawPost, byId: ReadonlyMap<string, RawPost>, pict
   return parents
 }
 
-export function readNicheMap(path = nicheMapPath(), postsPath = join(dirname(path), 'search_posts.jsonl'), perPerson = 6, picturesPath = join(dirname(path), '..', 'app', 'data.js'), rawDir = join(dirname(path), 'raw')): NicheMapEntry[] {
+function rawPeople(path: string, stored: { people: StoredNetworkPerson[] } | null): RawPerson[] {
+  if (stored) return stored.people.map((p) => ({ handle: p.handle, name: p.name ?? undefined, bio: p.bio ?? undefined, followers: p.followers ?? undefined, degree: p.degree ?? undefined, followsYou: p.followsOwner, tieStrength: p.tieStrength ?? undefined, classification: { role: { value: p.role } } }))
   if (!existsSync(path)) return []
-  const map = JSON.parse(readFileSync(path, 'utf8')) as { people?: RawPerson[] }
+  return (JSON.parse(readFileSync(path, 'utf8')) as { people?: RawPerson[] }).people ?? []
+}
+
+export function readNicheMap(given?: string, postsPath?: string, perPerson = 6, picturesPath?: string, rawDir?: string, stored: { source: string; people: StoredNetworkPerson[] } | null = given ? null : storedNetwork()): NicheMapEntry[] {
+  const path = given ?? (stored ? join(stored.source, 'nicheMap.json') : nicheMapPath())
+  postsPath ??= join(dirname(path), 'search_posts.jsonl')
+  picturesPath ??= join(dirname(path), '..', 'app', 'data.js')
+  rawDir ??= join(dirname(path), 'raw')
   const people = new Map<string, NicheMapEntry>()
   const pictures = readPictures(picturesPath)
-  for (const p of map.people ?? []) {
+  for (const p of rawPeople(path, stored)) {
     const role = p.classification?.role?.value ?? null
     if (!p.handle || !role || role === 'bot_or_spam') continue
     people.set(p.handle.toLowerCase(), { handle: p.handle, name: p.name ?? p.handle, role, degree: p.degree ?? 2, followsYou: !!p.followsYou, bio: p.bio ?? '', followers: p.followers ?? 0, tieStrength: p.tieStrength ?? 0, img: pictures.get(p.handle.toLowerCase()) ?? null, posts: [] })
@@ -207,7 +229,7 @@ export function pickPerson(people: readonly NicheMapEntry[], ratings: readonly T
 }
 
 export function replyProfileSummary(profile: ReplyProfile): string {
-  if (!profile.rated) return 'what matt replies to: nothing rated yet'
+  if (!profile.rated) return 'what the owner replies to: nothing rated yet'
   const lean = profile.roles.map((r) => `${r.role} ${r.replied} replied / ${r.skipped} skipped`).join(', ')
-  return `what matt replies to (${profile.replied} replied, ${profile.skipped} skipped${lean ? `: ${lean}` : ''})`
+  return `what the owner replies to (${profile.replied} replied, ${profile.skipped} skipped${lean ? `: ${lean}` : ''})`
 }

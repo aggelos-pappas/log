@@ -1,11 +1,11 @@
 import { Database } from 'bun:sqlite'
 import type { Statement } from 'bun:sqlite'
 import { mkdirSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { MIGRATIONS, runBackfill, SCHEMA_VERSION } from './helpers'
 import { SchemaTooNewError } from './types'
 import type { AppliedMigration } from './types'
+import { logHome } from '../../config/logHome/index'
 
 export function schemaVersionOf(handle: Database): number {
   return (handle.prepare('PRAGMA user_version').get() as { user_version: number }).user_version
@@ -43,16 +43,58 @@ export function migrate(handle: Database, now: Date = new Date()): AppliedMigrat
       throw error
     }
   }
-  return applied
+  return [...applied, ...repairSkipped(handle, now)]
+}
+
+export function missingObjectsOf(handle: Database, names: readonly string[]): string[] {
+  const present = new Set((handle.prepare("SELECT name FROM sqlite_master WHERE type IN ('table', 'index')").all() as { name: string }[]).map((r) => r.name))
+  return names.filter((name) => !present.has(name))
+}
+
+export function repairSkipped(handle: Database, now: Date = new Date()): AppliedMigration[] {
+  const version = schemaVersionOf(handle)
+  const repaired: AppliedMigration[] = []
+  for (const migration of MIGRATIONS) {
+    if (!migration.creates || migration.version > version) continue
+    if (missingObjectsOf(handle, migration.creates).length === 0) continue
+    handle.exec('BEGIN IMMEDIATE')
+    try {
+      const missing = missingObjectsOf(handle, migration.creates)
+      if (missing.length > 0) migration.apply(handle)
+      handle.exec('COMMIT')
+      if (missing.length > 0) repaired.push({ version: migration.version, name: migration.name, appliedAt: now.toISOString(), repaired: missing })
+    } catch (error) {
+      handle.exec('ROLLBACK')
+      throw error
+    }
+  }
+  return repaired
 }
 
 export function defaultDbPath(env: Record<string, string | undefined> = process.env): string {
   if (env.LOG_DB) return env.LOG_DB
   if (env.LOG_INBOX_STATE) return join(env.LOG_INBOX_STATE, 'log.db')
-  return join(homedir(), '.logCli', 'log.db')
+  return join(logHome(), 'log.db')
 }
 
 const handles = new Map<string, Database>()
+
+const changesAtOpen = new Map<string, number>()
+
+const totalChangesOf = (handle: Database): number => (handle.prepare('SELECT total_changes() AS n').get() as { n: number }).n
+
+export function usualDbPath(): string {
+  return join(logHome(), 'log.db')
+}
+
+export function dbOverride(env: Record<string, string | undefined> = process.env): string | null {
+  return env.LOG_DB && resolve(env.LOG_DB) !== resolve(usualDbPath()) ? env.LOG_DB : null
+}
+
+export function writesSinceOpen(path: string): number {
+  const held = handles.get(path)
+  return held ? totalChangesOf(held) - (changesAtOpen.get(path) ?? 0) : 0
+}
 
 export function openDatabase(path: string = defaultDbPath()): Database {
   const held = handles.get(path)
@@ -65,6 +107,7 @@ export function openDatabase(path: string = defaultDbPath()): Database {
   migrate(handle)
   runBackfill(handle)
   handles.set(path, handle)
+  changesAtOpen.set(path, totalChangesOf(handle))
   return handle
 }
 

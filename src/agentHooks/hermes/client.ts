@@ -1,0 +1,73 @@
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+import type { HarnessInstall } from "../opencode/types.ts";
+import { PACKAGE_ROOT } from "../opencode/client.ts";
+import { HERMES_PLUGIN_DIR, HERMES_PLUGIN_NAME } from "../registry/index.ts";
+import { HERMES_DESKTOP_DIR, HERMES_DESKTOP_SOURCE, HERMES_PLUGIN_FILES, HERMES_ROUTES_FILE, RETIRED_HERMES_MANIFESTS, RETIRED_HERMES_PLUGIN } from "./types.ts";
+
+export function hermesHome(env: NodeJS.ProcessEnv = process.env, home: string = homedir(), exists: (path: string) => boolean = existsSync): string {
+  const named = env.LOG_HERMES_DIR || env.HERMES_HOME;
+  if (named) return named;
+  const dotHermes = join(home, ".hermes");
+  if (exists(dotHermes)) return dotHermes;
+  const windowsHome = env.LOCALAPPDATA ? join(env.LOCALAPPDATA, "hermes") : "";
+  return windowsHome && exists(windowsHome) ? windowsHome : dotHermes;
+}
+
+export function installedPluginYaml(source: string, root: string): string {
+  const body = source.replace(/\r\n/g, "\n").replace(/^log_root:.*\n?/m, "");
+  return `${body.endsWith("\n") ? body : `${body}\n`}log_root: '${root.replace(/'/g, "''")}'\n`;
+}
+
+export function retireOldHalves(home: string, pluginDir: string): boolean {
+  let changed = false;
+  const hooksDir = join(home, "plugins", RETIRED_HERMES_PLUGIN);
+  const hooksYaml = join(hooksDir, "plugin.yaml");
+  if (existsSync(hooksYaml) && /^name: logHooks$/m.test(readFileSync(hooksYaml, "utf8"))) {
+    rmSync(hooksDir, { recursive: true, force: true });
+    changed = true;
+  }
+  for (const name of RETIRED_HERMES_MANIFESTS) {
+    const stale = join(pluginDir, name);
+    if (existsSync(stale)) {
+      rmSync(stale, { force: true });
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+export function installHermes(home: string = hermesHome(), root: string = PACKAGE_ROOT): HarnessInstall {
+  const from = join(root, HERMES_PLUGIN_DIR);
+  const pluginDir = join(home, "plugins", HERMES_PLUGIN_NAME);
+  mkdirSync(pluginDir, { recursive: true });
+  const pluginFiles: string[] = [];
+  let changed = retireOldHalves(home, pluginDir);
+  let routesChanged = false;
+  for (const name of HERMES_PLUGIN_FILES) {
+    const source = readFileSync(join(from, name), "utf8");
+    const wanted = name === "plugin.yaml" ? installedPluginYaml(source, root) : source;
+    const target = join(pluginDir, name);
+    const before = existsSync(target) ? readFileSync(target, "utf8") : null;
+    if (before !== wanted) {
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, wanted);
+      changed = true;
+      if (name === HERMES_ROUTES_FILE) routesChanged = true;
+    }
+    pluginFiles.push(target);
+  }
+  const desktopPlugin = installHermesDesktop(home, from);
+  return { configPath: join(pluginDir, "plugin.yaml"), changed: changed || desktopPlugin.changed, pluginDir, pluginFiles, desktopPlugin, routesChanged, routesPath: join(pluginDir, HERMES_ROUTES_FILE) };
+}
+
+export function installHermesDesktop(home: string, from: string): { path: string; changed: boolean; created: boolean } {
+  const path = join(home, HERMES_DESKTOP_DIR, HERMES_PLUGIN_NAME, "plugin.js");
+  const wanted = readFileSync(join(from, HERMES_DESKTOP_SOURCE), "utf8");
+  const existed = existsSync(path);
+  if (existed && readFileSync(path, "utf8") === wanted) return { path, changed: false, created: false };
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, wanted);
+  return { path, changed: true, created: !existed };
+}

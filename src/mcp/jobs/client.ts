@@ -1,14 +1,15 @@
 import type { Database } from "bun:sqlite";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { randomBytes } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { db } from "../../inbox/store/index.ts";
 import type { CancelVerdict, JobProgressLine, JobRecord, JobStatus, JobView } from "./types.ts";
 import { MAX_WAIT_MS, PUBLISH_PASSED } from "./types.ts";
+import { logHome } from "../../config/logHome/index.ts";
 
 export function jobsDir(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_MCP_JOBS_DIR || join(homedir(), ".logCli", "mcp", "jobs");
+  return env.LOG_MCP_JOBS_DIR || join(logHome(), "mcp", "jobs");
 }
 
 type JobRow = { id: string; tool: string; argv: string; account: string | null; live: number; pid: number; startedAt: string; endedAt: string | null; status: string; cancelRequested: number; result: string | null; text: string | null };
@@ -129,6 +130,15 @@ export function busyJob(account: string | null, alive: (pid: number) => boolean 
   importJobFiles();
   const running = (db().prepare("SELECT * FROM jobs WHERE account = ? AND status = 'running' ORDER BY startedAt DESC").all(account) as JobRow[]).map(recordOf);
   return running.find((r) => statusOf(r, alive) === "running") ?? null;
+}
+
+export const PARENT_PID_ENV = "LOG_PARENT_PID";
+
+export const jobScope = new AsyncLocalStorage<string>();
+
+export function heldByOther(holder: JobRecord | null, env: Record<string, string | undefined> = process.env, ownJob: string | undefined = jobScope.getStore()): JobRecord | null {
+  if (holder && ownJob && holder.id === ownJob) return null;
+  return holder && env[PARENT_PID_ENV] && String(holder.pid) === env[PARENT_PID_ENV] ? null : holder;
 }
 
 export function cancelRequested(id: string): boolean {

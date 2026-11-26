@@ -1,0 +1,25 @@
+@keyframes applyFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.applyFloat {
+  animation: applyFloat var(--floatDuration, 6s) ease-in-out var(--floatDelay, 0s) infinite;
+  animation-play-state: paused;
+  will-change: transform;
+}
+
+.applyFloatOn .applyFloat {
+  animation-play-state: running;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .applyFloat {
+    animation: none;
+  }
+}

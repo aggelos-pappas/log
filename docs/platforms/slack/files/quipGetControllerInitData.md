@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundaryfXCqttnwvuT6AAtY
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `init_options`, `preserialized`, `js_initializer.web_browser_id_cookie`, `js_initializer.staging_server`, `js_initializer.edge_resources_cookie`, `js_initializer.edge_resources_cookie_latest_val`, `js_initializer.js_autoreload`, `js_initializer.js_autoreload_frequency`, `js_initializer.css_autoreload`, `js_initializer.css_autoreload_frequency`, `js_initializer.live_apps_request_pool_timeout` and 28 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_a47771702afcf6462bd855c398bf3b93af40c68eaaf29daf82d7f8e230768ee1` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 14: press Enter: 200, 407 ms
+**runs/inspect/20261103T065639_slackAccount**, step 14: press Enter: 200, 407 ms
 
 Sent:
 
@@ -34,7 +34,7 @@ Sent:
     "_x_id": "2c6eaecf-1793689471.584",
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -42,7 +42,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryfXCqttnwvuT6AAtY\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryfXCqttnwvuT6AAtY\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\ncanvas-controller-init\r\n------WebKitFormBoundaryfXCqttnwvuT6AAtY\r\nContent-Disposition: form-data; name=\"_x_mode\"\r\n\r\nonline\r\n------WebKitFormBoundaryfXCqttnwvuT6AAtY\r\nContent-Dispo… (592 chars)"
+    "------WebKitFormBoundaryfXCqttnwvuT6AAtY\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryfXCqttnwvuT6AAtY\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\ncanvas-controller-init\r\n------WebKitFormBoundaryfXCqttnwvuT6AAtY\r\nContent-Disposition: form-data; name=\"_x_mode\"\r\n\r\nonline\r\n------WebKitFormBoundaryfXCqttnwvuT6AAtY\r\nContent-Dispo… (592 chars)"
   }
 }
 ```

@@ -10,7 +10,7 @@
 | Path | `edgeapi.slack.com/cache/users/list` |
 | Sends | — |
 | Reads | `results`, `ok` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script38.js:771 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script38.js:771 anonymous` |
 | rea | `ev_c768a8dd3a32ade2e987e251d0627a66b7d798dc007c87a92e41828826c7a8e2` |
 
 Seen 2 time(s) in 1 run(s).
@@ -23,7 +23,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 133 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 133 ms
 
 Sent:
 
@@ -34,7 +34,7 @@ Sent:
     "fp": "6f",
     "_x_num_retries": "0"
   },
-  "body": "{\"token\":\"xoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\",\"channels\":[\"C0C4L7RSTGX\"],\"present_first\":true,\"filter\":\"everyone AND NOT bots AND NOT apps\",\"count\":30}"
+  "body": "{\"token\":\"<slackToken>\",\"channels\":[\"<channelId:1>\"],\"present_first\":true,\"filter\":\"everyone AND NOT bots AND NOT apps\",\"count\":30}"
 }
 ```
 
@@ -44,21 +44,21 @@ Answered:
 {
   "results": [
     {
-      "id": "U0C4L7RF7HD",
-      "team_id": "T0C4VCD06MR",
-      "name": "matthewdonsemail",
+      "id": "<userId:1>",
+      "team_id": "<teamId:1>",
+      "name": "<name:1>",
       "deleted": false,
       "color": "5870dd",
-      "real_name": "Matthew Don",
-      "tz": "Asia/Bangkok",
-      "tz_label": "Indochina Time",
+      "real_name": "<name:2>",
+      "tz": "<timezone>",
+      "tz_label": "<timezone>",
       "tz_offset": 25200,
       "profile": {
         "title": "",
         "phone": "",
         "skype": "",
-        "real_name": "Matthew Don",
-        "real_name_normalized": "Matthew Don",
+        "real_name": "<name:2>",
+        "real_name_normalized": "<name:2>",
         "display_name": "",
         "display_name_normalized": "",
         "fields": null,
@@ -70,13 +70,13 @@ Answered:
         "avatar_hash": "c4e891e2ba88",
         "image_original": "https://s3-us-west-2.amazonaws.com/slack-files2/avatars/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_original.png",
         "is_custom_image": true,
-        "email": "matthewdonsemail@gmail.com",
+        "email": "<email>",
         "huddle_state": "default_unset",
         "huddle_state_expiration_ts": 0,
-        "first_name": "Matthew",
-        "last_name": "Don",
+        "first_name": "<name:3>",
+        "last_name": "<name:4>",
         "status_text_canonical": "",
-        "team": "T0C4VCD06MR"
+        "team": "<teamId:1>"
       },
       "is_admin": true,
       "is_owner": true,

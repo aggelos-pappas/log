@@ -14,8 +14,8 @@ const PROFILE = "https://www.facebook.com/profile.php";
 const NOTICE = fixture("browserNotificationsNotice");
 const PAST = fixture("pastNoticeDialog");
 const CLEAN = '- main [ref=e99]:\n  - button "Profile picture actions" [ref=e133] [cursor=pointer]:';
-const HAZLETON = { uid: "61593939852820", homeCity: "Hazleton", homeCountry: "US" };
-const current: CurrentInspect = { account: "61593939852820", runDir: "x", commandsPath: "x", repliesPath: "x", startedAt: "2026-10-24T21:15:41Z" };
+const HAZLETON = { uid: "99900000000007", homeCity: "Hazleton", homeCountry: "US" };
+const current: CurrentInspect = { account: "99900000000007", runDir: "x", commandsPath: "x", repliesPath: "x", startedAt: "2026-10-24T21:15:41Z" };
 
 function scripted(pages: string[], clearAnswer: boolean | null = true) {
   const root = mkdtempSync(join(tmpdir(), "overlays"));
@@ -100,5 +100,47 @@ describe("setLocation clears the overlays too, since the Location button is the 
   test("Kingston's notice covered Location before any click", () => {
     expect(PRESSING_ACTIONS.has("setLocation")).toBe(true);
     expect(PRESSING_ACTIONS.has("goto")).toBe(false);
+  });
+});
+
+describe("TikTok Studio's preview tip comes after the upload, so the flow checks again then (rule 79)", () => {
+  const STUDIO = "https://www.tiktok.com/tiktokstudio/upload";
+  const TIP = '- alertdialog "Preview your video on your phoneNow you can view your video as it will appear on TikTok.Got it" [ref=e646]:\n  - button "Got it" [ref=e655] [cursor=pointer]:';
+
+  test("the tip is a known state, resolved with Escape", () => {
+    expect(pageStateOf(STUDIO, TIP)).toMatchObject({ id: "tiktokPreviewTip", person: false });
+    expect(overlayOf(STUDIO, TIP)).toMatchObject({ id: "tiktokPreviewTip", key: "Escape" });
+    expect(overlayOf("https://www.facebook.com/me", TIP)).toBeNull();
+  });
+
+  test("upload, then Escape on the tip, then the caption", async () => {
+    const root = mkdtempSync(join(tmpdir(), "tiktokTip"));
+    const sent: string[] = [];
+    let tip = false;
+    const sendInspect = async (_c: CurrentInspect, action: InspectAction, args: string[]): Promise<InspectStepResult> => {
+      sent.push([action, ...args].join(" "));
+      const folder = join(root, String(sent.length));
+      mkdirSync(folder);
+      writeFileSync(join(folder, "exchanges.json"), "[]");
+      if (action === "uploadRole") tip = true;
+      if (action === "press") tip = false;
+      if (action === "pageText") return { ok: true, url: STUDIO, text: tip ? TIP : "- main:", folder } as InspectStepResult;
+      return { ok: true, url: STUDIO, folder } as InspectStepResult;
+    };
+    const context = { sendInspect, err: () => {} } as unknown as CommandContext;
+    const at = { step: "", ms: null, reaEvidenceId: null, requests: [] };
+    const flow: FlowDefinition = {
+      name: "tiktokPost",
+      platform: "tiktok",
+      summary: "",
+      params: [],
+      steps: [
+        { id: "s01_upload", action: "upload", role: "button", name: "Select video", value: "v.mp4", recorded: at },
+        { id: "s02_fill", action: "fill", role: "combobox", name: "v", value: "hi", recorded: at }
+      ],
+      source: { runDir: "", account: "", builtAt: "" }
+    };
+    expect((await runFlowInSession(context, current, flow, {})).result).toBe("done");
+    expect(sent).toEqual(["pageText", "uploadRole button Select video v.mp4", "pageText", "press Escape", "pageText", "fillRole combobox v hi"]);
   });
 });

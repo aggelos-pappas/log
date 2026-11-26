@@ -1,9 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { appendLedger, ledgerRows } from '../../../storage/ledger'
 import { defaultDbPath } from '../../../storage/schema'
 import { CAPTURE_FOLDERS } from '../../driver/types'
+import { logHome } from '../../../config/logHome/index'
 
 export interface LaunchLimits {
   minGapMinutes: number
@@ -31,8 +31,8 @@ export function recordLaunchReset(accountName: string, reason: string, at: Date 
 
 export function listLaunches(accountName: string, roots: { runs?: string; publish?: string; resets?: string } = {}): Date[] {
   const key = accountName.replace(/\W/g, '')
-  const runsRoot = roots.runs ?? (process.env.LOG_RUNS_DIR || join(homedir(), '.logCli', 'runs'))
-  const publishRoot = roots.publish ?? (process.env.LOG_PUBLISH_DIR || join(homedir(), '.logCli', 'publish'))
+  const runsRoot = roots.runs ?? (process.env.LOG_RUNS_DIR || join(logHome(), 'runs'))
+  const publishRoot = roots.publish ?? (process.env.LOG_PUBLISH_DIR || join(logHome(), 'publish'))
   const files: string[] = []
   for (const action of dirNames(runsRoot)) {
     for (const run of dirNames(join(runsRoot, action)).filter((name) => name.endsWith(`_${key}`))) {

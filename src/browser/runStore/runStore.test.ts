@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { backfillAll, countDomains, domainsInHar, listRuns, pruneRuns, storageVerdict } from './index'
+import { backfillAll, countDomains, docsBuiltAt, domainsInHar, listRuns, pruneRuns, recordDocsBuilt, remeasureRunsBytes, servedRunsBytes, storageVerdict } from './index'
+import { openDatabase } from '../../storage/schema/client'
 import { readRecords } from '../../storage/records/index'
 
 const NOW = Date.parse('2026-10-22T12:00:00Z')
@@ -22,6 +23,16 @@ const LIKE_HAR = JSON.stringify({ log: { entries: [{ startedDateTime: '2026-10-2
 const HAR = 'fb_api_req_friendly_name=GroupsCometFeedRegularStoriesPaginationQuery&x fb_api_req_friendly_name=MarketplaceCometBrowseFeedLightPaginationQuery'
 
 describe('runStore', () => {
+  test('when the docs were built is read from log.db, the oldest platform build, not from the repo', () => {
+    const handle = openDatabase(join(mkdtempSync(join(tmpdir(), 'logDocsBuilt')), 'log.db'))
+    expect(docsBuiltAt(handle)).toBe(0)
+    recordDocsBuilt('facebook', BUILT, handle)
+    recordDocsBuilt('reddit', BUILT - 1000, handle)
+    expect(docsBuiltAt(handle)).toBe(BUILT - 1000)
+    recordDocsBuilt('reddit', BUILT, handle)
+    expect(docsBuiltAt(handle)).toBe(BUILT)
+  })
+
   test('a run rea settled and the docs hold may go; one not settled, not documented or still written is kept', () => {
     const root = mkdtempSync(join(tmpdir(), 'logRuns'))
     run(root, 'inspect', '20261020T100000_a', { 'adsPower/session.har': HAR, 'adsPower/settle.json': '{}', 'adsPower/findings.md': '# f' })
@@ -111,5 +122,19 @@ describe('runStore', () => {
     expect(storageVerdict(9.7e9, 50e9)).toContain('9.7 GB')
     expect(storageVerdict(1e9, 2e9)).toContain('2.0 GB free')
     expect(storageVerdict(1e9, null)).toBeNull()
+  })
+})
+
+describe('the hook reads the runs size without walking the folder', () => {
+  test('a stale size is answered at once and measured again behind, a missing one is measured in place', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'runsSize'))
+    run(root, 'inspect', '20261020T100000_one', { 'a.har': 'x'.repeat(1000) })
+    expect(servedRunsBytes(root, NOW)).toBe(1000)
+    run(root, 'inspect', '20261020T100000_two', { 'b.har': 'y'.repeat(500) })
+    expect(servedRunsBytes(root, NOW + 60_000)).toBe(1000)
+    const later = NOW + 16 * 60_000
+    expect(servedRunsBytes(root, later)).toBe(1000)
+    expect(await remeasureRunsBytes(root, () => later)).toBeGreaterThanOrEqual(1500)
+    expect(servedRunsBytes(root, later)).toBeGreaterThanOrEqual(1500)
   })
 })

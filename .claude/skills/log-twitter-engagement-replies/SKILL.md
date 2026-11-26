@@ -1,7 +1,7 @@
 ---
 name: log-twitter-engagement-replies
 description: "Answering the people who engaged with your posts. A log play (docs/useCases/twitter/engagementReplies.md): When one of your posts gets comments, the people who commented are the warmest people on X for you. There are two ways to follow up, both public replies:"
-when_to_use: "Use when matt asks for: answering the people who engaged with your posts."
+when_to_use: "Use when the owner asks for this, in words like: \"reply to everyone who commented on my last tweet\", \"answer the comments on my post\", \"reply to the people who replied to my tweet with the follow-up link\"."
 metadata:
   summary: "Answering the people who engaged with your posts"
 ---
@@ -10,12 +10,14 @@ metadata:
 
 This is the log play `twitter/engagementReplies`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/engagementReplies" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 When one of your posts gets comments, the people who commented are the warmest people on X for you. There are two ways to follow up, both public replies:
 
 - **Answer their comment** under your post, pointing at the follow-up (a newer post, a video, an article).
 - **Reply to a fresh post of theirs** where you have a real take, so the conversation moves onto their timeline.
+
+How the owner asks for it: "reply to everyone who commented on my last tweet", "answer the comments on my post", "reply to the people who replied to my tweet with the follow-up link".
 
 ## Run it from a fresh context
 
@@ -32,7 +34,7 @@ Say: **"go on docs/useCases/twitter/engagementReplies.md for <post url>"** and, 
 | 3a | **Answer the comment:** one line that answers what they said, then the follow-up link | house style | passes `twitterQueueCheck` |
 | 3b | **Or their own post:** read their recent posts and pick one from the last few days where you have a real take | treg's X posts read | one post per person and the line for it |
 | 4 | Show the owner the table: who, what they said, the post being replied to, the line | wherever the owner reads | the owner says yes |
-| 5 | Queue it with likes and send | README queue steps | `finished` |
+| 5 | Queue it with likes and send | README queue steps: `twitterQueueBuild`, `twitterQueueRunLive` | `finished` |
 
 Where the comment was a question (for example "what does the first message actually look like"), the answer is the reply. Unanswered questions are the best openers.
 
@@ -44,7 +46,7 @@ Where the comment was a question (for example "what does the first message actua
 
 ## What the runs taught
 
-- **Write in house style from the start.** Copy written with full stops and commas is refused by `check`.
+- **Write in house style from the start.** Copy written with full stops and commas is refused by `twitterQueueCheck`.
 - **Vary the lines.** Spintax (`{a|b}`) is a quick way to draft variations, but expand it into plain lines before `twitterQueueBuild`.
 
 ## Next
@@ -52,3 +54,12 @@ Where the comment was a question (for example "what does the first message actua
 - [#36](https://github.com/matthewdonsemail-lab/log/issues/36) expands spintax in the queue.
 
 Likers and reposters aren't in a comments read: they have their own page, [engagerDms.md](../log-twitter-engager-dms/SKILL.md).
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [All X use cases, and the parts they share](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/twitter/README.md)
+- [What log does on X](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/x.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

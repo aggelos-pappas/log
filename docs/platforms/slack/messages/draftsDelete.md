@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundaryxqSde7FhvQFhRORI
 Content-Disposition: form-data; name` |
 | Reads | `ok` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script29.js:146 H5rY`, `runs/inspect/20261103T065639_mattSlack/script3.js:2954 H5rY`, `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script29.js:146 H5rY`, `runs/inspect/20261103T065639_slackAccount/script3.js:2954 H5rY`, `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_70a2c8c1076d1c4aa77ef1c0614ac5d9ed75e9a42a6a10dc7e67783412ef2ac0` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 17: press Backspace: 200, 311 ms
+**runs/inspect/20261103T065639_slackAccount**, step 17: press Backspace: 200, 311 ms
 
 Sent:
 
@@ -35,7 +35,7 @@ Sent:
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
     "_x_csid": "Omg2iVUkYDE",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -43,7 +43,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryxqSde7FhvQFhRORI\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryxqSde7FhvQFhRORI\r\nContent-Disposition: form-data; name=\"client_last_updated_ts\"\r\n\r\n1793689486064\r\n------WebKitFormBoundaryxqSde7FhvQFhRORI\r\nContent-Disposition: form-data; name=\"draft_id\"\r\n\r\nDr0CECLN037C\r\n------WebKitFormBoundaryxqSde7FhvQFhRORI\r\nCo… (932 chars)"
+    "------WebKitFormBoundaryxqSde7FhvQFhRORI\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryxqSde7FhvQFhRORI\r\nContent-Disposition: form-data; name=\"client_last_updated_ts\"\r\n\r\n1793689486064\r\n------WebKitFormBoundaryxqSde7FhvQFhRORI\r\nContent-Disposition: form-data; name=\"draft_id\"\r\n\r\nDr0CECLN037C\r\n------WebKitFormBoundaryxqSde7FhvQFhRORI\r\nCo… (932 chars)"
   }
 }
 ```

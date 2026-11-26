@@ -1,0 +1,13 @@
+[
+  { "id": "C1", "statement": "Today log's inbox labels come from counting back and forths, days quiet and unanswered asks, not from reading the messages." },
+  { "id": "C2", "statement": "Of 540 labelled people, the owner set only 7 labels by hand." },
+  { "id": "C3", "statement": "A bot with many messages is labelled readyToAsk by today's rules." },
+  { "id": "C4", "statement": "Today's people linking compares only shared posts, handles and display names." },
+  { "id": "C5", "statement": "SetFit reaches accuracy comparable to much larger models from a few labelled examples, without prompts (arXiv 2209.11055)." },
+  { "id": "C6", "statement": "Training a small classifier only on LLM labels lowers accuracy and raises instability compared with gold labels (arXiv 2504.15432)." },
+  { "id": "C7", "statement": "Small classifiers fine-tuned on GPT-4 labels performed close to ones fine-tuned on human labels across 14 tasks (arXiv 2406.17633)." },
+  { "id": "C8", "statement": "One false-positive link can chain unrelated records together, so merges across groups must be re-verified (arXiv 2607.26298)." },
+  { "id": "C9", "statement": "Writing style plus activity times matched 31% of users across two social networks from text alone (arXiv 1605.05166)." },
+  { "id": "C10", "statement": "log already ships a pinned local MiniLM embedder used by its prompt router." },
+  { "id": "C11", "statement": "A sales agent fine-tuned on real commercial conversations converted 21.6% better than a frontier model with the same tools in a field trial (arXiv 2610.25461)." }
+]

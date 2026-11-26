@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundarywoL1HkX4msIzF62m
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `assignments.slackbot_skills_admin_page_redirect`, `assignments.slackbot_skill_set_admin_page`, `assignments.slackbot_skills_admin_edit_access`, `assignments.slackbot_skill_share_dialog_v2`, `assignments.dunning_churn_reduction`, `assignments.code_channels_ghes_provider`, `assignments.new_team_ai_app_invites`, `assignments.canvas_readtime`, `assignments.canvas_permalink_icon`, `assignments.canvas_navigable_callout`, `assignments.canvas_header_image` and 28 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_c1f0045fb8d971ed590cc6de38e0a27b19246d205b6e190ed91fac4cabfedbae` |
 
 Seen 2 time(s) in 1 run(s).
@@ -20,13 +20,13 @@ Seen 2 time(s) in 1 run(s).
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 4: goto /client | 1 | 200 | 556 ms | 3157 ms | — |
-| inspect | step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU | 1 | 200 | 341 ms | 2222 ms | — |
+| inspect | step 6: goto /client/<teamId:1>/<channelId:1> | 1 | 200 | 341 ms | 2222 ms | — |
 
 ### What it sent and what came back (the newest 2 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 556 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 556 ms
 
 Sent:
 
@@ -43,7 +43,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryA4lRALid1vvTbbAJ\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryA4lRALid1vvTbbAJ\r\nContent-Disposition: form-data; name=\"web_client_version\"\r\n\r\n1793684253\r\n------WebKitFormBoundaryA4lRALid1vvTbbAJ\r\nContent-Disposition: form-data; name=\"_x_app_name\"\r\n\r\nclient\r\n------WebKitFormBoundaryA4lRALid1vvTbbAJ\r\nContent-Disp… (489 chars)"
+    "------WebKitFormBoundaryA4lRALid1vvTbbAJ\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryA4lRALid1vvTbbAJ\r\nContent-Disposition: form-data; name=\"web_client_version\"\r\n\r\n1793684253\r\n------WebKitFormBoundaryA4lRALid1vvTbbAJ\r\nContent-Disposition: form-data; name=\"_x_app_name\"\r\n\r\nclient\r\n------WebKitFormBoundaryA4lRALid1vvTbbAJ\r\nContent-Disp… (489 chars)"
   }
 }
 ```
@@ -58,7 +58,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU: 200, 341 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 341 ms
 
 Sent:
 
@@ -75,7 +75,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundarywoL1HkX4msIzF62m\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundarywoL1HkX4msIzF62m\r\nContent-Disposition: form-data; name=\"web_client_version\"\r\n\r\n1793684253\r\n------WebKitFormBoundarywoL1HkX4msIzF62m\r\nContent-Disposition: form-data; name=\"_x_app_name\"\r\n\r\nclient\r\n------WebKitFormBoundarywoL1HkX4msIzF62m\r\nContent-Disp… (489 chars)"
+    "------WebKitFormBoundarywoL1HkX4msIzF62m\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundarywoL1HkX4msIzF62m\r\nContent-Disposition: form-data; name=\"web_client_version\"\r\n\r\n1793684253\r\n------WebKitFormBoundarywoL1HkX4msIzF62m\r\nContent-Disposition: form-data; name=\"_x_app_name\"\r\n\r\nclient\r\n------WebKitFormBoundarywoL1HkX4msIzF62m\r\nContent-Disp… (489 chars)"
   }
 }
 ```

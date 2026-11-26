@@ -27,7 +27,7 @@ Seen 6 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T185330_mattinferencesaver**, step 1: goto /direct/t/<id>/: 200, 195 ms
+**runs/inspect/20261103T185330_instagramAccount**, step 1: goto /direct/t/<id>/: 200, 195 ms
 
 Sent:
 
@@ -42,11 +42,11 @@ Answered:
   "__ar": 1,
   "rid": "AtmAGSUziSw942ssULUo__x",
   "payload": null,
-  "lid": "7704020352427167998"
+  "lid": "<id:1>"
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 1: goto /: 200, 198 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 1: goto /: 200, 198 ms
 
 Sent:
 
@@ -61,11 +61,11 @@ Answered:
   "__ar": 1,
   "rid": "AVBpQO6GgdOUbGL_9HFzdlb",
   "payload": null,
-  "lid": "7704006638390988194"
+  "lid": "<id:2>"
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 2: snapshot: 200, 274 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 2: snapshot: 200, 274 ms
 
 Sent:
 
@@ -80,7 +80,7 @@ Answered:
   "__ar": 1,
   "rid": "ATgThBn_P4u7tWAU3aIPKww",
   "payload": null,
-  "lid": "7704006707839413158"
+  "lid": "<id:3>"
 }
 ```
 

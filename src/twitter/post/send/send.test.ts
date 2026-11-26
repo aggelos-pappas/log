@@ -7,8 +7,8 @@ const POST = 'https://x.com/someone/status/1900000000000000000'
 describe('planSend', () => {
   test('a reply with house-style copy plans the engine spec, live only when asked', () => {
     expect(planSend({ action: 'reply', tweetUrl: POST, text: 'love this', live: false })).toMatchObject({ ok: true, target: POST, watermark: { level: 'clean', statistical: 'unknown' }, spec: { action: 'reply', live: false, approvedBy: undefined, tweetUrl: POST, text: 'love this' } })
-    const live = planSend({ action: 'reply', tweetUrl: POST, text: 'love this', approvedBy: 'matt', live: true })
-    expect(live.ok && live.spec).toMatchObject({ live: true, approvedBy: 'matt' })
+    const live = planSend({ action: 'reply', tweetUrl: POST, text: 'love this', approvedBy: 'the owner', live: true })
+    expect(live.ok && live.spec).toMatchObject({ live: true, approvedBy: 'the owner' })
   })
 
   test('live needs who approved it; a dry run does not', () => {
@@ -16,6 +16,12 @@ describe('planSend', () => {
     expect(planSend({ action: 'like', tweetUrl: POST, live: false }).ok).toBe(true)
     expect(planSend({ action: 'repost', tweetUrl: POST, live: true })).toMatchObject({ ok: false, problem: { code: 'notApproved' } })
     expect(planSend({ action: 'repost', tweetUrl: POST, live: false }).ok).toBe(true)
+  })
+
+  test('a delete names the post, takes no text and needs who approved it to go live', () => {
+    expect(planSend({ action: 'delete', live: false })).toMatchObject({ ok: false, problem: { code: 'targetMissing' } })
+    expect(planSend({ action: 'delete', tweetUrl: POST, live: true })).toMatchObject({ ok: false, problem: { code: 'notApproved' } })
+    expect(planSend({ action: 'delete', tweetUrl: POST, approvedBy: 'the owner', live: true })).toMatchObject({ ok: true, target: POST, spec: { action: 'delete', tweetUrl: POST, live: true } })
   })
 
   test('the target, the text and the style are checked before X is called', () => {
@@ -36,7 +42,8 @@ describe('planSend', () => {
     expect(planSend({ action: 'post', text: 'Hello, world.', live: false })).toMatchObject({ ok: false, problem: { code: 'styleFailed' } })
     expect(planSend({ action: 'post', text: 'one in 173', media: ['clip.mp4'], live: true }, sizeOf)).toMatchObject({ ok: false, problem: { code: 'notApproved' } })
     expect(planSend({ action: 'reply', tweetUrl: POST, text: 'yes', media: ['clip.mp4'], live: false }, sizeOf)).toMatchObject({ ok: true, spec: { action: 'reply', tweetUrl: POST, media: [resolve('clip.mp4')] } })
-    expect(planSend({ action: 'quote', tweetUrl: POST, text: 'yes', media: ['clip.mp4'], live: false }, sizeOf)).toMatchObject({ ok: false, problem: { code: 'mediaInvalid' } })
+    expect(planSend({ action: 'quote', tweetUrl: POST, text: 'yes', media: ['clip.mp4'], live: false }, sizeOf)).toMatchObject({ ok: true, spec: { action: 'quote', tweetUrl: POST, media: [resolve('clip.mp4')] } })
+    expect(planSend({ action: 'like', tweetUrl: POST, media: ['clip.mp4'], live: false }, sizeOf)).toMatchObject({ ok: false, problem: { code: 'mediaInvalid' } })
   })
 
   test('a dm carries one file, never more', () => {

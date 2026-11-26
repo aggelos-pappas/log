@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { checkAnchors, sliceOf } from './index'
 import type { RequirementAnchors } from './index'
+import { SCANS_REPO_MS } from '../../../scripts/tests/timeouts.ts'
 
 const root = join(import.meta.dir, '..', '..', '..')
 
@@ -50,7 +51,7 @@ describe('anchors: what a rule names is proved by the syntax tree (rule 117)', (
     expect(checkAnchors(dir, 'pilot', anchors, true).healed).toHaveLength(2)
     expect(checkAnchors(dir, 'pilot', anchors).findings).toEqual([])
     expect(readFileSync(py, 'utf8')).toContain('SPACING_SECONDS = (4, 11)')
-  })
+  }, SCANS_REPO_MS)
 
   test('a missing function or error code is found and is not healable', () => {
     const dir = copyOf(['src/directApi/engine/types.ts', 'python/twitterApi/engine.py'])
@@ -59,7 +60,7 @@ describe('anchors: what a rule names is proved by the syntax tree (rule 117)', (
     const problems = checkAnchors(dir, 'pilot', anchors).findings
     expect(problems.map((f) => f.problem)).toEqual(['spacing_wait is not defined in python/twitterApi/engine.py', 'no string "accountBusy" in python/twitterApi/engine.py'])
     expect(problems.some((f) => f.healable)).toBe(false)
-  })
+  }, SCANS_REPO_MS)
 
   test('a name a file uses is proved by its identifiers, not its strings, in TypeScript and Python', () => {
     const uses: RequirementAnchors = {
@@ -75,7 +76,7 @@ describe('anchors: what a rule names is proved by the syntax tree (rule 117)', (
     writeFileSync(ts, readFileSync(ts, 'utf8').replace(/continuesSend/g, 'gone'))
     writeFileSync(py, readFileSync(py, 'utf8').replace(/continues_send/g, 'gone'))
     expect(checkAnchors(dir, 'pilot', uses).findings.map((f) => f.problem)).toEqual(['continuesSend is not used in src/cli/discord/index.ts', 'continues_send is not used in python/platformKit/engine.py'])
-  })
+  }, SCANS_REPO_MS)
 
   test('a string anchor finds its text in a template string with substitutions too', () => {
     const dir = mkdtempSync(join(tmpdir(), 'anchors'))

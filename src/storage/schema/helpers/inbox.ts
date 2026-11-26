@@ -23,3 +23,7 @@ export const INBOX_TABLES: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS spansByTool ON spans (tool, startedAt)`,
   `CREATE INDEX IF NOT EXISTS spansByCall ON spans (callId)`,
 ]
+
+export const TYPING_TABLES: readonly string[] = [
+  `CREATE TABLE IF NOT EXISTS typing (platform TEXT NOT NULL, account TEXT NOT NULL, conversationId TEXT NOT NULL, userId TEXT NOT NULL, startedAt TEXT NOT NULL, untilAt TEXT NOT NULL, PRIMARY KEY (platform, account, conversationId, userId))`,
+]

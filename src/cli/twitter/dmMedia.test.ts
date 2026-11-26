@@ -30,7 +30,7 @@ describe("a dm can carry a meme (rule 119)", () => {
   test("a split dm stops the moment they write back in either inbox, and the rest is held", async () => {
     const saved = { ...twitterSendDeps };
     twitterSendDeps.now = () => "2026-11-03T19:00:00.000Z";
-    twitterSendDeps.incoming = (account, userId) => [{ platform: "twitter", account, conversationId: `${userId}:1974596626342686720`, with: "lior", text: "hold on", at: "2026-11-03T19:00:05.000Z", box: "xchat", seenAt: "2026-11-03T19:00:05.200Z" }];
+    twitterSendDeps.incoming = (account, userId) => [{ platform: "twitter", account, conversationId: `${userId}:1974596626342686720`, with: "lina", text: "hold on", at: "2026-11-03T19:00:05.000Z", box: "xchat", seenAt: "2026-11-03T19:00:05.200Z" }];
     try {
       const specs: TwitterEngineSpec[] = [];
       const engine = async (spec: TwitterEngineSpec) => {
@@ -38,10 +38,10 @@ describe("a dm can carry a meme (rule 119)", () => {
         return { answer: { ok: true, event: "sent", loginState: "loggedIn" as const }, refreshed: null };
       };
       const plan = { parts: ["one", "two", "three"], gapSeconds: 1, why: "three lines" } as never;
-      const { interrupted } = await sendDmParts({ err: () => {}, sleep: async () => {} }, engine as never, { action: "dm", userId: "42", live: true } as TwitterEngineSpec, plan, { account: "matthewsoldit", userId: "42" });
+      const { interrupted } = await sendDmParts({ err: () => {}, sleep: async () => {} }, engine as never, { action: "dm", userId: "42", live: true } as TwitterEngineSpec, plan, { account: "xAccount", userId: "42" });
       expect(specs.map((s) => s.text)).toEqual(["one"]);
       expect(interrupted.map((m) => m.text)).toEqual(["hold on"]);
-      expect(dmInterruptedLines("matthewsoldit", plan, 1, interrupted).join("\n")).toContain("not sent: two");
+      expect(dmInterruptedLines("xAccount", plan, 1, interrupted).join("\n")).toContain("not sent: two");
     } finally {
       Object.assign(twitterSendDeps, saved);
     }

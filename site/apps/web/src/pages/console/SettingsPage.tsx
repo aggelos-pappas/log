@@ -2,6 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, errorText, useSelectedTeam, useWorkspaces, type InviteView, type MemberView, type PairingView, type WorkspaceView } from '@/lib/controlApi'
 import { ConsoleLayout, SectionHeading, WorkspaceChip, workspaceStateOf } from './ConsoleLayout'
+import { Spinner, toast } from '@listeningkit/ui'
+import { useErrorToast } from '@/lib/useErrorToast'
+import { localConsole } from '@/lib/consoleMode'
+import { loadLocalSettings } from './settingsData'
+import { AccountSettings } from './AccountSettings'
 
 function origin(): string {
   return window.location.origin
@@ -22,18 +27,16 @@ function WorkspaceSetup({ teamId, canAdmin }: { teamId: string; canAdmin: boolea
   const queryClient = useQueryClient()
   const [hash, setHash] = useState('')
   const [pairing, setPairing] = useState<PairingView | null>(null)
-  const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const selected = workspaces.data?.find((item) => item.selected) ?? null
   const state = workspaceStateOf(workspaces.data, workspaces.isError)
 
   async function run(work: () => Promise<void>) {
     setBusy(true)
-    setNotice('')
     try {
       await work()
     } catch (error) {
-      setNotice(errorText(error))
+      toast.error(errorText(error))
     } finally {
       setBusy(false)
     }
@@ -71,7 +74,6 @@ function WorkspaceSetup({ teamId, canAdmin }: { teamId: string; canAdmin: boolea
           {selected?.lastContactAt ? <span className="text-xs text-slate-500">Last contact {new Date(selected.lastContactAt).toLocaleString()}</span> : null}
         </div>
         <p className="mt-3 text-sm leading-6 text-slate-600">Your workspace is the cloud machine where log runs with your accounts, sessions and messages. They stay there; this site only routes requests to it.</p>
-        {notice ? <p role="status" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{notice}</p> : null}
 
         {!selected ? (
           canAdmin ? <button type="button" disabled={busy} onClick={create} className="mt-4 h-10 rounded-xl bg-[#2A8CFF] px-4 text-sm font-bold text-white disabled:opacity-60">Add a workspace</button> : <p className="mt-4 text-sm text-slate-600">Ask an owner or admin to add the team’s workspace.</p>
@@ -115,28 +117,25 @@ function Members({ teamId, canInvite, manageOwners }: { teamId: string; canInvit
   const queryClient = useQueryClient()
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<'member' | 'admin'>('member')
-  const [notice, setNotice] = useState('')
   const [sent, setSent] = useState<InviteView[]>([])
 
   async function invite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setNotice('')
     try {
       const made = await api<InviteView>(`/teams/${teamId}/invites`, { method: 'POST', body: { email: email.trim(), role } })
       setSent((items) => [made, ...items])
       setEmail('')
     } catch (error) {
-      setNotice(errorText(error))
+      toast.error(errorText(error))
     }
   }
 
   async function update(member: MemberView, change: { role?: string; status?: string }) {
-    setNotice('')
     try {
       await api<MemberView>(`/teams/${teamId}/members/${member.id}`, { method: 'PATCH', body: change })
       await queryClient.invalidateQueries({ queryKey: ['controlMembers', teamId] })
     } catch (error) {
-      setNotice(errorText(error))
+      toast.error(errorText(error))
     }
   }
 
@@ -145,16 +144,15 @@ function Members({ teamId, canInvite, manageOwners }: { teamId: string; canInvit
       await api<void>(`/teams/${teamId}/invites/${item.id}/revoke`, { method: 'POST', body: {} })
       setSent((items) => items.map((entry) => (entry.id === item.id ? { ...entry, status: 'revoked' } : entry)))
     } catch (error) {
-      setNotice(errorText(error))
+      toast.error(errorText(error))
     }
   }
 
   return (
     <section className="mb-10">
       <SectionHeading title="Members" count={members.data?.filter((item) => item.status === 'active').length} />
-      {notice ? <p role="status" className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{notice}</p> : null}
       <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
-        {members.isLoading ? <li className="p-4 text-sm text-slate-500">Loading…</li> : null}
+        {members.isLoading ? <li><Spinner className="min-h-0 py-6" label="Loading members" /></li> : null}
         {members.data?.map((member) => (
           <li key={member.id} className="flex flex-wrap items-center gap-3 p-4">
             <span className="min-w-0 flex-1 truncate text-sm font-semibold">{member.email}</span>
@@ -191,14 +189,67 @@ function Members({ teamId, canInvite, manageOwners }: { teamId: string; canInvit
   )
 }
 
+function LocalSettings() {
+  const query = useQuery({ queryKey: ['consoleSettings'], queryFn: ({ signal }) => loadLocalSettings(signal), retry: false, refetchOnWindowFocus: false })
+  useErrorToast(query.isError, query.error, 'Could not read settings on this machine.')
+  if (query.isLoading) return <p className="text-sm text-slate-500">Reading this machine…</p>
+  if (query.isError || !query.data) return <p className="text-sm text-slate-600"><button type="button" onClick={() => query.refetch()} className="font-semibold underline">Try again</button></p>
+  const data = query.data
+  const paths = [['log.db', data.paths.database], ['Runs', data.paths.runs], ['Accounts', data.paths.accounts], ['Settings and keys', data.paths.env]]
+  return (
+    <>
+      <section className="mb-10">
+        <SectionHeading title="Paths" />
+        <dl className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white px-5">
+          {paths.map(([label, value]) => <div key={label} className="flex flex-wrap justify-between gap-3 py-3 text-sm"><dt className="text-slate-600">{label}</dt><dd className="min-w-0 break-all text-xs">{value}</dd></div>)}
+        </dl>
+      </section>
+      <section className="mb-10">
+        <SectionHeading title="Governor today" count={data.governors.length} />
+        {data.governors.length ? (
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead className="border-b border-slate-200 text-slate-600"><tr>{['Platform', 'Account', 'Requests', 'Writes', 'This hour', 'Cooldown'].map((label) => <th key={label} scope="col" className="px-4 py-2 font-medium">{label}</th>)}</tr></thead>
+              <tbody className="divide-y divide-slate-100">{data.governors.map((g) => <tr key={`${g.platform}:${g.account}`}>
+                <td className="px-4 py-2">{g.platform}</td>
+                <td className="px-4 py-2 font-semibold">{g.account}</td>
+                <td className="px-4 py-2 tabular-nums">{g.requests}/{data.requestsPerDay}</td>
+                <td className="px-4 py-2 tabular-nums">{g.writes}/{g.writesPerDay}</td>
+                <td className="px-4 py-2 tabular-nums">{g.hourRequests}</td>
+                <td className="px-4 py-2">{g.cooldownSeconds ? `${Math.ceil(g.cooldownSeconds / 60)} min` : '—'}</td>
+              </tr>)}</tbody>
+            </table>
+          </div>
+        ) : <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-600">No account has a governor count yet.</p>}
+      </section>
+      <section className="mb-10">
+        <SectionHeading title="Streamed browser" />
+        <p className="text-sm leading-6 text-slate-600" data-browser-window={data.browserWindow?.streamed ?? 'hidden'}>A browser opened to stream into a chat or this console runs {(data.browserWindow?.streamed ?? 'hidden') === 'hidden' ? 'with its window hidden: no window or taskbar entry, the stream is its only view' : 'with its window visible on this machine'}. Set <code className="rounded bg-slate-100 px-1">{data.browserWindow?.setting ?? 'LOG_BROWSER_WINDOW'}=hidden|visible</code> in <code className="rounded bg-slate-100 px-1">{data.paths.env}</code>.</p>
+      </section>
+      <section>
+        <SectionHeading title="Web console" />
+        <p className="text-sm leading-6 text-slate-600">This page is served by <code className="rounded bg-slate-100 px-1">{data.webConsole.command}</code> on this machine only.</p>
+      </section>
+    </>
+  )
+}
+
 export function SettingsPage() {
   const { team } = useSelectedTeam()
+  if (localConsole) {
+    return (
+      <ConsoleLayout title="Settings" subtitle="Where log keeps things on this machine, and each account’s governor.">
+        <LocalSettings />
+      </ConsoleLayout>
+    )
+  }
   return (
-    <ConsoleLayout title="Settings" subtitle="Your team’s workspace, members and invites.">
+    <ConsoleLayout title="Settings" subtitle="Your team’s workspace, members and invites, and your account.">
       {team ? (
         <>
           <WorkspaceSetup teamId={team.id} canAdmin={team.role !== 'member'} />
           <Members teamId={team.id} canInvite={team.role !== 'member'} manageOwners={team.role === 'owner'} />
+          <AccountSettings />
         </>
       ) : null}
     </ConsoleLayout>

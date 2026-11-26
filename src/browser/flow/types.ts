@@ -2,6 +2,7 @@ export type FlowAction = 'goto' | 'click' | 'fill' | 'upload' | 'signIn' | 'code
   | 'setLocation'
   | 'scroll' | 'openAny' | 'clickAny' | 'dwell'
   | 'press' | 'scrollIn'
+  | 'rowMenu'
 
 export interface AnswerCheck {
   answer: string
@@ -50,9 +51,13 @@ export interface FlowParam {
   description: string
 }
 
+export type FlowEffect = 'write' | 'delete'
+
 export interface FlowDefinition {
   name: string
+  platform?: string
   summary: string
+  effect?: FlowEffect
   params: FlowParam[]
   steps: FlowStep[]
   source: { runDir: string; account: string; builtAt: string }

@@ -4,15 +4,15 @@ flowchart LR
   twenty[("Twenty socialAccounts: one row per account, its platform, session and proxy")]
   api["The platform's internal API: its own answer decides (rule 73)"]
   drivers["The account's browser: AdsPower or Camoufox, through the driver (The browser layer)"]
-  p_facebook["Facebook (FACEBOOK): 23 commands of its own"]
+  p_facebook["Facebook (FACEBOOK): 22 commands of its own"]
   twenty --> p_facebook
   p_facebook -->|"direct API: facebook read"| e_fbk["fbk (vendor/fbk): the saved session, a governor per account"]
   e_fbk --> api
-  p_facebook -->|"browser: facebook doctor, facebook connect, facebook profile, facebook host, #lt;platform#gt; warmup, facebook join, facebook read, facebook poll, facebook check, facebook scan, facebook status, facebook watch, facebook publish, facebook campaign"| b_facebook["Facebook's browser path: its proxy in the account's home country (rule 12)"]
+  p_facebook -->|"browser: facebook doctor, facebook connect, facebook profile, facebook host, facebook join, facebook read, facebook poll, facebook check, facebook scan, facebook status, facebook watch, facebook publish, facebook campaign"| b_facebook["Facebook's browser path: its proxy in the account's home country (rule 12)"]
   b_facebook --> drivers
-  p_twitter["X (TWITTER): 18 commands of its own"]
+  p_twitter["X (TWITTER): 20 commands of its own"]
   twenty --> p_twitter
-  p_twitter -->|"direct API: twitter session, twitter follows, twitter dms, twitter chat, twitter cookies, twitter followers, twitter notifications, twitter reply, twitter quote, twitter post, twitter like, twitter list, twitter repost, twitter follow, twitter dm, twitter react, twitter queue, twitter voice"| e_twikit["twikit (vendor/twikit): the saved session, a governor per account"]
+  p_twitter -->|"direct API: twitter session, twitter follows, twitter dms, twitter chat, twitter cookies, twitter followers, twitter posts, twitter notifications, twitter reply, twitter quote, twitter post, twitter like, twitter list, twitter repost, twitter delete, twitter follow, twitter dm, twitter react, twitter queue, twitter voice"| e_twikit["twikit (vendor/twikit): the saved session, a governor per account"]
   e_twikit --> api
   p_twitter -.->|"no browser path (rule 80)"| nob_twitter["X runs on its direct API only"]
   p_reddit["Reddit (REDDIT): 5 commands of its own"]
@@ -21,15 +21,15 @@ flowchart LR
   e_reverseChud --> api
   p_reddit -->|"browser: the any-platform commands"| b_reddit["Reddit's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_reddit --> drivers
-  p_discord["Discord (DISCORD): 8 commands of its own"]
+  p_discord["Discord (DISCORD): 14 commands of its own"]
   twenty --> p_discord
-  p_discord -->|"direct API: discord session, discord chats, discord read, discord watch, discord send, discord delete, discord react, discord voice"| e_endcord["endcord (vendor/endcord): the saved session, a governor per account"]
+  p_discord -->|"direct API: discord session, discord secrets, discord chats, discord servers, discord channels, discord posts, discord search, discord read, discord watch, discord send, discord delete, discord friend, discord react, discord voice"| e_endcord["endcord (vendor/endcord): the saved session, a governor per account"]
   e_endcord --> api
   p_discord -->|"browser: the any-platform commands"| b_discord["Discord's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_discord --> drivers
-  p_linkedin["LinkedIn (LINKEDIN): 2 commands of its own"]
+  p_linkedin["LinkedIn (LINKEDIN): 12 commands of its own"]
   twenty --> p_linkedin
-  p_linkedin -->|"direct API: linkedin session, linkedin cookies"| e_openLinkedinApi["openLinkedinApi (vendor/openLinkedinApi): the saved session, a governor per account"]
+  p_linkedin -->|"direct API: linkedin session, linkedin cookies, linkedin post, linkedin delete, linkedin suggestions, linkedin connect, linkedin like, linkedin repost, linkedin message, linkedin inbox, linkedin posts, linkedin messages"| e_openLinkedinApi["openLinkedinApi (vendor/openLinkedinApi): the saved session, a governor per account"]
   e_openLinkedinApi --> api
   p_linkedin -->|"browser: the any-platform commands"| b_linkedin["LinkedIn's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_linkedin --> drivers
@@ -45,17 +45,17 @@ flowchart LR
   e_instagrapi --> api
   p_instagram -->|"browser: the any-platform commands"| b_instagram["Instagram's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_instagram --> drivers
-  p_tiktok["TikTok (TIKTOK): 3 commands of its own"]
+  p_tiktok["TikTok (TIKTOK): 6 commands of its own"]
   twenty --> p_tiktok
-  p_tiktok -->|"direct API: tiktok session"| e_no_client_vendored_yet["no client vendored yet"]
-  e_no_client_vendored_yet --> api
-  p_tiktok -->|"direct API: tiktok session"| e_shared_inspect_browser["shared inspect browser"]
+  p_tiktok -->|"direct API: tiktok session, tiktok stats, tiktok post, tiktok delete"| e_shared_inspect_browser["shared inspect browser"]
   e_shared_inspect_browser --> api
-  p_tiktok -->|"direct API: tiktok session"| e_bundled_omkarcloud_tiktok_scraper["bundled omkarcloud/tiktok-scraper"]
+  p_tiktok -->|"direct API: tiktok session, tiktok stats, tiktok post, tiktok delete"| e_bundled_omkarcloud_tiktok_scraper["bundled omkarcloud/tiktok-scraper"]
   e_bundled_omkarcloud_tiktok_scraper --> api
+  p_tiktok -->|"direct API: tiktok session, tiktok stats, tiktok post, tiktok delete"| e_tiktokApi__curl_cffi__TikTok_Studio_calls_["tiktokApi (curl_cffi, TikTok Studio calls)"]
+  e_tiktokApi__curl_cffi__TikTok_Studio_calls_ --> api
   p_tiktok -->|"browser: the any-platform commands"| b_tiktok["TikTok's browser path: no proxy: this machine's own exit, the profile's timezone follows it (rule 84)"]
   b_tiktok --> drivers
-  anyB["Any platform with a browser path: inspect, flow"]
+  anyB["Any platform with a browser path: inspect, flow, #lt;platform#gt; warmup"]
   anyB --> b_facebook
   anyB --> b_reddit
   anyB --> b_discord
@@ -63,7 +63,7 @@ flowchart LR
   anyB --> b_slack
   anyB --> b_instagram
   anyB --> b_tiktok
-  anyN["Any platform, no browser: launch, adsPower, localAccount, proxy, errors, graph, runs, storage, timing, inbox, media, browsers, job, mcp, login, logout, whoami, voice, search, kb, runtime, memelord, treg, balance, governor, clone, transcribe, new"]
+  anyN["Any platform, no browser: launch, console, credentials, adsPower, localAccount, accounts, proxy, errors, graph, capture, router, runs, storage, version, update, models, relate, people, network, timing, tool, inbox, harness, media, browsers, browser, report, job, mcp, login, logout, whoami, voice, search, index, facts, kb, runtime, memelord, treg, balance, governor, sessions, chats, messages, watchers, voiceNotes, clone, transcribe, new, saidBy"]
   anyN -.-> twenty
   newP["log new platform name: one more platform, wired whole (rule 83)"] -.-> twenty
   drivers --> api

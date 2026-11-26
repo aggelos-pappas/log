@@ -1,10 +1,16 @@
-import { defineConfig } from 'vite'
+import { defineConfig, searchForWorkspaceRoot } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import { consoleEvents } from './server/consoleEvents'
+import { consoleEvents, localConsoleMode } from './server/consoleEvents'
+
+const controlServiceUrl = process.env.CONTROL_SERVICE_URL || 'http://127.0.0.1:8765'
+const controlServiceIsRemote = controlServiceUrl.startsWith('https://')
+const controlServiceProxy = { target: controlServiceUrl, changeOrigin: controlServiceIsRemote }
+const localConsoleApi = process.env.LOG_CONSOLE_API
+const localConsoleProxy = localConsoleApi ? { '/api/console': { target: localConsoleApi, changeOrigin: false } } : {}
 
 export default defineConfig({
-  plugins: [react(), consoleEvents()],
+  plugins: [react(), consoleEvents(), ...(localConsoleApi ? [localConsoleMode()] : [])],
   define: {
     __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 10)),
   },
@@ -15,12 +21,14 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    fs: { allow: [searchForWorkspaceRoot(process.cwd()), path.resolve(__dirname, '../../../src/mcp/apps/browserView/widget')] },
     proxy: {
-      '/api/v1': { target: process.env.CONTROL_SERVICE_URL || 'http://127.0.0.1:8765', changeOrigin: false },
-      '/oauth': { target: process.env.CONTROL_SERVICE_URL || 'http://127.0.0.1:8765', changeOrigin: false },
-      '/.well-known': { target: process.env.CONTROL_SERVICE_URL || 'http://127.0.0.1:8765', changeOrigin: false },
-      '/bridge': { target: process.env.CONTROL_SERVICE_URL || 'http://127.0.0.1:8765', ws: true, changeOrigin: false },
-      '/mcp': { target: process.env.CONTROL_SERVICE_URL || 'http://127.0.0.1:8765', changeOrigin: false, bypass: (req) => (req.method === 'GET' ? req.url : undefined) },
+      ...localConsoleProxy,
+      '/api/v1': controlServiceProxy,
+      '/oauth': controlServiceProxy,
+      '/.well-known': controlServiceProxy,
+      '/bridge': { ...controlServiceProxy, ws: true },
+      '/mcp': { ...controlServiceProxy, bypass: (req) => (req.method === 'GET' ? req.url : undefined) },
       // The repo modal posts newsletter signups to the member-site endpoint on listeningkit.com
       // (vercel.json rewrites the same path in production). Listed before /api so it wins.
       '/api/kit': {

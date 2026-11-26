@@ -1,6 +1,8 @@
 {
   "name": "deletePost",
+  "platform": "facebook",
   "summary": "Delete the newest post on the account's own profile: its Actions menu, Move to bin, Move (useCometTrashPostMutation; Facebook empties the bin after 30 days). Writes on Facebook (--live).",
+  "effect": "delete",
   "params": [],
   "steps": [
     {
@@ -84,7 +86,7 @@
     }
   ],
   "source": {
-    "runDir": "C:/Users/0/.logCli/runs/inspect/20261020T162343_61594063207669/sequences/deletePost",
+    "runDir": "C:/Users/tester/.logCli/runs/inspect/20261020T162343_99900000000001/sequences/deletePost",
     "account": "deletePost",
     "builtAt": "2026-10-20T16:35:09.542Z"
   }

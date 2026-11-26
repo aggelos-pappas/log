@@ -1,8 +1,9 @@
+import { savedCredential } from '../../auth/credentials/index.ts'
 import { AdsPowerError, DEFAULT_LOCAL_API_URL } from './types'
 import type { AdsPowerClient, AdsPowerProfile, CreateProfileBody, LocalApiConfig, LocalApiReply, StartedBrowser } from './types'
-import { listBrowserAccounts, saveAdsPowerProfileId } from '../../marketplace/socialAccount/index'
+import { listBrowserAccounts, saveAdsPowerProfileId } from '../../platformKit/socialAccount/index'
 import { PLATFORM_SITES, PLATFORMS } from '../../cli/runner/helpers/platforms'
-import type { FacebookAccount } from '../../marketplace/socialAccount/index'
+import type { FacebookAccount } from '../../platformKit/socialAccount/index'
 import type { TwentyClient } from '../../twenty/graphql/index'
 import type { BrowserDriver, BrowserEndpoint, GateResult } from '../driver/index'
 import { planSync, profileRequest } from './helpers/index'
@@ -13,7 +14,7 @@ export const RATE_LIMIT_WAIT_MS = [2000, 4000]
 const PAGE_SIZE = 100
 
 export function localApiConfig(env: Record<string, string | undefined> = process.env): LocalApiConfig {
-  return { baseUrl: (env.ADSPOWER_HOST?.trim() || DEFAULT_LOCAL_API_URL).replace(/\/+$/, ''), apiKey: env.ADSPOWER_API_KEY?.trim() || null }
+  return { baseUrl: (savedCredential('ADSPOWER_HOST', env) || env.ADSPOWER_HOST?.trim() || DEFAULT_LOCAL_API_URL).replace(/\/+$/, ''), apiKey: savedCredential('ADSPOWER_API_KEY', env) || env.ADSPOWER_API_KEY?.trim() || null }
 }
 
 type Fetch = (url: string, init?: RequestInit) => Promise<Response>
@@ -42,6 +43,8 @@ export function createAdsPowerClient(
         }
         throw new AdsPowerError('adsPowerRateLimited', `${path}: ${reply.msg}`)
       }
+      if (/api.?key mismatch|require api.?key/i.test(reply.msg ?? '')) throw new AdsPowerError('adsPowerKeyMismatch', `${path}: ${reply.msg}`)
+      if (/paid subscription/i.test(reply.msg ?? '')) throw new AdsPowerError('adsPowerPlanLapsed', `${path}: ${reply.msg}`)
       throw new AdsPowerError('adsPowerRequestFailed', `${path}: ${reply.msg || `code ${reply.code}`}`)
     }
   }
@@ -99,7 +102,7 @@ export function createAdsPowerClient(
     async startBrowser(profileId, options = {}) {
       const data = await call<{ ws?: { puppeteer?: string }; debug_port?: string }>('POST', '/api/v2/browser-profile/start', {
         profile_id: profileId,
-        headless: '0',
+        headless: options.headless ? '1' : '0',
         last_opened_tabs: '0',
         proxy_detection: '0',
         cdp_mask: '1',
@@ -179,10 +182,11 @@ export async function ensureProfileKernel(
 }
 
 export function adsPowerHomes(env: Record<string, string | undefined> = process.env): string[] | null {
-  return homesOf(env[ADS_POWER_HOMES_ENV])
+  return homesOf(savedCredential(ADS_POWER_HOMES_ENV, env) || env[ADS_POWER_HOMES_ENV])
 }
 
 export function homesOf(value: string | undefined | null): string[] | null {
+  if (value?.trim().toLowerCase() === 'all') return null
   const homes = (value ?? '').split(',').map((h) => h.trim().toUpperCase()).filter(Boolean)
   return homes.length ? homes : null
 }

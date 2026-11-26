@@ -1,7 +1,7 @@
 import type { LoginSecrets } from '../../twenty/graphql/index'
 import type { DeviceProfile } from '../../camofox/device/index'
 import type { ErrorCode } from '../../errors/catalog/index'
-import type { PlaywrightCookie } from '../../marketplace/socialAccount/index'
+import type { PlaywrightCookie } from '../../platformKit/socialAccount/index'
 
 export interface PreparedRun {
   dir: string
@@ -12,6 +12,7 @@ export interface PreparedRun {
   captureDir: string | null
   hasSession: boolean
   readCookies(): PlaywrightCookie[]
+  browserWrote(): boolean
   readStorageState(): { cookies: PlaywrightCookie[]; origins: unknown[] }
   newDeviceProfile(): DeviceProfile | null
   cleanup(): void

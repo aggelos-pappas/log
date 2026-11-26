@@ -1,10 +1,11 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { aiIndexOf, saveAiIndex, saveVectors, vectorsFor } from '../../inbox/store/index'
-import { homedir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { BASELINE_SAMPLE, MATT_SAYS_IT_TIMES, MUTE_IF_MATT_USES, X_COMPLAINT, X_COMPLAINT_KEEP } from './types'
+import { rerankBounded, withinMs } from './helpers/bounded'
+import { BASELINE_SAMPLE, JINA_GATE_MS, OWNER_SAYS_IT_TIMES, MUTE_IF_OWNER_USES, X_COMPLAINT, X_COMPLAINT_KEEP } from './types'
 import type { AiBaseline, AiCloseMatch, AiEmbedder, AiIndex, AiIndexMeta, AiPhrase, AiReading, AiTellHit, AiTellRule } from './types'
+import { logHome } from '../../config/logHome/index'
 
 const REGEX_CHARS = /[\\()[\]{}^$*+?|.]/
 
@@ -13,7 +14,7 @@ export function aiTellsDir(): string {
 }
 
 export function aiIndexDir(): string {
-  return process.env.LOG_AI_TELLS_INDEX || join(homedir(), '.logCli', 'aiTells')
+  return process.env.LOG_AI_TELLS_INDEX || join(logHome(), 'aiTells')
 }
 
 export function valeRules(dir = join(aiTellsDir(), 'valeAiTells', 'styles')): AiTellRule[] {
@@ -28,13 +29,19 @@ export function valeRules(dir = join(aiTellsDir(), 'valeAiTells', 'styles')): Ai
   return rules
 }
 
+const PATTERNS = new WeakMap<AiTellRule, RegExp | null>()
+
 function patternOf(rule: AiTellRule): RegExp | null {
+  if (PATTERNS.has(rule)) return PATTERNS.get(rule)!
   const body = rule.tokens.map((t) => `(?:${t})`).join('|')
+  let pattern: RegExp | null = null
   try {
-    return new RegExp(rule.nonword ? body : `\\b(?:${body})\\b`, rule.ignorecase ? 'gi' : 'g')
+    pattern = new RegExp(rule.nonword ? body : `\\b(?:${body})\\b`, rule.ignorecase ? 'gi' : 'g')
   } catch {
-    return null
+    pattern = null
   }
+  PATTERNS.set(rule, pattern)
+  return pattern
 }
 
 export function ruleHits(text: string, rules: readonly AiTellRule[], muted: ReadonlySet<string> = new Set()): AiTellHit[] {
@@ -148,12 +155,12 @@ function bestPerChunk(chunkVectors: number[][], index: Pick<AiIndex, 'vectors'>)
   })
 }
 
-export function mutedRules(replies: readonly string[], rules: readonly AiTellRule[], share = MUTE_IF_MATT_USES): string[] {
+export function mutedRules(replies: readonly string[], rules: readonly AiTellRule[], share = MUTE_IF_OWNER_USES): string[] {
   if (!replies.length) return []
   return rules.filter((rule) => replies.filter((r) => ruleHits(r, [rule]).length).length / replies.length > share).map((r) => r.name)
 }
 
-export function mattsOwnPhrases(replies: readonly string[], rules: readonly AiTellRule[], atLeast = MATT_SAYS_IT_TIMES): string[] {
+export function ownersOwnPhrases(replies: readonly string[], rules: readonly AiTellRule[], atLeast = OWNER_SAYS_IT_TIMES): string[] {
   const counts = new Map<string, number>()
   for (const reply of replies) for (const match of new Set(ruleHits(reply, rules).map((h) => h.match.toLowerCase()))) counts.set(match, (counts.get(match) ?? 0) + 1)
   return [...counts].filter(([, n]) => n >= atLeast).map(([match]) => match).sort()
@@ -169,7 +176,7 @@ export async function buildAiIndex(embedder: AiEmbedder, replies: readonly strin
   const vectors = embedded.filter((_, i) => kept[i])
   const index = { vectors: vectors.map((v) => Float32Array.from(v)) }
   const sample = replies.filter((r) => r.trim().split(/\s+/).length >= 3).slice(-BASELINE_SAMPLE)
-  log(`ai tells: measuring how close ${sample.length} of matt's own messages sit to them`)
+  log(`ai tells: measuring how close ${sample.length} of the owner's own messages sit to them`)
   const scores: number[] = []
   const chunked = sample.map((r) => chunksOf(r))
   const flat = await embedder.embed(chunked.flat())
@@ -179,7 +186,7 @@ export async function buildAiIndex(embedder: AiEmbedder, replies: readonly strin
     at += chunks.length
     scores.push(Math.max(...bestPerChunk(mine, index).map((b) => b.cosine)))
   }
-  const baseline: AiBaseline = { messages: scores.length, p50: percentile(scores, 50), p99: percentile(scores, 99), mutedRules: mutedRules(replies, rules), mattsPhrases: mattsOwnPhrases(replies, rules) }
+  const baseline: AiBaseline = { messages: scores.length, p50: percentile(scores, 50), p99: percentile(scores, 99), mutedRules: mutedRules(replies, rules), ownersPhrases: ownersOwnPhrases(replies, rules) }
   const meta: AiIndexMeta = { model: embedder.model, dimensions: embedder.dimensions, builtAt: new Date().toISOString(), phrases, baseline }
   saveVectors(embedder.model, embedder.dimensions, phrases.map((p, i) => ({ text: p.text, vector: vectors[i], kind: 'aiPhrase' })))
   saveAiIndex(dir, embedder.model, meta)
@@ -196,13 +203,20 @@ export function openAiIndex(dir = aiIndexDir(), model: string | null = null): Ai
   return { ...meta, vectors: found as Float32Array[] }
 }
 
-export async function readAiTells(text: string, index: AiIndex, embedder: AiEmbedder, rules = valeRules(), words = overusedWords(), top = 8): Promise<AiReading> {
-  const hits = ruleHits(text, rules, new Set([...index.baseline.mutedRules, ...(index.baseline.mattsPhrases ?? [])]))
+export async function readAiTells(text: string, index: AiIndex, embedder: AiEmbedder, rules = valeRules(), words = overusedWords(), top = 8, ms = JINA_GATE_MS): Promise<AiReading> {
+  const hits = ruleHits(text, rules, new Set([...index.baseline.mutedRules, ...(index.baseline.ownersPhrases ?? [])]))
   const overused = [...new Set(text.toLowerCase().match(/[a-z]+/g) ?? [])].filter((w) => words.has(w)).map((w) => ({ word: w, ratio: words.get(w)! }))
   const chunks = chunksOf(text)
-  const best = chunks.length ? bestPerChunk(await embedder.embed(chunks), index) : []
+  let embedded: number[][] = []
+  try {
+    embedded = chunks.length ? await withinMs(ms, () => embedder.embed(chunks), 'jina embeddings') : []
+  } catch (error) {
+    const skipped = `the closeness to AI phrases was skipped: ${error instanceof Error ? error.message : String(error)}`
+    return { hits, overused, closest: [], score: 0, p50: index.baseline.p50, p99: index.baseline.p99, flagged: false, pass: !hits.length, skipped }
+  }
+  const best = embedded.length ? bestPerChunk(embedded, index) : []
   const ranked = best.sort((a, b) => b.cosine - a.cosine).slice(0, top)
-  const reranks = ranked.length ? await embedder.rerank(text, ranked.map((r) => index.phrases[r.phrase].text)) : []
+  const reranks = ranked.length ? (await rerankBounded(text, ranked.map((r) => index.phrases[r.phrase].text), () => embedder, ms)) ?? [] : []
   const closest: AiCloseMatch[] = ranked.map((r, i) => ({ chunk: chunks[r.chunk], phrase: index.phrases[r.phrase].text, source: index.phrases[r.phrase].source, cosine: Number(r.cosine.toFixed(4)), rerank: reranks[i] === undefined ? null : Number(reranks[i].toFixed(4)) }))
   const score = closest[0]?.cosine ?? 0
   const flagged = score > index.baseline.p99
@@ -212,7 +226,7 @@ export async function readAiTells(text: string, index: AiIndex, embedder: AiEmbe
 export function aiTellsLine(reading: AiReading): string {
   const head = reading.pass ? 'ai tells: none' : 'AI TELLS'
   const hits = reading.hits.map((h) => `"${h.match}" (${h.rule})`).join(', ')
-  const close = reading.closest[0] ? `closest AI phrase "${reading.closest[0].phrase}" to "${reading.closest[0].chunk}" at ${reading.score.toFixed(3)} (matt's own p50 ${reading.p50.toFixed(3)}, p99 ${reading.p99.toFixed(3)}${reading.flagged ? ', past his p99' : ''})` : 'nothing to compare'
+  const close = reading.skipped ? reading.skipped : reading.closest[0] ? `closest AI phrase "${reading.closest[0].phrase}" to "${reading.closest[0].chunk}" at ${reading.score.toFixed(3)} (the owner's own p50 ${reading.p50.toFixed(3)}, p99 ${reading.p99.toFixed(3)}${reading.flagged ? ', past his p99' : ''})` : 'nothing to compare'
   const words = reading.overused.length ? `; words AI overuses: ${reading.overused.map((w) => `${w.word} ×${w.ratio.toFixed(1)}`).join(', ')}` : ''
   return `${head}${hits ? `: ${hits}` : ''}; ${close}${words}`
 }

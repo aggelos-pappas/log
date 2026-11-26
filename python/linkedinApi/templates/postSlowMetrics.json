@@ -1,0 +1,145 @@
+{
+  "requestId": "com.linkedin.sdui.requests.creatoranalytics.spaSlowMetrics",
+  "serverRequest": {
+    "requestId": "com.linkedin.sdui.requests.creatoranalytics.spaSlowMetrics",
+    "requestedArguments": {
+      "$type": "proto.sdui.actions.requests.RequestedArguments",
+      "requestedStateKeys": [],
+      "payload": {
+        "updateKey": {
+          "feedType": 47,
+          "items": [
+            {
+              "feedUpdateUrn": {
+                "updateUrnActivityUrn": {
+                  "activityUrn": {
+                    "activityId": "{{activityId}}"
+                  }
+                }
+              },
+              "trackingId": "{{trackingId}}"
+            }
+          ],
+          "aggregationReasonTypes": [],
+          "isVideoCarousel": false
+        }
+      },
+      "requestMetadata": {
+        "$type": "proto.sdui.common.RequestMetadata"
+      }
+    },
+    "onClientRequestFailureAction": {
+      "actions": [
+        {
+          "$type": "proto.sdui.actions.core.ServerRequest",
+          "value": {
+            "requestId": "com.linkedin.sdui.requests.creatoranalytics.spaSlowMetrics",
+            "requestedArguments": {
+              "$type": "proto.sdui.actions.requests.RequestedArguments",
+              "requestedStateKeys": [],
+              "payload": {
+                "updateKey": {
+                  "feedType": 47,
+                  "items": [
+                    {
+                      "feedUpdateUrn": {
+                        "updateUrnActivityUrn": {
+                          "activityUrn": {
+                            "activityId": "{{activityId}}"
+                          }
+                        }
+                      },
+                      "trackingId": "{{trackingId}}"
+                    }
+                  ],
+                  "aggregationReasonTypes": [],
+                  "isVideoCarousel": false
+                },
+                "pollAttempt": 1
+              },
+              "requestMetadata": {
+                "$type": "proto.sdui.common.RequestMetadata"
+              }
+            },
+            "onClientRequestFailureAction": {
+              "actions": [
+                {
+                  "$type": "proto.sdui.actions.core.ServerRequest",
+                  "value": {
+                    "requestId": "com.linkedin.sdui.requests.creatoranalytics.spaSlowMetrics",
+                    "requestedArguments": {
+                      "$type": "proto.sdui.actions.requests.RequestedArguments",
+                      "requestedStateKeys": [],
+                      "payload": {
+                        "updateKey": {
+                          "feedType": 47,
+                          "items": [
+                            {
+                              "feedUpdateUrn": {
+                                "updateUrnActivityUrn": {
+                                  "activityUrn": {
+                                    "activityId": "{{activityId}}"
+                                  }
+                                }
+                              },
+                              "trackingId": "{{trackingId}}"
+                            }
+                          ],
+                          "aggregationReasonTypes": [],
+                          "isVideoCarousel": false
+                        },
+                        "pollAttempt": 2
+                      },
+                      "requestMetadata": {
+                        "$type": "proto.sdui.common.RequestMetadata"
+                      }
+                    },
+                    "isApfcEnabled": false,
+                    "isStreaming": false,
+                    "rumPageKey": ""
+                  }
+                }
+              ]
+            },
+            "isApfcEnabled": false,
+            "isStreaming": false,
+            "rumPageKey": ""
+          }
+        }
+      ]
+    },
+    "isApfcEnabled": false,
+    "isStreaming": false,
+    "rumPageKey": ""
+  },
+  "states": [],
+  "requestedArguments": {
+    "$type": "proto.sdui.actions.requests.RequestedArguments",
+    "requestedStateKeys": [],
+    "payload": {
+      "updateKey": {
+        "feedType": 47,
+        "items": [
+          {
+            "feedUpdateUrn": {
+              "updateUrnActivityUrn": {
+                "activityUrn": {
+                  "activityId": "{{activityId}}"
+                }
+              }
+            },
+            "trackingId": "{{trackingId}}"
+          }
+        ],
+        "aggregationReasonTypes": [],
+        "isVideoCarousel": false
+      }
+    },
+    "requestMetadata": {
+      "$type": "proto.sdui.common.RequestMetadata"
+    },
+    "states": [],
+    "screenId": "com.linkedin.sdui.flagshipnav.creatoranalytics.MembersSPAContainer",
+    "knownTemplateIds": []
+  }
+}

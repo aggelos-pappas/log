@@ -13,7 +13,7 @@ Content-Disposition: form-data; name`, `------WebKitFormBoundarysgvHPqqp5TQe7MPT
 Content-Disposition: form-data; name`, `------WebKitFormBoundary0wPjwuoJYmvT1P3D
 Content-Disposition: form-data; name` |
 | Reads | `__ar`, `rid`, `payload`, `lid` |
-| Called from | `runs/inspect/20261103T185330_mattinferencesaver/script3.js:746 anonymous`, `runs/inspect/20261103T185330_mattinferencesaver/script4.js:1309 anonymous`, `runs/inspect/20261103T185330_mattinferencesaver/script4.js:866 anonymous`, `runs/inspect/20261103T185330_mattinferencesaver/script30.js:108 anonymous` |
+| Called from | `runs/inspect/20261103T185330_instagramAccount/script3.js:746 anonymous`, `runs/inspect/20261103T185330_instagramAccount/script4.js:1309 anonymous`, `runs/inspect/20261103T185330_instagramAccount/script4.js:866 anonymous`, `runs/inspect/20261103T185330_instagramAccount/script30.js:108 anonymous` |
 | rea | `ev_68f5d753b5ee697e2b34f2d44b07d990d78a155f0aa9263cc7d2f529c931d638` |
 
 Seen 20 time(s) in 2 run(s).
@@ -33,7 +33,7 @@ Seen 20 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T185330_mattinferencesaver**, upload: paulie.jpg handed to the file chooser: 200, 178 ms
+**runs/inspect/20261103T185330_instagramAccount**, upload: paulie.jpg handed to the file chooser: 200, 178 ms
 
 Sent:
 
@@ -55,11 +55,11 @@ Answered:
   "__ar": 1,
   "rid": "AhzVH6gBp03M67VQRDHXuY3",
   "payload": null,
-  "lid": "7704020494487878755"
+  "lid": "<id:1>"
 }
 ```
 
-**runs/inspect/20261103T185330_mattinferencesaver**, step 4: click e783: 200, 182 ms
+**runs/inspect/20261103T185330_instagramAccount**, step 4: click e783: 200, 182 ms
 
 Sent:
 
@@ -80,11 +80,11 @@ Answered:
   "__ar": 1,
   "rid": "AVHNigzxBexyRQJVtnEiHoC",
   "payload": null,
-  "lid": "7704020622278303489"
+  "lid": "<id:2>"
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 1: goto /: 200, 202 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 1: goto /: 200, 202 ms
 
 Sent:
 
@@ -95,7 +95,7 @@ Sent:
     "ph": "C3"
   },
   "body": {
-    "------WebKitFormBoundaryhx5lADbY1fBdIwIw\r\nContent-Disposition: form-data; name": "\"ts\"\r\n\r\n1793728825702\r\n------WebKitFormBoundaryhx5lADbY1fBdIwIw\r\nContent-Disposition: form-data; name=\"q\"\r\n\r\n[{\"app_id\":\"936619743392459\",\"posts\":[[\"falco:ig_web_page_view\",{\"e\":\"{\\\"module\\\":\\\"CAAIGLoginHomepage\\\",\\\"nav_chain\\\":\\\"CAAIGLoginHomepageRoot:CAAIGLoginHomepage:1:via_cold_start\\\",\\\"referrer\\\":\\\"\\\",\\\"url\\\":\\\"https://www.instagram.com/\\\",\\\"web_analytics_session_id\\\":\\\"c78ouj:c3tx3c:zgmoiu\\… (699 chars)"
+    "------WebKitFormBoundaryhx5lADbY1fBdIwIw\r\nContent-Disposition: form-data; name": "\"ts\"\r\n\r\n1793728825702\r\n------WebKitFormBoundaryhx5lADbY1fBdIwIw\r\nContent-Disposition: form-data; name=\"q\"\r\n\r\n[{\"app_id\":\"<id:3>\",\"posts\":[[\"falco:ig_web_page_view\",{\"e\":\"{\\\"module\\\":\\\"CAAIGLoginHomepage\\\",\\\"nav_chain\\\":\\\"CAAIGLoginHomepageRoot:CAAIGLoginHomepage:1:via_cold_start\\\",\\\"referrer\\\":\\\"\\\",\\\"url\\\":\\\"https://www.instagram.com/\\\",\\\"web_analytics_session_id\\\":\\\"c78ouj:c3tx3c:zgmoiu\\… (699 chars)"
   }
 }
 ```
@@ -107,7 +107,7 @@ Answered:
   "__ar": 1,
   "rid": "A-c31ZV38ap15654PxyR7Uz",
   "payload": null,
-  "lid": "7704006642877187368"
+  "lid": "<id:4>"
 }
 ```
 

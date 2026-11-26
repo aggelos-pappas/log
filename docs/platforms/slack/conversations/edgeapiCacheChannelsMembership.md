@@ -10,7 +10,7 @@
 | Path | `edgeapi.slack.com/cache/channels/membership` |
 | Sends | — |
 | Reads | `channel`, `members`, `ok` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script38.js:771 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script38.js:771 anonymous` |
 | rea | `ev_c768a8dd3a32ade2e987e251d0627a66b7d798dc007c87a92e41828826c7a8e2` |
 
 Seen 1 time(s) in 1 run(s).
@@ -23,7 +23,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 392 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 392 ms
 
 Sent:
 
@@ -34,7 +34,7 @@ Sent:
     "fp": "6f",
     "_x_num_retries": "0"
   },
-  "body": "{\"token\":\"xoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\",\"channel\":\"C0C4L7RSTGX\",\"users\":[\"U0C4L7RF7HD\"],\"as_admin\":false}"
+  "body": "{\"token\":\"<slackToken>\",\"channel\":\"<channelId:1>\",\"users\":[\"<userId:1>\"],\"as_admin\":false}"
 }
 ```
 
@@ -42,9 +42,9 @@ Answered:
 
 ```json
 {
-  "channel": "C0C4L7RSTGX",
+  "channel": "<channelId:1>",
   "members": [
-    "U0C4L7RF7HD"
+    "<userId:1>"
   ],
   "ok": true
 }

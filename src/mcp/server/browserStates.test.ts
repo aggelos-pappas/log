@@ -10,31 +10,31 @@ const CHECKPOINT = "https://www.facebook.com/checkpoint/1501092823525282/";
 const at = (url: string, text: string, extra: Partial<BrowserAt> = {}): BrowserAt => ({ account: "bethlehem", step: "04_snapshot", url, text, failed: null, ...extra });
 
 describe("where every open browser is, in every tool result (rules 54-55)", () => {
-  test("a checkpoint's first page is never pressed through: no next, matt is told the account is deactivated (rule 118)", () => {
+  test("a checkpoint's first page is never pressed through: no next, the owner is told the account is deactivated (rule 118)", () => {
     const view = browserView(at(CHECKPOINT, "- generic [ref=e62]: Fitri, confirm that you're human to use your account\n- generic [ref=e69]: Continue"));
     expect(view.state).toMatchObject({ id: "checkpointStart", person: true });
     expect(view.next).toBeNull();
-    expect(view.needsMatt).toContain("deactivated");
+    expect(view.needsOwner).toContain("deactivated");
   });
 
-  test("a video selfie is matt's: no next, needsMatt says so", () => {
+  test("a video selfie is the owner's: no next, needsOwner says so", () => {
     const view = browserView(at(CHECKPOINT, "- generic [ref=e130]: Confirm that you're a real person with a video selfie"));
     expect(view.state).toMatchObject({ id: "videoSelfie", person: true });
     expect(view.next).toBeNull();
-    expect(view.needsMatt).toContain("video selfie");
+    expect(view.needsOwner).toContain("video selfie");
   });
 
-  test("Messenger's Create PIN runs the recorded flow when the PIN is in Twenty, and is matt's when it isn't", () => {
+  test("Messenger's Create PIN runs the recorded flow when the PIN is in Twenty, and is the owner's when it isn't", () => {
     const text = "- heading \"Create a PIN to access your chats on any device\" [ref=e3]";
-    expect(browserView(at("https://www.facebook.com/messages/", text, { messengerPin: true })).next).toEqual({ tool: "flowMessengerPinCreateLive", input: { account: "bethlehem", confirmLive: true } });
+    expect(browserView(at("https://www.facebook.com/messages/", text, { messengerPin: true })).next).toEqual({ tool: "facebookFlowMessengerPinCreateLive", input: { account: "bethlehem", confirmLive: true } });
     const without = browserView(at("https://www.facebook.com/messages/", text));
     expect(without.next).toBeNull();
-    expect(without.needsMatt).toContain("messenger pin");
+    expect(without.needsOwner).toContain("messenger pin");
   });
 
   test("a failed step with no known state is a snapshot first; a clear page has nothing to do", () => {
     expect(browserView(at("https://www.facebook.com/marketplace/", "- main [ref=e1]", { failed: "timeout" })).next).toEqual({ tool: "inspectDo", input: { account: "bethlehem", action: "snapshot" } });
-    expect(browserView(at("https://www.facebook.com/marketplace/", "- main [ref=e1]"))).toMatchObject({ state: null, next: null, needsMatt: null });
+    expect(browserView(at("https://www.facebook.com/marketplace/", "- main [ref=e1]"))).toMatchObject({ state: null, next: null, needsOwner: null });
   });
 
   test("a label without a ref of its own takes its nearest parent's", () => {
@@ -52,10 +52,10 @@ describe("where every open browser is, in every tool result (rules 54-55)", () =
     }
   });
 
-  test("a group members list is named with no next call and nothing for matt", () => {
+  test("a group members list is named with no next call and nothing for the owner", () => {
     const exchanges = [{ offsetMs: 1, kind: "api" as const, name: "GroupsCometMembersPageNewMembersSectionRefetchQuery", method: "POST", host: "www.facebook.com", path: "/api/graphql/", status: 200, ms: 600, sent: {}, answer: { data: { node: { new_members: { edges: [{ node: { id: "1" } }] } } } }, errors: [], known: false }];
     const view = browserView(at("https://www.facebook.com/groups/junkremovalwinners/members", "", { exchanges }));
-    expect(view).toMatchObject({ state: { id: "groupMembersList", person: false }, next: null, needsMatt: null });
+    expect(view).toMatchObject({ state: { id: "groupMembersList", person: false }, next: null, needsOwner: null });
   });
 
   test("the result's first lines say it, and its structured part carries it", async () => {
@@ -65,14 +65,14 @@ describe("where every open browser is, in every tool result (rules 54-55)", () =
     const result = await runToolCall("errors", { code: "locationNotSet" }, { twenty: marketplaceFixture() }, () => {}, () => views);
     const text = (result.content as { text: string }[])[0].text;
     expect(text.split("\n")[0]).toContain("bethlehem on https://www.facebook.com/");
-    expect(result.structuredContent).toMatchObject({ next: { tool: "inspectDoLive" }, needsMatt: null, browsers: [{ account: "bethlehem", state: { id: "rememberPassword" } }] });
-    const refused = await runToolCall("check", {}, {}, () => {}, () => views);
+    expect(result.structuredContent).toMatchObject({ next: { tool: "inspectDoLive" }, needsOwner: null, browsers: [{ account: "bethlehem", state: { id: "rememberPassword" } }] });
+    const refused = await runToolCall("facebookCheck", {}, {}, () => {}, () => views);
     expect(refused.isError).toBe(true);
     expect(refused.structuredContent).toMatchObject({ next: { tool: "inspectDoLive" } });
   });
 
   test("progress carries every streamed line with its time", async () => {
-    const result = await runToolCall("accounts", {}, { twenty: marketplaceFixture() }, () => {}, () => []);
+    const result = await runToolCall("facebookAccounts", {}, { twenty: marketplaceFixture() }, () => {}, () => []);
     const progress = (result.structuredContent as { progress: { at: string; source: string; line: string }[] }).progress;
     expect(progress.length).toBeGreaterThan(0);
     for (const p of progress) expect(Number.isNaN(Date.parse(p.at))).toBe(false);

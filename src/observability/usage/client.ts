@@ -1,8 +1,9 @@
 import { db } from '../../inbox/store/index'
-import type { UsageBreakdown, UsageBucket, UsageKind, UsageSummary, UsageTotals } from './types'
+import type { UsageBreakdown, UsageBucket, UsageCall, UsageKind, UsageSummary, UsageTotals } from './types'
 
 const dayMs = 86400000
-type CallRow = { tool: string; startedAt: number; ms: number; ok: number }
+export const RECENT_CALLS = 40
+export type CallRow = { spanId?: string; tool: string; startedAt: number; ms: number; ok: number }
 type Accumulator = { calls: number; failed: number; durations: number[] }
 
 function kindOf(tool: string): UsageKind {
@@ -37,13 +38,22 @@ function summarize(group: Accumulator): UsageTotals {
   return { calls: group.calls, succeeded: group.calls - group.failed, failed: group.failed, p50Ms: percentile(0.5), p95Ms: percentile(0.95) }
 }
 
-export function readUsageSummary(fromMs: number, toMs = Date.now()): UsageSummary {
+function checkRange(fromMs: number, toMs: number) {
   if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || fromMs >= toMs || toMs - fromMs > dayMs * 31) throw new Error('usageRangeInvalid')
+}
+
+export function readUsageSummary(fromMs: number, toMs = Date.now()): UsageSummary {
+  checkRange(fromMs, toMs)
+  const rows = db().prepare("SELECT spanId, tool, startedAt, ms, ok FROM spans WHERE parentId IS NULL AND name = 'call' AND startedAt >= ? AND startedAt < ? ORDER BY startedAt").all(fromMs, toMs) as CallRow[]
+  return summarizeUsage(rows, fromMs, toMs)
+}
+
+export function summarizeUsage(rows: readonly CallRow[], fromMs: number, toMs: number): UsageSummary {
+  checkRange(fromMs, toMs)
   const totals = empty()
   const days = new Map<number, Accumulator>()
   const kinds = new Map<UsageKind, Accumulator>()
   for (let day = Math.floor(fromMs / dayMs) * dayMs; day < toMs; day += dayMs) days.set(day, empty())
-  const rows = db().prepare("SELECT tool, startedAt, ms, ok FROM spans WHERE parentId IS NULL AND name = 'call' AND startedAt >= ? AND startedAt < ? ORDER BY startedAt").all(fromMs, toMs) as CallRow[]
   for (const row of rows) {
     const kind = kindOf(row.tool)
     const category = kinds.get(kind) ?? empty()
@@ -55,5 +65,5 @@ export function readUsageSummary(fromMs: number, toMs = Date.now()): UsageSummar
   }
   const buckets: UsageBucket[] = [...days].map(([start, group]) => ({ start: new Date(start).toISOString(), ...summarize(group) }))
   const breakdown: UsageBreakdown[] = [...kinds].map(([kind, group]) => ({ kind, ...summarize(group) })).sort((left, right) => right.calls - left.calls)
-  return { schemaVersion: 1, source: 'workspace', generatedAt: new Date().toISOString(), from: new Date(fromMs).toISOString(), to: new Date(toMs).toISOString(), totals: summarize(totals), buckets, kinds: breakdown }
+  return { schemaVersion: 1, source: 'workspace', generatedAt: new Date().toISOString(), from: new Date(fromMs).toISOString(), to: new Date(toMs).toISOString(), totals: summarize(totals), buckets, kinds: breakdown, recentCalls: rows.slice(-RECENT_CALLS).reverse().map((row): UsageCall => ({ id: String(row.spanId ?? row.startedAt), time: row.startedAt, kind: kindOf(row.tool), status: row.ok === 0 ? 'failed' : 'succeeded', durationMs: Math.max(0, row.ms) })) }
 }

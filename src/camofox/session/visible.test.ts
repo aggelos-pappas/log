@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const python = join(import.meta.dir, "..", "..", "..", "python");
 const pyFiles = (readdirSync(python, { recursive: true }) as string[]).filter((f) => f.endsWith(".py"));
@@ -19,6 +20,8 @@ describe("Camoufox always launches visible", () => {
   test("the gate builds headless=False, humanize and showcursor into every launch", () => {
     const device = read("deviceProfile.py");
     expect(device).toContain('config["humanize"] = True');
+    expect(device).toContain('config["humanize"] = False');
+    expect(read("visibleBrowser.py")).toContain("return HUMANIZE_OFF_SECONDS if myuriInput.available() else HUMANIZE_HOP_SECONDS");
     expect(device).toContain('config["humanize:maxTime"] = visible["humanize"]');
     expect(device).toContain('config["showcursor"] = bool(visible["showcursor"])');
     expect(read("proxyGate.py")).toContain('and "headless" in kwargs and kwargs["headless"] is False');
@@ -42,7 +45,7 @@ describe("Camoufox always launches visible", () => {
       const text = readFileSync(join(python, name), "utf8");
       expect(/headless\s*=\s*True|get\("headless"/.test(text), name).toBe(false);
     }
-  });
+  }, SPAWNS_PROCESS_MS);
 });
 
 describe("no browser without the account's proxy (rule 12)", () => {
@@ -92,20 +95,20 @@ describe("an attached browser's own exit is checked when the proxy hands it anot
   const run = (where: string) => {
     const script = [
       "import sys", 'sys.path.insert(0, ".")', "from browser import proxyGate",
-      'proxyGate._armed.update({"exitIp": "98.235.13.173", "country": "US", "timezone": "America/New_York"})',
-      `print(proxyGate.exit_checked("73.130.225.59", lambda ip: ${where}))`, 'print(proxyGate._armed["exitIp"])',
+      'proxyGate._armed.update({"exitIp": "198.51.100.20", "country": "US", "timezone": "America/New_York"})',
+      `print(proxyGate.exit_checked("198.51.100.21", lambda ip: ${where}))`, 'print(proxyGate._armed["exitIp"])',
     ].join("\n");
     return require("node:child_process").spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { cwd: python, encoding: "utf8" }).stdout.trim().split(/\r?\n/).slice(-2);
   };
 
   test("same country and timezone: the browser's exit is pinned", () => {
-    expect(run('{"country": "US", "timezone": "America/New_York"}')).toEqual(["None", "73.130.225.59"]);
+    expect(run('{"country": "US", "timezone": "America/New_York"}')).toEqual(["None", "198.51.100.21"]);
   });
 
   test("another timezone or country is refused and nothing is pinned", () => {
     const [detail, pinned] = run('{"country": "US", "timezone": "America/Chicago"}');
-    expect(detail).toContain("the gate checked 98.235.13.173");
-    expect(pinned).toBe("98.235.13.173");
-    expect(run('{"country": "MX", "timezone": "America/New_York"}')[1]).toBe("98.235.13.173");
-  });
+    expect(detail).toContain("the gate checked 198.51.100.20");
+    expect(pinned).toBe("198.51.100.20");
+    expect(run('{"country": "MX", "timezone": "America/New_York"}')[1]).toBe("198.51.100.20");
+  }, SPAWNS_PROCESS_MS);
 });

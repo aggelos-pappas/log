@@ -3,13 +3,14 @@ import { runTwitterEngine, runTwitterEngineLive } from "../../twitter/account/se
 import { runInspectSession, sendInspectCommand } from "../../browser/inspect/index.ts";
 import { startConnectSession, startProfileSession, startSession } from "../../camofox/session/index.ts";
 import { runWorker } from "../../camofox/worker/index.ts";
-import { listAccounts } from "../../marketplace/account/index.ts";
-import { listListings } from "../../marketplace/listing/index.ts";
+import { listAccounts } from "../../platformKit/account/index.ts";
+import { listListings } from "../../facebook/marketplace/listing/index.ts";
 import { createTwentyClient, withLocalAccounts } from "../../twenty/graphql/index.ts";
 import { runRedditEngine } from "../../reddit/account/session/index.ts";
 import { runDiscordEngine, runDiscordEngineLive } from "../../discord/account/session/index.ts";
-import { isPlatform, renderUsage, resolvePlatformForm, RETIRED_COMMANDS } from "./helpers/index.ts";
+import { isPlatform, renderUsage, resolvePlatformForm, resultCodeOf, RETIRED_COMMANDS } from "./helpers/index.ts";
 import { COMMAND_INDEX } from "./helpers/commandIndex.ts";
+import { dbOverride, writesSinceOpen } from "../../storage/schema/index.ts";
 import type { CommandIndexEntry } from "./helpers/commandIndex.ts";
 import type { Command, CommandContext } from "./types.ts";
 import { runLinkedinEngine } from "../../linkedin/account/session/index.ts";
@@ -20,6 +21,7 @@ import { runTiktokEngine } from "../../tiktok/account/session/index.ts";
 export const ALIASES: Record<string, string> = {
   firefoxCapture: "capture",
   "--help": "help",
+  "--version": "version",
   "-h": "help",
   help: "help",
 };
@@ -36,13 +38,16 @@ export function createContext(overrides: Partial<CommandContext> = {}): CommandC
     sendInspect: overrides.sendInspect ?? defaultSendInspect,
     adsPower: overrides.adsPower,
     decisions: overrides.decisions,
+    embedder: overrides.embedder,
     connectTiming: overrides.connectTiming,
     out: overrides.out ?? ((line) => console.log(line)),
     err: overrides.err ?? ((line) => console.error(line)),
+    refused: overrides.refused,
     image: overrides.image,
     now: overrides.now ?? (() => new Date()),
     sleep: overrides.sleep,
     cancelled: overrides.cancelled,
+    cookiePrompts: overrides.cookiePrompts,
     directRead: overrides.directRead ?? readGroupDirect,
     directTwitter: overrides.directTwitter ?? runTwitterEngine,
     directTwitterLive: overrides.directTwitterLive ?? runTwitterEngineLive,
@@ -82,6 +87,7 @@ export async function runWith(argv: string[], context: Partial<CommandContext> |
   const proxy = takeProxyMs(argv);
   if (proxy.error) {
     ctx.err(proxy.error);
+    ctx.refused?.("inputInvalid");
     return 1;
   }
   if (proxy.proxyMs === null) return dispatch(ctx, proxy.argv);
@@ -107,13 +113,15 @@ export async function dispatchWith(ctx: CommandContext, argv: string[], commands
     ctx.out(renderUsage([...commands]));
     return 0;
   }
-  if (RETIRED_COMMANDS[requested]) { ctx.err(RETIRED_COMMANDS[requested](rest)); return 1; }
+  if (RETIRED_COMMANDS[requested]) { ctx.err(RETIRED_COMMANDS[requested](rest)); ctx.refused?.("toolUnknown"); return 1; }
   const form = resolvePlatformForm([requested, ...rest], findIn(commands));
   if (!form.ok) {
     ctx.err(form.error);
+    ctx.refused?.("inputInvalid");
     return 1;
   }
   if (!form.command) {
+    ctx.refused?.("toolUnknown");
     ctx.err(`Unknown command: ${first}
 `);
     ctx.err(renderUsage([...commands]));
@@ -122,10 +130,29 @@ export async function dispatchWith(ctx: CommandContext, argv: string[], commands
   return runOne(ctx, form.command, form.argv);
 }
 
+function withDb(stdout: string, path: string): string {
+  try {
+    const parsed = JSON.parse(stdout) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? JSON.stringify({ ...parsed, db: path }, null, 2) : stdout;
+  } catch {
+    return stdout;
+  }
+}
+
 async function runOne(ctx: CommandContext, command: Command, argv: string[]): Promise<number> {
+  const override = dbOverride();
+  const before = override ? writesSinceOpen(override) : 0;
   const result = await command.run(ctx, argv);
-  if (result.stdout) ctx.out(result.stdout);
+  const wrote = override && writesSinceOpen(override) > before ? override : null;
+  if (wrote) {
+    ctx.err(`writing to ${wrote} (LOG_DB is set; not your usual log.db)`);
+    ctx.wroteTo?.(wrote);
+  }
+  const stdout = wrote && result.stdout ? withDb(result.stdout, wrote) : result.stdout;
+  if (stdout) ctx.out(stdout);
   if (result.stderr) ctx.err(result.stderr);
+  const code = resultCodeOf(result);
+  if (code) ctx.refused?.(code);
   return result.code;
 }
 
@@ -141,6 +168,15 @@ export async function runFast(argv: string[], context?: Partial<CommandContext>,
   const entry = form?.ok && form.command ? form.command : null;
   const command = entry ? await loadIndexed(entry) : undefined;
   if (!entry || !command || command.name !== entry.name) return (await full())(argv, context);
+  if (command.longRunning) {
+    const [{ gateCli }, { busyJob, heldByOther }] = await Promise.all([import("../../platformKit/gates/client.ts"), import("../../mcp/jobs/index.ts")]);
+    const held = gateCli(command, rest, { busy: (account) => heldByOther(busyJob(account)) });
+    if (held) {
+      (context?.err ?? ((line: string) => console.error(line)))(held.message);
+      context?.refused?.(held.code);
+      return 1;
+    }
+  }
   return runWith(argv, context, (ctx, args) => {
     const again = resolvePlatformForm([ALIASES[args[0]] ?? args[0], ...args.slice(1)], findIn([command]));
     return again.ok && again.command ? runOne(ctx, again.command, again.argv) : dispatchWith(ctx, args, [command]);

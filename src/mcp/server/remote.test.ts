@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { isAppTool } from "../apps/index.ts";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { createLogMcpServer, serveLogMcpHttp, TOOL_RESULT_SCHEMA } from "./index.ts";
+import { reportOutputSchema } from "../apps/report/index.ts";
+import { LOADS_EVERY_TOOL_MS, STARTS_SERVER_MS } from "../../../scripts/tests/timeouts.ts";
 
 const stops: (() => void)[] = [];
 afterEach(() => stops.splice(0).forEach((stop) => stop()));
@@ -27,13 +30,13 @@ describe("the log MCP server over Streamable HTTP (remote)", () => {
     const served = serve("s3cret");
     const client = await clientOf(served.url, "s3cret");
     const { tools } = await client.listTools();
-    expect(tools.some((t) => t.name === "join")).toBe(true);
-    const result = await client.callTool({ name: "accounts", arguments: { json: true } });
+    expect(tools.some((t) => t.name === "facebookJoinGroup")).toBe(true);
+    const result = await client.callTool({ name: "facebookAccounts", arguments: { json: true } });
     expect(result.isError).toBe(false);
     const structured = result.structuredContent as { exit: number; ok: boolean; json: unknown };
     expect(structured).toMatchObject({ exit: 0, ok: true });
     expect(Array.isArray(structured.json) || typeof structured.json === "object").toBe(true);
-  });
+  }, STARTS_SERVER_MS);
 
   test("without the token: 401, nothing runs", async () => {
     const served = serve("s3cret");
@@ -48,10 +51,10 @@ describe("the log MCP server over Streamable HTTP (remote)", () => {
   test("--live is only the live tool, and it still needs confirmLive over HTTP (rule 10)", async () => {
     const client = await clientOf(serve(null).url, null);
     const args = ["group", "--account", "galwayOne", "--group", "123", "--live"];
-    const plain = await client.callTool({ name: "join", arguments: { args } });
+    const plain = await client.callTool({ name: "facebookJoin", arguments: { args } });
     expect(plain.isError).toBe(true);
-    expect((plain.structuredContent as { stderr: string }).stderr).toContain("joinLive");
-    const unconfirmed = await client.callTool({ name: "joinLive", arguments: { args } });
+    expect((plain.structuredContent as { stderr: string }).stderr).toContain("facebookJoinLive");
+    const unconfirmed = await client.callTool({ name: "facebookJoinLive", arguments: { args } });
     expect(unconfirmed.isError).toBe(true);
     expect((unconfirmed.structuredContent as { stderr: string }).stderr).toContain("confirmLive");
   });
@@ -61,10 +64,10 @@ describe("--bypass over MCP (rule 20)", () => {
   test("refused without confirmBypass, before anything runs; runs with it", async () => {
     const client = await clientOf(serve(null).url, null);
     const args = ["group", "--account", "galwayOne", "--group", "123", "--show", "--bypass"];
-    const refused = await client.callTool({ name: "join", arguments: { args } });
+    const refused = await client.callTool({ name: "facebookJoin", arguments: { args } });
     expect(refused.isError).toBe(true);
     expect((refused.structuredContent as { stderr: string }).stderr).toContain("confirmBypass");
-    const ran = await client.callTool({ name: "join", arguments: { args, confirmBypass: true } });
+    const ran = await client.callTool({ name: "facebookJoin", arguments: { args, confirmBypass: true } });
     expect((ran.structuredContent as { exit: number }).exit).toBe(0);
   });
 });
@@ -76,8 +79,9 @@ describe("what a client needs from the server (MCP client best practices)", () =
     const [a, b] = InMemoryTransport.createLinkedPair();
     await Promise.all([server.connect(b), client.connect(a)]);
     const { tools } = await client.listTools();
-    expect(tools.filter((t) => t.name !== "getGuide").every((t) => JSON.stringify(t.outputSchema) === JSON.stringify(TOOL_RESULT_SCHEMA))).toBe(true);
+    expect(tools.filter((t) => t.name !== "getGuide" && t.name !== "report" && !isAppTool(t.name)).every((t) => JSON.stringify(t.outputSchema) === JSON.stringify(TOOL_RESULT_SCHEMA))).toBe(true);
+    expect(JSON.stringify(tools.find((t) => t.name === "report")?.outputSchema)).toBe(JSON.stringify(reportOutputSchema()));
     expect(client.getServerCapabilities()?.tools?.listChanged).toBe(true);
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 });

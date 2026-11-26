@@ -7,24 +7,24 @@ import { jsonIn } from './llm'
 import type { ChatMessage, Llm } from './llm'
 import type { LabelledMeme, Situation } from './situation'
 
-export const CALL_SYSTEM = 'You answer X posts as matt, with one meme and his caption, or you skip posts he would not answer. Answer with JSON only.'
+export const CALL_SYSTEM = 'You answer X posts as the owner, with one meme and his caption, or you skip posts he would not answer. Answer with JSON only.'
 
 export function callPrompt(situation: Situation, memes: readonly Pick<LabelledMeme, 'id' | 'name' | 'fitsWhen'>[], taste: TasteLines = { picked: [], passed: [] }): string {
   return [
-    typeof taste.skipRate === 'number' ? `matt skips about ${Math.round(taste.skipRate * 100)}% of the posts he is shown. Skipping is a normal answer, not a failure: most posts are not worth a reply.` : '',
-    taste.skips?.length ? 'Posts matt skipped (he would not answer these):\n' + skipLines(taste.skips) : '',
-    taste.captions?.length ? 'How matt has answered posts before (the meme he sent and his own caption):\n' + captionLines(taste.captions) : '',
+    typeof taste.skipRate === 'number' ? `the owner skips about ${Math.round(taste.skipRate * 100)}% of the posts he is shown. Skipping is a normal answer, not a failure: most posts are not worth a reply.` : '',
+    taste.skips?.length ? 'Posts the owner skipped (he would not answer these):\n' + skipLines(taste.skips) : '',
+    taste.captions?.length ? 'How the owner has answered posts before (the meme he sent and his own caption):\n' + captionLines(taste.captions) : '',
     taste.picked.length ? 'Memes he has picked: ' + JSON.stringify(taste.picked) : '',
     taste.passed.length ? 'Memes he keeps passing over: ' + JSON.stringify(taste.passed) : '',
     'The thread: ' + JSON.stringify(situation.thread.map((p) => ({ handle: p.handle, text: p.text }))),
     'The context: ' + situation.moment,
     'The memes you can send: ' + JSON.stringify(memes.map((m) => ({ id: m.id, name: m.name, fitsWhen: m.fitsWhen }))),
-    'Two questions. First: would matt reply to this post at all? Compare it with the posts he skipped and the ones he answered, and give wouldReply, the chance from 0 to 1 that he replies. Second: if he did reply, which one of these memes would he send, with a caption in his own voice (lowercase, short, like his captions above), and memeConfidence, the chance from 0 to 1 that it is that exact meme. Be honest: with many memes that could work, memeConfidence is low.',
+    'Two questions. First: would the owner reply to this post at all? Compare it with the posts he skipped and the ones he answered, and give wouldReply, the chance from 0 to 1 that he replies. Second: if he did reply, which one of these memes would he send, with a caption in his own voice (lowercase, short, like his captions above), and memeConfidence, the chance from 0 to 1 that it is that exact meme. Be honest: with many memes that could work, memeConfidence is low.',
     'JSON: {"wouldReply":0.0,"id":"<meme id>","caption":"…","memeConfidence":0.0}',
   ].filter(Boolean).join('\n\n')
 }
 
-export const REPLY_SYSTEM = 'You sort X posts into the ones matt answers and the ones he skips, from his own past choices. Answer with JSON only.'
+export const REPLY_SYSTEM = 'You sort X posts into the ones the owner answers and the ones he skips, from his own past choices. Answer with JSON only.'
 
 export function replyPrompt(situation: Situation, taste: TasteLines = { picked: [], passed: [] }): string {
   const answered = (taste.captions ?? []).map((c) => `- ANSWERED: ${JSON.stringify(c.post)} (context: ${c.context})`)
@@ -32,7 +32,7 @@ export function replyPrompt(situation: Situation, taste: TasteLines = { picked: 
   const examples: string[] = []
   for (let i = 0; i < Math.max(answered.length, skipped.length); i++) examples.push(...[answered[i], skipped[i]].filter((x): x is string => !!x))
   return [
-    typeof taste.skipRate === 'number' ? `matt answers about ${Math.round((1 - taste.skipRate) * 100)}% of posts and skips the other ${Math.round(taste.skipRate * 100)}%.` : '',
+    typeof taste.skipRate === 'number' ? `the owner answers about ${Math.round((1 - taste.skipRate) * 100)}% of posts and skips the other ${Math.round(taste.skipRate * 100)}%.` : '',
     examples.length ? 'His past choices:\n' + examples.join('\n') : '',
     'The new post: ' + JSON.stringify(situation.thread.at(-1)?.text ?? '') + (situation.thread.length > 1 ? ' (a reply in a thread: ' + JSON.stringify(situation.thread.slice(0, -1).map((p) => p.text)) + ')' : ''),
     'The context: ' + situation.moment,

@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { InspectSessionConfig } from "../../browser/inspect/index.ts";
+import { logHome } from "../../config/logHome/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { runCli } from "../runner/index.ts";
 
@@ -26,9 +27,26 @@ describe("log inspect", () => {
     });
     expect(result.code).toBe(0);
     expect(configs[0].startUrl).toBe("https://www.facebook.com/me");
+    expect(configs[0].ownerDriven).toBe(false);
     expect(configs[0].captureDir.replaceAll("\\", "/")).toMatch(/\/inspect\/\d{8}T\d{6}_galwayOne\/camoufox$/);
     expect(configs[0].commandsPath.endsWith("commands.jsonl")).toBe(true);
     expect(result.out).toContain("ended (exit 0)");
+  });
+
+  test("--ownerDriven marks a session the owner opened to drive, unless LOG_BROWSER_INPUT is signInOnly", async () => {
+    const before = process.env.LOG_BROWSER_INPUT;
+    const configs: InspectSessionConfig[] = [];
+    const start = () => run(["inspect", "start", "--account", "galwayOne", "--ownerDriven"], { inspectSession: async (config: InspectSessionConfig) => (configs.push(config), 0) });
+    try {
+      delete process.env.LOG_BROWSER_INPUT;
+      expect((await start()).code).toBe(0);
+      process.env.LOG_BROWSER_INPUT = "signInOnly";
+      expect((await start()).code).toBe(0);
+    } finally {
+      if (before === undefined) delete process.env.LOG_BROWSER_INPUT;
+      else process.env.LOG_BROWSER_INPUT = before;
+    }
+    expect(configs.map((c) => c.ownerDriven)).toEqual([true, false]);
   });
 
   test("a browser Facebook sends to a checkpoint while it is open sets the account to DEACTIVATED in Twenty", async () => {
@@ -159,7 +177,7 @@ describe("log inspect start --detach (how an MCP agent opens the account's brows
       return { exited: () => 1 };
     };
     try {
-      const logPath = join(homedir(), ".logCli", "runs", "inspect", "galwayOne.start.log");
+      const logPath = join(logHome(), "runs", "inspect", "galwayOne.start.log");
       mkdirSync(dirname(logPath), { recursive: true });
       appendFileSync(logPath, "AdsPower profile k1 stopped\nInspect session for galwayOne ended (exit 0).\n");
       const err: string[] = [];

@@ -1,6 +1,6 @@
 ---
 name: layout
-description: 'Where a new file goes in log-cli (rule 58). Every file sits in a domain folder named for what it does: src/{library}/{domain}/, python/<domain>/, scripts/<domain>/; nothing loose. Use when adding a Python module, a script or a check, or when `bun run check:layout` refuses a commit.'
+description: 'Where a new file goes in log-cli (rule 2). Every file sits in a domain folder named for what it does: src/{library}/{domain}/, python/<domain>/, scripts/<domain>/; nothing loose. Use when adding a Python module, a script or a check, or when `bun run check:layout` refuses a commit.'
 ---
 
 # layout
@@ -8,13 +8,13 @@ description: 'Where a new file goes in log-cli (rule 58). Every file sits in a d
 | Where | What goes there |
 |---|---|
 | `src/{library}/{domain}/` | TypeScript, with the role files (`index.ts`, `types.ts`, `client.ts`, `machine.ts`, `helpers/`; rule 2) |
-| `src/browser/` | each browser (`adsPower`, `camoufox`) and what every browser shares: `driver`, `run`, `proxy`, `inspect`, `flow` (rule 57) |
+| `src/browser/` | each browser (`adsPower`, `camoufox`) and what every browser shares: `driver`, `run`, `proxy`, `inspect`, `flow` (rule 2) |
 | `python/browser/` | opening the account's browser through its gates: `browserDriver`, `adsPowerBrowser`, `visibleBrowser`, `proxyGate`, `harRecorder` |
 | `python/human/` | how the cursor and wheel move: `humanMouse`, `scrollMotion`, `recordMouse` |
 | `python/session/` | the processes TypeScript runs: `inspectSession`, `connectSession`, `publishSession`, `profileSession`, `logWorker` |
 | `python/login/`, `python/device/`, `python/errors/`, `python/fixtures/` | sign-in, Camoufox's device, the error codes and catalog, test pages |
 | `scripts/checks/` | the lefthook gates (`check:*`) |
-| `scripts/commitLog/`, `scripts/docs/`, `scripts/hooks/`, `scripts/twenty/`, `scripts/datasets/` | the log.md gate, the generated docs, the agent hooks, Twenty setup and client, dataset builds |
+| `scripts/commitLog/`, `scripts/docs/`, `scripts/hooks/`, `scripts/privacy/`, `scripts/twenty/`, `scripts/datasets/` | the private day-log gate, the generated docs, the agent hooks, the privacy check, Twenty setup and client, dataset builds |
 
 ## A new Python module
 

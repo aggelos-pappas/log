@@ -4,7 +4,7 @@
 
 ## How it moves between states
 
-The monitor is an XState v5 machine in `src/marketplace/monitor/machine.ts`:
+The monitor is an XState v5 machine in `src/facebook/marketplace/monitor/machine.ts`:
 
 ```text
 checking --ok-----------> evaluating --> waiting --after poll--> checking
@@ -41,3 +41,7 @@ The monitor reuses decisions proven in two earlier Marketplace tools:
 | Don't call listings removed when the page showed none, or fewer than 3 out of 3 or more | The same tool (`src/lib/listing-checker.ts`) |
 | No second repost while one is already queued | The same tool (`listing-checker.ts`) |
 | Map page text to one account issue (ban, checkpoint, limit, login) | The same tool (`poster.ts`, `process-posts`, `facebook-auto-login.ts`) |
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md) · [What log does on Facebook](platformGuides/facebook.md)

@@ -1,6 +1,6 @@
 # discordBadHashDelta
 
-<!-- facts:start · written by `log facebook capture --docs` from the run captures and rea. Not edited by hand. -->
+<!-- facts:start · written by `log capture docs` from the run captures and rea. Not edited by hand. -->
 
 | | |
 | --- | --- |
@@ -10,28 +10,31 @@
 | Path | `discord.com/bad-hash-delta` |
 | Sends | — |
 | Reads | `ADDED`, `REMOVED` |
-| Called from | `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1.js:208 app_store_parental_revocation`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1036.js:1 parse`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1221.js:2 anonymous`, `runs/inspect/20261028T074137_sourcedandsoldtothehighestbidder/script1245.js:2 anonymous` |
-| rea | `ev_065e7ad37dcb5911d240f9de7d6e2882220c5a8d7c025d92b46a23de59cf297c` |
+| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:232 625075`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 559868`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 961943`, `runs/inspect/20261111T233723_discordAccount/script1280.js:1 anonymous` |
+| rea | `ev_f6daff8038b4f477b27b852e31fc1f2f76f7dd725b1883891e74b824ed6f0ac3` |
 
-Seen 1 time(s) in 1 run(s).
+Seen 5 time(s) in 5 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 2: snapshot | 1 | 200 | 51 ms | 61939 ms | — |
+| inspect | Stopping after 1 step(s). | 1 | 200 | 60 ms | 6064 ms | — |
+| inspect | step 1: goto /login | 2 | 200 | 27–71 ms | 38881–1062683 ms | — |
+| inspect | step 6: wait 45s | 1 | 200 | 26 ms | 35540 ms | — |
 
-### What it sent and what came back (the newest 1 from our runs)
+### What it sent and what came back (the newest 2 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder**, step 2: snapshot: 200, 51 ms
+**runs/inspect/20261113T231616_discordAccount**, step 6: wait 45s: 200, 26 ms
 
 Sent:
 
 ```json
 {
   "query": {
-    "revision": "3223",
-    "targetRevision": "3226"
+    "revision": "3248",
+    "targetRevision": "3256"
   },
   "body": null
 }
@@ -42,13 +45,44 @@ Answered:
 ```json
 {
   "ADDED": [
-    "4d137ce1b5f3cf91b20b17e9e8c1c605240f6dff4573460389aba7769b0c5e65",
-    "51c948404c819186f62d0abe2d9713d9d902ec9818851a0536cbf0b85c33743f",
-    "66c9933182546aa3d05063822f28c9d00f909b4fabeb03d02e272c78e39e3330",
-    "71fd6063817590b753001475b0ea19906eecf1eea9d6ab2c91fb8bc57eb89ef3",
-    "912625c4bc1775111934e4c532cb08022ba659cb5f70a82b9845c440cec1dce2",
-    "91ff9905a57a0dc904e854954bbd55280e97e720604ecaff803d32de341a7cff",
-    "… 5 more"
+    "08050d400fe65ce0c5d1efd23a02c1d616c0b9934d1b4a905d913189759d55ba",
+    "0feacfdd1ce07272987873ced7e8f2dd476c84f2794b9ca453d579ee63debff7",
+    "27eb6d1bacc17e295ef559e81f446d2d78c87a63d408f14364a7e0751969096f",
+    "2c1aef53289834a37f05bf3869fb2b5ba99bc5ad844fb6f68acb623a52344c20",
+    "338c83a94601281be2028d72f47367651e701be52b12c192c4a360def959dc94",
+    "3a4bfcd0a7452abd9fceff5dacfb93ec4c290ba9e8c7b2cc08dbdd6d7133de05",
+    "… 19 more"
+  ],
+  "REMOVED": []
+}
+```
+
+**runs/inspect/20261111T233723_discordAccount**, step 1: goto /login: 200, 27 ms
+
+Sent:
+
+```json
+{
+  "query": {
+    "revision": "3241",
+    "targetRevision": "3248"
+  },
+  "body": null
+}
+```
+
+Answered:
+
+```json
+{
+  "ADDED": [
+    "0658700632fa2abf6215abeba1a8c1fbc51167dff6fca13d3f57e1d989e26b1f",
+    "30621ce306a881a6cb6f212528595607ce32913697f8313a8fd5614ab16579ca",
+    "4a7d707d5726eb02aa8fae76aba0ccf00f68439d27e6e919832fe3d2493f8c64",
+    "679166c75673d5853c34bbc35c68e814e41f37552b05060a4dfd9ab765443fb2",
+    "7ef0b3523160df0e16e9fd38bd9bbee59a9deb0171f488dc0b0add8df52c9d3d",
+    "823cd272472423e84e76ebf5b3382a5762e1c5fdad7ec8c9fd34ee6b33902258",
+    "… 7 more"
   ],
   "REMOVED": []
 }

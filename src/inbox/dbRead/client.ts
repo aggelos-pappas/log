@@ -1,4 +1,3 @@
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { deleteState, getState, putState } from '../../storage/state/index'
 import { notThePlatform, readSession, sessionLive } from '../relay/index'
@@ -8,6 +7,7 @@ import type { DbMessage, ReadSource, ReadSourceDeps } from './types'
 import type { MessageAttachment } from '../catchUp/types'
 import { timed } from '../../observability/timing/index'
 import { chatIdOf } from '../../storage/platform/index'
+import { logHome } from '../../config/logHome/index'
 
 export const readSourceDeps: ReadSourceDeps = {
   live: (platform, account) => sessionLive(readSession(platform, account)),
@@ -26,7 +26,7 @@ export function readSourceFor(platform: string, account: string, chatKey: string
 async function readSourceNow(platform: string, account: string, chatKey: string, have: number, limit: number, deps: ReadSourceDeps): Promise<ReadSource> {
   if (!deps.live(platform, account)) return { from: 'platform', reason: 'noLiveOwner' }
   const gap = deps.behind(platform, account)
-  if (gap?.status === 'refused' && !notThePlatform(gap.detail)) return { from: 'refused', refused: `>>> BEHIND: ${platform} ${account} has a gap from ${gap.fromAt} that its catch-up couldn't fill (${gap.detail ?? 'refused'}), so nothing is read around it; nothing resumes on it until matt says so (rule 94)` }
+  if (gap?.status === 'refused' && !notThePlatform(gap.detail)) return { from: 'refused', refused: `>>> BEHIND: ${platform} ${account} has a gap from ${gap.fromAt} that its catch-up couldn't fill (${gap.detail ?? 'refused'}), so nothing is read around it; nothing resumes on it until the owner says so (rule 94)` }
   if (gap) return { from: 'platform', reason: 'catchingUp' }
   if (deps.backfilledAt(platform, account, chatKey)) return { from: 'db', reason: 'backfilled' }
   if (have >= limit) return { from: 'db', reason: 'enoughInDb' }
@@ -89,7 +89,7 @@ export function sourceLine(source: ReadSource, platform: string, account: string
 }
 
 export function chatListPath(platform: string, account: string): string {
-  const root = process.env.LOG_INBOX_STATE || join(homedir(), '.logCli', 'inbox')
+  const root = process.env.LOG_INBOX_STATE || join(logHome(), 'inbox')
   return join(root, 'chatLists', platform, `${account.replace(/[^0-9A-Za-z_-]/g, '_')}.json`)
 }
 

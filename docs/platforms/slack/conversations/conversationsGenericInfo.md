@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundarypsFjOmkX5tI287jp
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `channels`, `unchanged_channel_ids` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script29.js:146 statement`, `runs/inspect/20261103T065639_mattSlack/script3.js:2954 statement`, `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script125.js:37 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script29.js:146 statement`, `runs/inspect/20261103T065639_slackAccount/script3.js:2954 statement`, `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script125.js:37 anonymous` |
 | rea | `ev_b0b9b469d7f4ea706fbef57e76f36fd79776b009477d63e3da46553eee76d18c` |
 
 Seen 2 time(s) in 1 run(s).
@@ -25,7 +25,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 310 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 310 ms
 
 Sent:
 
@@ -35,7 +35,7 @@ Sent:
     "_x_id": "2c6eaecf-1793689065.989",
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -43,7 +43,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundary3pN8vABeEaoHn8n3\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundary3pN8vABeEaoHn8n3\r\nContent-Disposition: form-data; name=\"updated_channels\"\r\n\r\n{\"D0C4VCJA6NP\":1790614723826}\r\n------WebKitFormBoundary3pN8vABeEaoHn8n3\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nfallback:fetchAndUpsertChannelsById\r\n------WebK… (737 chars)"
+    "------WebKitFormBoundary3pN8vABeEaoHn8n3\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundary3pN8vABeEaoHn8n3\r\nContent-Disposition: form-data; name=\"updated_channels\"\r\n\r\n{\"<channelId:1>\":1790614723826}\r\n------WebKitFormBoundary3pN8vABeEaoHn8n3\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nfallback:fetchAndUpsertChannelsById\r\n------WebK… (737 chars)"
   }
 }
 ```
@@ -55,7 +55,7 @@ Answered:
   "ok": true,
   "channels": [],
   "unchanged_channel_ids": [
-    "D0C4VCJA6NP"
+    "<channelId:1>"
   ]
 }
 ```

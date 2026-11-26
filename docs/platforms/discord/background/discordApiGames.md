@@ -1,6 +1,6 @@
 # discordApiGames
 
-<!-- facts:start · written by `log facebook capture --docs` from the run captures and rea. Not edited by hand. -->
+<!-- facts:start · written by `log capture docs` from the run captures and rea. Not edited by hand. -->
 
 | | |
 | --- | --- |
@@ -10,10 +10,10 @@
 | Path | `discord.com/api/games` |
 | Sends | — |
 | Reads | — |
-| Called from | `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1.js:208 app_store_parental_revocation`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1036.js:1 parse`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1221.js:2 anonymous`, `runs/inspect/20261028T074137_sourcedandsoldtothehighestbidder/script1245.js:2 anonymous` |
-| rea | `ev_065e7ad37dcb5911d240f9de7d6e2882220c5a8d7c025d92b46a23de59cf297c` |
+| Called from | `runs/inspect/20261120T115645_<name:12>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:12>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:12>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:12>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 7 time(s) in 3 run(s).
+Seen 24 time(s) in 12 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -21,21 +21,24 @@ Seen 7 time(s) in 3 run(s).
 | inspect | step 9: goto /channels/@me | 1 | 200 | 366 ms | 10199 ms | — |
 | inspect | step 25: goto /channels/@me | 1 | 200 | 318 ms | 8803 ms | — |
 | inspect | step 27: type e2077 | 2 | 200 | 325–385 ms | 390–543 ms | — |
-| inspect | step 1: goto /login | 1 | 200 | 418 ms | 18655 ms | — |
+| inspect | step 1: goto /login | 12 | 200 | 333–590 ms | 18655–1051883 ms | — |
 | inspect | step 2: snapshot | 1 | 200 | 1088 ms | 50864 ms | — |
+| inspect | step 2: viewerInput click | 2 | 200 | 337–382 ms | 1122–2954 ms | — |
+| inspect | step 1: goto /quest-home | 2 | 200 | 407–428 ms | 31701–36431 ms | — |
+| inspect | step 1: goto /channels/@me | 2 | 200 | 334–351 ms | 25108–1247268 ms | — |
 
 ### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder**, step 2: snapshot: 200, 1088 ms
+**runs/inspect/20261120T115645_<name:12>**, step 1: goto /login: 200, 371 ms
 
 Sent:
 
 ```json
 {
   "query": {
-    "game_ids": "542075586886107149"
+    "game_ids": "363445589247131668"
   },
   "body": null
 }
@@ -46,112 +49,220 @@ Answered:
 ```json
 [
   {
-    "id": "1445982809792708628",
-    "name": "AION 2",
-    "aliases": "(0 items)",
-    "description": "AION 2 is the only MMORPG built around a world where the sky is the battlefield. Choose your faction, ascend as a Daeva, and fight a faction war across a world 36 times larger than the original. PC only, on Unreal Engine 5.",
-    "icon_hash": "5146eac718876015ae5d3eeadbaad9d7",
-    "executables": "(0 items)",
-    "third_party_skus": "(4 items)",
+    "id": "<id:1>",
+    "name": "<name:1>",
+    "aliases": [
+      "Roblox"
+    ],
+    "description": "Roblox is a massively multiplayer online platform marketed toward creators and players of all ages. It allows users to create their own virtual games using a variety of objects, which they and others can enter and socialize in. Games created on Roblox can be scripted using a sandboxed scripting language based on Lua 5.1 to affect events that occur in-game and create different scenarios.",
+    "icon_hash": "f2b60e350a2097289b3b0b877495e55f",
+    "executables": [
+      {
+        "os": "darwin",
+        "name": "<name:2>",
+        "is_launcher": false
+      },
+      {
+        "os": "win32",
+        "name": "<name:3>",
+        "is_launcher": false
+      },
+      {
+        "os": "win32",
+        "name": "<name:4>",
+        "is_launcher": false
+      }
+    ],
+    "third_party_skus": [
+      {
+        "distributor": "gop",
+        "id": "<id:2>"
+      },
+      {
+        "distributor": "playstation",
+        "id": "<id:3>"
+      },
+      {
+        "distributor": "igdb",
+        "id": "<id:4>"
+      },
+      {
+        "distributor": "xbox_title",
+        "id": "<id:5>"
+      },
+      {
+        "distributor": "xbox_title",
+        "id": "<id:6>"
+      },
+      {
+        "distributor": "gdco",
+        "id": "<id:7>"
+      },
+      "… 8 more"
+    ],
     "overlay": false,
     "overlay_warn": false,
     "overlay_compatibility_hook": false,
-    "overlay_methods": 0,
+    "overlay_methods": 1,
     "hook": true,
-    "themes": "(2 items)",
-    "linked_applications": "(1 items)",
-    "media": "(6 fields)",
-    "first_release_date": "2025-11-18T00:00:00+00:00",
-    "genres": "(5 items)",
-    "platforms": "(1 items)",
-    "platform_availability": "(2 items)",
-    "cover_image_hash": "06794d884aafbc11a17fd770620030f9",
-    "banner_hash": "899b1d4806aac5d7732049bf568dc4f4",
-    "screenshot_hashes": "(4 items)",
-    "screenshot_urls": "(4 items)",
-    "trailers": "(1 items)",
-    "websites": "(7 items)",
-    "companies": "(1 items)",
-    "steam_release_status": 3,
-    "reviews": "(1 fields)",
-    "l30_rank": 22,
-    "community_guild_ids": "(7 items)",
+    "themes": [
+      "Action",
+      "Kids",
+      "Open world",
+      "Sandbox"
+    ],
+    "linked_applications": [],
+    "media": {
+      "cover_url": "https://images-ext-1.discordapp.net/external/EVCrLFOO8DAfZk2h_a8olO3_8P3lpgbqjXCwpQpcKXM/https/images.igdb.com/igdb/image/upload/t_cover_big/cociyw.jpg",
+      "artwork_hashes": [
+        "e970e33dd647f87dc87f4dc4b28f4627"
+      ],
+      "icon": {
+        "type": "hash",
+        "value": "f2b60e350a2097289b3b0b877495e55f"
+      },
+      "banner": {
+        "type": "hash",
+        "value": "e970e33dd647f87dc87f4dc4b28f4627"
+      },
+      "cover": {
+        "type": "url",
+        "value": "https://images-ext-1.discordapp.net/external/EVCrLFOO8DAfZk2h_a8olO3_8P3lpgbqjXCwpQpcKXM/https/images.igdb.com/igdb/image/upload/t_cover_big/cociyw.jpg"
+      },
+      "artwork": [
+        {
+          "type": "hash",
+          "value": "e970e33dd647f87dc87f4dc4b28f4627"
+        }
+      ]
+    },
+    "first_release_date": "2006-09-01T00:00:00+00:00",
+    "genres": [
+      8,
+      28,
+      5
+    ],
+    "platforms": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      7
+    ],
+    "platform_availability": [
+      "console",
+      "desktop",
+      "mobile"
+    ],
+    "banner_hash": "e970e33dd647f87dc87f4dc4b28f4627",
+    "screenshot_urls": [
+      "https://images-ext-1.discordapp.net/external/7QP_AtcqrL5Zo2XH9QYXKZSutpDYrUfzZO18W0Mocog/https/images.igdb.com/igdb/image/upload/t_1080p/sc12f2b.jpg",
+      "https://images-ext-1.discordapp.net/external/AD3oaKWVNWd4hlW6WrvXQFlUL2WeNZet83LVIIyCyRI/https/images.igdb.com/igdb/image/upload/t_1080p/scyxw8.jpg",
+      "https://images-ext-1.discordapp.net/external/M_9mwgc0vC1DwAh1u1WeUH6up0LZvP8cXxDzlb5Fi9M/https/images.igdb.com/igdb/image/upload/t_1080p/sc12f2c.jpg",
+      "https://images-ext-1.discordapp.net/external/M_eG7QR4WRVXdAeAisDa0UACvoCKl7RAKbhDsMpI2E8/https/images.igdb.com/igdb/image/upload/t_1080p/scyxwd.jpg",
+      "https://images-ext-1.discordapp.net/external/PCOKTAfXaBeqTHASK3iMTLinivFNE2OzkE-gd_iY6Z0/https/images.igdb.com/igdb/image/upload/t_1080p/scyxw9.jpg",
+      "https://images-ext-1.discordapp.net/external/_eC04hC8OYO-E2bD5jWF47rwXx7aFpfxs_Gto94Bsv0/https/images.igdb.com/igdb/image/upload/t_1080p/scyxwc.jpg",
+      "… 11 more"
+    ],
+    "websites": [
+      {
+        "url": "https://www.roblox.com",
+        "category": 22
+      },
+      {
+        "url": "https://play.google.com/store/apps/details?id=<id:14>",
+        "category": 12
+      },
+      {
+        "url": "https://www.facebook.com/Roblox",
+        "category": 4
+      },
+      {
+        "url": "https://www.instagram.com/roblox",
+        "category": 8
+      },
+      {
+        "url": "https://apps.apple.com/us/app/roblox/id431946152?platform=ipad",
+        "category": 11
+      },
+      {
+        "url": "https://apps.apple.com/us/app/roblox/id431946152",
+        "category": 10
+      },
+      "… 7 more"
+    ],
+    "companies": [
+      {
+        "name": "<name:5>",
+        "roles": [
+          1,
+          2
+        ]
+      }
+    ],
+    "reviews": {
+      "opencritic": {
+        "top_critic_rating_count": 1
+      },
+      "app_store": {
+        "rating": 4.5,
+        "rating_count": 20653860,
+        "global_rating_count": 48188813
+      },
+      "google_play": {
+        "rating": 4.199999809265137,
+        "rating_count": 53892112
+      }
+    },
+    "opencritic_url": "https://opencritic.com/game/1927/roblox",
+    "l30_rank": 1,
+    "community_guild_ids": [
+      "1376018788041887795",
+      "1358536829636448418",
+      "1254502244926361620",
+      "1328110081136398427",
+      "871820516825116723",
+      "150074202727251969",
+      "… 34 more"
+    ],
     "game_flags": 0,
-    "content_classification": "(1 fields)"
-  },
-  {
-    "id": "1539812812854132867",
-    "name": "Call of Duty",
-    "aliases": "(0 items)",
-    "description": "The Call of Duty® experience supports Modern Warfare® 4, Black Ops 7 and Call of Duty®: Warzone™.\n\nCall of Duty®: Modern Warfare® 4 brings players Warfare Without Limits.\n\nIn Call of Duty®: Black Ops 7, Treyarch and Raven Software are bringing players the biggest Black Ops ever.\n\nCall of Duty®: Warzone™ is the massive free-to-play combat arena, featuring Battle Royale, Resurgence, and now introduc… (495 chars)",
-    "icon_hash": "532b24566a2cdde9646052b7e4d43bc0",
-    "executables": "(1 items)",
-    "third_party_skus": "(7 items)",
-    "overlay": false,
-    "overlay_warn": false,
-    "overlay_compatibility_hook": false,
-    "overlay_methods": 0,
-    "hook": false,
-    "themes": "(2 items)",
-    "linked_applications": "(0 items)",
-    "media": "(5 fields)",
-    "first_release_date": "2026-10-23T00:00:00+00:00",
-    "genres": "(1 items)",
-    "platforms": "(3 items)",
-    "platform_availability": "(2 items)",
-    "cover_image_hash": "7f8275b121cbd881753bad14969257ea",
-    "screenshot_urls": "(7 items)",
-    "websites": "(7 items)",
-    "companies": "(2 items)",
-    "steam_release_status": 3,
-    "reviews": "(1 fields)",
-    "l30_rank": 7,
-    "game_flags": 0,
-    "content_classification": "(1 fields)"
-  },
-  {
-    "id": "542075586886107149",
-    "name": "Apex Legends",
-    "aliases": "(1 items)",
-    "description": "Conquer with character in Apex Legends, a free-to-play Hero shooter where legendary characters with powerful abilities team up to battle for fame & fortune on the fringes of the Frontier.\n\nMaster an ever-growing roster of diverse Legends, deep tactical squad play and bold new innovations that go beyond the Battle Royale experience—all within a rugged world where anything goes. Welcome to the next … (426 chars)",
-    "icon_hash": "91fac0600c5b6527c1aea95a93c6a8e0",
-    "executables": "(4 items)",
-    "third_party_skus": "(7 items)",
-    "overlay": false,
-    "overlay_warn": false,
-    "overlay_compatibility_hook": false,
-    "overlay_methods": 0,
-    "hook": true,
-    "themes": "(2 items)",
-    "linked_applications": "(0 items)",
-    "media": "(5 fields)",
-    "first_release_date": "2019-02-04T00:00:00+00:00",
-    "genres": "(2 items)",
-    "platforms": "(4 items)",
-    "platform_availability": "(2 items)",
-    "screenshot_urls": "(6 items)",
-    "trailers": "(1 items)",
-    "websites": "(7 items)",
-    "companies": "(2 items)",
-    "steam_release_status": 3,
-    "reviews": "(2 fields)",
-    "opencritic_url": "https://opencritic.com/game/7267/apex-legends",
-    "l30_rank": 13,
-    "community_guild_ids": "(7 items)",
-    "game_flags": 0,
-    "content_classification": "(1 fields)"
+    "content_classification": {
+      "agency_ratings": {
+        "esrb": {
+          "rating": 3,
+          "descriptors": []
+        },
+        "pegi": {
+          "rating": 3,
+          "descriptors": []
+        },
+        "apple": {
+          "rating": 4,
+          "descriptors": [
+            32,
+            33,
+            2,
+            3,
+            34,
+            7,
+            "… 4 more"
+          ]
+        }
+      }
+    }
   }
 ]
 ```
 
-**runs/inspect/20261028T074137_sourcedandsoldtothehighestbidder**, step 1: goto /login: 200, 418 ms
+**runs/inspect/20261120T115645_<name:12>**, step 2: viewerInput click: 200, 382 ms
 
 Sent:
 
 ```json
 {
   "query": {
-    "game_ids": "1432419613165228174"
+    "game_ids": "1402418436809953330"
   },
   "body": null
 }
@@ -162,11 +273,11 @@ Answered:
 ```json
 [
   {
-    "id": "1539812812854132867",
-    "name": "Call of Duty",
+    "id": "<id:8>",
+    "name": "<name:6>",
     "aliases": [],
-    "description": "The Call of Duty® experience supports Modern Warfare® 4, Black Ops 7 and Call of Duty®: Warzone™.\n\nCall of Duty®: Modern Warfare® 4 brings players Warfare Without Limits.\n\nIn Call of Duty®: Black Ops 7, Treyarch and Raven Software are bringing players the biggest Black Ops ever.\n\nCall of Duty®: Warzone™ is the massive free-to-play combat arena, featuring Battle Royale, Resurgence, and now introduc… (495 chars)",
-    "icon_hash": "532b24566a2cdde9646052b7e4d43bc0",
+    "description": "Elden Ring: Nightreign is a standalone adventure within the ELDEN RING universe, crafted to offer players a new gaming experience by reimagining the game’s core design.",
+    "icon_hash": "be5767e5d6fc2f9ab982f461cff7a528",
     "executables": [
       "(3 fields)"
     ],
@@ -177,28 +288,31 @@ Answered:
       "(2 fields)",
       "(2 fields)",
       "(2 fields)",
-      "… 16 more"
+      "… 15 more"
     ],
     "overlay": false,
     "overlay_warn": false,
     "overlay_compatibility_hook": false,
-    "overlay_methods": 0,
-    "hook": false,
+    "overlay_methods": null,
+    "hook": true,
     "themes": [
       "Action",
-      "Warfare"
+      "Fantasy",
+      "Open world",
+      "Survival"
     ],
     "linked_applications": [],
     "media": {
-      "cover_hash": "7f8275b121cbd881753bad14969257ea",
-      "artwork_urls": "(7 items)",
+      "cover_url": "https://images-ext-1.discordapp.net/external/gr5lzlpB7fgW3ZxCt55yYbxVsKTwucF8jJ6PqyAwi-Q/https/images.igdb.com/igdb/image/upload/t_cover_big/co95gk.jpg",
+      "artwork_urls": "(2 items)",
       "icon": "(2 fields)",
       "cover": "(2 fields)",
-      "artwork": "(7 items)"
+      "artwork": "(2 items)"
     },
-    "first_release_date": "2026-10-23T00:00:00+00:00",
+    "first_release_date": "2025-05-30T00:00:00+00:00",
     "genres": [
-      23
+      4,
+      20
     ],
     "platforms": [
       0,
@@ -209,14 +323,13 @@ Answered:
       "console",
       "desktop"
     ],
-    "cover_image_hash": "7f8275b121cbd881753bad14969257ea",
     "screenshot_urls": [
-      "https://images-ext-1.discordapp.net/external/6Quwi0Vk-EV5zssqunflZIuabJAs-KNTuolax9DdBhk/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3n.jpg",
-      "https://images-ext-1.discordapp.net/external/CXHgMq1VDGEJO2XQgpgFhUAeG8Y6Q2VBQI6MNiKFhgI/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3o.jpg",
-      "https://images-ext-1.discordapp.net/external/H9T04tXpFFGAeG4KG7pWBPLVp-mLE0DiY5KHuiN3r7s/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3t.jpg",
-      "https://images-ext-1.discordapp.net/external/J_MCgkZNLbf-bO3ik_xbt1PWjGhwJyMcpObrVZsX7OU/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3p.jpg",
-      "https://images-ext-1.discordapp.net/external/Y6nVJwzC9CsDcdhTB4Flm1GaYCpnqXceGyaZb0Z4GKU/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3q.jpg",
-      "https://images-ext-1.discordapp.net/external/fBmf9za3_WS0uvvjQ_xFAQRBh9jxXi6GGRnasXOqDgw/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3s.jpg",
+      "https://images-ext-1.discordapp.net/external/GCFK8FE9dqRgb7oge_1hezmqiBAJ4XpfEEpnMPYrYZk/https/images.igdb.com/igdb/image/upload/t_1080p/scus1u.jpg",
+      "https://images-ext-1.discordapp.net/external/Qe9J9sdimUnJT_T5m8m0_HaftM0GT3ugOOrYeouKNgQ/https/images.igdb.com/igdb/image/upload/t_1080p/scus1r.jpg",
+      "https://images-ext-1.discordapp.net/external/hNk4gEOVUoou1CBAfaM16lwdJkOye0sYcvWsuxOkHes/https/images.igdb.com/igdb/image/upload/t_1080p/scus1t.jpg",
+      "https://images-ext-1.discordapp.net/external/okuCxt7iM0f1fy1VpCo_ZWuIlpqpM9BlX-1SzSPVKvg/https/images.igdb.com/igdb/image/upload/t_1080p/scus1x.jpg",
+      "https://images-ext-1.discordapp.net/external/rAV5jtCLp-q5j7I5WSgttqxAtcc8ZB89B-LT4lwixbM/https/images.igdb.com/igdb/image/upload/t_1080p/scus1v.jpg",
+      "https://images-ext-1.discordapp.net/external/sI6cIhhkkw-ONmWa3gINrpI04gsDXEKh-JNRBovnhqg/https/images.igdb.com/igdb/image/upload/t_1080p/scus1s.jpg",
       "… 1 more"
     ],
     "websites": [
@@ -234,20 +347,32 @@ Answered:
     ],
     "steam_release_status": 3,
     "reviews": {
-      "steam": "(6 fields)"
+      "steam": "(6 fields)",
+      "opencritic": "(3 fields)"
     },
-    "l30_rank": 7,
+    "opencritic_url": "https://opencritic.com/game/18502/elden-ring-nightreign",
+    "community_guild_ids": [
+      "384334768063381514",
+      "998753917636718672",
+      "809469632859471933",
+      "1164010856078659634",
+      "1377816067145203782",
+      "793227917861322752",
+      "… 4 more"
+    ],
     "game_flags": 0,
     "content_classification": {
       "agency_ratings": "(2 fields)"
     }
   },
   {
-    "id": "1432419613165228174",
-    "name": "ARC Raiders",
-    "aliases": [],
-    "description": "ARC Raiders is a multiplayer extraction adventure, set in a lethal future earth, ravaged by a mysterious mechanized threat known as ARC.",
-    "icon_hash": "7ce8aa26a0dd472740eebeb9c25e6577",
+    "id": "<id:9>",
+    "name": "<name:7>",
+    "aliases": [
+      "ELDEN RING"
+    ],
+    "description": "Elden Ring is an action RPG developed by FromSoftware and published by Bandai Namco Entertainment, released in February 2022. Directed by Hidetaka Miyazaki, with world-building contributions from novelist George R. R. Martin, the game features an expansive open world called the Lands Between. Players assume the role of a customisable character known as the Tarnished, who must explore this world, b… (804 chars)",
+    "icon_hash": "28c674e1de18e7a100a44559d64a55b8",
     "executables": [
       "(3 fields)"
     ],
@@ -258,31 +383,32 @@ Answered:
       "(2 fields)",
       "(2 fields)",
       "(2 fields)",
-      "… 4 more"
+      "… 34 more"
     ],
     "overlay": true,
     "overlay_warn": false,
     "overlay_compatibility_hook": false,
     "overlay_methods": 0,
-    "hook": false,
+    "hook": true,
     "themes": [
       "Action",
-      "Science fiction"
+      "Fantasy",
+      "Open world"
     ],
     "linked_applications": [
       "(2 fields)"
     ],
     "media": {
-      "cover_url": "https://images-ext-1.discordapp.net/external/VhN78B3eWKBk9I6Sc7AfuqPw3RXp34hvQmYwHojgd5c/https/images.igdb.com/igdb/image/upload/t_cover_big/co9rk1.jpg",
-      "artwork_urls": "(5 items)",
+      "cover_url": "https://images-ext-1.discordapp.net/external/jCrLqbeLlZsQu7-FTtkg1Jqn9SaX2jF-ZjaLARLAfoM/https/images.igdb.com/igdb/image/upload/t_cover_big/co4jni.jpg",
+      "artwork_urls": "(4 items)",
       "icon": "(2 fields)",
       "cover": "(2 fields)",
-      "artwork": "(5 items)"
+      "artwork": "(4 items)"
     },
-    "first_release_date": "2025-10-30T00:00:00+00:00",
+    "first_release_date": "2022-02-25T00:00:00+00:00",
     "genres": [
       8,
-      23
+      20
     ],
     "platforms": [
       0,
@@ -294,13 +420,13 @@ Answered:
       "desktop"
     ],
     "screenshot_urls": [
-      "https://images-ext-1.discordapp.net/external/-2H_dHkUv4miagoU8Yb2V8Y1EsyYTduxLFF8wmORqTY/https/images.igdb.com/igdb/image/upload/t_1080p/sc11kkg.jpg",
-      "https://images-ext-1.discordapp.net/external/0FeHzf4pQlwUuP8ASQnP2UK9BA6uTUTshGMQwB4wgDU/https/images.igdb.com/igdb/image/upload/t_1080p/scii62.jpg",
-      "https://images-ext-1.discordapp.net/external/0M3bWzOoOevvAcD4JzUQXtddfCWbwhiHsfx88I3CP3I/https/images.igdb.com/igdb/image/upload/t_1080p/sc11kkk.jpg",
-      "https://images-ext-1.discordapp.net/external/9uD-nF2qjyxMgchgg3QR3O4PXB4lC--Es9Suf__TZXE/https/images.igdb.com/igdb/image/upload/t_1080p/sc11kkj.jpg",
-      "https://images-ext-1.discordapp.net/external/AmzovMyaGaYQke8DgByMwHQb-IGD8CoVk19DhHAGeO4/https/images.igdb.com/igdb/image/upload/t_1080p/sc11kkc.jpg",
-      "https://images-ext-1.discordapp.net/external/Bw-Ja2K0wdf1Yivko1G_f0NSroLKzzsDgsrenNCbJBM/https/images.igdb.com/igdb/image/upload/t_1080p/sc11kke.jpg",
-      "… 8 more"
+      "https://images-ext-1.discordapp.net/external/012WBSsjr7wgYY8xK-xHEP4ZuyK84tCZOpoJ3ncrRLc/https/images.igdb.com/igdb/image/upload/t_1080p/scf2s1.jpg",
+      "https://images-ext-1.discordapp.net/external/AGm7c7pVXKFpYl_RxLC_RErNEESNHDPleGchw-wqnE4/https/images.igdb.com/igdb/image/upload/t_1080p/scu5kx.jpg",
+      "https://images-ext-1.discordapp.net/external/Jj80BQ0vPk5UvFECurIdp3dF-mm3HQpJCc6wjnEuuwE/https/images.igdb.com/igdb/image/upload/t_1080p/scagdm.jpg",
+      "https://images-ext-1.discordapp.net/external/S5TbU53fDe-VPOhh3jzg2QYLcy864NpHj6CsSE0re4E/https/images.igdb.com/igdb/image/upload/t_1080p/scagdq.jpg",
+      "https://images-ext-1.discordapp.net/external/UFUQaQBUZl6tX4iexwmuNRGfYUsdz3Y6QmidR85CJY4/https/images.igdb.com/igdb/image/upload/t_1080p/scagdr.jpg",
+      "https://images-ext-1.discordapp.net/external/WJjGFZ15gIbbqWIynL50JCFqA0-XcciWLT40JEYdkZU/https/images.igdb.com/igdb/image/upload/t_1080p/scagdo.jpg",
+      "… 4 more"
     ],
     "trailers": [
       "(6 fields)"
@@ -323,16 +449,16 @@ Answered:
       "steam": "(6 fields)",
       "opencritic": "(3 fields)"
     },
-    "opencritic_url": "https://opencritic.com/game/19023/arc-raiders",
-    "l30_rank": 17,
+    "opencritic_url": "https://opencritic.com/game/12090/elden-ring",
+    "l30_rank": 60,
     "community_guild_ids": [
-      "1107589599045361695",
-      "927355923314380901",
-      "1002892569824464906",
-      "1367740450194063402",
-      "1095091795022590034",
-      "1173725697248862371",
-      "… 29 more"
+      "867784605293084702",
+      "598865171779420161",
+      "586725391624962139",
+      "1199144224612962314",
+      "959006368784850994",
+      "340798259972800513",
+      "… 15 more"
     ],
     "game_flags": 0,
     "content_classification": {
@@ -342,14 +468,14 @@ Answered:
 ]
 ```
 
-**runs/inspect/20261028T062914_sourcedandsoldtothehighestbidder**, step 5: click e40: 200, 358 ms
+**runs/inspect/20261120T111021_<name:12>**, step 1: goto /quest-home: 200, 428 ms
 
 Sent:
 
 ```json
 {
   "query": {
-    "game_ids": "1539812812854132867"
+    "game_ids": "1121201675240210523"
   },
   "body": null
 }
@@ -360,191 +486,163 @@ Answered:
 ```json
 [
   {
-    "id": "1539812812854132867",
-    "name": "Call of Duty",
-    "aliases": [],
-    "description": "The Call of Duty® experience supports Modern Warfare® 4, Black Ops 7 and Call of Duty®: Warzone™.\n\nCall of Duty®: Modern Warfare® 4 brings players Warfare Without Limits.\n\nIn Call of Duty®: Black Ops 7, Treyarch and Raven Software are bringing players the biggest Black Ops ever.\n\nCall of Duty®: Warzone™ is the massive free-to-play combat arena, featuring Battle Royale, Resurgence, and now introduc… (495 chars)",
-    "icon_hash": "532b24566a2cdde9646052b7e4d43bc0",
-    "executables": [
-      {
-        "os": "win32",
-        "name": "cod.exe",
-        "is_launcher": false
-      }
-    ],
-    "third_party_skus": [
-      {
-        "distributor": "xbox_game_pass",
-        "id": "9N8KMNW6942X"
-      },
-      {
-        "distributor": "steam",
-        "id": "1938090"
-      },
-      {
-        "distributor": "playstation",
-        "id": "PPSA07952_00"
-      },
-      {
-        "distributor": "playstation",
-        "id": "PPSA37415_00"
-      },
-      {
-        "distributor": "xbox_game_pass",
-        "id": "9NNFG8BQRCXL"
-      },
-      {
-        "distributor": "xbox_title",
-        "id": "1680003655"
-      },
-      "… 16 more"
-    ],
+    "id": "<id:10>",
+    "name": "<name:8>",
+    "aliases": "(0 items)",
+    "description": "Call of Duty: Modern Warfare 4 is a first-person shooter and the follow-up to Modern Warfare III (2023), continuing the rebooted Modern Warfare storyline. The campaign is set during a North Korean invasion of South Korea and features dual perspectives: a young South Korean soldier named Private Park facing his first combat deployment, and Captain Price operating outside official channels on a pers… (695 chars)",
+    "icon_hash": "cd03f4a5ad670a01f554c6a2832e2db7",
+    "executables": "(2 items)",
+    "third_party_skus": "(6 items)",
     "overlay": false,
     "overlay_warn": false,
     "overlay_compatibility_hook": false,
     "overlay_methods": 0,
     "hook": false,
-    "themes": [
-      "Action",
-      "Warfare"
-    ],
-    "linked_applications": [],
-    "media": {
-      "cover_hash": "7f8275b121cbd881753bad14969257ea",
-      "artwork_urls": [
-        "https://images-ext-1.discordapp.net/external/5UjV7Madww5K5njtAiKVe2B8gqg-RiR2zIblgXnnLqs/https/images.igdb.com/igdb/image/upload/t_1080p/ar604q.jpg",
-        "https://images-ext-1.discordapp.net/external/6KCWk5qfuU9xA7hUyQflx0VuZiavZiZH36VTzWPVCoI/https/images.igdb.com/igdb/image/upload/t_1080p/ar604r.jpg",
-        "https://images-ext-1.discordapp.net/external/ECekovq2erBXHWpFIMp6Ypwd2TD4BgFIEdv4ZdUsQWQ/https/images.igdb.com/igdb/image/upload/t_1080p/ar604p.jpg",
-        "https://images-ext-1.discordapp.net/external/N2d29aE527Ov2lHiyChlbvZ_6bRCp65zArOgMKmEmT0/https/images.igdb.com/igdb/image/upload/t_1080p/ar604u.jpg",
-        "https://images-ext-1.discordapp.net/external/QFspQz8vHVkUrBUxNAJWlCPZZL_s1AIarccPpG4nxNQ/https/images.igdb.com/igdb/image/upload/t_1080p/ar604o.jpg",
-        "https://images-ext-1.discordapp.net/external/X7wKUScPDDeW_cYz1ongu0GMeL_6i46AYSUR_S-PrLA/https/images.igdb.com/igdb/image/upload/t_1080p/ar604s.jpg",
-        "… 2 more"
-      ],
-      "icon": {
-        "type": "hash",
-        "value": "532b24566a2cdde9646052b7e4d43bc0"
-      },
-      "cover": {
-        "type": "hash",
-        "value": "7f8275b121cbd881753bad14969257ea"
-      },
-      "artwork": [
-        {
-          "type": "url",
-          "value": "https://images-ext-1.discordapp.net/external/5UjV7Madww5K5njtAiKVe2B8gqg-RiR2zIblgXnnLqs/https/images.igdb.com/igdb/image/upload/t_1080p/ar604q.jpg"
-        },
-        {
-          "type": "url",
-          "value": "https://images-ext-1.discordapp.net/external/6KCWk5qfuU9xA7hUyQflx0VuZiavZiZH36VTzWPVCoI/https/images.igdb.com/igdb/image/upload/t_1080p/ar604r.jpg"
-        },
-        {
-          "type": "url",
-          "value": "https://images-ext-1.discordapp.net/external/ECekovq2erBXHWpFIMp6Ypwd2TD4BgFIEdv4ZdUsQWQ/https/images.igdb.com/igdb/image/upload/t_1080p/ar604p.jpg"
-        },
-        {
-          "type": "url",
-          "value": "https://images-ext-1.discordapp.net/external/N2d29aE527Ov2lHiyChlbvZ_6bRCp65zArOgMKmEmT0/https/images.igdb.com/igdb/image/upload/t_1080p/ar604u.jpg"
-        },
-        {
-          "type": "url",
-          "value": "https://images-ext-1.discordapp.net/external/QFspQz8vHVkUrBUxNAJWlCPZZL_s1AIarccPpG4nxNQ/https/images.igdb.com/igdb/image/upload/t_1080p/ar604o.jpg"
-        },
-        {
-          "type": "url",
-          "value": "https://images-ext-1.discordapp.net/external/X7wKUScPDDeW_cYz1ongu0GMeL_6i46AYSUR_S-PrLA/https/images.igdb.com/igdb/image/upload/t_1080p/ar604s.jpg"
-        },
-        "… 2 more"
-      ]
-    },
+    "themes": "(2 items)",
+    "linked_applications": "(3 items)",
+    "media": "(5 fields)",
     "first_release_date": "2026-10-23T00:00:00+00:00",
-    "genres": [
-      23
-    ],
-    "platforms": [
-      0,
-      1,
-      2
-    ],
-    "platform_availability": [
-      "console",
-      "desktop"
-    ],
-    "cover_image_hash": "7f8275b121cbd881753bad14969257ea",
-    "screenshot_urls": [
-      "https://images-ext-1.discordapp.net/external/6Quwi0Vk-EV5zssqunflZIuabJAs-KNTuolax9DdBhk/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3n.jpg",
-      "https://images-ext-1.discordapp.net/external/CXHgMq1VDGEJO2XQgpgFhUAeG8Y6Q2VBQI6MNiKFhgI/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3o.jpg",
-      "https://images-ext-1.discordapp.net/external/H9T04tXpFFGAeG4KG7pWBPLVp-mLE0DiY5KHuiN3r7s/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3t.jpg",
-      "https://images-ext-1.discordapp.net/external/J_MCgkZNLbf-bO3ik_xbt1PWjGhwJyMcpObrVZsX7OU/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3p.jpg",
-      "https://images-ext-1.discordapp.net/external/Y6nVJwzC9CsDcdhTB4Flm1GaYCpnqXceGyaZb0Z4GKU/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3q.jpg",
-      "https://images-ext-1.discordapp.net/external/fBmf9za3_WS0uvvjQ_xFAQRBh9jxXi6GGRnasXOqDgw/https/images.igdb.com/igdb/image/upload/t_1080p/sc13i3s.jpg",
-      "… 1 more"
-    ],
-    "websites": [
-      {
-        "url": "https://discord.gg/callofdutyofficial",
-        "category": 18
-      },
-      {
-        "url": "https://www.facebook.com/CallofDuty",
-        "category": 4
-      },
-      {
-        "url": "https://www.instagram.com/callofduty/",
-        "category": 8
-      },
-      {
-        "url": "https://www.callofduty.com/",
-        "category": 1
-      },
-      {
-        "url": "https://www.youtube.com/@CallofDuty",
-        "category": 9
-      },
-      {
-        "url": "https://x.com/CallofDuty",
-        "category": 5
-      },
-      "… 1 more"
-    ],
-    "companies": [
-      {
-        "name": "Activision",
-        "roles": [
-          1
-        ]
-      },
-      {
-        "name": "Infinity Ward",
-        "roles": [
-          2
-        ]
-      }
-    ],
-    "steam_release_status": 3,
-    "reviews": {
-      "steam": {
-        "rating": 91,
-        "rating_count": 22376,
-        "recent_rating": 67,
-        "recent_rating_count": 11915,
-        "localized_rating": 59,
-        "localized_rating_count": 382305
-      }
-    },
-    "l30_rank": 7,
+    "genres": "(1 items)",
+    "platforms": "(3 items)",
+    "platform_availability": "(2 items)",
+    "cover_image_hash": "b84dc72f3c50792e031f4ee8337452ee",
+    "screenshot_hashes": "(7 items)",
+    "screenshot_urls": "(7 items)",
+    "websites": "(7 items)",
+    "companies": "(2 items)",
+    "reviews": "(1 fields)",
     "game_flags": 0,
-    "content_classification": {
-      "agency_ratings": {
-        "esrb": {
-          "rating": 4,
-          "descriptors": []
-        },
-        "pegi": {
-          "rating": 5,
-          "descriptors": []
-        }
-      }
-    }
+    "content_classification": "(1 fields)"
+  },
+  {
+    "id": "<id:11>",
+    "name": "<name:9>",
+    "aliases": "(0 items)",
+    "description": "Where Winds Meet is a free-to-play wuxia action-adventure RPG set in China during the Five Dynasties and Ten Kingdoms period. Players take on the role of a wandering adventurer known as a youxia, wielding a variety of weapons including swords, spears, fans, and umbrellas, each paired with distinct martial arts styles. The open world spans multiple regions and supports both single-player and multip… (618 chars)",
+    "icon_hash": "54b48542501564ce5e9837f7fa3171a5",
+    "executables": "(2 items)",
+    "third_party_skus": "(7 items)",
+    "overlay": false,
+    "overlay_warn": false,
+    "overlay_compatibility_hook": false,
+    "overlay_methods": 0,
+    "hook": false,
+    "themes": "(4 items)",
+    "linked_applications": "(1 items)",
+    "media": "(6 fields)",
+    "first_release_date": "2024-12-27T00:00:00+00:00",
+    "genres": "(2 items)",
+    "platforms": "(5 items)",
+    "platform_availability": "(3 items)",
+    "screenshot_urls": "(7 items)",
+    "websites": "(7 items)",
+    "companies": "(2 items)",
+    "steam_release_status": 3,
+    "reviews": "(4 fields)",
+    "opencritic_url": "https://opencritic.com/game/19677/where-winds-meet",
+    "community_guild_ids": "(7 items)",
+    "game_flags": 0,
+    "content_classification": "(1 fields)"
+  },
+  {
+    "id": "<id:12>",
+    "name": "<name:10>",
+    "aliases": "(0 items)",
+    "description": "Arknights: Endfield is a 3D real-time strategy RPG developed by HYPERGRYPH. You will take on the role of the Endministrator of Endfield Industries, set out across Talos-II to uncover its secrets, and defend and expand the frontiers of human civilization.",
+    "icon_hash": "a1c43f46f274856e6fb9edc8afda149d",
+    "executables": "(1 items)",
+    "third_party_skus": "(7 items)",
+    "overlay": false,
+    "overlay_warn": false,
+    "overlay_compatibility_hook": false,
+    "overlay_methods": 0,
+    "hook": false,
+    "themes": "(3 items)",
+    "linked_applications": "(1 items)",
+    "media": "(6 fields)",
+    "first_release_date": "2026-01-22T00:00:00+00:00",
+    "genres": "(3 items)",
+    "platforms": "(4 items)",
+    "platform_availability": "(3 items)",
+    "cover_image_hash": "941cd7843b7d364efa507aafd613a7c4",
+    "banner_hash": "73ef144a2ebe1c4e507bba257d986866",
+    "screenshot_hashes": "(7 items)",
+    "screenshot_urls": "(7 items)",
+    "trailers": "(1 items)",
+    "websites": "(7 items)",
+    "companies": "(2 items)",
+    "steam_release_status": 3,
+    "reviews": "(4 fields)",
+    "opencritic_url": "https://opencritic.com/game/19963/arknights-endfield",
+    "l30_rank": 94,
+    "community_guild_ids": "(4 items)",
+    "game_flags": 0,
+    "content_classification": "(1 fields)"
+  },
+  {
+    "id": "<id:1>",
+    "name": "<name:1>",
+    "aliases": "(1 items)",
+    "description": "Roblox is a massively multiplayer online platform marketed toward creators and players of all ages. It allows users to create their own virtual games using a variety of objects, which they and others can enter and socialize in. Games created on Roblox can be scripted using a sandboxed scripting language based on Lua 5.1 to affect events that occur in-game and create different scenarios.",
+    "icon_hash": "f2b60e350a2097289b3b0b877495e55f",
+    "executables": "(3 items)",
+    "third_party_skus": "(7 items)",
+    "overlay": false,
+    "overlay_warn": false,
+    "overlay_compatibility_hook": false,
+    "overlay_methods": 1,
+    "hook": true,
+    "themes": "(4 items)",
+    "linked_applications": "(0 items)",
+    "media": "(6 fields)",
+    "first_release_date": "2006-09-01T00:00:00+00:00",
+    "genres": "(3 items)",
+    "platforms": "(6 items)",
+    "platform_availability": "(3 items)",
+    "banner_hash": "e970e33dd647f87dc87f4dc4b28f4627",
+    "screenshot_urls": "(7 items)",
+    "websites": "(7 items)",
+    "companies": "(1 items)",
+    "reviews": "(3 fields)",
+    "opencritic_url": "https://opencritic.com/game/1927/roblox",
+    "l30_rank": 1,
+    "community_guild_ids": "(7 items)",
+    "game_flags": 0,
+    "content_classification": "(1 fields)"
+  },
+  {
+    "id": "<id:13>",
+    "name": "<name:11>",
+    "aliases": "(1 items)",
+    "description": "Honkai: Star Rail is an all-new strategy-RPG title in the Honkai series that takes players on a cosmic adventure across the stars. Hop aboard the Astral Express and experience the galaxy's infinite wonders on this journey filled with adventure and thrill.",
+    "icon_hash": "444d067889922e42b0af99b13e5d5c72",
+    "executables": "(1 items)",
+    "third_party_skus": "(7 items)",
+    "overlay": false,
+    "overlay_warn": false,
+    "overlay_compatibility_hook": false,
+    "overlay_methods": 0,
+    "hook": true,
+    "themes": "(3 items)",
+    "linked_applications": "(1 items)",
+    "media": "(6 fields)",
+    "first_release_date": "2023-04-26T00:00:00+00:00",
+    "genres": "(3 items)",
+    "platforms": "(4 items)",
+    "platform_availability": "(3 items)",
+    "cover_image_hash": "2e9bc8a0ff931b6cd0cf00a9a8be90eb",
+    "banner_hash": "f33bc88eae059cbb939029e34854911e",
+    "screenshot_hashes": "(7 items)",
+    "screenshot_urls": "(7 items)",
+    "trailers": "(1 items)",
+    "websites": "(7 items)",
+    "companies": "(3 items)",
+    "reviews": "(3 fields)",
+    "opencritic_url": "https://opencritic.com/game/14841/honkai-star-rail",
+    "l30_rank": 43,
+    "community_guild_ids": "(7 items)",
+    "game_flags": 0,
+    "content_classification": "(1 fields)"
   }
 ]
 ```

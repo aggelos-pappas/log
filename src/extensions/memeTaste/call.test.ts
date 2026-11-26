@@ -18,11 +18,11 @@ describe('the model call', () => {
 
   test('the call prompt carries his skips and how often he skips', () => {
     const prompt = callPrompt(situation, [meme('a')], { picked: [], passed: [], skipRate: 0.55, skips: [{ post: 'blue angels are the best', context: 'patriotic flex', role: 'sales_rep' }] })
-    expect(prompt).toContain('matt skips about 55% of the posts')
+    expect(prompt).toContain('the owner skips about 55% of the posts')
     expect(prompt).toContain('- sales rep: "blue angels are the best" (context: patriotic flex)')
   })
 
-  test('a call is right only when matt makes the same one', () => {
+  test('a call is right only when the owner makes the same one', () => {
     expect(callMatched(call(0.8, 'a'), { templateId: 'a', name: 'meme a', good: true })).toBe(true)
     expect(callMatched(call(0.8, 'a'), { templateId: 'b', name: 'meme b', good: true })).toBe(false)
     expect(callMatched(call(0.8, 'a'), { templateId: '', name: '', good: false, skipped: true })).toBe(false)
@@ -37,7 +37,7 @@ describe('the model call', () => {
     expect(gate.bands.find((b) => b.from === 0.5)).toMatchObject({ right: 1, calls: 3 })
   })
 
-  test('every answered rating becomes a training example, the answer being what matt did', () => {
+  test('every answered rating becomes a training example, the answer being what the owner did', () => {
     const example = trainingExample({ word: 'a founder flexing', thread: [{ handle: 'x', text: 'we raised 2m' }], templateId: 'a', name: 'Jensen Huang Pucker Face', mediaUrl: null, good: true, reply: 'its taste raw taste', searched: 'taste', fromSearch: true, shown: ['Cat Pointing'], at: '' })!
     expect(example.messages.map((m) => m.role)).toEqual(['system', 'user', 'assistant'])
     expect(JSON.parse(example.messages[2]!.content)).toEqual({ wouldReply: 1, id: 'Jensen Huang Pucker Face', caption: 'its taste raw taste', memeConfidence: 1, searched: 'taste' })

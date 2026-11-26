@@ -1,29 +1,59 @@
 import { join } from 'node:path'
 import { getState, putState } from '../../storage/state/index'
 import { AGENT_HOOKS } from '../registry/index'
+import { harnessOff } from '../harness/off/client'
 import type { AgentHook, HookEvent } from '../registry/types'
 import { sessionIdOf } from '../sessionOffsets/index'
+import { accountsFingerprint, freshBlock, numbersOut } from '../sessionBlocks/index'
+import type { BlockStore } from '../sessionBlocks/index'
 import { hookReply, parseMemory } from '../pageState/index'
 import { readOpenBrowsers } from '../../browser/inspect/index'
-import { diskFree, runsBytes, storageVerdict } from '../../browser/runStore/index'
-import { engineContext, fbkStateRoot, platformStateRoot, twitterStateRoot } from '../../directApi/engine/index'
-import { codeStampWatcher, localChangesLine, staleServerLine, uncommittedFiles } from '../../mcp/freshness/index'
+import { diskFree, servedRunsBytes, storageVerdict } from '../../browser/runStore/index'
+import { agentNotice, refreshInBackground } from '../../release/check/index'
+import { engineContext } from '../../directApi/engine/index'
+import { codeStampWatcher, localChangesLine, staleServerLine, uncommittedFiles, uncommittedFilesAsync } from '../../mcp/freshness/index'
 import type { StampWatcher } from '../../mcp/freshness/index'
 import { kbConfig } from '../../knowledge/base/index'
 import { newQueueEvents, queueContext } from '../../twitter/queue/events/index'
 import { newLiveEvents, xLiveContext } from '../../twitter/live/feed/index'
-import { inboxTextWithVoiceNotes } from '../../media/voiceNotes/index'
-import { replaceHungOwners } from '../../inbox/relay/index'
-import { claimContext } from '../../inbox/claims/index'
-import { clearDeadQueueLocks, codeStamp, coolingDown, ensureLiveWatchers, hookReaderOf, inboxContext, startDescriber, startDiscordWatch, startInstagramWatch, startSlackWatch, startTwitterWatch, stopStaleWatchers, storedInboxContext, takeAlerts, takePending, twitterAccounts } from '../../inbox/watch/index'
+import { clearDeadQueueLocks, ensureLiveWatchers, hookReaderOf, startDescriber } from '../../inbox/watch/index'
+import { readPending } from '../../inbox/pending/index'
+import { quietUntil } from '../../inbox/push/index'
+import { superviseLocalWatchers } from '../../platformKit/watcher/index'
 import { hookAnswer } from '../../contextLayer/hook/index'
 import type { HookInput } from '../../contextLayer/hook/index'
-import { REFUSING_HOOKS } from './types'
+import { relateContext } from '../../relate/graph/index'
+import { ensureGraphOwner, startGraphOwner } from '../../relate/owner/index'
+import { connectedSearch } from '../../relate/search/index'
+import { cardsNamedIn } from '../../people/index'
+import { defaultDbPath, openDatabase } from '../../storage/schema/index'
+import type { ConnectedSearch } from '../../relate/search/index'
+import type { TimingStage } from '../../contextLayer/service/types'
+import { REFUSING_HOOKS, WAITING_HOOKS } from './types'
 import type { EventAnswer, HookAnswer, HookTiming, RouteAsk } from './types'
 
-export function storageAnswer(): HookAnswer {
-  const verdict = storageVerdict(runsBytes(), diskFree())
-  return verdict ? { context: verdict } : {}
+export function updateNoticeOf(raw: string): string | null {
+  try {
+    refreshInBackground()
+    return agentNotice(sessionIdOf(raw))
+  } catch {
+    return null
+  }
+}
+
+export interface BlockOptions {
+  event?: HookEvent
+  store?: BlockStore
+}
+
+export function resumedSession(event: HookEvent | undefined, raw: string): boolean {
+  return event === 'SessionStart' && sourceOf(raw) !== 'startup'
+}
+
+export function storageAnswer(raw = '', verdict: () => string | null = () => storageVerdict(servedRunsBytes(), diskFree()), options: BlockOptions = {}): HookAnswer {
+  const said = verdict() ?? ''
+  const text = [freshBlock('storage', sessionIdOf(raw), said, numbersOut(said), options.store, resumedSession(options.event, raw)), updateNoticeOf(raw)].filter(Boolean).join('\n')
+  return text ? { context: text } : {}
 }
 
 export interface FreshnessSource {
@@ -40,41 +70,65 @@ export function useFreshnessSource(source: FreshnessSource | null): void {
 export interface FreshnessDeps {
   stamps?: StampWatcher
   files?: () => string[]
+  filesAsync?: () => Promise<string[]>
   refreshMs?: number
   now?: () => number
+  background?: boolean
 }
 
-export function cachedFreshness(repo: string, deps: FreshnessDeps = {}): FreshnessSource & { close(): void } {
+export function cachedFreshness(repo: string, deps: FreshnessDeps = {}): FreshnessSource & { close(): void; settled(): Promise<void> } {
   const stamps = deps.stamps ?? codeStampWatcher(repo)
   const list = deps.files ?? (() => uncommittedFiles(repo))
+  const listAsync = deps.filesAsync ?? (deps.files ? async () => list() : () => uncommittedFilesAsync(repo))
   const refreshMs = deps.refreshMs ?? 60_000
   const now = deps.now ?? Date.now
   let files = list()
   let filesStamp = stamps.current()
   let filesAt = now()
+  let refreshing: Promise<void> | null = null
+  const due = () => stamps.current() !== filesStamp || now() - filesAt >= refreshMs
+  const refreshInBackground = () => {
+    refreshing ??= (async () => {
+      await stamps.refreshAsync()
+      if (!due()) return
+      const stamp = stamps.current()
+      filesAt = now()
+      files = await listAsync()
+      filesStamp = stamp
+    })()
+      .catch(() => {})
+      .finally(() => {
+        refreshing = null
+      })
+  }
   return {
     stamp: () => stamps.current(),
     changes() {
+      if (deps.background) {
+        refreshInBackground()
+        return files
+      }
       stamps.refresh()
-      if (stamps.current() !== filesStamp || now() - filesAt >= refreshMs) {
+      if (due()) {
         files = list()
         filesStamp = stamps.current()
         filesAt = now()
       }
       return files
     },
+    settled: async () => {
+      await refreshing
+    },
     close: () => stamps.close(),
   }
 }
 
-export function enginesAnswer(event: HookEvent, repo: string): HookAnswer {
-  const text = [staleServerLine(repo, undefined, freshness?.stamp()), localChangesLine(repo, freshness ? freshness.changes() : undefined), engineContext()].filter(Boolean).join('\n')
-  const root = fbkStateRoot()
-  const last = join(root, '.lastHook')
-  const changed = getState<string>('lastHook', last, { legacyFile: last, parse: (raw) => raw })?.body !== text
-  if (event !== 'SessionStart' && !changed) return {}
-  putState('lastHook', last, text)
-  return { context: text }
+export function enginesAnswer(event: HookEvent, repo: string, raw = '', accounts: () => string = () => engineContext(), options: BlockOptions = {}): HookAnswer {
+  const lines = [staleServerLine(repo, undefined, freshness?.stamp()), localChangesLine(repo, freshness ? freshness.changes() : undefined)].filter(Boolean)
+  const said = accounts()
+  const text = [...lines, said].filter(Boolean).join('\n')
+  const fresh = freshBlock('engines', sessionIdOf(raw), text, [...lines, accountsFingerprint(said)].join('\n'), options.store, resumedSession(event, raw))
+  return fresh ? { context: fresh } : {}
 }
 
 async function chunkCount(url: string): Promise<number | null> {
@@ -92,8 +146,8 @@ async function chunkCount(url: string): Promise<number | null> {
 export async function knowledgeAnswer(): Promise<HookAnswer> {
   const config = kbConfig()
   const count = 'missing' in config ? null : await chunkCount(config.redisUrl)
-  const reach = 'missing' in config ? `not set up on this machine (${config.missing})` : count === null ? 'not reachable right now (node02 over the tailnet)' : `${count} indexed chunks`
-  return { context: `log-cli knowledge base (rule 93): every AGENTS.md rule, skill, doc, infra note, Claude memory file, page state, account and agent note, in ListeningKit's Twenty and searched through Redis, ${reach}. Before guessing how something works, where a login lives or what an earlier session found, run \`log kb search "<query>"\` (MCP kbSearch) and \`log kb show <key>\`; save what this session learns with \`log kb remember "<text>"\`, never a secret.` }
+  const reach = 'missing' in config ? `not set up on this machine (${config.missing})` : count === null ? 'not reachable right now (the KB_TWENTY_URL host)' : `${count} indexed chunks`
+  return { context: `log-cli knowledge base: every AGENTS.md rule, skill, doc, infra note, memory file, page state, account and agent note, kept in Twenty and searched through Redis, ${reach}. The MCP tools read it: \`kbSearch\` { query } finds what an earlier session found or how something works, \`kbShow\` { key } reads one entry, and \`kbRemember\` { text } saves what this session learns, never a secret.` }
 }
 
 export function queueAnswer(raw: string): HookAnswer {
@@ -102,6 +156,7 @@ export function queueAnswer(raw: string): HookAnswer {
 }
 
 export function xLiveAnswer(event: HookEvent, raw: string): HookAnswer {
+  if (quietUntil(Date.now())) return {}
   const text = xLiveContext(newLiveEvents(undefined, sessionIdOf(raw)), { sessionStart: event === 'SessionStart' })
   return text ? { context: text } : {}
 }
@@ -120,20 +175,11 @@ export function pageStateAnswer(event: HookEvent, raw: string): HookAnswer {
 }
 
 export function inboxAnswer(event: HookEvent, raw: string, repo: string): HookAnswer {
-  replaceHungOwners('twitter', twitterAccounts())
-  for (const platform of ['discord', 'slack', 'instagram']) replaceHungOwners(platform, twitterAccounts(platformStateRoot(platform)))
-  stopStaleWatchers('twitter', twitterAccounts(), codeStamp(repo, 'twitter'))
-  for (const platform of ['discord', 'slack', 'instagram']) stopStaleWatchers(platform, twitterAccounts(platformStateRoot(platform)), codeStamp(repo, platform))
+  superviseLocalWatchers(repo)
   clearDeadQueueLocks()
-  ensureLiveWatchers('twitter', twitterAccounts().filter((a) => !coolingDown(twitterStateRoot(), a)), (account) => startTwitterWatch(account, repo))
-  ensureLiveWatchers('discord', twitterAccounts(platformStateRoot('discord')).filter((a) => !coolingDown(platformStateRoot('discord'), a)), (account) => startDiscordWatch(account, repo))
-  ensureLiveWatchers('slack', twitterAccounts(platformStateRoot('slack')).filter((a) => !coolingDown(platformStateRoot('slack'), a)), (account) => startSlackWatch(account, repo))
-  ensureLiveWatchers('instagram', twitterAccounts(platformStateRoot('instagram')).filter((a) => !coolingDown(platformStateRoot('instagram'), a)), (account) => startInstagramWatch(account, repo))
   ensureLiveWatchers('model', ['describer'], () => startDescriber(repo))
-  const alerts = takeAlerts(hookReaderOf(raw))
-  const loud = alerts.length ? ['>>> ONE PROCESS PER ACCOUNT, NEVER TWO (rule 131): a second watcher tried to start and was refused. Every Claude session shares the one watcher per account through the inbox; never start another. Tell matt now.', ...alerts].join('\n') : ''
-  const fresh = takePending(hookReaderOf(raw)).map((m) => ({ ...m, text: inboxTextWithVoiceNotes(m) }))
-  const text = [loud, inboxContext(fresh), claimContext(fresh), event === 'SessionStart' ? storedInboxContext(twitterAccounts()) : null].filter(Boolean).join('\n\n')
+  if (quietUntil(Date.now())) return {}
+  const { text } = readPending(hookReaderOf(raw), { stored: event === 'SessionStart' })
   return text ? { context: text } : {}
 }
 
@@ -145,6 +191,30 @@ export async function useCasesAnswer(raw: string, route: RouteAsk): Promise<Hook
   if (!raw.trim()) return {}
   const result = await hookAnswer(input, route as never)
   return result.text ? { context: result.text } : {}
+}
+
+export function promptOf(raw: string): string {
+  try {
+    return String((JSON.parse(raw || '{}') as { prompt?: string }).prompt ?? '')
+  } catch {
+    return ''
+  }
+}
+
+export async function relateAnswer(raw: string, repo: string, searched: (prompt: string) => Promise<ConnectedSearch | null> = connectedSearch, dbPath?: string, start: (repo: string, dbPath: string) => number | null = startGraphOwner): Promise<HookAnswer> {
+  try {
+    ensureGraphOwner(repo, dbPath ?? defaultDbPath(), start)
+  } catch {}
+  const prompt = promptOf(raw)
+  if (!prompt.trim() || prompt.trimStart().startsWith('<')) return {}
+  const answer = await relateContext(prompt, dbPath)
+  let cards = ''
+  try {
+    cards = cardsNamedIn(openDatabase(dbPath ?? defaultDbPath()), prompt).map((c) => c.text).join('\n')
+  } catch {}
+  const found = answer.outcome === 'answered' ? await searched(prompt).catch(() => null) : null
+  const text = [cards, answer.text, found?.text ?? ''].filter(Boolean).join('\n')
+  return text ? { context: text } : {}
 }
 
 function toolOf(raw: string): string {
@@ -170,7 +240,7 @@ export function hooksForEvent(event: HookEvent, raw: string, hooks: readonly Age
 
 export function answerOne(hook: AgentHook, event: HookEvent, raw: string, repo: string, route: RouteAsk): HookAnswer | Promise<HookAnswer> {
   const name = hook.script.replace(/^.*\//, '').replace(/\.ts$/, '')
-  if (name === 'storage') return storageAnswer()
+  if (name === 'storage') return storageAnswer(raw, undefined, { event })
   if (name === 'engines') return enginesAnswer(event, repo)
   if (name === 'knowledge') return knowledgeAnswer()
   if (name === 'queue') return queueAnswer(raw)
@@ -178,6 +248,7 @@ export function answerOne(hook: AgentHook, event: HookEvent, raw: string, repo: 
   if (name === 'pageState') return pageStateAnswer(event, raw)
   if (name === 'inbox') return inboxAnswer(event, raw, repo)
   if (name === 'useCases') return useCasesAnswer(raw, route)
+  if (name === 'relate') return relateAnswer(raw, repo)
   return {}
 }
 
@@ -197,22 +268,62 @@ export function mergeAnswers(event: HookEvent, answers: readonly HookAnswer[]): 
   return { ...decision, ...(contexts.length ? { hookSpecificOutput: { hookEventName: event, additionalContext: contexts.join('\n\n') } } : {}) }
 }
 
+export function sentAtOf(raw: string): number | null {
+  try {
+    const sent = Number((JSON.parse(raw || '{}') as { log_sent_at?: unknown }).log_sent_at)
+    return Number.isFinite(sent) && sent > 0 ? sent : null
+  } catch {
+    return null
+  }
+}
+
+export function hookStages(raw: string, timings: readonly HookTiming[], at: { processAt?: number; bootedAt?: number; arrivedAt?: number }): TimingStage[] {
+  const sentAt = sentAtOf(raw)
+  const stages: TimingStage[] = []
+  const between = (name: string, from: number | null | undefined, to: number | undefined) => {
+    if (from && to && to >= from) stages.push({ name, startedAt: from, ms: to - from })
+  }
+  between('spawn', sentAt, at.processAt)
+  between('bunStart', at.processAt, at.bootedAt)
+  between('sent', sentAt, at.arrivedAt)
+  for (const t of timings) stages.push({ name: `hook ${t.hook}`, startedAt: t.startedAt ?? at.bootedAt ?? at.arrivedAt ?? Date.now(), ms: t.ms, ok: t.ok })
+  return stages
+}
+
+export function waitingHooksFirst(chosen: readonly AgentHook[]): AgentHook[] {
+  const waits = (hook: AgentHook) => WAITING_HOOKS.includes(hookName(hook))
+  return [...chosen.filter(waits), ...chosen.filter((hook) => !waits(hook))]
+}
+
+const hookName = (hook: AgentHook) => hook.script.replace(/^.*\//, '').replace(/\.ts$/, '')
+
+const failedAnswer = (name: string, event: HookEvent, error: unknown): HookAnswer => ({ context: `log hook ${name} failed on ${event}: ${error instanceof Error ? error.message : String(error)}` })
+
 export async function answerEvent(event: HookEvent, raw: string, repo: string, route: RouteAsk, hooks: readonly AgentHook[] = AGENT_HOOKS): Promise<EventAnswer> {
+  if (harnessOff()) return { event, body: {}, timings: [] }
   const chosen = hooksForEvent(event, raw, hooks)
+  const order = waitingHooksFirst(chosen)
   const timings: HookTiming[] = []
-  const settled = await Promise.all(
-    chosen.map(async (hook) => {
-      const started = performance.now()
-      const name = hook.script.replace(/^.*\//, '').replace(/\.ts$/, '')
-      try {
-        const answer = await answerOne(hook, event, raw, repo, route)
-        timings.push({ hook: name, ms: performance.now() - started, ok: true })
+  const pending = order.map((hook) => {
+    const name = hookName(hook)
+    const startedAt = Date.now()
+    const began = performance.now()
+    try {
+      const answer = answerOne(hook, event, raw, repo, route)
+      if (!(answer instanceof Promise)) {
+        timings.push({ hook: name, ms: performance.now() - began, ok: true, startedAt })
         return answer
-      } catch (error) {
-        timings.push({ hook: name, ms: performance.now() - started, ok: false })
-        return { context: `log hook ${name} failed on ${event}: ${error instanceof Error ? error.message : String(error)}` } satisfies HookAnswer
       }
-    }),
-  )
-  return { event, body: mergeAnswers(event, settled), timings }
+      return answer.then(
+        (done) => (timings.push({ hook: name, ms: performance.now() - began, ok: true, startedAt }), done),
+        (error) => (timings.push({ hook: name, ms: performance.now() - began, ok: false, startedAt }), failedAnswer(name, event, error)),
+      )
+    } catch (error) {
+      timings.push({ hook: name, ms: performance.now() - began, ok: false, startedAt })
+      return failedAnswer(name, event, error)
+    }
+  })
+  const settled = await Promise.all(pending)
+  const byHook = new Map(order.map((hook, i) => [hook, settled[i]] as const))
+  return { event, body: mergeAnswers(event, chosen.map((hook) => byHook.get(hook) ?? {})), timings }
 }

@@ -1,0 +1,57 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - uses: actions/checkout@v4
+        if: ${{ steps.release.outputs.pr && !steps.release.outputs.release_created }}
+        with:
+          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+
+      - uses: oven-sh/setup-bun@v2
+        if: ${{ steps.release.outputs.pr && !steps.release.outputs.release_created }}
+
+      - name: Release PR gets its Models line and the README Releases table
+        if: ${{ steps.release.outputs.pr && !steps.release.outputs.release_created }}
+        run: |
+          bun scripts/docs/releasesTable.ts
+          if ! git diff --quiet -- CHANGELOG.md README.md; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add CHANGELOG.md README.md
+            git commit -m "docs: releases table and pinned models for the release"
+            git push
+          fi
+
+      - uses: actions/checkout@v4
+        if: ${{ steps.release.outputs.release_created }}
+
+      - uses: actions/setup-node@v4
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish to npm with provenance
+        if: ${{ steps.release.outputs.release_created && env.NPM_TOKEN != '' }}
+        run: npm publish --provenance --access public --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { callHost, readHostInfo } from './helpers'
+import { SPAWNS_PROCESS_MS } from '../../../../scripts/tests/timeouts.ts'
 
 const python = join(import.meta.dir, '..', '..', '..', '..', 'python')
 const engine = join(python, 'twitterApi', 'engine.py')
@@ -17,7 +18,7 @@ function call(action: string): Record<string, unknown> {
   const cookiesPath = join(dir, 'cookies.json')
   writeFileSync(cookiesPath, JSON.stringify({ auth_token: 'a'.repeat(40), ct0: 'b'.repeat(40), twid: 'u%3D1' }))
   const spec = join(dir, 'spec.json')
-  writeFileSync(spec, JSON.stringify({ action, account, cookiesPath, text: 'hello', userId: '1' }))
+  writeFileSync(spec, JSON.stringify({ action, account, route: { proxy: null }, cookiesPath, text: 'hello', userId: '1' }))
   const run = spawnSync(process.env.LOG_PYTHON || 'python', [engine, spec], { encoding: 'utf8', env, timeout: 60_000 })
   return JSON.parse(run.stdout.trim().split('\n').pop() || '{}')
 }
@@ -37,20 +38,20 @@ describe('one X session per account: every call goes through the same host', () 
     const answer = call('dm')
     expect(answer.code).toBe('notLive')
     expect((answer.xSession as { pid: number }).pid).toBe(hostInfo().pid)
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('the next call is answered by the same session, not a new one', () => {
     const first = hostInfo().pid
     const answer = call('dm')
     expect((answer.xSession as { pid: number; calls: number }).pid).toBe(first)
     expect((answer.xSession as { calls: number }).calls).toBeGreaterThanOrEqual(2)
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('a second session for the same account refuses to start', () => {
     const second = spawnSync(process.env.LOG_PYTHON || 'python', [host, account], { encoding: 'utf8', env, timeout: 30_000 })
     expect(second.status).toBe(1)
     expect(second.stdout).toContain('another X session already holds')
-  })
+  }, SPAWNS_PROCESS_MS)
 
   test('Bun reaches the same session directly over its port, with no Python started for the call', async () => {
     const info = readHostInfo(join(state, account, 'host.json'))
@@ -58,7 +59,7 @@ describe('one X session per account: every call goes through the same host', () 
     const dir = mkdtempSync(join(tmpdir(), 'logTwitterHostDirect'))
     const cookiesPath = join(dir, 'cookies.json')
     writeFileSync(cookiesPath, JSON.stringify({ auth_token: 'a'.repeat(40), ct0: 'b'.repeat(40), twid: 'u%3D1' }))
-    const called = await callHost(info!, { action: 'dm', account, cookiesPath, text: 'hello', userId: '1' })
+    const called = await callHost(info!, { action: 'dm', account, route: { proxy: null }, cookiesPath, text: 'hello', userId: '1' })
     expect(called.reached).toBe(true)
     if (!called.reached) return
     expect(called.answer.code).toBe('notLive')

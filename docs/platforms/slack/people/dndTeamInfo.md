@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryUP5h90z1pj92UkUA
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `error` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script125.js:37 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:146 "2bB/"`, `runs/inspect/20261103T065639_mattSlack/script3.js:2954 "2bB/"` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script125.js:37 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:146 "2bB/"`, `runs/inspect/20261103T065639_slackAccount/script3.js:2954 "2bB/"` |
 | rea | `ev_e155976e730445a1e2ee00e54f9fbcbc57f4556e541ad2d601de0b94c62a2f4e` |
 
 Seen 2 time(s) in 1 run(s).
@@ -20,13 +20,13 @@ Seen 2 time(s) in 1 run(s).
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 4: goto /client | 1 | 200 | 367 ms | 8974 ms | — |
-| inspect | step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU | 1 | 200 | 304 ms | 6851 ms | — |
+| inspect | step 6: goto /client/<teamId:1>/<channelId:1> | 1 | 200 | 304 ms | 6851 ms | — |
 
 ### What it sent and what came back (the newest 2 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 367 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 367 ms
 
 Sent:
 
@@ -36,7 +36,7 @@ Sent:
     "_x_id": "2c6eaecf-1793689066.722",
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -47,7 +47,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryNNr9b3CmCshVSp3q\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryNNr9b3CmCshVSp3q\r\nContent-Disposition: form-data; name=\"users\"\r\n\r\nU0A9JFXK21L\r\n------WebKitFormBoundaryNNr9b3CmCshVSp3q\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nfetchAndUpsertDndForUsers-getDndTimesFor:others\r\n------WebKitFormBoundaryNNr… (720 chars)"
+    "------WebKitFormBoundaryNNr9b3CmCshVSp3q\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryNNr9b3CmCshVSp3q\r\nContent-Disposition: form-data; name=\"users\"\r\n\r\n<userId:1>\r\n------WebKitFormBoundaryNNr9b3CmCshVSp3q\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nfetchAndUpsertDndForUsers-getDndTimesFor:others\r\n------WebKitFormBoundaryNNr… (720 chars)"
   }
 }
 ```
@@ -61,7 +61,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU: 200, 304 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 304 ms
 
 Sent:
 
@@ -72,7 +72,7 @@ Sent:
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
     "_x_csid": "aVvVPXA0sak",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -80,7 +80,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryUP5h90z1pj92UkUA\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryUP5h90z1pj92UkUA\r\nContent-Disposition: form-data; name=\"users\"\r\n\r\nU0A9JFXK21L\r\n------WebKitFormBoundaryUP5h90z1pj92UkUA\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nfetchAndUpsertDndForUsers-getDndTimesFor:others\r\n------WebKitFormBoundaryUP5… (720 chars)"
+    "------WebKitFormBoundaryUP5h90z1pj92UkUA\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryUP5h90z1pj92UkUA\r\nContent-Disposition: form-data; name=\"users\"\r\n\r\n<userId:1>\r\n------WebKitFormBoundaryUP5h90z1pj92UkUA\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nfetchAndUpsertDndForUsers-getDndTimesFor:others\r\n------WebKitFormBoundaryUP5… (720 chars)"
   }
 }
 ```

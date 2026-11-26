@@ -20,15 +20,18 @@ for p in (str(ROOT), str(VENDOR / "twikit"), str(VENDOR / "fbk" / "src")):
 from platformKit import media as media_kit
 from platformKit import reactions
 from platformKit import timing
+from logHome import log_home
+import secretStore
+from identity import accountRoute as _route
 
 SECRET_KEYS = ("auth_token", "ct0", "twid", "kdt", "att", "password", "cookie")
-READS = ("ping", "follows", "inbox", "followers", "notifications", "webClient", "xchatContacts", "xchatUnlock", "xchatWatch", "lists")
-WRITES = ("reply", "quote", "like", "repost", "dm", "follow", "post", "react", "listCreate", "listAdd", "xchatVoice")
+READS = ("ping", "follows", "inbox", "followers", "userPosts", "notifications", "postEngagers", "webClient", "xchatContacts", "xchatUnlock", "xchatWatch", "lists")
+WRITES = ("reply", "quote", "like", "repost", "delete", "dm", "follow", "post", "react", "listCreate", "listAdd", "xchatVoice")
 ACTIONS = READS + WRITES
 
 
 def state_root() -> Path:
-    return Path(os.environ.get("LOG_TWITTER_STATE") or Path.home() / ".logCli" / "twitter")
+    return Path(os.environ.get("LOG_TWITTER_STATE") or log_home() / "twitter")
 
 
 def state_dir(account: str) -> Path:
@@ -160,10 +163,12 @@ class AccountBusy(Exception):
 
 
 class AccountLock:
-    def __init__(self, account: str, wait_seconds: float = LOCK_WAIT_SECONDS, name: str = "engine.lock") -> None:
+    def __init__(self, account: str, wait_seconds: float = LOCK_WAIT_SECONDS, name: str = "engine.lock", clock: Any = None, sleep: Any = None) -> None:
         self.path = state_dir(account) / name
         self.wait_seconds = wait_seconds
         self.handle: Any = None
+        self.clock = clock or time.time
+        self.sleep = sleep or asyncio.sleep
 
     def _try(self) -> bool:
         if os.name == "nt":
@@ -183,12 +188,12 @@ class AccountLock:
 
     async def __aenter__(self) -> "AccountLock":
         self.handle = open(self.path, "a+b")
-        deadline = time.time() + self.wait_seconds
+        deadline = self.clock() + self.wait_seconds
         while not self._try():
-            if time.time() > deadline:
+            if self.clock() > deadline:
                 self.handle.close()
                 raise AccountBusy(f"another log twitter call held this account for over {int(self.wait_seconds)} s")
-            await asyncio.sleep(0.5)
+            await self.sleep(0.5)
         return self
 
     async def __aexit__(self, *_: Any) -> None:
@@ -221,7 +226,7 @@ def live_operations_of(main_js: str, home_html: str) -> dict[str, Any]:
     return {"operations": operations, "featureValues": values}
 
 
-LIVE_CHUNKS = re.compile(r"DirectMessages|directMessagesData|loader\.MessageHandler|NotificationHandler|bundle\.Notifications|bundle\.Chat\b|XChatEmbed")
+LIVE_CHUNKS = re.compile(r"DirectMessages|directMessagesData|loader\.MessageHandler|NotificationHandler|bundle\.Notifications|bundle\.Chat\b|XChatEmbed|bundle\.TweetActivity")
 
 
 def chunk_urls_of(home_html: str) -> dict[str, str]:
@@ -357,16 +362,24 @@ def last_call_path(account: str) -> Path:
 
 def spacing_wait(account: str, now: float | None = None, draw: Any = None, action: str | None = None) -> float:
     import random
+    from logDb import engineStore
+
     try:
-        last = float(json.loads(last_call_path(account).read_text(encoding="utf-8")).get("at") or 0)
-    except (OSError, json.JSONDecodeError, ValueError):
+        last = float((engineStore.load("xLastCall", last_call_path(account)) or {}).get("at") or 0)
+    except (TypeError, ValueError):
         return 0.0
     gap = (draw or random.uniform)(*(READ_SPACING_SECONDS if action in READS else SPACING_SECONDS))
     return max(0.0, last + gap - (now or time.time()))
 
 
+def later_call(into: dict[str, Any], held: dict[str, Any]) -> None:
+    into["at"] = max(float(into.get("at") or 0), float(held.get("at") or 0))
+
+
 def mark_call(account: str, now: float | None = None) -> None:
-    last_call_path(account).write_text(json.dumps({"at": now or time.time()}), encoding="utf-8")
+    from logDb import engineStore
+
+    engineStore.save("xLastCall", last_call_path(account), {"at": now or time.time()}, later_call)
 
 
 async def session_answer(client: Any) -> int:
@@ -471,16 +484,30 @@ def event_of(error: Exception) -> str:
 
 MEDIA_CATEGORIES = {".mp4": "tweet_video", ".mov": "tweet_video", ".gif": "tweet_gif"}
 MEDIA_PROCESSING_SECONDS = 300
+LONG_VIDEO_MS = 140_000
+LONG_VIDEO_CATEGORY = "amplify_video"
+LONG_VIDEO_PROCESSING_SECONDS = 1800
+
+
+def video_upload_plan(path: str) -> dict[str, Any]:
+    category = MEDIA_CATEGORIES.get(Path(path).suffix.lower(), "tweet_image")
+    if category != "tweet_video":
+        return {"media_category": category, "timeout": MEDIA_PROCESSING_SECONDS}
+    duration = media_kit.mp4_duration_ms(path)
+    if duration is not None and duration > LONG_VIDEO_MS:
+        return {"media_category": LONG_VIDEO_CATEGORY, "is_long_video": True, "video_duration_ms": duration, "timeout": LONG_VIDEO_PROCESSING_SECONDS}
+    return {"media_category": category, "timeout": MEDIA_PROCESSING_SECONDS}
 
 
 async def upload_post_media(client: Any, paths: list[str]) -> list[str]:
     ids = []
     for path in paths:
-        category = MEDIA_CATEGORIES.get(Path(path).suffix.lower(), "tweet_image")
-        moving = category != "tweet_image"
+        plan = video_upload_plan(path)
+        timeout = plan.pop("timeout")
+        moving = plan["media_category"] != "tweet_image"
         media_id = await asyncio.wait_for(
-            client.upload_media(path, wait_for_completion=moving, media_category=category),
-            timeout=MEDIA_PROCESSING_SECONDS,
+            client.upload_media(path, wait_for_completion=moving, **plan),
+            timeout=timeout,
         )
         if not str(media_id or ""):
             raise RuntimeError(f"x gave no media id for {Path(path).name}: nothing was posted")
@@ -494,7 +521,6 @@ MEDIA_LINK = re.compile(r"^https?://\S+?\.(mp4|mov|gif|jpe?g|png|webp)(\?\S*)?$"
 
 def media_links_out(spec: dict[str, Any]) -> tuple[str, list[str]]:
     import hashlib
-    import urllib.request
 
     kept, links = [], []
     for line in str(spec.get("text") or "").split("\n"):
@@ -506,8 +532,7 @@ def media_links_out(spec: dict[str, Any]) -> tuple[str, list[str]]:
         suffix = Path(link.split("?")[0]).suffix.lower()
         path = folder / f"{hashlib.sha1(link.encode()).hexdigest()[:16]}{suffix}"
         if not path.exists():
-            with urllib.request.urlopen(urllib.request.Request(link, headers={"User-Agent": "Mozilla/5.0"}), timeout=60) as answer:
-                path.write_bytes(answer.read())
+            path.write_bytes(_route.download(link, "twitter"))
         print(f"media link {link} sent as media, not as text ({path.stat().st_size} bytes)", file=sys.stderr, flush=True)
         media.append(str(path))
     return "\n".join(kept).strip(), media
@@ -522,6 +547,19 @@ async def upload_dm_media(client: Any, path: str) -> str:
     if not str(media_id or ""):
         raise RuntimeError(f"x gave no media id for {Path(path).name}: nothing was sent")
     return str(media_id)
+
+
+def typing_seconds(text: str) -> float:
+    import random
+    return random.uniform(min(12.0, 1.5 + len(text) / 9), min(20.0, 3.0 + len(text) / 6))
+
+
+async def typed(action: str, text: str, sleep: Any = None) -> float:
+    seconds = typing_seconds(text)
+    with timing.span("typing", seconds=round(seconds, 2)):
+        print(f"{action}: typing for {seconds:.1f}s first, as a person would, before x gets it", file=sys.stderr, flush=True)
+        await (sleep or asyncio.sleep)(seconds)
+    return seconds
 
 
 def keep_create_answers(client: Any) -> dict[str, Any]:
@@ -634,7 +672,7 @@ def merge_state(into: dict[str, Any], state: dict[str, Any], box: str | None) ->
 
 def user_of(users: dict[str, Any], user_id: str) -> dict[str, Any]:
     user = users.get(user_id) or {}
-    return {"userId": user_id, "handle": user.get("screen_name"), "name": user.get("name"), "followsYou": user.get("followed_by"), "youFollow": user.get("following")}
+    return {"userId": user_id, "handle": user.get("screen_name"), "name": user.get("name"), "followsYou": user.get("followed_by"), "youFollow": user.get("following"), "pictureUrl": user.get("profile_image_url_https")}
 
 
 def thread_of(conversation: dict[str, Any], messages: list[dict[str, Any]], users: dict[str, Any], me: str, box: str) -> dict[str, Any]:
@@ -697,7 +735,7 @@ async def xchat_threads(client: Any, me: str, opened: dict[str, list[dict[str, A
     convs = await client.get_xchat_conversations()
     out = []
     for conv in convs:
-        people = [{"userId": uid, "handle": (conv.get("handles") or {}).get(uid)} for uid in conv.get("participant_ids") or []]
+        people = [{"userId": uid, "handle": (conv.get("handles") or {}).get(uid), "pictureUrl": (conv.get("avatars") or {}).get(uid)} for uid in conv.get("participant_ids") or []]
         last_ms = conv.get("last_time_ms")
         from_me = bool(conv.get("last_from_me"))
         said = [m for m in (opened or {}).get(conv.get("conversation_id") or "", []) if m.get("text") is not None]
@@ -1104,6 +1142,7 @@ def follower_of(user: Any) -> dict[str, Any]:
         "canDm": bool(getattr(user, "can_dm", False)),
         "protected": bool(getattr(user, "protected", False)),
         "createdAt": getattr(user, "created_at", None),
+        "pictureUrl": getattr(user, "profile_image_url", None) or getattr(user, "profile_image_url_https", None),
     }
 
 
@@ -1127,6 +1166,65 @@ async def followers(client: Any, cookies: dict[str, str], limit: int) -> dict[st
         page = await page.next()
         pages += 1
     return {"ok": True, "loginState": "loggedIn", "userId": me, "pages": pages, "followers": out[:limit], "complete": len(out) < limit}
+
+
+def media_of(item: Any) -> dict[str, Any]:
+    data = getattr(item, "_data", None) or {}
+    kind = data.get("type") or type(item).__name__.lower()
+    out: dict[str, Any] = {"type": kind, "url": data.get("media_url_https")}
+    info = data.get("video_info") or {}
+    mp4 = [v for v in info.get("variants") or [] if str(v.get("content_type", "")).startswith("video/mp4")]
+    if mp4:
+        best = max(mp4, key=lambda v: int(v.get("bitrate") or 0))
+        out["videoUrl"] = best.get("url")
+        out["durationMs"] = info.get("duration_millis")
+    return out
+
+
+def post_of(tweet: Any, handle: str) -> dict[str, Any]:
+    reposted = getattr(tweet, "retweeted_tweet", None)
+    source = reposted or tweet
+    author = getattr(getattr(source, "user", None), "screen_name", None) or handle
+    return {
+        "id": str(tweet.id),
+        "url": f"https://x.com/{author}/status/{source.id}",
+        "createdAt": getattr(tweet, "created_at", None),
+        "text": getattr(source, "full_text", None) or getattr(source, "text", "") or "",
+        "repostOf": author if reposted else None,
+        "isQuote": bool(getattr(tweet, "is_quote_status", False)),
+        "likes": getattr(source, "favorite_count", 0) or 0,
+        "reposts": getattr(source, "retweet_count", 0) or 0,
+        "replies": getattr(source, "reply_count", 0) or 0,
+        "quotes": getattr(source, "quote_count", 0) or 0,
+        "views": int(getattr(source, "view_count", 0) or 0),
+        "media": [media_of(m) for m in (getattr(source, "media", None) or [])],
+    }
+
+
+async def user_posts(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
+    handle = str(spec.get("user") or "").strip().lstrip("@")
+    limit = max(1, min(int(spec.get("limit") or 20), 200))
+    kind = "Media" if spec.get("mediaOnly") else "Tweets"
+    user = await client.get_user_by_screen_name(handle)
+    profile = follower_of(user)
+    page = await client.get_user_tweets(user.id, kind, count=min(40, limit))
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    pages = 1
+    while True:
+        added = 0
+        for tweet in page:
+            row = post_of(tweet, handle)
+            if row["id"] not in seen:
+                seen.add(row["id"])
+                out.append(row)
+                added += 1
+        if len(out) >= limit or not added or not getattr(page, "next_cursor", None) or pages >= 10:
+            break
+        await asyncio.sleep(1.5)
+        page = await page.next()
+        pages += 1
+    return {"ok": True, "loginState": "loggedIn", "user": profile, "kind": kind, "pages": pages, "posts": out[:limit]}
 
 
 async def xchat_contacts(client: Any, cookies: dict[str, str]) -> dict[str, Any]:
@@ -1177,6 +1275,55 @@ async def notifications(client: Any, cookies: dict[str, str], spec: dict[str, An
         held = read_store(path) or {"rows": {}}
         return {**base, "ok": False, "code": "governorBlocked", "detail": f"the governor stopped the notifications read between pages: {e}; {len(held['rows'])} rows are kept"}
     return {**base, "ok": True, "notificationSync": sync}
+
+
+ENGAGER_OPERATIONS = {"like": "Favoriters", "repost": "Retweeters"}
+ENGAGER_NOUNS = {"like": "likers", "repost": "reposters"}
+ENGAGER_CALL_PAGES = 5
+ENGAGER_CALL_PAGES_MAX = 50
+
+
+async def post_engagers(client: Any, cookies: dict[str, str], spec: dict[str, Any], governor: Any) -> dict[str, Any]:
+    from governor import GovernorBlockedError
+    from twikit.client import gql
+    from twikit.errors import TooManyRequests
+
+    from twitterApi.notifications import ENGAGER_PAGE_SIZE, engager_counts, read_store, unroll_engagers
+
+    me = own_user_id(cookies) or ""
+    path = notifications_path(str(spec["account"]))
+    post_id = str(spec["postId"])
+    kind = str(spec["kind"])
+    noun = ENGAGER_NOUNS[kind]
+    operation = ENGAGER_OPERATIONS[kind]
+    base = {"loginState": "loggedIn", "userId": me, "storePath": str(path), "postId": post_id, "kind": kind}
+    if operation not in (gql.LIVE_OPERATIONS.get("operations") or {}):
+        return {**base, "ok": False, "code": "engagersOperationUnknown", "detail": f"X's live {operation} operation isn't in xOperations.json, so the {noun} of post {post_id} weren't asked for and X was not called. Run log twitter session webClient for this account, then read again"}
+    max_pages = max(1, min(int(spec.get("pages") or ENGAGER_CALL_PAGES), ENGAGER_CALL_PAGES_MAX))
+    read = client.get_favoriters if kind == "like" else client.get_retweeters
+
+    async def fetch(cursor: str | None) -> Any:
+        return await read(post_id, ENGAGER_PAGE_SIZE, cursor)
+
+    async def pace() -> None:
+        import random
+        await asyncio.sleep(random.uniform(*READ_SPACING_SECONDS))
+        if governor is not None:
+            governor.before_request(is_mutation=False, quiet=True)
+
+    def log(line: str) -> None:
+        print(f"postEngagers: {line}", file=sys.stderr, flush=True)
+
+    def kept() -> int:
+        return engager_counts(read_store(path) or {"rows": {}}, post_id, kind)["total"]
+
+    try:
+        sync = await unroll_engagers(fetch, pace, path, me, spec.get("screenName"), post_id, kind, max_pages, log)
+    except TooManyRequests as e:
+        return {**base, "ok": False, "code": "rateLimited", "event": "throttled", "detail": f"X answered 429 to a page of the {noun} of post {post_id}: the read stopped there, {kept()} {noun} of it are kept and its place is held ({redact(e, cookies)[:160]})", "rateLimitReset": getattr(e, "rate_limit_reset", None)}
+    except GovernorBlockedError as e:
+        return {**base, "ok": False, "code": "governorBlocked", "detail": f"the governor stopped the read of the {noun} of post {post_id} between pages: {e}; {kept()} {noun} of it are kept and its place is held"}
+    return {**base, "ok": True, "engagerSync": sync}
 
 
 LIVE_WRITER: contextvars.ContextVar[Any] = contextvars.ContextVar("liveWriter", default=None)
@@ -1444,6 +1591,15 @@ async def send(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
         if errors or not ((data or {}).get("data") or {}).get("create_retweet"):
             raise RuntimeError(f"x did not repost the post: {json.dumps(data)[:300]}")
         return {"ok": True, "event": "sent", "reposted": True, "tweetId": tweet_id}
+    if action == "delete":
+        tweet_id = tweet_id_from_url(spec["tweetUrl"])
+        data, _ = await client.gql.delete_tweet(tweet_id)
+        errors = data.get("errors") if isinstance(data, dict) else None
+        if errors and any(e.get("code") == 144 for e in errors):
+            return {"ok": True, "event": "sent", "deleted": True, "already": True, "tweetId": tweet_id}
+        if errors or "delete_tweet" not in ((data or {}).get("data") or {}):
+            raise RuntimeError(f"x did not delete the post: {json.dumps(data)[:300]}")
+        return {"ok": True, "event": "sent", "deleted": True, "tweetId": tweet_id}
     if action == "react":
         return await react(client, spec)
     if action == "xchatVoice":
@@ -1461,7 +1617,7 @@ async def send(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
         if not str(getattr(user, "id", "") or ""):
             return {"ok": False, "event": "dropped", "code": "xSentNothing", "detail": "x answered the follow with no user: nobody was followed"}
         return {"ok": True, "event": "sent", "followed": True, "userId": user_id, "handle": getattr(user, "screen_name", None) or getattr(before, "screen_name", None)}
-    if action in ("dm", "post", "reply"):
+    if action in ("dm", "post", "reply", "quote"):
         text, media = media_links_out(spec)
         spec = {**spec, "text": text, "media": media}
     if action == "dm" and re.fullmatch(r"g\d+", str(spec.get("userId") or "")):
@@ -1469,17 +1625,19 @@ async def send(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
     if action == "dm":
         media = list(spec.get("media") or [])
         dm_media_id = await upload_dm_media(client, str(media[0])) if media else None
+        typed_seconds = await typed("dm", spec["text"])
         message = await client.send_dm(str(spec["userId"]), spec["text"], media_id=dm_media_id)
         message_id = str(getattr(message, "id", "") or "") or None
         if not message_id:
             return {"ok": False, "event": "dropped", "code": "xSentNothing", "detail": "x answered the dm with no message id: nothing was sent"}
         pair = sorted([str(getattr(message, "sender_id", "") or ""), str(getattr(message, "recipient_id", "") or "")], key=lambda i: int(i) if i.isdigit() else 0)
-        return {"ok": True, "event": "sent", "mode": "dm", "messageId": message_id, "conversationId": "-".join(pair), "userId": str(spec["userId"]), **({"mediaIds": [dm_media_id]} if dm_media_id else {})}
+        return {"ok": True, "event": "sent", "mode": "dm", "messageId": message_id, "conversationId": "-".join(pair), "userId": str(spec["userId"]), "typedSeconds": round(typed_seconds, 1), **({"mediaIds": [dm_media_id]} if dm_media_id else {})}
     media_ids: list[str] = []
     followed: dict[str, Any] | None = None
     liked: dict[str, Any] | None = None
     if action == "post":
         media_ids = await upload_post_media(client, list(spec.get("media") or []))
+        typed_seconds = await typed("post", spec["text"])
         tweet = await client.create_tweet(text=spec["text"], media_ids=media_ids or None)
     elif action == "reply":
         too_big = await author_too_big(client, spec)
@@ -1490,14 +1648,17 @@ async def send(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
         followed = await follow_author_first(client, spec)
         print(f"reply to {spec.get('tweetUrl')}: like first {json.dumps(liked)}, follow first {json.dumps(followed)}", file=sys.stderr, flush=True)
         media_ids = await upload_post_media(client, list(spec.get("media") or []))
+        typed_seconds = await typed("reply", spec["text"])
         tweet = await client.create_tweet(text=spec["text"], media_ids=media_ids or None, reply_to=tweet_id_from_url(spec["tweetUrl"]))
     else:
-        tweet = await client.create_tweet(text=spec["text"], attachment_url=spec["tweetUrl"])
+        media_ids = await upload_post_media(client, list(spec.get("media") or []))
+        typed_seconds = await typed("quote", spec["text"])
+        tweet = await client.create_tweet(text=spec["text"], media_ids=media_ids or None, attachment_url=spec["tweetUrl"])
     tweet_id = getattr(tweet, "id", None) or created_id_of(raw.get("body"))
     if not tweet_id:
         limits = raw.get("limits") or {}
         return {"ok": False, "event": "dropped", "code": "xSentNothing", "detail": f"x created no tweet (empty result): nothing was posted. x said: {json.dumps(raw.get('body'))[:300]}", "limits": limits, "rateLimitReset": reset_of(limits)}
-    return {"ok": True, "event": "sent", "mode": action, "tweetId": tweet_id, "target": spec.get("tweetUrl") or "newPost", **({"mediaIds": media_ids} if media_ids else {}), **({"likedPost": liked} if liked else {}), **({"followedAuthor": followed} if followed else {}), "limits": raw.get("limits") or {}}
+    return {"ok": True, "event": "sent", "mode": action, "tweetId": tweet_id, "target": spec.get("tweetUrl") or "newPost", "typedSeconds": round(typed_seconds, 1), **({"mediaIds": media_ids} if media_ids else {}), **({"likedPost": liked} if liked else {}), **({"followedAuthor": followed} if followed else {}), "limits": raw.get("limits") or {}}
 
 
 def list_row(found: Any) -> dict[str, Any]:
@@ -1625,8 +1786,9 @@ async def xchat_group_text(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
             await xchat_read_keys(client, spec)
         except Exception as e:
             return {"ok": False, "event": "dropped", "code": "xchatLocked", "detail": f"X Chat didn't unlock with the saved PIN: {str(e)[:200]}"}
+    typed_seconds = await typed("dm", str(spec["text"]))
     sent = await client.send_xchat_message(conversation_id, str(spec["text"]))
-    return {"ok": True, "event": "sent", "mode": "xchatGroup", "messageId": sent["message_id"], "conversationId": conversation_id, "keyVersion": sent["key_version"]}
+    return {"ok": True, "event": "sent", "mode": "xchatGroup", "messageId": sent["message_id"], "conversationId": conversation_id, "keyVersion": sent["key_version"], "typedSeconds": round(typed_seconds, 1)}
 
 
 async def xchat_voice(client: Any, spec: dict[str, Any]) -> dict[str, Any]:
@@ -1664,7 +1826,7 @@ def refusal_of(spec: dict[str, Any]) -> dict[str, Any] | None:
         return {"ok": False, "code": "notLive", "detail": f"{action} sends on X: the engine only sends with live set (rule 8)"}
     if action in WRITES and not str(spec.get("approvedBy") or "").strip():
         return {"ok": False, "code": "notApproved", "detail": f"{action} needs the name of who approved it"}
-    if action in ("reply", "quote", "like", "repost") and not spec.get("tweetUrl"):
+    if action in ("reply", "quote", "like", "repost", "delete") and not spec.get("tweetUrl"):
         return {"ok": False, "code": "targetMissing", "detail": f"{action} needs the post's url"}
     if action == "react" and not (spec.get("conversationId") and spec.get("messageId") and reactions.unicode_of(str(spec.get("emoji") or ""))):
         return {"ok": False, "code": "reactInvalid", "detail": "react needs the conversation id, the message id and an emoji"}
@@ -1682,6 +1844,8 @@ def refusal_of(spec: dict[str, Any]) -> dict[str, Any] | None:
         return {"ok": False, "code": "mediaInvalid", "detail": "post: a media file isn't there"}
     if action in ("reply", "quote", "dm", "post") and not str(spec.get("text") or "").strip():
         return {"ok": False, "code": "textMissing", "detail": f"{action} needs its text"}
+    if action == "postEngagers" and not (re.fullmatch(r"\d+", str(spec.get("postId") or "")) and spec.get("kind") in ENGAGER_OPERATIONS):
+        return {"ok": False, "code": "targetMissing", "detail": "postEngagers needs the post's id and a kind of like or repost"}
     if action == "follows" and not spec.get("handles"):
         return {"ok": False, "code": "targetMissing", "detail": "follows needs the handles to check"}
     return None
@@ -1702,8 +1866,14 @@ async def act(client: Any, cookies: dict[str, str], spec: dict[str, Any], govern
         return await follows(client, cookies, [h.strip().lstrip("@") for h in spec["handles"] if h.strip()])
     if action == "followers":
         return await followers(client, cookies, max(1, min(int(spec.get("limit") or 200), 4000)))
+    if action == "userPosts":
+        if not str(spec.get("user") or "").strip().lstrip("@"):
+            return {"ok": False, "code": "targetMissing", "detail": "userPosts needs the person's handle", "loginState": "loggedIn"}
+        return await user_posts(client, spec)
     if action == "notifications":
         return await notifications(client, cookies, spec, governor)
+    if action == "postEngagers":
+        return await post_engagers(client, cookies, spec, governor)
     if action == "webClient":
         return await web_client(client, spec)
     if action == "xchatContacts":
@@ -1746,7 +1916,14 @@ async def run(spec: dict[str, Any]) -> dict[str, Any]:
     action = spec.get("action")
     if action not in ACTIONS:
         return {"ok": False, "code": "actionUnknown", "detail": f"{action} is not one of {', '.join(ACTIONS)}"}
-    cookies = normalize_cookies(json.loads(Path(spec["cookiesPath"]).read_text(encoding="utf-8")))
+    try:
+        _route.arm("twitter", spec)
+    except _route.RouteError as e:
+        return {"ok": False, "code": e.code, "detail": e.detail}
+    try:
+        cookies = normalize_cookies(secretStore.load_session(spec)[0])
+    except secretStore.SecretStoreError as e:
+        return {"ok": False, "code": e.code, "detail": str(e)}
     if not has_session(cookies):
         return {"ok": False, "code": "noSession", "detail": "the saved cookies have no auth_token + ct0", "loginState": "loggedOut"}
     refused = refusal_of(spec)
@@ -1796,6 +1973,8 @@ async def run_locked(spec: dict[str, Any], cookies: dict[str, str], action: str,
             out = await act(client, cookies, spec, governor)
     except TooManyRequests as e:
         out = {"ok": False, "code": "rateLimited", "event": "throttled", "detail": redact(e, cookies), "rateLimitReset": getattr(e, "rate_limit_reset", None)}
+    except (_route.RouteError, _route.RouteRefused) as e:
+        out = {"ok": False, "code": e.code, "detail": redact(e.detail, cookies)[:300]}
     except Exception as e:
         text = redact(e, cookies)
         out = blocked_answer(e, "request", "unknown") or {"ok": False, "code": type(e).__name__, "detail": (page_title(text) or text)[:300]}
@@ -1812,7 +1991,7 @@ async def run_locked(spec: dict[str, Any], cookies: dict[str, str], action: str,
         keep_transaction(client, account)
         refreshed = client.get_cookies()
         if spec.get("refreshedPath") and refreshed:
-            Path(spec["refreshedPath"]).write_text(json.dumps({k: v for k, v in refreshed.items() if k != "__cf_bm"}), encoding="utf-8")
+            secretStore.write_private(spec["refreshedPath"], json.dumps({k: v for k, v in refreshed.items() if k != "__cf_bm"}))
     if forced_past:
         out["forcedPast"] = forced_past
     out["governor"] = governor.status()

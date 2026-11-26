@@ -11,8 +11,10 @@ import { DevlogIndexPage } from './landing/devlog/DevlogIndexPage'
 import { ShareCardPage } from './landing/shareCard/ShareCardPage'
 import { McpPage } from './landing/mcp/McpPage'
 import { McpPromo } from './landing/mcp/McpPromo'
+import { ApplyPage } from './landing/apply/ApplyPage'
 import Dither from './components/Dither'
-import { ClerkAuthPage } from './pages/auth/ClerkAuthPage'
+import { AuthPage } from './pages/auth/AuthPage'
+import { SsoCallbackPage } from './pages/auth/SsoCallbackPage'
 import { ConnectionsPage } from './pages/console/ConnectionsPage'
 import { StartPage } from './pages/console/StartPage'
 import { UsagePage } from './pages/console/UsagePage'
@@ -22,6 +24,8 @@ import { TeamsPage } from './pages/console/TeamsPage'
 import { SettingsPage } from './pages/console/SettingsPage'
 import { McpConsolePage } from './pages/console/McpConsolePage'
 import { StaticDocsRedirect } from './components/StaticDocsRedirect'
+import { LocalNoTeamPage } from './pages/console/LocalNoTeamPage'
+import { localConsole } from './lib/consoleMode'
 
 const createQueryClient = () => new QueryClient({
   defaultOptions: {
@@ -50,7 +54,7 @@ const VERCEL_ANALYTICS_DOMAIN = 'log.listeningkit.com'
 
 function SitePromo() {
   const { pathname } = useLocation()
-  if (pathname.startsWith('/console') || pathname === '/teams') return null
+  if (pathname.startsWith('/console') || pathname === '/teams' || pathname === '/apply') return null
   return <McpPromo />
 }
 
@@ -91,16 +95,23 @@ export function App() {
             <Route path="/slack" element={<UseCasesPage key="slack" platform="slack" />} />
             <Route path="/instagram" element={<UseCasesPage key="instagram" platform="instagram" />} />
             <Route path="/reddit" element={<UseCasesPage key="reddit" platform="reddit" />} />
+            <Route path="/cursor" element={<UseCasesPage key="cursor" platform="cursor" />} />
+            <Route path="/claude" element={<UseCasesPage key="claude" platform="claude" />} />
+            <Route path="/chatgpt" element={<UseCasesPage key="chatgpt" platform="chatgpt" />} />
+            <Route path="/hermes" element={<UseCasesPage key="hermes" platform="hermes" />} />
+            <Route path="/grok" element={<UseCasesPage key="grok" platform="grok" />} />
             <Route path="/mcp" element={<McpPage />} />
+            <Route path="/apply" element={<ApplyPage />} />
             <Route path="/rea-looksmaxxing" element={<ReaLooksmaxxingPage />} />
             <Route path="/devlog" element={<DevlogIndexPage />} />
             <Route path="/devlog/xreacher-alternative" element={<XreacherAlternativePage />} />
             <Route path="/docs" element={<StaticDocsRedirect />} />
             <Route path="/docs/*" element={<StaticDocsRedirect />} />
             <Route path="/shareCard/:slug" element={<ShareCardPage />} />
-            <Route path="/sign-in" element={<ClerkAuthPage />} />
-            <Route path="/sign-up" element={<ClerkAuthPage signUp />} />
-            <Route path="/verify" element={<Navigate to="/sign-in" replace />} />
+            <Route path="/sign-in" element={localConsole ? <Navigate to="/console/start" replace /> : <AuthPage key="signIn" mode="signIn" />} />
+            <Route path="/sign-up" element={localConsole ? <Navigate to="/console/start" replace /> : <AuthPage key="signUp" mode="signIn" />} />
+            <Route path="/verify" element={localConsole ? <Navigate to="/console/start" replace /> : <AuthPage key="verify" mode="verify" />} />
+            <Route path="/sso-callback" element={localConsole ? <Navigate to="/console/start" replace /> : <SsoCallbackPage />} />
             <Route path="/console" element={<Navigate to="/console/start" replace />} />
             <Route path="/console/start" element={<StartPage />} />
             <Route path="/console/connections" element={<ConnectionsPage />} />
@@ -110,7 +121,7 @@ export function App() {
             <Route path="/console/usage" element={<UsagePage />} />
             <Route path="/console/events" element={<EventsPage />} />
             <Route path="/console/analytics" element={<ConsolePlaceholderPage title="Analytics" subtitle="Private metrics read from the live workspace, shown with their provenance and unavailable while it is offline." />} />
-            <Route path="/console/subscription" element={<ConsolePlaceholderPage title="Subscription" subtitle="Billing stays unconfigured until a real billing authority is implemented." />} />
+            <Route path="/console/subscription" element={localConsole ? <LocalNoTeamPage title="Subscription" /> : <ConsolePlaceholderPage title="Subscription" subtitle="Billing stays unconfigured until a real billing authority is implemented." />} />
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/login" element={<Navigate to="/sign-in" replace />} />
             <Route path="/health" element={<HealthPage />} />

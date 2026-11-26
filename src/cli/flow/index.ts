@@ -1,28 +1,66 @@
-import { recordAccountIssue } from "../../marketplace/replacement/index.ts";
-import { findAccount, toTwentyEnum } from "../../marketplace/socialAccount/index.ts";
+import { recordAccountIssue } from "../../facebook/marketplace/replacement/index.ts";
+import { findAccount, toTwentyEnum } from "../../platformKit/socialAccount/index.ts";
 import { existsSync, readFileSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { createActor, fromPromise, toPromise } from "xstate";
-import { createFlowMachine, fillStep, flowFromRecording, listFlows, loadFlow, readRecordedCommands, saveFlow, toolName, writeFlowDoc } from "../../browser/flow/index.ts";
+import { createFlowMachine, fillStep, flowFromRecording, listFlows, loadFlow, readRecordedCommands, flowToolName, saveFlow, writeFlowDoc } from "../../browser/flow/index.ts";
 import type { FlowActInput, FlowDefinition, FlowRunOutput, FlowStep, FlowStepResult } from "../../browser/flow/index.ts";
 import type { InspectAction } from "../../browser/inspect/index.ts";
+import { readCurrentInspect } from "../../browser/inspect/index.ts";
 import { placeProblem } from "../../facebook/marketplace/location/index.ts";
 import { preparePhotos } from "../../media/photo/index.ts";
-import { fetchProxyUrl } from "../../marketplace/socialAccount/index.ts";
+import { fetchProxyUrl } from "../../platformKit/socialAccount/index.ts";
 import { createInspector, formatTraceLine } from "../../observability/trace/index.ts";
 import { mapInspectRun } from "../../rea/inspectMap/index.ts";
 import { openAccount, withRun } from "../live/index.ts";
-import { parseArgs } from "../runner/helpers/index.ts";
+import { JSON_FLAG, parseArgs, parserSpecOf, PROXY_MS_FLAG, refuseInput } from "../runner/helpers/index.ts";
 import { openInspectSession, runFlowInSession } from "./helpers/index.ts";
 
 export * from "./helpers/index.ts";
-import type { Command, CommandResult } from "../runner/types.ts";
+import type { Command, CommandResult, CommandInput, PositionalSpec } from "../runner/types.ts";
 
 export const FLOW_USAGE = [
   "Usage: log flow fromInspect <runDir> --name <name> [--summary <text>] [--rename text1=firstName]...",
-  "       log flow docs <name> | list | show <name>",
+  "       log flow docs <name>",
+  "       log flow list",
+  "       log flow show <name>",
   "       log flow run <name> --account <accountName> [--set <param>=<value>]... [--live] [--bypass] [--now] [--json]",
 ].join("\n");
+
+const FLOW_NAME: PositionalSpec = { name: "name", kind: "string", required: true, description: "The flow's name (log flow list)" };
+
+export const FLOW_INPUT: CommandInput = {
+  forms: [
+    {
+      words: ["fromInspect"],
+      effect: "write",
+      summary: "Turn a recorded inspect run into a flow: its steps, parameters, doc and machine",
+      positionals: [{ name: "runDir", kind: "string", required: true, description: "The inspect run folder (the one with replies.jsonl)" }],
+      flags: [
+        { name: "name", kind: "string", required: true, pattern: "^[a-z][A-Za-z0-9]*$", takes: "a camelCase name", description: "The flow's name, camelCase (rule 1)" },
+        { name: "summary", kind: "string", description: "What the flow does" },
+        { name: "rename", kind: "pairs", description: "Recorded text to make a parameter, as text=paramName" },
+      ],
+    },
+    { words: ["docs"], effect: "write", summary: "Write a flow's doc again", positionals: [FLOW_NAME], flags: [] },
+    { words: ["list"], effect: "read", summary: "Every saved flow, with its tool", positionals: [], flags: [] },
+    { words: ["show"], effect: "read", summary: "A saved flow's steps and parameters, as JSON", positionals: [FLOW_NAME], flags: [] },
+    {
+      words: ["run"],
+      summary: "Run a saved flow on an account: a dry run lists the steps and opens nothing; live runs each step in the account's browser",
+      positionals: [FLOW_NAME],
+      flags: [
+        { name: "account", kind: "string", required: true, description: "The account it runs on" },
+        { name: "set", kind: "pairs", description: "The flow's parameters, as name=value" },
+        { name: "live", kind: "boolean", live: true, description: "Run every step in the account's browser, only when the owner asked (rule 8)" },
+        { name: "bypass", kind: "boolean", bypass: true, description: "Outside the account's waking hours, only when the owner asked (rule 86)" },
+        { name: "now", kind: "boolean", description: "Skip the 10-minute launch gap only (rule 35)" },
+        PROXY_MS_FLAG,
+        JSON_FLAG,
+      ],
+    },
+  ],
+};
 
 export function takePairs(argv: string[], flag: string): { pairs: Record<string, string>; rest: string[] } {
   const pairs: Record<string, string> = {};
@@ -74,12 +112,34 @@ export async function runFlow(
     flow.steps.forEach((step, i) => lines.push(`  ${i + 1}. ${describe(fillStep(step, filled))}${step.expect ? `  → waits for ${step.expect}` : ""}`));
     return { code: 0, stdout: lines.join("\n") };
   }
+  const already = uid ? readCurrentInspect(undefined, uid) : null;
+  if (already && !flow.params.some((p) => p.kind === "file" && !isVideoFile(values[p.name] ?? ""))) {
+    for (const p of flow.params.filter((p) => p.kind === "file")) {
+      if (!existsSync(values[p.name])) return { code: 1, stderr: `log flow: ${p.name}: no such video file ${values[p.name]}` };
+      filled[p.name] = resolve(values[p.name]);
+    }
+    const account = await findAccount(context.twenty, uid);
+    if (flow.steps.some((s) => s.name?.includes("{profileName}"))) {
+      if (!account.profileName) return { code: 1, stderr: `log flow: ${flow.name} names the account's own posts by its profile name, and ${uid} has none in Twenty (socialAccounts.profileName)` };
+      filled.profileName = account.profileName;
+    }
+    context.err(`Flow ${flow.name} on ${uid}: ${flow.steps.length} steps, in the browser already open for it (${already.runDir}), no new launch (rule 35)`);
+    const output = await runFlowInSession(context, already, flow, filled, { account: { uid, homeCity: account.homeCity, homeCountry: account.homeCountry } });
+    const afterLines = output.result === "done" && after ? await after(output) : [];
+    if (flags["json"]) return { code: output.result === "done" ? 0 : 1, stdout: JSON.stringify({ ...output, ...(afterLines.length ? { after: afterLines } : {}) }, null, 2) };
+    return { code: output.result === "done" ? 0 : 1, stdout: [renderRun(flow, output, already.runDir), ...afterLines].join("\n") };
+  }
   const opened = await openAccount(context, "flow", FLOW_USAGE, flags["account"], "connect", Boolean(flags["bypass"]), true, Boolean(flags["now"]));
   if (!("run" in opened)) return opened;
   const { account, run } = opened;
   const runDir = dirname(run.captureDir!);
   return withRun(context, "flow", account, run, async () => {
-    const fileParams = flow.params.filter((p) => p.kind === "file");
+    const videos = flow.params.filter((p) => p.kind === "file" && isVideoFile(values[p.name] ?? ""));
+    for (const p of videos) {
+      if (!existsSync(values[p.name])) return { code: 1, stderr: `log flow: ${p.name}: no such video file ${values[p.name]}` };
+      filled[p.name] = resolve(values[p.name]);
+    }
+    const fileParams = flow.params.filter((p) => p.kind === "file" && !videos.includes(p));
     if (fileParams.length) {
       const prepared = await preparePhotos(fileParams.map((p) => values[p.name]), { dir: join(runDir, "photos"), proxy: fetchProxyUrl(account.proxy) });
       if (!prepared.ok) return { code: 1, stderr: `log flow: ${prepared.code} ${prepared.detail}` };
@@ -113,24 +173,26 @@ export const flowCommand: Command = {
   usage: FLOW_USAGE,
   platform: "any",
   name: "flow",
+  longRunning: true,
   effect: "browser",
+  input: FLOW_INPUT,
   summary: "Recorded inspect runs as flows: docs, an XState machine per flow, run on any account (rule 31)",
   args: "fromInspect <runDir> --name <n> | docs <n> | list | show <n> | run <n> --account <a> [--set k=v]... [--live]",
   async run(context, argv) {
     const sets = takePairs(argv, "set");
     const renames = takePairs(sets.rest, "rename");
-    const parsed = parseArgs(renames.rest, { boolean: ["live", "bypass", "now", "json"], valued: ["name", "summary", "account"] });
-    if (!parsed.ok) return { code: 1, stderr: `log flow: ${parsed.error}\n${FLOW_USAGE}` };
+    const parsed = parseArgs(renames.rest, parserSpecOf(FLOW_INPUT));
+    if (!parsed.ok) return refuseInput("flow", parsed.error, FLOW_USAGE);
     const [sub, target] = parsed.positionals;
 
     if (sub === "list") {
       const names = listFlows();
-      return { code: 0, stdout: names.length ? names.map((n) => `${n}  (MCP tool ${toolName(n)})`).join("\n") : "No flows yet: log flow fromInspect <runDir> --name <n>" };
+      return { code: 0, stdout: names.length ? names.map((n) => `${n}  (MCP tool ${flowToolName(loadFlow(n) ?? { name: n, steps: [] })})`).join("\n") : "No flows yet: log flow fromInspect <runDir> --name <n>" };
     }
     if (sub === "fromInspect") {
       if (!target || !existsSync(join(target, "replies.jsonl"))) return { code: 1, stderr: `log flow: ${target ?? "(none)"} is not an inspect run folder\n${FLOW_USAGE}` };
       const name = parsed.flags["name"];
-      if (typeof name !== "string" || !/^[a-z][A-Za-z0-9]*$/.test(name)) return { code: 1, stderr: "log flow: --name must be camelCase (rule 1)" };
+      if (typeof name !== "string" || !/^[a-z][A-Za-z0-9]*$/.test(name)) return { code: 1, error: "inputInvalid", stderr: "log flow: --name must be camelCase (rule 1)" };
       const summary = typeof parsed.flags["summary"] === "string" ? parsed.flags["summary"] : `Recorded from ${basename(target)}.`;
       const account = basename(target).split("_").pop() ?? "";
       let flow: FlowDefinition;
@@ -142,7 +204,7 @@ export const flowCommand: Command = {
       const files = [saveFlow(flow), writeFlowDoc(flow)];
       const lines = [`Flow ${name}: ${flow.steps.length} steps, params ${flow.params.map((p) => p.name).join(", ") || "none"}`];
       flow.steps.forEach((s, i) => lines.push(`  ${i + 1}. ${describe(s)}${s.expect ? `  → ${s.expect}` : ""}`));
-      lines.push(...files.map((f) => `  wrote ${f}`), `  MCP tool: ${toolName(name)}`);
+      lines.push(...files.map((f) => `  wrote ${f}`), `  MCP tool: ${flowToolName(flow)}`);
       return { code: 0, stdout: lines.join("\n") };
     }
     const flow = target ? loadFlow(target) : null;
@@ -150,6 +212,10 @@ export const flowCommand: Command = {
     if (sub === "show") return { code: 0, stdout: JSON.stringify(flow, null, 2) };
     if (sub === "docs") return { code: 0, stdout: `wrote ${writeFlowDoc(flow)}` };
     if (sub === "run") return runFlow(context, flow, sets.pairs, parsed.flags);
-    return { code: 1, stderr: `log flow: expected fromInspect, docs, list, show or run\n${FLOW_USAGE}` };
+    return { code: 1, error: "inputInvalid", stderr: `log flow: expected fromInspect, docs, list, show or run\n${FLOW_USAGE}` };
   },
 };
+
+const VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|webm|mkv|avi)$/i;
+
+export const isVideoFile = (path: string): boolean => VIDEO_EXTENSIONS.test(path);

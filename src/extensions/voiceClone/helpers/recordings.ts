@@ -31,7 +31,7 @@ export function recordingFiles(platforms: readonly string[] = Object.keys(OWN_RE
   return found
 }
 
-export function sentByMatt(recording: Pick<Recording, 'platform' | 'account' | 'conversationId' | 'messageId'>): boolean {
+export function sentByOwner(recording: Pick<Recording, 'platform' | 'account' | 'conversationId' | 'messageId'>): boolean {
   const stored = db().query('SELECT fromOwner FROM messages WHERE senderPlatform = ? AND chatId = ? AND platformMessageId = ? LIMIT 1').get(recording.platform, `${recording.platform}:${recording.account}:${recording.conversationId}`, recording.messageId) as { fromOwner: number } | null
   if (stored) return stored.fromOwner === 1
   const row = db().query(`SELECT 1 FROM events WHERE platform = ? AND account = ? AND type = 'ownMessage' AND json_extract(payload, '$.id') = ? LIMIT 1`).get(recording.platform, recording.account, recording.messageId)
@@ -51,9 +51,9 @@ export function pickReferences(recordings: readonly Recording[], limits: CloneLi
   return picked
 }
 
-export function mattsRecordings(deps: { files?: () => Omit<Recording, 'seconds'>[]; mine?: (r: Omit<Recording, 'seconds'>) => boolean; seconds?: (path: string) => number | null } = {}): Recording[] {
+export function ownersRecordings(deps: { files?: () => Omit<Recording, 'seconds'>[]; mine?: (r: Omit<Recording, 'seconds'>) => boolean; seconds?: (path: string) => number | null } = {}): Recording[] {
   const files = (deps.files ?? recordingFiles)()
-  const mine = deps.mine ?? sentByMatt
+  const mine = deps.mine ?? sentByOwner
   const seconds = deps.seconds ?? ((path: string) => secondsOf(path))
   const kept: Recording[] = []
   for (const file of files) {
@@ -82,7 +82,7 @@ export function firstClonedAt(store = readClones()): number | null {
   return times.length ? Math.min(...times) : null
 }
 
-export function mattsOwnVoiceNotes(recordings: readonly Recording[], clonedAt: number | null): Recording[] {
+export function ownersOwnVoiceNotes(recordings: readonly Recording[], clonedAt: number | null): Recording[] {
   return recordings.filter((r) => {
     const at = recordedAt(r)
     return clonedAt === null || at === null || at < clonedAt

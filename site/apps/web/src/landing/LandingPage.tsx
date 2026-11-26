@@ -1,17 +1,17 @@
 import type { CSSProperties } from 'react'
+import { SiteHeader } from './SiteHeader'
 import { BigGithubButton } from './BigGithubButton'
 import { SiteFooter } from './SiteFooter'
 import { ClayClouds } from './ClayClouds'
 import { Control } from './Control'
 import { GoGettersCta } from './GoGettersCta'
 import { HomeAnswers } from './HomeAnswers'
-import { Header } from './Header'
 import { HowWeThink } from './HowWeThink'
 import { ListeningIntro } from './ListeningIntro'
 import { OtherCases } from './OtherCases'
 import { PlatformSuite } from './PlatformSuite'
 import { PlugTooltip } from './PlugTooltip'
-import { LOG_REPO_URL, parseRepoUrl } from './RepoLink'
+import { LOG_REPO_URL } from './RepoLink'
 import { Socials } from './Socials'
 import { Usecase } from './Usecase'
 import { Unemployed } from './Unemployed'
@@ -51,7 +51,6 @@ const BUILT_WITH: { label: string; role: string; src: string }[] = [
   { label: 'AdsPower', role: 'one browser per account', src: '/logos/stack/adspower-mark.png' },
 ]
 
-const LOG_REPO = parseRepoUrl(LOG_REPO_URL)!
 
 export function LandingPage() {
   return (
@@ -67,14 +66,7 @@ export function LandingPage() {
             'radial-gradient(ellipse 130% 100% at 50% 0%, rgba(92,167,255,0.8) 0%, transparent 80%)',
         }}
       />
-      <Header
-        tone="light"
-        homeHref="/"
-        logoLabel="ListeningKit"
-        githubRepo={`${LOG_REPO.owner}/${LOG_REPO.repo}`}
-        className="z-[70]"
-        accountItems={[{ href: LOG_REPO_URL, label: 'Get started', variant: 'cta' }]}
-      />
+      <SiteHeader cta={{ href: LOG_REPO_URL, label: 'Get started' }} />
       <div style={{ backgroundColor: '#2a8cff' }}>
       <div aria-hidden className="h-24 shrink-0" />
       <ClayClouds>
@@ -82,6 +74,14 @@ export function LandingPage() {
           className="flex flex-col items-center px-12 py-10 text-center sm:px-20 sm:py-12"
           style={{ background: 'radial-gradient(ellipse at center, #2a8cff 45%, transparent 72%)' }}
         >
+          <a
+            href="/apply"
+            className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full bg-white py-1 pl-1 pr-3 text-[13px] font-bold text-[#0D2A4C] shadow-[0_3px_0_#1A5FC8] transition-transform hover:-translate-y-px sm:text-[14px]"
+          >
+            <span className="rounded-full bg-[#2A8CFF] px-2.5 py-0.5 text-[12px] font-black uppercase text-white">New</span>
+            <span className="truncate">log apply: your agent applies to jobs for you</span>
+            <span aria-hidden className="text-[#2A8CFF]">→</span>
+          </a>
           <img src="/logo.svg" alt="ListeningKit logo" className="size-20 shrink-0 rounded-[20px] object-contain sm:size-24" />
           <h1 className="mt-6 max-w-3xl text-4xl font-black leading-tight sm:text-6xl">
             The best tool for social media marketing.

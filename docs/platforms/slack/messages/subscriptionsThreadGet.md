@@ -15,7 +15,7 @@ Content-Disposition: form-data; name`, `------WebKitFormBoundaryuTDJuZwHk6eOvWC4
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryUygUPHnlyUw6it8f
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `subscriptions` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:146 z2QR`, `runs/inspect/20261103T065639_mattSlack/script3.js:2954 z2QR` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:146 z2QR`, `runs/inspect/20261103T065639_slackAccount/script3.js:2954 z2QR` |
 | rea | `ev_a43314148da83fd9fe8fd728f37ab130d0765c5beffcd87246fa0be2eb978482` |
 
 Seen 5 time(s) in 1 run(s).
@@ -28,7 +28,7 @@ Seen 5 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 16: press Control+a: 200, 290 ms
+**runs/inspect/20261103T065639_slackAccount**, step 16: press Control+a: 200, 290 ms
 
 Sent:
 
@@ -38,7 +38,7 @@ Sent:
     "_x_id": "2c6eaecf-1793689599.759",
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -46,7 +46,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryBc9uCNHsaN72M2Hp\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryBc9uCNHsaN72M2Hp\r\nContent-Disposition: form-data; name=\"channel\"\r\n\r\nD0C8VAE7REU\r\n------WebKitFormBoundaryBc9uCNHsaN72M2Hp\r\nContent-Disposition: form-data; name=\"thread_ts\"\r\n\r\n1793425898.143889\r\n------WebKitFormBoundaryBc9uCNHsaN72M2Hp\r\nContent-Dispo… (814 chars)"
+    "------WebKitFormBoundaryBc9uCNHsaN72M2Hp\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryBc9uCNHsaN72M2Hp\r\nContent-Disposition: form-data; name=\"channel\"\r\n\r\n<channelId:1>\r\n------WebKitFormBoundaryBc9uCNHsaN72M2Hp\r\nContent-Disposition: form-data; name=\"thread_ts\"\r\n\r\n1793425898.143889\r\n------WebKitFormBoundaryBc9uCNHsaN72M2Hp\r\nContent-Dispo… (814 chars)"
   }
 }
 ```

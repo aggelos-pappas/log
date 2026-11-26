@@ -4,7 +4,7 @@ title: "Specs"
 
 # Specs
 
-What log-cli must do, in order by domain: 45 domains, 508 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
+What log-cli must do, in order by domain: 57 domains, 686 requirements. Each one's anchors are proved against its code by the syntax tree on every commit, push and pull request (`bun run check:specs`). SubQ reads a requirement against its code only when asked (`bun run check:specs --subq`, rule 170). AGENTS.md keeps the rules by date; these pages are the same rules as they stand today. Written by `bun run docs:build` from the spec pages, not edited by hand.
 
 ## [Command shape](./commandShape.md)
 
@@ -24,10 +24,18 @@ Every log command has one shape: a command that acts on one platform starts with
 - **REQ-COMMAND-12** The docs check refuses anything out of date
 - **REQ-COMMAND-13** Every diagram parses as Mermaid
 - **REQ-COMMAND-14** A command summary doesn't name one browser
+- **REQ-COMMAND-15** A flag says its kind, range and shape
+- **REQ-COMMAND-16** The CLI parses once into typed values
+- **REQ-COMMAND-17** The tool schema says what run enforces
+- **REQ-COMMAND-18** approvedBy is required on a live tool whose command needs it
+- **REQ-COMMAND-19** Every form tool is driven through its command's own run
+- **REQ-COMMAND-20** The reference lists typed flags from the input forms
+- **REQ-COMMAND-21** Every tool has named inputs
+- **REQ-COMMAND-22** Every console operation has a command twin
 
 ## [MCP server](./mcpServer.md)
 
-The log MCP server is how every agent works with log-cli: it carries matt's rules into the agent's context, serves the guides and the use cases, names on every tool the rules, guide and use cases it falls under, and the hooks keep agents on it. Active rules 47, 55, 73, 158, 163 and 176 govern current guidance. Retired citations are consolidated into active rules; historical snapshots never restore superseded scope.
+The log MCP server is how every agent works with log-cli: it carries the owner's rules into the agent's context, serves the guides and the use cases, names on every tool the rules, guide and use cases it falls under, and the hooks keep agents on it. Active rules 47, 55, 73, 158, 163 and 176 govern current guidance. Retired citations are consolidated into active rules; historical snapshots never restore superseded scope.
 
 - **REQ-MCP-01** The instructions carry the core rules, rule one first
 - **REQ-MCP-02** The instructions send the agent to the full guide first
@@ -37,16 +45,88 @@ The log MCP server is how every agent works with log-cli: it carries matt's rule
 - **REQ-MCP-06** getGuide reads a guide or a use case
 - **REQ-MCP-07** Every tool names the use cases that call it
 - **REQ-MCP-08** Every tool declares Claude Code's result limit
+- **REQ-MCP-26** Every tool result is capped at 40 KB with the flags that narrow it
 - **REQ-MCP-09** The use-case review asks SubQ whether the use cases are stale, when run
 - **REQ-MCP-10** A log command run by hand from a shell is refused
 - **REQ-MCP-11** The terminal-only prompts are let through
-- **REQ-MCP-12** A stale MCP server is said to matt
+- **REQ-MCP-12** A stale MCP server is said to the owner
 - **REQ-MCP-13** Uncommitted local changes are said loudly
 - **REQ-MCP-14** They are said at session start and whenever they change
 - **REQ-MCP-18** Any command is found and run with logSearch, logGet and logCall
-- **REQ-MCP-17** One warm context layer routes matt's prompts and puts the play back after compaction
-- **REQ-MCP-16** The prompt is matched to a play, and every play is a skill
-- **REQ-MCP-15** The loaded use case is the session's play, and sends need one
+- **REQ-MCP-21** Every platform's tools carry the platform's name, and renamed tools still answer for one release
+- **REQ-MCP-17** One warm context layer routes the owner's prompts and puts the play back after compaction
+- **REQ-MCP-16** One router for the ask path and the prompt hook, and every play is a skill
+- **REQ-MCP-15** The loaded use case is the caller's play, kept under a handle, and a send needs a play that names it
+- **REQ-MCP-19** browserView shows an account's live browser where the person is, and only their own gated input reaches it
+- **REQ-MCP-20** report draws a report from log's block catalog in every host, inline where the host can and as markdown where it can't
+- **REQ-MCP-27** log's MCP App views draw in Hermes Desktop through one vendored host card (`::logapp`)
+- **REQ-MCP-29** The relationship state machine is a Hermes GenUI block, drawn with log's own machine
+- **REQ-MCP-22** Guides are scoped by capability and platform, fit every host, and say "the owner"
+- **REQ-MCP-23** Every result carries its code, platform and capability
+- **REQ-MCP-24** Both servers serve revision 2026-07-28 statelessly beside the older revisions
+- **REQ-MCP-25** One gate pipeline for every path
+
+## [The platform-neutral scorecard](./agnosticScorecard.md)
+
+`bun run check:agnostic` measures, from the code alone, how far log is from one platform-neutral capability set ([platformNeutralSurfaces.md](../proposals/platformNeutralSurfaces.md)), and fails a commit that makes any number worse than the committed baseline. Each slice of that plan lowers its numbers and lowers the baseline in the same change. Nothing is read from the network or from this machine's state: only the commands, the tool definitions, the committed flows, use cases, guides, skills, AGENTS.md and the source files.
+
+- **REQ-AGNOSTIC-01** Every number is computed from the code
+- **REQ-AGNOSTIC-02** A number worse than its baseline fails, and says which
+- **REQ-AGNOSTIC-03** The baseline only moves down without an explicit flag
+- **REQ-AGNOSTIC-04** It runs on every commit and in CI
+- **REQ-AGNOSTIC-05** The measuring functions are tested over fixtures
+
+## [Capabilities](./capabilities.md)
+
+A capability is one thing log does on any platform, with one name and one input shape: `chatsList` lists an account's chats, `messagesRead` reads one chat, `messagesWatch` listens to an account's messages for a set time. The platform is an input, taken from the account when it isn't given, never a default. Each platform's own command stays the implementation. The design is [capabilitySchema.md](../proposals/capabilitySchema.md), slice 7 of [platformNeutralSurfaces.md](../proposals/platformNeutralSurfaces.md).
+
+- **REQ-CAP-01** One capability table, bound to the commands that exist
+- **REQ-CAP-02** The platform comes from the account
+- **REQ-CAP-03** Canonical inputs become that platform's flags, or a refusal that contacts nothing
+- **REQ-CAP-04** Each noun is one shared command, and its tools are generated like any other
+- **REQ-CAP-05** The write capabilities run the platform command, gated as that platform tool
+
+## [Platform actions](./platformActions.md)
+
+An acting command (a send, a reaction, a voice note) runs through one shared machine with the same stages on every platform. Platforms supply what each stage does; the states, and what an outcome means, are the same everywhere. Slice 8 of [platformNeutralSurfaces.md](../proposals/platformNeutralSurfaces.md). Rule 6.
+
+- **REQ-ACTION-01** One machine: gating, acting, confirming, then done, refused or uncertain
+- **REQ-ACTION-02** The platform's answer decides, and a throw is never read as success
+- **REQ-ACTION-03** Which commands run through it
+
+## [Sessions: check and sign-in](./sessions.md)
+
+Whether an account is signed in, and signing it back in, is one capability with one state, one gate and one machine on every surface: the CLI (`log sessions check`, `log sessions signIn`), the MCP tools (`sessionsCheck`, `sessionsSignIn`), the console's Connections page and the hosted relay. Slices 3 and 4 of [platformNeutralSurfaces.md](../proposals/platformNeutralSurfaces.md). Rules 6, 25 and 94.
+
+- **REQ-SESSIONS-01** One check state for every surface
+- **REQ-SESSIONS-02** One gate decides which accounts may be checked
+- **REQ-SESSIONS-03** The check machine owns "checking", and a crash leaves no stuck row
+- **REQ-SESSIONS-04** One sign-in machine
+- **REQ-SESSIONS-05** Routes per platform, from one table
+- **REQ-SESSIONS-06** A signed-out browser never overwrites a session
+- **REQ-SESSIONS-07** Every surface calls the same machine
+- **REQ-SESSIONS-08** A login page off facebook.com is the owner's
+- **REQ-SESSIONS-09** A missing account is a structured `accountNotConfigured`
+- **REQ-SESSIONS-10** What the owner sees is decided from what the host declares
+- **REQ-SESSIONS-11** Page states are classified per platform
+- **REQ-SESSIONS-12** The live view's polling writes no hosted journal row
+- **REQ-SESSIONS-13** One live browser view for the console and the chat
+- **REQ-SESSIONS-14** Showing a signed-in account's browser, and saving only what a browser wrote
+- **REQ-SESSIONS-15** The owner drives the browser he opened
+- **REQ-SESSIONS-16** The live view never spins forever on a viewer that stopped answering
+- **REQ-SESSIONS-17** The owner's input is instant and only one view per account runs
+
+## [Account watchers](./watchers.md)
+
+Each signed-in account on a platform with a push channel has one watcher: one process that owns the account's socket, writes what it hears to log.db and relays it to every subscriber (rule 105). Its lifecycle is one XState machine with the same states on every platform; each platform supplies only how it connects and how its events read. Any harness starts the watchers through one command, and reads what they heard through one reader. Slice 10 of [platformNeutralSurfaces.md](../proposals/platformNeutralSurfaces.md). Rules 6, 105 and 123.
+
+- **REQ-WATCH-01** One machine per account watcher
+- **REQ-WATCH-02** How a watch ended decides its end state
+- **REQ-WATCH-03** The watch commands run through it
+- **REQ-WATCH-04** The state is kept in log.db and reconciled
+- **REQ-WATCH-05** One start, called by every harness
+- **REQ-WATCH-06** log watchers status, start and stop
+- **REQ-WATCH-07** One reader for what was heard
 
 ## [Agent hooks](./agentHooks.md)
 
@@ -69,12 +149,23 @@ The agent hooks put log-cli's state in front of the agent (Claude Code or Codex)
 - **REQ-HOOKS-15** Only the session that claims a chat acts on it
 - **REQ-HOOKS-16** The inbox is one database, read from cursors
 - **REQ-HOOKS-17** An account behind is caught up by its owner, and sends wait for it
-- **REQ-HOOKS-18** A refused catch-up resumes only on matt's word
-- **REQ-HOOKS-19** Every event is named before matt sees it
+- **REQ-HOOKS-18** A refused catch-up resumes only on the owner's word
+- **REQ-HOOKS-19** Every event is named before the owner sees it
 - **REQ-HOOKS-20** A Discord, Slack or Instagram call names its chat, never its id
 - **REQ-HOOKS-21** Claude Code's hooks reach log through the warm service, and only the refusals start a process
 - **REQ-HOOKS-22** The hook service moves itself onto new code
 - **REQ-HOOKS-23** Only the platform's refusal stops a catch-up
+- **REQ-HOOKS-24** One harness table, one hook file per hook host
+- **REQ-HOOKS-25** Each adapter answers in its harness's shape, cut to its limit
+- **REQ-HOOKS-26** The prompt hook names the play when the service is down
+- **REQ-HOOKS-27** The check runs every hook on scratch state, starting nothing
+- **REQ-HOOKS-29** The prompt hook names the tools for the ask
+- **REQ-HOOKS-30** The prompt router ranks plays, tools and skills by meaning as well as words
+- **REQ-HOOKS-28** Setup installs the hooks for each harness it finds
+- **REQ-HOOKS-31** The warm service never makes a hook wait on a walk, a git run or a second embed
+- **REQ-HOOKS-32** A typo of a common word is never pointed at a chat
+- **REQ-HOOKS-33** A typo-heavy prompt or one about building log names no play
+- **REQ-HOOKS-34** An unchanged block is said once per session
 
 ## [Inspect rule one](./inspectRuleOne.md)
 
@@ -146,7 +237,7 @@ A procedure recorded with `log inspect` becomes the whole pipeline, not a one-of
 
 ## [Runs and rea](./runsAndRea.md)
 
-Every browser action records a raw HAR of everything it did, and rea reads it. What each platform's client does is written up as one doc per request, by platform and then domain, built from the runs by `log facebook capture --docs` with rea reading each request's code. A run is deleted once it is analysed, and what it taught is kept. Rules 22, 27, 48, 66 and 85, with rule 73 (a step's exchanges are kept past the prune).
+Every browser action records a raw HAR of everything it did, and rea reads it. What each platform's client does is written up as one doc per request, by platform and then domain, built from the runs by `log capture docs` (shared: it reads every platform's runs) with rea reading each request's code. A run is deleted once it is analysed, and what it taught is kept. Rules 22, 27, 48, 66 and 85, with rule 73 (a step's exchanges are kept past the prune).
 
 - **REQ-RUNS-01** Every browser context records a raw HAR
 - **REQ-RUNS-02** A browser without a capture folder is refused
@@ -162,6 +253,7 @@ Every browser action records a raw HAR of everything it did, and rea reads it. W
 - **REQ-RUNS-12** Every step's exchanges are taken out before a run goes
 - **REQ-RUNS-13** What a run taught is kept
 - **REQ-RUNS-14** The storage hook warns before the disk fills
+- **REQ-RUNS-15** A request doc names its own platform and machines
 
 ## [Browser gate](./browserGate.md)
 
@@ -185,10 +277,15 @@ Before an account's browser loads anything, it goes through one gate: a headed l
 - **REQ-GATE-16** The language list must start with the pinned languages
 - **REQ-GATE-17** The browser's exit IP is the one the gate checked, or in its country and timezone
 - **REQ-GATE-18** A failed self-check stops the browser before Facebook loads
+- **REQ-GATE-19** Brave opens through the same gate, in the account's own profile
+- **REQ-GATE-20** Every engine spec carries the account's route
+- **REQ-GATE-21** Every client in an engine goes out through that route
+- **REQ-GATE-22** A direct platform's account with a proxy opens its browser through it
+- **REQ-GATE-23** A new way out without the route is refused by a check
 
 ## [Launch budget](./launchBudget.md)
 
-Before a run opens an account's browser, `prepareRun` checks when it may open: only inside the account's local waking hours, at most 8 launches a local day and at least 10 minutes apart. `--bypass` skips the hours only, `--now` skips the gap only, and only matt resets the count, with `log facebook account resetOpens`. Rules 18, 20, 24, 30 and 37.
+Before a run opens an account's browser, `prepareRun` checks when it may open: only inside the account's local waking hours, at most 8 launches a local day and at least 10 minutes apart. `--bypass` skips the hours only, `--now` skips the gap only, and only the owner resets the count, with `log facebook account resetOpens`. Rules 18, 20, 24, 30 and 37.
 
 - **REQ-LAUNCH-01** No run outside the account's waking hours
 - **REQ-LAUNCH-02** The account's own hours replace the default
@@ -209,7 +306,7 @@ AdsPower is the account's browser. Each account holds one AdsPower profile, link
 
 - **REQ-ADSPOWER-01** Each account is linked to one profile
 - **REQ-ADSPOWER-02** A profile holds no proxy
-- **REQ-ADSPOWER-03** The account's browser is AdsPower when it has a profile
+- **REQ-ADSPOWER-03** AdsPower is deprecated: an account opens on it only when it names it
 - **REQ-ADSPOWER-04** An account without a profile is refused
 - **REQ-ADSPOWER-05** The gate runs before the proxy goes on
 - **REQ-ADSPOWER-06** The proxy goes on only to open
@@ -222,6 +319,7 @@ AdsPower is the account's browser. Each account holds one AdsPower profile, link
 - **REQ-ADSPOWER-13** Setting DEACTIVATED gives the profile back at once
 - **REQ-ADSPOWER-14** The sync releases before it creates
 - **REQ-ADSPOWER-15** Only the homes in LOG_ADSPOWER_HOMES hold a profile
+- **REQ-ADSPOWER-16** Moving an account off a browser keeps its session and is confirmed by the platform
 
 ## [Account lifecycle](./accountLifecycle.md)
 
@@ -282,9 +380,9 @@ Facebook group listening is OpenMagpie's triage job: an account joins a group, O
 
 ## [Warm-up](./warmup.md)
 
-The warm-up makes an account look used before it sells: Listaro's five Facebook activities run as recorded flows (`log facebook warmup stages`), and the Reels activity (`log facebook warmup reel`) watches reels the way a real person with the account's persona would, each step checked against what it must achieve. Rules 36, 49 and 50, with the command forms of rules 60 and 63 and the code layout of rule 64.
+The warm-up makes an account look used before it sells: five Facebook activities run as recorded flows (`log facebook warmup stages`), and the Reels activity (`log facebook warmup reel`) watches reels the way a real person with the account's persona would, each step checked against what it must achieve. Rules 36, 49 and 50, with the command forms of rules 60 and 63 and the code layout of rule 64.
 
-- **REQ-WARMUP-01** The stages are Listaro's five activities, each a flow of its own
+- **REQ-WARMUP-01** The stages are the five warm-up activities, each a flow of its own
 - **REQ-WARMUP-02** Recording turns each activity into a flow, never from a broken recording
 - **REQ-WARMUP-03** Running needs every flow recorded, and runs them in turn in one browser
 - **REQ-WARMUP-04** A checkpoint, login wall or restriction stops the stages
@@ -308,7 +406,7 @@ The warm-up makes an account look used before it sells: Listaro's five Facebook 
 How log-cli talks to X: directly, with no proxy, through one curl_cffi client per account that lives in one engine host, one call at a time, spaced the way X's own web app spaces them, and signed with X's live operation ids. Rules 80, 81, 104, 105, 110 and 113.
 
 - **REQ-XSESSION-01** An X account calls X directly, with no proxy
-- **REQ-XSESSION-02** twikit goes out as curl_cffi impersonating Safari
+- **REQ-XSESSION-02** twikit goes out as curl_cffi impersonating log's one browser
 - **REQ-XSESSION-03** One call per account at a time
 - **REQ-XSESSION-04** Sends are spaced 4 to 11 seconds, reads 0.8 to 2.5 seconds
 - **REQ-XSESSION-05** The transaction key is kept for 3 hours
@@ -325,7 +423,7 @@ How log-cli talks to X: directly, with no proxy, through one curl_cffi client pe
 
 ## [Write budgets](./writeBudgets.md)
 
-How many times an account may write on its platform in a day, how matt can push one call past the account's governor, and how a refusal stops an account instead of being pushed through. Every direct-API engine (X, Discord, LinkedIn, Reddit and any new platform) runs each call through the account's own governor. Rules 86, 91, 94, 96, 101 and 102.
+How many times an account may write on its platform in a day, how the owner can push one call past the account's governor, and how a refusal stops an account instead of being pushed through. Every direct-API engine (X, Discord, LinkedIn, Reddit and any new platform) runs each call through the account's own governor. Rules 86, 91, 94, 96, 101 and 102.
 
 - **REQ-BUDGET-01** Each platform has its own daily write budget
 - **REQ-BUDGET-02** Every engine run carries the platform's budget
@@ -381,31 +479,48 @@ Before anything goes to a person on X, log reads that person's full context thro
 
 ## [Voice gate](./voiceGate.md)
 
-Every message log sends as matt passes the voice gate first (`log voice`, MCP `voice`). The gate asks SubQ whether matt typed it himself, reading his own writing across all his conversations. Rules 90, 98, 111 and 112.
+Every message log sends as the owner passes the voice gate first (`log voice`, MCP `voice`). The gate asks SubQ whether the owner typed it himself, reading his own writing across all his conversations. Rules 90, 98, 111 and 112.
 
-- **REQ-VOICE-01** Every draft is read against matt's writing across all his conversations
+- **REQ-VOICE-01** Every draft is read against the owner's writing across all his conversations
 - **REQ-VOICE-02** A chat with the person adds that chat's evidence
-- **REQ-VOICE-03** Phrases matt never says fail the draft
+- **REQ-VOICE-03** Phrases the owner never says fail the draft
 - **REQ-VOICE-04** A first message is only the opener
 - **REQ-VOICE-05** A draft with AI artifacts fails
-- **REQ-VOICE-06** A draft passes only when every answer passes
-- **REQ-VOICE-07** A draft written in word pairs matt has never written fails
+- **REQ-VOICE-06** A draft passes on one calibrated score and three hard blocks
+- **REQ-VOICE-07** A draft written in word pairs the owner has never written fails
+- **REQ-VOICE-20** A draft written on several lines is graded as the messages it sends
+- **REQ-VOICE-21** A subject he has never written about never counts against his voice
+- **REQ-VOICE-22** Outside X, his X guide is scoped to his vocabulary
 - **REQ-VOICE-08** The vendored watermark scrambler reads every draft
 - **REQ-VOICE-09** The gate runs inside every send and refuses a failing draft
 - **REQ-VOICE-10** The chat's context is ranked for the moment and given in full
-- **REQ-VOICE-11** Only embeddings are stored, each once, in the .db
-- **REQ-VOICE-12** The gate inside a send reads matt's real replies in that chat
+- **REQ-VOICE-11** Embeddings are stored once in the .db, and only a verdict and the calibration beside them
+- **REQ-VOICE-12** The gate inside a send reads the owner's real replies in that chat
 - **REQ-VOICE-13** A voice note is graded as spoken and must build on the conversation
-- **REQ-VOICE-14** matt can send one dm over the gate's refusal
+- **REQ-VOICE-14** the owner can send one dm over the gate's refusal
 - **REQ-VOICE-19** A task is gated as a brief, and its files go with it
-- **REQ-VOICE-18** A draft that just passed is not sent to SubQ again
+- **REQ-VOICE-18** A draft that was just gated is not sent to SubQ again
 - **REQ-VOICE-17** A refused draft says where to look before it is rewritten
 - **REQ-VOICE-16** No two messages read alike
 - **REQ-VOICE-15** Every send and voice note is gated against the room it goes to
+- **REQ-VOICE-23** Every chat the owner sends to has one card, built only from that chat
+- **REQ-VOICE-24** The writer and the gate read the card first
+- **REQ-VOICE-25** An answer is owed only when the card says it waits on the owner, and their line is under a day old
+- **REQ-VOICE-26** A chat with history is judged on that history
+- **REQ-VOICE-27** No Jina call inside the gate waits more than a few seconds
+- **REQ-VOICE-28** The grounding pack comes before any draft
+- **REQ-VOICE-29** One voice score with fixed written weights
+- **REQ-VOICE-30** The threshold is calibrated on his own held-out replies
+- **REQ-VOICE-31** The same text gets the same verdict at gate and at send
+- **REQ-VOICE-32** Options are graded together and ranked
+- **REQ-VOICE-33** A draft that mirrors them more than he does loses
+- **REQ-VOICE-34** Not an AI tell comes from the detector trained on him
+- **REQ-VOICE-35** The chat is found however its id is written, and a first message is only one with nothing between them
+- **REQ-VOICE-36** His own sent words are never an AI tell
 
 ## [AI tells and watermark](./aiTells.md)
 
-Every X and Discord send's copy is read for what AI chat interfaces leave in text (the watermark reading), and every draft the voice gate reads is also read for AI phrasing against curated lists and matt's own writing. Rules 111 and 112.
+Every X and Discord send's copy is read for what AI chat interfaces leave in text (the watermark reading), and every draft the voice gate reads is also read for AI phrasing against curated lists and the owner's own writing. Rules 111 and 112.
 
 - **REQ-AITELLS-01** The reading is clean, stylistic or artifacts
 - **REQ-AITELLS-02** planSend refuses copy with artifacts
@@ -414,20 +529,26 @@ Every X and Discord send's copy is read for what AI chat interfaces leave in tex
 - **REQ-AITELLS-04** vale-ai-tells rules run on the draft
 - **REQ-AITELLS-05** The index embeds every literal phrase with Jina
 - **REQ-AITELLS-06** Phrases quoted on X are kept only when close to a curated one
-- **REQ-AITELLS-07** matt's own p50 and p99 are measured
-- **REQ-AITELLS-08** Vale rules matt uses himself are muted
-- **REQ-AITELLS-09** Phrases matt says himself never fail a draft
+- **REQ-AITELLS-07** the owner's own p50 and p99 are measured
+- **REQ-AITELLS-08** Vale rules the owner uses himself are muted
+- **REQ-AITELLS-09** Phrases the owner says himself never fail a draft
 - **REQ-AITELLS-10** Each chunk's closest AI phrase is found and reranked
-- **REQ-AITELLS-11** A draft closer to AI phrasing than matt's p99 fails
-- **REQ-AITELLS-12** The voice gate keeps the index current and fails on AI tells
+- **REQ-AITELLS-11** A draft closer to AI phrasing than the owner's p99 fails
+- **REQ-AITELLS-12** The Jina index is read only when asked for
+- **REQ-AITELLS-14** The training corpus lives in log.db
+- **REQ-AITELLS-15** Fresh drafts are paired with his real reply and capped in spend
+- **REQ-AITELLS-16** An over-use profile and structural habits, each with his own phrasing
+- **REQ-AITELLS-17** A small classifier head trained in Python and applied in TypeScript
+- **REQ-AITELLS-18** One line per length band, set on his held-out messages
+- **REQ-AITELLS-19** The reading names the words and habits beside his phrasing
 
 ## [Message split and the opener](./messageSplit.md)
 
-How a message to a person goes out: a draft on several lines goes out one message per line in every chat, a one-line draft is split the way matt writes in that chat, and a first message is gated as the opener as a whole before any of it is sent. Rules 90 and 98.
+How a message to a person goes out: a draft on several lines goes out one message per line in every chat, a one-line draft is split the way the owner writes in that chat, and a first message is gated as the opener as a whole before any of it is sent. Rules 90 and 98.
 
 - **REQ-SPLIT-01** A draft on several lines goes out one message per line
 - **REQ-SPLIT-02** --asOne sends it as one message
-- **REQ-SPLIT-03** A one-line draft is split the way matt writes in that chat
+- **REQ-SPLIT-03** A one-line draft is split the way the owner writes in that chat
 - **REQ-SPLIT-04** The parts go out with his usual gap
 - **REQ-SPLIT-05** Every chat splits the same way
 - **REQ-SPLIT-06** A part that is not sent stops the rest
@@ -437,7 +558,7 @@ How a message to a person goes out: a draft on several lines goes out one messag
 
 ## [X Chat](./xChat.md)
 
-X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it only through its own engine and vendored twikit, with the account's PIN from Twenty, uses it to keep cold dms away from people matt already talks to, and treats a reaction or a read receipt as a follow-up to send. Rules 87, 88 and 100.
+X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it only through its own engine and vendored twikit, with the account's PIN from Twenty, uses it to keep cold dms away from people the owner already talks to, and treats a reaction or a read receipt as a follow-up to send. Rules 87, 88 and 100.
 
 - **REQ-XCHAT-01** A dm queue check reads the account's X Chat inbox
 - **REQ-XCHAT-02** A pending dm to someone already in a conversation is dropped
@@ -447,7 +568,7 @@ X Chat is X's encrypted DM inbox, separate from the old DM API. log reads it onl
 - **REQ-XCHAT-06** The PIN is saved only from a masked prompt, after it unlocks
 - **REQ-XCHAT-07** A person's old DM thread and X Chat thread are one conversation
 - **REQ-XCHAT-08** A reaction as their last event is a follow-up
-- **REQ-XCHAT-09** A read receipt past matt's last message is a follow-up
+- **REQ-XCHAT-09** A read receipt past the owner's last message is a follow-up
 - **REQ-XCHAT-10** --waiting lists the follow-ups apart
 - **REQ-XCHAT-11** twikit sends in X Chat the way X Chat's own app does
 - **REQ-XCHAT-12** A dm can go to an X Chat group
@@ -463,7 +584,18 @@ While an account's X Chat watch is open, its one session keeps X's own notificat
 - **REQ-XLIVE-04** A refused read stops the poll
 - **REQ-XLIVE-05** The X live hook puts new events in front of the agent
 - **REQ-XLIVE-06** Each Claude session reads from its own cursor
-- **REQ-XLIVE-07** A refused read is said to matt
+- **REQ-XLIVE-07** A refused read is said to the owner
+
+## [X notifications](./xNotifications.md)
+
+Who liked, reposted, replied to, quoted or followed an X account, read through the account's one session and kept in `~/.logCli/twitter/<account>/notifications.json`, one row per person per thing they did. X's notifications name only some of the people behind an aggregated notification, so the read also unrolls a post's whole likers and reposters lists into the same rows. Rules 6, 94 and 105.
+
+- **REQ-XNOTIFICATIONS-01** The feed is read new first, then back through the history, and kept
+- **REQ-XNOTIFICATIONS-02** A post's likers and reposters are paged through the same session
+- **REQ-XNOTIFICATIONS-03** Unrolled people merge into the same rows, once each
+- **REQ-XNOTIFICATIONS-04** Each list's place is kept so a stopped read goes on
+- **REQ-XNOTIFICATIONS-05** One state machine drives the read and stops on a refusal
+- **REQ-XNOTIFICATIONS-06** The command says per post what came from where, and when it stopped early
 
 ## [Platform scaffold](./platformScaffold.md)
 
@@ -496,10 +628,12 @@ Finding context in conversations is a search, never reading every thread. `log s
 - **REQ-SEARCH-06** The indexes survive restarts
 - **REQ-SEARCH-07** An update embeds only what changed
 - **REQ-SEARCH-08** The bench prints p50, p95 and p99, cold and warm, beside a linear scan
+- **REQ-SEARCH-09** Search fuses keyword, meaning and relationship as evidence
+- **REQ-SEARCH-10** The relationship retriever votes from the Relate graph
 
 ## [Knowledge base](./knowledgeBase.md)
 
-The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in ListeningKit's Twenty on node02 and is searched through Redis on node02 by keyword and meaning at once. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
+The knowledge base holds everything an agent should look up before it guesses: AGENTS.md's rules and sections, the skills, the docs, the Claude memory files, the known page states and the accounts. It lives in your own Twenty server and is searched through your own Redis by keyword and meaning at once. `log kb sync`, `log kb search`, `log kb remember` and `log kb show` (MCP `kbSync`, `kbSearch`, `kbRemember`, `kbShow`). Rule 93 (with rule 38 for the pages it leaves out).
 
 - **REQ-KB-01** The articles live in Twenty's knowledgeArticles
 - **REQ-KB-02** The logins are files outside the repo
@@ -512,14 +646,70 @@ The knowledge base holds everything an agent should look up before it guesses: A
 - **REQ-KB-09** Show reads one article in full
 - **REQ-KB-10** Secrets are scrubbed before anything is written
 
+## [Relate graph](./relateGraph.md)
+
+log keeps a Relate (Neo4j's embedded graph database) projection of log.db: the owner's accounts, the people they meet, the rooms they share, the owner's posts and who engaged them. The hook layer reads it for the people a prompt names and injects their connected context before the agent answers. log.db's events stay the record; the graph is derived from them and can always be thrown away and rebuilt. How it works and why: [Relate graph](../relateGraph.md).
+
+- **REQ-RELATE-01** The graph is built from log.db's typed tables in one read snapshot
+- **REQ-RELATE-02** Each build writes a new graph file and only then points at it
+- **REQ-RELATE-03** The graph is checked against what log.db derives
+- **REQ-RELATE-04** A graph belongs to one log.db
+- **REQ-RELATE-05** The hook names only people the prompt names
+- **REQ-RELATE-06** The context is what the graph connects, as facts
+- **REQ-RELATE-07** The graph is built at install and kept current by its owner
+- **REQ-RELATE-08** Agents can read the graph with Cypher
+- **REQ-RELATE-09** The hook adds what was said, found by all three retrievers together
+- **REQ-RELATE-10** Discord rooms carry their kind, their own name and their server
+- **REQ-RELATE-11** Person links are projected, so linked identities share one person
+- **REQ-RELATE-12** SAID keeps first and last times, and replies and mentions are edges
+- **REQ-RELATE-13** A graph that can't be opened is a coded outcome
+- **REQ-RELATE-14** Rings come from every stored event, live and free
+- **REQ-RELATE-15** New events are applied to the graph in place, in microbatches
+- **REQ-RELATE-16** `log network status` shows the rings live
+- **REQ-RELATE-17** The network is per person and per platform
+- **REQ-RELATE-18** One long-lived owner per log.db follows log.db's events
+- **REQ-RELATE-19** The owner is fenced by its generation, in log.db and in the store
+- **REQ-RELATE-20** Readers ask the owner, and fall back to the last file
+- **REQ-RELATE-21** A full rebuild runs on a snapshot outside the loop
+- **REQ-RELATE-22** Lag is visible
+- **REQ-RELATE-23** The relationship machine has each platform's own states and moves
+- **REQ-RELATE-24** The network's state cells hold the people in them
+- **REQ-RELATE-25** Bots and system accounts are not people
+- **REQ-RELATE-26** Counts agree with the person view, and a group chat is its own room
+
+## [People across platforms](./people.md)
+
+One person often has several identities: a Discord account, an X account, an Instagram account. log keeps them apart until the owner says they are one person. From then on, the person card, the Relate graph and the hook treat them as one. Links are events in log.db, never edits, so every link can be explained and undone. Suggestions come from Fellegi-Sunter record linkage, the model Splink implements, over evidence log already stores. There are no model calls and no embeddings. The design and its reasoning: [People across platforms](../proposals/peopleAcrossPlatforms.md).
+
+- **REQ-PEOPLE-01** Links are events, and the tables are derived from them
+- **REQ-PEOPLE-02** One identity belongs to at most one person, enforced by the database
+- **REQ-PEOPLE-03** A link follows an identity when its id is learned
+- **REQ-PEOPLE-04** Suggestions are scored with Fellegi-Sunter record linkage, weights learned by EM
+- **REQ-PEOPLE-05** What never becomes a suggestion
+- **REQ-PEOPLE-06** One card across every platform of a person
+- **REQ-PEOPLE-07** The hook and the graph see a person, not one identity
+- **REQ-PEOPLE-08** Vetoes, merge re-checks, accounts together, and SubQ on the review band
+
+## [Person facts](./personFacts.md)
+
+log keeps lasting facts about the people the owner talks to: their job, where they work, what they are building, where they live, what they are into, how they know the owner, what the owner promised them, what they promised, and money owed either way. Without them every draft re-reads raw chats, and a reply can repeat a promise the owner already made to the same person. Each fact is an event in log.db with the exact message it came from, projected into the Relate graph in the shape of Relate's own agent memory, and checked by the voice gate before a draft goes out.
+
+- **REQ-FACTS-01** A fact is an event with its source, and the table is derived from it
+- **REQ-FACTS-02** A correction supersedes, it never edits
+- **REQ-FACTS-03** A fact follows the identity onto the person
+- **REQ-FACTS-04** Two tiers over new lines only
+- **REQ-FACTS-05** Promises the owner made are checked before a draft goes out
+- **REQ-FACTS-06** Projected into Relate's agent-memory model, recalled with evidence
+
 ## [Local accounts](./localAccounts.md)
 
-Accounts can live in a local file instead of Twenty, on every platform, so log can run everything locally. `log localAccount pull|add|list` (MCP `localAccount`) fills and reads the file, and `LOG_ACCOUNTS=local` leaves Twenty out of accounts entirely. Listings, groups and conversations stay in Twenty. Rule 97, which narrows rule 13 for accounts only.
+Accounts can live in a local file instead of Twenty, on every platform, so log can run everything locally. `log localAccount pull|add|list|login` (MCP `localAccountPull`, `localAccountAdd`, `localAccountList`; `login` is terminal-only) fills and reads the file, and `LOG_ACCOUNTS=local` leaves Twenty out of accounts entirely. Listings, groups and conversations stay in Twenty. Rule 97, which narrows rule 13 for accounts only.
 
 - **REQ-LOCAL-01** Accounts live in one local file
 - **REQ-LOCAL-02** Pull copies every Twenty account in, keeping its Twenty id
 - **REQ-LOCAL-03** Add makes an account Twenty never had
 - **REQ-LOCAL-04** List shows the local accounts
+- **REQ-LOCAL-10** Login saves an account's email and password from masked prompts
 - **REQ-LOCAL-05** A local row wins over Twenty's of the same name
 - **REQ-LOCAL-06** LOG_ACCOUNTS=local leaves Twenty out of accounts
 - **REQ-LOCAL-07** A session a run saves goes back to the file
@@ -543,7 +733,7 @@ log's first extension: Memelord's meme templates, clips and stickers, searched f
 
 ## [Voice notes](./voiceNotes.md)
 
-Every voice note on X and Discord, sent to matt or by him, is transcribed with AssemblyAI and written into the conversation store, so search, the voice gate and SubQ see what was said. Rules 26, 41, 88, 89, 94, 105, 106 and 126.
+Every voice note on X and Discord, sent to the owner or by him, is transcribed with AssemblyAI and written into the conversation store, so search, the voice gate and SubQ see what was said. Rules 26, 41, 88, 89, 94, 105, 106 and 126.
 
 - **REQ-TRANSCRIBE-01** Upload, ask, poll until done
 - **REQ-TRANSCRIBE-02** No key means no call
@@ -594,12 +784,12 @@ An X account's own lists, shown, made and added to through its one session on ve
 
 ## [Voice clone and voice notes](./voiceClone.md)
 
-matt's voice is cloned once per voice provider from the voice notes he sent himself, and a voice note in that voice goes out only when he asks for one, as the platform's own voice note, made from text. The voice layer is provider-agnostic: Inworld and Fish Audio are providers behind one interface. Every voice note is shaped like his own voice notes and listened back before it goes. Rules 142 to 151.
+the owner's voice is cloned once per voice provider from the voice notes he sent himself, and a voice note in that voice goes out only when he asks for one, as the platform's own voice note, made from text. The voice layer is provider-agnostic: Inworld and Fish Audio are providers behind one interface. Every voice note is shaped like his own voice notes and listened back before it goes. Rules 142 to 151.
 
 
 ## [Provider balances](./balance.md)
 
-Every paid provider log calls, with what is left, so a failing voice note, gate or search is seen as money and not a bug. Reading a balance spends nothing, and topping up is matt's. Rules 41, 73, 94 and 164.
+Every paid provider log calls, with what is left, so a failing voice note, gate or search is seen as money and not a bug. Reading a balance spends nothing, and topping up is the owner's. Rules 41, 73, 94 and 164.
 
 - **REQ-BALANCE-01** One command shows every paid provider
 - **REQ-BALANCE-02** A balance API is read where the provider has one
@@ -625,23 +815,50 @@ Every call is timed, never guessed: one timing layer across Bun and Python gives
 - **REQ-TIMING-02** The trace crosses into Python and back as one tree
 - **REQ-TIMING-03** The guards and the voice gate are timed stage by stage
 - **REQ-TIMING-04** Timings are stored and reported, never lost to a failure
+- **REQ-TIMING-05** Whole agent turns are timed and split into tool and agent time
+- **REQ-TIMING-06** Landed to pushed is measured per platform, and watch sessions are listed apart
+- **REQ-TIMING-07** A watcher's reads have deadlines and spend requests only where something changed
 
 ## [treg](./treg.md)
 
-treg's catalog reached from log as an extension: endpoints found by the job, read, and called with the key held server-side, with nothing priced run unless matt approved the spend. Rule 166.
+treg's catalog reached from log as an extension: endpoints found by the job, read, and called with the key held server-side, with nothing priced run unless the owner approved the spend. Rule 166.
 
 - **REQ-TREG-01** Search, get and call run the treg CLI, never a shell
-- **REQ-TREG-02** Nothing priced runs unless matt approved the spend
+- **REQ-TREG-02** Nothing priced runs unless the owner approved the spend
 - **REQ-TREG-03** A call's answer comes back trimmed
 
 ## [Governor counts](./governor.md)
 
-Every platform account's governor counts what it sent today (requests, writes, this hour's requests) and refuses once the day is spent. Its count is read with one command and put back to 0 with another, only when matt says so, and every reset is checked and kept in log.db. Rules 73, 94 and 168.
+Every platform account's governor counts what it sent today (requests, writes, this hour's requests) and refuses once the day is spent. Its count is read with one command and put back to 0 with another, only when the owner says so, and every reset is checked and kept in log.db. Rules 73, 94 and 168.
 
 - **REQ-GOVERNOR-01** One command shows every account's count
 - **REQ-GOVERNOR-02** A reset puts the count back to 0 and proves it held
 - **REQ-GOVERNOR-03** Every reset is a row in log.db
 - **REQ-GOVERNOR-04** A cooldown after a block is kept
+
+## [Hand-rolled one-offs into tools](./handRolled.md)
+
+When an agent hand-rolls a data read or action (a scratch script or raw query against log.db, a curl to a platform or a link, a one-off `python -c` or `bun -e`), log labels it, counts it and advises turning it into a real command and MCP tool, without blocking and without asking the owner; `log tool scaffold` then writes that tool through the syntax tree. Rules 83 and 163.
+
+- **REQ-HANDROLLED-01** Every host's call is normalised before it is classified
+- **REQ-HANDROLLED-02** The label is readsData or actsOnData with the data it touched
+- **REQ-HANDROLLED-03** Each hit is counted in log.db
+- **REQ-HANDROLLED-04** The hook advises on every host and never blocks
+- **REQ-HANDROLLED-05** log tool scaffold writes the tool through the syntax tree
+
+## [Updates](./updates.md)
+
+log knows its own version, hears about a newer release at most once a day without slowing a command, tells the CLI, the agent and the console, and updates only after the owner's yes, then resumes what was running. docs/updates.md explains it for people.
+
+- **REQ-UPDATE-01** The version and the install are known
+- **REQ-UPDATE-02** The newest release is checked at most once a day, never in front of a command
+- **REQ-UPDATE-03** The CLI, the agent and the console are told; the agent once per session
+- **REQ-UPDATE-04** An update asks first, refuses while busy, rolls back and resumes
+- **REQ-UPDATE-05** Every harness is refreshed, and every harness's agent is told
+- **REQ-UPDATE-06** Every local model is pinned to one revision, and log models says whether it is here
+- **REQ-UPDATE-07** Install and update run one after-install routine, at one release
+- **REQ-UPDATE-08** The README lists every release in order, with its models
+- **REQ-UPDATE-09** Every merge to main that passed CI is a nightly, and an install picks its track
 
 ## [Instagram](./instagram.md)
 
@@ -684,7 +901,7 @@ Where a Marketplace listing is and where an account sells from is typed as a pla
 
 ## [Marketplace publish and check](./marketplacePublish.md)
 
-log-cli is read-only on Facebook except where matt asked for an action. Posting a listing is one he asked for: `log facebook publish` posts one listing through the publish machine, a dry run unless `--live`, with nothing retried once Publish is clicked. Once a listing is live, the account is checked on a schedule in the browser the host holds (`log facebook check` runs it once), reading Facebook's own answers and clicking nothing. Rules 8, 10 and 69.
+log-cli is read-only on Facebook except where the owner asked for an action. Posting a listing is one he asked for: `log facebook publish` posts one listing through the publish machine, a dry run unless `--live`, with nothing retried once Publish is clicked. Once a listing is live, the account is checked on a schedule in the browser the host holds (`log facebook check` runs it once), reading Facebook's own answers and clicking nothing. Rules 8, 10 and 69.
 
 - **REQ-LISTING-16** Publish is a dry run unless --live
 - **REQ-LISTING-17** Nothing is retried once Publish is clicked
@@ -694,6 +911,21 @@ log-cli is read-only on Facebook except where matt asked for an action. Posting 
 - **REQ-LISTING-21** Anything but full access is the account's suspended issue
 - **REQ-LISTING-22** Each listing's state on Selling goes into Twenty
 - **REQ-LISTING-23** Seller chats are counted and kept as sent
+
+## [Who each person is and where they are](./pipeline.md)
+
+Every chat in the owner's inbox carries two fields: `who` the person is to the owner and, only for a lead or a client, `where` they are in the sales cycle. A small model on the CPU fills both on every new message, the owner's own labels always win and train it, and SubQ labels the rest once. Nothing here sends a message on any platform. The design and the measured CPU stack: [the pipeline proposal](../decisions/pipeline/proposal.md); how to use it: [Pipeline labels](../pipelineLabels.md).
+
+- **REQ-PIPELINE-01** Two owner-editable lists, and no sales stage for a bot, friend, partner or community
+- **REQ-PIPELINE-02** Old labels still read the same
+- **REQ-PIPELINE-03** Day one is nearest-prototype on the shipped MiniLM, with the counting signals and a bot detector as features
+- **REQ-PIPELINE-04** A trained head, applied on the CPU, wins once it exists
+- **REQ-PIPELINE-05** Stored per chat on every new message, cached by the last message
+- **REQ-PIPELINE-06** The owner labels what log is least sure of
+- **REQ-PIPELINE-07** SubQ labels every chat once, as a dry run until applied
+- **REQ-PIPELINE-08** Whether people answer what log sent, against the owner's own sends, matched by person and stage
+- **REQ-PIPELINE-09** Unsure chats go to SubQ off the push path, within a daily cap, and the head retrains itself
+- **REQ-PIPELINE-10** A bot needs the bot signal and the teacher, and never a two-way human conversation
 
 ## [Slack](./slack.md)
 
@@ -716,16 +948,22 @@ How log keeps what it reads and does: one SQLite database, `~/.logCli/log.db`, w
 - **REQ-STORAGE-05** Nothing a replay needs is cut or looked up again
 - **REQ-STORAGE-06** The typed tables can be rebuilt and verified from the events
 - **REQ-STORAGE-07** People and accounts have stable ids, and names live in one place
+- **REQ-STORAGE-18** Profile fields the engines already return are kept once, per person, and rebuilt from events
 - **REQ-STORAGE-08** A replaced owner's writes are refused by the database, not by its own good behaviour
 - **REQ-STORAGE-09** A gap is never closed over a newer drop
 - **REQ-STORAGE-10** Each part of a send is fenced by its claim
 - **REQ-STORAGE-11** Bulk work is short and resumable, and old and new code share the file
+- **REQ-STORAGE-19** A create-only migration another branch skipped is repaired, never re-run blind
 - **REQ-STORAGE-12** The X queues live in log.db
 - **REQ-STORAGE-13** The MCP jobs live in log.db
 - **REQ-STORAGE-14** Transcripts live in log.db
 - **REQ-STORAGE-15** The small logs are records, and hook timings are spans
 - **REQ-STORAGE-16** Nothing new writes shared state outside log.db
 - **REQ-STORAGE-17** The small shared state is keyed rows in log.db
+- **REQ-STORAGE-20** The engines' own stores are rows in log.db
+- **REQ-STORAGE-21** A chat's kind and name come from the best source that knows them
+- **REQ-STORAGE-22** A chat with more than two members is a group
+- **REQ-STORAGE-23** A write to a database LOG_DB points at says so
 
 ## [TikTok](./tiktok.md)
 

@@ -1,7 +1,7 @@
 ---
 name: log-twitter-who-needs-you
 description: "Finding who needs something from you, or who matters. A log play (docs/useCases/twitter/whoNeedsYou.md): Go through the account's messages and find the people who clearly need something from the owner, or who matter: someone asking for work, a collaboration, a referral, a call; someone well placed (a fund, a big audience, a shared network). It reads what each conversation is about across its whole history, not just the last line, and says how close each one is to money. It sends nothing. What happens next with each person is the owner's call, and the reply itself is [followUps.md](followUps.md)."
-when_to_use: "Use when matt asks for this, in words like: \"look through my messages and find someone who clearly needs something off me\", \"summarise everything on my twitter, how likely is it we make money\", \"who's worth following up\"."
+when_to_use: "Use when the owner asks for this, in words like: \"look through my messages and find someone who clearly needs something off me\", \"summarise everything on my twitter, how likely is it we make money\", \"who's worth following up\"."
 metadata:
   summary: "Finding who needs something from you, or who matters"
 ---
@@ -10,7 +10,7 @@ metadata:
 
 This is the log play `twitter/whoNeedsYou`. Before anything else, call the log MCP tool `getGuide({ useCase: "twitter/whoNeedsYou" })`: it returns this page and makes it the session's play, so every log tool's answer says which step you are on and a send with no play loaded is refused (rules 157, 158). Then follow the steps in order.
 
-Draft every message from that person's own thread and matt's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
+Draft every message from that person's own thread and the owner's real replies (`voice` with no text, `search`), never from memory, and never send two that read alike (`sameAsSent`).
 
 Go through the account's messages and find the people who clearly need something from the owner, or who matter: someone asking for work, a collaboration, a referral, a call; someone well placed (a fund, a big audience, a shared network). It reads what each conversation is about across its whole history, not just the last line, and says how close each one is to money. It sends nothing. What happens next with each person is the owner's call, and the reply itself is [followUps.md](../log-twitter-follow-ups/SKILL.md).
 
@@ -26,8 +26,8 @@ Say: **"go on docs/useCases/twitter/whoNeedsYou.md"**, and which account. The ag
 | # | Step | Tool | Done when |
 | --- | --- | --- | --- |
 | 1 | Who wrote last and is waiting: already in context at session start, read from the local inbox store, nothing fetched | the SessionStart hook | the list is in context |
-| 2 | Bring the inbox up to date: the first read takes everything once, every read after only what is new (about 5 s) | `twitterDms` { account, limit: "60" } | every conversation, newest first, with who spoke last |
-| 3 | Shortlist: everyone waiting on the owner, plus anyone recent the owner wrote to who answered | `twitterDms` { account, waiting: true, limit: "60" } | a shortlist of handles |
+| 2 | Bring the inbox up to date: the first read takes everything once, every read after only what is new (about 5 s) | `twitterDms` { account, limit: 60 } | every conversation, newest first, with who spoke last |
+| 3 | Shortlist: everyone waiting on the owner, plus anyone recent the owner wrote to who answered | `twitterDms` { account, waiting: true, limit: 60 } | a shortlist of handles |
 | 4 | Read each shortlisted person in full, old DM thread and X Chat merged, one person at a time | `twitterDms` { account, with: "<handle>" } | their whole thread, oldest first |
 | 5 | What the conversation is about beyond the thread: earlier talk about the same thing anywhere | `search` { query, with: "<handle>" } | the matches, with when |
 | 6 | Who they are: their bio, role and reach, and whether they're in Twenty | [treg](https://treg.to/?ref=matthewdonse-aebsh)'s X profile read, Twenty | one line per person |
@@ -41,3 +41,12 @@ Say: **"go on docs/useCases/twitter/whoNeedsYou.md"**, and which account. The ag
 - "(could not decrypt)" means X Chat couldn't be opened for that message, not that the person said nothing. Never say "nobody replied" from it.
 - Reads go one person at a time. Never read the whole inbox in a loop of calls, and never in the same session as a bulk send (rule 94).
 - How likely money is gets said plainly, from what was said. Nothing is inferred that the person didn't say.
+
+## Related
+
+- Up: [All use cases](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/README.md)
+- [All X use cases, and the parts they share](https://github.com/matthewdonsemail-lab/log/blob/main/docs/useCases/twitter/README.md)
+- [What log does on X](https://github.com/matthewdonsemail-lab/log/blob/main/docs/platformGuides/x.md)
+- [Connect your agent](https://github.com/matthewdonsemail-lab/log/blob/main/docs/mcp.md) · [Trust](https://github.com/matthewdonsemail-lab/log/blob/main/docs/trust.md)
+
+> Some links in this play carry ListeningKit's referral or affiliate credit (a `ref=` or `aff=` code). They cost the owner nothing extra; use the plain address without the code if you prefer.

@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundarydgUf1IW1MzpABYlv
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `domains_ts`, `domains.useless-signin-prod.herokuapp.com`, `domains.open.workast.com`, `domains.open.workast.app`, `domains.loom.com`, `domains.www.loom.com`, `domains.lucid.app`, `domains.atlassian.net`, `domains.bitbucket.org`, `domains.trello.com`, `wildcard_domains.bitbucket.org` and 4 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script3.js:2908 statement`, `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script3.js:2908 statement`, `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_4a8886575dabfa8974994a6184592e0c330698626980cf00b54a7909f0d9eec9` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 941 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 941 ms
 
 Sent:
 
@@ -34,14 +34,14 @@ Sent:
     "_x_id": "2c6eaecf-1793689064.406",
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_frontend_build_type": "current",
     "fp": "6f",
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundarydgUf1IW1MzpABYlv\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundarydgUf1IW1MzpABYlv\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nsiws-get-domains\r\n------WebKitFormBoundarydgUf1IW1MzpABYlv\r\nContent-Disposition: form-data; name=\"_x_mode\"\r\n\r\nonline\r\n------WebKitFormBoundarydgUf1IW1MzpABYlv\r\nContent-Disposition… (586 chars)"
+    "------WebKitFormBoundarydgUf1IW1MzpABYlv\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundarydgUf1IW1MzpABYlv\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nsiws-get-domains\r\n------WebKitFormBoundarydgUf1IW1MzpABYlv\r\nContent-Disposition: form-data; name=\"_x_mode\"\r\n\r\nonline\r\n------WebKitFormBoundarydgUf1IW1MzpABYlv\r\nContent-Disposition… (586 chars)"
   }
 }
 ```
@@ -81,7 +81,7 @@ Fetches Slack's list of domains it unfurls links for: it answered `ok: true` wit
 
 ## What our machine does with it
 
-Nothing: no log-cli code calls it. The engine (`python/slackApi/engine.py`, actions ping, workspaces, chats, read, send, watch over `vendor/gabrielSlack`) never uses this endpoint; it is Slack's web client's own traffic, seen only because the `log inspect` AdsPower run on mattSlack loaded the page. It only affects how links in messages are previewed.
+Nothing: no log-cli code calls it. The engine (`python/slackApi/engine.py`, actions ping, workspaces, chats, read, send, watch over `vendor/gabrielSlack`) never uses this endpoint; it is Slack's web client's own traffic, seen only because the `log inspect` AdsPower run on slackAccount loaded the page. It only affects how links in messages are previewed.
 
 ## What can go wrong
 

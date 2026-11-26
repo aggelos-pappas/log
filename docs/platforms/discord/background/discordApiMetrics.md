@@ -1,6 +1,6 @@
 # discordApiMetrics
 
-<!-- facts:start · written by `log facebook capture --docs` from the run captures and rea. Not edited by hand. -->
+<!-- facts:start · written by `log capture docs` from the run captures and rea. Not edited by hand. -->
 
 | | |
 | --- | --- |
@@ -10,10 +10,10 @@
 | Path | `discord.com/api/metrics` |
 | Sends | `metrics`, `client_info` |
 | Reads | — |
-| Called from | `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1.js:208 app_store_parental_revocation`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1036.js:1 parse`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1221.js:2 anonymous`, `runs/inspect/20261028T074137_sourcedandsoldtothehighestbidder/script1245.js:2 anonymous` |
-| rea | `ev_065e7ad37dcb5911d240f9de7d6e2882220c5a8d7c025d92b46a23de59cf297c` |
+| Called from | `runs/inspect/20261120T115645_<name:3>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:3>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:3>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:3>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 6 time(s) in 3 run(s).
+Seen 17 time(s) in 12 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -23,12 +23,17 @@ Seen 6 time(s) in 3 run(s).
 | inspect | step 28: press Enter | 1 | 204 | 373 ms | 29174 ms | — |
 | inspect | step 32: snapshot | 1 | 204 | 359 ms | 60949 ms | — |
 | inspect | step 3: snapshot | 1 | 204 | 301 ms | 13477 ms | — |
+| inspect | step 1: goto /login | 5 | 204 | 325–2618 ms | 127935–1082791 ms | — |
+| inspect | step 2: viewerInput click | 1 | 204 | 389 ms | 481 ms | — |
+| inspect | step 3: viewerInput click | 2 | 204 | 326–368 ms | 60687–114894 ms | — |
+| inspect | step 1: goto /quest-home | 2 | 204 | 334–338 ms | 128675–129568 ms | — |
+| inspect | step 1: goto /channels/@me | 1 | 204 | 327 ms | 128536 ms | — |
 
 ### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder**, step 3: snapshot: 204, 301 ms
+**runs/inspect/20261120T115645_<name:3>**, step 2: viewerInput click: 204, 389 ms
 
 Sent:
 
@@ -36,7 +41,7 @@ Sent:
 {
   "metrics": [
     {
-      "name": "badge_directory_catalog_fetch",
+      "name": "<name:1>",
       "type": "distribution",
       "tags": [
         "design_id:2",
@@ -47,70 +52,117 @@ Sent:
         "platform:web",
         "… 1 more"
       ],
-      "value": 903
+      "value": 4290
     },
     {
-      "name": "quest_content_impression",
+      "name": "<name:2>",
       "type": "count",
       "tags": [
         "design_id:2",
-        "quest_content:QUEST_BAR_V2",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
         "platform:web",
         "release_channel:stable"
       ]
     },
     {
-      "name": "wasm_asset_fetch_duration",
-      "type": "distribution",
+      "name": "<name:2>",
+      "type": "count",
       "tags": [
         "design_id:2",
-        "br:true",
-        "delivery:network",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
         "platform:web",
         "release_channel:stable"
-      ],
-      "value": 437
+      ]
     },
     {
-      "name": "wasm_asset_body_duration",
-      "type": "distribution",
+      "name": "<name:2>",
+      "type": "count",
       "tags": [
         "design_id:2",
-        "br:true",
-        "delivery:network",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
         "platform:web",
         "release_channel:stable"
-      ],
-      "value": 321
+      ]
     },
     {
-      "name": "wasm_asset_encoded_bytes",
-      "type": "distribution",
+      "name": "<name:2>",
+      "type": "count",
       "tags": [
         "design_id:2",
-        "br:true",
-        "delivery:network",
+        "quest_content:QUEST_HOME_HERO",
+        "ad_creative_type:QUEST_HOME_HERO",
         "platform:web",
         "release_channel:stable"
-      ],
-      "value": 706201
+      ]
     },
     {
-      "name": "wasm_asset_decoded_bytes",
+      "name": "<name:2>",
+      "type": "count",
+      "tags": [
+        "design_id:2",
+        "quest_content:QUEST_HOME_HERO_SHELF",
+        "ad_creative_type:QUEST_HOME_HERO",
+        "platform:web",
+        "release_channel:stable"
+      ]
+    },
+    "… 1 more"
+  ],
+  "client_info": {
+    "built_at": "1795076375680",
+    "build_number": "677695"
+  }
+}
+```
+
+Answered:
+
+```json
+null
+```
+
+**runs/inspect/20261120T115645_<name:3>**, step 3: viewerInput click: 204, 326 ms
+
+Sent:
+
+```json
+{
+  "metrics": [
+    {
+      "name": "<name:1>",
       "type": "distribution",
       "tags": [
         "design_id:2",
-        "br:true",
-        "delivery:network",
+        "viewed_user:other",
+        "result:success",
+        "catalog_state:non_empty",
+        "attempt:initial",
         "platform:web",
-        "release_channel:stable"
+        "… 1 more"
       ],
-      "value": 2261175
+      "value": 628
+    },
+    {
+      "name": "<name:1>",
+      "type": "distribution",
+      "tags": [
+        "design_id:2",
+        "viewed_user:other",
+        "result:success",
+        "catalog_state:non_empty",
+        "attempt:initial",
+        "platform:web",
+        "… 1 more"
+      ],
+      "value": 1998
     }
   ],
   "client_info": {
-    "built_at": "1793344820826",
-    "build_number": "657850"
+    "built_at": "1795076375680",
+    "build_number": "677695"
   }
 }
 ```
@@ -121,7 +173,7 @@ Answered:
 null
 ```
 
-**runs/inspect/20261028T065202_sourcedandsoldtothehighestbidder**, step 2: snapshot: 204, 367 ms
+**runs/inspect/20261120T111021_<name:3>**, step 1: goto /quest-home: 204, 334 ms
 
 Sent:
 
@@ -129,7 +181,7 @@ Sent:
 {
   "metrics": [
     {
-      "name": "badge_directory_catalog_fetch",
+      "name": "<name:1>",
       "type": "distribution",
       "tags": [
         "design_id:2",
@@ -140,169 +192,68 @@ Sent:
         "platform:web",
         "… 1 more"
       ],
-      "value": 1225
+      "value": 2537
     },
     {
-      "name": "wasm_asset_fetch_duration",
-      "type": "distribution",
+      "name": "<name:2>",
+      "type": "count",
       "tags": [
         "design_id:2",
-        "br:true",
-        "delivery:cache",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
         "platform:web",
         "release_channel:stable"
-      ],
-      "value": 8
+      ]
     },
     {
-      "name": "wasm_asset_body_duration",
-      "type": "distribution",
+      "name": "<name:2>",
+      "type": "count",
       "tags": [
         "design_id:2",
-        "br:true",
-        "delivery:cache",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
         "platform:web",
         "release_channel:stable"
-      ],
-      "value": 6
+      ]
     },
     {
-      "name": "wasm_asset_encoded_bytes",
-      "type": "distribution",
+      "name": "<name:2>",
+      "type": "count",
       "tags": [
         "design_id:2",
-        "br:true",
-        "delivery:cache",
+        "quest_content:QUEST_HOME_DESKTOP",
+        "ad_creative_type:QUEST",
         "platform:web",
         "release_channel:stable"
-      ],
-      "value": 65052
+      ]
     },
     {
-      "name": "wasm_asset_decoded_bytes",
-      "type": "distribution",
+      "name": "<name:2>",
+      "type": "count",
       "tags": [
         "design_id:2",
-        "br:true",
-        "delivery:cache",
+        "quest_content:QUEST_HOME_HERO",
+        "ad_creative_type:QUEST_HOME_HERO",
         "platform:web",
         "release_channel:stable"
-      ],
-      "value": 193784
+      ]
     },
     {
-      "name": "wasm_asset_fetch_duration",
-      "type": "distribution",
+      "name": "<name:2>",
+      "type": "count",
       "tags": [
         "design_id:2",
-        "br:true",
-        "delivery:cache",
+        "quest_content:QUEST_HOME_HERO_SHELF",
+        "ad_creative_type:QUEST_HOME_HERO",
         "platform:web",
         "release_channel:stable"
-      ],
-      "value": 16
+      ]
     },
-    "… 15 more"
+    "… 1 more"
   ],
   "client_info": {
-    "built_at": "1793113957288",
-    "build_number": "652418"
-  }
-}
-```
-
-Answered:
-
-```json
-null
-```
-
-**runs/inspect/20261028T062914_sourcedandsoldtothehighestbidder**, step 6: wait 6s: 204, 379 ms
-
-Sent:
-
-```json
-{
-  "metrics": [
-    {
-      "name": "badge_directory_catalog_fetch",
-      "type": "distribution",
-      "tags": [
-        "design_id:2",
-        "viewed_user:self",
-        "result:success",
-        "catalog_state:non_empty",
-        "attempt:initial",
-        "platform:web",
-        "… 1 more"
-      ],
-      "value": 3645
-    },
-    {
-      "name": "wasm_asset_fetch_duration",
-      "type": "distribution",
-      "tags": [
-        "design_id:2",
-        "br:false",
-        "delivery:network",
-        "platform:web",
-        "release_channel:stable"
-      ],
-      "value": 976
-    },
-    {
-      "name": "wasm_asset_body_duration",
-      "type": "distribution",
-      "tags": [
-        "design_id:2",
-        "br:false",
-        "delivery:network",
-        "platform:web",
-        "release_channel:stable"
-      ],
-      "value": 846
-    },
-    {
-      "name": "wasm_asset_encoded_bytes",
-      "type": "distribution",
-      "tags": [
-        "design_id:2",
-        "br:false",
-        "delivery:network",
-        "platform:web",
-        "release_channel:stable"
-      ],
-      "value": 867528
-    },
-    {
-      "name": "wasm_asset_decoded_bytes",
-      "type": "distribution",
-      "tags": [
-        "design_id:2",
-        "br:false",
-        "delivery:network",
-        "platform:web",
-        "release_channel:stable"
-      ],
-      "value": 2260349
-    },
-    {
-      "name": "wasm_asset_fetch_duration",
-      "type": "distribution",
-      "tags": [
-        "design_id:2",
-        "br:false",
-        "delivery:network",
-        "platform:web",
-        "release_channel:stable"
-      ],
-      "value": 773
-    },
-    "… 3 more"
-  ],
-  "client_info": {
-    "built_at": "1793113957288",
-    "build_number": "652418"
+    "built_at": "1795076375680",
+    "build_number": "677695"
   }
 }
 ```

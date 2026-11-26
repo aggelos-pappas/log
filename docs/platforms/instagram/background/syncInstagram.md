@@ -10,7 +10,7 @@
 | Path | `/sync/instagram` |
 | Sends | `encrypted_data`, `__d`, `qpl_active_flow_ids` |
 | Reads | `__ar`, `rid`, `payload`, `lid` |
-| Called from | `runs/inspect/20261103T180010_mattinferencesaver/script262.js:1 statement`, `runs/inspect/20261103T180010_mattinferencesaver/script262.js:1 statement`, `runs/inspect/20261103T180010_mattinferencesaver/script115.js:1 statement`, `runs/inspect/20261103T185330_mattinferencesaver/script31.js:28 statement` |
+| Called from | `runs/inspect/20261103T180010_instagramAccount/script262.js:1 statement`, `runs/inspect/20261103T180010_instagramAccount/script262.js:1 statement`, `runs/inspect/20261103T180010_instagramAccount/script115.js:1 statement`, `runs/inspect/20261103T185330_instagramAccount/script31.js:28 statement` |
 | rea | `ev_42cc6233fb35c7a12f5b1b6e444cbb8ea0320a699d0b1c88cfb3ecbe95bede95` |
 
 Seen 4 time(s) in 2 run(s).
@@ -26,7 +26,7 @@ Seen 4 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T185330_mattinferencesaver**, step 1: goto /direct/t/<id>/: 200, 194 ms
+**runs/inspect/20261103T185330_instagramAccount**, step 1: goto /direct/t/<id>/: 200, 194 ms
 
 Sent:
 
@@ -44,11 +44,11 @@ Answered:
   "__ar": 1,
   "rid": "AZZp8jZxh0mBF7xWvkU9iR_",
   "payload": null,
-  "lid": "7704020382008127603"
+  "lid": "<id:1>"
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 2: snapshot: 200, 194 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 2: snapshot: 200, 194 ms
 
 Sent:
 
@@ -66,11 +66,11 @@ Answered:
   "__ar": 1,
   "rid": "AcScNTtzGNxYQLjFnYFI5if",
   "payload": null,
-  "lid": "7704006797227472939"
+  "lid": "<id:2>"
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 3: goto /direct/inbox/: 200, 191 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 3: goto /direct/inbox/: 200, 191 ms
 
 Sent:
 
@@ -88,7 +88,7 @@ Answered:
   "__ar": 1,
   "rid": "A53xPGN4JZq8dDBDTr03yRD",
   "payload": null,
-  "lid": "7704006912815245066"
+  "lid": "<id:3>"
 }
 ```
 

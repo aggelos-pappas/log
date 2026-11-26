@@ -7,6 +7,7 @@ import type { PublishSession, SessionConfig, SessionStep } from "../../camofox/s
 import { readAttempts } from "../../captcha/router/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { runCli } from "../runner/index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const root = mkdtempSync(join(tmpdir(), "logCliPublish"));
 const saved: Record<string, string | undefined> = {};
@@ -292,19 +293,19 @@ describe("publishSession location match", () => {
     const script = "import sys, json; sys.path.insert(0, 'python'); from session import publishSession as p; print(json.dumps([p.in_place(t, c) for t, c, _ in json.loads(sys.stdin.read())]))";
     const run = require("node:child_process").spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", input: JSON.stringify(cases) });
     expect(JSON.parse(run.stdout.trim())).toEqual(cases.map((c) => c[2]));
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("FB's text captcha page is read as a captcha, not a checkpoint for a person", () => {
     const texts = ["Confirm that you're human\nEnter the text from the image.\nCan't read this text? Hear this code\nContinue", "Confirm your identity\nUpload a photo"];
     const script = "import sys, json; sys.path.insert(0, 'python'); from session import publishSession as p; print(json.dumps([bool(p.TEXT_CAPTCHA.search(t)) for t in json.loads(sys.stdin.read())]))";
     const run = require("node:child_process").spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", input: JSON.stringify(texts) });
     expect(JSON.parse(run.stdout.trim())).toEqual([true, false]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("with no Location field, the form's preview says where it would be listed", () => {
     const texts = ["Preview\nListed a few seconds ago in Kearney\nDetails", "Listed in Philadelphia, PA\n", "no preview"];
     const script = "import sys, json; sys.path.insert(0, 'python'); from session import publishSession as p; ms = [p.LISTED_IN.search(t) for t in json.loads(sys.stdin.read())]; print(json.dumps([(m.group(1) or m.group(2)).strip() if m else None for m in ms]))";
     const run = require("node:child_process").spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", input: JSON.stringify(texts) });
     expect(JSON.parse(run.stdout.trim())).toEqual(["Kearney", "Philadelphia, PA", null]);
-  });
+  }, SPAWNS_PROCESS_MS);
 });

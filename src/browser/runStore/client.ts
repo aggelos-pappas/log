@@ -1,17 +1,19 @@
 import { appendRecord } from '../../storage/records/index'
-import { appendFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statfsSync, statSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
+import { appendFileSync, promises as fsp, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statfsSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { knownRequests } from '../../subq/stepReading/client.ts'
 import { exchangesOf } from '../../subq/stepReading/helpers/exchangesOf.ts'
 import { DOCUMENT_FIELDS, EXCHANGES_FILE } from '../../subq/stepReading/types.ts'
 import { openInspects } from '../inspect/index.ts'
 import { domainsInHar } from './helpers/domainsInHar.ts'
+import type { Database } from 'bun:sqlite'
+import { readEngineStore, writeEngineStore } from '../../storage/engineStore/index'
+import { DOCS_BUILT_ACCOUNT } from './types.ts'
 import type { Backfill, PrunedRun, RunEntry, StepHar } from './types.ts'
+import { logHome } from '../../config/logHome/index.ts'
 
 export function logCliRoot(): string {
-  return process.env.LOG_CAPTURES_ROOT || join(homedir(), '.logCli')
+  return process.env.LOG_CAPTURES_ROOT || logHome()
 }
 
 const RUN_FOLDER = /^(\d{4})(\d{2})(\d{2})T\d{6}_(.+)$/
@@ -45,13 +47,14 @@ function newestChange(path: string): number {
   return readdirSync(path).filter((name) => !TAKEN_OUT.test(name)).reduce((n, name) => Math.max(n, newestChange(join(path, name))), 0)
 }
 
-export function docsBuiltAt(repoRoot = fileURLToPath(new URL('../../../', import.meta.url))): number {
-  const index = join(repoRoot, 'docs', 'platforms', 'facebook', 'operations.json')
-  try {
-    return Date.parse((JSON.parse(readFileSync(index, 'utf8')) as { builtAt?: string }).builtAt ?? '') || 0
-  } catch {
-    return 0
-  }
+export function recordDocsBuilt(platform: string, at: number, handle?: Database): void {
+  writeEngineStore('clientDocs', DOCS_BUILT_ACCOUNT, { builtAt: { [platform]: at } }, handle)
+}
+
+export function docsBuiltAt(handle?: Database): number {
+  const stored = readEngineStore<{ builtAt?: Record<string, unknown> }>('clientDocs', DOCS_BUILT_ACCOUNT, undefined, handle)
+  const times = Object.values(stored?.builtAt ?? {}).filter((t): t is number => typeof t === 'number' && t > 0)
+  return times.length ? Math.min(...times) : 0
 }
 
 export function listRuns(options: { root?: string; builtAt?: number; now?: number; open?: string[] } = {}): RunEntry[] {
@@ -72,7 +75,7 @@ export function listRuns(options: { root?: string; builtAt?: number; now?: numbe
       const settled = captureDir ? existsSync(join(captureDir, 'settle.json')) : null
       const documented = captureDir ? statSync(join(captureDir, 'session.har')).mtimeMs <= builtAt : null
       const busy = open.has(path.toLowerCase()) || now - newestChange(path) < BUSY_MS
-      const keep = busy ? 'still being written' : settled === false ? 'not settled by rea yet: log facebook capture --settle <its capture folder>' : documented === false ? 'not in the request docs yet: log facebook capture --docs' : null
+      const keep = busy ? 'still being written' : settled === false ? 'not settled by rea yet: log capture settle <its capture folder>' : documented === false ? 'not in the request docs yet: log capture docs' : null
       entries.push({ path, action, run, account: match[4], day: `${match[1]}-${match[2]}-${match[3]}`, bytes: sizeOf(path), captureDir, settled, documented, open: busy, keep })
     }
   }
@@ -186,16 +189,67 @@ export function diskFree(path = logCliRoot()): number | null {
   }
 }
 
+const RUNS_SIZE_FRESH_MS = 15 * 60_000
+
+function savedRunsSize(runs: string): { at: number; bytes: number } | null {
+  try {
+    return JSON.parse(readFileSync(join(runs, '.size.json'), 'utf8')) as { at: number; bytes: number }
+  } catch {
+    return null
+  }
+}
+
+function saveRunsSize(runs: string, bytes: number, at: number): void {
+  try {
+    if (existsSync(runs)) writeFileSync(join(runs, '.size.json'), JSON.stringify({ at, bytes }))
+  } catch {}
+}
+
 export function runsBytes(root = logCliRoot(), now = Date.now()): number {
   const runs = join(root, 'runs')
-  const cache = join(runs, '.size.json')
-  try {
-    const saved = JSON.parse(readFileSync(cache, 'utf8')) as { at: number; bytes: number }
-    if (now - saved.at < 15 * 60_000) return saved.bytes
-  } catch {}
+  const saved = savedRunsSize(runs)
+  if (saved && now - saved.at < RUNS_SIZE_FRESH_MS) return saved.bytes
   const bytes = sizeOf(runs)
-  try {
-    if (existsSync(runs)) writeFileSync(cache, JSON.stringify({ at: now, bytes }))
-  } catch {}
+  saveRunsSize(runs, bytes, now)
   return bytes
+}
+
+async function sizeOfAsync(path: string): Promise<number> {
+  let stat
+  try {
+    stat = await fsp.stat(path)
+  } catch {
+    return 0
+  }
+  if (!stat.isDirectory()) return stat.size
+  let names: string[] = []
+  try {
+    names = await fsp.readdir(path)
+  } catch {
+    return 0
+  }
+  let total = 0
+  for (const name of names) total += await sizeOfAsync(join(path, name))
+  return total
+}
+
+const sizing = new Map<string, Promise<number>>()
+
+export function remeasureRunsBytes(root = logCliRoot(), now: () => number = Date.now): Promise<number> {
+  const runs = join(root, 'runs')
+  const running = sizing.get(runs)
+  if (running) return running
+  const work = sizeOfAsync(runs)
+    .then((bytes) => (saveRunsSize(runs, bytes, now()), bytes))
+    .finally(() => sizing.delete(runs))
+  sizing.set(runs, work)
+  return work
+}
+
+export function servedRunsBytes(root = logCliRoot(), now = Date.now()): number {
+  const runs = join(root, 'runs')
+  const saved = savedRunsSize(runs)
+  if (!saved) return runsBytes(root, now)
+  if (now - saved.at >= RUNS_SIZE_FRESH_MS) void remeasureRunsBytes(root).catch(() => 0)
+  return saved.bytes
 }

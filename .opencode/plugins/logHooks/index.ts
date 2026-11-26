@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -7,6 +8,8 @@ import { writeTranscript } from "./helpers/transcript";
 import type { OpenCodeEvent, PluginContext, SessionHookEvent, ToolHookEvent } from "./types";
 
 const CHAT_NAME_TOOL = /^mcp__log__(discord|slack|instagram)/;
+
+const HAND_ROLLED_TOOL = /^(Bash|PowerShell|Monitor|write|patch|apply_patch)$/i;
 
 const STOP_REPEAT_MS = 5 * 60 * 1000;
 
@@ -85,6 +88,28 @@ export default {
     const stopBlocked = new Map<string, { reason: string; at: number }>();
     const lastStopAt = new Map<string, number>();
     const started = new Set<string>();
+    const pushes = new Map<string, ReturnType<typeof spawn>>();
+
+    const follow = (sessionID: string): void => {
+      const reader = sessionID.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 80);
+      if (!reader || pushes.has(sessionID) || !ctx.session.synthetic) return;
+      const child = spawn("bun", [join(repo, "scripts", "hooks", "push.ts"), "--host", "opencode", "--reader", reader], { cwd: repo, stdio: ["ignore", "pipe", "ignore"], windowsHide: true });
+      pushes.set(sessionID, child);
+      let buffered = "";
+      child.stdout?.setEncoding("utf8");
+      child.stdout?.on("data", (chunk: string) => {
+        buffered += chunk;
+        const lines = buffered.split("\n");
+        buffered = lines.pop() ?? "";
+        for (const line of lines) {
+          try {
+            const batch = JSON.parse(line) as { context?: string };
+            if (batch.context) void ctx.session.synthetic?.({ sessionID, text: clipped(batch.context) }).catch(() => undefined);
+          } catch {}
+        }
+      });
+      child.on("exit", () => pushes.delete(sessionID));
+    };
 
     const inject = async (sessionID: string, key: string, text: string): Promise<boolean> => {
       try {
@@ -147,6 +172,10 @@ export default {
       const name = codeTool || hostToolName(String(event.tool ?? ""));
       const callID = String(event.callID ?? "");
       if (callID) callTools.set(callID, name);
+      if (HAND_ROLLED_TOOL.test(name)) {
+        const advice = await runCommandHook("handRolled.ts", repo, { hook_event_name: "PreToolUse", session_id: event.sessionID, tool_name: name, tool_input: input, cwd: repo });
+        if (advice.context) carried.set(event.sessionID, [carried.get(event.sessionID), advice.context].filter(Boolean).join("\n\n"));
+      }
       if (CHAT_NAME_TOOL.test(name)) {
         const verdict = await runCommandHook("chatNames.ts", repo, {
           hook_event_name: "PreToolUse",
@@ -205,6 +234,7 @@ export default {
           if (info?.parentID) return;
         }
         started.add(sessionID);
+        follow(sessionID);
         const context = await sessionStart(sessionID, source);
         if (!context) return;
         if (!(await inject(sessionID, START_KEY, context))) carried.set(sessionID, context);
@@ -223,6 +253,8 @@ export default {
         return;
       }
       if (event.type === "session.deleted") {
+        pushes.get(sessionID)?.kill();
+        pushes.delete(sessionID);
         carried.delete(sessionID);
         stopBlocked.delete(sessionID);
         lastStopAt.delete(sessionID);
@@ -240,6 +272,8 @@ export default {
 
     return () => {
       controller.abort();
+      for (const child of pushes.values()) child.kill();
+      pushes.clear();
       carried.clear();
       callTools.clear();
       stopBlocked.clear();

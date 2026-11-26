@@ -7,19 +7,34 @@ flowchart TB
   terminal["terminal only"]
   subgraph g_any["Any platform"]
     c_launch["launch"]
+    c_console["console"]
+    c_credentials["credentials"]
     c_adsPower["adsPower"]
     c_localAccount["localAccount"]
+    c_accounts["accounts"]
     c_inspect["inspect"]
     c_flow["flow"]
     c_proxy["proxy"]
     c_errors["errors"]
     c_graph["graph"]
+    c_capture["capture"]
+    c_router["router"]
     c_runs["runs"]
     c_storage["storage"]
+    c_version["version"]
+    c_update["update"]
+    c_models["models"]
+    c_relate["relate"]
+    c_people["people"]
+    c_network["network"]
     c_timing["timing"]
+    c_tool["tool"]
     c_inbox["inbox"]
+    c_harness["harness"]
     c_media["media"]
     c_browsers["browsers"]
+    c_browser["browser"]
+    c_report["report"]
     c_job["job"]
     c_mcp["mcp"]
     c_login["login"]
@@ -27,43 +42,50 @@ flowchart TB
     c_whoami["whoami"]
     c_voice["voice"]
     c_search["search"]
+    c_index["index"]
+    c_facts["facts"]
     c_kb["kb"]
     c_runtime["runtime"]
     c_memelord["memelord"]
     c_treg["treg"]
     c_balance["balance"]
     c_governor["governor"]
+    c_sessions["sessions"]
+    c_chats["chats"]
+    c_messages["messages"]
+    c_watchers["watchers"]
+    c_voiceNotes["voiceNotes"]
     c_clone["clone"]
     c_transcribe["transcribe"]
     c_new["new"]
+    c_saidBy["saidBy"]
   end
   subgraph g_byArgument["Platform named first"]
     c_warmup["#lt;platform#gt; warmup"]
   end
   subgraph g_facebook["Facebook"]
-    c_listings["listings"]
-    c_listing["listing"]
-    c_accounts["accounts"]
-    c_account["account"]
-    c_lifecycle["lifecycle"]
-    c_preflight["preflight"]
-    c_doctor["doctor"]
-    c_connect["connect"]
-    c_profile["profile"]
-    c_host["host"]
-    c_join["join"]
-    c_read["read"]
-    c_poll["poll"]
-    c_check["check"]
-    c_scan["scan"]
-    c_status["status"]
-    c_watch["watch"]
-    c_publish["publish"]
-    c_campaign["campaign"]
-    c_conversations["conversations"]
-    c_conversation["conversation"]
-    c_messenger["messenger"]
-    c_capture["capture"]
+    c_facebookListings["listings"]
+    c_facebookListing["listing"]
+    c_facebookAccounts["accounts"]
+    c_facebookAccount["account"]
+    c_facebookLifecycle["lifecycle"]
+    c_facebookPreflight["preflight"]
+    c_facebookDoctor["doctor"]
+    c_facebookConnect["connect"]
+    c_facebookProfile["profile"]
+    c_facebookHost["host"]
+    c_facebookJoin["join"]
+    c_facebookRead["read"]
+    c_facebookPoll["poll"]
+    c_facebookCheck["check"]
+    c_facebookScan["scan"]
+    c_facebookStatus["status"]
+    c_facebookWatch["watch"]
+    c_facebookPublish["publish"]
+    c_facebookCampaign["campaign"]
+    c_facebookConversations["conversations"]
+    c_facebookConversation["conversation"]
+    c_facebookMessenger["messenger"]
   end
   subgraph g_twitter["X"]
     c_twitterSession["session"]
@@ -72,6 +94,7 @@ flowchart TB
     c_twitterChat["chat"]
     c_twitterCookies["cookies"]
     c_twitterFollowers["followers"]
+    c_twitterPosts["posts"]
     c_twitterNotifications["notifications"]
     c_twitterReply["reply"]
     c_twitterQuote["quote"]
@@ -79,6 +102,7 @@ flowchart TB
     c_twitterLike["like"]
     c_twitterList["list"]
     c_twitterRepost["repost"]
+    c_twitterDelete["delete"]
     c_twitterFollow["follow"]
     c_twitterDm["dm"]
     c_twitterReact["react"]
@@ -94,17 +118,33 @@ flowchart TB
   end
   subgraph g_discord["Discord"]
     c_discordSession["session"]
+    c_discordSecrets["secrets"]
     c_discordChats["chats"]
+    c_discordServers["servers"]
+    c_discordChannels["channels"]
+    c_discordPosts["posts"]
+    c_discordSearch["search"]
     c_discordRead["read"]
     c_discordWatch["watch"]
     c_discordSend["send"]
     c_discordDelete["delete"]
+    c_discordFriend["friend"]
     c_discordReact["react"]
     c_discordVoice["voice"]
   end
   subgraph g_linkedin["LinkedIn"]
     c_linkedinSession["session"]
     c_linkedinCookies["cookies"]
+    c_linkedinPost["post"]
+    c_linkedinDelete["delete"]
+    c_linkedinSuggestions["suggestions"]
+    c_linkedinConnect["connect"]
+    c_linkedinLike["like"]
+    c_linkedinRepost["repost"]
+    c_linkedinMessage["message"]
+    c_linkedinInbox["inbox"]
+    c_linkedinPosts["posts"]
+    c_linkedinMessages["messages"]
   end
   subgraph g_slack["Slack"]
     c_slackSession["session"]
@@ -127,39 +167,48 @@ flowchart TB
   end
   subgraph g_tiktok["TikTok"]
     c_tiktokSession["session"]
+    c_tiktokStats["stats"]
+    c_tiktokPost["post"]
+    c_tiktokDelete["delete"]
     c_tiktokSearch["search"]
     c_tiktokScrape["scrape"]
   end
   cli --> c_launch
   c_launch -.- terminal
-  cli --> c_listings
-  mcp --> c_listings
-  cli --> c_listing
-  mcp --> c_listing
-  cli --> c_accounts
-  mcp --> c_accounts
-  cli --> c_account
-  mcp --> c_account
+  cli --> c_console
+  mcp --> c_console
+  cli --> c_credentials
+  mcp --> c_credentials
+  cli --> c_facebookListings
+  mcp --> c_facebookListings
+  cli --> c_facebookListing
+  mcp --> c_facebookListing
+  cli --> c_facebookAccounts
+  mcp --> c_facebookAccounts
+  cli --> c_facebookAccount
+  mcp --> c_facebookAccount
   cli --> c_adsPower
   mcp --> c_adsPower
   cli --> c_localAccount
   mcp --> c_localAccount
-  cli --> c_lifecycle
-  mcp --> c_lifecycle
-  cli --> c_preflight
-  mcp --> c_preflight
-  cli --> c_doctor
-  mcp --> c_doctor
-  c_doctor --> live
-  cli --> c_connect
-  mcp --> c_connect
-  c_connect --> live
-  cli --> c_profile
-  mcp --> c_profile
-  c_profile --> live
-  cli --> c_host
-  mcp --> c_host
-  c_host --> live
+  cli --> c_accounts
+  mcp --> c_accounts
+  cli --> c_facebookLifecycle
+  mcp --> c_facebookLifecycle
+  cli --> c_facebookPreflight
+  mcp --> c_facebookPreflight
+  cli --> c_facebookDoctor
+  mcp --> c_facebookDoctor
+  c_facebookDoctor --> live
+  cli --> c_facebookConnect
+  mcp --> c_facebookConnect
+  c_facebookConnect --> live
+  cli --> c_facebookProfile
+  mcp --> c_facebookProfile
+  c_facebookProfile --> live
+  cli --> c_facebookHost
+  mcp --> c_facebookHost
+  c_facebookHost --> live
   cli --> c_inspect
   mcp --> c_inspect
   c_inspect --> live
@@ -169,41 +218,41 @@ flowchart TB
   cli --> c_warmup
   mcp --> c_warmup
   c_warmup --> live
-  cli --> c_join
-  mcp --> c_join
-  c_join --> live
-  cli --> c_read
-  mcp --> c_read
-  c_read --> live
-  cli --> c_poll
-  mcp --> c_poll
-  c_poll --> live
-  cli --> c_check
-  mcp --> c_check
-  c_check --> live
-  cli --> c_scan
-  mcp --> c_scan
-  c_scan --> live
-  cli --> c_status
-  mcp --> c_status
-  c_status --> live
-  cli --> c_watch
-  mcp --> c_watch
-  c_watch --> live
+  cli --> c_facebookJoin
+  mcp --> c_facebookJoin
+  c_facebookJoin --> live
+  cli --> c_facebookRead
+  mcp --> c_facebookRead
+  c_facebookRead --> live
+  cli --> c_facebookPoll
+  mcp --> c_facebookPoll
+  c_facebookPoll --> live
+  cli --> c_facebookCheck
+  mcp --> c_facebookCheck
+  c_facebookCheck --> live
+  cli --> c_facebookScan
+  mcp --> c_facebookScan
+  c_facebookScan --> live
+  cli --> c_facebookStatus
+  mcp --> c_facebookStatus
+  c_facebookStatus --> live
+  cli --> c_facebookWatch
+  mcp --> c_facebookWatch
+  c_facebookWatch --> live
   cli --> c_proxy
   mcp --> c_proxy
-  cli --> c_publish
-  mcp --> c_publish
-  c_publish --> live
-  cli --> c_campaign
-  mcp --> c_campaign
-  c_campaign --> live
-  cli --> c_conversations
-  mcp --> c_conversations
-  cli --> c_conversation
-  mcp --> c_conversation
-  cli --> c_messenger
-  c_messenger -.- terminal
+  cli --> c_facebookPublish
+  mcp --> c_facebookPublish
+  c_facebookPublish --> live
+  cli --> c_facebookCampaign
+  mcp --> c_facebookCampaign
+  c_facebookCampaign --> live
+  cli --> c_facebookConversations
+  mcp --> c_facebookConversations
+  cli --> c_facebookConversation
+  mcp --> c_facebookConversation
+  cli --> c_facebookMessenger
+  c_facebookMessenger -.- terminal
   cli --> c_errors
   mcp --> c_errors
   cli --> c_graph
@@ -211,18 +260,40 @@ flowchart TB
   cli --> c_capture
   mcp --> c_capture
   c_capture --> live
+  cli --> c_router
+  mcp --> c_router
   cli --> c_runs
   mcp --> c_runs
   cli --> c_storage
   mcp --> c_storage
+  cli --> c_version
+  mcp --> c_version
+  cli --> c_update
+  mcp --> c_update
+  cli --> c_models
+  mcp --> c_models
+  cli --> c_relate
+  mcp --> c_relate
+  cli --> c_people
+  mcp --> c_people
+  cli --> c_network
+  mcp --> c_network
   cli --> c_timing
   mcp --> c_timing
+  cli --> c_tool
+  mcp --> c_tool
   cli --> c_inbox
   mcp --> c_inbox
+  cli --> c_harness
+  mcp --> c_harness
   cli --> c_media
   mcp --> c_media
   cli --> c_browsers
   mcp --> c_browsers
+  cli --> c_browser
+  mcp --> c_browser
+  cli --> c_report
+  mcp --> c_report
   cli --> c_job
   mcp --> c_job
   cli --> c_mcp
@@ -247,6 +318,10 @@ flowchart TB
   mcp --> c_voice
   cli --> c_search
   mcp --> c_search
+  cli --> c_index
+  c_index -.- terminal
+  cli --> c_facts
+  c_facts -.- terminal
   cli --> c_kb
   mcp --> c_kb
   cli --> c_runtime
@@ -259,12 +334,26 @@ flowchart TB
   mcp --> c_balance
   cli --> c_governor
   mcp --> c_governor
+  cli --> c_sessions
+  mcp --> c_sessions
+  c_sessions --> live
+  cli --> c_chats
+  mcp --> c_chats
+  cli --> c_messages
+  mcp --> c_messages
+  c_messages --> live
+  cli --> c_watchers
+  mcp --> c_watchers
+  cli --> c_voiceNotes
+  mcp --> c_voiceNotes
   cli --> c_clone
   mcp --> c_clone
   cli --> c_transcribe
   mcp --> c_transcribe
   cli --> c_twitterFollowers
   mcp --> c_twitterFollowers
+  cli --> c_twitterPosts
+  mcp --> c_twitterPosts
   cli --> c_twitterNotifications
   mcp --> c_twitterNotifications
   cli --> c_twitterReply
@@ -279,6 +368,8 @@ flowchart TB
   mcp --> c_twitterList
   cli --> c_twitterRepost
   mcp --> c_twitterRepost
+  cli --> c_twitterDelete
+  mcp --> c_twitterDelete
   cli --> c_twitterFollow
   mcp --> c_twitterFollow
   cli --> c_twitterDm
@@ -303,8 +394,18 @@ flowchart TB
   mcp --> c_redditVote
   cli --> c_discordSession
   mcp --> c_discordSession
+  cli --> c_discordSecrets
+  c_discordSecrets -.- terminal
   cli --> c_discordChats
   mcp --> c_discordChats
+  cli --> c_discordServers
+  mcp --> c_discordServers
+  cli --> c_discordChannels
+  mcp --> c_discordChannels
+  cli --> c_discordPosts
+  mcp --> c_discordPosts
+  cli --> c_discordSearch
+  mcp --> c_discordSearch
   cli --> c_discordRead
   mcp --> c_discordRead
   c_discordRead --> live
@@ -315,6 +416,8 @@ flowchart TB
   mcp --> c_discordSend
   cli --> c_discordDelete
   mcp --> c_discordDelete
+  cli --> c_discordFriend
+  mcp --> c_discordFriend
   cli --> c_discordReact
   mcp --> c_discordReact
   cli --> c_discordVoice
@@ -323,6 +426,26 @@ flowchart TB
   mcp --> c_linkedinSession
   cli --> c_linkedinCookies
   c_linkedinCookies -.- terminal
+  cli --> c_linkedinPost
+  mcp --> c_linkedinPost
+  cli --> c_linkedinDelete
+  mcp --> c_linkedinDelete
+  cli --> c_linkedinSuggestions
+  mcp --> c_linkedinSuggestions
+  cli --> c_linkedinConnect
+  mcp --> c_linkedinConnect
+  cli --> c_linkedinLike
+  mcp --> c_linkedinLike
+  cli --> c_linkedinRepost
+  mcp --> c_linkedinRepost
+  cli --> c_linkedinMessage
+  mcp --> c_linkedinMessage
+  cli --> c_linkedinInbox
+  mcp --> c_linkedinInbox
+  cli --> c_linkedinPosts
+  mcp --> c_linkedinPosts
+  cli --> c_linkedinMessages
+  mcp --> c_linkedinMessages
   cli --> c_slackSession
   mcp --> c_slackSession
   cli --> c_slackWorkspaces
@@ -360,64 +483,78 @@ flowchart TB
   mcp --> c_twitterVoice
   cli --> c_tiktokSession
   mcp --> c_tiktokSession
+  cli --> c_saidBy
+  mcp --> c_saidBy
+  cli --> c_tiktokStats
+  mcp --> c_tiktokStats
+  cli --> c_tiktokPost
+  mcp --> c_tiktokPost
+  cli --> c_tiktokDelete
+  mcp --> c_tiktokDelete
   cli --> c_tiktokSearch
   mcp --> c_tiktokSearch
   cli --> c_tiktokScrape
   mcp --> c_tiktokScrape
-  f_deletePost["flowDeletePost: flow run deletePost"]
+  f_deletePost["facebookFlowDeletePost: flow run deletePost"]
   mcp --> f_deletePost
   f_deletePost --> c_flow
-  f_facebookLanguageEnglish["flowFacebookLanguageEnglish: flow run facebookLanguageEnglish"]
+  f_facebookLanguageEnglish["facebookFlowLanguageEnglish: flow run facebookLanguageEnglish"]
   mcp --> f_facebookLanguageEnglish
   f_facebookLanguageEnglish --> c_flow
-  f_groupHeaderMenus["flowGroupHeaderMenus: flow run groupHeaderMenus"]
+  f_groupHeaderMenus["facebookFlowGroupHeaderMenus: flow run groupHeaderMenus"]
   mcp --> f_groupHeaderMenus
   f_groupHeaderMenus --> c_flow
-  f_groupMembers["flowGroupMembers: flow run groupMembers"]
+  f_groupMembers["facebookFlowGroupMembers: flow run groupMembers"]
   mcp --> f_groupMembers
   f_groupMembers --> c_flow
-  f_groupPostComments["flowGroupPostComments: flow run groupPostComments"]
+  f_groupPostComments["facebookFlowGroupPostComments: flow run groupPostComments"]
   mcp --> f_groupPostComments
   f_groupPostComments --> c_flow
-  f_groupPostDialog["flowGroupPostDialog: flow run groupPostDialog"]
+  f_groupPostDialog["facebookFlowGroupPostDialog: flow run groupPostDialog"]
   mcp --> f_groupPostDialog
   f_groupPostDialog --> c_flow
-  f_groupTabs["flowGroupTabs: flow run groupTabs"]
+  f_groupTabs["facebookFlowGroupTabs: flow run groupTabs"]
   mcp --> f_groupTabs
   f_groupTabs --> c_flow
-  f_marketplaceListingDelete["flowMarketplaceListingDelete: flow run marketplaceListingDelete"]
+  f_marketplaceListingDelete["facebookFlowMarketplaceListingDelete: flow run marketplaceListingDelete"]
   mcp --> f_marketplaceListingDelete
   f_marketplaceListingDelete --> c_flow
-  f_marketplaceListingPublish["flowMarketplaceListingPublish: flow run marketplaceListingPublish"]
+  f_marketplaceListingPublish["facebookFlowMarketplaceListingPublish: flow run marketplaceListingPublish"]
   mcp --> f_marketplaceListingPublish
   f_marketplaceListingPublish --> c_flow
-  f_messengerPinCreate["flowMessengerPinCreate: flow run messengerPinCreate"]
+  f_messengerPinCreate["facebookFlowMessengerPinCreate: flow run messengerPinCreate"]
   mcp --> f_messengerPinCreate
   f_messengerPinCreate --> c_flow
-  f_postComment["flowPostComment: flow run postComment"]
+  f_postComment["facebookFlowPostComment: flow run postComment"]
   mcp --> f_postComment
   f_postComment --> c_flow
-  f_profilePhotoPost["flowProfilePhotoPost: flow run profilePhotoPost"]
+  f_profilePhotoPost["facebookFlowProfilePhotoPost: flow run profilePhotoPost"]
   mcp --> f_profilePhotoPost
   f_profilePhotoPost --> c_flow
-  f_profilePost["flowProfilePost: flow run profilePost"]
+  f_profilePost["facebookFlowProfilePost: flow run profilePost"]
   mcp --> f_profilePost
   f_profilePost --> c_flow
-  f_profileSetup["flowProfileSetup: flow run profileSetup"]
+  f_profileSetup["facebookFlowProfileSetup: flow run profileSetup"]
   mcp --> f_profileSetup
   f_profileSetup --> c_flow
-  f_warmupCreateAccessCheck["flowWarmupCreateAccessCheck: flow run warmupCreateAccessCheck"]
+  f_tiktokDelete["tiktokFlowDelete: flow run tiktokDelete"]
+  mcp --> f_tiktokDelete
+  f_tiktokDelete --> c_flow
+  f_tiktokPost["tiktokFlowPost: flow run tiktokPost"]
+  mcp --> f_tiktokPost
+  f_tiktokPost --> c_flow
+  f_warmupCreateAccessCheck["facebookFlowWarmupCreateAccessCheck: flow run warmupCreateAccessCheck"]
   mcp --> f_warmupCreateAccessCheck
   f_warmupCreateAccessCheck --> c_flow
-  f_warmupFeedBrowse["flowWarmupFeedBrowse: flow run warmupFeedBrowse"]
+  f_warmupFeedBrowse["facebookFlowWarmupFeedBrowse: flow run warmupFeedBrowse"]
   mcp --> f_warmupFeedBrowse
   f_warmupFeedBrowse --> c_flow
-  f_warmupMarketplaceBrowse["flowWarmupMarketplaceBrowse: flow run warmupMarketplaceBrowse"]
+  f_warmupMarketplaceBrowse["facebookFlowWarmupMarketplaceBrowse: flow run warmupMarketplaceBrowse"]
   mcp --> f_warmupMarketplaceBrowse
   f_warmupMarketplaceBrowse --> c_flow
-  f_warmupMessagesVisit["flowWarmupMessagesVisit: flow run warmupMessagesVisit"]
+  f_warmupMessagesVisit["facebookFlowWarmupMessagesVisit: flow run warmupMessagesVisit"]
   mcp --> f_warmupMessagesVisit
   f_warmupMessagesVisit --> c_flow
-  f_warmupSellingVisit["flowWarmupSellingVisit: flow run warmupSellingVisit"]
+  f_warmupSellingVisit["facebookFlowWarmupSellingVisit: flow run warmupSellingVisit"]
   mcp --> f_warmupSellingVisit
   f_warmupSellingVisit --> c_flow

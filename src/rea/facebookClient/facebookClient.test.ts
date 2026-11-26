@@ -130,6 +130,17 @@ describe("the docs index is cumulative", () => {
     const index = JSON.parse(readFileSync(join(dir, DOCS_INDEX), "utf8")) as { operations: { name: string; seen: number }[] };
     expect(index.operations.map((o) => [o.name, o.seen])).toEqual([["bothMutation", 4], ["newMutation", 1], ["oldMutation", 5]]);
   });
+
+  test("rebuilding with nothing new leaves the index and every doc byte-identical, with no builtAt", () => {
+    const dir = mkdtempSync(join(tmpdir(), "logDocs"));
+    const store = join(dir, "facts.json");
+    writeOperationDocs([op("oldMutation", 2), op("bothMutation", 3)], dir, 5, store);
+    const read = () => [DOCS_INDEX, "checkpoint/oldMutation.md", "checkpoint/bothMutation.md"].map((f) => readFileSync(join(dir, f), "utf8"));
+    const first = read();
+    writeOperationDocs([op("oldMutation", 2), op("bothMutation", 3)], dir, 5, store);
+    expect(read()).toEqual(first);
+    expect(JSON.parse(first[0])).not.toHaveProperty("builtAt");
+  });
 });
 
 describe("the doc", () => {
@@ -142,23 +153,23 @@ describe("the doc", () => {
     sends: ["input"],
     reads: [],
     calledFrom: [],
-    sightings: [{ run: "runs/connect/20261019T073942_61500000000001", action: "connect", step: "Page: checkpoint https://www.facebook.com/checkpoint/1234567890123/ from 203.0.113.7", status: 200, ms: 300, afterStepMs: 1200, errors: [] }],
+    sightings: [{ run: "runs/connect/20261019T073942_99900000000006", action: "connect", step: "Page: checkpoint https://www.facebook.com/checkpoint/1234567890123/ from 203.0.113.7", status: 200, ms: 300, afterStepMs: 1200, errors: [] }],
     reaEvidenceId: "ev_1",
   };
 
   test("step lines lose exit IPs, account ids and URLs before they are committed", () => {
     expect(stepLabel(operation.sightings[0].step)).toBe("Page: checkpoint /checkpoint/<id>/ from <ip>");
-    expect(renderOperationDoc(operation, null)).not.toContain("61500000000001");
+    expect(renderOperationDoc(operation, null)).not.toContain("99900000000006");
   });
 
   test("a new doc asks for its reasoning; a rebuild keeps what was written", () => {
     const fresh = renderOperationDoc(operation, null);
     expect(fresh.split(TO_WRITE)).toHaveLength(4);
-    const written = fresh.replaceAll(`${TO_WRITE} `, "Written by matt. ");
+    const written = fresh.replaceAll(`${TO_WRITE} `, "Written by the owner. ");
     const rebuilt = renderOperationDoc({ ...operation, reaEvidenceId: "ev_2" }, written);
     expect(rebuilt).toContain("`ev_2`");
     expect(rebuilt).not.toContain("`ev_1`");
-    expect(rebuilt).toContain("Written by matt.");
+    expect(rebuilt).toContain("Written by the owner.");
     expect(rebuilt).not.toContain(TO_WRITE);
   });
 });
@@ -191,7 +202,7 @@ describe("a run that isn't settled yet still gives the docs its bundles", () => 
       entry("https://static.xx.fbcdn.net/rsrc.php/v4/b.js", { mimeType: "application/x-javascript", size: 0, _bodyError: "Error: No resource with given identifier found" }),
     ] } }));
     const lines: string[] = [];
-    const modules = indexRunModules([{ dir, run: "runs/host/20261024T211541_61593939852820", action: "host" }], (l) => lines.push(l));
+    const modules = indexRunModules([{ dir, run: "runs/host/20261024T211541_99900000000007", action: "host" }], (l) => lines.push(l));
     expect(modules.has("useMarketplaceComposerAttributesQuery_facebookRelayOperation")).toBe(true);
     expect(existsSync(join(dir, "scripts", "script0.js"))).toBe(true);
     expect(lines[0]).toContain("not settled yet, 1 bundle(s) taken from its session.har; 1 response body(ies) lost in the recording");

@@ -1,3 +1,4 @@
+import { saveProfileAvatars, avatarSightingOf } from "../../../inbox/profiles/index.ts";
 import { timedSync } from "../../../observability/timing/index.ts";
 import { spawn } from "node:child_process";
 import { join } from "node:path";
@@ -9,7 +10,7 @@ import { lastWordOf, personKeyOf } from "../../../inbox/lastWord/index.ts";
 import type { LastWord } from "../../../inbox/lastWord/index.ts";
 import { loadConversations, saveConversations, twitterConversationOf } from "../../../search/conversations/index.ts";
 import { localAccountId, twitterStateRoot } from "../../../directApi/engine/index.ts";
-import { JSON_FLAG, parseArgs, parserSpecOf, refuse, refuseError } from "../../runner/helpers/index.ts";
+import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuse, refuseError, refuseInput } from "../../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../../runner/types.ts";
 import { activityLine, activityOf, dropMirrors, followUpDue, mergeThreads, ONE_INBOX_NOTE, openedNoReply, reactedOnly, storedThreads, waitingOnYou } from "../../../twitter/dm/person/index.ts";
 import { notificationsFresh, notificationStorePath, readNotificationStore } from "../../../twitter/notification/feed/index.ts";
@@ -26,7 +27,7 @@ export function backfillThread(account: string, messages: readonly TwitterDmMess
 
 export const DMS_USAGE = [
   "Usage: log twitter dms --account <accountName> [--limit <n>] [--waiting] [--with <handle>] [--conversation <id>] [--full] [--force] [--json]",
-  "Reads the account's X direct messages on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80). Sends nothing and marks nothing read.",
+  "Reads the account's X direct messages on the direct-API engine (no browser; direct unless it has a proxy, rule 80). Sends nothing and marks nothing read.",
   "Without --conversation it syncs the inbox the way X's own chat app does (dm-core): the first read takes the whole X Chat inbox (GetInitialXChatPageQuery, then GetInboxPageRequestQuery pages) and the old DM inbox (dm/inbox_initial_state, then dm/inbox_timeline pages, 1.5 s apart) and keeps them in ~/.logCli/twitter/<account>/inboxSync.json with the newest event's sequence id; every read after that asks X only for what is newer (GetMessageEventsPageQuery from that sequence id, beside one dm/inbox_initial_state), unlocks the PIN and decrypts only when something is new, opening just those conversations' keys (GetInboxPageConversationDataQuery), and keeps each event once by its id. --full reads everything again. Each read saves its conversations for log search and updates the search index in the background with only the chunks that changed. It then lists the newest conversations first, one row per person (their old DM thread and X Chat thread merged): who, when, the last message from either and whether it was yours. --waiting keeps only the ones whose last message isn't yours, the people waiting on a reply, and lists apart the ones that opened your last message, by reacting to it or reading it without replying (read receipts, where the person keeps them on): so each is a follow-up to send, not a reply they're waiting on (--json: followUps). --conversation <id> reads one conversation's messages, oldest first: a legacy id (two user ids joined by a dash) through dm/conversation, an X Chat id (joined by a colon) the same way --with reads it, never the whole inbox.",
   "--with <handle> reads everything with one person by their handle and nobody else: their user id, their legacy thread (dm/conversation) and their X Chat thread (read the way X's own chat app opens a chat, from its dm-core: GetInboxPageConversationDataQuery for that one conversation, then GetConversationPageQuery from the oldest message held, its fetchOlderMessages, up to 5 pages 1.5 s apart while X says there is more), merged into one timeline, oldest first, a message mirrored into both shown once. It never reads the whole inbox. A 429 stops the read with nothing retried, as X's app does (it retries only 5xx), and pauses the account's governor (rule 94). X Chat (encrypted DMs) is opened with the account's X Chat PIN from Twenty (`log twitter chat pin`), recovered through Juicebox by the vendored chat-xdk; without a PIN its text stays encrypted. " + ONE_INBOX_NOTE + " X's own answer decides: the session check first, then the inbox's answer. --limit is how many conversations (or messages) to show, default 20, at most 200.",
 ].join("\n");
@@ -39,12 +40,12 @@ export const DMS_INPUT: CommandInput = {
       positionals: [],
       flags: [
         { name: "account", kind: "string", required: true, description: "The TWITTER socialAccount's accountName (its handle)" },
-        { name: "limit", kind: "string", description: "How many conversations, or messages with --conversation, to show (default 20, at most 200)" },
+        { name: "limit", kind: "integer", min: 1, max: 200, refusal: "limitInvalid", description: "How many conversations, or messages with --conversation, to show (default 20, at most 200)" },
         { name: "waiting", kind: "boolean", description: "Only the conversations whose last message isn't the account's" },
         { name: "with", kind: "string", description: "A handle, to read that person's thread without looking up its id" },
         { name: "conversation", kind: "string", description: "One conversation's id, to read its messages" },
         { name: "full", kind: "boolean", description: "Read the whole inbox again instead of only what is new since the last read" },
-        { name: "force", kind: "boolean", description: "Read past the account's governor (its pause, hourly and daily caps) for this call, only when matt asked (rule 86)" },
+        { name: "force", kind: "boolean", description: "Read past the account's governor (its pause, hourly and daily caps) for this call, only when the owner asked (rule 86)" },
         JSON_FLAG,
       ],
     },
@@ -151,12 +152,10 @@ export const dmsCommand: Command = {
   args: "--account <a> [--limit <n>] [--waiting] [--with <handle>] [--conversation <id>] [--force] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(DMS_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log twitter dms: ${parsed.error}\n${DMS_USAGE}` };
+    if (!parsed.ok) return refuseInput("twitter dms", parsed.error, DMS_USAGE);
     const ref = parsed.flags["account"];
-    if (typeof ref !== "string") return { code: 1, stderr: `log twitter dms: --account is needed\n${DMS_USAGE}` };
-    const rawLimit = parsed.flags["limit"];
-    const limit = typeof rawLimit === "string" ? Number(rawLimit) : 20;
-    if (!Number.isInteger(limit) || limit < 1 || limit > 200) return refuse("twitter dms", "limitInvalid", "--limit is a whole number from 1 to 200");
+    if (typeof ref !== "string") return { code: 1, error: "inputInvalid", stderr: `log twitter dms: --account is needed\n${DMS_USAGE}` };
+    const limit = numberOf(parsed, "limit") ?? 20;
     const conversation = parsed.flags["conversation"];
     if (conversation !== undefined && (typeof conversation !== "string" || !/^[\dg]+(?:[-:]\d+)?$/.test(conversation))) return refuse("twitter dms", "conversationInvalid", "--conversation is X's conversation id (digits, or two user ids joined by a dash)");
     const withHandle = parsed.flags["with"];
@@ -192,7 +191,7 @@ export const dmsCommand: Command = {
       if (parsed.flags["force"] === true) {
         const engine = opened.engine;
         opened.engine = (spec) => engine({ ...spec, force: true });
-        context.err(`${opened.account.accountName}: reading past the governor for this call, as matt asked (rule 86)`);
+        context.err(`${opened.account.accountName}: reading past the governor for this call, as the owner asked (rule 86)`);
       }
       const secrets = early && knownId === opened.account.id ? await early : await context.twenty.loginSecrets(opened.account.id).catch(() => null);
       const chatPin = secrets?.messengerPin ?? undefined;
@@ -237,6 +236,16 @@ export const dmsCommand: Command = {
       const words = everyChat.ok && everyChat.threads ? lastWordOf({ platform: "twitter", account: opened.account.accountName }) : [];
       if (words.length) context.err(`${opened.account.accountName}: who wrote last is read from log.db by time (${words.length} people, each one's old DM and X Chat judged together)`);
       const run = everyChat.ok && everyChat.threads ? { ...raw, answer: withDbLastWord(onePerPerson(everyChat), words) } : { ...raw, answer: everyChat };
+      if (run.answer.ok) {
+        const seen = new Set<string>();
+        const people = (run.answer.threads ?? []).flatMap((t) => t.with ?? []).filter((p) => {
+          const key = `${p.userId}:${p.pictureUrl ?? ""}`;
+          if (!p.pictureUrl || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).slice(0, 100);
+        await saveProfileAvatars("twitter", opened.account.accountName, people.map(avatarSightingOf), context.now?.() ?? new Date());
+      }
       const code = run.answer.ok ? 0 : 1;
       if (parsed.flags["json"]) {
         const answer = waiting && run.answer.threads ? { ...run.answer, threads: run.answer.threads.filter(waitingOnYou), followUps: run.answer.threads.filter(followUpDue) } : run.answer;

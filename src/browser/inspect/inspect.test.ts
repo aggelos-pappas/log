@@ -24,7 +24,7 @@ describe('parseInspectAction', () => {
   })
 
   test('click, type, press, solve, signIn, code and pin are the actions that act on Facebook (rule 8)', () => {
-    expect([...LIVE_ACTIONS].sort()).toEqual(['click', 'clickAny', 'clickRole', 'code', 'fillRole', 'likePost', 'pin', 'postButton', 'press', 'setLocation', 'signIn', 'solve', 'type', 'upload', 'uploadRole'])
+    expect([...LIVE_ACTIONS].sort()).toEqual(['click', 'clickAny', 'clickRole', 'code', 'fillRole', 'likePost', 'pin', 'postButton', 'press', 'rowMenu', 'setLocation', 'signIn', 'solve', 'type', 'upload', 'uploadRole'])
   })
 })
 

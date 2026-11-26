@@ -1,6 +1,6 @@
 # Storage against the book: what Designing Data-Intensive Applications says about the unifyStorage work
 
-matt, 2026-11-08: the book (Kleppmann, *Designing Data-Intensive Applications*) is the basis for log's data modelling from here on. This page checks what the `unifyStorage` branch has built so far (#96, #97, PR #98) against it. For each point it gives the book's section, what log does today, and what has to change. Chapters 1 to 4, 7 and 11 to 12 were read in full; chapters 8 and 9 for what applies to several processes sharing one machine.
+the owner, 2026-11-08: the book (Kleppmann, *Designing Data-Intensive Applications*) is the basis for log's data modelling from here on. This page checks what the `unifyStorage` branch has built so far (#96, #97, PR #98) against it. For each point it gives the book's section, what log does today, and what has to change. Chapters 1 to 4, 7 and 11 to 12 were read in full; chapters 8 and 9 for what applies to several processes sharing one machine.
 
 `docs/unifyStorage.md` is the plan. This page is the correction to it.
 
@@ -50,7 +50,7 @@ matt, 2026-11-08: the book (Kleppmann, *Designing Data-Intensive Applications*) 
 
 *Book:* store an id that means nothing to people and never changes, and keep the name in one place (ch. 2, "Many-to-One and Many-to-Many Relationships").
 
-*Today:* where a platform gives no id, the person is keyed by their handle (`@deepman`). One person can become two rows (`@deepman` and `12345`), and a renamed handle splits them for good. The account's own messages are keyed `self:<account>` or by a guessed id. The name is copied into `messages.senderLabel`, `events.withWho` and others. `people` and `identities` hold the same fact twice.
+*Today:* where a platform gives no id, the person is keyed by their handle (`@someone`). One person can become two rows (`@someone` and `12345`), and a renamed handle splits them for good. The account's own messages are keyed `self:<account>` or by a guessed id. The name is copied into `messages.senderLabel`, `events.withWho` and others. `people` and `identities` hold the same fact twice.
 
 *Change:*
 - `accounts (platform, account, userId)` holds each account's own real id, written when its session starts.
@@ -227,3 +227,7 @@ matt, 2026-11-08: the book (Kleppmann, *Designing Data-Intensive Applications*) 
 9. The person model for #95 (item 15), then blobs and vectors (item 16).
 
 Each step is measured before and after with the benchmark from step 6 (built first if a step needs its numbers), and lands as its own commit naming #96 or #97.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

@@ -29,9 +29,59 @@ The platform is always the first word after `log`. Everything after the command 
 | `log campaign fill\|heal\|run\|show --campaign …` | `log facebook campaign fill\|heal\|run\|show --campaign …` |
 | `log conversations [--account] [--listing]` | `log facebook conversations [--account] [--listing]` |
 | `log conversation show\|read\|lead\|link\|record …` | `log facebook conversation show\|read\|lead\|link\|record …` |
-| `log capture --har\|--settle\|--docs` | `log facebook capture --har\|--settle\|--docs` (its docs are in `docs/platforms/facebook/`) |
+| `log capture --har\|--settle\|--docs` | `log facebook capture --har\|--settle\|--docs` until 14 November 2026, then shared again as `log capture har\|settle\|docs`: it reads every platform's runs (its docs are in `docs/platforms/<platform>/`) |
 | `log warmup facebook <activity> …` | `log facebook warmup <activity> …` (e.g. `log facebook warmup reel`, `log facebook warmup stages run`) |
 | `log facebook warmup plan\|record\|run\|feed` | `log facebook warmup stages plan\|record\|run\|log` |
+
+## Every Facebook MCP tool, old and new
+
+The MCP tools follow the same rule: every platform's tools start with the platform, Facebook's too (2026-11-13). Until then Facebook was the one platform whose tools had bare names (`accounts`, `check`, `status`), so an agent couldn't tell they were Facebook only. The CLI words did not change. The old names still run the new tool for one release, with a line saying the tool was renamed, but `tools/list` shows only the new ones (`RENAMED_TOOLS` in `src/mcp/server/helpers/toolAliases.ts`).
+
+| Old tool | New tool |
+|---|---|
+| `listings` | `facebookListings` |
+| `listing` | `facebookListing` |
+| `listingCreate` | `facebookListingCreate` |
+| `listingRemove` | `facebookListingRemove` |
+| `listingRemoveLive` | `facebookListingRemoveLive` |
+| `listingSweep` | `facebookListingSweep` |
+| `listingLint` | `facebookListingLint` |
+| `accounts` | `facebookAccounts` |
+| `accountShow` | `facebookAccountShow` |
+| `accountResave` | `facebookAccountResave` |
+| `accountResetOpens` | `facebookAccountResetOpens` |
+| `accountStatus` | `facebookAccountStatus` |
+| `lifecycle` | `facebookLifecycle` |
+| `preflight` | `facebookPreflight` |
+| `doctor` | `facebookDoctor` |
+| `connect` | `facebookConnect` |
+| `profile` | `facebookProfile` |
+| `profileLive` | `facebookProfileLive` |
+| `hostStart` | `facebookHostStart` |
+| `hostStartLive` | `facebookHostStartLive` |
+| `hostSend` | `facebookHostSend` |
+| `hostStatus` | `facebookHostStatus` |
+| `join` | `facebookJoin` |
+| `joinLive` | `facebookJoinLive` |
+| `readGroup` | `facebookReadGroup` |
+| `readGroupLive` | `facebookReadGroupLive` |
+| `readMembers` | `facebookReadMembers` |
+| `poll` | `facebookPoll` |
+| `check` | `facebookCheck` |
+| `scan` | `facebookScan` |
+| `status` | `facebookStatus` |
+| `watch` | `facebookWatch` |
+| `publish` | `facebookPublish` |
+| `publishLive` | `facebookPublishLive` |
+| `campaign` | `facebookCampaign` |
+| `campaignLive` | `facebookCampaignLive` |
+| `conversations` | `facebookConversations` |
+| `conversationShow` | `facebookConversationShow` |
+| `conversationRead` | `facebookConversationRead` |
+| `conversationLead` | `facebookConversationLead` |
+| `conversationLink` | `facebookConversationLink` |
+| `conversationRecord` | `facebookConversationRecord` |
+| `capture`, then `facebookCapture` | `captureDocs` (with `captureHar` and `captureSettle`: capture is shared) |
 
 ## The poll
 
@@ -50,3 +100,9 @@ What the runner refuses and what `bun run check:docs` checks are in the spec, [C
 Code is laid out by platform first too, `src/<platform>/<area>/<domain>`, because each platform does things differently: for example `src/facebook/group/read` and `src/facebook/warmup/stages`. See [Where the code lives](layout.md).
 
 The rules behind this are in AGENTS.md.
+
+## Related
+
+- Up: [log's README](../README.md)
+- Start here, in order: [Install](install.md) · [Add an account](accounts.md) · [Connect your agent](mcp.md) · [What log does, and what it never does](trust.md)
+- Then: [Use cases, the plays step by step](useCases/README.md) · [Your agent app](harnesses/README.md) · [What you can do on each platform](platformGuides/x.md) · [Every command and tool](reference.md) · [How log works](howItWorks.md)

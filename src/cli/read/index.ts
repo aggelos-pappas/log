@@ -10,12 +10,12 @@ import type { GroupMember, MembersPlan, MembersReadOutput, MembersStepInput, Mem
 import { cursorOf, groupReadMachine, readStateOf, saveRead } from "../../facebook/group/read/index.ts";
 import type { GroupReadOutput, ReadStepInput, ReadStepReply, SavedRead } from "../../facebook/group/read/index.ts";
 import type { ErrorCode } from "../../errors/catalog/index.ts";
-import { homeOf, outsideActiveHours } from "../../marketplace/home/index.ts";
-import { checkRunnable, findAccount } from "../../marketplace/socialAccount/index.ts";
-import type { FacebookAccount } from "../../marketplace/socialAccount/index.ts";
+import { homeOf, outsideActiveHours } from "../../platformKit/home/index.ts";
+import { checkRunnable, findAccount } from "../../platformKit/socialAccount/index.ts";
+import type { FacebookAccount } from "../../platformKit/socialAccount/index.ts";
 import { createInspector, formatTraceLine } from "../../observability/trace/index.ts";
 import type { TwentyClient } from "../../twenty/graphql/index.ts";
-import { refuse, refuseError } from "../runner/helpers/index.ts";
+import { refuse, refuseError, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandResult } from "../runner/types.ts";
 import { directGate, recordSessionState } from "../../directApi/engine/index.ts";
 import { parseReadArgs, READ_INPUT, renderDirectRead } from "./helpers/index.ts";
@@ -31,11 +31,11 @@ export const READ_USAGE = [
   "--scrolls: feed scrolls at most (default 6). --commentPosts: posts whose comments are read at most (default 5; 0 reads none).",
   "--worker (OpenMagpie's call) is refused here: it became its own command, log facebook poll (its usage).",
   "--live: each post's comments are switched to Newest first (two clicks, rule 8); without it nothing is clicked and the page's Most relevant comments are read.",
-  "Every step in the browser runs inside the account's local hours (rule 18); --bypass skips that for one run, only when matt asked (rule 20).",
+  "Every step in the browser runs inside the account's local hours (rule 18); --bypass skips that for one run, only when the owner asked (rule 20).",
   "On the browser path the account's browser must be open (log inspect start --account <a>, or log facebook host start): a read is a step in it (rule 35).",
   "log facebook read members --account <accountName> --group <group url or id> --count <n> [--secondsPerScroll <s>] [--maxScrolls <n>] [--owners] [--bypass] [--json]",
   "Reads the group's newest members from its People tab (/groups/<g>/members) in the account's open browser: the page's first 10, then a scroll at a time, each scroll's GroupsCometMembersPageNewMembersSectionRefetchQuery answers (about 10 members each, 2 a scroll). Nothing is clicked (rule 8).",
-  "--count: members to read (1-5000). --secondsPerScroll: the wait before each scroll (default 15; matt: the time 40 scrolls take is a variable). --maxScrolls: scrolls at most (default twice the plan's, plus 2). It says up front: count N → ~S scrolls, ~M min at Xs per scroll.",
+  "--count: members to read (1-5000). --secondsPerScroll: the wait before each scroll (default 15; the owner: the time 40 scrolls take is a variable). --maxScrolls: scrolls at most (default twice the plan's, plus 2). It says up front: count N → ~S scrolls, ~M min at Xs per scroll.",
   "It stops at --count members, when the list ends (has_next_page false) or at --maxScrolls. --owners keeps only owners: a bio naming owner, co-owner, founder, CEO, president, proprietor or self-employed, or a page (a category set).",
   "The members go to ~/.logCli/members/<group>/<run time>.tsv and .json, never to Twenty; it prints how many, how many with a bio, owners and pages, and the files. --json gives them.",
 ].join("\n");
@@ -222,7 +222,7 @@ export function renderMembers(read: MembersRead, owners: boolean): string {
 }
 
 async function runReadMembers(context: CommandContext, parsed: ReadMembersArgs): Promise<CommandResult> {
-  if (parsed.count === null) return { code: 1, stderr: `log facebook read members: --count is needed\n${READ_USAGE}` };
+  if (parsed.count === null) return { code: 1, error: "inputInvalid", stderr: `log facebook read members: --count is needed\n${READ_USAGE}` };
   const ref = parseGroupRef(parsed.group ?? "");
   if (!ref.ok) return refuse("read", "groupRefInvalid", ref.error);
   const account = await findAccount(context.twenty, parsed.account ?? "");
@@ -244,7 +244,7 @@ async function runReadMembers(context: CommandContext, parsed: ReadMembersArgs):
 
 export async function runRead(context: CommandContext, argv: string[]): Promise<CommandResult> {
   const parsed = parseReadArgs(argv);
-  if (!parsed.ok) return { code: 1, stderr: `log facebook read: ${parsed.error}\n${READ_USAGE}` };
+  if (!parsed.ok) return refuseInput("facebook read", parsed.error, READ_USAGE);
   if (!parsed.account || !parsed.group) return { code: 1, stderr: `log facebook read: --account and --group are both needed\n${READ_USAGE}` };
   if (parsed.target === "members") {
     try {
@@ -302,8 +302,9 @@ export const readCommand: Command = {
   usage: READ_USAGE,
   platform: "facebook",
   name: "read",
+  longRunning: true,
   effect: "browser",
-  summary: "Read a Facebook group's new posts and their comments, or its newest members, as one account, by hand: posts on the direct-API engine first, else in its open browser; only the group's cursor is saved to Twenty (#27, rule 65), the members to a file",
+  summary: "Read a Facebook group's new posts and their comments, or its newest members, as one account, by hand: posts on the direct-API engine first, else in its open browser; only the group's cursor is saved to Twenty, the members to a file",
   args: "group --account <a> --group <g> [--scrolls <n>] [--commentPosts <n>] [--live] [--bypass] [--json] | --show | members --account <a> --group <g> --count <n> [--secondsPerScroll <s>] [--maxScrolls <n>] [--owners] [--bypass] [--json]",
   input: READ_INPUT,
   run: runRead,

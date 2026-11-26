@@ -13,7 +13,7 @@ Content-Disposition: form-data; name`, `------WebKitFormBoundaryHqp8uZ6lB21nDPhx
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryJIvuj0Foq8HPDwjY
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `threads.has_unreads`, `threads.mention_count`, `threads.vip_count`, `threads.mention_count_by_channel`, `threads.unread_count_by_channel`, `channels`, `mpims`, `ims`, `file_channels.quip`, `file_channels.list`, `activity_v2.at_user` and 28 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script29.js:146 bvjQ`, `runs/inspect/20261103T065639_mattSlack/script3.js:2954 bvjQ`, `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script29.js:146 bvjQ`, `runs/inspect/20261103T065639_slackAccount/script3.js:2954 bvjQ`, `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_a86fe74a91fad953021f06e73c8039c1c3b2b4c52523fba8841e4164ca4de847` |
 
 Seen 3 time(s) in 1 run(s).
@@ -21,14 +21,14 @@ Seen 3 time(s) in 1 run(s).
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 4: goto /client | 1 | 200 | 560 ms | 3155 ms | — |
-| inspect | step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU | 1 | 200 | 316 ms | 2221 ms | — |
+| inspect | step 6: goto /client/<teamId:1>/<channelId:1> | 1 | 200 | 316 ms | 2221 ms | — |
 | inspect | step 7: pageText | 1 | 200 | 339 ms | 44069 ms | — |
 
 ### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 560 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 560 ms
 
 Sent:
 
@@ -44,7 +44,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryG3sqoOyD3ACJvPlS\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryG3sqoOyD3ACJvPlS\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nfetch-client-counts-data\r\n------WebKitFormBoundaryG3sqoOyD3ACJvPlS\r\nContent-Disposition: form-data; name=\"thread_counts_by_channel\"\r\n\r\ntrue\r\n------WebKitFormBoundaryG3sqoOyD3ACJvP… (936 chars)"
+    "------WebKitFormBoundaryG3sqoOyD3ACJvPlS\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryG3sqoOyD3ACJvPlS\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nfetch-client-counts-data\r\n------WebKitFormBoundaryG3sqoOyD3ACJvPlS\r\nContent-Disposition: form-data; name=\"thread_counts_by_channel\"\r\n\r\ntrue\r\n------WebKitFormBoundaryG3sqoOyD3ACJvP… (936 chars)"
   }
 }
 ```
@@ -60,12 +60,12 @@ Answered:
     "vip_count": 0,
     "mention_count_by_channel": {},
     "unread_count_by_channel": {
-      "D0C8VAE7REU": 5
+      "<channelId:1>": 5
     }
   },
   "channels": [
     {
-      "id": "C0C4L7RSTGX",
+      "id": "<channelId:2>",
       "last_read": "1790614677.128359",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -74,7 +74,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "C0C559K0JA0",
+      "id": "<channelId:3>",
       "last_read": "1790614677.298429",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -83,7 +83,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "C0CCTFK2D5G",
+      "id": "<channelId:4>",
       "last_read": "0000000000.000000",
       "latest": "1793180188.288059",
       "updated": "0000000000.000000",
@@ -95,7 +95,7 @@ Answered:
   "mpims": [],
   "ims": [
     {
-      "id": "D0C4VCJA6NP",
+      "id": "<channelId:5>",
       "last_read": "1790614725.624499",
       "latest": "1793180184.720269",
       "updated": "0000000000.000000",
@@ -104,7 +104,7 @@ Answered:
       "has_unreads": true
     },
     {
-      "id": "D0C559JJT6Y",
+      "id": "<channelId:6>",
       "last_read": "0000000000.000000",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -113,7 +113,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "D0C5W04RGPJ",
+      "id": "<channelId:7>",
       "last_read": "0000000000.000000",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -122,7 +122,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "D0C8VAE7REU",
+      "id": "<channelId:1>",
       "last_read": "1793689024.177609",
       "latest": "1793689024.177609",
       "updated": "1793688218.000400",
@@ -204,7 +204,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU: 200, 316 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 316 ms
 
 Sent:
 
@@ -220,7 +220,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryHqp8uZ6lB21nDPhx\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryHqp8uZ6lB21nDPhx\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nfetch-client-counts-data\r\n------WebKitFormBoundaryHqp8uZ6lB21nDPhx\r\nContent-Disposition: form-data; name=\"thread_counts_by_channel\"\r\n\r\ntrue\r\n------WebKitFormBoundaryHqp8uZ6lB21nDP… (936 chars)"
+    "------WebKitFormBoundaryHqp8uZ6lB21nDPhx\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryHqp8uZ6lB21nDPhx\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nfetch-client-counts-data\r\n------WebKitFormBoundaryHqp8uZ6lB21nDPhx\r\nContent-Disposition: form-data; name=\"thread_counts_by_channel\"\r\n\r\ntrue\r\n------WebKitFormBoundaryHqp8uZ6lB21nDP… (936 chars)"
   }
 }
 ```
@@ -236,12 +236,12 @@ Answered:
     "vip_count": 0,
     "mention_count_by_channel": {},
     "unread_count_by_channel": {
-      "D0C8VAE7REU": 5
+      "<channelId:1>": 5
     }
   },
   "channels": [
     {
-      "id": "C0C4L7RSTGX",
+      "id": "<channelId:2>",
       "last_read": "1790614677.128359",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -250,7 +250,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "C0C559K0JA0",
+      "id": "<channelId:3>",
       "last_read": "1790614677.298429",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -259,7 +259,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "C0CCTFK2D5G",
+      "id": "<channelId:4>",
       "last_read": "0000000000.000000",
       "latest": "1793180188.288059",
       "updated": "0000000000.000000",
@@ -271,7 +271,7 @@ Answered:
   "mpims": [],
   "ims": [
     {
-      "id": "D0C4VCJA6NP",
+      "id": "<channelId:5>",
       "last_read": "1790614725.624499",
       "latest": "1793180184.720269",
       "updated": "0000000000.000000",
@@ -280,7 +280,7 @@ Answered:
       "has_unreads": true
     },
     {
-      "id": "D0C559JJT6Y",
+      "id": "<channelId:6>",
       "last_read": "0000000000.000000",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -289,7 +289,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "D0C5W04RGPJ",
+      "id": "<channelId:7>",
       "last_read": "0000000000.000000",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -298,7 +298,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "D0C8VAE7REU",
+      "id": "<channelId:1>",
       "last_read": "1793689111.667059",
       "latest": "1793689111.667059",
       "updated": "1793688218.000400",
@@ -380,7 +380,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 7: pageText: 200, 339 ms
+**runs/inspect/20261103T065639_slackAccount**, step 7: pageText: 200, 339 ms
 
 Sent:
 
@@ -391,7 +391,7 @@ Sent:
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
     "_x_csid": "aVvVPXA0sak",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -399,7 +399,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryJIvuj0Foq8HPDwjY\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryJIvuj0Foq8HPDwjY\r\nContent-Disposition: form-data; name=\"thread_counts_by_channel\"\r\n\r\ntrue\r\n------WebKitFormBoundaryJIvuj0Foq8HPDwjY\r\nContent-Disposition: form-data; name=\"org_wide_aware\"\r\n\r\ntrue\r\n------WebKitFormBoundaryJIvuj0Foq8HPDwjY\r\nContent-Dis… (1157 chars)"
+    "------WebKitFormBoundaryJIvuj0Foq8HPDwjY\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryJIvuj0Foq8HPDwjY\r\nContent-Disposition: form-data; name=\"thread_counts_by_channel\"\r\n\r\ntrue\r\n------WebKitFormBoundaryJIvuj0Foq8HPDwjY\r\nContent-Disposition: form-data; name=\"org_wide_aware\"\r\n\r\ntrue\r\n------WebKitFormBoundaryJIvuj0Foq8HPDwjY\r\nContent-Dis… (1157 chars)"
   }
 }
 ```
@@ -415,12 +415,12 @@ Answered:
     "vip_count": 0,
     "mention_count_by_channel": {},
     "unread_count_by_channel": {
-      "D0C8VAE7REU": 5
+      "<channelId:1>": 5
     }
   },
   "channels": [
     {
-      "id": "C0C4L7RSTGX",
+      "id": "<channelId:2>",
       "last_read": "1790614677.128359",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -429,7 +429,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "C0C559K0JA0",
+      "id": "<channelId:3>",
       "last_read": "1790614677.298429",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -438,7 +438,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "C0CCTFK2D5G",
+      "id": "<channelId:4>",
       "last_read": "0000000000.000000",
       "latest": "1793180188.288059",
       "updated": "0000000000.000000",
@@ -450,7 +450,7 @@ Answered:
   "mpims": [],
   "ims": [
     {
-      "id": "D0C4VCJA6NP",
+      "id": "<channelId:5>",
       "last_read": "1790614725.624499",
       "latest": "1793180184.720269",
       "updated": "0000000000.000000",
@@ -459,7 +459,7 @@ Answered:
       "has_unreads": true
     },
     {
-      "id": "D0C559JJT6Y",
+      "id": "<channelId:6>",
       "last_read": "0000000000.000000",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -468,7 +468,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "D0C5W04RGPJ",
+      "id": "<channelId:7>",
       "last_read": "0000000000.000000",
       "latest": "0000000000.000000",
       "updated": "0000000000.000000",
@@ -477,7 +477,7 @@ Answered:
       "has_unreads": false
     },
     {
-      "id": "D0C8VAE7REU",
+      "id": "<channelId:1>",
       "last_read": "1793689118.238869",
       "latest": "1793689118.238869",
       "updated": "1793688218.000400",

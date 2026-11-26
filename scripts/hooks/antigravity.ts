@@ -1,8 +1,10 @@
 #!/usr/bin/env bun
 import { join } from 'node:path'
 import { answerEvent } from '../../src/agentHooks/answers/index'
+import { antigravityPromptPayload, clipContext, contextOf } from '../../src/agentHooks/harness/index'
 import { chatNameVerdict } from '../../src/agentHooks/chatNames/index'
 import { liveLogVerdict } from '../../src/agentHooks/liveLog/index'
+import { classifyCall, handRolledAdvice } from '../../src/agentHooks/handRolled/client'
 import { askRoute, readService, startService } from '../../src/contextLayer/service/index'
 
 const repo = join(import.meta.dir, '..', '..')
@@ -27,7 +29,7 @@ const route = (prompt: string) => askRoute(prompt, service)
 
 if (event === 'SessionStart') {
   const answered = await answerEvent('SessionStart', raw, repo, route)
-  const additionalContext = answered.body?.hookSpecificOutput?.additionalContext
+  const additionalContext = clipContext(contextOf(answered.body), 'antigravity')
   const output = {
     injectSteps: additionalContext
       ? [
@@ -41,10 +43,9 @@ if (event === 'SessionStart') {
   }
   process.stdout.write(JSON.stringify(output))
 } else if (event === 'PreInvocation') {
-  const prompt = typeof input.lastUserInput === 'string' ? input.lastUserInput : ''
-  const payload = JSON.stringify({ hook_event_name: 'UserPromptSubmit', prompt })
+  const payload = antigravityPromptPayload(input)
   const answered = await answerEvent('UserPromptSubmit', payload, repo, route)
-  const additionalContext = answered.body?.hookSpecificOutput?.additionalContext
+  const additionalContext = clipContext(contextOf(answered.body), 'antigravity')
   const output = {
     injectSteps: additionalContext
       ? [
@@ -75,6 +76,17 @@ if (event === 'SessionStart') {
     process.exit(0)
   }
 
+  const handRolled = classifyCall(toolName, args)
+  if (handRolled.handRolled) {
+    let seen = 0
+    try {
+      const { recordHandRolled } = await import('../../src/agentHooks/handRolled/helpers/store')
+      seen = recordHandRolled(handRolled)
+    } catch {}
+    process.stdout.write(JSON.stringify({ decision: 'allow', reason: handRolledAdvice(handRolled, seen) }))
+    process.exit(0)
+  }
+
   process.stdout.write(JSON.stringify({ decision: 'allow' }))
 } else if (event === 'PostToolUse') {
   const toolCall = (input.toolCall ?? {}) as { name?: string; args?: Record<string, unknown> }
@@ -85,7 +97,7 @@ if (event === 'SessionStart') {
 } else if (event === 'Stop') {
   const answered = await answerEvent('Stop', raw, repo, route)
   if (answered.body?.decision === 'block') {
-    const reason = typeof answered.body.reason === 'string' ? answered.body.reason : 'A browser sits on a state log-cli can resolve (rule 54).'
+    const reason = typeof answered.body.reason === 'string' ? answered.body.reason : 'A browser sits on a state log-cli can resolve (rule 35).'
     process.stdout.write(JSON.stringify({ decision: 'continue', reason }))
   } else {
     process.stdout.write(JSON.stringify({ decision: 'allow' }))

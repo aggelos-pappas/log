@@ -8,7 +8,7 @@ export const TIKTOK_PLATFORM: PlatformShape = {
   twentyPlatform: 'TIKTOK',
   label: 'TikTok',
   engine: join(import.meta.dir, '..', '..', '..', '..', 'python', 'tiktokApi', 'engine.py'),
-  sessionCookies: []
+  sessionCookies: ['sessionid', 'sid_tt']
 }
 
 export const TIKTOK_COOKIE_DOMAIN = '.tiktok.com'

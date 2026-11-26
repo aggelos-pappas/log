@@ -1,10 +1,10 @@
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { appendRecord, importRecordFile, readRecords } from '../../../../storage/records/index'
 import type { StageLogLine } from '../types'
+import { logHome } from '../../../../config/logHome/index'
 
 export function stageLogPath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_WARMUP_STAGE_LOG || join(homedir(), '.logCli', 'runs', 'warmup', 'stageLog.jsonl')
+  return env.LOG_WARMUP_STAGE_LOG || join(logHome(), 'runs', 'warmup', 'stageLog.jsonl')
 }
 
 const accountOf = (body: Record<string, unknown>) => (typeof body.account === 'string' ? body.account : null)

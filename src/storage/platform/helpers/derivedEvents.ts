@@ -1,4 +1,5 @@
-import type { EventInsert } from '../types'
+import { PEOPLE_ACCOUNT, PEOPLE_PLATFORM } from '../types'
+import type { EventInsert, IdentityProfileFields } from '../types'
 import { derivedEventId } from './time'
 
 export function attachmentsSeenEvent(target: { platform: string; account: string; conversationId: string }, messageKey: string, attachments: readonly Record<string, unknown>[], platformMessageId: string | null = null): EventInsert {
@@ -24,4 +25,42 @@ export function identityLearnedEvent(platform: string, account: string, userId: 
 
 export function accountIdentifiedEvent(platform: string, account: string, userId: string, at: string, source = 'session'): EventInsert {
   return { eventId: derivedEventId('accountIdentified', [platform, account, userId]), platform, account, conversationId: '', type: 'accountIdentified', with: '', text: '', box: '', payload: { userId }, sourceAt: '', receivedAt: at, source, known: true }
+}
+
+export function profileSeenEvent(platform: string, account: string, userId: string, fields: IdentityProfileFields, at: string, source = 'derived'): EventInsert {
+  return { eventId: derivedEventId('profileSeen', [platform, userId, JSON.stringify(fields)]), platform, account, conversationId: '', type: 'profileSeen', with: '', text: '', box: '', payload: { userId, ...fields }, sourceAt: '', receivedAt: at, source, known: true }
+}
+
+export interface IdentityRef {
+  platform: string
+  userId: string
+}
+
+export interface IdentitySeenIn {
+  handle: string | null
+  messageKey: string
+  chatId: string
+  at: string | null
+  text: string
+}
+
+function peopleEvent(type: string, personId: string, key: readonly string[], payload: Record<string, unknown>, at: string, source: string): EventInsert {
+  return { eventId: derivedEventId(type, [...key, at]), platform: PEOPLE_PLATFORM, account: PEOPLE_ACCOUNT, conversationId: personId, type, with: '', text: '', box: '', payload, sourceAt: '', receivedAt: at, source, known: true }
+}
+
+export function personNamedEvent(personId: string, name: string | null, by: string, at: string): EventInsert {
+  return peopleEvent('personNamed', personId, [personId, name ?? ''], { personId, name, by }, at, 'owner')
+}
+
+export function identityLinkedEvent(personId: string, identity: IdentityRef, by: string, evidence: string | null, at: string, seenIn: IdentitySeenIn | null = null): EventInsert {
+  return peopleEvent('identityLinked', personId, [personId, identity.platform, identity.userId], { personId, platform: identity.platform, userId: identity.userId, by, evidence, ...(seenIn ? { seenIn } : {}) }, at, 'owner')
+}
+
+export function identityUnlinkedEvent(personId: string, identity: IdentityRef, by: string, at: string): EventInsert {
+  return peopleEvent('identityUnlinked', personId, [personId, identity.platform, identity.userId], { personId, platform: identity.platform, userId: identity.userId, by }, at, 'owner')
+}
+
+export function identityNotLinkedEvent(a: IdentityRef, b: IdentityRef, by: string, at: string): EventInsert {
+  const [x, y] = [a, b].sort((p, q) => `${p.platform}:${p.userId}`.localeCompare(`${q.platform}:${q.userId}`))
+  return peopleEvent('identityNotLinked', '', [x.platform, x.userId, y.platform, y.userId], { a: x, b: y, by }, at, 'owner')
 }

@@ -1,5 +1,6 @@
 {
   "name": "groupPostDialog",
+  "platform": "facebook",
   "summary": "On a group's Discussion feed, open a post in its dialog with Leave a comment (the comment box takes focus, nothing is typed) and close it",
   "params": [
     {
@@ -68,7 +69,7 @@
     }
   ],
   "source": {
-    "runDir": "C:/Users/0/.logCli/runs/inspect/20261020T153648_61594063207669/sequences/groupPostDialog",
+    "runDir": "C:/Users/tester/.logCli/runs/inspect/20261020T153648_99900000000001/sequences/groupPostDialog",
     "account": "groupPostDialog",
     "builtAt": "2026-10-20T15:52:01.403Z"
   }

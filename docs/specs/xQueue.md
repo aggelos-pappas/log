@@ -26,6 +26,8 @@ Checked by: code and SubQ
 
 The run takes the next event in time order, waits for its time, sends it and waits for X's answer before it takes the next one. It never sends two items at once.
 
+The run is `queueRunMachine` (`src/twitter/queue/run/machine.ts`), built with `setup()`, named guards and actions, and `onError` on every invoke; `runQueue` starts it and sends `BEGIN`. The machine drives the run: in `waiting` it takes the next event (`taking`, `choosing`), and its waits and checks are invoked actors (`waitDue` for the poll until the event is due, `pause` for a nudge's 20 to 60 s, `awaitAdded` while `--keepOpen` waits for more, `checkContext` for the read right before a reply); the send is the `sendItem` actor in `liking` or `replying`, and X's answer picks the next state (`waiting`, `retrying` for a network drop, or `halted`). A cancel ends in `stopped`, a throw from any actor ends in `crashed` and `runQueue` throws it as before. The pacing, the order, the gates, the governor use, the queue log lines and the saves are the same as the loop it replaced: `src/twitter/queue/run/runRecord.test.ts` and `src/cli/twitter/queueRun.test.ts` record them and were written against the loop first.
+
 Checked by: code and SubQ
 
 ### REQ-QUEUE-04: Two sends are never closer than minGap
@@ -88,7 +90,7 @@ Checked by: code and SubQ
 
 ### REQ-QUEUE-13: The hook says what to do
 
-For a held item the hook says to read the person again, redraft, gate it, stop the run, put it back with `twitterQueueEdit` and run again. For a refusal it says loudly that the run stopped at X's answer, that the item stays pending and that nothing goes out on that account until matt says so; for any other stop it says the same.
+For a held item the hook says to read the person again, redraft, gate it, stop the run, put it back with `twitterQueueEdit` and run again. For a refusal it says loudly that the run stopped at X's answer, that the item stays pending and that nothing goes out on that account until the owner says so; for any other stop it says the same.
 
 Checked by: code and SubQ
 
@@ -96,7 +98,7 @@ Checked by: code and SubQ
 
 ### REQ-QUEUE-14: A refusal from X stops the run, and only a network drop is tried again
 
-When X refuses a send (a 429, 226 looks automated, 344 daily limit, an empty result, a soft block, the governor, a dead session, or any other answer where X did not send it), the run stops at once: the item stays pending (not sent, not skipped), the run ends halted with the refusal (X's code, its message and the time) and a stop line saying so, and it never waits and asks X again by itself. Nothing goes out on that account until matt starts a run again (rule 94). A dropped connection with no answer from X (a connection reset, a timeout, the live poll's network test, never a 429) is not a refusal: it is tried again after a short wait, at most `MAX_DROPS` drops in a row, then the run stops with the item pending. A post that is gone (385, 433) is skipped, not a refusal of the account, and so is a reply whose author is over the follower cap (REQ-QUEUE-15).
+When X refuses a send (a 429, 226 looks automated, 344 daily limit, an empty result, a soft block, the governor, a dead session, or any other answer where X did not send it), the run stops at once: the item stays pending (not sent, not skipped), the run ends halted with the refusal (X's code, its message and the time) and a stop line saying so, and it never waits and asks X again by itself. Nothing goes out on that account until the owner starts a run again (rule 94). A dropped connection with no answer from X (a connection reset, a timeout, the live poll's network test, never a 429) is not a refusal: it is tried again after a short wait, at most `MAX_DROPS` drops in a row, then the run stops with the item pending. A post that is gone (385, 433) is skipped, not a refusal of the account, and so is a reply whose author is over the follower cap (REQ-QUEUE-15).
 
 Checked by: code and SubQ
 
@@ -104,7 +106,7 @@ Checked by: code and SubQ
 
 ### REQ-QUEUE-15: A reply goes only to an author with 1500 followers or fewer
 
-matt (2026-11-03): an account that is too large isn't worth it yet, and under 1500 followers is ideal. Before a reply likes, follows or sends anything, the engine reads the author's follower count (`author_too_big`, `MAX_AUTHOR_FOLLOWERS` 1500 in `python/twitterApi/engine.py`). An author over the cap gets nothing: the answer is `event: tooBig`, `code: authorTooBig`, with their count. The queue run treats it like a gone post. The item is marked skipped, the event is dropped with `tooBig`, a `TOO BIG` line says who and how many followers, and the run goes on to the next item. It is never a refusal that stops the run. A spec can lift the cap only when matt asks: with `maxAuthorFollowers`, or with `force` on a reply he named himself (rule 86). Rule 121.
+the owner (2026-11-03): an account that is too large isn't worth it yet, and under 1500 followers is ideal. Before a reply likes, follows or sends anything, the engine reads the author's follower count (`author_too_big`, `MAX_AUTHOR_FOLLOWERS` 1500 in `python/twitterApi/engine.py`). An author over the cap gets nothing: the answer is `event: tooBig`, `code: authorTooBig`, with their count. The queue run treats it like a gone post. The item is marked skipped, the event is dropped with `tooBig`, a `TOO BIG` line says who and how many followers, and the run goes on to the next item. It is never a refusal that stops the run. A spec can lift the cap only when the owner asks: with `maxAuthorFollowers`, or with `force` on a reply he named himself (rule 86). Rule 121.
 
 Checked by: code and SubQ
 

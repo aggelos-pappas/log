@@ -15,7 +15,7 @@ Content-Disposition: form-data; name`, `------WebKitFormBoundaryjJgVoI0ckgJPk0lY
 Content-Disposition: form-data; name`, `------WebKitFormBoundarykOLlhd5pMoLAuhUF
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `notifications.client_footer`, `notifications.client_header_right`, `notifications.message_pane`, `notifications.sidebar_footer`, `notifications.launch_modal`, `notifications.in_product_coachmark`, `notifications.in_product_glow`, `notifications.education_user_group_sections_coachmark`, `notifications.quick_reactions`, `notifications.message_actions_labels`, `notifications.welcome_space` and 28 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:169 oYBt`, `runs/inspect/20261103T065639_mattSlack/script3.js:2977 oYBt` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:169 oYBt`, `runs/inspect/20261103T065639_slackAccount/script3.js:2977 oYBt` |
 | rea | `ev_e17cfbdfab177a94900b80d1ca7b2fe660af932547648ecd8e88b642d2eb9d73` |
 
 Seen 5 time(s) in 1 run(s).
@@ -23,13 +23,13 @@ Seen 5 time(s) in 1 run(s).
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 4: goto /client | 2 | 200 | 513–527 ms | 7549–7573 ms | — |
-| inspect | step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU | 3 | 200 | 322–493 ms | 5031–7884 ms | — |
+| inspect | step 6: goto /client/<teamId:1>/<channelId:1> | 3 | 200 | 322–493 ms | 5031–7884 ms | — |
 
 ### What it sent and what came back (the newest 2 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 527 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 527 ms
 
 Sent:
 
@@ -39,7 +39,7 @@ Sent:
     "_x_id": "2c6eaecf-1793689064.901",
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -47,7 +47,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryQy8m2kZejs0F1edr\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryQy8m2kZejs0F1edr\r\nContent-Disposition: form-data; name=\"event\"\r\n\r\n{\"type\":\"request_spaces\",\"spaces\":[\"client_footer\",\"client_header_right\",\"message_pane\",\"sidebar_footer\",\"launch_modal\",\"in_product_coachmark\",\"in_product_glow\",\"education_user_group_… (1134 chars)"
+    "------WebKitFormBoundaryQy8m2kZejs0F1edr\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryQy8m2kZejs0F1edr\r\nContent-Disposition: form-data; name=\"event\"\r\n\r\n{\"type\":\"request_spaces\",\"spaces\":[\"client_footer\",\"client_header_right\",\"message_pane\",\"sidebar_footer\",\"launch_modal\",\"in_product_coachmark\",\"in_product_glow\",\"education_user_group_… (1134 chars)"
   }
 }
 ```
@@ -99,7 +99,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU: 200, 493 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 493 ms
 
 Sent:
 
@@ -110,7 +110,7 @@ Sent:
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
     "_x_csid": "aVvVPXA0sak",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -118,7 +118,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundarynOUC5X2qRikE1mHd\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundarynOUC5X2qRikE1mHd\r\nContent-Disposition: form-data; name=\"event\"\r\n\r\n{\"type\":\"request_spaces\",\"spaces\":[\"client_footer\",\"client_header_right\",\"message_pane\",\"sidebar_footer\",\"launch_modal\",\"in_product_coachmark\",\"in_product_glow\",\"education_user_group_… (1134 chars)"
+    "------WebKitFormBoundarynOUC5X2qRikE1mHd\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundarynOUC5X2qRikE1mHd\r\nContent-Disposition: form-data; name=\"event\"\r\n\r\n{\"type\":\"request_spaces\",\"spaces\":[\"client_footer\",\"client_header_right\",\"message_pane\",\"sidebar_footer\",\"launch_modal\",\"in_product_coachmark\",\"in_product_glow\",\"education_user_group_… (1134 chars)"
   }
 }
 ```

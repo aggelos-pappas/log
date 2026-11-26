@@ -1,11 +1,11 @@
-import { timingSafeEqual } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { existsSync, readFileSync, watch } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import { CallToolRequestSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, ElicitResultSchema, ListResourcesRequestSchema, ListToolsRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { COMMANDS, defaultSendInspect, runCli } from "../../cli/runner/index.ts";
 import type { CommandContext } from "../../cli/runner/types.ts";
@@ -18,21 +18,49 @@ import type { BrowserView } from "../../browser/inspect/index.ts";
 import type { FlowDefinition } from "../../browser/flow/index.ts";
 import { appendLiveLine, liveLogDir } from "../../observability/liveLog/index.ts";
 import { msText, timeCall } from "../../observability/timing/index.ts";
-import { accountOfArgv, appendProgress, busyJob, cancelRequested, DEFAULT_WAIT_MS, finishJob, MAX_WAIT_MS, startJob } from "../jobs/index.ts";
+import { accountOfArgv, appendProgress, busyJob, cancelRequested, DEFAULT_WAIT_MS, finishJob, heldByOther, jobScope, MAX_WAIT_MS, startJob } from "../jobs/index.ts";
 import type { JobRecord } from "../jobs/index.ts";
 import { oauthFromEnv } from "../oauth/index.ts";
 import type { OAuthServer } from "../oauth/index.ts";
-import { playRefusal, setActivePlay, withPlayFooter } from "./helpers/index.ts";
+import { activePlay, BROWSERS_HEAD, capResult, currentToolName, narrowingFlags, FLOW_LIVE_TOOL, forgetPlayScope, gatedToolOf, guideAnswer, handleOf, PLAY_HANDLE_FIELD, playMeta, playRefusal, actingAsOwnerTools, capabilityPlayGateMode, folderOfPlay, namedByPlay, platformOfTool, playGateMode, stepToolsOf, playScope, processPlayScope, renamedTool, touchPlay, withoutHandle, withPlayFooter, withRenamedNote } from "./helpers/index.ts";
+import type { PlayScope } from "./helpers/index.ts";
+import { isPlatform } from "../../cli/runner/helpers/index.ts";
+import { ensureGraphOwner } from "../../relate/owner/index.ts";
+import { capabilityDeps } from "../../cli/capabilities/index.ts";
+import { loadConnectionsView } from "../../console/connections/index.ts";
+import { gateCall } from "../../platformKit/gates/index.ts";
+import type { GateCaller, GateDeps, GatedTool } from "../../platformKit/gates/index.ts";
+import { flowRunInput, FLOW_RUN_TOOL } from "./helpers/index.ts";
 import { CALL_TOOL, catalog, catalogTools, getAnswer, isCatalogTool, resolveCall, searchAnswer, SEARCH_TOOL } from "../catalog/index.ts";
-import { AGENTS_URI, commandTools, CORE_GUIDE, flowArgv, flowOfTool, guardCall, GUIDE_TOOL, GUIDE_TOPICS, guideTool, listUseCases, readUseCase, withUseCases, hasShell, LONG_RUNNING, parseEnvText, readGuide, SERVER_INSTRUCTIONS, toolsFromCommands, toolsFromFlows } from "./helpers/index.ts";
+import { AGENTS_URI, commandTools, CORE_GUIDE, flowArgv, flowOfTool, guardCall, GUIDE_TOOL, GUIDE_TOPICS, guideTool, listUseCases, readUseCase, withUseCases, hasShell, identityOf, legacyArgsTool, parseEnvText, readGuide, SERVER_INSTRUCTIONS, toolsFromCommands, toolsFromFlows } from "./helpers/index.ts";
 import type { LogStream } from "./helpers/index.ts";
-import type { LogToolInput, ProgressLine, ToolResult } from "./types.ts";
+import type { LogToolInput, ProgressLine, ResultIdentity, ToolResult } from "./types.ts";
 import { RESULT_SIZE_META } from "./types.ts";
 import { readConsoleEvents } from "../../observability/console/index.ts";
+import { viewerState } from "../../browser/viewer/index.ts";
+import { accountOfArgs, appTools, BROWSER_VIEW_TOOL, httpLocation, isAppTool, MCP_APP_MIME_TYPE, runAppTool, settleLocation, UI_EXTENSION_ID, uiCapable, withBrowserView } from "../apps/browserView/index.ts";
+import { browserViewLocation } from "../../cli/browser/index.ts";
+import { CARDS, cardResources, readCard, withCard } from "../apps/cards.ts";
+import { hermesClient, MAP_TOOL, MACHINE_TOOL, REPORT_TOOL, reportTool, runMachine, runMap, runReport } from "../apps/report/index.ts";
+import { deferredElicitation, isSignInCall, localSignInSurface, SIGN_IN_INPUT_KEY, signInCall } from "../apps/signIn/index.ts";
+import { answeredAction, argumentsDigest, dualEraTransport, hostAllowed, isModernHttp, statelessHttp, urlInputRequired } from "../stateless/index.ts";
+import type { StatelessHandlers } from "../stateless/index.ts";
+import { harnessOff } from "../../agentHooks/harness/off/client.ts";
 
 export * from "./helpers/index.ts";
 export type { GuardResult, LogTool, LogToolInput } from "./types.ts";
-export { MAX_RESULT_CHARS, NO_PROMPT, RESULT_SIZE_META, TERMINAL_ONLY, TOOL_RESULT_SCHEMA } from "./types.ts";
+export { MAX_RESULT_CHARS, RESULT_SIZE_META, TOOL_RESULT_SCHEMA } from "./types.ts";
+
+const HARNESS_RESTORE_TOOLS = new Set(["harnessOn", "harnessStatus"]);
+
+function harnessCommands(shell: boolean) {
+  const commands = [...toolsFromCommands(COMMANDS, { shell }), ...toolsFromFlows(savedFlows(), { shell })];
+  return harnessOff() ? commands.filter((tool) => HARNESS_RESTORE_TOOLS.has(tool.name)) : commands;
+}
+
+function harnessRefusal(): CallToolResult {
+  return { isError: true, content: [{ type: "text" as const, text: "log harness is off; call harnessOn { by: \"<who>\" } to restore hooks, pushes and tools" }] };
+}
 
 export type ReadBrowsers = () => BrowserView[];
 
@@ -45,22 +73,34 @@ function safeViews(read: ReadBrowsers): BrowserView[] {
 }
 
 export function browserLines(views: BrowserView[]): string[] {
-  const where = views.length
-    ? `Browsers: ${views.map((v) => `${v.account} on ${v.url || "a page"} (step ${v.step})${v.state ? `, page state ${v.state.id}: ${v.state.what}` : v.failed ? ", its last step failed" : ", no known blocking state"}`).join("; ")}.`
-    : "Browsers: none open.";
-  const matt = views.find((v) => v.needsMatt)?.needsMatt;
+  if (!views.length) return [];
+  const where = `${BROWSERS_HEAD}${views.map((v) => `${v.account} on ${v.url || "a page"} (step ${v.step})${v.state ? `, page state ${v.state.id}: ${v.state.what}` : v.failed ? ", its last step failed" : ", no known blocking state"}`).join("; ")}.`;
+  const owner = views.find((v) => v.needsOwner)?.needsOwner;
   const next = views.find((v) => v.next)?.next;
-  return [where, ...(matt ? [`Needs matt: ${matt}`] : []), ...(next ? [`Next: call \`${next.tool}\` ${JSON.stringify(next.input)} (rule 79: a known state is resolved, never a reason to stop).`] : [])];
+  return [where, ...(owner ? [`Needs the owner: ${owner}`] : []), ...(next ? [`Next: call \`${next.tool}\` ${JSON.stringify(next.input)} (rule 79: a known state is resolved, never a reason to stop).`] : [])];
 }
 
-function withBrowsers(base: Omit<ToolResult, "browsers" | "next" | "needsMatt">, body: string, isError: boolean, read: ReadBrowsers, images: readonly ToolImage[] = []): CallToolResult {
+function withBrowsers(base: Omit<ToolResult, "browsers" | "next" | "needsOwner">, body: string, isError: boolean, read: ReadBrowsers, images: readonly ToolImage[] = []): CallToolResult {
   const views = safeViews(read);
-  const result: ToolResult = { ...base, browsers: views, next: views.find((v) => v.next)?.next ?? null, needsMatt: views.find((v) => v.needsMatt)?.needsMatt ?? null };
-  return { isError, content: [{ type: "text", text: [...browserLines(views), "", body].join("\n") }, ...images.map((image) => ({ type: "image" as const, data: image.data, mimeType: image.mimeType }))], structuredContent: result as unknown as Record<string, unknown> };
+  const head = browserLines(views);
+  const result: ToolResult = { ...base, browsers: views, next: views.find((v) => v.next)?.next ?? null, needsOwner: views.find((v) => v.needsOwner)?.needsOwner ?? null };
+  return { isError, content: [{ type: "text", text: head.length ? [...head, "", body].join("\n") : body }, ...images.map((image) => ({ type: "image" as const, data: image.data, mimeType: image.mimeType }))], structuredContent: result as unknown as Record<string, unknown> };
 }
 
-function refused(message: string, read: ReadBrowsers): CallToolResult {
-  return withBrowsers({ exit: 1, ok: false, stdout: "", stderr: message, log: [], progress: [] }, message, true, read);
+const NO_IDENTITY: ResultIdentity = { platform: null, capability: null };
+
+export function withEnvelope(result: CallToolResult, identity: ResultIdentity, read: ReadBrowsers): CallToolResult {
+  const text = (result.content ?? []).flatMap((part) => (part.type === "text" ? [part.text] : [])).join("\n");
+  const failed = result.isError === true;
+  const payload = (result.structuredContent ?? {}) as Record<string, unknown>;
+  const code = failed ? (typeof payload.error === "string" ? payload.error : (/^([A-Za-z]\w*):/.exec(text)?.[1] ?? "commandFailed")) : null;
+  const views = safeViews(read);
+  const envelope: ToolResult = { exit: failed ? 1 : 0, ok: !failed, code, ...identity, stdout: failed ? "" : text, stderr: failed ? text : "", log: [], progress: [], browsers: views, next: views.find((v) => v.next)?.next ?? null, needsOwner: views.find((v) => v.needsOwner)?.needsOwner ?? null };
+  return { ...result, structuredContent: { ...payload, ...envelope } as unknown as Record<string, unknown> };
+}
+
+function refused(message: string, code: string, read: ReadBrowsers, identity: ResultIdentity = NO_IDENTITY): CallToolResult {
+  return withBrowsers({ exit: 1, ok: false, code, ...identity, stdout: "", stderr: message, log: [], progress: [] }, message, true, read);
 }
 
 function jsonOf(stdout: string): unknown {
@@ -72,6 +112,8 @@ function jsonOf(stdout: string): unknown {
     return undefined;
   }
 }
+
+export const PLAY_META = "log/play";
 
 export const AGENTS_MD = fileURLToPath(new URL("../../../AGENTS.md", import.meta.url));
 
@@ -93,7 +135,7 @@ export class JobCancelled extends Error {
 }
 
 interface Ran {
-  base: Omit<ToolResult, "browsers" | "next" | "needsMatt">;
+  base: Omit<ToolResult, "browsers" | "next" | "needsOwner">;
   text: string;
   cancelled: boolean;
   images: ToolImage[];
@@ -104,11 +146,12 @@ export interface ToolImage {
   mimeType: string;
 }
 
-function runGuarded(name: string, argv: string[], context: Partial<CommandContext>, onLine: OnLogLine, progress: ProgressLine[], job: JobRecord | null, signal?: AbortSignal): Promise<Ran> {
-  return timeCall(name, (call) => runTimed(name, argv, context, onLine, progress, job, call, signal), { account: accountOfArgv(argv) || undefined, job: job?.id });
+function runGuarded(name: string, argv: string[], context: Partial<CommandContext>, onLine: OnLogLine, progress: ProgressLine[], job: JobRecord | null, identity: ResultIdentity, signal?: AbortSignal): Promise<Ran> {
+  const timed = () => timeCall(name, (call) => runTimed(name, argv, context, onLine, progress, job, call, identity, signal), { account: accountOfArgv(argv) || undefined, job: job?.id });
+  return job ? jobScope.run(job.id, timed) : timed();
 }
 
-async function runTimed(name: string, argv: string[], context: Partial<CommandContext>, onLine: OnLogLine, progress: ProgressLine[], job: JobRecord | null, call: ActiveCall, signal?: AbortSignal): Promise<Ran> {
+async function runTimed(name: string, argv: string[], context: Partial<CommandContext>, onLine: OnLogLine, progress: ProgressLine[], job: JobRecord | null, call: ActiveCall, identity: ResultIdentity, signal?: AbortSignal): Promise<Ran> {
   const began = performance.now();
   let kept: JobRecord | null = null;
   const out: string[] = [];
@@ -145,10 +188,18 @@ async function runTimed(name: string, argv: string[], context: Partial<CommandCo
   inFlight.add(fromProcess);
   onLine(name, "out", `▶ log ${argv.join(" ")}${job ? `  (job ${job.id})` : ""}  (call ${call.callId})`);
   let code: number;
+  let refusal: string | null = null;
+  let wroteTo: string | null = null;
   let cancelled = false;
   try {
     code = await runCli(argv, {
       ...context,
+      refused: (said) => {
+        refusal ??= said;
+      },
+      wroteTo: (path) => {
+        wroteTo = path;
+      },
       ...(job
         ? {
             cancelled: () => cancelRequested(job.id),
@@ -175,6 +226,7 @@ async function runTimed(name: string, argv: string[], context: Partial<CommandCo
   } catch (error) {
     cancelled = error instanceof JobCancelled;
     err.push(error instanceof Error ? error.message : String(error));
+    refusal = cancelled ? "commandFailed" : "crashed";
     code = 1;
   } finally {
     signal?.removeEventListener("abort", clientCancelled);
@@ -183,17 +235,35 @@ async function runTimed(name: string, argv: string[], context: Partial<CommandCo
   }
   if (job && !cancelled && code !== 0 && cancelRequested(job.id)) cancelled = true;
   call.attrs.exit = code;
+  if (code !== 0) call.attrs.code = refusal ?? "commandFailed";
   const keptJob = kept as JobRecord | null;
   onLine(name, "out", `■ exit ${code} in ${msText(performance.now() - began)} (call ${call.callId}: timing { call: "${call.callId}" } shows where the time went)${keptJob ? `; the client had cancelled it, so its answer is job ${keptJob.id}` : ""}`);
   const text = [out.join("\n"), processLog.length ? `log:\n${processLog.join("\n")}` : "", err.length ? `stderr:\n${err.join("\n")}` : "", `exit ${code}`].filter(Boolean).join("\n\n");
   const stdout = out.join("\n");
   const json = jsonOf(stdout);
   if (keptJob) finishJob(keptJob.id, code === 0 ? "completed" : "failed", { exit: code, ok: code === 0, stdout, stderr: err.join("\n"), cancelledByClient: true }, text);
-  return { base: { exit: code, ok: code === 0, stdout, stderr: err.join("\n"), log: processLog, progress, ...(json === undefined ? {} : { json }) }, text, cancelled, images };
+  const failed = code === 0 ? null : (refusal ?? "commandFailed");
+  return { base: { exit: code, ok: code === 0, code: failed, ...identity, stdout, stderr: err.join("\n"), log: processLog, progress, ...(wroteTo ? { db: wroteTo } : {}), ...(json === undefined ? {} : { json }) }, text, cancelled, images };
 }
+
+export const gateDeps: Pick<GateDeps, "accounts" | "busy" | "session"> = {
+  accounts: () => capabilityDeps.accounts(),
+  busy: (account) => heldByOther(busyJob(account), {}),
+  session: (account, platform) => {
+    try {
+      return loadConnectionsView().accounts.find((a) => a.platform === platform && a.name.toLowerCase() === account.trim().replace(/^@/, "").toLowerCase()) ?? null;
+    } catch {
+      return null;
+    }
+  },
+};
 
 function commandOfTool(name: string) {
   return commandTools(COMMANDS).find((t) => t.tool === name) ?? null;
+}
+
+function flowIdentity(flow: FlowDefinition): ResultIdentity {
+  return { platform: isPlatform(flow.platform) ? flow.platform : null, capability: "flow.run" };
 }
 
 export function waitOf(input: LogToolInput | undefined): number {
@@ -208,56 +278,80 @@ export async function runToolCall(
   onLine: OnLogLine = () => {},
   readBrowsers: ReadBrowsers = browserViews,
   signal?: AbortSignal,
+  appCaller: boolean = browserViewLocation() === "remote",
+  scope: PlayScope = processPlayScope(),
+  shell: boolean = true,
+  caller: Exclude<GateCaller, "cli"> = "mcp",
+  client: string = "",
 ): Promise<CallToolResult> {
+  const handle = handleOf(input);
+  const given = withoutHandle(input);
+  if (harnessOff() && !HARNESS_RESTORE_TOOLS.has(name)) return harnessRefusal();
+  const again = (tool: string, next: LogToolInput | undefined, app: boolean = appCaller, by: Exclude<GateCaller, "cli"> = caller) => runToolCall(tool, handle && next ? { ...next, [PLAY_HANDLE_FIELD]: handle } : next, context, onLine, readBrowsers, signal, app, scope, shell, by, client);
+  if (renamedTool(name)) return withRenamedNote(name, await again(currentToolName(name), input, appCaller, caller === "mcp" ? "alias" : caller));
+  if (isAppTool(name)) return runAppTool(name, given, appCaller || caller === "mcp" || caller === "stateless");
+  if (name === REPORT_TOOL) return runReport(given, appCaller, {}, { hermes: hermesClient(client) });
+  if (name === MACHINE_TOOL) {
+    const entry = commandOfTool(name);
+    return withEnvelope(await runMachine(given, appCaller, { hermes: hermesClient(client) }), entry ? identityOf(entry, []) : NO_IDENTITY, readBrowsers);
+  }
+  if (name === MAP_TOOL) {
+    const entry = commandOfTool(name);
+    return withEnvelope(await runMap(given, appCaller, { hermes: hermesClient(client) }), entry ? identityOf(entry, []) : NO_IDENTITY, readBrowsers);
+  }
   if (name === GUIDE_TOOL) {
-    const asked = (input ?? {}) as { topic?: unknown; useCase?: unknown };
-    if (typeof asked.useCase === "string" && asked.useCase) {
-      const page = readUseCase(asked.useCase);
-      if (page === null) return { isError: true, content: [{ type: "text", text: `No use case "${asked.useCase}". Use cases: ${listUseCases().map((u) => u.id).join(", ")}.` }] };
-      const play = setActivePlay(asked.useCase, page);
-      return { content: [{ type: "text", text: `${page}\n\n>>> PLAY ${play.id} is now this session's play: every log tool's answer ends with the step it is and the step that comes next, and a send that isn't one of its steps says so (rule 157).` }] };
-    }
-    const topic = String(asked.topic ?? CORE_GUIDE);
-    const text = readGuide(topic);
-    if (text === null) return { isError: true, content: [{ type: "text", text: `No guide "${topic}". Topics: ${Object.keys(GUIDE_TOPICS).join(", ")}.` }] };
-    return { content: [{ type: "text", text }] };
+    const answer = guideAnswer(input, scope, shell);
+    const play = answer.play === undefined ? undefined : playMeta(answer.play);
+    return { ...(answer.isError ? { isError: true } : {}), content: [{ type: "text", text: answer.text }], ...(play === undefined ? {} : { _meta: { [PLAY_META]: play } }) };
   }
   if (isCatalogTool(name)) {
-    const entries = catalog(COMMANDS);
+    const entries = catalog(COMMANDS, savedFlows());
     if (name === CALL_TOOL) {
-      const target = resolveCall(entries, input);
-      if (!target.ok) return refused(target.message, readBrowsers);
-      return runToolCall(target.tool, target.input, context, onLine, readBrowsers, signal);
+      const target = resolveCall(entries, given);
+      if (!target.ok) return refused(target.message, "inputInvalid", readBrowsers);
+      return again(target.tool, target.input, false, caller === "mcp" ? "logCall" : caller);
     }
-    const answer = name === SEARCH_TOOL ? searchAnswer(entries, input) : getAnswer(entries, input);
-    return withBrowsers({ exit: answer.ok ? 0 : 1, ok: answer.ok, stdout: answer.text, stderr: answer.ok ? "" : answer.text, log: [], progress: [], json: answer.json }, answer.text, !answer.ok, readBrowsers);
+    const answer = name === SEARCH_TOOL ? searchAnswer(entries, given) : getAnswer(entries, given);
+    return withBrowsers({ exit: answer.ok ? 0 : 1, ok: answer.ok, code: answer.ok ? null : "inputInvalid", ...NO_IDENTITY, stdout: answer.text, stderr: answer.ok ? "" : answer.text, log: [], progress: [], json: answer.json }, answer.text, !answer.ok, readBrowsers);
   }
-  const { waitMs, ...fields } = input ?? {};
-  const flowCall = flowOfTool(savedFlows(), name);
+  const { waitMs, ...fields } = given ?? {};
+  const flows = savedFlows();
+  const gate = (gated: GatedTool) => {
+    const { tool, platform, capability } = gated;
+    const play = activePlay(scope, handle);
+    const pages = listUseCases(capability ? [tool, capability] : [tool]);
+    const mode = capabilityPlayGateMode(capability, tool, actingAsOwnerTools(COMMANDS, flows), pages, platform);
+    const fits = (u: { id: string; text: string }) => namedByPlay(tool, stepToolsOf([u])) || (platform !== null && folderOfPlay(u.id) === platform) || (capability !== null && namedByPlay(capability, stepToolsOf([u])) && !isPlatform(folderOfPlay(u.id)));
+    const refusal = playRefusal(tool, { mode, platform, capability, useCases: pages.filter(fits).map((u) => u.id), play });
+    if (!refusal) touchPlay(play);
+    return refusal;
+  };
+  const flowCall = flowOfTool(flows, name);
   if (flowCall) {
-    const built = flowArgv(flowCall.flow, fields as Record<string, unknown>, flowCall.live);
-    if (!built.ok) return refused(built.message, readBrowsers);
-    return runToolCall(flowCall.live ? "flowLive" : "flow", { args: built.argv.slice(1), confirmLive: fields.confirmLive, confirmBypass: fields.confirmBypass, ...(waitMs === undefined ? {} : { waitMs }) }, context, onLine, readBrowsers, signal);
+    const built = flowRunInput(flowCall.flow, fields as Record<string, unknown>, flowCall.live);
+    if (!built.ok) return refused(built.message, "inputInvalid", readBrowsers, flowIdentity(flowCall.flow));
+    const ran = await again(flowCall.live ? FLOW_LIVE_TOOL : FLOW_RUN_TOOL, { ...built.input, confirmLive: fields.confirmLive, confirmBypass: fields.confirmBypass, ...(waitMs === undefined ? {} : { waitMs }) });
+    return ran.structuredContent ? { ...ran, structuredContent: { ...ran.structuredContent, ...flowIdentity(flowCall.flow) } } : ran;
   }
-  const guard = guardCall(name, input === undefined ? undefined : fields, COMMANDS);
-  if (!guard.ok) return refused(guard.message, readBrowsers);
-  const noPlay = playRefusal(name, listUseCases([name]).filter((u) => u.tools.includes(name)).map((u) => u.id));
-  if (noPlay) return refused(noPlay, readBrowsers);
-  const entry = commandOfTool(name);
+  const guard = gateCall(name, given === undefined ? undefined : fields, caller, { commands: COMMANDS, flows, accounts: gateDeps.accounts, play: gate, session: gateDeps.session, busy: gateDeps.busy });
+  const entry = guard.entry;
+  const identityBase = entry ? identityOf(entry, guard.ok ? guard.argv : []) : NO_IDENTITY;
+  const identity = guard.ok && guard.gated.capability && guard.gated.platform ? { ...identityBase, platform: guard.gated.platform } : identityBase;
+  if (!guard.ok) return refused(guard.message, guard.code, readBrowsers, identity);
   const progress: ProgressLine[] = [];
-  if (!entry || !LONG_RUNNING.has(entry.command.name)) {
-    const ran = await runGuarded(name, guard.argv, context, onLine, progress, null, signal);
-    return withBrowsers(ran.base, ran.text, ran.base.exit !== 0, readBrowsers, ran.images);
+  const noted = (result: CallToolResult): CallToolResult => (guard.note ? { ...result, content: [...(result.content ?? []), { type: "text" as const, text: guard.note }] } : result);
+  if (!entry || !guard.longRunning) {
+    const ran = await runGuarded(name, guard.argv, context, onLine, progress, null, identity, signal);
+    const answered = noted(withBrowsers(ran.base, ran.text, ran.base.exit !== 0, readBrowsers, ran.images));
+    return name === BROWSER_VIEW_TOOL ? withViewer(answered, input, hermesClient(client)) : answered;
   }
-  const account = accountOfArgv(guard.argv);
-  const holder = busyJob(account);
-  if (holder) return refused(`accountBusy: job ${holder.id} (${holder.tool}) holds ${account}, started ${holder.startedAt}. Follow it with jobStatus { jobId: "${holder.id}" }, or stop it with jobCancel (rule 35).`, readBrowsers);
+  const account = guard.account;
   const job = startJob({ tool: name, argv: guard.argv, account, live: entry.live });
-  const run = runGuarded(name, guard.argv, context, onLine, progress, job, signal).then((ran) => {
+  const run = runGuarded(name, guard.argv, context, onLine, progress, job, identity, signal).then((ran) => {
     const status = ran.cancelled ? "cancelled" : ran.base.exit === 0 ? "completed" : "failed";
     const done = withBrowsers({ ...ran.base, job: { id: job.id, status, afterLine: progress.length } }, ran.text, ran.base.exit !== 0, readBrowsers);
     finishJob(job.id, status, done.structuredContent as Record<string, unknown>, (done.content as { text: string }[])[0].text);
-    return done;
+    return noted(done);
   });
   const wait = waitOf(input);
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -265,11 +359,29 @@ export async function runToolCall(
   clearTimeout(timer);
   if (finished) return finished;
   const running = `Still running as job ${job.id} (${name}). Follow it with jobStatus { jobId: "${job.id}", afterLine: ${progress.length} } (it waits for new lines), stop it at its next browser step with jobCancel { jobId: "${job.id}" }. Lines so far:\n${progress.map((p) => `${p.at.slice(11, 19)}  ${p.line}`).join("\n") || "(none yet)"}`;
-  return withBrowsers({ exit: -1, ok: false, stdout: "", stderr: "", log: [], progress: [...progress], job: { id: job.id, status: "running", afterLine: progress.length } }, running, false, readBrowsers);
+  return withBrowsers({ exit: -1, ok: false, code: null, ...identity, stdout: "", stderr: "", log: [], progress: [...progress], job: { id: job.id, status: "running", afterLine: progress.length } }, running, false, readBrowsers);
+}
+
+export function withCallFooter(name: string, input: LogToolInput | undefined, result: CallToolResult, scope: PlayScope = processPlayScope()): CallToolResult {
+  if (name === GUIDE_TOOL || name === REPORT_TOOL || name === MACHINE_TOOL || name === MAP_TOOL) return result;
+  const target = name === CALL_TOOL ? resolveCall(catalog(COMMANDS, savedFlows()), withoutHandle(input)) : null;
+  const tool = target?.ok ? target.tool : currentToolName(name);
+  return withPlayFooter(tool, capResult(tool, result, narrowingFlags(commandOfTool(tool)?.form?.flags ?? [])), activePlay(scope, handleOf(input)));
+}
+
+async function withViewer(result: CallToolResult, input: LogToolInput | undefined, hermes: boolean = false): Promise<CallToolResult> {
+  const account = accountOfArgs(input);
+  if (result.isError || !account) return result;
+  try {
+    return withBrowserView(result, await viewerState(account), undefined, hermes);
+  } catch {
+    return result;
+  }
 }
 
 export interface LogMcpOptions {
   logDir?: string | null;
+  playOwner?: string;
   watchFlows?: boolean;
   readBrowsers?: ReadBrowsers;
 }
@@ -280,6 +392,7 @@ export function createLogMcpServer(context: Partial<CommandContext> = {}, option
     { capabilities: { tools: { listChanged: true }, logging: {}, resources: {} }, instructions: SERVER_INSTRUCTIONS },
   );
   const logDir = options.logDir === undefined ? liveLogDir() : options.logDir;
+  const scope = options.playOwner ? playScope(options.playOwner) : processPlayScope();
   const onLine: OnLogLine = (tool, stream, line) => {
     if (logDir) appendLiveLine(logDir, tool, stream, line);
     server.sendLoggingMessage({ level: stream === "err" ? "warning" : "info", logger: `log.${tool}.${stream}`, data: line }).catch(() => {});
@@ -290,23 +403,41 @@ export function createLogMcpServer(context: Partial<CommandContext> = {}, option
   };
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const shell = hasShell(server.getClientVersion()?.name);
-    const tools = [...toolsFromCommands(COMMANDS, { shell }), ...toolsFromFlows(savedFlows(), { shell })];
+    const tools = harnessCommands(shell);
+    if (harnessOff()) return { tools: tools.map((tool) => ({ ...tool, _meta: { ...RESULT_SIZE_META } as Record<string, unknown> })) };
     const listed = [guideTool(), ...catalogTools(), ...withUseCases(tools, listUseCases(tools.map((t) => t.name)))];
-    return { tools: listed.map((tool) => ({ ...tool, _meta: RESULT_SIZE_META })) };
+    const capable = uiCapable(server.getClientCapabilities());
+    const sized = listed.map((tool) => ({ ...tool, _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }));
+    const report = { ...reportTool(), _meta: { ...RESULT_SIZE_META } as Record<string, unknown> };
+    return { tools: [...sized.map((tool) => withCard(tool, capable)), withCard(report, capable), ...appTools().map((tool) => ({ ...tool, _meta: { ...tool._meta, ...RESULT_SIZE_META } }))] };
   });
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-    resources: [{ uri: AGENTS_URI, name: "AGENTS.md", description: "matt's rules for log-cli, every one numbered and dated, the newest at the bottom. Every tool's description cites the ones it falls under.", mimeType: "text/markdown" }],
+    resources: [
+      { uri: AGENTS_URI, name: "AGENTS.md", description: "The owner's rules for log-cli, every one numbered and dated, the newest at the bottom. Every tool's description cites the ones it falls under.", mimeType: "text/markdown" },
+      ...cardResources(uiCapable(server.getClientCapabilities())),
+    ],
   }));
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    if (request.params.uri !== AGENTS_URI) throw new Error(`No resource ${request.params.uri} (the one resource is ${AGENTS_URI})`);
+    const card = await readCard(request.params.uri);
+    if (card) return card;
+    if (request.params.uri !== AGENTS_URI) throw new Error(`No resource ${request.params.uri} (the resources are ${[AGENTS_URI, ...CARDS.map((each) => each.uri)].join(", ")})`);
     return { contents: [{ uri: AGENTS_URI, mimeType: "text/markdown", text: readFileSync(AGENTS_MD, "utf8") }] };
   });
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
-    const result = await runToolCall(request.params.name, request.params.arguments as LogToolInput | undefined, context, onLine, options.readBrowsers ?? browserViews, extra.signal);
-    if (request.params.name === GUIDE_TOOL) return result;
-    const target = request.params.name === CALL_TOOL ? resolveCall(catalog(COMMANDS), request.params.arguments as LogToolInput | undefined) : null;
-    return withPlayFooter(target?.ok ? target.tool : request.params.name, result);
+    const input = request.params.arguments as LogToolInput | undefined;
+    const run = (given: LogToolInput | undefined) => runToolCall(request.params.name, given, context, onLine, options.readBrowsers ?? browserViews, extra.signal, uiCapable(server.getClientCapabilities()), scope, hasShell(server.getClientVersion()?.name), "mcp", server.getClientVersion()?.name ?? "");
+    const result = isSignInCall(request.params.name) ? await signInCall(input, run, localSignInSurface(server.getClientCapabilities(), (params) => extra.sendRequest({ method: "elicitation/create", params }, ElicitResultSchema))) : await run(input);
+    if (request.params.name === "harnessOn" || request.params.name === "harnessOff") server.sendToolListChanged().catch(() => {});
+    return withCallFooter(request.params.name, input, result, scope);
   });
+  if (options.playOwner) {
+    const owner = options.playOwner;
+    const close = server.onclose;
+    server.onclose = () => {
+      forgetPlayScope(owner);
+      close?.();
+    };
+  }
   if (options.watchFlows !== false && existsSync(FLOWS_DIR)) {
     let pending: ReturnType<typeof setTimeout> | null = null;
     try {
@@ -325,6 +456,57 @@ export function createLogMcpServer(context: Partial<CommandContext> = {}, option
   return server;
 }
 
+export const STATELESS_SERVER_INFO = { name: "log", version: "0.1.0" } as const;
+
+export interface StatelessLogOptions extends LogMcpOptions {
+  scope?: PlayScope;
+  principal?: string;
+  stateKey?: Uint8Array;
+}
+
+export function statelessTools(): Record<string, unknown>[] {
+  const commands = harnessCommands(false);
+  if (harnessOff()) return commands.map((tool) => ({ ...tool, _meta: { ...RESULT_SIZE_META } as Record<string, unknown> })) as unknown as Record<string, unknown>[];
+  const listed = [guideTool(), ...catalogTools(), ...withUseCases(commands, listUseCases(commands.map((t) => t.name)))];
+  const sized = listed.map((tool) => withCard({ ...tool, _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }));
+  return [...sized, withCard({ ...reportTool(), _meta: { ...RESULT_SIZE_META } as Record<string, unknown> }), ...appTools().map((tool) => ({ ...tool, _meta: { ...tool._meta, ...RESULT_SIZE_META } }))] as unknown as Record<string, unknown>[];
+}
+
+export function statelessLogHandlers(context: Partial<CommandContext> = {}, options: StatelessLogOptions = {}): StatelessHandlers {
+  const logDir = options.logDir === undefined ? liveLogDir() : options.logDir;
+  const onLine: OnLogLine = (tool, stream, line) => {
+    if (logDir) appendLiveLine(logDir, tool, stream, line);
+  };
+  const scope = options.scope ?? processPlayScope();
+  const principal = options.principal ?? "local";
+  const stateKey = options.stateKey ?? randomBytes(32);
+  return {
+    serverInfo: { ...STATELESS_SERVER_INFO },
+    instructions: SERVER_INSTRUCTIONS,
+    capabilities: { tools: {}, resources: {}, extensions: { [UI_EXTENSION_ID]: { mimeTypes: [MCP_APP_MIME_TYPE] } } },
+    listTools: async () => statelessTools(),
+    listResources: async () => [{ uri: AGENTS_URI, name: "AGENTS.md", description: "The owner's rules for log-cli, every one numbered and dated, the newest at the bottom. Every tool's description cites the ones it falls under.", mimeType: "text/markdown" }, ...cardResources(true)],
+    readResource: async (uri) => {
+      const card = await readCard(uri);
+      if (card) return card as unknown as Record<string, unknown>;
+      if (uri !== AGENTS_URI) return null;
+      return { contents: [{ uri: AGENTS_URI, mimeType: "text/markdown", text: readFileSync(AGENTS_MD, "utf8") }] };
+    },
+    callTool: async (params, caller) => {
+      const input = params.arguments as LogToolInput | undefined;
+      const run = (given: LogToolInput | undefined) => runToolCall(params.name, given, context, onLine, options.readBrowsers ?? browserViews, caller.signal, uiCapable(caller.capabilities), scope, hasShell(caller.clientInfo?.name), "stateless", caller.clientInfo?.name ?? "");
+      if (!isSignInCall(params.name)) return withCallFooter(params.name, input, await run(input), scope);
+      const expect = { tool: params.name, digest: argumentsDigest(withoutHandle(input)), principal, key: SIGN_IN_INPUT_KEY };
+      const answered = answeredAction(caller, expect, stateKey);
+      const deferred = deferredElicitation(answered);
+      const result = await signInCall(input, run, localSignInSurface(caller.capabilities, (asked) => deferred.elicit(asked.url, asked.message, asked.elicitationId ?? "")));
+      const asked = deferred.asked();
+      if (asked && answered === null) return urlInputRequired(expect, asked.url, asked.message, stateKey);
+      return withCallFooter(params.name, input, result, scope);
+    },
+  };
+}
+
 function loadEnv(root: string): void {
   process.chdir(root);
   const envPath = join(root, ".env.local");
@@ -337,7 +519,11 @@ export async function startLogMcpServer(root: string): Promise<void> {
   loadEnv(root);
   console.log = console.error;
   console.info = console.error;
-  await createLogMcpServer().connect(new StdioServerTransport());
+  settleLocation("local");
+  try {
+    ensureGraphOwner(root);
+  } catch {}
+  await createLogMcpServer().connect(dualEraTransport(new StdioServerTransport(), statelessLogHandlers()));
 }
 
 export interface LogMcpHttpOptions {
@@ -369,6 +555,9 @@ export function serveLogMcpHttp(options: LogMcpHttpOptions = {}): { url: string;
   const oauth = options.oauth ?? null;
   if (!LOOPBACK.has(host) && !token && !oauth) throw new Error(`log MCP over HTTP on ${host} needs a token or OAuth: set LOG_MCP_TOKEN, or LOG_MCP_PUBLIC_URL with Twenty (only loopback runs without one)`);
   const sessions = new Map<string, WebStandardStreamableHTTPServerTransport>();
+  const stateless = statelessLogHandlers(options.context ?? {}, { ...(options.server ?? {}), scope: playScope("http:stateless"), principal: "http" });
+  const rebinding = !LOOPBACK.has(host) || oauth !== null;
+  const allowedHosts = () => [...(LOOPBACK.has(host) ? ["127.0.0.1", "localhost", "[::1]"].flatMap((h) => [h, `${h}:${server.port}`]) : [host, `${host}:${server.port}`]), ...(oauth ? [oauth.publicHost] : [])];
   const server = Bun.serve({
     hostname: host,
     port: options.port ?? 7337,
@@ -390,6 +579,13 @@ export function serveLogMcpHttp(options: LogMcpHttpOptions = {}): { url: string;
       }
       if (url.pathname !== "/mcp") return new Response("Not found: the MCP endpoint is /mcp", { status: 404 });
       if (!authorized(request, token, oauth)) return oauth ? oauth.unauthorized() : new Response("Unauthorized", { status: 401, headers: { "WWW-Authenticate": "Bearer" } });
+      if (request.method === "POST") {
+        const body = await request.clone().json().catch(() => undefined);
+        if (isModernHttp(request.headers, body)) {
+          if (rebinding && !hostAllowed(request.headers, allowedHosts())) return Response.json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Host or Origin not allowed" } }, { status: 403 });
+          return statelessHttp(request.headers, body, stateless, request.signal);
+        }
+      }
       const id = request.headers.get("mcp-session-id");
       let transport = id ? sessions.get(id) : undefined;
       if (id && !transport) return Response.json({ jsonrpc: "2.0", error: { code: -32001, message: "Session not found: initialize again" }, id: null }, { status: 404 });
@@ -398,10 +594,10 @@ export function serveLogMcpHttp(options: LogMcpHttpOptions = {}): { url: string;
           sessionIdGenerator: () => crypto.randomUUID(),
           onsessioninitialized: (sessionId) => void sessions.set(sessionId, fresh),
           onsessionclosed: (sessionId) => void sessions.delete(sessionId),
-          enableDnsRebindingProtection: !LOOPBACK.has(host) || oauth !== null,
-          allowedHosts: [...(LOOPBACK.has(host) ? ["127.0.0.1", "localhost", "[::1]"].flatMap((h) => [h, `${h}:${server.port}`]) : [host, `${host}:${server.port}`]), ...(oauth ? [oauth.publicHost] : [])],
+          enableDnsRebindingProtection: rebinding,
+          allowedHosts: allowedHosts(),
         });
-        await createLogMcpServer(options.context ?? {}, options.server ?? {}).connect(fresh);
+        await createLogMcpServer(options.context ?? {}, { ...(options.server ?? {}), playOwner: `http:${crypto.randomUUID()}` }).connect(fresh);
         transport = fresh;
       }
       return transport.handleRequest(request);
@@ -413,6 +609,7 @@ export function serveLogMcpHttp(options: LogMcpHttpOptions = {}): { url: string;
 export async function startLogMcpHttp(root: string, options: { host?: string; port?: number }): Promise<void> {
   loadEnv(root);
   const oauth = oauthFromEnv();
+  settleLocation(httpLocation(options.host ?? "127.0.0.1", Boolean(process.env.LOG_MCP_TOKEN || oauth)));
   const served = serveLogMcpHttp({ ...options, token: process.env.LOG_MCP_TOKEN || null, oauth });
   const how = [process.env.LOG_MCP_TOKEN ? "the static bearer token" : "", oauth ? `OAuth through Twenty, resource ${oauth.resource}` : ""].filter(Boolean).join(" or ") || "loopback, no token";
   console.error(`log MCP over HTTP: ${served.url} (${how})`);

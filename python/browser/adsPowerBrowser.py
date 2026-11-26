@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 import urllib.request
 from typing import Any
@@ -35,7 +36,7 @@ def _call(method: str, path: str, body: dict[str, Any] | None = None) -> Any:
         if "too many request" in msg.lower() and attempt < len(RATE_LIMIT_WAIT_S):
             time.sleep(RATE_LIMIT_WAIT_S[attempt])
             continue
-        code = "adsPowerRateLimited" if "too many request" in msg.lower() else "adsPowerRequestFailed"
+        code = "adsPowerRateLimited" if "too many request" in msg.lower() else "adsPowerKeyMismatch" if re.search(r"api.?key mismatch|require api.?key", msg, re.I) else "adsPowerRequestFailed"
         raise proxyGate.GateError(code, f"{path}: {msg or 'code ' + str(reply.get('code'))}")
     raise proxyGate.GateError("adsPowerRateLimited", path)
 

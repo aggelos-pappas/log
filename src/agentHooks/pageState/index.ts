@@ -4,7 +4,7 @@ import type { BrowserAt, Finding, HookEvent, HookMemory, HookReply } from "./typ
 
 export type { BrowserAt, Finding, HookMemory, HookReply } from "./types.ts";
 
-const HEADER = "log-cli page state (rules 54-55, scripts/hooks/pageState.ts):";
+const HEADER = "log-cli page state (rule 35, scripts/hooks/pageState.ts):";
 
 export function findingOf(at: BrowserAt): Finding {
   const state = pageStateOf(at.url, at.text, { messengerPin: at.messengerPin, exchanges: at.exchanges });
@@ -13,7 +13,7 @@ export function findingOf(at: BrowserAt): Finding {
     return { account: at.account, kind: "state", state, mark: `${at.step}:${state.id}`, line: `${at.account}: page state **${state.id}**: ${state.what} (${where}). Known, nothing to resolve: ${state.resolve}.`, resolvable: false };
   }
   if (state) {
-    const next = state.person ? "Only a person can clear it: stop this account and tell matt." : "Known state, resolve it, do not stop:";
+    const next = state.person ? "Only a person can clear it: stop this account and tell the owner." : "Known state, resolve it, do not stop:";
     return { account: at.account, kind: "state", state, mark: `${at.step}:${state.id}`, line: `${at.account}: page state **${state.id}**: ${state.what} (${where}). ${next} ${state.resolve}.`, resolvable: !state.person };
   }
   if (at.reading && !at.reading.decided) {
@@ -25,7 +25,7 @@ export function findingOf(at: BrowserAt): Finding {
       kind: "failed",
       state: null,
       mark: `${at.step}:failed`,
-      line: `${at.account}: step failed, the page is unconfirmed (${where}): ${at.failed.slice(0, 240)}. Resolve it: \`log inspect do snapshot --account ${at.account}\`, read where the page is, then its resolver; a blocking page not in pageStateOf is added there (rule 54).`,
+      line: `${at.account}: step failed, the page is unconfirmed (${where}): ${at.failed.slice(0, 240)}. It resolves through the MCP tool \`inspectDo\` { action: "snapshot", account: "${at.account}" }, which reads where the page is, then its resolver; a blocking page not in pageStateOf is added there (rule 35).`,
       resolvable: true,
     };
   }
@@ -67,7 +67,7 @@ export function hookReply(event: HookEvent, browsers: BrowserAt[], memory: HookM
     const marks = [...open.map((f) => `${f.account}=${f.mark}`), ...goalsOpen.map((g) => g.mark)].join(",");
     if (stopHookActive && memory.stopBlocked === marks) return { output: null, memory: { seen, stopBlocked: marks } };
     const reason = [
-      `${HEADER} the turn is not over (matt: "you're not meant to stop").`,
+      `${HEADER} the turn is not over (the owner: "you're not meant to stop").`,
       ...open.map((f) => `- ${f.line}`),
       ...goalsOpen.map((g) => `- ${g.line}`),
     ].join("\n");

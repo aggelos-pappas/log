@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, 
 import { tmpdir } from "node:os";
 import { basename, dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { stripPrivateBlocks } from "../../src/privacy/privateBlocks/index.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const docsDir = join(root, "docs");
@@ -116,12 +117,23 @@ function plainText(body) {
 }
 
 function render(rel) {
-  const text = readFileSync(join(docsDir, rel), "utf8");
+  const { text, problem } = stripPrivateBlocks(readFileSync(join(docsDir, rel), "utf8"));
+  if (problem) problems.push(`docs/${rel}: ${problem}`);
   if (rel.endsWith(".mmd")) {
     return { title: `Diagram: ${basename(rel, ".mmd")}`, body: `Generated from the code by \`bun run docs:build\`.\n\n\`\`\`mermaid\n${text.trim()}\n\`\`\`\n` };
   }
   const { title, body } = titleAndBody(rel, text);
-  const linked = body.replace(/(\]\()([^)\s]+)(\))/g, (_, open, target, close) => open + rewriteLink(rel, target) + close);
+  let inFence = false;
+  const linked = body
+    .split("\n")
+    .map((line) => {
+      if (/^\s*(```|~~~)/.test(line)) {
+        inFence = !inFence;
+        return line;
+      }
+      return inFence ? line : line.replace(/(\]\()([^)\s]+)(\))/g, (_, open, target, close) => open + rewriteLink(rel, target) + close);
+    })
+    .join("\n");
   return { title, body: plainText(linked) };
 }
 

@@ -82,7 +82,7 @@ describe('AssemblyAI client', () => {
 
 describe('the conversation store', () => {
   const root = () => join(dir, 'transcripts')
-  const conversation = (text: string): Conversation => ({ platform: 'twitter', account: 'matt', conversationId: '1:2', box: 'xchat', with: ['nefer'], messages: [{ id: '10', at: null, from: 'nefer', fromMe: false, text }] })
+  const conversation = (text: string): Conversation => ({ platform: 'twitter', account: 'the owner', conversationId: '1:2', box: 'xchat', with: ['handle_n1'], messages: [{ id: '10', at: null, from: 'handle_n1', fromMe: false, text }] })
 
   test('a voice note marker becomes what was said, and the saved-path marker goes', () => {
     expect(withTranscripts('(audio: v.m4a) (audio saved: C:\\x\\v.m4a)', () => transcript('h', 'call me "tomorrow"'))).toBe(`(voice note: "call me 'tomorrow'")`)
@@ -91,7 +91,7 @@ describe('the conversation store', () => {
 
   test('applyTranscripts rewrites only the messages that have a transcript', () => {
     writeTranscript(transcript('h1', 'see you at nine'), root())
-    linkMessages([{ link: { platform: 'twitter', account: 'matt', messageId: '10', name: 'v.m4a' }, hash: 'h1' }], root())
+    linkMessages([{ link: { platform: 'twitter', account: 'the owner', messageId: '10', name: 'v.m4a' }, hash: 'h1' }], root())
     const { conversations, changed } = applyTranscripts([conversation('(audio: v.m4a)'), conversation('just text')], root())
     expect(changed).toHaveLength(1)
     expect(conversations[0].messages[0].text).toBe('(voice note: "see you at nine")')
@@ -101,12 +101,12 @@ describe('the conversation store', () => {
   test('X voice notes find their file from the X Chat store', () => {
     const state = join(dir, 'state')
     const media = { type: 'audio', filename: 'v.m4a', media_hash_key: 'abcDEF' }
-    mkdirSync(join(state, 'matt'), { recursive: true })
-    writeFileSync(join(state, 'matt', 'inboxSync.json'), JSON.stringify({ xchat: { '1:2': { messages: [{ event_id: '10', media: [media] }] } } }))
-    const path = xchatMediaPath(state, 'matt', '1:2', media)
-    expect(path).toBe(join(state, 'matt', 'media', '1_2', 'abcDEF.m4a'))
+    mkdirSync(join(state, 'the owner'), { recursive: true })
+    writeFileSync(join(state, 'the owner', 'inboxSync.json'), JSON.stringify({ xchat: { '1:2': { messages: [{ event_id: '10', media: [media] }] } } }))
+    const path = xchatMediaPath(state, 'the owner', '1:2', media)
+    expect(path).toBe(join(state, 'the owner', 'media', '1_2', 'abcDEF.m4a'))
     expect(twitterVoiceNotes([conversation('(audio: v.m4a)')], state)).toMatchObject([{ messageId: '10', name: 'v.m4a', path: null, mediaHashKey: 'abcDEF' }])
-    mkdirSync(join(state, 'matt', 'media', '1_2'), { recursive: true })
+    mkdirSync(join(state, 'the owner', 'media', '1_2'), { recursive: true })
     writeFileSync(path, 'x')
     expect(twitterVoiceNotes([conversation('(audio: v.m4a)')], state)[0].path).toBe(path)
   })
@@ -121,8 +121,8 @@ describe('the conversation store', () => {
 
   test('the inbox alert shows a kept transcript, or says it is not transcribed yet', () => {
     writeTranscript(transcript('h2', 'yo'), root())
-    linkMessages([{ link: { platform: 'twitter', account: 'matt', messageId: '10', name: 'v.m4a' }, hash: 'h2' }], root())
-    expect(inboxTextWithVoiceNotes({ platform: 'twitter', account: 'matt', text: '(audio: v.m4a)' }, root())).toBe('(voice note: "yo")')
-    expect(inboxTextWithVoiceNotes({ platform: 'twitter', account: 'matt', text: '(audio: w.m4a)' }, root())).toContain('not transcribed yet')
+    linkMessages([{ link: { platform: 'twitter', account: 'the owner', messageId: '10', name: 'v.m4a' }, hash: 'h2' }], root())
+    expect(inboxTextWithVoiceNotes({ platform: 'twitter', account: 'the owner', text: '(audio: v.m4a)' }, root())).toBe('(voice note: "yo")')
+    expect(inboxTextWithVoiceNotes({ platform: 'twitter', account: 'the owner', text: '(audio: w.m4a)' }, root())).toContain('not transcribed yet')
   })
 })

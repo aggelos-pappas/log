@@ -19,6 +19,7 @@ Everything log-cli does on X, one page per job. Each page can be run from a fres
 | [collabMaxxing.md](collabMaxxing.md) | turn open conversations and missed openings into collabs: scope it, position the open-source collab, then the small ask | dms, one by one or through the queue, once the voice gate passes |
 | [nicheMapRegion.md](nicheMapRegion.md) | add a new world to the niche map (the YC 2026 batches, say), run it through the pipeline, then open on the warmest of it | follows, likes and openers, a few a day, once the voice gate passes |
 | [managerMaxxing.md](managerMaxxing.md) | the managers of the biggest Kick streamers, category by category: find them on X, reply guy them with memes, then DM the ones who engaged their tweet, a line and a voice note | replies, then dms and voice notes, through the account's one queue |
+| [replyGuyFunnel.md](replyGuyFunnel.md) | reply to each new person's post with a meme, open a DM on that post, build on what they say, then the ask | replies, then dms, through the queue |
 
 DMs are their own pages. Recruiting is public replies only.
 
@@ -30,7 +31,7 @@ DMs are their own pages. Recruiting is public replies only.
 | Copy style | the account's `copyStyle` (empty: house). Every send and queue check holds the copy to it | `src/twitter/copy/style` |
 | Session check | first call of every run, sends nothing | `twitterSessionCheck` / `log twitter session check --account <account>` |
 | Finding people and posts | an outside search, never X itself (rule 53). Say the price before a big sweep | [treg](https://treg.to/?ref=matthewdonse-aebsh)'s X search, profile, posts and comments reads |
-| House style (`house`) | all lowercase, no commas, no full stops, no dashes. Urls are fine. `check` refuses anything else | `src/twitter/copy/style` |
+| House style (`house`) | all lowercase, no commas, no full stops, no dashes. Urls are fine. `twitterQueueCheck` refuses anything else | `src/twitter/copy/style` |
 | One send | dry run, then the `…Live` tool with `approvedBy` | `twitterReply`, `twitterQuote`, `twitterLike`, `twitterDm` (+ `…Live`) |
 | The queue | any send to 2 or more people. Never a hand loop | `twitterQueueBuild` → `Show` → `Check` → `Approve` → `Plan` → `Run` → `RunLive`, `Add`, `Edit`, `Nudge`, `Status` |
 | Pacing | 2 minutes between sends by default (`minGap` 120), the window about 2 minutes per person; only longer when the owner asks. 240 writes a day per account. Any refusal from X (a 429, 226, 344, a soft block, the governor) stops the run, and nothing goes out until the owner starts it again (rule 94) | the account's governor, `~/.logCli/twitter/<account>`; `--force` goes past it only when the owner says so (rule 86) |
@@ -46,9 +47,9 @@ The same calls on every sending page.
 5. `twitterQueueApprove` { by: "<owner>" } only after the owner says yes. Any edit afterwards voids it.
 6. `twitterQueuePlan` { window, minGap: 120, like: true }, with the window about 2 minutes per person (20 people: "40m"), then `twitterQueueRun` (dry run) then `twitterQueueRunLive` { confirmLive: true } when the owner asked for the live send. Follow it with `jobStatus`, and start a Monitor on `~/.logCli/mcp/<UTC day>.log` first (rule 26). `jobCancel` stops it at its next wait.
 
-One account has one queue and one run for everything it sends, dms, replies and quotes together (rule 107): `twitterQueueAdd` { queue, targets, action, by } puts more in, even while it runs, and `twitterQueueRunLive` { keepOpen: true } keeps the run going until `jobCancel`. Right before each send the run reads the person again and holds the item when anything happened since the draft (rule 109). Any refusal from X stops the run with the item pending; only a dropped connection with no answer is tried again. A deleted post or replies off (385/433) is skipped. What the run must do: [docs/specs/xQueue.md](../../specs/xQueue.md) and [docs/specs/fullContext.md](../../specs/fullContext.md).
+One account has one queue and one run for everything it sends, dms, replies and quotes together (rule 105): `twitterQueueAdd` { queue, targets, action, by } puts more in, even while it runs, and `twitterQueueRunLive` { keepOpen: true } keeps the run going until `jobCancel`. Right before each send the run reads the person again and holds the item when anything happened since the draft (rule 109). Any refusal from X stops the run with the item pending; only a dropped connection with no answer is tried again. A deleted post or replies off (385/433) is skipped. What the run must do: [docs/specs/xQueue.md](../../specs/xQueue.md) and [docs/specs/fullContext.md](../../specs/fullContext.md).
 
-The queue hook puts every held item, send, refusal and stop in front of the agent (`>>> QUEUE`, rule 114). A held item: read them again (`twitterDms` { with }), redraft, gate it with `voice`, stop the run (`jobCancel`), put it back with `twitterQueueEdit` and run it again. A refusal or stop: tell the owner X's answer and the time; nothing goes out on that account until the owner says so (rule 94).
+The queue hook puts every held item, send, refusal and stop in front of the agent (`>>> QUEUE`). A held item: read them again (`twitterDms` { with }), redraft, gate it with `voice`, stop the run (`jobCancel`), put it back with `twitterQueueEdit` and run it again. A refusal or stop: tell the owner X's answer and the time; nothing goes out on that account until the owner says so (rule 94).
 
 ## Rules that hold on every page
 
@@ -57,3 +58,8 @@ The queue hook puts every held item, send, refusal and stop in front of the agen
 - **Personal beats generic.** A line about the person's own post goes through; the same generic line with a link sent to strangers tends to come back as "no tweet created". Write each line for its post.
 - **No claims you can't back up,** and no pay figures in public replies.
 - **Log every send:** the reply url (`https://x.com/<account>/status/<id>`) or X's event, kept with the queue.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [What log does on X](../../platformGuides/x.md) · [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

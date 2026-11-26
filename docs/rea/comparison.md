@@ -12,8 +12,8 @@ Two questions often get mixed up, and this page keeps them apart. **Programmatic
 | Account check before any browser, including sign-in | `checkRunnable`, `socialAccount.test.ts` (`noProxy` on connect) | |
 | Publish dry run through the state machine | `publish.test.ts`, and a visible run against `python/fixtures/createItem.html` reaching `done` | A live facebook.com run, `--live` past review, a live captcha solve |
 | Proxy required, exit country checked | `python/browser/proxyGate.py`, proxy tests | A live `log proxy assign` |
-| One device, pinned locale, launch self-check, local active hours | `src/camofox/device/`, `src/marketplace/home/` | A CreepJS re-measure on camoufox 0.5.8 / 156.0.1-beta.39 |
-| The monitor decides and never posts | `src/marketplace/monitor/machine.ts` | A signed-in selling scan |
+| One device, pinned locale, launch self-check, local active hours | `src/camofox/device/`, `src/platformKit/home/` | A CreepJS re-measure on camoufox 0.5.8 / 156.0.1-beta.39 |
+| The monitor decides and never posts | `src/facebook/marketplace/monitor/machine.ts` | A signed-in selling scan |
 | Captcha route: CaptchaKraken, then 2Captcha, else a person | `src/captcha/router/` | A live solve |
 | Reading and writing accounts and listings in Twenty | The generated client, `marketplaceFixture()` in tests | A call to a real Twenty during this study |
 
@@ -36,12 +36,12 @@ log's publish session is the one to keep. The other two are sources for selector
 
 ## Avoidance: what's still open
 
-The status table is in `docs/identityLeaks/README.md`. These items were still open, and REA doesn't close them:
+The status table is in the private identity-leak study. These items were still open, and REA doesn't close them:
 
 | Item | Why it stays open |
 | --- | --- |
 | The canvas hash changes every launch | Firefox re-keys its noise per session. Turning that off makes every account share the machine's raw canvas. Not decided yet. |
-| WebGL pixels match the machine's GPU | Camoufox can change the reported GPU name, but not the pixels. `docs/deviceIsolation/` says a software renderer on a VM trades one tell for another. |
+| WebGL pixels match the machine's GPU | Camoufox can change the reported GPU name, but not the pixels. The private device-isolation study says a software renderer on a VM trades one tell for another. |
 | Camoufox detectability on 156.0.1-beta.39 | Upgraded but not re-measured on CreepJS. The package is paired with beta.36. |
 | A person at the keyboard during sign-in | Input method, phone country, personal email. A process question, not code. |
 | Listing text and currency | Not screened. A place name from the wrong country in the copy would show. |

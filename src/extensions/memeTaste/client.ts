@@ -1,12 +1,12 @@
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { getState, putState } from '../../storage/state/index'
 import type { DecisionImage, DecisionsClient } from '../../subq/decisions/index'
 import { MEME_AT, TASTE_OTHER, TASTE_STYLES } from './types'
 import type { TasteCandidate, TasteFit, TasteIndex, TasteMeme, TasteRating, TasteStyle } from './types'
+import { logHome } from '../../config/logHome/index'
 
 export function tastePath(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_MEME_TASTE || join(homedir(), '.logCli', 'memes', 'taste.json')
+  return env.LOG_MEME_TASTE || join(logHome(), 'memes', 'taste.json')
 }
 
 export function readTaste(path = tastePath()): TasteIndex | null {
@@ -98,20 +98,20 @@ export function tasteCounts(index: TasteIndex): Record<string, number> {
 
 export function tasteSummary(index: TasteIndex | null): string {
   const named = Object.entries(TASTE_STYLES).map(([k, v]) => `${k}: ${v.split(': ').slice(1).join(': ')}`).join('; ')
-  if (!index) return `matt's meme taste: ${named}. No index of the memes he has sent yet (log memelord taste --build).`
+  if (!index) return `the owner's meme taste: ${named}. No index of the memes he has sent yet (log memelord taste --build).`
   const counts = Object.entries(tasteCounts(index)).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(', ')
   const lines = index.memes.map((m) => m.text.replace(/^(@\w+\s*)+/, '').replace(/\s+/g, ' ').trim()).filter(Boolean)
   const said = lines.slice(0, 6).map((l) => `"${l.slice(0, 60)}"`).join(', ')
-  return `matt's meme taste: ${named}. Of the ${index.memes.length} memes he has sent (${counts})${said ? `, with lines like ${said}` : ''}.`
+  return `the owner's meme taste: ${named}. Of the ${index.memes.length} memes he has sent (${counts})${said ? `, with lines like ${said}` : ''}.`
 }
 
 export async function tasteFit(decide: DecisionsClient, index: TasteIndex | null, template: { name: string; description: string }, image: DecisionImage, ratings: readonly TasteRating[] = []): Promise<TasteFit> {
   const rated = ratings.filter((r) => r.name).slice(-80)
   const response = await decide({
-    state: { mattsTaste: tasteSummary(index), styles: TASTE_STYLES, examplesHeSent: (index?.memes ?? []).slice(0, 25).map((m) => ({ style: m.style, line: m.text.slice(0, 120) })), memesHePicked: rated.filter((r) => r.good).map((r) => `${r.name} (for: ${r.word})`), memesHePassedOn: rated.filter((r) => !r.good).flatMap((r) => (r.shown?.length ? r.shown : r.name ? [r.name] : []).map((n) => `${n} (for: ${r.word})`)).slice(-60), whatHeWouldSendInstead: rated.filter((r) => r.other).map((r) => `${r.other} (for: ${r.word})`), candidate: template },
+    state: { ownersTaste: tasteSummary(index), styles: TASTE_STYLES, examplesHeSent: (index?.memes ?? []).slice(0, 25).map((m) => ({ style: m.style, line: m.text.slice(0, 120) })), memesHePicked: rated.filter((r) => r.good).map((r) => `${r.name} (for: ${r.word})`), memesHePassedOn: rated.filter((r) => !r.good).flatMap((r) => (r.shown?.length ? r.shown : r.name ? [r.name] : []).map((n) => `${n} (for: ${r.word})`)).slice(-60), whatHeWouldSendInstead: rated.filter((r) => r.other).map((r) => `${r.other} (for: ${r.word})`), candidate: template },
     images: [image],
     questions: {
-      fit: { type: 'noul', instructions: 'Going by mattsTaste, the styles, the examples he has sent and the memes he picked, passed on or would send instead, is the attached meme his kind of meme, one he would send himself?', criteria: { true: 'His kind: deep fried, larping, a streamer reacting or a shitpost, like what he sends', false: 'A clean, mainstream or corporate meme he would not send' } },
+      fit: { type: 'noul', instructions: 'Going by ownersTaste, the styles, the examples he has sent and the memes he picked, passed on or would send instead, is the attached meme his kind of meme, one he would send himself?', criteria: { true: 'His kind: deep fried, larping, a streamer reacting or a shitpost, like what he sends', false: 'A clean, mainstream or corporate meme he would not send' } },
       style: { type: 'choice', instructions: 'Which kind of meme is the attached picture?', criteria: styleCriteria() },
     },
   })

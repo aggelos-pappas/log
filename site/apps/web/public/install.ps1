@@ -49,7 +49,17 @@ if ($SkillsOnly) {
 
 $LogHome = if ($env:LOG_HOME) { $env:LOG_HOME } else { Join-Path $HOME ".logCli" }
 $Package = if ($env:LOG_PACKAGE) { $env:LOG_PACKAGE } else { "@listeningkit/log" }
+$LogRepo = if ($env:LOG_REPO) { $env:LOG_REPO } else { "matthewdonsemail-lab/log" }
 New-Item -ItemType Directory -Force -Path $LogHome | Out-Null
+$Track = if ($env:LOG_TRACK) { $env:LOG_TRACK } else { "stable" }
+if ($Track -ne "stable" -and $Track -ne "nightly") { Fail "LOG_TRACK is stable or nightly, not $Track" }
+
+function ReleaseVersion {
+  if ($env:LOG_VERSION) { return $env:LOG_VERSION.TrimStart("v") }
+  if ($Track -eq "nightly") { try { $next = (Invoke-RestMethod -UseBasicParsing "https://registry.npmjs.org/$Package/next").version; if ($next) { return $next } } catch {} }
+  try { $tag = (Invoke-RestMethod -UseBasicParsing "https://api.github.com/repos/$LogRepo/releases/latest").tag_name; if ($tag) { return $tag.TrimStart("v") } } catch {}
+  try { return (Invoke-RestMethod -UseBasicParsing "https://registry.npmjs.org/$Package/latest").version } catch { return "" }
+}
 
 if (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
   Say "installing Bun"
@@ -58,8 +68,15 @@ if (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
 }
 if (-not (Get-Command bun -ErrorAction SilentlyContinue)) { Fail "Bun didn't install. Install it from https://bun.sh and run this again." }
 
-Say "installing $Package"
-bun add -g $(if ($env:LOG_PACKAGE_SOURCE) { $env:LOG_PACKAGE_SOURCE } else { $Package })
+$Version = ReleaseVersion
+if ($Version) {
+  $Spec = "$Package@$Version"
+  if ($env:LOG_VERSION) { Say "installing $Package $Version (pinned by LOG_VERSION)" } else { Say "installing $Package $Version, the newest $Track release" }
+} else {
+  $Spec = $Package
+  Say "no release answered on GitHub or npm; installing $Package as npm has it"
+}
+bun add -g $(if ($env:LOG_PACKAGE_SOURCE) { $env:LOG_PACKAGE_SOURCE } else { $Spec })
 $GlobalDir = ((bun pm ls -g 2>$null | Select-Object -First 1) -replace ' node_modules .*$', '')
 $Root = Join-Path $GlobalDir "node_modules\$Package"
 if (-not (Test-Path (Join-Path $Root "package.json"))) {
@@ -67,6 +84,8 @@ if (-not (Test-Path (Join-Path $Root "package.json"))) {
   $Root = Join-Path $BunHome "install\global\node_modules\$Package"
 }
 if (-not (Test-Path (Join-Path $Root "package.json"))) { Fail "couldn't find $Package in Bun's global folder ($GlobalDir)" }
+$Installed = (Get-Content -Raw (Join-Path $Root "package.json") | ConvertFrom-Json).version
+if ($env:LOG_VERSION -and -not $env:LOG_PACKAGE_SOURCE -and $Installed -ne $env:LOG_VERSION.TrimStart("v")) { Fail "asked for $Package $($env:LOG_VERSION.TrimStart('v')) but Bun installed $Installed" }
 
 if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
   Say "installing uv (it installs and manages Python)"
@@ -80,10 +99,6 @@ Say "setting up Python 3.12 for the engines in $Venv"
 uv python install 3.12
 if (-not (Test-Path $Venv)) { uv venv --python 3.12 $Venv }
 $Python = Join-Path $Venv "Scripts\python.exe"
-$Wheel = Get-ChildItem (Join-Path $Root "vendor\chatXdk\wheels") -Filter "*win_amd64.whl" -ErrorAction SilentlyContinue | Select-Object -First 1
-$Extra = @()
-if ($Wheel) { $Extra += $Wheel.FullName }
-uv pip install --python $Python -r (Join-Path $Root "vendor\twikit\requirements.txt") -r (Join-Path $Root "vendor\tiktokScraper\requirements.txt") (Join-Path $Root "vendor\fbk") (Join-Path $Root "vendor\endcord") @Extra
 
 $EnvFile = Join-Path $LogHome ".env"
 if (-not (Test-Path $EnvFile)) { New-Item -ItemType File -Path $EnvFile | Out-Null }
@@ -91,16 +106,20 @@ $Current = Get-Content $EnvFile -ErrorAction SilentlyContinue
 if (-not ($Current -match '^LOG_PYTHON=')) { Add-Content $EnvFile "LOG_PYTHON=$Python" }
 if (-not ($Current -match '^LOG_ACCOUNTS=')) { Add-Content $EnvFile "LOG_ACCOUNTS=local" }
 
+Say "running the after-install steps log update runs too: the Python engines, database migrations, skills, harness plugins and the pinned local models"
+$PostInstall = Join-Path $Root "scripts\update\postInstall.ts"
+$env:LOG_PYTHON = $Python
+& bun $PostInstall
+if ($LASTEXITCODE -ne 0) { Say "some after-install steps need a look (above); run bun $PostInstall again any time" }
+if ($env:LOG_TRACK) {
+  $env:LOG_HOME = $LogHome
+  & bun (Join-Path $Root "scripts\update\track.ts") $Track
+  if ($LASTEXITCODE -ne 0) { Say "couldn't save the track; run log update --track $Track" }
+}
+
 Say "done. Your settings are in $EnvFile and your accounts will live in $LogHome."
 if (Get-Command log -ErrorAction SilentlyContinue) { Say "log is on your PATH" } else { Say "open a new terminal so 'log' is on your PATH" }
 InstallSkills
-
-$OpenCodeDir = Join-Path $HOME ".config\opencode"
-$OpenCodeInstall = Join-Path $Root "scripts\opencode\install.ts"
-if ((Test-Path $OpenCodeDir) -and (Test-Path $OpenCodeInstall)) {
-  Say "wiring OpenCode: log's tools native (not Code Mode) and its hooks running"
-  & bun $OpenCodeInstall
-}
 
 $BunHome = if ($env:BUN_INSTALL) { $env:BUN_INSTALL } else { Join-Path $HOME ".bun" }
 $LogBin = if (Get-Command log -ErrorAction SilentlyContinue) { (Get-Command log).Source } else { Join-Path $BunHome "bin\log.exe" }
@@ -111,3 +130,4 @@ if ($env:LOG_SETUP -ne "0" -and (Test-Path $LogBin) -and [Environment]::UserInte
 } else {
   Say "next: run log launch --setup to pick your platforms, sign them in and add extensions"
 }
+Say "installed log $Installed"

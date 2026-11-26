@@ -1,6 +1,8 @@
 import type { WatermarkReading } from '../watermark/types'
 export interface VoiceEvidence {
   chat: string
+  platform?: string
+  kind?: string
   profile: unknown
   replies: { said: string; reply: string; chat: string; tier: string }[]
   wording?: { reply: string; chat: string; tier: string }[]
@@ -10,21 +12,33 @@ export interface VoiceEvidence {
 export interface VoiceDraft {
   to: string
   text: string
+  ownerWroteHere?: number
+  messagesHere?: number
   context?: string
   evidence?: VoiceEvidence
   everywhere?: VoiceEvidence
-  phrasesNewToMatt?: string[]
+  phrasesNewToOwner?: string[]
   scrambler?: { suspicious: number; kinds: string[] }
   conversation?: { from: string; text: string; at: string }[]
   spoken?: boolean
-  howMattTalks?: string[]
+  howOwnerTalks?: string[]
   room?: import('../../../voice/room/index').Room
+  card?: string
+  cardAnswerOwed?: boolean
+  publicReply?: boolean
+}
+
+export interface OptionDraft {
+  text: string
+  phrasesNewToOwner?: string[]
+  scrambler?: { suspicious: number; kinds: string[] }
 }
 
 export interface VoiceReading {
   to: string
   voice: number
   inContext: number
+  answerRequired: boolean
   friendLike: number
   openerOnly: number
   toThem: number | null
@@ -34,12 +48,16 @@ export interface VoiceReading {
   watermark: WatermarkReading
   pass: boolean
   model: string | null
+  firstContact?: boolean
 }
 
 export const VOICE_PASS = 0.8
 export const CONTEXT_PASS = 0.7
+export const ANSWER_WINDOW_MS = 24 * 60 * 60 * 1000
 export const RANKED_CONTEXT = 12
 export const RANKED_SHORTLIST = 40
+
+export const RANKED_POOL = 300
 export const VOICE_MODEL = 'subq-snap-1.1'
 
 export const NEVER_SAYS: readonly string[] = [
@@ -49,7 +67,7 @@ export const NEVER_SAYS: readonly string[] = [
   'finish each others sentences', 'proper package',
 ]
 
-export const MATT_DMS: readonly string[] = [
+export const OWNER_DMS: readonly string[] = [
   'yo saw you were following me lad cheers mate been using blitz like it think its pretty cool saw it got added to treg as well also pretty cool weve been making these videos about 430000 views in the past 2 months just from talking about treg would be cool to talk about blitz might be pretty good for you boys just to get a bit of video content to help educate the audience',
   'yo whats that thing youre doing to be able to queue 163 tweets thats pretty hectic we build out the same kind of stuff maybe it could be cool to plug that into what were doing but weve built a lot of it more for social first platforms so just curious what is it youre doing it for',
   'we run our stuff dynamically out of our crm thats how we do these dynamic pages and then we monitor and measure the results based off of the clicks',

@@ -9,7 +9,7 @@ import type { CurrentInspect, InspectAction, InspectStepResult } from "../../../
 import { createInspector, formatTraceLine } from "../../../observability/trace/index.ts";
 import type { CommandContext } from "../../runner/types.ts";
 import { browserFor } from "../../../browser/driver/index.ts";
-import type { FacebookAccount } from "../../../marketplace/socialAccount/index.ts";
+import type { FacebookAccount } from "../../../platformKit/socialAccount/index.ts";
 import { watchCheckpoint } from "../../inspect/helpers/watchCheckpoint.ts";
 
 export function commandFor(step: FlowStep): { action: InspectAction; args: string[] } {
@@ -30,6 +30,7 @@ export function commandFor(step: FlowStep): { action: InspectAction; args: strin
     case "dwell":
     case "press":
     case "scrollIn":
+    case "rowMenu":
       return { action: step.action, args: step.args ?? [] };
     default:
       return { action: step.action, args: [] };
@@ -115,7 +116,7 @@ export async function runFlowInSession(
           }
         }
         const { action, args } = commandFor(step);
-        const reply = await context.sendInspect(current, action, args, 240_000, step.expect ? { name: step.expect, ms: 45_000 } : answerWait(step.answers), step.within ? { within: step.within } : undefined);
+        const reply = await context.sendInspect(current, action, args, 240_000, step.expect ? { name: step.expect, ms: 45_000 } : answerWait(step.answers), { reaLater: true, ...(step.within ? { within: step.within } : {}) });
         let result: FlowStepResult = reply
           ? { id: step.id, ok: reply.ok !== false, error: reply.error, expectSeen: reply.expect?.seen, ms: (reply as { ms?: number }).ms, folder: reply.folder }
           : { id: step.id, ok: false, error: "no reply from the session" };
@@ -123,6 +124,7 @@ export async function runFlowInSession(
         if (problem) result = { ...result, ok: false, issue: problem.code, error: `${problem.code}: ${problem.detail}` };
         const wrong = result.ok && step.answers?.length && reply?.folder ? answersIssue(step.answers, stepExchangesAt(reply.folder), options.account ?? { uid: filled.uid }) : null;
         if (wrong) result = { ...result, ok: false, issue: wrong.code, error: `${wrong.code}: ${wrong.text}` };
+        if (result.ok && step.action === "upload") overlaysChecked = false;
         options.onStep?.(step, result);
         return result;
       }),

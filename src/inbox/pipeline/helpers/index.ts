@@ -1,0 +1,8 @@
+export { botSignal, featuresOf, openAskIn, turnsIn, windowOf, windowText } from './features'
+export { applyLayer, botVerdict, buildPrototypes, cosine, entropyOf, guessOf, headInput, prototypeScores, prototypeTexts, softmax, stageAllowed, withExemplars } from './model'
+export { chatsMovedSince, lastMessageSeq, latestHead, messageIdOf, putRow, saveHead, setEmotions, storedRow, storedRows } from './store'
+export { localEmotions } from './emotion'
+export { teach, teachPlan, teachState, trainAndSave, trainingSet, uvTrainer } from './teach'
+export type { HeadTrainer, TeachContext, TeachItem, TeachPlan, TrainingRow } from './teach'
+export { conversationIdsOf, drainTeacher, fallbackReason, humanTalk, queueForTeacher, startTeacher, subqDailyUsd, teachContext, teachItemOf, teachQueue, teachSpend, withoutFalseBot } from './fallback'
+export type { FallbackInput, TeacherDeps } from './fallback'

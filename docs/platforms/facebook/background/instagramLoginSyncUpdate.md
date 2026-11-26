@@ -23,7 +23,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T180010_mattinferencesaver**, step 2: snapshot: 200, 339 ms
+**runs/inspect/20261103T180010_instagramAccount**, step 2: snapshot: 200, 339 ms
 
 Sent:
 
@@ -43,7 +43,7 @@ Answered:
   "payload": {
     "success": "ok"
   },
-  "lid": "7704006797055112010"
+  "lid": "<id:1>"
 }
 ```
 

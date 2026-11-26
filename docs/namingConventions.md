@@ -21,8 +21,8 @@ Read a path as **library, then domain, then role**:
 
 | Path | What it is |
 | --- | --- |
-| `marketplace/listing` | Facebook Marketplace listings: types, the listing machine, the data client |
-| `marketplace/account` | The Facebook accounts the listings are published from |
+| `facebook/marketplace/listing` | Facebook Marketplace listings: types, the listing machine, the data client |
+| `platformKit/account` | The Facebook accounts the listings are published from |
 | `cli/runner` | The command registry, dispatcher and shared CLI helpers (args, tables, usage) |
 | `cli/listing` | `log facebook listings` and `log facebook listing <id>` |
 | `cli/account` | `log facebook accounts` |
@@ -58,3 +58,7 @@ These keep their own spelling:
 - HTTP header names (`set-cookie`, `proxy-authorization`, `content-type`) and rea-agents commands (`inspect-web-network-capture`, `analyze-javascript-application`).
 - Third-party ids: Unsplash photo ids (`photo-1558...`), the UUID template.
 - Account issues (`session_expired`), which are snake_case from log's shared account-issue vocabulary. They aren't kebab-case.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

@@ -60,9 +60,9 @@ export const QUEUE_USAGE = [
   "       log twitter queue add <queue.json> --targets <targets.json> --by <who> [--action reply|quote|dm|voice] [--window <2h|90m>] [--minGap <s>]",
   "       log twitter queue nudge <queue.json> [--replies <n>]",
   "       log twitter queue edit <queue.json> --n <n> --text \"<new copy>\" --by <who> [--window <30m>]",
-  "A queue of approved X replies, quotes or dms, sent one at a time at random moments inside a window, on the direct-API engine (no browser, no proxy: X accounts call X directly, rule 80). Targets come from treg research, never from X (rule 53).",
+  "A queue of approved X replies, quotes or dms, sent one at a time at random moments inside a window, on the direct-API engine (no browser; direct unless it has a proxy, rule 80). Targets come from treg research, never from X (rule 53).",
   "build pairs each target with one unique line from the variations, shuffled; a target that carries its own text (written for that person's post) keeps it. show and status read it; check runs every pending item through the house style and target checks and contacts nothing. approve records who approved it as it stands: a fingerprint of the account and every item's action, target and copy, and any edit afterwards voids it. plan draws every like and reply a time with the system random source, at least --minGap apart (with --like, each post may get a like before or after its reply). nudge tells a running run to send the next replies now. One account has one queue: add puts more in (dms, replies, quotes together), even while it runs, each fitted between what is planned at least minGap apart, and the run takes them in as it waits; run --keepOpen stays running for more, so all of an account's sending is one run through its one X session (rule 105). Right before each send the run reads that person's full context again (their dm thread and X Chat, and what they did on the account's posts from its notifications) and holds the item when anything happened since it was drafted: a message either way, a like, retweet, reply, quote, mention or follow (rule 109). edit puts new copy on a pending or held item (no queue file is ever edited by hand), plans a held one again inside --window, and approves the queue as it then stands.",
-  "run walks the plan as an XState machine (planned, waiting, liking, replying, retrying, finished, halted), every transition on the live log: without --live a dry run lists what it would send and when; --live sends, only when matt asked (rule 8). Each answer is X's own event: any refusal (a 429, 226 looks automated, 344 daily limit, a soft block, the governor, a dead session) stops the run at once with X's answer and the time, the item stays pending, and nothing goes out on that account until matt starts a run again (rule 94); with --alertChannel it tags matt in buzz. A deleted post or replies off (385/433) is skipped. A dropped connection with no answer from X is tried again after 1 to 3 min, at most 3 drops in a row. It saves after every step, so running it again resumes. --force sends every event past the account's governor (its pause and caps), only when matt asked (rule 86); X's answers still stop the run.",
+  "run walks the plan as an XState machine (planned, waiting, liking, replying, retrying, finished, halted), every transition on the live log: without --live a dry run lists what it would send and when; --live sends, only when the owner asked (rule 8). Each answer is X's own event: any refusal (a 429, 226 looks automated, 344 daily limit, a soft block, the governor, a dead session) stops the run at once with X's answer and the time, the item stays pending, and nothing goes out on that account until the owner starts a run again (rule 94); with --alertChannel it tags the owner in buzz. A deleted post or replies off (385/433) is skipped. A dropped connection with no answer from X is tried again after 1 to 3 min, at most 3 drops in a row. It saves after every step, so running it again resumes. --force sends every event past the account's governor (its pause and caps), only when the owner asked (rule 86); X's answers still stop the run.",
 ].join("\n");
 
 const flag = (name: string, kind: FlagSpec["kind"], description: string, extra: Partial<FlagSpec> = {}): FlagSpec => ({ name, kind, description, ...extra });
@@ -76,7 +76,7 @@ export const QUEUE_INPUT: CommandInput = {
       positionals: [],
       flags: [
         flag("targets", "string", "The targets file: a list (or items) of {handle, tweet_url | post_url | user_id, post_text, text}; text is that target's own line", { required: true }),
-        flag("variations", "string", "The copy files, comma-separated: each a list (or messages) of lines; not needed when every target carries its own text"),
+        flag("variations", "list", "The copy files, comma-separated: each a list (or messages) of lines; not needed when every target carries its own text"),
         flag("out", "string", "The queue file to write (never overwritten)", { required: true }),
         flag("account", "string", "The TWITTER socialAccount that will send it", { required: true }),
         flag("action", "enum", "What each item sends (default reply)", { values: QUEUE_ACTIONS }),
@@ -84,7 +84,7 @@ export const QUEUE_INPUT: CommandInput = {
       ],
     },
     { words: ["show"], summary: "Show a queue: who, which post, what copy, and its approval", positionals: [QUEUE], flags: [JSON_FLAG] },
-    { words: ["check"], summary: "Check every pending item's target and house style; for a dm queue, read the account's X Chat inbox and drop anyone already in a conversation", positionals: [QUEUE], flags: [flag("skipXChatCheck", "boolean", "Skip the X Chat prior-conversation drop, only when matt asked (rule 87)"), JSON_FLAG] },
+    { words: ["check"], summary: "Check every pending item's target and house style; for a dm queue, read the account's X Chat inbox and drop anyone already in a conversation", positionals: [QUEUE], flags: [flag("skipXChatCheck", "boolean", "Skip the X Chat prior-conversation drop, only when the owner asked (rule 87)"), JSON_FLAG] },
     { words: ["status"], summary: "Count a queue's items by status", positionals: [QUEUE], flags: [JSON_FLAG] },
     { words: ["approve"], effect: "write", summary: "Record who approved the queue as it stands now", positionals: [QUEUE], flags: [flag("by", "string", "Who approved it", { required: true })] },
     {
@@ -93,12 +93,12 @@ export const QUEUE_INPUT: CommandInput = {
       summary: "Draw a random time for every like and reply inside a window, contacting nothing",
       positionals: [QUEUE],
       flags: [
-        flag("window", "string", "How long to spread it over: 5h or 90m", { required: true }),
+        flag("window", "string", "How long to spread it over: 5h or 90m", { required: true, pattern: "^\\d+(?:\\.\\d+)?[hm]$", takes: "a span in hours or minutes, e.g. 5h or 90m" }),
         flag("limit", "integer", "Plan at most this many posts"),
         flag("start", "string", "When the window opens (an ISO time, default now)"),
         flag("minGap", "integer", "Seconds between any two events, at least 30 (default 120)"),
         flag("like", "boolean", "Randomly like posts too, each at its own random moment"),
-        flag("likeChance", "string", "The chance a post gets a like, 0-1 (default 0.7)"),
+        flag("likeChance", "number", "The chance a post gets a like, 0-1 (default 0.7)", { min: 0, max: 1 }),
       ],
     },
     {
@@ -109,10 +109,10 @@ export const QUEUE_INPUT: CommandInput = {
       flags: [
         flag("alertChannel", "string", "A buzz channel to post the stop to"),
         flag("alertReplyTo", "string", "A buzz event id to thread them under"),
-        flag("alertMention", "string", "Pubkeys (hex) the halt tags, comma-separated"),
-        flag("force", "boolean", "Go past the account's governor (its pause and caps) for every send, only when matt asked (rule 86)"),
+        flag("alertMention", "list", "Pubkeys (hex) the halt tags, comma-separated"),
+        flag("force", "boolean", "Go past the account's governor (its pause and caps) for every send, only when the owner asked (rule 86)"),
         flag("keepOpen", "boolean", "Stay running once everything is sent, taking in what queue add puts in, until cancelled"),
-        flag("live", "boolean", "Send on X, only when matt asked (rule 8)", { live: true }),
+        flag("live", "boolean", "Send on X, only when the owner asked (rule 8)", { live: true }),
         JSON_FLAG,
       ],
     },
@@ -125,7 +125,7 @@ export const QUEUE_INPUT: CommandInput = {
         flag("targets", "string", "The targets file: a list (or items) of {handle, tweet_url | post_url | user_id, post_text, text}; each target carries its own text", { required: true }),
         flag("action", "enum", "What each added item sends (default reply)", { values: QUEUE_ACTIONS }),
         flag("by", "string", "Who approved what is added (the queue is approved again as it then stands)", { required: true }),
-        flag("window", "string", "How far ahead to fit them: 2h or 90m (default 2h)"),
+        flag("window", "string", "How far ahead to fit them: 2h or 90m (default 2h)", { pattern: "^\\d+(?:\\.\\d+)?[hm]$", takes: "a span in hours or minutes, e.g. 2h or 90m" }),
         flag("minGap", "integer", "Seconds from any other planned send, at least 30 (default the queue's own)"),
       ],
     },
@@ -139,7 +139,7 @@ export const QUEUE_INPUT: CommandInput = {
         flag("n", "integer", "The item's number", { required: true }),
         flag("text", "string", "The new copy, gated with voice first", { required: true }),
         flag("by", "string", "Who approved the new copy", { required: true }),
-        flag("window", "string", "For a held item, how soon to send it again: 30m or 2h (default 30m)"),
+        flag("window", "string", "For a held item, how soon to send it again: 30m or 2h (default 30m)", { pattern: "^\\d+(?:\\.\\d+)?[hm]$", takes: "a span in hours or minutes, e.g. 30m or 2h" }),
       ],
     },
   ],
@@ -217,7 +217,7 @@ async function runCommand(context: CommandContext, path: string, flags: Record<s
   if (!opened.ok) return opened.result;
   const taken = takeQueueLock(path, process.pid, pidAlive);
   if (!taken.ok) return refuse("twitter queue run", "queueBusy", `a run (pid ${taken.holder}) is already going on this queue`);
-  const alertArgs = { channel: typeof flags["alertChannel"] === "string" ? (flags["alertChannel"] as string) : undefined, replyTo: typeof flags["alertReplyTo"] === "string" ? (flags["alertReplyTo"] as string) : undefined, mentions: typeof flags["alertMention"] === "string" ? (flags["alertMention"] as string).split(",").map((m) => m.trim()).filter(Boolean) : [] };
+  const alertArgs = { channel: typeof flags["alertChannel"] === "string" ? (flags["alertChannel"] as string) : undefined, replyTo: typeof flags["alertReplyTo"] === "string" ? (flags["alertReplyTo"] as string) : undefined, mentions: Array.isArray(flags["alertMention"]) ? (flags["alertMention"] as string[]) : [] };
   const nowMs = () => (context.now?.() ?? new Date()).getTime();
   const log = (line: string) => context.err(queueLog(path, line, new Date(nowMs())));
   const approvedBy = queue.approval!.by;
@@ -234,7 +234,7 @@ async function runCommand(context: CommandContext, path: string, flags: Record<s
     const activity = activityOf(held.activity as unknown as TwitterNotification[], who, since);
     const changed = contextChangesSince(held.messages, activity, since);
     if (!changed.length && item.text?.trim()) {
-      const voiced = await gateDeps.gate(context, { platform: "twitter", account: queue.account, to: item.handle ? `@${item.handle.replace(/^@/, "")}` : namedLabel("twitter", queue.account, String(item.userId ?? ""), String(item.userId ?? "")), text: item.text, handle: item.handle ?? null, userId: item.userId ?? null, ...(item.postText?.trim() ? { said: item.postText } : {}), ...(item.action === "voice" ? { spoken: true } : {}) });
+      const voiced = await gateDeps.gate(context, { platform: "twitter", account: queue.account, to: item.handle ? `@${item.handle.replace(/^@/, "")}` : namedLabel("twitter", queue.account, String(item.userId ?? ""), String(item.userId ?? "")), text: item.text, handle: item.handle ?? null, userId: item.userId ?? null, ...(item.postText?.trim() ? { said: item.postText } : {}), ...(item.action === "voice" ? { spoken: true } : {}), ...((item.action ?? "reply") === "reply" || item.action === "quote" ? { publicReply: true } : {}) });
       if (!voiced.ok) {
         log(`#${item.n} @${item.handle ?? "?"}: ${voiced.refused}`);
         return voiced.refused.split("\n").slice(1).map((l) => `voice gate: ${l.replace(/^\s*-\s*/, "")}`);
@@ -266,7 +266,7 @@ async function runCommand(context: CommandContext, path: string, flags: Record<s
             if (!chosen.ok) return { ok: false, code: "voiceProviderInvalid", detail: String((chosen as { detail?: string }).detail ?? "no voice provider") };
             const rendered = await voiceNoteDeps.render(chosen.provider, "twitter", item.text);
             if (!rendered.ok) return { ok: false, code: rendered.code, detail: rendered.detail };
-            log(`#${item.n} @${item.handle ?? "?"}: voice note made in matt's cloned voice, ${rendered.note.seconds} s`);
+            log(`#${item.n} @${item.handle ?? "?"}: voice note made in the owner's cloned voice, ${rendered.note.seconds} s`);
             const guard = guardSend({ platform: "twitter", account: opened.account.accountName, conversationId: item.userId });
             if (!guard.ok) return { ok: false, code: "chatClaimedElsewhere", detail: guard.refused };
             if (guard.part(0, `voice note: ${item.text}`) !== "go") {
@@ -347,6 +347,7 @@ export const queueCommand: Command = {
   usage: QUEUE_USAGE,
   platform: "twitter",
   name: "queue",
+  longRunning: true,
   effect: "write",
   input: QUEUE_INPUT,
   summary: "Build, approve, plan and run a queue of approved X replies, quotes or dms at random moments, on the direct-API engine",
@@ -361,13 +362,13 @@ export const queueCommand: Command = {
     const stray = Object.keys(parsed.flags).filter((name) => !allowed.has(name));
     if (stray.length) return fail(`${word} doesn't take --${stray.join(", --")}`);
     if (extra.length || (word === "build" ? path !== undefined : typeof path !== "string")) return fail(word === "build" ? "build takes only flags" : `${word} needs the queue file`);
-    const flags = parsed.flags;
+    const flags = parsed.values;
     const now = context.now?.() ?? new Date();
     try {
       if (word === "build") {
         const out = flags["out"] as string;
         if (existsSync(out) || queueExists(out)) return refuse("twitter queue build", "queueInvalid", `${out} exists; it is never overwritten`);
-        const files = String(flags["variations"] ?? "").split(",").map((f) => f.trim()).filter(Boolean);
+        const files = (flags["variations"] as string[] | undefined) ?? [];
         let targets;
         let lines: string[];
         try {
@@ -430,8 +431,7 @@ export const queueCommand: Command = {
         return { code: 0, stdout: `log twitter queue approve: ${file} approved by ${queue.approval!.by}, ${queue.approval!.count} pending items. Any edit voids it.` };
       }
       if (word === "plan") {
-        const chance = flags["likeChance"] === undefined ? 0.7 : Number(flags["likeChance"]);
-        if (!(chance >= 0 && chance <= 1)) return fail("--likeChance is a number from 0 to 1");
+        const chance = (flags["likeChance"] as number | undefined) ?? 0.7;
         const start = typeof flags["start"] === "string" ? new Date(flags["start"] as string) : now;
         if (Number.isNaN(start.getTime())) return fail("--start is a time, e.g. 2026-10-26T09:00:00+07:00");
         let queue: Queue;

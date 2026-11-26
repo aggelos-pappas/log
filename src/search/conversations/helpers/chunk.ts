@@ -1,5 +1,6 @@
 import { CHUNK_MESSAGES, CHUNK_OVERLAP } from '../types'
 import type { Chunk, Conversation } from '../types'
+import { placeOf } from './place'
 
 export function speakerOf(conversation: Conversation, fromMe: boolean, from: string | null): string {
   if (fromMe) return conversation.account
@@ -18,6 +19,7 @@ export function chunksOf(conversation: Conversation, size = CHUNK_MESSAGES, over
       account: conversation.account,
       conversationId: conversation.conversationId,
       with: conversation.with,
+      place: placeOf(conversation),
       at: window[window.length - 1].at,
       messageIds: window.map((m) => m.id),
       text: window.map((m) => `@${speakerOf(conversation, m.fromMe, m.from)}: ${m.text.replace(/\s+/g, ' ').trim()}`).join('\n'),

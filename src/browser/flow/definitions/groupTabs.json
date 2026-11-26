@@ -1,5 +1,6 @@
 {
   "name": "groupTabs",
+  "platform": "facebook",
   "summary": "Open each tab of a group the account is in (Featured, Open questions, People, Events, Media, Files, About) and come back to Discussion; read-only",
   "params": [
     {
@@ -189,7 +190,7 @@
     }
   ],
   "source": {
-    "runDir": "C:/Users/0/.logCli/runs/inspect/20261020T153648_61594063207669/sequences/groupTabs",
+    "runDir": "C:/Users/tester/.logCli/runs/inspect/20261020T153648_99900000000001/sequences/groupTabs",
     "account": "groupTabs",
     "builtAt": "2026-10-20T15:51:58.642Z"
   }

@@ -8,7 +8,8 @@ import type { WorkerClient } from "../../camofox/worker/index.ts";
 import { emitLog } from "../../observability/processLog/index.ts";
 import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { runToolCall } from "../server/index.ts";
-import { accountOfArgv, appendProgress, busyJob, finishJob, jobView, readJob, requestCancel, startJob, statusOf } from "./index.ts";
+import { accountOfArgv, appendProgress, busyJob, finishJob, heldByOther, jobScope, jobView, PARENT_PID_ENV, readJob, requestCancel, startJob, statusOf } from "./index.ts";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const doctorReply = { ok: true, checks: { python: "3.12", facebookCamofoxClient: "/fcc", camoufoxBrowser: "/c.exe", camoufoxVersion: "1" } };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -24,7 +25,7 @@ describe("a long run outlasting its call becomes a job (Duet plan step 4)", () =
       return doctorReply;
     }) as unknown as WorkerClient;
     const context = { twenty: marketplaceFixture(), worker };
-    const started = await runToolCall("doctor", { args: ["--json"], waitMs: 50 }, context, () => {}, () => []);
+    const started = await runToolCall("facebookDoctor", { args: ["--json"], waitMs: 50 }, context, () => {}, () => []);
     const handle = structured(started);
     expect(handle.exit).toBe(-1);
     expect(handle.job?.status).toBe("running");
@@ -43,18 +44,18 @@ describe("a long run outlasting its call becomes a job (Duet plan step 4)", () =
     const done = readJob(handle.job!.id)!;
     expect(done.result).toMatchObject({ exit: 0, ok: true });
     expect(done.text).toContain("Self-check passed");
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("a run that ends inside its wait comes back whole, with its job finished", async () => {
     const worker = (async () => doctorReply) as unknown as WorkerClient;
-    const result = await runToolCall("doctor", { args: ["--json"] }, { twenty: marketplaceFixture(), worker }, () => {}, () => []);
+    const result = await runToolCall("facebookDoctor", { args: ["--json"] }, { twenty: marketplaceFixture(), worker }, () => {}, () => []);
     expect(structured(result).exit).toBe(0);
     expect(structured(result).job?.status).toBe("completed");
     expect(readJob(structured(result).job!.id)?.status).toBe("completed");
   });
 
   test("a quick tool is never a job", async () => {
-    const result = await runToolCall("accounts", {}, { twenty: marketplaceFixture() }, () => {}, () => []);
+    const result = await runToolCall("facebookAccounts", {}, { twenty: marketplaceFixture() }, () => {}, () => []);
     expect(structured(result).job).toBeUndefined();
   });
 });
@@ -74,11 +75,11 @@ describe("one job per account, cancel at the next browser step", () => {
       return null;
     };
     const context = { twenty: marketplaceFixture(), sendInspect, now: () => new Date("2026-10-22T12:00:00Z") };
-    const started = await runToolCall("check", { account: "galwayOne", bypass: true, confirmBypass: true, waitMs: 20 }, context, () => {}, () => []);
+    const started = await runToolCall("facebookCheck", { account: "galwayOne", bypass: true, confirmBypass: true, waitMs: 20 }, context, () => {}, () => []);
     const id = structured(started).job!.id;
     expect(structured(started).exit).toBe(-1);
     expect(busyJob("galwayOne")?.id).toBe(id);
-    const second = await runToolCall("check", { account: "galwayOne", bypass: true, confirmBypass: true, waitMs: 20 }, context, () => {}, () => []);
+    const second = await runToolCall("facebookCheck", { account: "galwayOne", bypass: true, confirmBypass: true, waitMs: 20 }, context, () => {}, () => []);
     expect(textOf(second)).toContain("accountBusy");
     const cancel = await runToolCall("jobCancel", { jobId: id }, context, () => {}, () => []);
     expect(cancel.isError).toBe(false);
@@ -90,16 +91,44 @@ describe("one job per account, cancel at the next browser step", () => {
   });
 });
 
+describe("a detached child is not blocked by its parent's job", () => {
+  test("inspectStart detach: the CLI child the MCP spawned sees its parent's job as its own, any other holder still refuses", async () => {
+    const { gateCli } = await import("../../platformKit/gates/client.ts");
+    const parent = startJob({ tool: "inspectStart", argv: ["inspect", "start", "--account", "detachOne", "--detach"], account: "detachOne", live: false });
+    const command = { longRunning: true } as const;
+    const argv = ["start", "--account", "detachOne"];
+    const own = gateCli(command, argv, { busy: (account) => heldByOther(busyJob(account), { [PARENT_PID_ENV]: String(process.pid) }) });
+    expect(own).toBeNull();
+    const other = gateCli(command, argv, { busy: (account) => heldByOther(busyJob(account), { [PARENT_PID_ENV]: String(process.pid + 1) }) });
+    expect(other?.code).toBe("accountBusy");
+    expect(other?.message).toContain(parent.id);
+    expect(gateCli(command, argv, { busy: (account) => heldByOther(busyJob(account), {}) })?.code).toBe("accountBusy");
+    finishJob(parent.id, "completed", {}, "done");
+  });
+});
+
+describe("a tool a job calls in its own process", () => {
+  test("is not refused by that job, and still is by any other job on the account", async () => {
+    const { gateDeps } = await import("../server/index.ts");
+    const outer = startJob({ tool: "sessionsSignIn", argv: ["sessions", "signIn", "--account", "scopeOne", "--open"], account: "scopeOne", live: false });
+    expect(gateDeps.busy("scopeOne")?.id).toBe(outer.id);
+    expect(jobScope.run(outer.id, () => gateDeps.busy("scopeOne"))).toBeNull();
+    expect(await jobScope.run(outer.id, async () => (await sleep(5), gateDeps.busy("scopeOne")))).toBeNull();
+    expect(jobScope.run("jobSomeoneElse", () => gateDeps.busy("scopeOne"))?.id).toBe(outer.id);
+    finishJob(outer.id, "completed", {}, "done");
+  });
+});
+
 describe("the job store", () => {
   test("a running job whose server is gone is lost", () => {
-    const record = startJob({ tool: "publishLive", argv: ["facebook", "publish"], account: "a", live: true });
+    const record = startJob({ tool: "facebookPublishLive", argv: ["facebook", "publish"], account: "a", live: true });
     expect(statusOf(record, () => false)).toBe("lost");
     expect(statusOf(record)).toBe("running");
     finishJob(record.id, "completed", { exit: 0 }, "done");
   });
 
   test("a live job past Publish is never cancelled (rule 10); a finished one has nothing to stop", () => {
-    const record = startJob({ tool: "publishLive", argv: ["facebook", "publish", "--live"], account: "b", live: true });
+    const record = startJob({ tool: "facebookPublishLive", argv: ["facebook", "publish", "--live"], account: "b", live: true });
     appendProgress(record.id, { at: new Date().toISOString(), source: "err", line: "12:00:01  publish             state  publishing" });
     const refused = requestCancel(record.id);
     expect(refused.ok).toBe(false);

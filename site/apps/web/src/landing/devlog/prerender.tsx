@@ -4,10 +4,11 @@ import { DEVLOG_ARTICLES, SITE, devlogImage, devlogPath } from './articles'
 import { DEVLOG_DESCRIPTION, DEVLOG_TITLE, DevlogList } from './DevlogIndexPage'
 import { XREACHER_SCHEMA, XreacherStory } from './XreacherAlternativePage'
 import sharePages from '../useCases/sharePages.json'
-import { PLATFORM_PAGES } from '../useCases/platformPages'
+import { SITE_PAGES, SITE_PLATFORMS } from '../useCases/sitePages'
 import { QUICK_ANSWERS } from '../useCases/quickAnswers'
 import { PLATFORMS } from '../PlatformSuite'
-import { UPDATED, devlogIndexSchema, homeSchema, mcpSchema, platformSchema } from '../structuredData'
+import { UPDATED, applySchema, devlogIndexSchema, homeSchema, mcpSchema, platformSchema } from '../structuredData'
+import { APPLY_BUILT_WITH, APPLY_COMPARE, APPLY_DESCRIPTION, APPLY_FAQ, APPLY_GITHUB_URL, APPLY_INSTALL, APPLY_PATH, APPLY_STEPS, APPLY_TITLE, APPLY_USAGE } from '../apply/applyContent'
 import { MCP_CLIENTS, MCP_DESCRIPTION, MCP_FAQ, MCP_INSTALL, MCP_PATH, MCP_PLATFORMS, MCP_STEPS, MCP_TITLE } from '../mcp/mcpContent'
 import { USE_CASES } from '../useCases/useCaseCatalog'
 
@@ -21,6 +22,8 @@ export type PrerenderedPage = {
   body: string
   markdown?: string
 }
+
+const FENCE = '```'
 
 const BODIES: Record<string, { Story: ComponentType; schema: object }> = {
   'xreacher-alternative': { Story: XreacherStory, schema: XREACHER_SCHEMA },
@@ -71,12 +74,14 @@ export function prerenderedPages(): PrerenderedPage[] {
     ),
   }
   const platforms: PrerenderedPage[] = sharePages.map((share) => {
-    const page = PLATFORM_PAGES.find((item) => item.id === share.slug)
+    const page = SITE_PAGES.find((item) => item.id === share.slug)
     if (!page) throw new Error(`share page ${share.slug} has no platform page`)
-    const platform = PLATFORMS.find((item) => item.id === page.platformId)
+    const platform = SITE_PLATFORMS.find((item) => item.id === page.platformId)
     if (!platform) throw new Error(`platform page ${page.id} has no platform ${page.platformId}`)
     const faq = QUICK_ANSWERS[page.id]
     const image = `${SITE}/og/pages/${share.slug}.png`
+    const routes = page.harness?.routes ?? []
+    const plays = [page.play, ...(page.harness?.plays ?? [])]
     return {
       path: page.path,
       title: share.title,
@@ -102,12 +107,24 @@ export function prerenderedPages(): PrerenderedPage[] {
         '',
         share.description,
         '',
-        `## The play: ${page.play.name}`,
-        '',
-        `Ask your agent: "${page.play.ask}"`,
-        '',
-        ...page.play.steps.map((step, index) => `${index + 1}. **${step.title}.** ${step.body}`),
-        '',
+        ...routes.flatMap((route) => [
+          `## Connect log to ${platform.label}: ${route.label}`,
+          '',
+          route.best,
+          '',
+          ...route.steps.flatMap((step, index) => [`${index + 1}. ${step.text}`, ...(step.code ? ['', FENCE, step.code, FENCE, ''] : [])]),
+          '',
+          `Sources: ${route.sources.map((source) => source.href).join(', ')}`,
+          '',
+        ]),
+        ...plays.flatMap((play) => [
+          `## The play: ${play.name}`,
+          '',
+          `Ask your agent: "${play.ask}"`,
+          '',
+          ...play.steps.map((step, index) => `${index + 1}. **${step.title}.** ${step.body}`),
+          '',
+        ]),
         `## ${platform.label} with log: quick answers`,
         '',
         ...faq.flatMap((item) => [`### ${item.q}`, '', item.a, '']),
@@ -118,6 +135,26 @@ export function prerenderedPages(): PrerenderedPage[] {
         <main>
           <h1>{share.title}</h1>
           <p>{share.description}</p>
+          {routes.map((route) => (
+            <section key={route.id}>
+              <h2>
+                Connect log to {platform.label}: {route.label}
+              </h2>
+              <p>{route.best}</p>
+              <ol>
+                {route.steps.map((step) => (
+                  <li key={step.text}>
+                    {step.text}
+                    {step.code ? (
+                      <pre>
+                        <code>{step.code}</code>
+                      </pre>
+                    ) : null}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ))}
           <section className="quick-answers">
             <h2>{platform.label} with log: quick answers</h2>
             {faq.map((item) => (
@@ -227,5 +264,83 @@ export function prerenderedPages(): PrerenderedPage[] {
       </main>,
     ),
   }
-  return [index, ...articles, ...platforms, mcp]
+  const applyImage = `${SITE}/og/pages/apply.png`
+  const apply: PrerenderedPage = {
+    path: APPLY_PATH,
+    title: APPLY_TITLE,
+    description: APPLY_DESCRIPTION,
+    image: applyImage,
+    type: 'website',
+    schema: applySchema({ path: APPLY_PATH, title: APPLY_TITLE, description: APPLY_DESCRIPTION, image: applyImage, repo: APPLY_GITHUB_URL, faq: APPLY_FAQ, steps: APPLY_STEPS }),
+    markdown: [
+      `# ${APPLY_TITLE}`,
+      '',
+      `canonical_url: ${SITE}${APPLY_PATH}`,
+      `last_updated: ${UPDATED}`,
+      '',
+      APPLY_DESCRIPTION,
+      '',
+      '## How it works',
+      '',
+      ...APPLY_STEPS.map((step) => `${step.number}. **${step.title}.** ${step.body}`),
+      '',
+      `## ${APPLY_COMPARE.without.label} vs ${APPLY_COMPARE.with.label}`,
+      '',
+      `- ${APPLY_COMPARE.without.label}: ${APPLY_COMPARE.without.headline}. ${APPLY_COMPARE.without.points.join('. ')}.`,
+      `- ${APPLY_COMPARE.with.label}: ${APPLY_COMPARE.with.headline}. ${APPLY_COMPARE.with.points.join('. ')}.`,
+      '',
+      '## Install, in Claude Code',
+      '',
+      FENCE,
+      ...APPLY_INSTALL,
+      FENCE,
+      '',
+      'Then ask for jobs:',
+      '',
+      FENCE,
+      ...APPLY_USAGE,
+      FENCE,
+      '',
+      `Agent setup instructions: ${SITE}/apply.txt`,
+      '',
+      '',
+      '## Built with',
+      '',
+      ...APPLY_BUILT_WITH.map((item) => `- [${item.name}](${item.href}): ${item.role}`),
+      '',
+      '## log apply: quick answers',
+      '',
+      ...APPLY_FAQ.flatMap((item) => [`### ${item.q}`, '', item.a, '']),
+      `Source: ${APPLY_GITHUB_URL}`,
+      '',
+    ].join('\n'),
+    body: renderToStaticMarkup(
+      <main>
+        <h1>{APPLY_TITLE}</h1>
+        <p>{APPLY_DESCRIPTION}</p>
+        <h2>How it works</h2>
+        <ol>
+          {APPLY_STEPS.map((step) => (
+            <li key={step.number}>
+              <strong>{step.title}.</strong> {step.body}
+            </li>
+          ))}
+        </ol>
+        <h2>Install, in Claude Code</h2>
+        <pre>
+          <code>{APPLY_INSTALL.join('\n')}</code>
+        </pre>
+        <section className="quick-answers">
+          <h2>log apply: quick answers</h2>
+          {APPLY_FAQ.map((item) => (
+            <div key={item.q}>
+              <h3>{item.q}</h3>
+              <p>{item.a}</p>
+            </div>
+          ))}
+        </section>
+      </main>,
+    ),
+  }
+  return [index, ...articles, ...platforms, mcp, apply]
 }

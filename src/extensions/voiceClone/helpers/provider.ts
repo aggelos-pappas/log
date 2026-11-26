@@ -4,11 +4,15 @@ import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ACCENT_ENV, DEFAULT_ACCENT, DEFAULT_LANGUAGE, DEFAULT_PROVIDER, DEFAULT_SPEED, FALLBACK_LANGUAGE, LANGUAGE_ENV, PROVIDER_ENV, SPEED_ENV, SPEED_RANGE, VOICE_PROVIDERS } from '../types'
 import type { VoiceProvider, VoiceSettings } from '../types'
+import { savedCredential } from '../../../auth/credentials/index.ts'
+import { extraEnvFiles, logHome } from '../../../config/logHome/index.ts'
 
 export function envValue(name: string, env: Record<string, string | undefined> = process.env, home = homedir()): string | null {
+  const saved = savedCredential(name, env)
+  if (saved) return saved
   if (env[name]?.trim()) return env[name]!.trim()
   const repo = resolve(fileURLToPath(new URL('../../../..', import.meta.url)))
-  for (const file of [join(repo, '.env.local'), join(repo, '..', '..', '.env.local'), join(home, '.buzz', '.env.local')]) {
+  for (const file of [join(repo, '.env.local'), join(repo, '..', '..', '.env.local'), join(logHome(env), '.env'), ...extraEnvFiles(env)]) {
     if (!existsSync(file)) continue
     const found = new RegExp(`^\\s*${name}\\s*=\\s*(.*)$`, 'm').exec(readFileSync(file, 'utf8'))?.[1]?.trim().replace(/^["']|["']$/g, '')
     if (found) return found
@@ -41,5 +45,5 @@ export function speedOf(said: string | null): number {
 }
 
 export function accentDescriptionOf(accent: string): string {
-  return `matt's own voice, a ${accent} accent`
+  return `the owner's own voice, a ${accent} accent`
 }

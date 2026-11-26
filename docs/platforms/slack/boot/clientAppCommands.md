@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundarygAaa46CR1GAAYxae
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `app_actions`, `commands`, `cache_ts` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script29.js:153 RLb6`, `runs/inspect/20261103T065639_mattSlack/script3.js:2961 RLb6` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script29.js:153 RLb6`, `runs/inspect/20261103T065639_slackAccount/script3.js:2961 RLb6` |
 | rea | `ev_55a6fa408c20ebeabe44fdae92e9bcfd39e913ab4e6198dab07a384ec2b614d7` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 948 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 948 ms
 
 Sent:
 
@@ -34,14 +34,14 @@ Sent:
     "_x_id": "2c6eaecf-1793689064.419",
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_frontend_build_type": "current",
     "fp": "6f",
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundarygAaa46CR1GAAYxae\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundarygAaa46CR1GAAYxae\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\ndispatch-client-extras\r\n------WebKitFormBoundarygAaa46CR1GAAYxae\r\nContent-Disposition: form-data; name=\"_x_mode\"\r\n\r\nonline\r\n------WebKitFormBoundarygAaa46CR1GAAYxae\r\nContent-Dispo… (592 chars)"
+    "------WebKitFormBoundarygAaa46CR1GAAYxae\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundarygAaa46CR1GAAYxae\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\ndispatch-client-extras\r\n------WebKitFormBoundarygAaa46CR1GAAYxae\r\nContent-Disposition: form-data; name=\"_x_mode\"\r\n\r\nonline\r\n------WebKitFormBoundarygAaa46CR1GAAYxae\r\nContent-Dispo… (592 chars)"
   }
 }
 ```
@@ -57,72 +57,72 @@ Answered:
       "canonical_name": "/shrug",
       "desc": "Appends ¯\\_(ツ)_/¯ to your message",
       "usage": "your text",
-      "name_normalized": "/shrug",
-      "name": "/shrug",
+      "name_normalized": "<name:1>",
+      "name": "<name:1>",
       "type": "core",
       "is_workspace_agnostic": true,
       "teams": [
-        "T0C4VCD06MR"
+        "<teamId:1>"
       ]
     },
     {
       "canonical_name": "/me",
       "usage": "your message",
       "desc": "Displays action text",
-      "name_normalized": "/me",
-      "name": "/me",
+      "name_normalized": "<name:2>",
+      "name": "<name:2>",
       "type": "core",
       "is_workspace_agnostic": true,
       "teams": [
-        "T0C4VCD06MR"
+        "<teamId:1>"
       ]
     },
     {
       "canonical_name": "/topic",
       "usage": "new topic",
       "desc": "Set the channel topic",
-      "name_normalized": "/topic",
-      "name": "/topic",
+      "name_normalized": "<name:3>",
+      "name": "<name:3>",
       "type": "core",
       "is_workspace_agnostic": true,
       "teams": [
-        "T0C4VCD06MR"
+        "<teamId:1>"
       ]
     },
     {
       "canonical_name": "/away",
       "usage": "",
       "desc": "Toggle your \"away\" status",
-      "name_normalized": "/away",
-      "name": "/away",
+      "name_normalized": "<name:4>",
+      "name": "<name:4>",
       "type": "core",
       "is_workspace_agnostic": true,
       "teams": [
-        "T0C4VCD06MR"
+        "<teamId:1>"
       ]
     },
     {
       "canonical_name": "/msg",
       "usage": "@user [your message]",
       "desc": "Send a DM message to another user",
-      "name_normalized": "/msg",
-      "name": "/msg",
+      "name_normalized": "<name:5>",
+      "name": "<name:5>",
       "type": "core",
       "is_workspace_agnostic": true,
       "teams": [
-        "T0C4VCD06MR"
+        "<teamId:1>"
       ]
     },
     {
       "canonical_name": "/open",
       "usage": "[channel]",
       "desc": "Open a channel",
-      "name_normalized": "/open",
-      "name": "/open",
+      "name_normalized": "<name:6>",
+      "name": "<name:6>",
       "type": "core",
       "is_workspace_agnostic": true,
       "teams": [
-        "T0C4VCD06MR"
+        "<teamId:1>"
       ]
     },
     "… 18 more"

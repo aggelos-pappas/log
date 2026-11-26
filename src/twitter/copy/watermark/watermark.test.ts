@@ -13,13 +13,13 @@ describe('what a Claude-made message can carry, read before it is sent', () => {
   test('a hidden zero-width character is an artifact, and the send is refused', () => {
     const text = 'yo lad​ made a new free tool'
     expect(watermarkReadingOf(text).level).toBe('artifacts')
-    const plan = planSend({ action: 'dm', userId: '1', text, approvedBy: 'matt', live: true, skipStyleCheck: true })
+    const plan = planSend({ action: 'dm', userId: '1', text, approvedBy: 'the owner', live: true, skipStyleCheck: true })
     expect(plan.ok).toBe(false)
     if (!plan.ok) expect(plan.problem.code).toBe('aiArtifacts')
   })
 
   test('an em dash or curly quote is only stylistic and the reading goes with the plan', () => {
-    const plan = planSend({ action: 'dm', userId: '1', text: 'yo lad — made a tool', approvedBy: 'matt', live: true, skipStyleCheck: true })
+    const plan = planSend({ action: 'dm', userId: '1', text: 'yo lad — made a tool', approvedBy: 'the owner', live: true, skipStyleCheck: true })
     expect(plan.ok).toBe(true)
     if (plan.ok) expect(plan.watermark?.level).toBe('stylistic')
   })

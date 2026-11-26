@@ -4,6 +4,7 @@ import { afterGap, appendEvent, db, eventIdOf } from "../../inbox/store/index.ts
 import { lastMessagesOf, messageTimeOf, msOf } from "../platform/index.ts";
 import { migrate } from "./client.ts";
 import { BACKFILL_STEPS, runBackfill } from "./helpers/index.ts";
+import { FRESH_DB_MS } from "../../../scripts/tests/timeouts.ts";
 
 describe("times as integer milliseconds", () => {
   test("every shape log has stored parses to the same instant", () => {
@@ -84,5 +85,5 @@ describe("the backfill", () => {
       { eventId: "e3", messageKey: "discord:old:c1:m2" },
     ]);
     expect(runBackfill(handle).messageTimes).toBe(0);
-  });
+  }, FRESH_DB_MS);
 });

@@ -3,7 +3,13 @@ TOKEN = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8
 
 DOMAIN = 'x.com'
 
-IMPERSONATE = 'safari17_0'
+try:
+    from identity import browserIdentity as _identity
+except ImportError:  # used outside log: keep the old pin
+    _identity = None
+IMPERSONATE = _identity.curl_target('twitter') if _identity else 'safari17_0'
+ATTACH = (lambda session: _identity.attach(session, 'twitter', 'https://x.com')) if _identity else (lambda session: session)
+USER_AGENT = _identity.user_agent('twitter') if _identity else 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15'
 
 FEATURES = {
     'creator_subscriptions_tweet_preview_api_enabled': True,

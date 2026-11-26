@@ -4,7 +4,7 @@ The `unifyStorage` branch's design: issues #96 (one database) and #97 (one shape
 
 Everything below was measured on the owner's machine on 2026-11-08 (`~/.logCli`, Bun 1.4.0).
 
-## The principles (matt, 2026-11-08)
+## The principles (the owner, 2026-11-08)
 
 1. **Every system is held to a p95 and p99.** A read or write that has no target, and isn't measured, isn't done.
 2. **No large JSON reads, and no data stored as JSON.** Parsing a whole file to find one thing is slow, and gets slower as it grows.
@@ -422,3 +422,7 @@ flowchart LR
 
 - **Encryption at rest.** Principle 5 is about outside parties reading the data. One file with the right permissions is a big step up from thousands of loose files. Whether `log.db` should also be encrypted is the owner's call.
 - **Retention.** How long raw captures (HAR, exchanges) stay in `blobs` once a run is analysed. Rule 66 prunes them from disk today.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md)

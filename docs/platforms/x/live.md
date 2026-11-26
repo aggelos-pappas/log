@@ -35,7 +35,7 @@ The notification refresher lives in `bundle.Notifications` (module 726194). It i
   - Each read is counted by the governor.
 - **New notifications:** when `ntab_unread_count` rises, the poll reads one page of notifications and keeps only the rows it hadn't seen.
 - **The live file:** every changed count and every new like, retweet, reply, quote, mention or follow is one line in `~/.logCli/twitter/<account>/live.jsonl`.
-- **A refusal:** when X refuses a badge read or the notifications page (a 429, any other error X answers, or the governor stopping the read), the poll ends. The refusal is written to the file, and nothing resumes until matt says so (rule 94).
+- **A refusal:** when X refuses a badge read or the notifications page (a 429, any other error X answers, or the governor stopping the read), the poll ends. The refusal is written to the file, and nothing resumes until the owner says so (rule 94).
 - **A dropped connection** (a network error such as a timeout or a reset, not X answering) is written to the file too, and the poll goes on.
 - **The context hook** (`scripts/hooks/xLive.ts`): on SessionStart, on every prompt and after every log tool or shell call, it puts a `>>> X LIVE` block in front of the agent. The block holds:
   - each account's counts;
@@ -43,7 +43,7 @@ The notification refresher lives in `bundle.Notifications` (module 726194). It i
 - **Each Claude session keeps its own offsets** (`src/agentHooks/sessionOffsets`, keyed by the hook's `session_id`), so two sessions open at once both see every event once.
   - A new session starts with the current counts, not the history.
   - The queue hook (rule 114) reads per session the same way.
-- **It is said loudly.** New activity comes first in the block (`>>> X LIVE, NEW ACTIVITY`), and the agent tells matt at once, before anything else. A count that changed with no new activity adds nothing to the block.
+- **It is said loudly.** New activity comes first in the block (`>>> X LIVE, NEW ACTIVITY`), and the agent tells the owner at once, before anything else. A count that changed with no new activity adds nothing to the block.
 - **It wakes the agent while idle.** A hook only runs on a prompt or a tool call, so on SessionStart the block tells the agent to start a Monitor on every account's `live.jsonl` (`LIVE_MONITOR`) for the whole session. Each like, retweet, reply, quote, mention or follow then wakes the agent the moment it lands.
 
 The requirements this page describes, each checked against the code: [docs/specs/xLive.md](../../specs/xLive.md).

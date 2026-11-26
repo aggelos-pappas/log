@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { logHome } from "../logHome/index.ts";
 import { loadUserEnv, parseEnvFile, userEnvPath } from "./index.ts";
 
 describe("userEnv", () => {
@@ -30,6 +31,7 @@ describe("userEnv", () => {
 
   test("LOG_USER_ENV moves the file, otherwise it is ~/.logCli/.env", () => {
     expect(userEnvPath({ LOG_USER_ENV: "/tmp/x.env" })).toBe("/tmp/x.env");
-    expect(userEnvPath({}).replace(/\\/g, "/")).toMatch(/\/\.logCli\/\.env$/);
+    expect(userEnvPath({})).toBe(join(logHome(), ".env"));
+    expect(join(logHome({}), ".env").replace(/\\/g, "/")).toMatch(/\/\.logCli\/\.env$/);
   });
 });

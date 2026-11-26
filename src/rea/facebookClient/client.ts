@@ -1,17 +1,20 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { defaultReaRunner, evidenceIdOf, writeCaptureScripts } from "../capture/client";
 import { exportScripts, parseSteps, splitHarBySteps } from "../capture/helpers/index";
 import type { ReaRunner } from "../capture/types";
 import { CAPTURE_FOLDERS } from "../../browser/driver/types";
-import { domainOf, factsFromDoc, foldOperation, importersOf, indexModules, readGraphqlDefinition, renderOperationDoc, renderStoredSightings, requestsInStep, sliceFor } from "./helpers/index";
+import { domainOf, factsFromDoc, foldOperation, importersOf, indexModules, readGraphqlDefinition, renderOperationDoc, renderStoredSightings, requestDocPrompts, requestsInStep, sliceFor } from "./helpers/index";
+import { platformMachines } from "../platformClient/helpers/platformMachines";
 import type { ReasoningPrompts, StoredFacts } from "./helpers/index";
 import type { RequestSeen } from "./helpers/index";
 import type { ClientOperation, FacebookModule } from "./types";
 import { exchangesOf } from "../../subq/stepReading/helpers/exchangesOf";
 import type { StepExchange } from "../../subq/stepReading/types";
+import { redactDoc } from "../../privacy/redact/index";
+import { loadDenylist } from "../../privacy/scan/client";
+import { logHome } from "../../config/logHome/index";
 
 export interface RunCapture {
   dir: string;
@@ -31,7 +34,7 @@ export interface BuildClientMapOptions {
 export const DOCS_INDEX = "operations.json";
 
 export function capturesRoot(env: Record<string, string | undefined> = process.env): string {
-  return env.LOG_CAPTURES_ROOT || join(homedir(), ".logCli");
+  return env.LOG_CAPTURES_ROOT || logHome();
 }
 
 export function findRunCaptures(root: string): RunCapture[] {
@@ -227,7 +230,7 @@ function existingDoc(docsDir: string, name: string): string | null {
 }
 
 export function clientFactsPath(): string {
-  return join(process.env.LOG_CAPTURES_ROOT || join(homedir(), ".logCli"), "rea", "clientFacts.json");
+  return join(process.env.LOG_CAPTURES_ROOT || logHome(), "rea", "clientFacts.json");
 }
 
 export function writeOperationDocs(operations: ClientOperation[], docsDir: string, runs: number, storePath = clientFactsPath(), reasoning?: ReasoningPrompts): { written: number; toWrite: number } {
@@ -239,6 +242,7 @@ export function writeOperationDocs(operations: ClientOperation[], docsDir: strin
   }
   const seenBy = new Map<string, number>();
   const kindBy = new Map<string, ClientOperation["kind"]>();
+  const denylist = loadDenylist();
   for (const operation of operations) {
     const path = join(docsDir, operation.domain, `${operation.name}.md`);
     const old = existingDoc(docsDir, operation.name);
@@ -248,7 +252,7 @@ export function writeOperationDocs(operations: ClientOperation[], docsDir: strin
     seenBy.set(operation.name, facts.seen);
     kindBy.set(operation.name, facts.kind);
     const known = { ...operation, kind: facts.kind, sends: facts.sends, reads: facts.reads, calledFrom: facts.calledFrom, reaEvidenceId: facts.reaEvidenceId };
-    const doc = renderOperationDoc(known, oldText, renderStoredSightings(facts), reasoning);
+    const doc = redactDoc(renderOperationDoc(known, oldText, renderStoredSightings(facts), reasoning), denylist);
     mkdirSync(join(docsDir, operation.domain), { recursive: true });
     writeFileSync(path, doc);
     if (old && resolve(old) !== resolve(path)) rmSync(old);
@@ -272,7 +276,7 @@ export function writeOperationDocs(operations: ClientOperation[], docsDir: strin
   }));
   const seenNow = new Set(current.map((e) => e.name));
   const kept = previous.filter((e) => !seenNow.has(e.name) && existsSync(join(docsDir, e.doc)));
-  const index = { builtAt: new Date().toISOString(), runs, operations: [...current, ...kept].sort((x, y) => x.name.localeCompare(y.name)) };
+  const index = { runs, operations: [...current, ...kept].sort((x, y) => x.name.localeCompare(y.name)) };
   writeFileSync(join(docsDir, DOCS_INDEX), `${JSON.stringify(index, null, 2)}\n`);
   mkdirSync(dirname(storePath), { recursive: true });
   writeFileSync(storePath, `${JSON.stringify(store)}\n`);
@@ -311,8 +315,8 @@ export async function buildClientMap(options: BuildClientMapOptions): Promise<st
   mkdirSync(options.outDir, { recursive: true });
   if (options.runner) await readSlices(operations, modules, options.outDir, options.runner, log, options.concurrency);
   else log("rea: not run (--noRea)");
-  writeFileSync(join(options.outDir, "clientMap.json"), `${JSON.stringify({ builtAt: new Date().toISOString(), operations }, null, 2)}\n`, { mode: 0o600 });
-  const docs = writeOperationDocs(operations, options.docsDir, captures.length);
+  writeFileSync(join(options.outDir, "clientMap.json"), `${JSON.stringify({ operations }, null, 2)}\n`, { mode: 0o600 });
+  const docs = writeOperationDocs(operations, options.docsDir, captures.length, clientFactsPath(), requestDocPrompts({ name: "Facebook", evidence: "its definition", machines: platformMachines("facebook") }));
   const unread = operations.filter((o) => !o.reaEvidenceId).length;
   return `Facebook client map: ${operations.length} requests from ${captures.length} runs, ${operations.length - unread} read by rea. Docs: ${options.docsDir} (${docs.toWrite} still need their reasoning written).`;
 }

@@ -12,7 +12,7 @@ from controlService.dispatchAuthority import request_hash, sign_authority
 from controlService.errors import ApiError
 from controlService.models import Membership, MembershipStatus, OperationMetadata, OperationState, Team, TeamWorkspaceSelection, Workspace, WorkspaceStatus
 from controlService.settings import DISPATCH_WAIT_SECONDS, OPERATION_METADATA_DAYS, PROTOCOL_VERSION, Settings
-from controlService.tools import tool_kind
+from controlService.tools import APP_TOOLS, CONSOLE_TOOLS, tool_kind
 from controlService.views import OperationView
 
 
@@ -71,10 +71,20 @@ class Dispatcher:
     settings: Settings
     engine: Engine
     bridges: Bridges
+    reads: dict[str, frozenset] = field(default_factory=dict)
 
-    def admit(self, actor: Actor, operationId: uuid.UUID, tool: str, record: bool):
-        kind = tool_kind(tool)
-        if kind is None:
+    def remember_reads(self, teamId, names) -> None:
+        self.reads[str(teamId)] = frozenset(name for name in names if isinstance(name, str))
+
+    def knows(self, teamId, tool: str) -> bool:
+        return tool_kind(tool) is not None or tool in self.reads.get(str(teamId), frozenset())
+
+    def kind_of(self, teamId, tool: str) -> str | None:
+        return tool_kind(tool) or ("read" if tool in self.reads.get(str(teamId), frozenset()) else None)
+
+    def admit(self, actor: Actor, operationId: uuid.UUID, tool: str, record: bool, app: bool = False):
+        kind = self.kind_of(actor.teamId, tool)
+        if kind is None or (tool in APP_TOOLS and not app):
             raise ApiError("invalidInput", f"{tool} is not a registered tool")
         with Session(self.engine, expire_on_commit=False) as db:
             team, membership = current_membership(db, actor)
@@ -96,8 +106,26 @@ class Dispatcher:
             db.commit()
             return team, workspace, link, OperationState.dispatched, False
 
-    async def run(self, actor: Actor, operationId: uuid.UUID, tool: str, args: dict, record: bool = True) -> OperationView:
-        team, workspace, link, state, repeat = await to_thread.run_sync(self.admit, actor, operationId, tool, record)
+    def admit_console(self, actor: Actor, tool: str):
+        permission = CONSOLE_TOOLS.get(tool)
+        if permission is None:
+            raise ApiError("invalidInput", f"{tool} is not a console operation")
+        with Session(self.engine, expire_on_commit=False) as db:
+            team, membership = current_membership(db, actor)
+            if permission not in PERMISSIONS[membership.role]:
+                raise ApiError("forbidden", "your role may not do that in this team")
+            workspace, link = selected_route(db, team.id, self.bridges)
+            return team, workspace, link
+
+    async def run_console(self, actor: Actor, tool: str, args: dict) -> OperationView:
+        team, workspace, link = await to_thread.run_sync(self.admit_console, actor, tool)
+        return await self.dispatch(actor, team, workspace, link, uuid.uuid4(), tool, args, OperationState.dispatched, False)
+
+    async def run(self, actor: Actor, operationId: uuid.UUID, tool: str, args: dict, record: bool = True, app: bool = False) -> OperationView:
+        team, workspace, link, state, repeat = await to_thread.run_sync(self.admit, actor, operationId, tool, record and not app, app)
+        return await self.dispatch(actor, team, workspace, link, operationId, tool, args, state, repeat)
+
+    async def dispatch(self, actor: Actor, team: Team, workspace: Workspace, link: Link, operationId: uuid.UUID, tool: str, args: dict, state: OperationState, repeat: bool) -> OperationView:
         authority = sign_authority(
             self.settings.dispatchSigningKey,
             teamId=str(team.id),

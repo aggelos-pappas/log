@@ -49,8 +49,8 @@ def _base_params(client, region):
         "browser_language": "en-US",
         "browser_name": "Mozilla",
         "browser_online": "true",
-        "browser_platform": "MacIntel",
-        "browser_version": USER_AGENT[8:],
+        "browser_platform": client.browser_platform,
+        "browser_version": client.user_agent[8:],
         "channel": "tiktok_web",
         "cookie_enabled": "true",
         "data_collection_enabled": "false",
@@ -62,7 +62,7 @@ def _base_params(client, region):
         "is_fullscreen": "false",
         "is_page_visible": "true",
         "language": "en",
-        "os": "mac",
+        "os": client.os,
         "priority_region": "",
         "referer": "",
         "region": region,
@@ -89,7 +89,7 @@ def _api_once(client, path, params, *, signed, base, host, referer):
     query.update({key: str(value) for key, value in params.items() if value is not None})
     ms_token = client.session.cookies.get("msToken") or ""
     if signed:
-        query_string, _ = signer.sign(list(query.items()), USER_AGENT, ms_token=ms_token)
+        query_string, _ = signer.sign(list(query.items()), client.user_agent, ms_token=ms_token)
     else:
         if ms_token and base:
             query["msToken"] = ms_token

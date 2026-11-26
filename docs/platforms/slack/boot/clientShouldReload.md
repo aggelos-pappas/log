@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundary9nMQaA1eVAIC7RGf
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `build_version_enabled`, `should_reload`, `client_min_version`, `client_min_build_version`, `client_min_config_version`, `recommended_build_version`, `build_manifest_last_modified`, `should_fetch_new_service_worker` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_mattSlack/script36.js:1 maybeStartTrace` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous`, `runs/inspect/20261103T065639_slackAccount/script36.js:1 maybeStartTrace` |
 | rea | `ev_2996fdc433a0d8c3802737045c4c2ddf029d1fd662a71194c2326befe2a9286f` |
 
 Seen 2 time(s) in 1 run(s).
@@ -20,13 +20,13 @@ Seen 2 time(s) in 1 run(s).
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 4: goto /client | 1 | 200 | 540 ms | 3161 ms | — |
-| inspect | step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU | 1 | 200 | 298 ms | 2226 ms | — |
+| inspect | step 6: goto /client/<teamId:1>/<channelId:1> | 1 | 200 | 298 ms | 2226 ms | — |
 
 ### What it sent and what came back (the newest 2 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 540 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 540 ms
 
 Sent:
 
@@ -42,7 +42,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryukECt92Z3Jk8I9Iv\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryukECt92Z3Jk8I9Iv\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nboot\r\n------WebKitFormBoundaryukECt92Z3Jk8I9Iv\r\nContent-Disposition: form-data; name=\"build_manifest_last_modified\"\r\n\r\n1793687964\r\n------WebKitFormBoundaryukECt92Z3Jk8I9Iv\r\nConten… (818 chars)"
+    "------WebKitFormBoundaryukECt92Z3Jk8I9Iv\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryukECt92Z3Jk8I9Iv\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nboot\r\n------WebKitFormBoundaryukECt92Z3Jk8I9Iv\r\nContent-Disposition: form-data; name=\"build_manifest_last_modified\"\r\n\r\n1793687964\r\n------WebKitFormBoundaryukECt92Z3Jk8I9Iv\r\nConten… (818 chars)"
   }
 }
 ```
@@ -63,7 +63,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU: 200, 298 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 298 ms
 
 Sent:
 
@@ -79,7 +79,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundary9nMQaA1eVAIC7RGf\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundary9nMQaA1eVAIC7RGf\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nboot\r\n------WebKitFormBoundary9nMQaA1eVAIC7RGf\r\nContent-Disposition: form-data; name=\"build_manifest_last_modified\"\r\n\r\n1793687964\r\n------WebKitFormBoundary9nMQaA1eVAIC7RGf\r\nConten… (818 chars)"
+    "------WebKitFormBoundary9nMQaA1eVAIC7RGf\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundary9nMQaA1eVAIC7RGf\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nboot\r\n------WebKitFormBoundary9nMQaA1eVAIC7RGf\r\nContent-Disposition: form-data; name=\"build_manifest_last_modified\"\r\n\r\n1793687964\r\n------WebKitFormBoundary9nMQaA1eVAIC7RGf\r\nConten… (818 chars)"
   }
 }
 ```

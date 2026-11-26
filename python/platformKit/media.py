@@ -4,6 +4,7 @@ import os
 import re
 from pathlib import Path
 from typing import Any
+from logHome import log_home
 
 AUDIO_SUFFIXES = (".ogg", ".oga", ".opus", ".m4a", ".mp3", ".wav", ".aac", ".flac", ".webm")
 AUDIO_TYPES = ("audio/", "video/ogg")
@@ -59,7 +60,7 @@ def is_visual(attachment: dict[str, Any]) -> bool:
 
 
 def voice_notes_root() -> Path:
-    return Path(os.environ.get("LOG_VOICE_NOTES_DIR") or Path.home() / ".logCli" / "voiceNotes").resolve()
+    return Path(os.environ.get("LOG_VOICE_NOTES_DIR") or log_home() / "voiceNotes").resolve()
 
 
 def voice_note_path(given: Any, suffix: str) -> Path | None:
@@ -121,3 +122,45 @@ def text_preview(path: Path) -> str:
 
 def not_opened(attachment: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in attachment.items() if k != "url"} | {"error": "not a type log opens, so it wasn't downloaded"}
+
+
+def mp4_duration_ms(path: str) -> int | None:
+    def boxes(f: Any, start: int, end: int):
+        at = start
+        while at + 8 <= end:
+            f.seek(at)
+            head = f.read(8)
+            if len(head) < 8:
+                return
+            size, kind = int.from_bytes(head[:4], "big"), head[4:8]
+            body = at + 8
+            if size == 1:
+                size = int.from_bytes(f.read(8), "big")
+                body = at + 16
+            elif size == 0:
+                size = end - at
+            if size < 8:
+                return
+            yield kind, body, at + size
+            at += size
+
+    with open(path, "rb") as f:
+        f.seek(0, 2)
+        total = f.tell()
+        for kind, body, end in boxes(f, 0, total):
+            if kind != b"moov":
+                continue
+            for inner, inner_body, _ in boxes(f, body, end):
+                if inner != b"mvhd":
+                    continue
+                f.seek(inner_body)
+                version = f.read(1)[0]
+                f.read(3)
+                if version == 1:
+                    f.read(16)
+                    scale, length = int.from_bytes(f.read(4), "big"), int.from_bytes(f.read(8), "big")
+                else:
+                    f.read(8)
+                    scale, length = int.from_bytes(f.read(4), "big"), int.from_bytes(f.read(4), "big")
+                return length * 1000 // scale if scale else None
+    return None

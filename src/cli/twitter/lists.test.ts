@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import { SPAWNS_PROCESS_MS } from "../../../scripts/tests/timeouts.ts";
 
 const python = process.env.LOG_PYTHON || "python";
 const root = join(import.meta.dir, "..", "..", "..", "python");
@@ -16,7 +17,7 @@ const LISTS_PAGE = `def a_list(list_id, name, owner):
 
 page = {"data": {"viewer": {"list_management_timeline": {"timeline": {"instructions": [{"type": "TimelineAddEntries", "entries": [
     {"entryId": "ownedSubscribedListModule0", "content": {"items": [
-        {"entryId": "a", "item": {"itemContent": {"itemType": "TimelineTwitterList", "list": a_list("2118253450186440992", "Go-Getters", "111")}}},
+        {"entryId": "a", "item": {"itemContent": {"itemType": "TimelineTwitterList", "list": a_list("2118253450186440992", "Close Circle", "111")}}},
         {"entryId": "b", "item": {"itemContent": {"itemType": "TimelineTwitterList", "list": a_list("900", "Someone Else's", "222")}}},
     ]}},
     {"entryId": "listToFollowModule1", "content": {"items": [
@@ -47,7 +48,7 @@ fake.get_lists = types.MethodType(Client.get_lists, fake)
 found = asyncio.run(fake.get_lists(count=100))
 print(json.dumps([[f.id, f.owner_id] for f in found]))`);
     expect(got).toEqual([["2118253450186440992", "111"], ["900", "222"], ["901", "444"]]);
-  });
+  }, SPAWNS_PROCESS_MS);
 
   test("lists_of keeps only the lists the account owns", () => {
     const got = py(`import asyncio, types
@@ -57,6 +58,6 @@ ${LISTS_PAGE}
 fake = Fake()
 fake.get_lists = types.MethodType(Client.get_lists, fake)
 print(json.dumps(asyncio.run(engine.lists_of(fake))))`);
-    expect(got).toEqual([{ id: "2118253450186440992", name: "Go-Getters", mode: "Private", memberCount: 0, description: "" }]);
-  });
+    expect(got).toEqual([{ id: "2118253450186440992", name: "Close Circle", mode: "Private", memberCount: 0, description: "" }]);
+  }, SPAWNS_PROCESS_MS);
 });

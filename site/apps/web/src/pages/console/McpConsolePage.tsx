@@ -3,6 +3,10 @@ import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, errorText, HOSTED_MCP_URL, useSelectedTeam, type ConsentRequestView, type GrantView } from '@/lib/controlApi'
 import { ConsoleLayout, SectionHeading } from './ConsoleLayout'
+import { Spinner, toast } from '@listeningkit/ui'
+import { useErrorToast } from '@/lib/useErrorToast'
+import { localConsole } from '@/lib/consoleMode'
+import { loadLocalAiClients } from './aiClientsData'
 
 const SCOPE_TEXT: Record<string, string> = {
   'log:read': 'Read your team’s accounts, DMs and chats through your workspace',
@@ -14,26 +18,26 @@ function Consent({ requestId }: { requestId: string }) {
   const request = useQuery({ queryKey: ['controlConsent', requestId], queryFn: ({ signal }) => api<ConsentRequestView>(`/oauth/requests/${requestId}`, { signal }), retry: false, staleTime: Infinity })
   const [teamId, setTeamId] = useState('')
   const [busy, setBusy] = useState(false)
-  const [notice, setNotice] = useState('')
 
   useEffect(() => {
     if (request.data && !teamId) setTeamId(request.data.selectedTeamId ?? request.data.teams[0]?.id ?? '')
   }, [request.data, teamId])
 
+  useErrorToast(request.isError, request.error)
+
   async function decide(approve: boolean) {
     setBusy(true)
-    setNotice('')
     try {
       const answer = await api<{ redirectTo: string }>(`/oauth/requests/${requestId}/${approve ? 'approve' : 'deny'}`, { method: 'POST', body: approve ? { teamId } : {} })
       window.location.assign(answer.redirectTo)
     } catch (error) {
-      setNotice(errorText(error))
+      toast.error(errorText(error))
       setBusy(false)
     }
   }
 
   if (request.isLoading) return <p className="text-sm text-slate-500">Loading the request…</p>
-  if (request.isError || !request.data) return <p role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">{errorText(request.error)} Start the connection again from your AI app.</p>
+  if (request.isError || !request.data) return <p className="text-sm text-slate-600">Start the connection again from your AI app.</p>
   const data = request.data
   return (
     <section className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-6">
@@ -49,7 +53,6 @@ function Consent({ requestId }: { requestId: string }) {
         </select>
       </label>
       <p className="mt-2 text-xs leading-5 text-slate-500">It can only reach this team’s workspace. Switching team on this site never moves it; connect again for another team.</p>
-      {notice ? <p role="status" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{notice}</p> : null}
       <div className="mt-6 flex gap-3">
         <button type="button" disabled={busy || !teamId} onClick={() => decide(true)} className="h-11 flex-1 rounded-xl bg-[#2A8CFF] text-sm font-bold text-white disabled:opacity-60">{busy ? 'Working…' : 'Approve'}</button>
         <button type="button" disabled={busy} onClick={() => decide(false)} className="h-11 flex-1 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-700 disabled:opacity-60">Deny</button>
@@ -61,7 +64,6 @@ function Consent({ requestId }: { requestId: string }) {
 function Grants({ teamId }: { teamId: string }) {
   const grants = useQuery({ queryKey: ['controlGrants', teamId], queryFn: ({ signal }) => api<GrantView[]>(`/teams/${teamId}/grants`, { signal }) })
   const queryClient = useQueryClient()
-  const [notice, setNotice] = useState('')
   const url = HOSTED_MCP_URL
 
   async function revoke(grant: GrantView) {
@@ -70,7 +72,7 @@ function Grants({ teamId }: { teamId: string }) {
       await api<void>(`/teams/${teamId}/grants/${grant.id}/revoke`, { method: 'POST', body: {} })
       await queryClient.invalidateQueries({ queryKey: ['controlGrants', teamId] })
     } catch (error) {
-      setNotice(errorText(error))
+      toast.error(errorText(error))
     }
   }
 
@@ -87,8 +89,7 @@ function Grants({ teamId }: { teamId: string }) {
       </section>
       <section>
         <SectionHeading title="Connected AI apps" count={live.length} />
-        {notice ? <p role="status" className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{notice}</p> : null}
-        {grants.isLoading ? <p className="text-sm text-slate-500">Loading…</p> : live.length ? (
+        {grants.isLoading ? <Spinner className="min-h-0 py-6" label="Loading your AI connections" /> : live.length ? (
           <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
             {live.map((grant) => (
               <li key={grant.id} className="flex items-center gap-3 p-4">
@@ -103,10 +104,48 @@ function Grants({ teamId }: { teamId: string }) {
   )
 }
 
+function CopyBlock({ text }: { text: string }) {
+  return (
+    <div className="mt-2 flex items-start gap-2 rounded-xl bg-[#0D2A4C] p-3 font-mono text-xs leading-5 text-white">
+      <pre className="min-w-0 flex-1 overflow-x-auto whitespace-pre-wrap break-all">{text}</pre>
+      <button type="button" onClick={() => navigator.clipboard.writeText(text)} className="shrink-0 rounded-md bg-white/15 px-2 py-0.5 text-[11px] font-semibold">Copy</button>
+    </div>
+  )
+}
+
+function LocalAiClients() {
+  const query = useQuery({ queryKey: ['consoleAiClients'], queryFn: ({ signal }) => loadLocalAiClients(signal), retry: false, refetchOnWindowFocus: false })
+  useErrorToast(query.isError, query.error, 'Could not read the MCP config for this machine.')
+  if (query.isLoading) return <p className="text-sm text-slate-500">Reading this machine…</p>
+  if (query.isError || !query.data) return <p className="text-sm text-slate-600"><button type="button" onClick={() => query.refetch()} className="font-semibold underline">Try again</button></p>
+  return (
+    <section className="space-y-6">
+      {query.data.clients.map((client) => (
+        <div key={client.id}>
+          <SectionHeading title={client.label} />
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm leading-6 text-slate-700">
+            {client.command ? <><p className="font-semibold">Run once:</p><CopyBlock text={client.command} /></> : null}
+            <p className="mt-3 font-semibold">Or put this in {client.configPath}:</p>
+            <CopyBlock text={client.config.trimEnd()} />
+            <p className="mt-3 text-slate-600">{client.note}</p>
+          </div>
+        </div>
+      ))}
+    </section>
+  )
+}
+
 export function McpConsolePage() {
   const [params] = useSearchParams()
   const requestId = params.get('request')
   const { team } = useSelectedTeam()
+  if (localConsole) {
+    return (
+      <ConsoleLayout title="AI clients" subtitle="Connect Claude Code, Codex or opencode to log on this machine.">
+        <LocalAiClients />
+      </ConsoleLayout>
+    )
+  }
   return (
     <ConsoleLayout title="AI clients" subtitle="Connect Claude, ChatGPT, Cursor, Codex or Hermes to your team’s workspace.">
       {requestId ? <Consent requestId={requestId} /> : team ? <Grants teamId={team.id} /> : null}

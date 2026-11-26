@@ -10,7 +10,7 @@
 | Path | `edgeapi.slack.com/cache/channels/info` |
 | Sends | — |
 | Reads | `failed_ids`, `results`, `ok`, `member_channels` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script38.js:771 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script38.js:771 anonymous` |
 | rea | `ev_c768a8dd3a32ade2e987e251d0627a66b7d798dc007c87a92e41828826c7a8e2` |
 
 Seen 4 time(s) in 1 run(s).
@@ -25,7 +25,7 @@ Seen 4 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 508 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 508 ms
 
 Sent:
 
@@ -36,7 +36,7 @@ Sent:
     "fp": "6f",
     "_x_num_retries": "0"
   },
-  "body": "{\"token\":\"xoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\",\"check_membership\":true,\"updated_ids\":{\"D0C4VCJA6NP\":1790614723826}}"
+  "body": "{\"token\":\"<slackToken>\",\"check_membership\":true,\"updated_ids\":{\"<channelId:1>\":1790614723826}}"
 }
 ```
 
@@ -45,14 +45,14 @@ Answered:
 ```json
 {
   "failed_ids": [
-    "D0C4VCJA6NP"
+    "<channelId:1>"
   ],
   "results": [],
   "ok": true
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 14: press Enter: 200, 373 ms
+**runs/inspect/20261103T065639_slackAccount**, step 14: press Enter: 200, 373 ms
 
 Sent:
 
@@ -63,7 +63,7 @@ Sent:
     "fp": "6f",
     "_x_num_retries": "0"
   },
-  "body": "{\"token\":\"xoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\",\"check_membership\":true,\"updated_ids\":{\"C0CDBB09HT5\":0}}"
+  "body": "{\"token\":\"<slackToken>\",\"check_membership\":true,\"updated_ids\":{\"<channelId:2>\":0}}"
 }
 ```
 
@@ -73,24 +73,24 @@ Answered:
 {
   "results": [
     {
-      "id": "C0CDBB09HT5",
+      "id": "<channelId:2>",
       "enterprise_id": "",
-      "context_team_id": "T0C4VCD06MR",
+      "context_team_id": "<teamId:1>",
       "internal_team_ids": [],
       "pending_connected_team_ids": [],
       "pending_shared": [],
       "shared_team_ids": [
-        "T0A9H4FM18V"
+        "<teamId:2>"
       ],
       "connected_limited_team_ids": [],
       "connected_team_ids": [
-        "T0A9H4FM18V",
-        "T0C4VCD06MR"
+        "<teamId:2>",
+        "<teamId:1>"
       ],
-      "conversation_host_id": "T0A9H4FM18V",
+      "conversation_host_id": "<teamId:2>",
       "creator": "USLACKBOT",
-      "name": "Untitled",
-      "name_normalized": "FC:F0CDBB09HT5:Untitled",
+      "name": "<name:1>",
+      "name_normalized": "<name:2>",
       "previous_names": [],
       "created": 1793354470,
       "unlinked": 0,
@@ -168,14 +168,14 @@ Answered:
     }
   ],
   "member_channels": [
-    "C0CDBB09HT5",
-    "C0CDBB09HT5"
+    "<channelId:2>",
+    "<channelId:2>"
   ],
   "ok": true
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 16: press Control+a: 200, 109 ms
+**runs/inspect/20261103T065639_slackAccount**, step 16: press Control+a: 200, 109 ms
 
 Sent:
 
@@ -186,7 +186,7 @@ Sent:
     "fp": "6f",
     "_x_num_retries": "0"
   },
-  "body": "{\"token\":\"xoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\",\"check_membership\":true,\"updated_ids\":{\"C0CDBB09HT5\":1793354473218}}"
+  "body": "{\"token\":\"<slackToken>\",\"check_membership\":true,\"updated_ids\":{\"<channelId:2>\":1793354473218}}"
 }
 ```
 
@@ -196,8 +196,8 @@ Answered:
 {
   "results": [],
   "member_channels": [
-    "C0CDBB09HT5",
-    "C0CDBB09HT5"
+    "<channelId:2>",
+    "<channelId:2>"
   ],
   "ok": true
 }

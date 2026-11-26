@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { getState, putState } from '../../storage/state/index'
 import { PASS_REUSE_MS, PASSES_KEPT } from './types'
 import type { VoicePass } from './types'
+import { logHome } from '../../config/logHome/index'
 
 export function passesPath(): string {
-  return join(process.env.LOG_INBOX_STATE || join(homedir(), '.logCli', 'inbox'), 'voicePasses.json')
+  return join(process.env.LOG_INBOX_STATE || join(logHome(), 'inbox'), 'voicePasses.json')
 }
 
 export function passKey(text: string): string {

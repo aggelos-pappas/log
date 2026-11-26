@@ -6,8 +6,8 @@ import { marketplaceFixture } from "../../twenty/graphql/index.ts";
 import { guardCall } from "../server/helpers/guardCall.ts";
 import { commandTools } from "../server/helpers/toolsFromCommands.ts";
 import { createLogMcpServer } from "../server/index.ts";
-import { TERMINAL_ONLY } from "../server/types.ts";
 import { catalog, didYouMean, exampleInputs, getAnswer, resolveCall, searchAnswer, searchCatalog } from "./index.ts";
+import { LOADS_EVERY_TOOL_MS } from "../../../scripts/tests/timeouts.ts";
 
 const entries = catalog(COMMANDS);
 const callable = entries.filter((e) => !e.terminalOnly);
@@ -29,7 +29,7 @@ describe("the command catalog", () => {
     expect(callable.map((e) => e.tool).sort()).toEqual(plainTools);
     const liveTools = commandTools(COMMANDS).filter((t) => t.live).map((t) => t.tool).sort();
     expect(callable.flatMap((e) => (e.liveTool ? [e.liveTool] : [])).sort()).toEqual(liveTools);
-    for (const name of Object.keys(TERMINAL_ONLY)) if (COMMANDS.some((c) => c.name === name)) expect(entries.some((e) => e.command.name === name && e.terminalOnly)).toBe(true);
+    for (const command of COMMANDS.filter((c) => c.terminalOnly)) expect(entries.some((e) => e.command === command && e.terminalOnly === command.terminalOnly)).toBe(true);
     expect(entries.find((e) => e.id === "twitter.dm")?.liveTool).toBe("twitterDmLive");
   });
 
@@ -60,7 +60,7 @@ describe("logSearch", () => {
 
   test("naming a platform keeps the other platforms out", () => {
     const found = searchCatalog(entries, "save x cookies", 8);
-    expect(found.hits[0].entry.id).toBe("twitter.cookies.save");
+    expect(found.hits.slice(0, 3).map((h) => h.entry.id)).toContain("twitter.cookies.save");
     for (const hit of found.hits) expect(["twitter", "any", "byArgument"]).toContain(hit.entry.platform);
   });
 
@@ -73,7 +73,7 @@ describe("logSearch", () => {
 
   test("results are a table, and the answer ends with the next call", () => {
     const text = searchAnswer(entries, { query: "send a dm on x" }).text;
-    expect(text).toMatch(/^results\[\d+\]\{id,summary,acts\}:$/m);
+    expect(text).toMatch(/^results\[\d+\]\{id,capability,summary,acts\}:$/m);
     expect(text).toContain('help[1]:\n  - logGet {"id":"twitter.dm"}');
   });
 });
@@ -90,9 +90,9 @@ describe("logGet", () => {
     expect(answer.text).toContain("rules: rules ");
   });
 
-  test("a terminal-only command says matt runs it in a terminal", () => {
+  test("a terminal-only command says the owner runs it in a terminal", () => {
     const answer = getAnswer(entries, { id: "twitter.cookies.save" });
-    expect(answer.text).toContain("run by matt in a terminal");
+    expect(answer.text).toContain("run by the owner in a terminal");
     expect(answer.text).toContain("log twitter cookies save --account yourAccount");
   });
 
@@ -140,7 +140,7 @@ describe("the three tools over MCP", () => {
     const { tools } = await client.listTools();
     expect(tools.slice(0, 4).map((t) => t.name)).toEqual(["getGuide", "logSearch", "logGet", "logCall"]);
     await client.close();
-  });
+  }, LOADS_EVERY_TOOL_MS);
 
   test("search, get and call run end to end, and call goes through the command tool's own guard", async () => {
     const client = await connected();

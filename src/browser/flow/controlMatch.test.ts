@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { answersIssue, confirmingRequest, dialogAt, dialogOf, flowWithParams, loadFlow } from './index'
 import type { StepExchange } from '../../subq/stepReading/index'
+import { SPAWNS_PROCESS_MS } from '../../../scripts/tests/timeouts.ts'
 
 const python = join(import.meta.dir, '..', '..', '..', 'python')
 const fixture = (name: string) => readFileSync(join(python, 'fixtures', 'controls', `${name}.yml`), 'utf8')
@@ -155,23 +156,23 @@ describe('flows carry what makes each step deterministic', () => {
 describe("the picture steps' answers decide them (rule 73)", () => {
   const steps = loadFlow('profileSetup')!.steps
   const at = (id: string) => steps.find((s) => s.id === id)!.answers!
-  const EXETER = { uid: '61593843527201', homeCity: 'Exeter', homeCountry: 'US' }
+  const EXETER = { uid: '99900000000002', homeCity: 'Exeter', homeCountry: 'US' }
   const exchange = (name: string, answer: unknown): StepExchange => ({ offsetMs: 0, kind: 'api', name, method: 'POST', host: 'www.facebook.com', path: '/', status: 200, ms: 400, sent: {}, answer, errors: [], known: true })
 
   test("the dialog must be for this account, the upload must name it and return the photo's id", () => {
     const dialog = (id: string) => exchange('ProfileCometProfilePictureEditDialogQuery', { data: { viewer: { actor: { id, profile_picture_is_silhouette: true } } } })
-    expect(answersIssue(at('s03_clickChooseProfilePicture'), [dialog('61593843527201')], EXETER)).toBeNull()
+    expect(answersIssue(at('s03_clickChooseProfilePicture'), [dialog('99900000000002')], EXETER)).toBeNull()
     expect(answersIssue(at('s03_clickChooseProfilePicture'), [dialog('100000000000001')], EXETER)).not.toBeNull()
     const upload = (profileID: string, fbid: string | null) => exchange('profilePictureUpload', { __ar: 1, payload: { fbid, profileID, imageWidth: 896, imageHeight: 1200 } })
-    expect(answersIssue(at('s04_uploadUploadPhoto'), [upload('61593843527201', '122123515989461450')], EXETER)).toBeNull()
-    expect(answersIssue(at('s04_uploadUploadPhoto'), [upload('61593843527201', null)], EXETER)).not.toBeNull()
+    expect(answersIssue(at('s04_uploadUploadPhoto'), [upload('99900000000002', '122123515989461450')], EXETER)).toBeNull()
+    expect(answersIssue(at('s04_uploadUploadPhoto'), [upload('99900000000002', null)], EXETER)).not.toBeNull()
   })
 
   test("the session names a plain endpoint the way the readings do, so a step can wait on it", () => {
     const script = ['import sys', 'sys.path.insert(0, ".")', 'from session.inspectSession import endpoint_name', 'print(endpoint_name("https://www.facebook.com/profile/picture/upload/?profile_id=1"), endpoint_name("https://www.facebook.com/ajax/bnzai?x=1"))'].join('\n')
     const run = spawnSync(process.env.LOG_PYTHON || 'python', ['-c', script], { cwd: python, encoding: 'utf8' })
     expect(run.stdout.trim()).toBe('profilePictureUpload ajaxBnzai')
-  })
+  }, SPAWNS_PROCESS_MS)
 })
 
 describe('a picked control is held by a tag, not by where it sat (rule 79)', () => {
@@ -189,7 +190,7 @@ describe('a picked control is held by a tag, not by where it sat (rule 79)', () 
     expect(document.querySelector('[data-log-control="c1"]')?.id).toBe('price')
     expect(tag(['html > body:nth-child(2) > form:nth-child(1) > label:nth-child(9) > input:nth-child(1)', 'c2'])).toBe(false)
     expect(document.querySelectorAll('[data-log-control]').length).toBe(0)
-  })
+  }, SPAWNS_PROCESS_MS)
 })
 
 describe("the location step reads Facebook's answer to the whole place typed, never a prefix's (rule 73)", () => {
@@ -203,7 +204,7 @@ describe("the location step reads Facebook's answer to the whole place typed, ne
     ].join('\n')
     const run = spawnSync(process.env.LOG_PYTHON || 'python', ['-c', script], { cwd: python, encoding: 'utf8' })
     expect(run.stdout.trim().split(/\r?\n/)).toEqual(['["Mountain Top, Pennsylvania", "Mountaintop, Pennsylvania"]', '[]'])
-  })
+  }, SPAWNS_PROCESS_MS)
 })
 
 describe('the accessible name decides between controls that share a word (rule 79)', () => {

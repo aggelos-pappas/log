@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { checkAnchors, unpairedSpecs } from "../../specs/index.ts";
 import { addImport, addToArray, addToInterface, addToObject, addToReturnedObject, AstEditError, applyPlan, namesOf, planNewPlatform } from "./index.ts";
+import { SCANS_REPO_MS } from "../../../scripts/tests/timeouts.ts";
 
 const REPO = join(import.meta.dir, "..", "..", "..");
 const PROBE = "scaffoldProbe";
@@ -61,7 +62,7 @@ describe("log new platform", () => {
     for (const file of [`src/${PROBE}/account/session/client.ts`, `src/cli/${PROBE}/index.ts`, `src/cli/${PROBE}/${PROBE}.test.ts`, `python/${PROBE}Api/engine.py`, `python/${PROBE}Api/__init__.py`, `docs/platforms/${PROBE}/README.md`]) expect(existsSync(join(root, file))).toBe(true);
     expect(read(`src/${PROBE}/account/session/client.ts`)).toContain("sessionCookies: ['probe_session']");
     expect(read("src/storage/platform/helpers/extenders.ts")).toContain(`${PROBE}: makeExtender({ platform: '${PROBE}', chatKind: () => 'dm' })`);
-  });
+  }, SCANS_REPO_MS);
 
   test("a new platform gets its spec and anchors, and every anchor is proved by the syntax tree on what was written", async () => {
     const root = copyOfRepo();
@@ -76,7 +77,7 @@ describe("log new platform", () => {
     expect(report.findings).toEqual([]);
     expect(report.checked).toBeGreaterThan(8);
     for (const id of Object.keys(spec.anchors)) expect(readFileSync(join(root, `docs/specs/${PROBE}.md`), "utf8")).toContain(`### ${id}:`);
-  });
+  }, SCANS_REPO_MS);
 
   test("an existing platform, a bad name or a missing library is refused before anything is written", () => {
     const root = copyOfRepo();

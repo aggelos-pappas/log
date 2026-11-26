@@ -1,0 +1,58 @@
+[
+  {
+    "id": "D1",
+    "question": "Where should a draft in the owner's voice come from, so most first tries pass the gate?",
+    "options": [
+      { "id": "A", "name": "Today: the agent writes, the gate grades", "description": "The agent drafts from the chat card in its own words, the gate grades it, the agent rewrites on a fail." },
+      { "id": "B", "name": "Grounding pack for the agent", "description": "The voice tool hands the agent a grounding pack before it writes: his real replies to the most similar messages (that chat first, then all chats), one line of his measured features (words per line, case, punctuation, his most-used words and openers), and 2-3 contrastive lines he would never write (AI tells and other people's lines). The agent writes 3-5 options from it; no local generator." },
+      { "id": "C", "name": "Small local model writes options (ONNX)", "description": "Like B, but a small instruct model (about 1-2B, ONNX through the runtime log already uses for its pinned models) writes the 3-5 options on the CPU from the grounding pack; the agent picks or edits." },
+      { "id": "D", "name": "Small local model writes options (llama.cpp)", "description": "Like C, but the model is a quantized GGUF served by llama.cpp's server on the CPU, a new runtime and binary for log to pin and ship." },
+      { "id": "E", "name": "Local model steered by his style vector", "description": "C or D plus a style vector built from his messages against generic text (StyleVector / GLASS), added inside the model while it writes. Needs activation access." },
+      { "id": "F", "name": "Fine-tune a model on his chats", "description": "LoRA fine-tune of a 7B model on his replies (WeClone's fine-tuned clone), then generate from it." }
+    ],
+    "criteria": [
+      { "id": "passRate", "question": "How likely is a first option to sound like him and pass, for short informal DMs?", "levels": ["Worse than today", "About today", "Somewhat better", "Much better", "Most first options pass"] },
+      { "id": "latency", "question": "How fast is a set of options on this laptop's CPU, whole-ask p95?", "levels": ["Over a minute", "20-60 s", "5-20 s", "2-5 s", "Under 2 s"] },
+      { "id": "machineFit", "question": "Does it run on this laptop (Ryzen 9 8945HS, no NVIDIA GPU, Windows)?", "levels": ["Cannot run", "Runs badly", "Runs with effort", "Runs well", "Already runs today"] },
+      { "id": "effort", "question": "How small is the build for log's code (Bun/TypeScript plus Python, existing voice index and model store)?", "levels": ["Very large", "Large", "Medium", "Small", "Tiny"] },
+      { "id": "privacy", "question": "How little of his private messages leaves the machine?", "levels": ["Everything goes out", "Most goes out", "Some goes out", "Little goes out", "Nothing extra goes out"] },
+      { "id": "upkeep", "question": "How little upkeep as his writing changes (new chats, new words)?", "levels": ["Retrain often", "Rebuild often", "Rebuild sometimes", "Updates itself mostly", "Updates itself"] }
+    ]
+  },
+  {
+    "id": "D2",
+    "question": "How should the gate decide pass or fail, so it is defined, stable and agrees with his own real messages?",
+    "options": [
+      { "id": "A", "name": "Today: every check must pass", "description": "Eight or more separate thresholds (SubQ voice, context, friend-like, opener, chat, builds-on; his word pairs at his 10th percentile; never-said phrases; AI tells; watermark). Any one fails the draft." },
+      { "id": "B", "name": "One calibrated authorship score plus three hard blocks", "description": "One number from a fixed, written weighting of the same signals (SubQ voice, his word pairs, nearest-reply similarity, AI-tell distance, answers-them when an answer is owed), with its threshold set so his own held-out messages pass 95% of the time. Hard blocks stay only for never-said phrases, watermark artifacts and a pitch in a first message." },
+      { "id": "C", "name": "SubQ alone, one question", "description": "One SubQ question 'did he write this', no local signals." },
+      { "id": "D", "name": "Local authorship verification only", "description": "No SubQ: a training-free local authorship check (embedding similarity to his nearest replies, his word pairs, his measured features), calibrated on his messages." },
+      { "id": "E", "name": "Today's checks, cached and lower variance", "description": "Keep every check, but ask SubQ at low temperature once per exact text and cache the verdict so send matches pre-gate." }
+    ],
+    "criteria": [
+      { "id": "agreement", "question": "How often does it pass his own real messages and fail AI-written ones?", "levels": ["Worse than today", "About today", "Somewhat better", "Much better", "Near perfect"] },
+      { "id": "stability", "question": "Does the same text get the same verdict every time (pre-gate and at send)?", "levels": ["Often differs", "Sometimes differs", "Rarely differs", "Almost never", "Never differs"] },
+      { "id": "defined", "question": "Can the owner read why it passed or failed as one defined rule?", "levels": ["Opaque", "Hard to follow", "Readable with effort", "Clear", "One line anyone can check"] },
+      { "id": "safety", "question": "Does it still stop AI-sounding text, pitches in a first message and hidden characters?", "levels": ["Lets them through", "Often misses", "Sometimes misses", "Rarely misses", "Always stops them"] },
+      { "id": "latency", "question": "How fast is one verdict, p95?", "levels": ["Over 20 s", "7-20 s", "3-7 s", "1-3 s", "Under 1 s"] },
+      { "id": "effort", "question": "How small is the change to src/voice and src/twitter/copy/voice?", "levels": ["Very large", "Large", "Medium", "Small", "Tiny"] }
+    ]
+  },
+  {
+    "id": "D3",
+    "question": "What should a failed draft come back with?",
+    "options": [
+      { "id": "A", "name": "Today: sub-scores and named pairs", "description": "The sub-scores, the pairs he never wrote and the closest AI phrase; the agent rewrites." },
+      { "id": "B", "name": "The fix, in his words", "description": "Each failing span with his nearest real phrasing for it (from his replies), and which single check failed in plain words." },
+      { "id": "C", "name": "One automatic refine round", "description": "B, then the generator rewrites only the failing spans with his phrasing and the gate re-reads once before the agent sees the result (critique-refine, PerFine)." },
+      { "id": "D", "name": "Ranked passing options instead of a fail", "description": "The tool always returns options ranked by the score; a fail only happens when none of 3-5 options passes, with B's fix for the best one." }
+    ],
+    "criteria": [
+      { "id": "roundsToPass", "question": "How few rounds does the agent need before something passes?", "levels": ["Many rounds", "3-4 rounds", "2 rounds", "Usually 1", "Almost always first try"] },
+      { "id": "hardStops", "question": "How well does it avoid the 3-fail pause and the ~8-fail hard stop in Hermes?", "levels": ["Makes them likelier", "No change", "Somewhat fewer", "Rare", "Never"] },
+      { "id": "faithful", "question": "Does the passing text stay his own words, not drift into a cleverer rewrite?", "levels": ["Drifts a lot", "Drifts some", "Mostly his", "His words", "Only his phrasing"] },
+      { "id": "latency", "question": "How fast is the whole ask from first draft to a passing one, p95?", "levels": ["Over a minute", "30-60 s", "10-30 s", "5-10 s", "Under 5 s"] },
+      { "id": "effort", "question": "How small is the build?", "levels": ["Very large", "Large", "Medium", "Small", "Tiny"] }
+    ]
+  }
+]

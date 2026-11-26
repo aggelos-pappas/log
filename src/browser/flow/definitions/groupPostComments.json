@@ -1,5 +1,6 @@
 {
   "name": "groupPostComments",
+  "platform": "facebook",
   "summary": "On a group's Open questions tab, open a post's comments, switch the sort to All comments and scroll them; read-only",
   "params": [
     {
@@ -97,7 +98,7 @@
     }
   ],
   "source": {
-    "runDir": "C:/Users/0/.logCli/runs/inspect/20261020T153648_61594063207669/sequences/groupPostComments",
+    "runDir": "C:/Users/tester/.logCli/runs/inspect/20261020T153648_99900000000001/sequences/groupPostComments",
     "account": "groupPostComments",
     "builtAt": "2026-10-20T15:52:00.519Z"
   }

@@ -43,27 +43,56 @@ describe("catching up after a gap (rule 135)", () => {
     expect(db().prepare("SELECT kind FROM alerts WHERE kind = 'catchUpRefused'").all()).toHaveLength(1);
   });
 
-  test("a refused gap stays refused until matt resumes it, and then the runner catches up again", async () => {
+  test("a refused gap stays refused until the owner resumes it, and then the runner catches up again", async () => {
     openGap("twitter", "acct", "2026-11-04T01:00:00Z", "socketDropped");
     await catchUpRunner("twitter", "acct", async () => ({ appended: 0, refused: "xchatLocked: transient" })).run();
-    expect(resumeGap("discord", "acct", "matt")).toBeNull();
+    expect(resumeGap("discord", "acct", "the owner")).toBeNull();
     let calls = 0;
     await catchUpRunner("twitter", "acct", async () => (calls++, { appended: 1 })).run();
     expect(calls).toBe(0);
-    expect(resumeGap("twitter", "acct", "matt")).toMatchObject({ status: "open", fromAt: "2026-11-04T01:00:00Z" });
-    expect(String(behindOf("twitter", "acct")?.detail)).toContain("resumed by matt");
+    expect(resumeGap("twitter", "acct", "the owner")).toMatchObject({ status: "open", fromAt: "2026-11-04T01:00:00Z" });
+    expect(String(behindOf("twitter", "acct")?.detail)).toContain("resumed by the owner");
     expect(db().prepare("SELECT kind FROM alerts WHERE kind = 'gapResumed'").all()).toHaveLength(1);
     await catchUpRunner("twitter", "acct", async () => (calls++, { appended: 1 })).run();
     expect(calls).toBe(1);
     expect(behindOf("twitter", "acct")).toBeNull();
-    expect(resumeGap("twitter", "acct", "matt")).toBeNull();
+    expect(resumeGap("twitter", "acct", "the owner")).toBeNull();
   });
 
   test("an X user id finds its handle from the notifications the owner stored, so the voice gate reads the right chat", () => {
     expect(handleOfUserId("twitter", "acct", "1987816842371743744")).toBeNull();
-    appendEvent({ platform: "twitter", account: "acct", conversationId: "", type: "notification", with: "AjeetVermai", payload: { userId: "1987816842371743744", handle: "AjeetVermai" }, receivedAt: "2026-11-05T11:41:11Z" });
-    expect(handleOfUserId("twitter", "acct", "1987816842371743744")).toBe("AjeetVermai");
+    appendEvent({ platform: "twitter", account: "acct", conversationId: "", type: "notification", with: "HandleA1", payload: { userId: "1987816842371743744", handle: "HandleA1" }, receivedAt: "2026-11-05T11:41:11Z" });
+    expect(handleOfUserId("twitter", "acct", "1987816842371743744")).toBe("HandleA1");
     expect(handleOfUserId("twitter", "other", "1987816842371743744")).toBeNull();
+  });
+
+  test("the catch-up machine says how each run ended", async () => {
+    expect(await catchUpRunner("slack", "none", async () => ({ appended: 1 })).run()).toMatchObject({ end: "nothingBehind" });
+    openGap("slack", "acct", "2026-11-04T00:00:00Z", "socketDropped");
+    expect(await catchUpRunner("slack", "acct", undefined).run()).toMatchObject({ end: "noCatchUp" });
+    expect(await catchUpRunner("slack", "acct", async () => { throw new Error("engine crashed"); }).run()).toMatchObject({ end: "retryLater", detail: "engine crashed" });
+    expect(behindOf("slack", "acct")).toMatchObject({ status: "open" });
+    expect(await catchUpRunner("slack", "acct", async () => ({ appended: 0, refused: "ImportError: DLL load failed while importing win32clipboard" })).run()).toMatchObject({ end: "retryLater" });
+    expect(behindOf("slack", "acct")).toMatchObject({ status: "open" });
+    expect(await catchUpRunner("slack", "acct", async () => ({ appended: 2 })).run()).toMatchObject({ end: "caughtUp", appended: 2 });
+    expect(behindOf("slack", "acct")).toBeNull();
+  });
+
+  test("a gap held for our own error, from before this fix, is reopened by the next run and caught up", async () => {
+    const gap = openGap("instagram", "acct", "2026-11-14T10:12:30Z", "ownerRestarted");
+    markGap(gap.id, "refused", "reading the inbox: ImportError: cannot import name 'ArgsKwargs' from 'pydantic_core._pydantic_core' (unknown location)");
+    let calls = 0;
+    expect(await catchUpRunner("instagram", "acct", async () => (calls++, { appended: 4 })).run()).toMatchObject({ end: "caughtUp", appended: 4 });
+    expect(calls).toBe(1);
+    expect(behindOf("instagram", "acct")).toBeNull();
+  });
+
+  test("a gap the platform refused is held, and nothing is read", async () => {
+    const gap = openGap("twitter", "held", "2026-11-04T00:00:00Z", "socketDropped");
+    markGap(gap.id, "refused", "429: rate limited");
+    let calls = 0;
+    expect(await catchUpRunner("twitter", "held", async () => (calls++, { appended: 1 })).run()).toMatchObject({ end: "held" });
+    expect(calls).toBe(0);
   });
 
   test("only one catch-up runs at a time", async () => {
@@ -93,20 +122,53 @@ describe("catching up after a gap (rule 135)", () => {
     const specs: Record<string, unknown>[] = [];
     const read: PlatformRead = (_a, spec) => {
       specs.push(spec);
+      if (spec.action === "chats") return { answer: { ok: true, chats: [{ id: "D1", lastMessageId: "900" }, { id: "D2", lastMessageId: "600" }] } } as unknown as ReturnType<PlatformRead>;
       if (spec.channel === "D1") return { answer: { ok: true, messages: [{ id: "101", at: "2026-11-04T02:00:00Z", from: "x", text: "missed this" }, { id: "102", at: "2026-11-04T02:01:00Z", from: "me", fromMe: true, text: "and my answer" }] } } as unknown as ReturnType<PlatformRead>;
       return { answer: { ok: false, code: "rateLimited", detail: "429" } } as unknown as ReturnType<PlatformRead>;
     };
     const got = await discordCatchUp(account, openGap("discord", "acct", "2026-11-04T01:00:00Z", "socketDropped"), read, new Date(), noWait);
-    expect(specs).toEqual([{ action: "read", channel: "D1", limit: 100, after: "100", catchUp: true }, { action: "read", channel: "D2", limit: 100, after: "500", catchUp: true }]);
+    expect(specs).toEqual([{ action: "chats", dmsOnly: true, catchUp: true }, { action: "read", channel: "D1", limit: 100, after: "100", catchUp: true }, { action: "read", channel: "D2", limit: 100, after: "500", catchUp: true }]);
     expect(got).toMatchObject({ appended: 2, refused: "reading D2: rateLimited: 429" });
     expect(positionsOf("discord", "acct").D1).toBe("102");
     expect(db().prepare("SELECT type, source FROM events ORDER BY seq").all()).toEqual([{ type: "message", source: "catchUp" }, { type: "ownMessage", source: "catchUp" }]);
+  });
+
+  test("Discord reads only the chats whose newest message is past their saved position, newest first, from one chat list", async () => {
+    recordPosition("discord", "acct", "100", "QUIET");
+    recordPosition("discord", "acct", "200", "BUSY");
+    recordPosition("discord", "acct", "300", "OLDER");
+    recordPosition("discord", "acct", "400", "CLOSED");
+    const specs: Record<string, unknown>[] = [];
+    const read: PlatformRead = (_a, spec) => {
+      specs.push(spec);
+      if (spec.action === "chats") return { answer: { ok: true, chats: [{ id: "QUIET", lastMessageId: "100" }, { id: "OLDER", lastMessageId: "350" }, { id: "BUSY", lastMessageId: "1200" }, { id: "EMPTY", lastMessageId: null }] } } as unknown as ReturnType<PlatformRead>;
+      return { answer: { ok: true, messages: [] } } as unknown as ReturnType<PlatformRead>;
+    };
+    const got = await discordCatchUp(account, openGap("discord", "acct", "2026-11-04T01:00:00Z", "socketDropped"), read, new Date(), noWait);
+    expect(specs.map((s) => s.channel ?? s.action)).toEqual(["chats", "BUSY", "OLDER"]);
+    expect(got.detail).toContain("2 of 4 chat(s)");
+  });
+
+  test("a refused chat list stops the Discord catch-up on an account refusal and reads every chat on any other failure", async () => {
+    recordPosition("discord", "acct", "100", "D1");
+    const limited: PlatformRead = () => ({ answer: { ok: false, code: "rateLimited", detail: "Discord answered 429" } }) as unknown as ReturnType<PlatformRead>;
+    const stopped = await discordCatchUp(account, openGap("discord", "acct", "2026-11-04T01:00:00Z", "socketDropped"), limited, new Date(), noWait);
+    expect(stopped).toEqual({ appended: 0, refused: "listing the chats: rateLimited: Discord answered 429" });
+    const specs: Record<string, unknown>[] = [];
+    const dropped: PlatformRead = (_a, spec) => {
+      specs.push(spec);
+      return (spec.action === "chats" ? { answer: { ok: false, code: "platformError", detail: "the network dropped" } } : { answer: { ok: true, messages: [] } }) as unknown as ReturnType<PlatformRead>;
+    };
+    const got = await discordCatchUp(account, openGap("discord", "acct", "2026-11-04T01:00:00Z", "socketDropped"), dropped, new Date(), noWait);
+    expect(specs.map((s) => s.channel ?? s.action)).toEqual(["chats", "D1"]);
+    expect(got.detail).toContain("wasn't read");
   });
 
   test("a chat the account can't read is skipped, and the catch-up carries on with the others", async () => {
     recordPosition("discord", "acct", "100", "DEAD");
     recordPosition("discord", "acct", "100", "D1");
     const read: PlatformRead = (_a, spec) => {
+      if (spec.action === "chats") return { answer: { ok: true, chats: [{ id: "DEAD", lastMessageId: "150" }, { id: "D1", lastMessageId: "101" }] } } as unknown as ReturnType<PlatformRead>;
       if (spec.channel === "DEAD") return { answer: { ok: false, code: "platformError", detail: 'Discord answered 403 to channel DEAD messages: {"message": "Missing Access", "code": 50001}' } } as unknown as ReturnType<PlatformRead>;
       return { answer: { ok: true, messages: [{ id: "101", at: "2026-11-04T02:00:00Z", from: "x", text: "still read" }] } } as unknown as ReturnType<PlatformRead>;
     };
@@ -151,7 +213,7 @@ describe("a send catches up only its own chat, never waiting for the whole accou
 
   test("while catching up, this one chat is read and stored at once", () => {
     openGap("discord", "oneChatB", "2026-11-07T11:00:00Z", "ownerRestarted");
-    const got = catchUpOneChat("discord", "oneChatB", "c2", () => ({ ok: true, messages: [{ id: "1", at: "2026-11-07T11:01:00Z", from: "Kennedy", fromMe: false, text: "we gotta plan" }] }), new Date("2026-11-07T11:02:00Z"));
+    const got = catchUpOneChat("discord", "oneChatB", "c2", () => ({ ok: true, messages: [{ id: "1", at: "2026-11-07T11:01:00Z", from: "Kira", fromMe: false, text: "we gotta plan" }] }), new Date("2026-11-07T11:02:00Z"));
     expect(got).toEqual({ ok: true, how: "chatRead", stored: 1 });
   });
 

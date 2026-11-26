@@ -6,8 +6,8 @@ import { buildTaste, candidatesFromXPosts, readTaste, tasteFit, tasteSummary, wr
 import type { DecisionRequest, DecisionResponse } from '../../subq/decisions/index'
 
 const POSTS = [
-  { tweet_id: '1', created_at: 'Mon Nov 02 03:58:23 +0000 2026', text: 'put the fries in the bag https://t.co/abc', author: { screen_name: 'matthewsoldit' }, media: { video: [{ media_url_https: 'https://pbs.twimg.com/amplify_video_thumb/1/img/a.jpg', variants: [{ content_type: 'video/mp4', url: 'https://video.twimg.com/a.mp4', bitrate: 600 }] }] } },
-  { tweet_id: '2', text: 'our dashboard', author: { screen_name: 'matthewsoldit' }, media: { photo: [{ media_url_https: 'https://pbs.twimg.com/media/b.jpg' }] } },
+  { tweet_id: '1', created_at: 'Mon Nov 02 03:58:23 +0000 2026', text: 'put the fries in the bag https://t.co/abc', author: { screen_name: 'xAccount' }, media: { video: [{ media_url_https: 'https://pbs.twimg.com/amplify_video_thumb/1/img/a.jpg', variants: [{ content_type: 'video/mp4', url: 'https://video.twimg.com/a.mp4', bitrate: 600 }] }] } },
+  { tweet_id: '2', text: 'our dashboard', author: { screen_name: 'xAccount' }, media: { photo: [{ media_url_https: 'https://pbs.twimg.com/media/b.jpg' }] } },
   { tweet_id: '3', text: 'no media' },
 ]
 
@@ -22,12 +22,12 @@ function deciding(answer: (request: DecisionRequest) => Record<string, unknown>)
   return { seen, decide }
 }
 
-describe("matt's meme taste (rule 120)", () => {
+describe("the owner's meme taste (rule 120)", () => {
   test('every picture in his X media posts is a candidate, its text without the t.co link', () => {
     const candidates = candidatesFromXPosts(POSTS)
     expect(candidates.map((c) => [c.url, c.kind, c.text])).toEqual([
-      ['https://x.com/matthewsoldit/status/1', 'video', 'put the fries in the bag'],
-      ['https://x.com/matthewsoldit/status/2', 'photo', 'our dashboard'],
+      ['https://x.com/xAccount/status/1', 'video', 'put the fries in the bag'],
+      ['https://x.com/xAccount/status/2', 'photo', 'our dashboard'],
     ])
     expect(candidates[0]?.mediaUrl).toBe('https://video.twimg.com/a.mp4')
   })
@@ -55,6 +55,6 @@ describe("matt's meme taste (rule 120)", () => {
     const { seen, decide } = deciding(() => ({ fit: { type: 'noul', noul: 0.82 }, style: { type: 'choice', choice: 'streamerReacts', confidence: 0.7 } }))
     const fit = await tasteFit(decide, null, { name: 'Jerry Jones pissed', description: 'a reaction' }, { mediaType: 'image/jpeg', base64: 'AA==' })
     expect(fit).toEqual({ fit: 0.82, style: 'streamerReacts', styleConfidence: 0.7 })
-    expect((seen[0]?.state as { mattsTaste: string }).mattsTaste).toContain("matt's meme taste")
+    expect((seen[0]?.state as { ownersTaste: string }).ownersTaste).toContain("the owner's meme taste")
   })
 })

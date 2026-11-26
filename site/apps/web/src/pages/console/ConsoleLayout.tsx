@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { autoUpdate, flip, FloatingFocusManager, FloatingPortal, offset, shift, useClick, useDismiss, useFloating, useInteractions, useRole } from '@floating-ui/react'
 import { useClerk } from '@clerk/react'
 import { Link, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
@@ -8,6 +9,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRightFromBracket, faBolt, faChartColumn, faCoins, faGear, faGift, faHouse, faPlug, faRobot } from '@fortawesome/free-solid-svg-icons'
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import './console.css'
+import { Spinner, toast } from '@listeningkit/ui'
+import { localConsole } from '@/lib/consoleMode'
 
 export type WorkspaceState = 'notConnected' | 'awaitingConnection' | 'connecting' | 'ready' | 'reconnecting' | 'offline' | 'failed' | 'stateMissing'
 
@@ -58,7 +61,6 @@ export function TeamSwitch() {
   const queryClient = useQueryClient()
   const resetPrivate = useResetPrivate()
   const navigate = useNavigate()
-  const [notice, setNotice] = useState('')
   const teams = session.data?.teams ?? []
   async function pick(teamId: string) {
     try {
@@ -67,42 +69,41 @@ export function TeamSwitch() {
       queryClient.setQueryData(sessionKey, next)
       navigate('/console/start')
     } catch (error) {
-      setNotice(errorText(error))
+      toast.error(errorText(error))
     }
   }
   const initial = (team?.name ?? '?').slice(0, 1).toUpperCase()
-  return (
-    <details className="group relative">
-      <summary
-        className="flex cursor-pointer list-none items-center gap-2 rounded-md bg-[#2A8CFF] px-2.5 py-1.5 text-xs text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_1px_2px_rgba(13,42,76,0.25)] transition-colors hover:bg-[#1F6FE6] sm:text-sm [&::-webkit-details-marker]:hidden"
-        aria-label="Teams"
-      >
-        <span className="hidden rounded-md bg-white/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white sm:inline">{team?.role ?? ''}</span>
-        <span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-bold text-[#1B6FD6]">{initial}</span>
-        <b className="max-w-[5rem] truncate font-semibold sm:max-w-[7rem]">{team?.name ?? 'Pick a team'}</b>
-        <span aria-hidden="true" className="text-[10px] text-white/70">▾</span>
-      </summary>
-      <div className="absolute left-0 top-[calc(100%+6px)] z-30 w-56 rounded-md border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10">
-        <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">Your teams</p>
-        {teams.map((item) => (
-          <button key={item.id} type="button" onClick={() => item.id !== team?.id && pick(item.id)} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-slate-50">
-            <span aria-hidden="true" className="flex size-6 items-center justify-center rounded-full bg-[#2A8CFF] text-[10px] font-bold text-white">{item.name.slice(0, 1).toUpperCase()}</span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate font-semibold">{item.name}</span>
-              <span className="text-[11px] text-slate-500">{item.role}</span>
-            </span>
-            {item.id === team?.id ? <span className="text-[11px] font-semibold text-[#1B6FD6]">✓ active</span> : null}
+  const [open, setOpen] = useState(false)
+  const { refs, floatingStyles, context } = useFloating({ open, onOpenChange: setOpen, placement: 'bottom-start', strategy: 'fixed', middleware: [offset(10), flip(), shift({ padding: 12 })], whileElementsMounted: autoUpdate })
+  const { getReferenceProps, getFloatingProps } = useInteractions([useClick(context), useDismiss(context), useRole(context, { role: 'dialog' })])
+  return <>
+    <button ref={refs.setReference} type="button" {...getReferenceProps()} className="flex items-center gap-2 rounded-md bg-[#2A8CFF] px-2.5 py-1.5 text-xs text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_1px_2px_rgba(13,42,76,0.25)] transition-colors hover:bg-[#1F6FE6] sm:text-sm" aria-label="Teams">
+      <span className="hidden rounded-md bg-white/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white sm:inline">{team?.role ?? ''}</span>
+      <span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-bold text-[#1B6FD6]">{initial}</span>
+      <b className="max-w-[5rem] truncate font-semibold sm:max-w-[7rem]">{team?.name ?? 'Pick a team'}</b>
+      <span aria-hidden="true" className="text-[10px] text-white/70">▾</span>
+    </button>
+    {open ? <FloatingPortal><FloatingFocusManager context={context} modal={false}>
+      <div ref={refs.setFloating} style={{ ...floatingStyles, zIndex: 10000 }} {...getFloatingProps()} aria-label="Your teams" className="w-72 max-w-[calc(100vw-24px)] rounded-xl border border-slate-200 bg-white p-2 font-sans text-sm text-slate-900 shadow-xl shadow-slate-900/10">
+        {team ? <div role="group" aria-label={`${team.name} team profile`} className="mb-2 flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/70 p-4">
+          <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[#2A8CFF] text-xl font-bold text-white shadow-sm">{initial}</span>
+          <div className="min-w-0 flex-1"><p className="truncate text-base font-semibold text-[#0D2A4C]">{team.name}</p><p className="mt-0.5 text-sm capitalize text-slate-600">{team.role}</p></div>
+          <span aria-label="Active team" title="Active team" className="flex size-7 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-white font-semibold text-[#2A8CFF]">✓</span>
+        </div> : null}
+        {teams.filter((item) => item.id !== team?.id).map((item) => (
+          <button key={item.id} type="button" onClick={() => { setOpen(false); void pick(item.id) }} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-slate-50">
+            <span aria-hidden="true" className="flex size-7 items-center justify-center rounded-lg bg-[#2A8CFF] text-xs font-bold text-white">{item.name.slice(0, 1).toUpperCase()}</span>
+            <span className="min-w-0 flex-1"><span className="block truncate font-semibold">{item.name}</span><span className="text-xs capitalize text-slate-500">{item.role}</span></span>
           </button>
         ))}
-        {notice ? <p className="px-2 py-1 text-[11px] text-red-600">{notice}</p> : null}
-        <div className="my-1 h-px bg-slate-200" />
-        <Link to="/teams" className="block rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-slate-50">＋ New team</Link>
-        <Link to="/console/settings" className="block rounded-md px-2 py-1.5 text-sm font-semibold hover:bg-slate-50">⚙ Team settings</Link>
+        <Link to="/teams" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 font-semibold hover:bg-slate-50">＋ New team</Link>
+        <Link to="/teams" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 font-semibold hover:bg-slate-50">⤷ Join by code</Link>
+        <div className="my-1 h-px bg-slate-100" />
+        <Link to="/console/settings" onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2.5 font-semibold hover:bg-slate-50">⚙ Settings</Link>
       </div>
-    </details>
-  )
+    </FloatingFocusManager></FloatingPortal> : null}
+  </>
 }
-
 export function BalanceChip() {
   return (
     <div className="flex h-9 items-center gap-1.5 rounded-md bg-[#2A8CFF] px-2.5 py-1.5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_1px_2px_rgba(13,42,76,0.25)]">
@@ -158,7 +159,7 @@ export function AccountMenu() {
       <div className="absolute right-0 top-[calc(100%+6px)] z-30 w-60 rounded-md border border-slate-200 bg-white p-1.5 text-sm shadow-xl shadow-slate-900/10">
         <p className="truncate px-2 py-1 text-xs font-semibold text-slate-500">{email}</p>
         <div className="my-1 h-px bg-slate-200" />
-        <Link to="/console/settings" className="block rounded-md px-2 py-1.5 font-semibold hover:bg-slate-50">Team settings</Link>
+        <Link to="/console/settings" className="block rounded-md px-2 py-1.5 font-semibold hover:bg-slate-50">Settings</Link>
         <Link to="/console/subscription" className="block rounded-md px-2 py-1.5 font-semibold hover:bg-slate-50">Billing</Link>
         <Link to="/console/connections" className="block rounded-md px-2 py-1.5 font-semibold hover:bg-slate-50">Connections</Link>
         <div className="my-1 h-px bg-slate-200" />
@@ -168,6 +169,15 @@ export function AccountMenu() {
         </button>
       </div>
     </details>
+  )
+}
+
+export function LocalChip() {
+  return (
+    <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-md bg-[#2A8CFF] px-2.5 py-1.5 text-xs font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_1px_2px_rgba(13,42,76,0.25)] sm:text-sm" title="Local console: no sign-in, no team">
+      <span aria-hidden="true" className="size-1.5 rounded-full bg-white" />
+      This machine
+    </span>
   )
 }
 
@@ -206,10 +216,12 @@ export function ConsoleLayout({ title, subtitle, children }: { title: string; su
     return () => root.classList.remove('lk-console-scroll')
   }, [])
 
-  if (session.isLoading) return <div className="relative z-10 grid min-h-screen place-items-center text-sm text-slate-500">Loading…</div>
-  if (session.isError) return <div className="relative z-10 grid min-h-screen place-items-center px-6 text-center text-sm text-slate-600">Could not reach ListeningKit. Check your connection and refresh.</div>
-  if (!session.data) return <Navigate to={`/sign-in?returnPath=${encodeURIComponent(pathname + search)}`} replace />
-  if (!team) return <Navigate to="/teams" replace />
+  if (!localConsole) {
+    if (session.isLoading) return <div className="relative z-10 grid min-h-screen place-items-center"><Spinner label="Loading your console" /></div>
+    if (session.isError) return <div className="relative z-10 grid min-h-screen place-items-center px-6 text-center text-sm text-slate-600">Could not reach ListeningKit. Check your connection and refresh.</div>
+    if (!session.data) return <Navigate to={`/sign-in?returnPath=${encodeURIComponent(pathname + search)}`} replace />
+    if (!team) return <Navigate to="/teams" replace />
+  }
 
   return (
     <div className="relative min-h-screen font-sans text-slate-900">
@@ -220,7 +232,7 @@ export function ConsoleLayout({ title, subtitle, children }: { title: string; su
               <Link to="/" className="ml-1 flex shrink-0 items-center gap-2.5 font-bold tracking-tight" aria-label="ListeningKit home">
                 <img src="/logo.svg" alt="" className="size-8 rounded-[9px]" />
               </Link>
-              <TeamSwitch />
+              {localConsole ? <LocalChip /> : <TeamSwitch />}
             </div>
             <nav
               aria-label="Console"
@@ -244,9 +256,11 @@ export function ConsoleLayout({ title, subtitle, children }: { title: string; su
               ))}
             </nav>
             <div className="relative z-30 ml-auto flex w-fit shrink-0 items-center justify-end gap-1 rounded-md border border-white/80 bg-white/85 p-1 shadow-[0_2px_14px_rgba(13,42,76,0.10),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl transition-transform duration-200 hover:scale-[1.02] motion-reduce:transform-none sm:gap-2 md:ml-0 md:justify-self-end">
-              <ReferralLink />
-              <BalanceChip />
-              <AccountMenu />
+              {localConsole ? <span className="px-2 py-1.5 text-xs font-semibold text-slate-600">Local console</span> : <>
+                <ReferralLink />
+                <BalanceChip />
+                <AccountMenu />
+              </>}
             </div>
           </div>
           <nav

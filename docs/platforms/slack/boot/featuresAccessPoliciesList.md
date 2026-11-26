@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundarytRJKOVFiA68YryY9
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `feature_policies.admin_productivity_suite__access`, `feature_policies.analytics_ai__view`, `feature_policies.analytics_app__view`, `feature_policies.analytics_all_channels_in_org__view`, `feature_policies.analytics_member__view`, `feature_policies.analytics_channel_insights_client__view`, `feature_policies.analytics_slackbot__view`, `feature_policies.analytics_member_plan_with_ai_feature__view`, `feature_policies.analytics_member_paid_plan__view`, `feature_policies.analytics_enterprise_plus_admin__view`, `feature_policies.canvas_standalone__edit` and 28 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_7f96348a092aafff7bc33ebbf88e3b2d0490512a370bd68c7b2e6d032a514bb3` |
 
 Seen 2 time(s) in 1 run(s).
@@ -20,13 +20,13 @@ Seen 2 time(s) in 1 run(s).
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 4: goto /client | 1 | 200 | 559 ms | 3159 ms | — |
-| inspect | step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU | 1 | 200 | 305 ms | 2225 ms | — |
+| inspect | step 6: goto /client/<teamId:1>/<channelId:1> | 1 | 200 | 305 ms | 2225 ms | — |
 
 ### What it sent and what came back (the newest 2 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 559 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 559 ms
 
 Sent:
 
@@ -43,7 +43,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryW6zdeU2xALzQZmIy\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryW6zdeU2xALzQZmIy\r\nContent-Disposition: form-data; name=\"_x_app_name\"\r\n\r\nclient\r\n------WebKitFormBoundaryW6zdeU2xALzQZmIy\r\nContent-Disposition: form-data; name=\"_x_sonic\"\r\n\r\ntrue\r\n------WebKitFormBoundaryW6zdeU2xALzQZmIy--\r\n"
+    "------WebKitFormBoundaryW6zdeU2xALzQZmIy\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryW6zdeU2xALzQZmIy\r\nContent-Disposition: form-data; name=\"_x_app_name\"\r\n\r\nclient\r\n------WebKitFormBoundaryW6zdeU2xALzQZmIy\r\nContent-Disposition: form-data; name=\"_x_sonic\"\r\n\r\ntrue\r\n------WebKitFormBoundaryW6zdeU2xALzQZmIy--\r\n"
   }
 }
 ```
@@ -129,7 +129,7 @@ Answered:
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU: 200, 305 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 305 ms
 
 Sent:
 
@@ -146,7 +146,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundarytRJKOVFiA68YryY9\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundarytRJKOVFiA68YryY9\r\nContent-Disposition: form-data; name=\"_x_app_name\"\r\n\r\nclient\r\n------WebKitFormBoundarytRJKOVFiA68YryY9\r\nContent-Disposition: form-data; name=\"_x_sonic\"\r\n\r\ntrue\r\n------WebKitFormBoundarytRJKOVFiA68YryY9--\r\n"
+    "------WebKitFormBoundarytRJKOVFiA68YryY9\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundarytRJKOVFiA68YryY9\r\nContent-Disposition: form-data; name=\"_x_app_name\"\r\n\r\nclient\r\n------WebKitFormBoundarytRJKOVFiA68YryY9\r\nContent-Disposition: form-data; name=\"_x_sonic\"\r\n\r\ntrue\r\n------WebKitFormBoundarytRJKOVFiA68YryY9--\r\n"
   }
 }
 ```

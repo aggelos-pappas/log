@@ -41,7 +41,7 @@ The profile picture and cover photo work the same way (`socialAccounts.profilePh
 
 ## Checks before publishing
 
-`validateListing` (`src/marketplace/publish/helpers/validateListing.ts`) refuses a listing before any browser opens when:
+`validateListing` (`src/facebook/marketplace/publish/helpers/validateListing.ts`) refuses a listing before any browser opens when:
 
 - it has no photo (Facebook's Next button stays disabled without one);
 - it has more than 10 photos;
@@ -55,3 +55,7 @@ The copy guidance asks for 4 to 6 real photos, with the strongest before-and-aft
 
 - **`log facebook publish`** takes up to 10, so 4 to 6 fit.
 - **The recorded flow** uploads two. A third photo onward needs the flow's second upload step repeated for each extra photo.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md) · [What log does on Facebook](platformGuides/facebook.md)

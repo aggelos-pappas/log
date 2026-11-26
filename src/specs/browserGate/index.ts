@@ -5,7 +5,7 @@ const gate = 'python/browser/proxyGate.py'
 const vis = 'python/browser/visibleBrowser.py'
 const device = 'python/device/deviceProfile.py'
 const run = 'src/browser/run/client.ts'
-const home = 'src/marketplace/home/helpers/homeOf.ts'
+const home = 'src/platformKit/home/helpers/homeOf.ts'
 
 export const browserGate = {
   description: 'The gate every account browser passes before it loads anything',
@@ -14,10 +14,15 @@ export const browserGate = {
     'python/browser/proxyGate.py',
     'python/browser/visibleBrowser.py',
     'python/browser/browserDriver.py',
+    'python/browser/browserWindow.py',
     'python/device/deviceProfile.py',
     'src/browser/run/client.ts',
-    'src/marketplace/home/helpers/homeOf.ts',
-    'src/marketplace/home/types.ts',
+    'src/platformKit/home/helpers/homeOf.ts',
+    'src/platformKit/home/types.ts',
+    'python/identity/accountRoute.py',
+    'src/platformKit/socialAccount/helpers/checkRunnable.ts',
+    'src/platformKit/session/client.ts',
+    'scripts/checks/checkIdentityGate.ts',
   ],
   anchors: {
     'REQ-GATE-01': [
@@ -25,6 +30,8 @@ export const browserGate = {
       { kind: 'string', file: vis, includes: 'showcursor' },
       { kind: 'symbol', file: gate, name: 'apply' },
       { kind: 'string', file: gate, includes: 'unguardedLaunch' },
+      { kind: 'symbol', file: 'python/browser/browserWindow.py', name: 'WindowKeeper' },
+      { kind: 'symbol', file: 'python/browser/browserWindow.py', name: 'keep_hidden' },
     ],
     'REQ-GATE-02': [
       { kind: 'symbol', file: gate, name: 'ALLOWED_CALLER_KEYS' },
@@ -65,7 +72,7 @@ export const browserGate = {
       { kind: 'string', file: run, includes: 'deviceProfileInvalid' },
     ],
     'REQ-GATE-12': [
-      { kind: 'symbol', file: 'src/marketplace/home/types.ts', name: 'HOME_COUNTRIES' },
+      { kind: 'symbol', file: 'src/platformKit/home/types.ts', name: 'HOME_COUNTRIES' },
       { kind: 'symbol', file: home, name: 'homeOf' },
       { kind: 'string', file: home, includes: 'noHomeLocale' },
     ],
@@ -95,9 +102,36 @@ export const browserGate = {
       { kind: 'symbol', file: gate, name: '_checked' },
       { kind: 'symbol', file: gate, name: 'check_attached' },
     ],
+    'REQ-GATE-19': [
+      { kind: 'symbol', file: gate, name: 'chromium_launch' },
+      { kind: 'symbol', file: 'python/browser/browserDriver.py', name: 'open_brave' },
+      { kind: 'symbol', file: 'python/browser/browserDriver.py', name: 'brave_profile_dir' },
+      { kind: 'string', file: 'python/browser/browserDriver.py', includes: 'braveNotFound' },
+    ],
+    'REQ-GATE-20': [
+      { kind: 'symbol', file: 'src/platformKit/socialAccount/helpers/checkRunnable.ts', name: 'engineRoute' },
+      { kind: 'uses', file: 'src/platformKit/session/client.ts', name: 'engineRoute' },
+      { kind: 'uses', file: 'src/twitter/account/session/client.ts', name: 'engineRoute' },
+      { kind: 'uses', file: 'src/directApi/engine/client.ts', name: 'engineRoute' },
+      { kind: 'symbol', file: 'python/identity/accountRoute.py', name: 'arm' },
+      { kind: 'string', file: 'python/identity/accountRoute.py', includes: 'routeMissing' },
+    ],
+    'REQ-GATE-21': [
+      { kind: 'symbol', file: 'python/identity/accountRoute.py', name: 'enforce' },
+      { kind: 'symbol', file: 'python/identity/accountRoute.py', name: 'install' },
+      { kind: 'symbol', file: 'python/identity/accountRoute.py', name: 'download' },
+      { kind: 'string', file: 'python/identity/accountRoute.py', includes: 'socks5h' },
+      { kind: 'string', file: 'python/discordApi/browserRest.py', includes: 'routeBypass' },
+    ],
+    'REQ-GATE-22': [
+      { kind: 'symbol', file: 'src/platformKit/socialAccount/helpers/checkRunnable.ts', name: 'ownProxy' },
+    ],
+    'REQ-GATE-23': [
+      { kind: 'symbol', file: 'scripts/checks/checkIdentityGate.ts', name: 'identityGateProblems' },
+    ],
   },
   rubrics: {
-    'REQ-GATE-01': noul('Does proxyGate.apply refuse a launch whose headless option is anything other than None or False, and is the visible launch always headed with humanize and the cursor on, with no option that turns it off?'),
+    'REQ-GATE-01': noul('Does proxyGate.apply refuse a launch whose headless option is anything other than None or False, and is the visible launch always headed with humanize and the cursor on, and does a streamed session only hide the headed window (browserWindow.keep_hidden) rather than launch headless?'),
     'REQ-GATE-02': noul('Does proxyGate.apply refuse any caller launch option that is not in the allowed caller keys?'),
     'REQ-GATE-03': noul('Is a Playwright launch, persistent context or new context refused when the gate has not armed a launch, when its options differ from the env, proxy and executable path the gate built, or when it is not headed?'),
     'REQ-GATE-04': noul('Do both the Camoufox launch path and the attached-browser path refuse when no proxy file is found?'),
@@ -115,6 +149,11 @@ export const browserGate = {
     'REQ-GATE-16': noul('Does compare accept a navigator.languages list whose first entries equal the pinned languages in order, with extra languages after them, and refuse a list that does not start with them?'),
     'REQ-GATE-17': noul('Does the self-check refuse when no IP echo answers, and when the browser exit IP differs from the checked one, accepting a different IP on an attached browser only when it is in the same country and the same timezone?'),
     'REQ-GATE-18': noul('When the self-check refuses, is the Camoufox context and browser closed before the error is raised, and does the attached-browser check raise the error so the opener stops the profile?'),
+    'REQ-GATE-19': noul("Does a Brave session open only after gate_attached passes, through chromium_launch's options (headed, the account's proxy, the pinned locale) and the guarded persistent context that runs the self-check, in the account's own profile folder under log's home, and is a missing Brave refused with braveNotFound?"),
+    'REQ-GATE-20': noul("Does every engine spawner (runPlatformEngine, the X engine, the Facebook direct API) build the spec's route with engineRoute, refusing a Facebook account without a proxy and an unreadable proxy before Python starts, and does the engine refuse a spec without a route with routeMissing?"),
+    'REQ-GATE-21': noul("Once accountRoute is armed, is every curl_cffi request and ws_connect given the account's proxy, is a different proxy (or any proxy for a direct account) refused with routeBypass, is a Python socket to anything but the proxy or this machine refused for a proxied account, and do media links and Discord's files go through the route?"),
+    'REQ-GATE-22': noul("Does checkRunnable give an account on a direct platform its own proxy when it has one, refusing it without a home country, and open direct only when it has no proxy?"),
+    'REQ-GATE-23': noul("Does check:identityGate refuse a non-curl_cffi Python network client outside the listed services, a browser launch outside the gated launchers or listed no-account tools, an engine that never arms the route, a TypeScript engine spawner without engineRoute, and Bun's fetch to a platform host?"),
     unspecifiedBehavior: noul('Does the gate let a browser open by a route the specification does not describe, such as skipping the self-check, opening without a proxy for a Facebook account, or launching headless?'),
   },
   assertions: {
@@ -136,6 +175,11 @@ export const browserGate = {
     'REQ-GATE-16': MET,
     'REQ-GATE-17': MET,
     'REQ-GATE-18': MET,
+    'REQ-GATE-19': MET,
+    'REQ-GATE-20': MET,
+    'REQ-GATE-21': MET,
+    'REQ-GATE-22': MET,
+    'REQ-GATE-23': MET,
     unspecifiedBehavior: NOT_VIOLATED,
   },
 }

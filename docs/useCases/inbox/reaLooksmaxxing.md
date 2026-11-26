@@ -6,7 +6,7 @@ How the owner asks for it: "/rea-looksmaxxing how clavicular gets paid", "moneym
 
 ## Run it from a fresh context
 
-Say: **"go on docs/useCases/inbox/reaLooksmaxxing.md for <creator> and <offer>"**. The agent reads this page and treg's `web-access` skill, loads `getGuide({ topic: "xSending" })` before anything on X, and runs the steps. Outside this repo the same play is the `rea-looksmaxxing` skill: `curl -fsSL https://log.listeningkit.com/install.sh | sh -s -- --skills rea-looksmaxxing --skillsOnly` installs it with treg's `treg` and `web-access` skills beside it (on Windows, set `LOG_SKILLS=rea-looksmaxxing` and `LOG_SKILLS_ONLY=1` before `irm https://log.listeningkit.com/install.ps1 | iex`), and `npx skills add log.listeningkit.com` finds it too.
+Say: **"go on docs/useCases/inbox/reaLooksmaxxing.md for <creator> and <offer>"**. The agent reads this page and treg's `web-access` skill, loads `getGuide({ topic: "xSending" })` before anything on X, and runs the steps. Outside this repo the same play is the `rea-looksmaxxing` skill: log's installer with `--skills rea-looksmaxxing --skillsOnly` installs it with treg's `treg` and `web-access` skills beside it (on Windows, set `LOG_SKILLS=rea-looksmaxxing` and `LOG_SKILLS_ONLY=1` before the PowerShell installer; both are in [install](../../install.md)), and `npx skills add log.listeningkit.com` finds it too.
 
 ## The steps
 
@@ -20,7 +20,7 @@ flowchart TD
   s4["5. See who replied, liked or followed<br/><i>twitterNotifications</i>"]
   s5["6. Read each person's whole thread before a word is written<br/><i>twitterDms, instagramDms, discordRead</i>"]
   s6["7. Draft the answer in the owner's voice and gate it against the s…<br/><i>voice, text</i>"]
-  s7["8. Answer them, then point them at the offer once they're keen<br/><i>twitterReplyLive, twitterDmLive, instagramSendLive, discordSendLive</i>"]
+  s7["8. Answer them, then point them at the offer once they're keen<br/><i>twitterReplyLive, twitterDmLive, instagramSendLive, discordSendLive, messagesSendLive, messagesSend</i>"]
   s0 --> s1
   s1 --> s2
   s2 --> s3
@@ -40,7 +40,7 @@ flowchart TD
 | 5 | See who replied, liked or followed | `twitterNotifications` | a list of real people and what they did |
 | 6 | Read each person's whole thread before a word is written | `twitterDms` { with }, `instagramDms`, `discordRead` | what they asked and where the talk stands |
 | 7 | Draft the answer in the owner's voice and gate it against the same person | `voice` { to, with, context }, then `voice` with `text` | the gate passes |
-| 8 | Answer them, then point them at the offer once they're keen. The first message is about them, never the pitch | `twitterReplyLive`, `twitterDmLive`, `instagramSendLive`, `discordSendLive` | the platform answers `sent`, and they're in the Discord or on the offer |
+| 8 | Answer them, then point them at the offer once they're keen. The first message is about them, never the pitch | `twitterReplyLive`, `twitterDmLive`, `instagramSendLive`, `discordSendLive`, or for a DM on the account's own platform `messagesSendLive` { account, chat, text, approvedBy: "<owner>", confirmLive: true } after its dry run `messagesSend` | the platform answers `sent`, and they're in the Discord or on the offer |
 
 ## What to know
 
@@ -49,3 +49,8 @@ flowchart TD
 - **Sends follow the account's rules.** Reads first, every `…Live` tool needs `confirmLive: true`, one session per account, never in quick succession, and a 429 or any refusal stops the run (rules 8, 94, 105).
 - **Sell the outcome.** Step 7 of the video says to build the offer on people's insecurities and adds "we don't recommend it". The play doesn't either.
 - The video's beats, copy rules and render steps are in the `reaLooksmaxxing` skill (`skills/reaLooksmaxxing/SKILL.md`); the play everyone can install is `skills/published/reaLooksmaxxing/SKILL.md`.
+
+## Related
+
+- Up: [All use cases](../README.md)
+- [Connect your agent](../../mcp.md) · [Trust](../../trust.md)

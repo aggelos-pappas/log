@@ -9,6 +9,7 @@ export interface OverlayClear {
 
 export const OVERLAY_CLEARS: Readonly<Record<string, OverlayClear>> = {
   browserNotificationsNotice: { id: 'browserNotificationsNotice', key: 'Escape', answers: [] },
+  tiktokPreviewTip: { id: 'tiktokPreviewTip', key: 'Escape', answers: [] },
   pastNoticeDialog: {
     id: 'pastNoticeDialog',
     key: 'Escape',
@@ -16,7 +17,7 @@ export const OVERLAY_CLEARS: Readonly<Record<string, OverlayClear>> = {
   }
 }
 
-export const PRESSING_ACTIONS: ReadonlySet<FlowAction> = new Set(['click', 'fill', 'upload', 'setLocation'])
+export const PRESSING_ACTIONS: ReadonlySet<FlowAction> = new Set(['click', 'fill', 'upload', 'setLocation', 'rowMenu'])
 
 export function overlayOf(url: string, text: string): OverlayClear | null {
   const state = pageStateOf(url, text)

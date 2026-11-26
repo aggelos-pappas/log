@@ -64,7 +64,7 @@ Checked by: code and SubQ
 
 ### REQ-MEME-09: The taste index is read from the pictures he sent
 
-`log memelord taste --build` takes every picture in a file of his X media posts, sends each one as an image to SubQ, and keeps only those SubQ calls a meme (at least 0.5), each with the style it picks from the styles matt named (deep fried, larping, streamer reacts, shitpost) or other. Rule 120.
+`log memelord taste --build` takes every picture in a file of his X media posts, sends each one as an image to SubQ, and keeps only those SubQ calls a meme (at least 0.5), each with the style it picks from the styles the owner named (deep fried, larping, streamer reacts, shitpost) or other. Rule 120.
 
 Checked by: code and SubQ
 

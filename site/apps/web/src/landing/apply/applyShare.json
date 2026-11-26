@@ -1,0 +1,21 @@
+{
+  "slug": "apply",
+  "icon": "faBriefcase",
+  "title": "log apply: your agent applies to jobs for you",
+  "description": "An open-source Claude Code plugin that writes a one-page resume and cover letter for each job, fills Workday and Greenhouse in your own browser, and keeps a public ledger of every application.",
+  "headline": ["let claude", "apply to"],
+  "card": {
+    "lead": "your",
+    "name": "jobs",
+    "pitch": "job applications, run by <span class=\"u\">your AI agent</span>"
+  },
+  "chat": {
+    "ask": "apply to every software job posted this week",
+    "done": "7 submitted, each with its own resume. Ready for more.",
+    "rows": [
+      { "who": "Global Relay", "status": "Applied" },
+      { "who": "Workday", "status": "Applied" },
+      { "who": "TMX Group", "status": "Applied" }
+    ]
+  }
+}

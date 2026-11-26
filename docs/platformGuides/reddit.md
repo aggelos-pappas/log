@@ -32,3 +32,8 @@ None yet. See [all use cases](../useCases/README.md).
 
 - [Reference](../reference.md): every command, flag and MCP tool.
 - Agent guide: [Reddit](../guides/reddit.md).
+
+## Related
+
+- Up: [log's README](../../README.md)
+- [Use cases, the plays step by step](../useCases/README.md) · [Add an account](../accounts.md) · [Connect your agent](../mcp.md) · [Trust](../trust.md)

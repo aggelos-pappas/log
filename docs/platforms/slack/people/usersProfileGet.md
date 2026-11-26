@@ -12,7 +12,7 @@
 Content-Disposition: form-data; name`, `------WebKitFormBoundaryRYtYhXF3bL7Xrnmv
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `profile.title`, `profile.phone`, `profile.skype`, `profile.real_name`, `profile.real_name_normalized`, `profile.display_name`, `profile.display_name_normalized`, `profile.fields`, `profile.status_text`, `profile.status_emoji`, `profile.status_emoji_display_info` and 18 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script3.js:2877 statement`, `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script3.js:2877 statement`, `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_faa9f7318ff0f6d50c372eeec541ae040c0c16f852fe8046533df4f9dd1da0c8` |
 
 Seen 2 time(s) in 1 run(s).
@@ -26,7 +26,7 @@ Seen 2 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 7: pageText: 200, 288 ms
+**runs/inspect/20261103T065639_slackAccount**, step 7: pageText: 200, 288 ms
 
 Sent:
 
@@ -37,7 +37,7 @@ Sent:
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
     "_x_csid": "aVvVPXA0sak",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -45,7 +45,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundary5uS3k1bdJfS6iYn3\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundary5uS3k1bdJfS6iYn3\r\nContent-Disposition: form-data; name=\"user\"\r\n\r\nU0C4L7RF7HD\r\n------WebKitFormBoundary5uS3k1bdJfS6iYn3\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nwith-call-menu\r\n------WebKitFormBoundary5uS3k1bdJfS6iYn3\r\nContent-Disposition… (686 chars)"
+    "------WebKitFormBoundary5uS3k1bdJfS6iYn3\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundary5uS3k1bdJfS6iYn3\r\nContent-Disposition: form-data; name=\"user\"\r\n\r\n<userId:1>\r\n------WebKitFormBoundary5uS3k1bdJfS6iYn3\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nwith-call-menu\r\n------WebKitFormBoundary5uS3k1bdJfS6iYn3\r\nContent-Disposition… (686 chars)"
   }
 }
 ```
@@ -59,8 +59,8 @@ Answered:
     "title": "",
     "phone": "",
     "skype": "",
-    "real_name": "Matthew Don",
-    "real_name_normalized": "Matthew Don",
+    "real_name": "<name:1>",
+    "real_name_normalized": "<name:1>",
     "display_name": "",
     "display_name_normalized": "",
     "fields": {},
@@ -70,26 +70,26 @@ Answered:
     "status_expiration": 0,
     "status_clear_on_focus_end": false,
     "avatar_hash": "c4e891e2ba88",
-    "image_original": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_original.png",
+    "image_original": "<avatarUrl>",
     "is_custom_image": true,
-    "email": "matthewdonsemail@gmail.com",
+    "email": "<email>",
     "huddle_state": "default_unset",
     "huddle_state_expiration_ts": 0,
-    "first_name": "Matthew",
-    "last_name": "Don",
-    "image_24": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_24.png",
-    "image_32": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_32.png",
-    "image_48": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_48.png",
-    "image_72": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_72.png",
-    "image_192": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_192.png",
-    "image_512": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_512.png",
-    "image_1024": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_1024.png",
+    "first_name": "<name:2>",
+    "last_name": "<name:3>",
+    "image_24": "<avatarUrl>",
+    "image_32": "<avatarUrl>",
+    "image_48": "<avatarUrl>",
+    "image_72": "<avatarUrl>",
+    "image_192": "<avatarUrl>",
+    "image_512": "<avatarUrl>",
+    "image_1024": "<avatarUrl>",
     "status_text_canonical": ""
   }
 }
 ```
 
-**runs/inspect/20261103T065639_mattSlack**, POST 0 /beacon/error (383 ms): 200, 286 ms
+**runs/inspect/20261103T065639_slackAccount**, POST 0 /beacon/error (383 ms): 200, 286 ms
 
 Sent:
 
@@ -100,7 +100,7 @@ Sent:
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
     "_x_csid": "qDE7gQoj5kY",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -108,7 +108,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryRYtYhXF3bL7Xrnmv\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryRYtYhXF3bL7Xrnmv\r\nContent-Disposition: form-data; name=\"user\"\r\n\r\nU0C4L7RF7HD\r\n------WebKitFormBoundaryRYtYhXF3bL7Xrnmv\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nwith-call-menu\r\n------WebKitFormBoundaryRYtYhXF3bL7Xrnmv\r\nContent-Disposition… (686 chars)"
+    "------WebKitFormBoundaryRYtYhXF3bL7Xrnmv\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryRYtYhXF3bL7Xrnmv\r\nContent-Disposition: form-data; name=\"user\"\r\n\r\n<userId:1>\r\n------WebKitFormBoundaryRYtYhXF3bL7Xrnmv\r\nContent-Disposition: form-data; name=\"_x_reason\"\r\n\r\nwith-call-menu\r\n------WebKitFormBoundaryRYtYhXF3bL7Xrnmv\r\nContent-Disposition… (686 chars)"
   }
 }
 ```
@@ -122,8 +122,8 @@ Answered:
     "title": "",
     "phone": "",
     "skype": "",
-    "real_name": "Matthew Don",
-    "real_name_normalized": "Matthew Don",
+    "real_name": "<name:1>",
+    "real_name_normalized": "<name:1>",
     "display_name": "",
     "display_name_normalized": "",
     "fields": {},
@@ -133,20 +133,20 @@ Answered:
     "status_expiration": 0,
     "status_clear_on_focus_end": false,
     "avatar_hash": "c4e891e2ba88",
-    "image_original": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_original.png",
+    "image_original": "<avatarUrl>",
     "is_custom_image": true,
-    "email": "matthewdonsemail@gmail.com",
+    "email": "<email>",
     "huddle_state": "default_unset",
     "huddle_state_expiration_ts": 0,
-    "first_name": "Matthew",
-    "last_name": "Don",
-    "image_24": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_24.png",
-    "image_32": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_32.png",
-    "image_48": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_48.png",
-    "image_72": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_72.png",
-    "image_192": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_192.png",
-    "image_512": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_512.png",
-    "image_1024": "https://avatars.slack-edge.com/2026-09-28/12175321721380_c4e891e2ba88dcc86e9f_1024.png",
+    "first_name": "<name:2>",
+    "last_name": "<name:3>",
+    "image_24": "<avatarUrl>",
+    "image_32": "<avatarUrl>",
+    "image_48": "<avatarUrl>",
+    "image_72": "<avatarUrl>",
+    "image_192": "<avatarUrl>",
+    "image_512": "<avatarUrl>",
+    "image_1024": "<avatarUrl>",
     "status_text_canonical": ""
   }
 }
@@ -156,7 +156,7 @@ Answered:
 
 ## What it does
 
-Reads one person's profile (sent `user: U0C4L7RF7HD`, reason `with-call-menu`) and answered `ok: true` with `profile.real_name: Matthew Don`, empty status and title, avatar URLs and email. It fired 13.3 s into step 7 (`pageText`, 288 ms) and again with the page's `/beacon/error` POST (286 ms), both 200.
+Reads one person's profile (sent `user: <userId:1>`, reason `with-call-menu`) and answered `ok: true` with `profile.real_name: <the account's real name>`, empty status and title, avatar URLs and email. It fired 13.3 s into step 7 (`pageText`, 288 ms) and again with the page's `/beacon/error` POST (286 ms), both 200.
 
 ## What our machine does with it
 

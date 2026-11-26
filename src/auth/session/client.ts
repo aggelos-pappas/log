@@ -1,12 +1,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { isTokenExpired } from "./helpers/index.ts";
 import { DEFAULT_API_URL, DEFAULT_WEB_URL } from "./types.ts";
 import type { SessionConfig, SessionHome, SessionRecord, ValidationResult } from "./types.ts";
+import { logHome } from "../../config/logHome/index.ts";
 
 export function authDir(env: Record<string, string | undefined> = process.env): string {
-  return join(env.LOG_HOME || join(homedir(), ".logCli"), "auth");
+  return join(env.LOG_HOME || logHome(), "auth");
 }
 
 function readJsonFile(path: string): Record<string, unknown> | null {

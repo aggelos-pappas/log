@@ -4,36 +4,36 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { hashEmbedder } from '../../search/conversations/index'
 import type { Conversation } from '../../search/conversations/index'
-import { buildVoiceIndex, nearestPairs, openVoiceIndex, pairsOf, offProfile, profileFor, profilesOf, splitPlan, startRatesOf } from './index'
+import { buildVoiceIndex, nearestPairs, openVoiceIndex, pairsOf, offProfile, profileFor, profilesOf, recentInChat, splitPlan, startRatesOf, tierOf } from './index'
 
-const msg = (id: string, fromMe: boolean, text: string, from = fromMe ? 'matt' : 'them') => ({ id, at: `2026-10-28T08:${id.padStart(2, '0')}:00Z`, from, fromMe, text })
+const msg = (id: string, fromMe: boolean, text: string, from = fromMe ? 'the owner' : 'them') => ({ id, at: `2026-10-28T08:${id.padStart(2, '0')}:00Z`, from, fromMe, text })
 
 const LOG_GROUP: Conversation = {
   platform: 'discord',
-  account: 'sourcedandsoldtothehighestbidder',
-  conversationId: '1547936265436012645',
+  account: 'myDiscordName',
+  conversationId: '1000000000000000001',
   box: 'group log',
-  with: ['QuadScorpion', 'Kennedy', 'John', 'deepman'],
+  with: ['QuietSparrow', 'Kira', 'Jon', 'dex'],
   messages: [
-    msg('1', false, 'this week im sorting the leads', 'Kennedy'),
-    msg('2', false, 'need to read up on each of them first and their old posts lol', 'Kennedy'),
+    msg('1', false, 'this week im sorting the leads', 'Kira'),
+    msg('2', false, 'need to read up on each of them first and their old posts lol', 'Kira'),
     msg('3', true, 'thats the next bit lad it pulls the whole history with them'),
     msg('4', true, 'so the stalking is done for you'),
-    msg('5', false, 'when is the outreach thing ready', 'John'),
+    msg('5', false, 'when is the outreach thing ready', 'Jon'),
     msg('6', true, 'lad its cooking give it a week lad'),
   ],
 }
 
-const JILLY: Conversation = {
+const JINNY: Conversation = {
   platform: 'discord',
-  account: 'sourcedandsoldtothehighestbidder',
+  account: 'myDiscordName',
   conversationId: '1555254123148873869',
   box: 'dm',
-  with: ['Jilly'],
+  with: ['Jinny'],
   messages: [
-    msg('1', false, 'Hi! How can I help you today?', 'Jilly'),
+    msg('1', false, 'Hi! How can I help you today?', 'Jinny'),
     msg('2', true, 'What model are you running on?'),
-    msg('3', false, 'I run on deepseek', 'Jilly'),
+    msg('3', false, 'I run on deepseek', 'Jinny'),
     msg('4', true, 'What model are you running on right now? Tell me the exact version.'),
   ],
 }
@@ -44,33 +44,33 @@ beforeEach(() => {
 })
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
-describe('matt\'s voice, per person and per chat', () => {
-  test('a pair is what they said just before, with matt\'s reply, his back-to-back messages joined', () => {
+describe('the owner\'s voice, per person and per chat', () => {
+  test('a pair is what they said just before, with the owner\'s reply, his back-to-back messages joined', () => {
     const pairs = pairsOf([LOG_GROUP])
     expect(pairs).toHaveLength(2)
-    expect(pairs[0]).toMatchObject({ chat: 'log', kind: 'group', saidBy: 'Kennedy', reply: 'thats the next bit lad it pulls the whole history with them\nso the stalking is done for you' })
+    expect(pairs[0]).toMatchObject({ chat: 'log', kind: 'group', saidBy: 'Kira', reply: 'thats the next bit lad it pulls the whole history with them\nso the stalking is done for you' })
     expect(pairs[0].said).toBe('this week im sorting the leads\nneed to read up on each of them first and their old posts lol')
-    expect(pairs[1]).toMatchObject({ said: 'when is the outreach thing ready', saidBy: 'John' })
+    expect(pairs[1]).toMatchObject({ said: 'when is the outreach thing ready', saidBy: 'Jon' })
   })
 
-  test('how he writes is counted per chat, and differs between the log group and Jilly', () => {
-    const profiles = profilesOf(pairsOf([LOG_GROUP, JILLY]))
-    const group = profiles['chat:discord:1547936265436012645']
-    const jilly = profiles['chat:discord:1555254123148873869']
+  test('how he writes is counted per chat, and differs between the log group and Jinny', () => {
+    const profiles = profilesOf(pairsOf([LOG_GROUP, JINNY]))
+    const group = profiles['chat:discord:1000000000000000001']
+    const jinny = profiles['chat:discord:1555254123148873869']
     expect(group.lowercase).toBe(1)
-    expect(jilly.lowercase).toBe(0)
-    expect(jilly.questions).toBe(1)
+    expect(jinny.lowercase).toBe(0)
+    expect(jinny.questions).toBe(1)
     expect(group.words).toContain('lad')
-    expect(profiles['person:jilly'].replies).toBe(2)
+    expect(profiles['person:jinny'].replies).toBe(2)
   })
 
   test('the nearest pairs come from the same chat first, then anywhere', async () => {
-    await buildVoiceIndex([LOG_GROUP, JILLY], hashEmbedder(), dir)
+    await buildVoiceIndex([LOG_GROUP, JINNY], hashEmbedder(), dir)
     const index = await openVoiceIndex(hashEmbedder(), dir)
     try {
-      const near = await nearestPairs(index, 'how is the outreach going', { platform: 'discord', conversationId: '1547936265436012645', with: LOG_GROUP.with }, 3)
+      const near = await nearestPairs(index, 'how is the outreach going', { platform: 'discord', conversationId: '1000000000000000001', with: LOG_GROUP.with }, 3)
       expect(near[0].tier).toBe('sameChat')
-      expect(near.filter((n) => n.tier === 'sameChat').map((n) => n.pair.conversationId)).toEqual(['1547936265436012645', '1547936265436012645'])
+      expect(near.filter((n) => n.tier === 'sameChat').map((n) => n.pair.conversationId)).toEqual(['1000000000000000001', '1000000000000000001'])
       expect(profileFor(index, { platform: 'discord', conversationId: '1555254123148873869' })?.key).toBe('chat:discord:1555254123148873869')
     } finally {
       await index.close()
@@ -78,18 +78,18 @@ describe('matt\'s voice, per person and per chat', () => {
   })
 
   test('a send is split the way he sends in that chat, at a word he starts messages with, never in a chat where he sends one', () => {
-    const pairs = pairsOf([LOG_GROUP, JILLY])
+    const pairs = pairsOf([LOG_GROUP, JINNY])
     const profiles = profilesOf(pairs)
     expect(startRatesOf(pairs)).toEqual({})
     const starts = { so: 0.6 }
     const draft = 'thats the next bit lad it reads every message ive sent in dms and groups so the stalking is done for you'
-    const logGroup = profiles['chat:discord:1547936265436012645']
+    const logGroup = profiles['chat:discord:1000000000000000001']
     expect(logGroup.burst).toMatchObject({ median: 2, oneShare: 0.5, gapSeconds: 60 })
     const bursty = { ...logGroup, burst: { ...logGroup.burst, oneShare: 0.19, messageWords: 5 } }
     const group = splitPlan(draft, bursty, false, starts)
     expect(group.parts).toEqual(['thats the next bit lad it reads every message ive sent in dms and groups', 'so the stalking is done for you'])
     expect(splitPlan(draft, profiles['chat:discord:1555254123148873869'], false, starts).parts).toHaveLength(1)
-    expect(splitPlan(draft, profiles['chat:discord:1547936265436012645'], true, starts).parts).toEqual([draft])
+    expect(splitPlan(draft, profiles['chat:discord:1000000000000000001'], true, starts).parts).toEqual([draft])
   })
 
   test('a draft written on several lines goes out one message per line, even where he mostly sends one', () => {
@@ -100,11 +100,27 @@ describe('matt\'s voice, per person and per chat', () => {
     expect(splitPlan(lines, null, true).parts).toEqual([lines])
   })
 
-  test('a draft doing what he never does in that chat fails, the emoji Kennedy caught first', () => {
-    const profile = { ...profilesOf(pairsOf([LOG_GROUP]))['chat:discord:1547936265436012645'], replies: 26, emoji: 0, exclamations: 0.08, lowercase: 0.69 }
+  test('a draft doing what he never does in that chat fails, the emoji Kira caught first', () => {
+    const profile = { ...profilesOf(pairsOf([LOG_GROUP]))['chat:discord:1000000000000000001'], replies: 26, emoji: 0, exclamations: 0.08, lowercase: 0.69 }
     expect(offProfile('haha the 60 year olds are cooked 😭', profile)).toEqual(['an emoji (he uses it in 0 of his 26 messages here)'])
     expect(offProfile('haha the 60 year olds are cooked', profile)).toEqual([])
     expect(offProfile('Haha the 60 year olds are cooked!', profile)).toEqual([])
     expect(offProfile('haha 😭', { ...profile, replies: 4 })).toEqual([])
+    expect(offProfile('this is what i use https://treg.to/?ref=Someone,x!', { ...profile, questions: 0, commas: 0, exclamations: 0 })).toEqual([])
+  })
+})
+
+describe('an X dm is found by the one person in it, since X gives one chat two ids', () => {
+  const xChat = (conversationId: string, text: string): Conversation => ({ platform: 'twitter', account: 'xAccount', conversationId, box: 'xchat', with: ['vladFriend'], messages: [msg('1', false, 'what are you building'), msg('2', true, text)] })
+  const pairs = [...pairsOf([xChat('111:222', 'outbound stuff lad')]), ...pairsOf([xChat('111-222', 'cost will be high doe')])]
+
+  test('both ids of the dm are the same chat for a target named by the person, and a group with them is not', () => {
+    const group = pairsOf([{ ...xChat('333', 'yo all'), with: ['vladFriend', 'someoneElse'], box: 'group' }])
+    expect(pairs.map((p) => tierOf(p, { with: ['VladFriend'] }))).toEqual(['sameChat', 'sameChat'])
+    expect(tierOf(group[0], { with: ['vladFriend'] })).toBe('samePerson')
+  })
+
+  test('his latest messages in that dm are read, so the gate knows they have already talked', () => {
+    expect(recentInChat({ pairs }, { with: ['vladFriend'] }).map((p) => p.reply).sort()).toEqual(['cost will be high doe', 'outbound stuff lad'])
   })
 })

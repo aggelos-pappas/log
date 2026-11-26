@@ -106,3 +106,7 @@ Reading NEW `socialListening` rows with `sourceKind` `facebook_group`, and actin
 - `NewFacebookPostPayload` carrying the author's id. Today `from_record` keeps only the author's name, which step 5 can't act on alone.
 
 The rules behind this are in AGENTS.md.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md) · [What log does on Facebook](platformGuides/facebook.md)

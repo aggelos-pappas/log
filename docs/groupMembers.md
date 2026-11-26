@@ -6,7 +6,7 @@
 log facebook read members --account <a> --group <url|id> --count <n> [--secondsPerScroll <s>] [--maxScrolls <n>] [--owners] [--bypass] [--json]
 ```
 
-Code: `src/facebook/group/members`. MCP tool: `readMembers` (read-only, so there is no live version). Spec: [Facebook groups](specs/facebookGroups.md), REQ-GROUP-07 to 14.
+Code: `src/facebook/group/members`. MCP tool: `facebookReadMembers` (read-only, so there is no live version). Spec: [Facebook groups](specs/facebookGroups.md), REQ-GROUP-07 to 14.
 
 ## Where the members come from
 
@@ -79,3 +79,7 @@ It prints how many members it read, how many had a bio, the owners (by bio and a
 A step on `/groups/<g>/members` whose `GroupsCometMembersPageNewMembersSectionRefetchQuery` answered with `new_members` edges is the page state `groupMembersList` (`src/browser/flow/helpers/pageState.ts`). It needs nothing (`needsNothing`): there is no resolver, the page-state hook mentions it once and never holds the turn on it, and an inspect step there is decided without a SubQ reading.
 
 The rules behind this are in AGENTS.md.
+
+## Related
+
+- Up: [How log works](howItWorks.md) · [log's README](../README.md) · [What log does on Facebook](platformGuides/facebook.md)

@@ -14,7 +14,7 @@ snapshots of run 20261020T143506 recorded them (Bethlehem, a group it is a
 member of: load, a snapshot, three scrolls; `log inspect`, rule 29). There
 were 810 refs on the page after the scrolls; these are the 110 kinds they
 fall into. **Writes** is what changes something on Facebook, which needs
-matt and `--live` (rule 8). **Request** is what the page sends, linked to its
+the owner and `--live` (rule 8). **Request** is what the page sends, linked to its
 doc where a run has recorded it; "not recorded" means no run has clicked it
 yet, and code that clicks it waits for a recording that does (rule 29).
 
@@ -124,7 +124,7 @@ unnamed (24 refs): it isn't clickable.
 
 The group read touches none of these: it scrolls, and reads the posts from
 what the page already sent, the group page's HTML and the feed query (rule 22,
-`src/facebook/group/read`). Comments are read too (matt, 2026-10-20): from the post's
+`src/facebook/group/read`). Comments are read too (the owner, 2026-10-20): from the post's
 dialog or its own page, sorted Newest, scrolled until the list ends
 (`commentsFromResponse`, `commentsFromPostPage`, recorded on run
 20261020T151100). Every control marked "not recorded" is one `log inspect` step

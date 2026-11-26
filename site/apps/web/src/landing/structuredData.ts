@@ -106,6 +106,11 @@ export const PLATFORM_LIST = [
   { name: 'log for Slack', path: '/slack' },
   { name: 'log for Instagram', path: '/instagram' },
   { name: 'log for Reddit', path: '/reddit' },
+  { name: 'log for Cursor', path: '/cursor' },
+  { name: 'log for Claude', path: '/claude' },
+  { name: 'log for ChatGPT', path: '/chatgpt' },
+  { name: 'log for Hermes', path: '/hermes' },
+  { name: 'log for Grok', path: '/grok' },
 ]
 
 export function softwareApplication(featureList: string[] = []) {
@@ -303,6 +308,73 @@ export function devlogIndexSchema(title: string, description: string, entries: D
       breadcrumbs([{ name: 'log', path: '/' }, { name: 'Devlog', path: '/devlog' }]),
       ORGANIZATION,
       AUTHOR,
+    ],
+  }
+}
+
+export type ApplySchemaInput = {
+  path: string
+  title: string
+  description: string
+  image: string
+  repo: string
+  faq: FaqItem[]
+  steps: { title: string; body: string }[]
+}
+
+export function applySchema(page: ApplySchemaInput) {
+  const url = `${SITE}${page.path}`
+  const appId = `${url}#software`
+  const trail = breadcrumbs([{ name: 'log', path: '/' }, { name: 'log apply', path: page.path }])
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': `${url}#webpage`,
+        url,
+        name: page.title,
+        description: page.description,
+        isPartOf: { '@id': SITE_ID },
+        about: { '@id': appId },
+        primaryImageOfPage: { '@type': 'ImageObject', url: page.image },
+        dateModified: UPDATED,
+        breadcrumb: trail,
+        mainEntity: { '@id': appId },
+        hasPart: [{ '@id': `${url}#howto` }, { '@id': `${url}#faq` }],
+        speakable: { '@type': 'SpeakableSpecification', cssSelector: ['h1', '.quick-answers'] },
+      },
+      ORGANIZATION,
+      AUTHOR,
+      WEBSITE,
+      trail,
+      {
+        '@type': 'SoftwareApplication',
+        '@id': appId,
+        name: 'log apply',
+        description: page.description,
+        url,
+        applicationCategory: 'BusinessApplication',
+        applicationSubCategory: 'Job applications for AI agents',
+        softwareRequirements: 'Claude Code',
+        license: 'https://opensource.org/licenses/MIT',
+        isAccessibleForFree: true,
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        downloadUrl: page.repo,
+        sameAs: [page.repo],
+        image: page.image,
+        publisher: { '@id': ORG_ID },
+        featureList: page.steps.map((step) => `${step.title}: ${step.body}`),
+      },
+      {
+        '@type': 'HowTo',
+        '@id': `${url}#howto`,
+        name: 'How log apply applies to a job',
+        description: page.description,
+        tool: { '@type': 'HowToTool', name: 'log apply' },
+        step: page.steps.map((step, index) => ({ '@type': 'HowToStep', position: index + 1, name: step.title, text: step.body })),
+      },
+      faqPage(page.faq, `${url}#faq`),
     ],
   }
 }

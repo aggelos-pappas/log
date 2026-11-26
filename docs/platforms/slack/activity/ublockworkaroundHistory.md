@@ -11,20 +11,20 @@
 | Sends | `------WebKitFormBoundaryMjuaJBgUANQquNXo
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `events`, `has_more`, `total` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script38.js:771 anonymous`, `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script38.js:771 anonymous`, `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_2f8dd806490806c59de0f0b61fac07f8b79263d795e0780144a6544292b6ea5e` |
 
 Seen 1 time(s) in 1 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
-| inspect | step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU | 1 | 200 | 305 ms | 6669 ms | — |
+| inspect | step 6: goto /client/<teamId:1>/<channelId:1> | 1 | 200 | 305 ms | 6669 ms | — |
 
 ### What it sent and what came back (the newest 1 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 6: goto /client/T0C4VCD06MR/D0C8VAE7REU: 200, 305 ms
+**runs/inspect/20261103T065639_slackAccount**, step 6: goto /client/<teamId:1>/<channelId:1>: 200, 305 ms
 
 Sent:
 
@@ -35,7 +35,7 @@ Sent:
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
     "_x_csid": "aVvVPXA0sak",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -43,7 +43,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryMjuaJBgUANQquNXo\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryMjuaJBgUANQquNXo\r\nContent-Disposition: form-data; name=\"start\"\r\n\r\n1793689111.020700\r\n------WebKitFormBoundaryMjuaJBgUANQquNXo\r\nContent-Disposition: form-data; name=\"count\"\r\n\r\n2000\r\n------WebKitFormBoundaryMjuaJBgUANQquNXo\r\nContent-Disposition: form-… (1260 chars)"
+    "------WebKitFormBoundaryMjuaJBgUANQquNXo\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryMjuaJBgUANQquNXo\r\nContent-Disposition: form-data; name=\"start\"\r\n\r\n1793689111.020700\r\n------WebKitFormBoundaryMjuaJBgUANQquNXo\r\nContent-Disposition: form-data; name=\"count\"\r\n\r\n2000\r\n------WebKitFormBoundaryMjuaJBgUANQquNXo\r\nContent-Disposition: form-… (1260 chars)"
   }
 }
 ```
@@ -67,7 +67,7 @@ Reads a history of events for a workaround feature in the client: it answered `o
 
 ## What our machine does with it
 
-Nothing: no log-cli code calls it. The engine (`python/slackApi/engine.py`, actions ping, workspaces, chats, read, send, watch over `vendor/gabrielSlack`) never uses this endpoint; it is Slack's web client's own traffic, seen only because the `log inspect` AdsPower run on mattSlack loaded the page.
+Nothing: no log-cli code calls it. The engine (`python/slackApi/engine.py`, actions ping, workspaces, chats, read, send, watch over `vendor/gabrielSlack`) never uses this endpoint; it is Slack's web client's own traffic, seen only because the `log inspect` AdsPower run on slackAccount loaded the page.
 
 ## What can go wrong
 

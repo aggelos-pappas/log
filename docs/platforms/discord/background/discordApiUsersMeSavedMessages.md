@@ -1,6 +1,6 @@
 # discordApiUsersMeSavedMessages
 
-<!-- facts:start · written by `log facebook capture --docs` from the run captures and rea. Not edited by hand. -->
+<!-- facts:start · written by `log capture docs` from the run captures and rea. Not edited by hand. -->
 
 | | |
 | --- | --- |
@@ -10,10 +10,10 @@
 | Path | `discord.com/api/users/@me/saved-messages` |
 | Sends | — |
 | Reads | `message`, `code` |
-| Called from | `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1.js:208 app_store_parental_revocation`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1036.js:1 parse`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1221.js:2 anonymous`, `runs/inspect/20261028T074137_sourcedandsoldtothehighestbidder/script1245.js:2 anonymous` |
-| rea | `ev_065e7ad37dcb5911d240f9de7d6e2882220c5a8d7c025d92b46a23de59cf297c` |
+| Called from | `runs/inspect/20261120T115645_<name:1>/script0.js:232 625075`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 559868`, `runs/inspect/20261120T115645_<name:1>/script0.js:124 961943`, `runs/inspect/20261120T115645_<name:1>/script1326.js:1 634654` |
+| rea | `ev_a9fa69c7432fa1fcc41058ba491790444cfcec72f4c96150b3d2566a4e5def67` |
 
-Seen 6 time(s) in 4 run(s).
+Seen 16 time(s) in 14 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -21,14 +21,16 @@ Seen 6 time(s) in 4 run(s).
 | inspect | step 5: click e40 | 1 | 404 | 367 ms | 12912 ms | — |
 | inspect | step 9: goto /channels/@me | 1 | 404 | 430 ms | 9553 ms | — |
 | inspect | step 25: goto /channels/@me | 1 | 404 | 353 ms | 8663 ms | — |
-| inspect | step 1: goto /login | 1 | 404 | 384 ms | 18497 ms | — |
+| inspect | step 1: goto /login | 8 | 404 | 327–9780 ms | 18497–1052590 ms | — |
 | inspect | step 2: snapshot | 1 | 404 | 454 ms | 51746 ms | — |
+| inspect | step 1: goto /quest-home | 2 | 404 | 333–380 ms | 17515–26353 ms | — |
+| inspect | step 1: goto /channels/@me | 1 | 404 | 371 ms | 15772 ms | — |
 
 ### What it sent and what came back (the newest 3 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder**, step 2: snapshot: 404, 454 ms
+**runs/inspect/20261120T115645_<name:1>**, step 1: goto /login: 404, 355 ms
 
 Sent:
 
@@ -45,12 +47,12 @@ Answered:
 
 ```json
 {
-  "message": "Unknown Saved Messages",
+  "message": "<messageText>",
   "code": 10133
 }
 ```
 
-**runs/inspect/20261028T074137_sourcedandsoldtothehighestbidder**, step 1: goto /login: 404, 384 ms
+**runs/inspect/20261120T111021_<name:1>**, step 1: goto /quest-home: 404, 333 ms
 
 Sent:
 
@@ -67,12 +69,12 @@ Answered:
 
 ```json
 {
-  "message": "Unknown Saved Messages",
+  "message": "<messageText>",
   "code": 10133
 }
 ```
 
-**runs/inspect/20261028T065202_sourcedandsoldtothehighestbidder**, step 1: goto /channels/@me/<id>: 404, 342 ms
+**runs/inspect/20261120T091412_<name:1>**, step 1: goto /channels/@me: 404, 371 ms
 
 Sent:
 
@@ -89,7 +91,7 @@ Answered:
 
 ```json
 {
-  "message": "Unknown Saved Messages",
+  "message": "<messageText>",
   "code": 10133
 }
 ```

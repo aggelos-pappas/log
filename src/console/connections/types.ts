@@ -1,0 +1,108 @@
+import type { CheckState } from "../../platformKit/sessionCheck/index.ts";
+import type { BrowserDriverName } from "../../browser/driver/index.ts";
+import type { Platform } from "../../cli/runner/helpers/platforms.ts";
+import type { CredentialInputType, CredentialProvider } from "../../auth/credentials/index.ts";
+
+export type SignInKind = "cookies" | "connect" | "browser";
+
+export interface ConsoleAccount {
+  id: string;
+  platform: Platform;
+  accountName: string;
+  sessionState: string | null;
+  browserProfile: boolean;
+  browser: BrowserDriverName | null;
+  signIn: SignInKind;
+}
+
+export interface ConsolePlatformGroup {
+  platform: Platform;
+  label: string;
+  accounts: ConsoleAccount[];
+}
+
+export const ACCOUNT_STATUSES = ["active", "warming", "limited", "paused", "needsLogin", "checkpoint", "restricted", "banned", "dead", "deactivated"] as const;
+export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
+
+export const SESSION_STATES = ["loggedIn", "loggedOut", "restricted", "checkpoint", "unknown", "shadowSuspect", "accountWarning"] as const;
+export type SessionState = (typeof SESSION_STATES)[number];
+
+export { CHECK_STATES } from "../../platformKit/sessionCheck/index.ts";
+export type { CheckState };
+
+export type ProxyProvider = "twoCaptcha" | "byteful" | "unknown";
+
+export interface LaunchOutcome {
+  phase: string;
+  retryAt: string | null;
+  code: string;
+}
+
+export interface LastCheck {
+  state: CheckState;
+  checkedAt: string;
+  launchOutcome?: LaunchOutcome;
+}
+
+export interface ConnectionAccount {
+  id: string;
+  name: string;
+  platform: Platform;
+  homeCountry: string | null;
+  proxyProvider: ProxyProvider | null;
+  status: AccountStatus | "unknown";
+  statusReason: string | null;
+  state: SessionState;
+  checkedAt: string | null;
+  signIn: SignInKind;
+  browser: BrowserDriverName | null;
+  lastCheck: LastCheck | null;
+}
+
+export interface BrowserChoice {
+  name: BrowserDriverName;
+  label: string;
+  logo: string;
+  isDefault: boolean;
+  deprecated: boolean;
+}
+
+export interface SavedKeyField {
+  id: string;
+  label: string;
+  secret: boolean;
+  required: boolean;
+  inputType: CredentialInputType;
+  hasValue: boolean;
+  masked: string | null;
+}
+
+export type ExtensionState = "configured" | "notConfigured" | "unavailable";
+
+export interface ExtensionConnection {
+  key: CredentialProvider;
+  state: ExtensionState;
+  fields: SavedKeyField[];
+  persisted: boolean;
+}
+
+export interface ConnectionsView {
+  schemaVersion: 1;
+  source: "workspace";
+  generatedAt: string;
+  accounts: ConnectionAccount[];
+  extensions: ExtensionConnection[];
+  browsers: BrowserChoice[];
+}
+
+export interface ConsoleConnections {
+  schemaVersion: 1;
+  source: "local";
+  generatedAt: string;
+  path: string;
+  total: number;
+  platforms: ConsolePlatformGroup[];
+  accounts: ConnectionAccount[];
+  extensions: ExtensionConnection[];
+  browsers: BrowserChoice[];
+}

@@ -1,13 +1,14 @@
-import { checkBalances, needsMoney, PROVIDER_INFO, PROVIDERS } from "../../billing/index.ts";
+import { balanceDeps, checkBalances, needsMoney, PROVIDER_INFO, PROVIDERS, tregBalance } from "../../billing/index.ts";
+import { tregDeps } from "../treg/index.ts";
 import type { Provider, ProviderBalance } from "../../billing/index.ts";
-import { JSON_FLAG, parseArgs, parserSpecOf } from "../runner/helpers/index.ts";
+import { JSON_FLAG, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandInput } from "../runner/types.ts";
 
 export const BALANCE_USAGE = [
   "Usage: log balance [--provider <name>] [--json]",
   `Every paid provider log calls, with what is left: ${PROVIDERS.join(", ")}.`,
   "A provider with a balance API (Jina, Fish Audio, treg, 2Captcha, Byteful) is read from it. One without one (SubQ, Inworld, AssemblyAI, Parallel) shows its last answer to a real call, which log keeps for every call (the ledger table in ~/.logCli/log.db (kind providerAnswer)). A provider that answered it is out of credit shows outOfCredit, so a failing voice note or gate is seen as money, not a bug.",
-  "Reading balances spends nothing (rule 41). Topping up is matt's: never done from log.",
+  "Reading balances spends nothing (rule 41). Topping up is the owner's: never done from log.",
 ].join("\n");
 
 export const BALANCE_INPUT: CommandInput = {
@@ -43,10 +44,10 @@ export const balanceCommand: Command = {
   args: "[--provider <name>] [--json]",
   async run(context, argv) {
     const parsed = parseArgs(argv, parserSpecOf(BALANCE_INPUT));
-    if (!parsed.ok) return { code: 1, stderr: `log balance: ${parsed.error}\n${BALANCE_USAGE}` };
+    if (!parsed.ok) return refuseInput("balance", parsed.error, BALANCE_USAGE);
     const only = typeof parsed.flags["provider"] === "string" ? [parsed.flags["provider"] as Provider] : [...PROVIDERS];
     context.err(`log balance: reading ${only.map((p) => PROVIDER_INFO[p].label).join(", ")}`);
-    const balances = await checkBalances(only);
+    const balances = await checkBalances(only, { ...balanceDeps, treg: () => tregBalance(tregDeps.client()) });
     if (parsed.flags["json"] === true) return { code: 0, stdout: JSON.stringify({ balances, needsMoney: needsMoney(balances).map((b) => b.provider) }, null, 2) };
     return { code: 0, stdout: ["log balance:", ...balanceLines(balances)].join("\n") };
   },

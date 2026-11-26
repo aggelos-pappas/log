@@ -1,4 +1,4 @@
-import type { EventInput, ExtenderContext, InteractionRow, PlatformExtender } from '../types'
+import type { EventInput, ExtenderContext, IdentityProfileRow, InteractionRow, PlatformExtender } from '../types'
 import { makeExtender } from './base'
 import { isBareId, textOf } from './ids'
 
@@ -37,6 +37,14 @@ function slackInteraction(event: EventInput): InteractionRow | null {
   return { interactionKey: `slack:${event.account}:${event.eventId}`, kind: 'reaction', actorUserId: actor, targetRef: textOf(event.payload.ts), targetText: null, text: textOf(event.payload.reaction), at: event.sourceAt || event.receivedAt }
 }
 
+function twitterNotificationProfile(event: EventInput): IdentityProfileRow | null {
+  if (event.type !== 'notification') return null
+  const userId = textOf(event.payload.userId)
+  const followers = event.payload.followers
+  if (!userId || typeof followers !== 'number' || !Number.isFinite(followers)) return null
+  return { platform: 'twitter', userId, bio: null, avatarHash: null, followerCount: followers, verified: null, extra: null, fetchedAt: event.receivedAt }
+}
+
 export const twitterExtender = makeExtender({
   platform: 'twitter',
   chatKind: (e) => (e.conversationId.startsWith('g') ? 'group' : 'dm'),
@@ -48,11 +56,13 @@ export const twitterExtender = makeExtender({
     const userId = textOf(e.payload.userId)
     return userId ? [{ platform: 'twitter', userId, handle: textOf(e.payload.handle), displayName: textOf(e.payload.name) }] : []
   },
+  toProfile: twitterNotificationProfile,
 })
 
 export const discordExtender = makeExtender({
   platform: 'discord',
   chatKind: (e) => (textOf(e.payload.serverId) ?? textOf(e.payload.guildId) ? 'channel' : e.box === 'group' ? 'group' : 'dm'),
+  kindFromMembers: true,
   serverIdOf: (e) => textOf(e.payload.serverId) ?? textOf(e.payload.guildId),
 })
 
@@ -66,21 +76,25 @@ export const slackExtender = makeExtender({
 export const instagramExtender = makeExtender({
   platform: 'instagram',
   chatKind: () => 'dm',
+  kindFromMembers: true,
 })
 
 export const redditExtender = makeExtender({
   platform: 'reddit',
   chatKind: () => 'dm',
+  kindFromMembers: true,
 })
 
 export const facebookExtender = makeExtender({
   platform: 'facebook',
   chatKind: () => 'dm',
+  kindFromMembers: true,
 })
 
 export const linkedinExtender = makeExtender({
   platform: 'linkedin',
   chatKind: () => 'dm',
+  kindFromMembers: true,
 })
 
 export const EXTENDERS: Readonly<Record<string, PlatformExtender>> = {
@@ -91,9 +105,9 @@ export const EXTENDERS: Readonly<Record<string, PlatformExtender>> = {
   slack: slackExtender,
   instagram: instagramExtender,
   reddit: redditExtender,
-  tiktok: makeExtender({ platform: 'tiktok', chatKind: () => 'dm' }),
+  tiktok: makeExtender({ platform: 'tiktok', chatKind: () => 'dm', kindFromMembers: true }),
 }
 
 export function extenderOf(platform: string): PlatformExtender {
-  return EXTENDERS[platform] ?? makeExtender({ platform, chatKind: () => 'dm' })
+  return EXTENDERS[platform] ?? makeExtender({ platform, chatKind: () => 'dm', kindFromMembers: true })
 }

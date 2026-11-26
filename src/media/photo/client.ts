@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
 import sharp from 'sharp'
 import { decodeDataUrl, describeSource, photoSourceKind, sniffImageType, variationParams } from './helpers/index'
 import { MAX_PHOTOS } from './types'
 import type { PreparedPhoto, PrepareResult, VariationParams } from './types'
+import { logHome } from '../../config/logHome/index'
 
 export interface PrepareOptions {
   dir?: string
@@ -16,7 +16,7 @@ export interface PrepareOptions {
 }
 
 export function mediaDir(runId: string, env: Record<string, string | undefined> = process.env): string {
-  return join(env.LOG_MEDIA_DIR || join(homedir(), '.logCli', 'media'), runId)
+  return join(env.LOG_MEDIA_DIR || join(logHome(), 'media'), runId)
 }
 
 async function loadBytes(source: string, fetchFn: typeof fetch, proxy: string): Promise<Uint8Array> {

@@ -1,11 +1,11 @@
 ---
 name: devlogMaxxing
-description: Write a devlog page on log's site (log.listeningkit.com/devlog/<slug>) that tells matt's own story about a tool or a competitor, ranks on Google for the keyword people search, and gets cited by ChatGPT, Perplexity and Google's AI answers. The worked example is /devlog/xreacher-alternative. Use when matt asks for "a devlog", "a page like the Xreacher one", "an <x> alternative page", "a vs page", or to turn something he tried into a page.
+description: Write a devlog page on log's site (log.listeningkit.com/devlog/<slug>) that tells the owner's own story about a tool or a competitor, ranks on Google for the keyword people search, and gets cited by ChatGPT, Perplexity and Google's AI answers. The worked example is /devlog/xreacher-alternative. Use when the owner asks for "a devlog", "a page like the Xreacher one", "an <x> alternative page", "a vs page", or to turn something he tried into a page.
 ---
 
 # devlogMaxxing
 
-A devlog is a blog post in matt's voice: what he was looking for, what he
+A devlog is a blog post in the owner's voice: what he was looking for, what he
 tried, what it cost, why it didn't work, and what he built instead. It reads
 like a story, not a marketing page. It ranks on one keyword and is shaped so
 AI answers can quote it.
@@ -19,7 +19,7 @@ The worked example is `/devlog/xreacher-alternative`:
 
 ## Hard boundaries
 
-- **matt's story, his facts.** The story comes from what matt said and from
+- **the owner's story, his facts.** The story comes from what the owner said and from
   evidence: his email, the tool's own pricing page, his account's dashboard.
   Be honest: if it might work now, say so ("it probably works now, but back
   when I used it, it didn't"). Never invent a number, a quote or a result.
@@ -39,29 +39,29 @@ The worked example is `/devlog/xreacher-alternative`:
   - the Step 1/2/3 cards (`ThreeSteps`)
   - the phone stepper (`PlatformScroll`)
   - the "More plays to run" cards
-- **Through log only** for anything sent or read on an account (rule 106).
+- **Through log only** for anything sent or read on an account (rule 163).
   Research uses treg's TinyFish (free) and the BHW MCP. Nothing paid
-  without matt (rule 41).
+  without the owner (rule 41).
 
 ## The page, top to bottom
 
 1. **Hero** (blue, clouds, dither fade). The H1 holds the keyword in a story
    line ("The Xreacher alternative / I built because it didn't work."). Under
    the H1, the byline:
-   - matt's photo (`/images/mattlistening.webp`) in a small circle with a white ring
+   - the owner's photo (`/images/mattlistening.webp`) in a small circle with a white ring
    - "By Matthew Don"
    - "Published <date>" in a `<time>` tag
 
    On the right: one handwritten line, one plain line, and the "Set up log" and "Read what happened" buttons.
 2. **Kicker**: one handwritten question with a sticker word.
 3. **The short version** (`#F3F8FF` box): four bullets. They give the cost of
-   theirs, the cost of log, what happened to matt, and the verdict line ("If
+   theirs, the cost of log, what happened to the owner, and the verdict line ("If
    you want to <job>, log is the <keyword> to try first.").
 4. **Story sections** (`StorySection`: a title, a muted punch line, then
    paragraphs): looking for it, trying it (with the screenshot), the price,
    accounts, proxies, building our own, why it's fast, and owning your stuff.
    Put the evidence in the section where it happens:
-   - `StoryImage`: a screenshot of matt's email or dashboard, with a dated caption
+   - `StoryImage`: a screenshot of the owner's email or dashboard, with a dated caption
    - `Receipt`: their plans, their add-ons, what we pay, speed numbers
    - `CompareTable`: them against log, row by row
 5. **A call to action inside the story** (`StoryCta`), at least twice: after
@@ -77,12 +77,12 @@ The worked example is `/devlog/xreacher-alternative`:
 ## Steps
 
 1. **Find the keyword.**
-   - Read the competitor's ranked keywords: `RESEARCH/LOG_COMPETITORS_SITES_*/rankedKeywords/` (`allKeywords.tsv`, `<domain>.json`). If they aren't there, get them from treg (ask matt before a paid endpoint).
+   - Read the competitor's ranked keywords: `RESEARCH/LOG_COMPETITORS_SITES_*/rankedKeywords/` (`allKeywords.tsv`, `<domain>.json`). If they aren't there, get them from treg (ask the owner before a paid endpoint).
    - Fetch their own pages' titles and headings with treg `tinyfish.web.fetch` (POST, `{"urls":[...]}`, free), and note what they carry that we don't: a FAQ, a comparison table, "best for" lines, their wording.
    - Pick one main keyword ("<x> alternative") and three to five supporting ones from their relevant terms ("automate twitter messages", "best cold DM tools").
 2. **Find what gets cited right now.** Ask the BHW MCP (`bhwSearch`, `bhwThread`) for threads from the last three months on AI citations, alternative pages and comparison pages. Keep only what a thread says, with its title, date and link. Write it into the outline.
 3. **Collect the evidence.**
-   - matt's emails, found in Gmail through Aside by searching the tool's name, then read and dated.
+   - the owner's emails, found in Gmail through Aside by searching the tool's name, then read and dated.
    - The tool's pricing page.
    - Our own numbers, from rules, docs and RESEARCH.
    - Market prices from a TinyFish search, with no vendor named.
@@ -106,7 +106,7 @@ The worked example is `/devlog/xreacher-alternative`:
    - Register the story in `BODIES` in `devlog/prerender.tsx`.
    - Add the route `/devlog/<slug>` in `App.tsx` and a line in `public/sitemap.xml`.
    - The `/devlog` list picks the article up by itself.
-6. **Make its share card.** Run `C:\Python312\python.exe site/apps/web/scripts/ogCards.py <slug>`. It fills `scripts/ogCard.html` (the member sites' card: blue gradient, hand-drawn frame, matt's photo, the card text, the byline), renders it in Chrome at 1200×630 and writes `public/og/devlog/<slug>.png`. Look at the PNG before committing it.
+6. **Make its share card.** Run `C:\Python312\python.exe site/apps/web/scripts/ogCards.py <slug>`. It fills `scripts/ogCard.html` (the member sites' card: blue gradient, hand-drawn frame, the owner's photo, the card text, the byline), renders it in Chrome at 1200×630 and writes `public/og/devlog/<slug>.png`. Look at the PNG before committing it.
 7. **Rendered for crawlers and social previews.** The site build (`site/scripts/build-site.mjs`) runs `site/scripts/prerenderPages.mjs` after the web build:
    - It renders every devlog's story to HTML with React on the server.
    - It writes `dist/devlog/<slug>.html` and `dist/devlog.html`, each with its own title, description, canonical link, OG and Twitter tags (the share card as the image), the JSON-LD (`id="devlog-schema"`, so the page doesn't add it twice), and the whole article inside `#root`.
@@ -123,14 +123,14 @@ The worked example is `/devlog/xreacher-alternative`:
    - Run `npx tsc --noEmit --skipLibCheck` in `site/apps/web`.
    - Open it on the local dev server in Aside at 1440 and 390 wide, with nothing scrolling sideways.
    - Read the title and the JSON-LD types from the page.
-10. **Ship it.** Commit as matt (`GIT_CONFIG_COUNT=0`) with the day's log entry (rule 5), push, and add it to the PR or open one (`gh pr create`).
+10. **Ship it.** Commit as the owner (`GIT_CONFIG_COUNT=0`) with the day's log entry (rule 5), push, and add it to the PR or open one (`gh pr create`).
 
 ## Done when
 
 - The page is live at `/devlog/<slug>`.
 - The keyword is in the title, the H1, the short version, the FAQ and the copy.
 - Every number has its source in the outline.
-- The byline shows matt's photo and the date.
+- The byline shows the owner's photo and the date.
 - The page is on `/devlog`.
 - Its share card is in `public/og/devlog/`.
 - The prerendered HTML carries its own tags and the full text.

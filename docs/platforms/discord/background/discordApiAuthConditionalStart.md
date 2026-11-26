@@ -1,6 +1,6 @@
 # discordApiAuthConditionalStart
 
-<!-- facts:start · written by `log facebook capture --docs` from the run captures and rea. Not edited by hand. -->
+<!-- facts:start · written by `log capture docs` from the run captures and rea. Not edited by hand. -->
 
 | | |
 | --- | --- |
@@ -10,21 +10,22 @@
 | Path | `discord.com/api/auth/conditional/start` |
 | Sends | — |
 | Reads | `challenge`, `ticket` |
-| Called from | `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1.js:208 app_store_parental_revocation`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1036.js:1 parse`, `runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder/script1221.js:2 anonymous`, `runs/inspect/20261028T074137_sourcedandsoldtothehighestbidder/script1245.js:2 anonymous` |
-| rea | `ev_065e7ad37dcb5911d240f9de7d6e2882220c5a8d7c025d92b46a23de59cf297c` |
+| Called from | `runs/inspect/20261114T184328_discordAccount/script0.js:232 625075`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 559868`, `runs/inspect/20261114T184328_discordAccount/script0.js:124 961943`, `runs/inspect/20261111T233723_discordAccount/script1280.js:1 anonymous` |
+| rea | `ev_f6daff8038b4f477b27b852e31fc1f2f76f7dd725b1883891e74b824ed6f0ac3` |
 
-Seen 2 time(s) in 2 run(s).
+Seen 5 time(s) in 5 run(s).
 
 | Action | Our step | Times | Status | Took | After step start | Errors |
 | --- | --- | --- | --- | --- | --- | --- |
 | inspect | step 3: goto /login | 1 | 200 | 432 ms | 5774 ms | — |
-| inspect | step 1: goto /channels/@me | 1 | 200 | 299 ms | 12301 ms | — |
+| inspect | step 1: goto /channels/@me | 2 | 200 | 176–299 ms | 5477–12301 ms | — |
+| inspect | step 1: goto /login | 2 | 200 | 204–270 ms | 3231–5548 ms | — |
 
 ### What it sent and what came back (the newest 2 from our runs)
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261030T222341_sourcedandsoldtothehighestbidder**, step 1: goto /channels/@me: 200, 299 ms
+**runs/inspect/20261109T193816_discordAccount**, step 1: goto /login: 200, 204 ms
 
 Sent:
 
@@ -36,12 +37,12 @@ Answered:
 
 ```json
 {
-  "challenge": "{\"publicKey\":{\"challenge\":\"We7-A9RvlUdIVrsvAOjVuQ18ey5TGKFs895TLbjWqhs\",\"timeout\":300000,\"rpId\":\"discord.com\",\"allowCredentials\":[],\"userVerification\":\"required\",\"extensions\":{\"uvm\":true}},\"mediation\":\"conditional\"}",
-  "ticket": "f63d9936-74a3-482a-b441-9fd5fd8c4782"
+  "challenge": "{\"publicKey\":{\"challenge\":\"981bWzPGQCQj6omn7Clthd0P8_mTQVVqPWLM_g8kJeQ\",\"timeout\":300000,\"rpId\":\"discord.com\",\"allowCredentials\":[],\"userVerification\":\"required\",\"extensions\":{\"uvm\":true}},\"mediation\":\"conditional\"}",
+  "ticket": "(taken out)"
 }
 ```
 
-**runs/inspect/20261028T062914_sourcedandsoldtothehighestbidder**, step 3: goto /login: 200, 432 ms
+**runs/inspect/20261109T193411_discordAccount**, step 1: goto /channels/@me: 200, 176 ms
 
 Sent:
 
@@ -53,8 +54,8 @@ Answered:
 
 ```json
 {
-  "challenge": "{\"publicKey\":{\"challenge\":\"uAUvFkCei5fkBkGVVT5WFupqaUa3DLocQ8shWXI7sIA\",\"timeout\":300000,\"rpId\":\"discord.com\",\"allowCredentials\":[],\"userVerification\":\"required\",\"extensions\":{\"uvm\":true}},\"mediation\":\"conditional\"}",
-  "ticket": "8aecfcc2-4ff4-45cc-bedb-24245f34b530"
+  "challenge": "{\"publicKey\":{\"challenge\":\"Oz351MwxWTk4e8MU_VyBdo6hCB7hkG2t2hABLtGLQ-A\",\"timeout\":300000,\"rpId\":\"discord.com\",\"allowCredentials\":[],\"userVerification\":\"required\",\"extensions\":{\"uvm\":true}},\"mediation\":\"conditional\"}",
+  "ticket": "(taken out)"
 }
 ```
 
@@ -66,7 +67,7 @@ Starts the login page's conditional sign-in (passkey autofill): the server hands
 
 ## What our machine does with it
 
-Not used: matt signs in himself (matt, 2026-10-28), so our step only records it.
+Not used: the owner signs in himself (the owner, 2026-10-28), so our step only records it.
 
 ## What can go wrong
 

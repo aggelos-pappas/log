@@ -11,9 +11,20 @@ VISIBLE_LAUNCH: dict[str, Any] = {"headless": False, "humanize": HUMANIZE_MAX_SE
 
 HUMANIZE_HOP_SECONDS = 0.02
 
+HUMANIZE_OFF_SECONDS = 0.0
+
+
+def own_trajectory_humanize() -> float:
+    from human import myuriInput
+
+    return HUMANIZE_OFF_SECONDS if myuriInput.available() else HUMANIZE_HOP_SECONDS
+
 
 def launch_kwargs(kwargs: dict[str, Any], own_trajectory: bool = False) -> dict[str, Any]:
-    visible = {**VISIBLE_LAUNCH, "humanize": HUMANIZE_HOP_SECONDS} if own_trajectory else VISIBLE_LAUNCH
+    from browser import camoufoxSource
+
+    camoufoxSource.install()
+    visible = {**VISIBLE_LAUNCH, "humanize": own_trajectory_humanize()} if own_trajectory else VISIBLE_LAUNCH
     return proxyGate.apply(kwargs, visible)
 
 

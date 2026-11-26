@@ -3,7 +3,7 @@ import { inboxMessageOf, isChatMessage, liveLine } from "./helpers/chat.ts";
 import { pushedTypeOf } from "../../inbox/relay/index.ts";
 
 describe("X Chat live lines", () => {
-  const message = { type: "message", id: "2119089067904425984", conversationId: "1974596626342686720:2039389784808853504", time: "2026-11-07T15:26:19.216000Z", senderId: "2039389784808853504", text: "I just woke up", fromMe: false, from: "deepman_1", box: "xchat", encrypted: false };
+  const message = { type: "message", id: "2119089067904425984", conversationId: "1974596626342686720:2039389784808853504", time: "2026-11-07T15:26:19.216000Z", senderId: "2039389784808853504", text: "I just woke up", fromMe: false, from: "dex_1", box: "xchat", encrypted: false };
 
   test("a message waiting for its key is never a message", () => {
     const waiting = { type: "unopened", state: "waitingForKey", eventId: "2119089067904425984", conversationId: message.conversationId, error: "no matching key" };
@@ -32,6 +32,6 @@ describe("X Chat live lines", () => {
 
   test("a message opened late keeps how long it waited and why", () => {
     const late = { tries: 5, waitedSeconds: 2600, firstError: "no matching key" };
-    expect(inboxMessageOf("matthewsoldit", { ...message, openedLate: late }, new Date("2026-11-07T16:09:13Z")).openedLate).toEqual(late);
+    expect(inboxMessageOf("xAccount", { ...message, openedLate: late }, new Date("2026-11-07T16:09:13Z")).openedLate).toEqual(late);
   });
 });

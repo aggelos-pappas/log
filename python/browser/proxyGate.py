@@ -10,6 +10,7 @@ from typing import Any
 
 from device import deviceProfile
 from errors.errorCodes import checked, redact, register_secret
+from identity import browserIdentity as _identity
 
 _armed: dict[str, Any] = {
     "path": None,
@@ -152,9 +153,20 @@ def twocaptcha_proxy() -> dict[str, str] | None:
 
 
 def locate_ip(ip: str) -> dict[str, Any]:
-    from camoufox.geolocation import get_geolocation
+    from camoufox import geolocation
+    from camoufox.exceptions import UnknownIPLocation
 
-    geo = get_geolocation(ip)
+    try:
+        geo = geolocation.get_geolocation(ip)
+    except UnknownIPLocation:
+        raise
+    except Exception as exc:
+        kept = geolocation.get_mmdb_path("ipv6" if ":" in ip else "ipv4", geolocation.load_geoip_config())
+        if not kept.exists():
+            raise
+        log(f"GeoIP update failed ({type(exc).__name__}: {str(exc)[:120]}); keeping the database already on this machine")
+        os.utime(kept)
+        geo = geolocation.get_geolocation(ip)
     return {"country": str(geo.locale.region or "").upper(), "timezone": str(geo.timezone or ""),
             "latitude": geo.latitude, "longitude": geo.longitude}
 
@@ -213,32 +225,30 @@ def slow_ms() -> int:
 
 def facebook_ms(proxy: dict[str, Any]) -> int | None:
     import time
-    import urllib.error
-    import urllib.request
+
+    from curl_cffi.requests import Session
 
     if not str(proxy["server"]).lower().startswith("http"):
         return None
     url = proxy_url(proxy)
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({"http": url, "https": url}))
 
-    def one_round() -> int:
+    def one_round(client: Any) -> int:
         worst = 0
         for probe in FACEBOOK_PROBES:
             started = time.monotonic()
             try:
-                opener.open(urllib.request.Request(probe, headers={"User-Agent": "Mozilla/5.0"}), timeout=15).read(256)
-            except urllib.error.HTTPError:
-                pass
+                client.get(probe, timeout=15).content[:256]
             except Exception:
                 return 15_000
             worst = max(worst, int((time.monotonic() - started) * 1000))
         return worst
 
     best = 15_000
-    for _ in range(PROBE_ROUNDS):
-        best = min(best, one_round())
-        if best <= slow_ms():
-            break
+    with Session(impersonate=_identity.curl_target("facebook"), proxies={"all": url}) as client:
+        for _ in range(PROBE_ROUNDS):
+            best = min(best, one_round(client))
+            if best <= slow_ms():
+                break
     return best
 
 
@@ -264,8 +274,7 @@ def apply(kwargs: dict[str, Any], visible: dict[str, Any]) -> dict[str, Any]:
             deviceProfile.write_run_file(_armed["devicePath"], run)
     except deviceProfile.ProfileError as exc:
         raise GateError("deviceProfileInvalid", str(exc)) from None
-    launch_proxy = None if proxy.get("direct") else playwright_proxy(proxy)
-    options = deviceProfile.build_launch(profile, run, exit_["exitIp"], exit_["timezone"], launch_proxy, visible)
+    options = deviceProfile.build_launch(profile, run, exit_["exitIp"], exit_["timezone"], None if proxy.get("direct") else playwright_proxy(proxy), visible)
     _armed.update({
         "proxy": proxy,
         "launch": options,
@@ -352,7 +361,7 @@ def _require_gate(args: tuple, kwargs: dict[str, Any]) -> None:
     same = (
         not args
         and kwargs.get("env") == built["env"]
-        and kwargs.get("proxy") == built["proxy"]
+        and kwargs.get("proxy") == built.get("proxy")
         and "headless" in kwargs and kwargs["headless"] is False
         and str(kwargs.get("executablePath")) == str(built["executable_path"])
     )
@@ -368,7 +377,24 @@ def _force_context(kwargs: dict[str, Any]) -> None:
     kwargs["timezoneId"] = _armed["timezone"]
     kwargs["geolocation"] = dict(_armed["geolocation"])
     kwargs["permissions"] = sorted(set(kwargs.get("permissions") or []) | {"geolocation"})
+    if (_armed["launch"] or {}).get("chromium"):
+        kwargs["locale"] = _armed["locale"]
     _force_capture(kwargs)
+
+
+CHROMIUM_GEO_ACCURACY = 100
+
+
+def chromium_launch(executable_path: str) -> dict[str, Any]:
+    gate = gate_attached()
+    proxy = gate["proxy"]
+    chosen = None if proxy.get("direct") else playwright_proxy(proxy)
+    locale = _armed["locale"]
+    _armed["languages"] = [locale]
+    _armed["geolocation"] = {"latitude": gate.get("latitude"), "longitude": gate.get("longitude"), "accuracy": CHROMIUM_GEO_ACCURACY}
+    _armed["launch"] = {"env": None, "proxy": chosen, "executable_path": executable_path, "chromium": True}
+    install_guards()
+    return {"executable_path": executable_path, "headless": False, "args": [f"--lang={locale}", f"--accept-lang={locale}"], **({"proxy": chosen} if chosen else {})}
 
 
 def har_path(capture_dir: str) -> Path:

@@ -20,6 +20,9 @@ let callId = "";
 const code = await timeCall(`cli ${words || "help"}`, async (call) => {
   callId = call.callId;
   const exit = await runFast(argv, {
+    refused: (said) => {
+      call.attrs.code ??= said;
+    },
     out: (line) => {
       console.log(line);
       appendLiveLine(dir, tool, "out", line);
@@ -33,4 +36,6 @@ const code = await timeCall(`cli ${words || "help"}`, async (call) => {
   return exit;
 });
 appendLiveLine(dir, tool, "out", `■ exit ${code} in ${msText(performance.now() - began)} (call ${callId})`);
+const { afterCommand } = await import("../src/release/check/index.ts");
+afterCommand(argv[0], (line) => process.stderr.write(`${line}\n`), Boolean(process.stderr.isTTY));
 process.exit(code);

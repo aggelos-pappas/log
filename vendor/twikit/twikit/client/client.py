@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 from ..bookmark import BookmarkFolder
 from ..community import Community, CommunityMember
-from ..constants import TOKEN, DOMAIN, IMPERSONATE
+from ..constants import ATTACH, TOKEN, DOMAIN, IMPERSONATE, USER_AGENT
 from ..errors import (
     AccountLocked,
     AccountSuspended,
@@ -62,6 +62,8 @@ from ..x_client_transaction.utils import handle_x_migration
 from ..x_client_transaction import ClientTransaction
 from .gql import GQLClient
 from .v11 import V11Client
+
+APPENDS_IN_FLIGHT = 4
 
 
 class Client:
@@ -108,7 +110,7 @@ class Client:
 
         kwargs.setdefault('impersonate', IMPERSONATE)
         kwargs.setdefault('allow_redirects', False)
-        self.http = AsyncSession(proxy=proxy, **kwargs)
+        self.http = ATTACH(AsyncSession(proxy=proxy, **kwargs))
         self.language = language
         self.proxy = proxy
         self.captcha_solver = captcha_solver
@@ -118,7 +120,7 @@ class Client:
 
         self._token = TOKEN
         self._user_id = None
-        self._user_agent = user_agent or 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15'
+        self._user_agent = user_agent or USER_AGENT
         self._act_as = None
 
         self.gql = GQLClient(self)
@@ -964,7 +966,8 @@ class Client:
         status_check_interval: float | None = None,
         media_type: str | None = None,
         media_category: str | None = None,
-        is_long_video: bool = False
+        is_long_video: bool = False,
+        video_duration_ms: int | None = None
     ) -> str:
         """
         Uploads media to twitter.
@@ -1045,7 +1048,7 @@ class Client:
 
         # ============ INIT =============
         response, _ = await self.v11.upload_media_init(
-            media_type, total_bytes, media_category, is_long_video
+            media_type, total_bytes, media_category, is_long_video, video_duration_ms
         )
         media_id = response['media_id']
         # =========== APPEND ============
@@ -1054,12 +1057,20 @@ class Client:
         MAX_SEGMENT_SIZE = 8 * 1024 * 1024  # The maximum segment size is 8 MB
         append_tasks = []
         chunk_streams: list[io.BytesIO] = []
+        in_flight = asyncio.Semaphore(APPENDS_IN_FLIGHT)
+
+        async def sent_one(coro):
+            async with in_flight:
+                return await coro
 
         while bytes_sent < total_bytes:
             chunk = binary[bytes_sent:bytes_sent + MAX_SEGMENT_SIZE]
             chunk_stream = io.BytesIO(chunk)
-            coro = self.v11.upload_media_append(is_long_video, media_id, segment_index, chunk_stream)
-            append_tasks.append(asyncio.create_task(coro))
+            if video_duration_ms is not None and is_long_video:
+                coro = self.v11.upload_media_append_multi(media_id, segment_index, chunk, MAX_SEGMENT_SIZE)
+            else:
+                coro = self.v11.upload_media_append(is_long_video, media_id, segment_index, chunk_stream)
+            append_tasks.append(asyncio.create_task(sent_one(coro)))
             chunk_streams.append(chunk_stream)
 
             segment_index += 1
@@ -1735,8 +1746,15 @@ class Client:
         if not items_:
             return Result([])
         items = items_[0]
-        next_cursor = items[-1]['content']['value']
-        previous_cursor = items[-2]['content']['value']
+
+        def cursor_at(index):
+            try:
+                return items[index]['content']['value']
+            except (IndexError, KeyError, TypeError):
+                return None
+
+        next_cursor = cursor_at(-1)
+        previous_cursor = cursor_at(-2)
 
         results = []
         for item in items:
@@ -3265,11 +3283,16 @@ class Client:
                         ids.add(part)
                 ids.discard(me)
                 handles = {}
+                avatars = {}
                 for part in detail.get('participants_results') or []:
                     rest = str(part.get('rest_id') or '')
-                    core = ((part.get('result') or {}).get('core') or {})
+                    result = part.get('result') or {}
+                    core = result.get('core') or {}
+                    avatar = (result.get('avatar') or {}).get('image_url')
                     if rest and core.get('screen_name'):
                         handles[rest] = core['screen_name']
+                    if rest and avatar:
+                        avatars[rest] = avatar
                 events = [decode_event(e) for e in (item.get('latest_message_events') or [])]
                 events = [e for e in events if e.get('time_ms') is not None]
                 last = max(events, key=lambda e: e['time_ms']) if events else None
@@ -3280,6 +3303,7 @@ class Client:
                     'last_time_ms': last['time_ms'] if last else None,
                     'last_from_me': bool(last and last['sender_id'] == me),
                     'handles': {k: v for k, v in handles.items() if k != me},
+                    'avatars': {k: v for k, v in avatars.items() if k != me},
                 })
             return out
 

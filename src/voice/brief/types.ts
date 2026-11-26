@@ -16,7 +16,7 @@ export interface BriefDraft {
   conversation?: readonly unknown[]
   room?: Room
   attached?: readonly { name: string; text: string | null }[]
-  howMattWrites?: string
+  howOwnerWrites?: string
 }
 
 export interface BriefReading {

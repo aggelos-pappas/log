@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundaryQf7lBY8wRQGaEPAG
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `draft.id`, `draft.date_created`, `draft.user_id`, `draft.team_id`, `draft.last_updated_ts`, `draft.last_updated_client`, `draft.blocks`, `draft.file_ids`, `draft.is_from_composer`, `draft.is_deleted`, `draft.is_sent` and 5 more |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script3.js:2895 statement`, `runs/inspect/20261103T065639_mattSlack/script35.js:275 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script3.js:2895 statement`, `runs/inspect/20261103T065639_slackAccount/script35.js:275 anonymous` |
 | rea | `ev_393c379ebcd2d612034a5b6a17f377c66133e9187f6250b2610105c57300caa5` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, POST 0 /beacon/error (383 ms): 200, 312 ms
+**runs/inspect/20261103T065639_slackAccount**, POST 0 /beacon/error (383 ms): 200, 312 ms
 
 Sent:
 
@@ -35,7 +35,7 @@ Sent:
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
     "_x_csid": "qDE7gQoj5kY",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_foreground": "true",
     "_x_frontend_build_type": "current",
@@ -43,7 +43,7 @@ Sent:
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundaryQf7lBY8wRQGaEPAG\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundaryQf7lBY8wRQGaEPAG\r\nContent-Disposition: form-data; name=\"blocks\"\r\n\r\n[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"just need it for food till thennah been travelling for 3 years lad\"}]}]}]\r\n------WebKi… (1517 chars)"
+    "------WebKitFormBoundaryQf7lBY8wRQGaEPAG\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundaryQf7lBY8wRQGaEPAG\r\nContent-Disposition: form-data; name=\"blocks\"\r\n\r\n[{\"type\":\"rich_text\",\"elements\":[{\"type\":\"rich_text_section\",\"elements\":[{\"type\":\"text\",\"text\":\"<messageText>\"}]}]}]\r\n------WebKi… (1517 chars)"
   }
 }
 ```
@@ -56,8 +56,8 @@ Answered:
   "draft": {
     "id": "Dr0CECLN037C",
     "date_created": 1793689406,
-    "user_id": "U0C4L7RF7HD",
-    "team_id": "T0C4VCD06MR",
+    "user_id": "<userId:1>",
+    "team_id": "<teamId:1>",
     "last_updated_ts": "1793689496.046363",
     "last_updated_client": "Chrome",
     "blocks": [
@@ -70,7 +70,7 @@ Answered:
             "elements": [
               {
                 "type": "text",
-                "text": "just need it for food till thennah been travelling for 3 years lad"
+                "text": "<messageText>"
               }
             ]
           }
@@ -85,9 +85,9 @@ Answered:
     "date_scheduled": 0,
     "destinations": [
       {
-        "channel_id": "D0C8VAE7REU",
+        "channel_id": "<channelId:1>",
         "user_ids": [
-          "U0A9JFXK21L"
+          "<userId:2>"
         ]
       }
     ],

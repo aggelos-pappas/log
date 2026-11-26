@@ -184,9 +184,12 @@ def launch_config(profile: dict[str, Any], run: dict[str, Any], exit_ip: str, ex
     config["geolocation:latitude"] = geo["latitude"]
     config["geolocation:longitude"] = geo["longitude"]
     config["geolocation:accuracy"] = geo["accuracy"]
-    config["humanize"] = True
-    config["humanize:maxTime"] = visible["humanize"]
-    config["humanize:minTime"] = min(HUMANIZE_MIN_SECONDS, float(visible["humanize"]))
+    if float(visible["humanize"]) > 0:
+        config["humanize"] = True
+        config["humanize:maxTime"] = visible["humanize"]
+        config["humanize:minTime"] = min(HUMANIZE_MIN_SECONDS, float(visible["humanize"]))
+    else:
+        config["humanize"] = False
     config["showcursor"] = bool(visible["showcursor"])
     return config
 
@@ -231,5 +234,5 @@ def build_launch(profile: dict[str, Any], run: dict[str, Any], exit_ip: str, exi
         "env": env,
         "firefox_user_prefs": prefs,
         "headless": bool(visible["headless"]),
-        "proxy": proxy,
+        **({"proxy": proxy} if proxy else {}),
     }

@@ -15,7 +15,10 @@ export interface PhraseIndex {
 export interface PhraseReading {
   familiarity: number | null
   floor: number
+  median?: number
   unfamiliar: string[]
+  newPhrasing: string[]
+  newWords: string[]
   pass: boolean
 }
 

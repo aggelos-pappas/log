@@ -11,7 +11,7 @@
 | Sends | `------WebKitFormBoundarymsx7880oTfIYc9gW
 Content-Disposition: form-data; name` |
 | Reads | `ok`, `machines` |
-| Called from | `runs/inspect/20261103T065639_mattSlack/script29.js:146 XiUd`, `runs/inspect/20261103T065639_mattSlack/script3.js:2954 XiUd`, `runs/inspect/20261103T065639_mattSlack/script31.js:2988 anonymous` |
+| Called from | `runs/inspect/20261103T065639_slackAccount/script29.js:146 XiUd`, `runs/inspect/20261103T065639_slackAccount/script3.js:2954 XiUd`, `runs/inspect/20261103T065639_slackAccount/script31.js:2988 anonymous` |
 | rea | `ev_e1063020a3dbf78451ebdfca64ab4e699ceebc1b556f62d91d9b8c7b1c97e6ab` |
 
 Seen 1 time(s) in 1 run(s).
@@ -24,7 +24,7 @@ Seen 1 time(s) in 1 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T065639_mattSlack**, step 4: goto /client: 200, 899 ms
+**runs/inspect/20261103T065639_slackAccount**, step 4: goto /client: 200, 899 ms
 
 Sent:
 
@@ -34,14 +34,14 @@ Sent:
     "_x_id": "2c6eaecf-1793689064.484",
     "_x_gantry": "true",
     "_x_desktop_ia": "4",
-    "slack_route": "T0C4VCD06MR",
+    "slack_route": "<teamId:1>",
     "_x_version_ts": "1793684253",
     "_x_frontend_build_type": "current",
     "fp": "6f",
     "_x_num_retries": "0"
   },
   "body": {
-    "------WebKitFormBoundarymsx7880oTfIYc9gW\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\nxoxc-12165421006739-12156263517591-12492529441700-5bffe6e6a317b9bbab53d938a4526d20e882de6ab372cd46f9f90868bb0322a0\r\n------WebKitFormBoundarymsx7880oTfIYc9gW\r\nContent-Disposition: form-data; name=\"machines\"\r\n\r\n[{\"machine_name\":\"INPRODUCT_TEAM_CREATION_FLOW\"},{\"machine_name\":\"SEGMENTATION_IN_TEAM_CREATION_FLOW\"},{\"machine_name\":\"SC_TRIAL_TEAM_ONBOARDING\"},{\"machine_name\":\"SC_TRIAL_TEAM_ON… (1002 chars)"
+    "------WebKitFormBoundarymsx7880oTfIYc9gW\r\nContent-Disposition: form-data; name": "\"token\"\r\n\r\n<slackToken>\r\n------WebKitFormBoundarymsx7880oTfIYc9gW\r\nContent-Disposition: form-data; name=\"machines\"\r\n\r\n[{\"machine_name\":\"INPRODUCT_TEAM_CREATION_FLOW\"},{\"machine_name\":\"SEGMENTATION_IN_TEAM_CREATION_FLOW\"},{\"machine_name\":\"SC_TRIAL_TEAM_ONBOARDING\"},{\"machine_name\":\"SC_TRIAL_TEAM_ON… (1002 chars)"
   }
 }
 ```
@@ -67,7 +67,7 @@ Answered:
     {
       "machine_name": "SC_TRIAL_TEAM_ONBOARDING",
       "state": "COMPLETE",
-      "metadata": "{\"sc_channel_id\":\"C0C5VUS8GC8\",\"inviting_team_domain\":\"rheosgroup\",\"has_sent_first_message\":true,\"message_banner_skipped_at\":1790671577,\"welcome_modal_completed_at\":1790671576,\"message_banner_skipped_reason\":\"has_sent_message\",\"channel_invite_coachmark_completed_at\":1790708270,\"workspace_invite_coachmark_completed_at\":1790796175}",
+      "metadata": "{\"sc_channel_id\":\"<channelId:1>\",\"inviting_team_domain\":\"<name:1>\",\"has_sent_first_message\":true,\"message_banner_skipped_at\":1790671577,\"welcome_modal_completed_at\":1790671576,\"message_banner_skipped_reason\":\"has_sent_message\",\"channel_invite_coachmark_completed_at\":1790708270,\"workspace_invite_coachmark_completed_at\":1790796175}",
       "is_state_terminal": true
     },
     {

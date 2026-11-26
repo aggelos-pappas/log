@@ -24,7 +24,7 @@ Seen 2 time(s) in 2 run(s).
 
 Read from each run's own recording (rule 73), secrets and signed link tokens taken out. Kept in `~/.logCli/rea/clientFacts.json`, so it stays after the run is pruned.
 
-**runs/inspect/20261103T185330_mattinferencesaver**, upload: paulie.jpg handed to the file chooser: 200, 1747 ms
+**runs/inspect/20261103T185330_instagramAccount**, upload: paulie.jpg handed to the file chooser: 200, 1747 ms
 
 Sent:
 
@@ -42,12 +42,12 @@ Answered:
 
 ```json
 {
-  "media_id": 1660877522409968,
-  "media_id_str": "1660877522409968"
+  "media_id": <id:1>,
+  "media_id_str": "<id:1>"
 }
 ```
 
-**runs/inspect/20261103T180010_mattinferencesaver**, upload: grievous.jpg handed to the file chooser: 200, 2098 ms
+**runs/inspect/20261103T180010_instagramAccount**, upload: grievous.jpg handed to the file chooser: 200, 2098 ms
 
 Sent:
 
@@ -64,8 +64,8 @@ Answered:
 
 ```json
 {
-  "media_id": 1634557321701016,
-  "media_id_str": "1634557321701016"
+  "media_id": <id:2>,
+  "media_id_str": "<id:2>"
 }
 ```
 
@@ -73,7 +73,7 @@ Answered:
 
 ## What it does
 
-Instagram's upload host for a Direct message photo: when the web page handed a file to the file chooser it uploaded the image and answered `media_id` and `media_id_str` (for example `1660877522409968`). It fired twice, once per run, on the `upload: paulie.jpg` and `upload: grievous.jpg handed to the file chooser` steps, taking 1747 and 2098 ms with status 200.
+Instagram's upload host for a Direct message photo: when the web page handed a file to the file chooser it uploaded the image and answered `media_id` and `media_id_str` (for example `<id:1>`). It fired twice, once per run, on the `upload: paulie.jpg` and `upload: grievous.jpg handed to the file chooser` steps, taking 1747 and 2098 ms with status 200.
 
 ## What our machine does with it
 

@@ -7,12 +7,12 @@ const got = installOpenCode(dir ?? opencodeConfigDir());
 
 console.log(
   got.changed
-    ? `log: OpenCode's log MCP server is in ${got.configPath}, native (codemode off)`
-    : `log: OpenCode's log MCP server is already native in ${got.configPath}`,
+    ? `log: OpenCode's log MCP server is in ${got.configPath}, Code Mode (tools.log.*)`
+    : `log: OpenCode's log MCP server is already in Code Mode in ${got.configPath}`,
 );
 if (!got.pluginFiles.length) {
   console.log("log: this install has no OpenCode plugin to copy");
 } else {
   console.log(`log: OpenCode's log hooks are in ${got.pluginDir} (${got.pluginFiles.length} file(s))`);
 }
-console.log("log: reload OpenCode once (opencode reload) and its log tools are native, with the hooks running");
+console.log("log: reload OpenCode once (opencode reload) and its log tools are under tools.log.*, with the hooks running");
