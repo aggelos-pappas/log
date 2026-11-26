@@ -141,7 +141,7 @@ async function roomsFor(read: Ask, s: PersonStanding, platform: string): Promise
   for (const r of await rows(read, `MATCH (i:Identity)-[:SAID|MEMBER_OF]->(g:Room) WHERE i.key = $key RETURN g.key AS key, coalesce(g.name, g.conversationId, g.key) AS name, g.server AS server, g.kind AS kind, min(coalesce(g.lastAtMs, g.lastSeenAt)) AS at`, { key: s.evidence.key })) {
     add(String(r.key), String(r.name ?? r.key), r.server ? String(r.server) : null, String(r.kind ?? 'room'), num(r.at), r.server ? 'Server or channel you share' : r.kind === 'dm' ? 'A direct chat' : 'A place you share')
   }
-  return out.slice(0, 6)
+  return out.slice(0, MAP_LIMITS.nodeRooms)
 }
 
 function whyOf(s: PersonStanding): string {
@@ -202,6 +202,7 @@ function bridgePath(edges: readonly MapEdge[], handles: Map<string, string>, tar
       handle: handles.get(key) ?? (key === 'owner' ? 'You' : key),
       ...(i ? (() => { const e = edges.find((edge) => (edge.a === route[i - 1] && edge.b === key) || (edge.b === route[i - 1] && edge.a === key)); return e ? { room: e.room, at: e.at } : {} })() : {}),
     }))
+    if (route.length >= MAP_LIMITS.path) continue
     for (const e of neighbours.get(last) ?? []) if (!seen.has(e.b)) {
       seen.add(e.b)
       queue.push([...route, e.b])
@@ -304,7 +305,7 @@ export async function mapFrom(read: Ask, ask: MapAsk, throughSeq: number | null,
   }
 
   const roomKeys = rooms.map((r) => r.key).filter((k) => !k.startsWith('edge:'))
-  if (roomKeys.length) for (const r of await rows(read, `MATCH (i:Identity)-[:MEMBER_OF|SAID]->(g:Room) WHERE g.key IN $keys RETURN g.key AS key, collect(DISTINCT coalesce(i.handle, i.name))[0..3] AS members`, { keys: roomKeys })) {
+  if (roomKeys.length) for (const r of await rows(read, `MATCH (i:Identity)-[:MEMBER_OF|SAID]->(g:Room) WHERE g.key IN $keys RETURN g.key AS key, collect(DISTINCT coalesce(i.handle, i.name))[0..${MAP_LIMITS.members}] AS members`, { keys: roomKeys })) {
     const room = rooms.find((item) => item.key === String(r.key))
     if (room) room.members = ((r.members as string[] | null) ?? []).filter(Boolean).map((m) => String(m).replace(/^@/, ''))
   }

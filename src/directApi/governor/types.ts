@@ -8,6 +8,7 @@ export interface GovernorState {
   last_mutation_ts?: number
   cooldown_until?: number
   soft_blocks_seen?: number
+  by_caller?: Record<string, number>
 }
 
 export interface GovernorCount {
@@ -18,6 +19,7 @@ export interface GovernorCount {
   writes: number
   hourRequests: number
   cooldownSeconds: number
+  byCaller: Record<string, number>
   path: string
 }
 
@@ -38,3 +40,7 @@ export interface GovernorResetRequest {
 }
 
 export const GOVERNOR_FILE = 'governor_state.json'
+export const GOVERNOR_DAILY_CAP = 500
+export const GOVERNOR_LOCK_SUFFIX = '.lock'
+export const GOVERNOR_LOCK_WAIT_MS = 2_000
+export const GOVERNOR_LOCK_STALE_MS = 10_000

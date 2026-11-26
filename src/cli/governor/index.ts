@@ -1,4 +1,5 @@
 import { countOf, governorAccounts, governorCounts, resetGovernor } from "../../directApi/governor/index.ts";
+import { governorDailyCap } from "../../directApi/governor/helpers/index.ts";
 import type { GovernorCount, GovernorResetResult } from "../../directApi/governor/index.ts";
 import { writesPerDayOf } from "../../directApi/engine/index.ts";
 import { ledgerRows } from "../../storage/ledger/index.ts";
@@ -27,13 +28,14 @@ export const GOVERNOR_INPUT: CommandInput = {
   ],
 };
 
-const DAILY = 500;
 
 function countLine(c: GovernorCount): string {
   const last = ledgerRows("governorReset", { account: c.account, limit: 50 }).filter((r) => r.platform === c.platform).at(-1);
   const cooldown = c.cooldownSeconds > 0 ? `, cooling off ${Math.ceil(c.cooldownSeconds / 60)} min` : "";
   const reset = last ? `, last reset ${last.at.slice(0, 16).replace("T", " ")} UTC by ${last.subject ?? "?"} (log.db ledger #${last.seq})` : "";
-  return `  ${c.platform} ${c.account}: ${c.requests}/${DAILY} requests, ${c.writes}/${writesPerDayOf(c.platform)} writes, ${c.hourRequests} this hour (day ${c.day ?? "?"})${cooldown}${reset}`;
+  const callers = Object.entries(c.byCaller).sort((a, b) => b[1] - a[1]);
+  const split = callers.length ? `; requests by caller: ${callers.map(([who, n]) => `${who} ${n}`).join(", ")}` : "";
+  return `  ${c.platform} ${c.account}: ${c.requests}/${governorDailyCap()} requests, ${c.writes}/${writesPerDayOf(c.platform)} writes, ${c.hourRequests} this hour (day ${c.day ?? "?"})${cooldown}${reset}${split}`;
 }
 
 function resetLine(r: GovernorResetResult): string {

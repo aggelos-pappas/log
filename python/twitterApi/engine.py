@@ -96,14 +96,14 @@ def redact(text: Any, cookies: dict[str, str]) -> str:
 def governor_for(account: str, writes_per_day: int | None = None, continues_send: bool = False) -> Any:
     from dataclasses import replace
 
-    from governor import GovernorConfig, RequestGovernor
+    from governor import GOVERNOR_STATE_FILE, GovernorConfig, RequestGovernor
 
     config = GovernorConfig.from_env()
     if writes_per_day and "FBK_GOVERNOR_MUTATION_DAILY" not in os.environ:
         config = replace(config, mutation_daily_cap=int(writes_per_day))
     if continues_send:
         config = replace(config, mean_gap_s=config.min_gap_s)
-    return RequestGovernor(config=config, state_path=state_dir(account) / "governor_state.json")
+    return RequestGovernor(config=config, state_path=state_dir(account) / GOVERNOR_STATE_FILE)
 
 
 def count_forced(governor: Any, is_mutation: bool) -> None:
@@ -1952,6 +1952,13 @@ async def run(spec: dict[str, Any]) -> dict[str, Any]:
 
 
 async def run_locked(spec: dict[str, Any], cookies: dict[str, str], action: str, account: str) -> dict[str, Any]:
+    from governor import governor_caller
+
+    with governor_caller(str(spec.get("caller") or action)):
+        return await counted_run(spec, cookies, action, account)
+
+
+async def counted_run(spec: dict[str, Any], cookies: dict[str, str], action: str, account: str) -> dict[str, Any]:
     from governor import GovernorBlockedError
     from twikit import Client
     from twikit.errors import TooManyRequests

@@ -100,9 +100,9 @@ def _login(session: Any) -> dict[str, Any]:
 
 
 def governor_status(account: str) -> dict[str, Any]:
-    from governor import RequestGovernor
+    from governor import GOVERNOR_STATE_FILE, RequestGovernor
 
-    return {"ok": True, "account": account, "governor": RequestGovernor(state_path=state_dir(account) / "governor_state.json").status()}
+    return {"ok": True, "account": account, "governor": RequestGovernor(state_path=state_dir(account) / GOVERNOR_STATE_FILE).status()}
 
 
 def _plain(x: Any) -> Any:

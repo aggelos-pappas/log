@@ -136,7 +136,7 @@ export const stateMachine = z
     });
   });
 
-const mapRoom = z.strictObject({ key: line(MP.id), name: line(MP.label), server: z.string().max(MP.label).nullable().optional(), kind: line(MP.platform), platform: line(MP.platform), meaning: line(MP.label), at: z.string().max(MP.at).nullable().optional(), members: z.array(line(MP.label)).max(4) });
+const mapRoom = z.strictObject({ key: line(MP.id), name: line(MP.label), server: z.string().max(MP.label).nullable().optional(), kind: line(MP.platform), platform: line(MP.platform), meaning: line(MP.label), at: z.string().max(MP.at).nullable().optional(), members: z.array(line(MP.label)).max(MP.members) });
 const mapFact = z.strictObject({ slot: line(40), text: line(MP.text), quote: line(MP.quote), at: line(40) });
 const mapLane = z.strictObject({ platform: line(MP.platform), state: line(MP.label) });
 const mapNext = z.strictObject({ text: line(MP.text), tool: line(MP.platform) });
@@ -145,7 +145,7 @@ const mapNode = z.strictObject({
   avatar: z.string().startsWith("data:image/").max(6_000_000).nullable().optional(),
   platform: line(MP.platform), platforms: z.array(line(MP.platform)).max(8),
   ring: z.number().int().min(1).max(4), tone: z.enum(MAP_TONES), why: line(MP.why),
-  rooms: z.array(mapRoom).max(8), facts: z.array(mapFact).max(MP.facts),
+  rooms: z.array(mapRoom).max(MP.nodeRooms), facts: z.array(mapFact).max(MP.facts),
   next: mapNext.optional(), lanes: z.array(mapLane).max(MP.lanes),
   quiet: z.boolean(), talk: z.boolean(), at: ms, machine: stateMachine,
 });
@@ -159,7 +159,7 @@ export const networkMap = z
     cursor: finite.min(0), nextCursor: finite.min(0).nullable(), total: finite.min(0),
     rings: z.array(mapRing).max(4), nodes: z.array(mapNode).max(MP.nodes),
     edges: z.array(mapEdge).max(MP.edges), rooms: z.array(mapRoom).max(MP.rooms),
-    path: z.array(mapHop).max(8), target: line(MP.id).optional(),
+    path: z.array(mapHop).max(MP.path), target: line(MP.id).optional(),
   })
   .superRefine((block, ctx) => {
     const keys = new Set(block.nodes.map((n) => n.key));

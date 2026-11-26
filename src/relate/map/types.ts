@@ -15,7 +15,7 @@ export const MAP_PLATFORMS = ['all', 'twitter', 'discord', 'instagram', 'slack',
 export type MapPlatform = (typeof MAP_PLATFORMS)[number]
 
 export const MAP_LIMITS = {
-  nodes: 32, edges: 96, rooms: 64, perRing: 6, facts: 3, lanes: 4,
+  nodes: 32, edges: 96, rooms: 64, perRing: 6, facts: 3, lanes: 4, path: 8, nodeRooms: 6, members: 3,
   id: 60, label: 80, text: 260, quote: 140, why: 400, at: 40, platform: 20,
 } as const
 
@@ -111,6 +111,16 @@ export interface MapHop {
   handle: string
   room?: string
   at?: string | null
+}
+
+const fieldsOf = <T>(fields: Record<keyof T, true>): (keyof T & string)[] => Object.keys(fields) as (keyof T & string)[]
+
+export const MAP_KEYS = {
+  node: fieldsOf<MapNode>({ key: true, handle: true, name: true, initials: true, avatar: true, platform: true, platforms: true, ring: true, tone: true, why: true, rooms: true, facts: true, next: true, lanes: true, quiet: true, talk: true, at: true, machine: true }),
+  room: fieldsOf<MapRoom>({ key: true, name: true, server: true, kind: true, platform: true, meaning: true, at: true, members: true }),
+  edge: fieldsOf<MapEdge>({ a: true, b: true, kind: true, room: true, at: true }),
+  ring: fieldsOf<MapRing>({ id: true, label: true, tone: true, count: true, nodes: true }),
+  hop: fieldsOf<MapHop>({ key: true, handle: true, room: true, at: true }),
 }
 
 export interface NetworkMapBlock {

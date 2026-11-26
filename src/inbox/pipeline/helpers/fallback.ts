@@ -135,8 +135,17 @@ export async function drainTeacher(deps: TeacherDeps, on: Database = db()): Prom
   const run: TeachRun = { at, chats: 0, inputTokens: 0, usd: 0, left: queue.length, stopped: null, retrainedHead: null, retrain: null }
   if (!queue.length) return { ...run, stopped: 'nothing queued' }
   const remaining = cap - spend.usd
+  const save = (runs: (latest: TeachSpend) => TeachRun[], usd: number, chats: number): void =>
+    on.transaction(() => {
+      const latest = teachSpend(day, on)
+      putState('pipelineTeach', `spend:${day}`, { day, usd: Math.round((latest.usd + usd) * 1e6) / 1e6, chats: latest.chats + chats, runs: runs(latest).slice(-200) } satisfies TeachSpend, now, on)
+    })()
   const record = (done: TeachRun): TeachRun => {
-    putState('pipelineTeach', `spend:${day}`, { day, usd: Math.round((spend.usd + done.usd) * 1e6) / 1e6, chats: spend.chats + done.chats, runs: [...spend.runs, done].slice(-200) } satisfies TeachSpend, now, on)
+    save((latest) => [...latest.runs, done], done.usd, done.chats)
+    return done
+  }
+  const amend = (done: TeachRun): TeachRun => {
+    save((latest) => latest.runs.map((r) => (r.at === done.at ? done : r)), 0, 0)
     return done
   }
   if (remaining <= 0) return record({ ...run, stopped: `the daily SubQ cap of $${cap} is spent` })
@@ -173,15 +182,16 @@ export async function drainTeacher(deps: TeacherDeps, on: Database = db()): Prom
   for (const a of answers) setLabel({ platform: a.platform, account: a.account, chat: a.person }, { who: a.who, where: a.where, confidence: a.confidence, ...(a.candidates.length ? { candidates: a.candidates } : {}), ...(typeof through.get(keyOf(a)) === 'number' ? { throughSeq: through.get(keyOf(a)) } : {}) }, TEACHER_BY, new Date(now))
   const inputTokens = answers.reduce((sum, a) => sum + a.inputTokens, 0) || plan.inputTokens
   const usd = Math.round((inputTokens / 1e6) * SUBQ_USD_PER_MILLION_INPUT * 1e6) / 1e6
-  const done: TeachRun = { ...run, chats: answers.length, inputTokens, usd, left: leftAfter() }
+  const done: TeachRun = record({ ...run, chats: answers.length, inputTokens, usd, left: leftAfter() })
   const head = latestHead(on)
   const fresh = labelList().filter((e) => e.by === TEACHER_BY && (!head || e.at > head.trainedAt)).length
   if (fresh >= (deps.retrainAfter ?? RETRAIN_AFTER)) {
     const trained = await trainAndSave(storedRows(on), labelList(), deps.labels, deps.embedderModel, on, deps.trainer ?? uvTrainer).catch((error: unknown) => ({ refused: error instanceof Error ? error.message.slice(0, 160) : String(error) }))
     if ('id' in trained) done.retrainedHead = trained.id
     done.retrain = 'id' in trained ? `head ${trained.id} trained after ${fresh} new teacher labels` : `not retrained: it ${trained.refused}`
+    return amend(done)
   }
-  return record(done)
+  return done
 }
 
 export function startTeacher(deps: () => TeacherDeps, on: () => Database = db, everyMs: number = TEACH_EVERY_MS): () => void {

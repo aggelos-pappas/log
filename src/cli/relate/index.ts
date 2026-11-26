@@ -3,9 +3,9 @@ import { buildGraph, GraphOwned, GraphReadOnly, pointerOf, eventsThrough, queryG
 import { ensureGraphOwner, graphOwnerAlive, graphOwnerStatus, OWNER_BATCH_MS, OWNER_START_WAIT_MS, startGraphOwner, stopGraphOwner } from "../../relate/owner/index.ts";
 import type { GraphPointer } from "../../relate/graph/index.ts";
 import type { GraphCounts, NetworkGraphCounts } from "../../relate/graph/index.ts";
-import { MACHINE_FORMS, MACHINE_PLATFORMS, MACHINE_VIEWS, machineGenuiBlock, relateMachine } from "../../relate/machine/index.ts";
+import { MACHINE_FORMS, MACHINE_LIMITS, MACHINE_PLATFORMS, MACHINE_VIEWS, machineGenuiBlock, relateMachine } from "../../relate/machine/index.ts";
 import type { MachinePlatform, MachineView } from "../../relate/machine/index.ts";
-import { MAP_FORMS, MAP_PLATFORMS, networkMapGenuiBlock, relateMap } from "../../relate/map/index.ts";
+import { MAP_DEFAULT_LIMIT, MAP_FORMS, MAP_LIMITS, MAP_PLATFORMS, networkMapGenuiBlock, relateMap } from "../../relate/map/index.ts";
 import type { MapPlatform } from "../../relate/map/index.ts";
 import { defaultDbPath, openDatabase } from "../../storage/schema/index.ts";
 import { tickLine } from "../../indexPass/helpers/tick.ts";
@@ -43,7 +43,7 @@ export const RELATE_INPUT: CommandInput = {
         { name: "state", kind: "string", description: "Network view: only this state's cell, for the next page of people" },
         { name: "cursor", kind: "integer", min: 0, description: "Network view: how many people of this state to skip, for the next page" },
         { name: "quiet", kind: "boolean", description: "Network view: the ones gone quiet for 14 days or more" },
-        { name: "limit", kind: "integer", min: 1, max: 6, description: "Network view: how many people per cell, at most 6 (the default)" },
+        { name: "limit", kind: "integer", min: 1, max: MACHINE_LIMITS.people, description: `Network view: how many people per cell, at most ${MACHINE_LIMITS.people} (the default)` },
         { name: "form", kind: "enum", values: MACHINE_FORMS, description: "genui: the block to pass to show_blocks" },
         JSON_FLAG,
       ],
@@ -59,7 +59,7 @@ export const RELATE_INPUT: CommandInput = {
         { name: "platform", kind: "enum", values: MAP_PLATFORMS, description: "Only this platform's accounts" },
         { name: "cursor", kind: "integer", min: 0, description: "Skip for the next page" },
         { name: "quiet", kind: "boolean", description: "Only the quiet ones" },
-        { name: "limit", kind: "integer", min: 1, max: 32, description: "People to draw, default 24" },
+        { name: "limit", kind: "integer", min: 1, max: MAP_LIMITS.nodes, description: `People to draw, default ${MAP_DEFAULT_LIMIT}` },
         { name: "form", kind: "enum", values: MAP_FORMS, description: "genui: the block to pass to show_blocks" },
         JSON_FLAG,
       ],
