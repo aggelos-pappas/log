@@ -90,6 +90,13 @@ def not_built(platform: str, action: str) -> dict[str, Any]:
 
 
 async def run(spec: dict[str, Any], actions: dict[str, Action], writes: tuple[str, ...]) -> dict[str, Any]:
+    from governor import governor_caller
+
+    with governor_caller(str(spec.get("caller") or spec.get("action") or "")):
+        return await counted_run(spec, actions, writes)
+
+
+async def counted_run(spec: dict[str, Any], actions: dict[str, Action], writes: tuple[str, ...]) -> dict[str, Any]:
     from governor import GovernorBlockedError
 
     action = spec.get("action")

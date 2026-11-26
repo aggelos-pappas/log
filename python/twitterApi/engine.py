@@ -1952,6 +1952,13 @@ async def run(spec: dict[str, Any]) -> dict[str, Any]:
 
 
 async def run_locked(spec: dict[str, Any], cookies: dict[str, str], action: str, account: str) -> dict[str, Any]:
+    from governor import governor_caller
+
+    with governor_caller(str(spec.get("caller") or action)):
+        return await counted_run(spec, cookies, action, account)
+
+
+async def counted_run(spec: dict[str, Any], cookies: dict[str, str], action: str, account: str) -> dict[str, Any]:
     from governor import GovernorBlockedError
     from twikit import Client
     from twikit.errors import TooManyRequests

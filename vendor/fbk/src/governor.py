@@ -69,7 +69,8 @@ import threading
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from contextvars import ContextVar
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -187,6 +188,7 @@ class GovernorState:
     last_mutation_ts: float = 0.0
     cooldown_until: float = 0.0       # epoch seconds; 0 = no cooldown active
     soft_blocks_seen: int = 0
+    by_caller: dict[str, int] = field(default_factory=dict)
 
     def _roll(self, now: float) -> None:
         """Reset counters whose calendar bucket has passed ``now``.
@@ -199,11 +201,24 @@ class GovernorState:
         hour = time.strftime("%Y-%m-%d-%H", time.localtime(now))
         if day != self.day:
             self.day, self.day_count, self.mutation_count = day, 0, 0
+            self.by_caller = {}
         if hour != self.hour_bucket:
             self.hour_bucket, self.hour_count = hour, 0
 
 
 GOVERNOR_STATE_FILE = "governor_state.json"
+GOVERNOR_CALLER: ContextVar[str] = ContextVar("governor_caller", default="other")
+
+
+@contextmanager
+def governor_caller(name: str) -> Iterator[None]:
+    token = GOVERNOR_CALLER.set(name or "other")
+    try:
+        yield
+    finally:
+        GOVERNOR_CALLER.reset(token)
+
+
 STATE_LOCK_WAIT_S = 2.0
 STATE_LOCK_STALE_S = 10.0
 
@@ -347,7 +362,7 @@ class RequestGovernor:
                 f"to override for this run")
 
     def before_request(self, *, is_mutation: bool = False,
-                       quiet: bool = False) -> float:
+                       quiet: bool = False, caller: str | None = None) -> float:
         """Gate one request: roll counters, enforce cooldown/caps, pace.
 
         Args:
@@ -371,9 +386,9 @@ class RequestGovernor:
         if not self.config.enabled:
             return 0.0
         with self._lock:
-            return self._before_request_locked(is_mutation=is_mutation, quiet=quiet)
+            return self._before_request_locked(is_mutation=is_mutation, quiet=quiet, caller=caller)
 
-    def _before_request_locked(self, *, is_mutation: bool, quiet: bool) -> float:
+    def _before_request_locked(self, *, is_mutation: bool, quiet: bool, caller: str | None = None) -> float:
         """The gate body — caller must already hold ``_lock`` (§5.4).
 
         Order matters: cooldown → caps → diurnal gate → pacing sleep →
@@ -445,6 +460,8 @@ class RequestGovernor:
             state.last_request_ts = stamp
             state.hour_count += 1
             state.day_count += 1
+            who = caller or GOVERNOR_CALLER.get()
+            state.by_caller[who] = state.by_caller.get(who, 0) + 1
             if is_mutation:
                 state.mutation_count += 1
                 state.last_mutation_ts = stamp
@@ -530,6 +547,7 @@ class RequestGovernor:
                 "mutation_count": self.state.mutation_count,
                 "mutation_daily_cap": self.config.mutation_daily_cap,
                 "soft_blocks_seen": self.state.soft_blocks_seen,
+                "by_caller": dict(self.state.by_caller),
                 "cooldown_active": now < self.state.cooldown_until,
                 "cooldown_remaining_s": max(0, int(self.state.cooldown_until - now)),
                 "active_window": self.config.quiet_hours,
@@ -539,7 +557,7 @@ class RequestGovernor:
 
     # ------------------------------------------------------------------- plumbing
     _SHARED_FIELDS = ("day", "hour_bucket", "hour_count", "day_count",
-                      "mutation_count", "cooldown_until", "soft_blocks_seen")
+                      "mutation_count", "cooldown_until", "soft_blocks_seen", "by_caller")
 
     def _read_disk(self) -> GovernorState | None:
         if not self.state_path or not self.state_path.is_file():

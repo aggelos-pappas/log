@@ -8,6 +8,7 @@ export interface GovernorState {
   last_mutation_ts?: number
   cooldown_until?: number
   soft_blocks_seen?: number
+  by_caller?: Record<string, number>
 }
 
 export interface GovernorCount {
@@ -18,6 +19,7 @@ export interface GovernorCount {
   writes: number
   hourRequests: number
   cooldownSeconds: number
+  byCaller: Record<string, number>
   path: string
 }
 
