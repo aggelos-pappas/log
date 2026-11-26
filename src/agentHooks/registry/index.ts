@@ -191,7 +191,14 @@ export function hookFiles(hooks: readonly AgentHook[] = AGENT_HOOKS, hermesVersi
     hooksKeyFile(".codex/hooks.json", hooksFor("codex", hooks), { description: "log-cli's agent hooks, written from src/agentHooks/registry (bun run check:agentHooks --write)." }),
     wholeFile(".cursor/hooks.json", cursorHooks(hooks)),
     wholeFile(".agents/hooks.json", antigravityHooks(hooks)),
-    { path: `${HERMES_PLUGIN_DIR}/plugin.yaml`, format: "text", same: (current) => (current ?? "").replace(/\r\n/g, "\n") === yaml, wanted: () => yaml },
+    { path: `${HERMES_PLUGIN_DIR}/plugin.yaml`, format: "text", same: (current) => {
+      if (current === null) return false;
+      try {
+        return JSON.stringify(Bun.YAML.parse(current)) === JSON.stringify(Bun.YAML.parse(yaml));
+      } catch {
+        return false;
+      }
+    }, wanted: () => yaml },
     {
       path: HARNESS_README,
       format: "text",
