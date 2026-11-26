@@ -32,6 +32,7 @@ export const DIRECT_ROUTES: Readonly<Record<string, DirectRoute>> = {
   twitterFollowers: { platform: 'twitter', library: 'twikit', only: true, surface: 'friendships', method: 'followers', when: 'followers read', seam: 'directTwitter' },
   twitterPosts: { platform: 'twitter', library: 'twikit', only: true, surface: 'tweets', method: 'get_user_tweets', when: 'posts read', seam: 'directTwitter' },
   twitterNotifications: { platform: 'twitter', library: 'twikit', only: true, surface: 'notifications', method: 'get_notifications_page', when: 'notifications read (new, or back through the history with --full)', seam: 'directTwitter' },
+  twitterOwn: { platform: 'twitter', library: 'twikit', only: true, surface: 'own activity', method: 'get_user_tweets', when: "the owner's own replies, likes and follows read", seam: 'directTwitter' },
   twitterChat: { platform: 'twitter', library: 'twikit', only: true, surface: 'xchat', method: 'unlock_xchat', when: 'chat pin (the PIN is checked against Juicebox before it is saved), chat watch (X pushes each message over wss://chat-ws.x.com, nothing polled)', seam: 'directTwitter' },
   twitterCookies: { platform: 'twitter', library: 'twikit', only: true, surface: 'account', method: 'ping', when: 'cookies save (the cookies are checked with X before they are saved)', seam: 'directTwitter' },
   twitterDms: { platform: 'twitter', library: 'twikit', only: true, surface: 'messages', method: 'inbox', when: 'dms read (the inbox, or one conversation)', seam: 'directTwitter' },

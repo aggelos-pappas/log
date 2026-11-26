@@ -1,4 +1,5 @@
 import type { Database } from 'bun:sqlite'
+import type { OwnSeen } from '../../twitter/ownActivity/types'
 
 export const HAND_SETTLE_MS = 20_000
 
@@ -22,6 +23,7 @@ export interface HandSend {
 
 export interface ByHandRead {
   sends: HandSend[]
+  public: OwnSeen[]
   text: string | null
 }
 

@@ -115,6 +115,7 @@ const SOURCE_COMMAND_RULES: Readonly<Record<string, number[]>> = {
   media: [26, 41, 126, 131, 137, 138, 139, 169],
   twitterFollowers: [13, 63, 64, 73, 80, 81, 104, 105],
   twitterPosts: [13, 63, 64, 73, 80, 81, 94, 104, 105],
+  twitterOwn: [13, 63, 64, 73, 80, 81, 94, 104, 105, 109],
   twitterNotifications: [13, 26, 63, 64, 73, 80, 81, 94, 104, 105],
   twitterReply: [8, 13, 53, 63, 64, 73, 80, 81, 86, 94, 104, 105, 121],
   twitterQuote: [8, 13, 53, 63, 64, 73, 80, 81, 86, 94, 104, 105],

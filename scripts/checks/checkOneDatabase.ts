@@ -123,6 +123,7 @@ const ALLOWED: Record<string, { writes: number; kind: Kind }> = {
   'python/logDb/engineStore.py': { writes: 1, kind: 'fallback' },
   'python/twitterApi/inboxSync.py': { writes: 1, kind: 'fallback' },
   'python/twitterApi/notifications.py': { writes: 1, kind: 'fallback' },
+  'python/twitterApi/ownActivity.py': { writes: 1, kind: 'session' },
   'hermesPlugin/__init__.py': { writes: 1, kind: 'fallback' },
   'scripts/browserView/hostBench.py': { writes: 3, kind: 'capture' },
   'scripts/browserView/openBench.py': { writes: 1, kind: 'capture' },

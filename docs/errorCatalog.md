@@ -423,4 +423,5 @@ stateDiagram-v2
 | `relateMachineNoGraph` | no | `relate/machine` | command exits | This log.db has no Relate graph yet, so there is nothing to draw the state machine from. | Run log relate build, then ask again. |
 | `relateMachineNobody` | no | `relate/machine` | command exits | Nobody in the Relate graph matches that handle or name. | Check the handle (log people or search finds it), or rebuild the graph with log relate build if they are new. |
 | `graphUnreadable` | yes | `relate/graph` | command exits | The current Relate graph file can't be opened read-only; a process may still hold it open for writing. | Run log relate build to write a fresh graph, then ask again. |
+| `ownActivityRefused` | yes | `twitter/ownActivity` | command exits | The platform didn't answer the read of the owner's own replies, likes or follows, so what he did by hand is unknown. | Read the platform's answer: a governor refusal waits for tomorrow's budget, a 429 waits for its reset, a dead session needs the account's session check. A queue holds its sends until this read works. |
 

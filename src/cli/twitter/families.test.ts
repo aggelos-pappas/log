@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -11,10 +11,16 @@ import type { Queue } from "../../twitter/queue/plan/index.ts";
 import { runCli } from "../runner/index.ts";
 import { twitterSendDeps } from "./helpers/send.ts";
 import { gateDeps } from "./helpers/voice.ts";
+import { ownActivityDeps } from "./helpers/queue.ts";
 import { twitterDmsDeps } from "./helpers/dms.ts";
 import { loadConversations } from "../../search/conversations/index.ts";
 import { appendEvent, markGap, openGap } from "../../inbox/store/index.ts";
 import { chatContextOf } from "../../inbox/context/index.ts";
+
+beforeEach(() => {
+  ownActivityDeps.refresh = async () => ({ ok: true, fresh: true, added: 0 });
+  ownActivityDeps.changes = () => [];
+});
 
 const POST_A = "https://x.com/alice/status/1900000000000000001";
 const POST_B = "https://x.com/bob/status/1900000000000000002";
