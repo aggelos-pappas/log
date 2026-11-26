@@ -1,8 +1,9 @@
 import { twitterAccounts } from "../../inbox/watch/client.ts";
 import { platformStateRoot } from "../../directApi/engine/index.ts";
 import { discordGate, findDiscordAccount } from "../../discord/account/session/index.ts";
-import { benchmark, buildIndex, chunkPlace, linearScan, placeFromBox, whereSaid, loadConversations, localEmbedder, openIndex, saveConversations, search, twitterConversationOf, updateIndex } from "../../search/conversations/index.ts";
-import type { Conversation, ConversationAttachment, Embedder, SearchHit } from "../../search/conversations/index.ts";
+import { benchmark, buildIndex, chunkPlace, linearScan, placeFromBox, whereSaid, loadConversations, localEmbedder, openIndex, saveConversations, search, sendersOf, twitterConversationOf, updateIndex } from "../../search/conversations/index.ts";
+import type { ChunkSender, Conversation, ConversationAttachment, Embedder, SearchHit } from "../../search/conversations/index.ts";
+import { db } from "../../inbox/store/index.ts";
 import { JSON_FLAG, numberOf, parseArgs, parserSpecOf, refuseInput } from "../runner/helpers/index.ts";
 import type { Command, CommandContext, CommandInput } from "../runner/types.ts";
 import { openTwitterAccount } from "../twitter/helpers/account.ts";
@@ -117,12 +118,25 @@ export function compactChunk(chunk: SearchHit["chunk"], query: string): Omit<Sea
   return { ...rest, text: snippetOf(chunk.text, query), messages: messageIds.length, firstMessageId: messageIds[0] ?? null, lastMessageId: messageIds.at(-1) ?? null };
 }
 
-function hitLine(hit: SearchHit, query: string, full: boolean): string {
+function sendersOfHits(hits: readonly SearchHit[]): ChunkSender[][] {
+  try {
+    const handle = db();
+    return hits.map((h) => sendersOf(handle, h.chunk));
+  } catch {
+    return hits.map(() => []);
+  }
+}
+
+function sendersLine(senders: readonly ChunkSender[]): string {
+  return senders.length ? ` · from ${senders.map((s) => `${s.label ?? "?"} (id ${s.userId})`).join(", ")}` : "";
+}
+
+function hitLine(hit: SearchHit, query: string, full: boolean, senders: readonly ChunkSender[] = []): string {
   const c = hit.chunk;
   const belief = hit.likelihood === undefined ? null : `likelihood ${hit.likelihood.toFixed(2)} × prior ${(hit.prior ?? 1).toFixed(2)}${(hit.conflict ?? 0) > 0.2 ? `, conflict ${hit.conflict!.toFixed(2)}` : ""}`;
   const ranks = [hit.keywordRank ? `keyword #${hit.keywordRank}` : null, hit.meaningRank ? `meaning #${hit.meaningRank}` : null, hit.relationRank ? `relationship #${hit.relationRank}` : null, belief].filter(Boolean).join(", ");
   const body = full ? c.text.split("\n").map((l) => l.slice(0, 220)) : snippetOf(c.text, query).split("\n");
-  return [`  ${hit.rank}. ${whereSaid(c.platform, chunkPlace(c), c.with, c.account)} · ${c.account} · ${c.at ?? "?"} · ${ranks} · conversation ${c.conversationId}`, ...body.map((l) => `     ${l}`)].join("\n");
+  return [`  ${hit.rank}. ${whereSaid(c.platform, chunkPlace(c), c.with, c.account)} · ${c.account} · ${c.at ?? "?"} · ${ranks} · conversation ${c.conversationId}${sendersLine(senders)}`, ...body.map((l) => `     ${l}`)].join("\n");
 }
 
 async function indexAll(context: CommandContext, only: string | undefined, platform: string | undefined): Promise<{ lines: string[]; conversations: Conversation[] }> {
@@ -213,9 +227,10 @@ export const searchCommand: Command = {
         const ms = performance.now() - started;
         const priorOf = graph ? { people: graph.people.map((p) => `${p.platform} ${p.handle ?? p.key}`), behind: graph.behind } : null;
         const full = parsed.flags["full"] === true;
-        if (json) return { code: 0, stdout: JSON.stringify({ query, ms, fusion, relationship: priorOf, hits: full ? hits : hits.map((h) => ({ ...h, chunk: compactChunk(h.chunk, query) })) }, null, full ? 2 : undefined) };
+        const senders = sendersOfHits(hits);
+        if (json) return { code: 0, stdout: JSON.stringify({ query, ms, fusion, relationship: priorOf, hits: hits.map((h, i) => ({ ...h, ...(full ? {} : { chunk: compactChunk(h.chunk, query) }), senders: senders[i] })) }, null, full ? 2 : undefined) };
         const how = fusion === "bayes" ? `keyword + meaning, Dempster-Shafer${priorOf ? `, relationship retriever from ${priorOf.people.join(", ")}` : ", no one named so the relationship retriever abstains"}` : "keyword + meaning, RRF";
-        return { code: 0, stdout: [`log search "${query}": ${hits.length} hit${hits.length === 1 ? "" : "s"} in ${ms.toFixed(1)} ms (${how})`, ...hits.map((h) => hitLine(h, query, full))].join("\n") };
+        return { code: 0, stdout: [`log search "${query}": ${hits.length} hit${hits.length === 1 ? "" : "s"} in ${ms.toFixed(1)} ms (${how})`, ...hits.map((h, i) => hitLine(h, query, full, senders[i]))].join("\n") };
       } finally {
         await index.close();
       }

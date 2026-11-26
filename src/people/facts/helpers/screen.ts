@@ -13,25 +13,48 @@ export class ScreenUnavailable extends Error {
   readonly code = 'factScreenUnavailable'
 }
 
-export function gliner2Screener(modelDir: string | null = placeOf(modelByKey(SCREEN_MODEL_KEY)), python: string = process.env.LOG_PYTHON || 'python', revision: string | null = latestRevision()): Screener {
+export interface ScreenerLaunch {
+  launch?: (command: string, args: string[], options: { windowsHide: boolean; env: NodeJS.ProcessEnv }) => ChildProcessWithoutNullStreams
+  startMs?: number
+  askMs?: number
+}
+
+export function gliner2Screener(modelDir: string | null = placeOf(modelByKey(SCREEN_MODEL_KEY)), python: string = process.env.LOG_PYTHON || 'python', revision: string | null = latestRevision(), options: ScreenerLaunch = {}): Screener {
+  const launch = options.launch ?? ((command, args, spawnOptions) => spawn(command, args, { ...spawnOptions, windowsHide: true }))
   let child: ChildProcessWithoutNullStreams | null = null
+  let starting: Promise<void> | null = null
   let buffer = ''
   let stderr = ''
   const tailOf = (text: string): string => text.trim().split('\n').slice(-5).join(' | ').slice(-600)
   const waiting: ((line: string) => void)[] = []
   const nextLine = (ms: number): Promise<string> => new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new ScreenUnavailable(`factScreenUnavailable: the fact screen gave no answer in ${Math.round(ms / 1000)} s`)), ms)
-    waiting.push((line) => {
+    const onLine = (line: string) => {
       clearTimeout(timer)
       resolve(line)
-    })
+    }
+    const timer = setTimeout(() => {
+      const at = waiting.indexOf(onLine)
+      if (at >= 0) waiting.splice(at, 1)
+      reject(new ScreenUnavailable(`factScreenUnavailable: the fact screen gave no answer in ${Math.round(ms / 1000)} s`))
+    }, ms)
+    waiting.push(onLine)
   })
-  const start = async () => {
-    if (child) return
+  const retire = (which: ChildProcessWithoutNullStreams | null) => {
+    if (!which || which !== child) return
+    child = null
+    starting = null
+    buffer = ''
+    which.stdin.end()
+    which.kill()
+  }
+  const launchChild = async () => {
     if (!modelDir) throw new ScreenUnavailable('factScreenUnavailable: no place for the fact model; run log models --fetch')
-    child = spawn(python, [SCREEN_PATH, modelDir, ...(revision ? [revision] : [])], { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } })
-    child.stdout.setEncoding('utf8')
-    child.stdout.on('data', (chunk: string) => {
+    const spawned = launch(python, [SCREEN_PATH, modelDir, ...(revision ? [revision] : [])], { windowsHide: true, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } })
+    child = spawned
+    buffer = ''
+    spawned.stdout.setEncoding('utf8')
+    spawned.stdout.on('data', (chunk: string) => {
+      if (child !== spawned) return
       buffer += chunk
       let at = buffer.indexOf('\n')
       while (at >= 0) {
@@ -41,32 +64,49 @@ export function gliner2Screener(modelDir: string | null = placeOf(modelByKey(SCR
         at = buffer.indexOf('\n')
       }
     })
-    child.stderr.setEncoding('utf8')
-    child.stderr.on('data', (chunk: string) => { stderr = (stderr + chunk).slice(-4_000) })
-    child.on('error', () => waiting.shift()?.(JSON.stringify({ ok: false, error: `the fact screen could not start: ${stderr}` })))
-    child.on('exit', (code, signal) => {
+    spawned.stderr.setEncoding('utf8')
+    spawned.stderr.on('data', (chunk: string) => { stderr = (stderr + chunk).slice(-4_000) })
+    spawned.on('error', () => {
+      if (child === spawned) waiting.shift()?.(JSON.stringify({ ok: false, error: `the fact screen could not start: ${stderr}` }))
+    })
+    spawned.on('exit', (code, signal) => {
+      if (child !== spawned) return
       child = null
+      starting = null
       const why = `the fact screen stopped (code ${code ?? 'null'}, signal ${signal ?? 'none'}): ${tailOf(stderr)}`
       while (waiting.length) waiting.shift()?.(JSON.stringify({ ok: false, error: why }))
     })
-    const ready = JSON.parse(await nextLine(SCREEN_START_MS)) as { ok: boolean; error?: string }
-    if (!ready.ok) throw new ScreenUnavailable(`factScreenUnavailable: ${ready.error ?? 'the fact model did not load'}; run log models --fetch and check gliner2 is installed in LOG_PYTHON`)
+    try {
+      const ready = JSON.parse(await nextLine(options.startMs ?? SCREEN_START_MS)) as { ok: boolean; error?: string }
+      if (!ready.ok) throw new ScreenUnavailable(`factScreenUnavailable: ${ready.error ?? 'the fact model did not load'}; run log models --fetch and check gliner2 is installed in LOG_PYTHON`)
+    } catch (error) {
+      retire(spawned)
+      throw error
+    }
   }
+  const start = (): Promise<void> => (starting ??= launchChild())
   return {
     model: modelByKey(SCREEN_MODEL_KEY).id,
     async screen(texts) {
       if (!texts.length) return { marks: [], ms: 0 }
       await start()
-      const asked = nextLine(SCREEN_ASK_MS)
-      child!.stdin.write(`${JSON.stringify({ texts, batchSize: SCREEN_BATCH })}\n`)
-      const answer = JSON.parse(await asked) as { ok: boolean; error?: string; marks?: ScreenMark[]; ms?: number }
+      const asking = child
+      if (!asking) throw new ScreenUnavailable('factScreenUnavailable: the fact screen stopped before it was asked')
+      const asked = nextLine(options.askMs ?? SCREEN_ASK_MS)
+      asking.stdin.write(`${JSON.stringify({ texts, batchSize: SCREEN_BATCH })}\n`)
+      let line: string
+      try {
+        line = await asked
+      } catch (error) {
+        retire(asking)
+        throw error
+      }
+      const answer = JSON.parse(line) as { ok: boolean; error?: string; marks?: ScreenMark[]; ms?: number }
       if (!answer.ok || !answer.marks) throw new ScreenUnavailable(`factScreenUnavailable: ${answer.error ?? 'no marks'}`)
       return { marks: answer.marks, ms: answer.ms ?? 0 }
     },
     stop() {
-      child?.stdin.end()
-      child?.kill()
-      child = null
+      retire(child)
     },
   }
 }

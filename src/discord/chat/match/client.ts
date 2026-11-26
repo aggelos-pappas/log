@@ -1,6 +1,6 @@
 import { editDistance } from '../../../useCases/router/helpers/typos'
 import { FILLER_WORDS } from './types'
-import type { ChatMatch, DiscordChat } from './types'
+import type { ChatMatch, DiscordChat, SavedChannel } from './types'
 
 const FILLER = new Set<string>(FILLER_WORDS)
 
@@ -61,4 +61,16 @@ export function matchChat(chats: readonly DiscordChat[], said: string): ChatMatc
   const top = scored.filter((s) => s.hit.score === best)
   if (top.length > 1) return { ok: false, code: 'chatAmbiguous', detail: `${top.length} chats match "${said}" (read as "${words.join(' ')}"): say which`, candidates: top.slice(0, 8).map((s) => ({ id: s.chat.id, label: labelOf(s.chat) })) }
   return { ok: true, chat: top[0].chat, label: labelOf(top[0].chat), how: top[0].hit.how }
+}
+
+export function withSavedChannels(chats: readonly DiscordChat[], saved: readonly SavedChannel[]): DiscordChat[] {
+  const servers = new Map(chats.filter((c) => c.serverId && c.server?.trim()).map((c) => [String(c.serverId), c.server!.trim()]))
+  const kept = new Set(chats.map((c) => c.id))
+  const aliases = saved.flatMap((c) => {
+    const name = c.name?.trim()
+    if (!name || kept.has(c.id)) return []
+    const server = c.serverId ? servers.get(String(c.serverId)) ?? null : null
+    return [{ id: c.id, kind: c.kind, name: server ? `${server} #${name}` : name, members: [], ...(server ? { server, serverId: c.serverId } : {}) }]
+  })
+  return [...chats, ...aliases]
 }

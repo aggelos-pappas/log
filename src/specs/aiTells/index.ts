@@ -117,7 +117,7 @@ export const aiTells = {
       { kind: 'symbol', file: TRAIN, name: 'gramCutoff' },
       { kind: 'symbol', file: TRAIN, name: 'bandMutedRules' },
       { kind: 'value', file: CONV_TYPES, name: 'OWNER_PASS', equals: 0.95 },
-      { kind: 'value', file: CONV_TYPES, name: 'ABSTAIN_BELOW_WORDS', equals: 3 },
+      { kind: 'value', file: CONV_TYPES, name: 'ABSTAIN_BELOW_WORDS', equals: 6 },
       { kind: 'symbol', file: TRAIN, name: 'trainLines' },
     ],
     'REQ-AITELLS-19': [

@@ -1,7 +1,7 @@
 ---
 name: log-inbox-said-by
 description: "Someone's messages on every platform, found by name, newest first. A log play (docs/useCases/inbox/saidBy.md): Someone's messages on every platform, found by name, newest first. Made from a hand-rolled one-off with log tool scaffold (getGuide({ useCase: \"log/toolFromOneOff\" })), so it is a log tool from now on and the one-off is never written again."
-when_to_use: "Use when the owner asks for this, in words like: \"what did he say\", \"find his messages\", \"everything they said\""
+when_to_use: "Use when the owner asks for this, in words like: \"what did he say\", \"find all his messages\", \"all he ever said\""
 metadata:
   summary: "Someone's messages on every platform, found by name, newest first"
 ---
@@ -14,7 +14,7 @@ Draft every message from that person's own thread and the owner's real replies (
 
 Someone's messages on every platform, found by name, newest first. Made from a hand-rolled one-off with log tool scaffold (getGuide({ useCase: "log/toolFromOneOff" })), so it is a log tool from now on and the one-off is never written again.
 
-How the owner asks for it: "what did he say", "find his messages", "everything they said"
+How the owner asks for it: "what did he say", "find all his messages", "all he ever said"
 
 ## The steps
 

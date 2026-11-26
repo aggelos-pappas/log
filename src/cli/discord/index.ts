@@ -8,12 +8,8 @@ import { basename, isAbsolute, join, relative, resolve as resolvePath } from "no
 import { watermarkLine, watermarkReadingOf } from "../../twitter/copy/watermark/index.ts";
 import { roomFromRead } from "../../voice/room/index.ts";
 import { findDiscordAccount, recordDiscordSession, discordGate } from "../../discord/account/session/index.ts";
-import { labelOf, matchChat, normalizedName } from "../../discord/chat/match/index.ts";
-const withChannels = (account: string) => (chats: DiscordChat[], said: string) => {
-  const kept = new Map(chats.map((c) => [c.id, c.name?.trim().toLowerCase() ?? ""]));
-  const aliases = savedServerChannels("discord", account).filter((c) => c.name?.trim() && kept.get(c.id) !== c.name.trim().toLowerCase());
-  return matchChat([...chats, ...aliases], said);
-};
+import { labelOf, matchChat, normalizedName, withSavedChannels } from "../../discord/chat/match/index.ts";
+const withChannels = (account: string) => (chats: DiscordChat[], said: string) => matchChat(withSavedChannels(chats, savedServerChannels("discord", account)), said);
 import { closestNamed } from "../../inbox/nameHints/index.ts";
 import { embeddableXLinks } from "../../discord/chat/embed/index.ts";
 import { addPending, incomingSince, interruptedLines, watchLogMark } from "../../inbox/watch/index.ts";

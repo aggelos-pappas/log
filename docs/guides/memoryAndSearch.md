@@ -12,7 +12,7 @@ When the owner asks for one of these, follow its page step by step.
 |---|---|---|
 | `getGuide({ useCase: "discord/serverReply" })` | Replying in a Discord server channel | "reply to <someone> in <server>", "answer him in the general", "message the guy in <server> #<channel> who mentioned me", "reply in the <server> server", "find what <someone> said in <server> and answer it" |
 | `getGuide({ useCase: "discord/serverSearch" })` | Finding a conversation in a Discord server | "find the conversation I had with <someone> in <server> about <thing>", "what did <someone> say in <server> about <thing>", "search <server> for <words>", "read through the <server> server and find <thing>" |
-| `getGuide({ useCase: "inbox/saidBy" })` | Someone's messages on every platform, found by name, newest first | "what did he say", "find his messages", "everything they said" |
+| `getGuide({ useCase: "inbox/saidBy" })` | Someone's messages on every platform, found by name, newest first | "what did he say", "find all his messages", "all he ever said" |
 | `getGuide({ useCase: "inbox/scopeAJob" })` | Scoping a job out of someone in a DM | "probe <person> so we can scope out what the task is", "scope it out with him", "find out what he actually wants done", "go through and then scope it out". |
 | `getGuide({ useCase: "log/toolFromOneOff" })` | Turning a hand-rolled one-off into a log tool | "turn that one-off into a tool", "make that script a log command", "stop hand-rolling that", "vendor that query into log" |
 | `getGuide({ useCase: "network/relationshipMachine" })` | Relationship state machine | "where am I with <person>", "how do I reach <person>". |

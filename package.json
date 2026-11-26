@@ -60,7 +60,7 @@
     "doctor": "bun run bin/log.ts doctor",
     "mcp": "bun run bin/logMcp.ts",
     "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile .cache/tsc/root.tsbuildinfo && tsc -p src/mcp/apps/browserView/widget --incremental --tsBuildInfoFile .cache/tsc/widget.tsbuildinfo && tsc -p src/mcp/apps/report/view --incremental --tsBuildInfoFile .cache/tsc/report.tsbuildinfo",
-    "test": "bun test",
+    "test": "bun scripts/tests/run.ts",
     "test:full": "bun test",
     "test:affected": "bun scripts/tests/affectedTests.ts",
     "check:privacy": "node scripts/privacy/checkPrivacy.mjs",

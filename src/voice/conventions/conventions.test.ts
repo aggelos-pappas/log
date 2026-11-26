@@ -74,6 +74,12 @@ describe('the frontier-conventions detector', () => {
     const short = readConventions(loaded, 'yo lad', [0, 1])
     expect(short.abstain).toBe(true)
     expect(short.value).toBeNull()
+    for (const his of ['yeah lad thats mad', 'this is it mate', 'one two three four five']) {
+      const reading = readConventions(loaded, his, [1, 0])
+      expect(reading.abstain).toBe(true)
+      expect(reading.probability).toBeNull()
+    }
+    expect(readConventions(loaded, 'one two three four five six', [1, 0]).abstain).toBe(false)
     const ai = readConventions(loaded, 'happy to help with the build', [1, 0])
     expect(ai.flagged).toBe(true)
     expect(ai.band).toBe('medium')

@@ -23,6 +23,7 @@ import {
   linesOf,
   loadQueue,
   editItem,
+  keptPostLink,
   liveLock,
   logPathOf,
   pidAlive,
@@ -486,7 +487,9 @@ export const queueCommand: Command = {
         if (liveLock(file)) return refuse("twitter queue edit", "queueBusy", "a run is going on this queue: stop it with jobCancel, edit, then run it again (its saves would undo the edit)");
         const queue = load(file);
         let event;
+        let keptPost: string | null = null;
         try {
+          keptPost = keptPostLink(queue.items.find((i) => i.n === wholeFlag(flags, "n", 0))?.text ?? "", String(flags["text"] ?? "").trim());
           event = editItem(queue, wholeFlag(flags, "n", 0), String(flags["text"] ?? ""), flags["by"] as string, systemRandom, now, typeof flags["window"] === "string" ? (flags["window"] as string) : "30m");
         } catch (error) {
           return refuse("twitter queue edit", "queueInvalid", error instanceof Error ? error.message : String(error));
@@ -496,7 +499,8 @@ export const queueCommand: Command = {
         const item = queue.items.find((i) => i.n === n)!;
         context.err(queueLog(file, `edit: #${n} @${item.handle ?? "?"} has new copy, approved by ${flags["by"] as string}${event ? `, planned again at ${event.at}` : ""}`, now));
         const lines = item.text.split("\n").map((l) => `  ${l}`);
-        return { code: 0, stdout: [`log twitter queue edit: #${n} @${item.handle ?? "?"} now reads:`, ...lines, `${event ? `planned at ${event.at}` : "keeps its planned time"}; the queue is approved again by ${flags["by"] as string}. Nothing sent.`].join("\n") };
+        const keptLine = keptPost ? [`the new copy had no post link, so it kept #${n}'s post link above it: ${keptPost}. To open on a different post, put that link on the first line of --text.`] : [];
+        return { code: 0, stdout: [`log twitter queue edit: #${n} @${item.handle ?? "?"} now reads:`, ...lines, ...keptLine, `${event ? `planned at ${event.at}` : "keeps its planned time"}; the queue is approved again by ${flags["by"] as string}. Nothing sent.`].join("\n") };
       }
       let replies: number;
       try {

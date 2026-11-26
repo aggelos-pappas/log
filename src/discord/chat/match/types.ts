@@ -3,6 +3,15 @@ export interface DiscordChat {
   kind: string
   name: string | null
   members: string[]
+  server?: string | null
+  serverId?: string | null
+}
+
+export interface SavedChannel {
+  id: string
+  kind: string
+  name: string | null
+  serverId?: string | null
 }
 
 export type ChatMatch =

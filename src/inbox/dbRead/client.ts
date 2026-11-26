@@ -98,9 +98,9 @@ export function cachedChatList<T>(platform: string, account: string, now: number
   return kept && now - kept.savedAt < CHAT_LIST_FRESH_MS ? kept.chats : null
 }
 
-export function savedServerChannels(platform: string, account: string): { id: string; kind: string; name: string | null; members: string[] }[] {
+export function savedServerChannels(platform: string, account: string): { id: string; kind: string; name: string | null; serverId: string | null; members: string[] }[] {
   try {
-    const rows = db().prepare("SELECT conversationId AS id, kind, name FROM chats WHERE platform = ? AND account = ? AND kind IN ('channel', 'thread', 'forumPost') AND name IS NOT NULL AND name <> ''").all(platform, account) as { id: string; kind: string; name: string }[]
+    const rows = db().prepare("SELECT conversationId AS id, kind, name, serverId FROM chats WHERE platform = ? AND account = ? AND kind IN ('channel', 'thread', 'forumPost') AND name IS NOT NULL AND name <> ''").all(platform, account) as { id: string; kind: string; name: string; serverId: string | null }[]
     return rows.map((r) => ({ ...r, members: [] }))
   } catch {
     return []

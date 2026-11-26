@@ -56,7 +56,7 @@ With no prompt hook, getGuide({ ask }) routes the owner's words to the one that 
 | `getGuide({ useCase: "network/whoToTalkTo" })` | Who to talk to next |
 | `getGuide({ useCase: "people/bots" })` | Bots |
 | `getGuide({ useCase: "people/facts" })` | Person facts |
-| `getGuide({ useCase: "reddit/contributorMaxxing" })` | Contributor maxxing: finding talented builders through what they share |
+| `getGuide({ useCase: "reddit/contributorMaxxing" })` | Contributor maxxing: builders by what they share |
 | `getGuide({ useCase: "slack/dmReply" })` | Reading and answering a Slack DM |
 | `getGuide({ useCase: "tiktok/post" })` | Posting a video on TikTok, and deleting it |
 | `getGuide({ useCase: "tiktok/videoResearch" })` | Researching public TikTok videos |

@@ -179,6 +179,7 @@ export function botSources(deps: BotEngineDeps): BotSources {
         const cursor = getState<{ after?: string }>('botBackfill', cursorKey(account.account, server.id), {}, deps.handle)?.body.after ?? '0'
         const pages = Math.max(1, Math.min(BOT_DISCORD_PAGES_PER_SERVER, budget))
         const run = await deps.discord(account, { action: 'members', server: server.id, after: cursor, pages })
+        budget -= Math.max(1, Number(run.requests ?? (run.ok ? pages : 1)) || 1)
         if (!run.ok) {
           if (accountLevel(run.code)) {
             stopped = `${run.code}: ${run.detail ?? ''}`
@@ -188,7 +189,6 @@ export function botSources(deps: BotEngineDeps): BotSources {
           putState('botBackfill', refusedKey(account.account, server.id), { until: clock() + BOT_DISCORD_REFUSED_MS, code: BOT_PLACE_REFUSAL }, clock(), deps.handle)
           continue
         }
-        budget -= Number(run.requests ?? pages)
         take(run.members)
         const last = [...run.members].reverse().map(memberOf).find((m) => m)
         if (run.stopped && last) putState('botBackfill', cursorKey(account.account, server.id), { after: last.userId }, clock(), deps.handle)

@@ -84,4 +84,4 @@ export interface OwnerOptions {
 
 export type OwnerOutcome = { ok: true; batches: number; reason: string } | { ok: false; code: string; reason: string }
 
-export type EnsureOutcome = 'alive' | 'started' | 'starting' | 'off'
+export type EnsureOutcome = 'alive' | 'started' | 'starting' | 'failed' | 'off'

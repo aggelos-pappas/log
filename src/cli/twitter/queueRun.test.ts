@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { marketplaceFixture } from "../../accounts/store/index.ts";
 import type { TwitterEngineRun, TwitterEngineSpec, TwitterSessionAnswer } from "../../twitter/account/session/index.ts";
-import { approveQueue, buildQueue, loadQueue, pidAlive } from "../../twitter/queue/plan/index.ts";
+import { approveQueue, buildQueue, loadQueue, pidAlive, saveQueue } from "../../twitter/queue/plan/index.ts";
 import type { EventKind, Queue, QueueAction } from "../../twitter/queue/plan/index.ts";
 import { queueLockHolder, queueLogLines, takeQueueLock } from "../../twitter/queue/store/index.ts";
 import { runCli } from "../runner/index.ts";
@@ -259,8 +259,23 @@ describe("log twitter queue run --live, recorded end to end on a stubbed engine 
     await check("heldThenEditThenRun", path);
   });
 
+  test("an edit with no post link says it kept the item's post link", async () => {
+    const path = queueFile(dir, "dm", 1, [{ n: 1, kind: "reply", s: 10 }], 20);
+    const link = "https://x.com/fakeBird/status/1900000000000000099";
+    const queue = loadQueue(path);
+    queue.items[0].text = `${link}\nyo the new tool is up`;
+    saveQueue(path, approveQueue(queue, "fakeOwner", new Date(START)));
+    world.lines.length = 0;
+    expect(await cli(["twitter", "queue", "edit", path, "--n", "1", "--text", "saw your database post, made you a copy", "--by", "fakeOwner"])).toBe(0);
+    expect(world.lines.join("\n")).toContain(`kept #1's post link above it: ${link}`);
+    expect(loadQueue(path).items[0].text).toBe(`${link}\nsaw your database post, made you a copy`);
+    world.lines.length = 0;
+    expect(await cli(["twitter", "queue", "edit", path, "--n", "1", "--text", "https://x.com/fakeBird/status/1900000000000000100\nthis one instead", "--by", "fakeOwner"])).toBe(0);
+    expect(world.lines.join("\n")).not.toContain("kept #1's post link");
+  });
+
   test("dryRun", async () => {
-    const path = queueFile(dir, "reply", 2, [{ n: 1, kind: "reply", s: 10 }, { n: 2, kind: "reply", s: 40 }], 20);
+    const path = queueFile(dir, "reply", 2,[{ n: 1, kind: "reply", s: 10 }, { n: 2, kind: "reply", s: 40 }], 20);
     await cli(["twitter", "queue", "run", path]);
     await check("dryRun", path);
   });

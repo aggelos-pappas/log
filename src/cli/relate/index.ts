@@ -122,7 +122,7 @@ export const relateCommand: Command = {
           owner = await graphOwnerStatus(dbPath);
         }
         if (json) return { code: owner.live ? 0 : 1, stdout: JSON.stringify({ outcome, owner: owner.live }, null, 2) };
-        return { code: owner.live ? 0 : 1, stdout: `log relate owner start: ${outcome === "alive" ? "already running" : "started"}; ${ownerLine(owner)}` };
+        return { code: owner.live ? 0 : 1, stdout: `log relate owner start: ${outcome === "alive" ? "already running" : outcome === "failed" ? "the owner process did not start" : "started"}; ${ownerLine(owner)}` };
       }
       const owner = await graphOwnerStatus(dbPath);
       if (json) return { code: 0, stdout: JSON.stringify(owner, null, 2) };

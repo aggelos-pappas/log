@@ -203,6 +203,7 @@ const anchors: RequirementAnchors = {
   'REQ-RELATE-25': [
     { kind: 'symbol', file: machineBots, name: 'botKnowledge' },
     { kind: 'symbol', file: machineBots, name: 'BOT_WORD' },
+    { kind: 'symbol', file: machineBots, name: 'namedBot' },
     { kind: 'symbol', file: storeClient, name: 'markAutomatedIdentity' },
     { kind: 'uses', file: machine, name: 'withoutBots' },
   ],

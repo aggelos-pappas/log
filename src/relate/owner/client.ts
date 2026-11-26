@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import type { Connection } from '@relate/relate'
 import { defaultDbPath, openDatabase } from '../../storage/schema/index'
-import { claimState } from '../../storage/state/index'
+import { claimState, deleteState } from '../../storage/state/index'
 import { killTree, processAlive, processStartedAt, sameProcess } from '../../inbox/watch/index'
 import { applyBatch, buildFileAsync, contextFrom, countsFrom, countsOf, eventsThrough, fenceStore, graphDir, needsFullBuild, offsetWithPointer, openStoreRetry, pointerFor, pointerOf, priorFrom, prune, putPointer, readOnlyRows, workspaceOf } from '../graph/client'
 import { askOf } from '../graph/helpers/store'
@@ -287,9 +287,18 @@ export function ensureGraphOwner(repo: string, dbPath: string = defaultDbPath(),
   if (env.LOG_GRAPH_OWNER === 'off') return 'off'
   const handle = openDatabase(dbPath)
   if (graphOwnerAlive(dbPath, handle, now)) return 'alive'
-  if (!claimState('relateOwnerStart', workspaceOf(dbPath), { by: process.pid }, OWNER_START_BACKOFF_MS, now, handle)) return 'starting'
-  start(repo, dbPath)
-  return 'started'
+  const key = workspaceOf(dbPath)
+  if (!claimState('relateOwnerStart', key, { by: process.pid }, OWNER_START_BACKOFF_MS, now, handle)) return 'starting'
+  let pid: number | null
+  try {
+    pid = start(repo, dbPath)
+  } catch (error) {
+    deleteState('relateOwnerStart', key, handle)
+    throw error
+  }
+  if (pid !== null && processAlive(pid)) return 'started'
+  deleteState('relateOwnerStart', key, handle)
+  return 'failed'
 }
 
 export async function graphOwnerStatus(dbPath: string = defaultDbPath()): Promise<{ row: OwnerRow | null; alive: boolean; live: OwnerStatus | null; head: number; pointer: GraphPointer | null }> {

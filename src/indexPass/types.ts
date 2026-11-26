@@ -4,6 +4,8 @@ export const PASS_SCOPE = 'indexStream'
 
 export const PASS_CURSOR = 'cursor'
 
+export const PASS_DEFERRED = 'deferred'
+
 export const PASS_SLICE_MS = 200
 
 export const PASS_SLICE_LINES = 2000

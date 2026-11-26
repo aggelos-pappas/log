@@ -189,6 +189,7 @@ describe("the plugin's warm app host", () => {
       "until = time.monotonic() + 20",
       "while time.monotonic() < until and (module._apps.proc is None or module._apps.proc.pid == first): time.sleep(0.05)",
       "print(json.dumps({'warmed': warmed, 'restarted': module._apps.proc is not None and module._apps.proc.pid != first}))",
+      "module.APP_RESTART_AFTER_SECONDS = 10 ** 9",
       "module._apps.proc.stdin.close(); module._apps.proc.wait(5)",
     ].join("\n");
     const run = spawnSync(process.env.LOG_PYTHON || "python", ["-c", script], { encoding: "utf8", windowsHide: true, timeout: 60_000 });

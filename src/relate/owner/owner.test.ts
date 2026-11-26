@@ -229,7 +229,7 @@ describe('the graph owner: one consumer of log.db events per log.db', () => {
     const started: string[] = []
     const start = (_repo: string, path: string) => {
       started.push(path)
-      return null
+      return process.pid
     }
     expect(ensureGraphOwner(repo, dbPath, start, {})).toBe('started')
     expect(ensureGraphOwner(repo, dbPath, start, {})).toBe('starting')
@@ -246,6 +246,17 @@ describe('the graph owner: one consumer of log.db events per log.db', () => {
     }
     expect(started).toEqual([dbPath])
     expect(ensureGraphOwner(repo, dbPath, start, {})).toBe('alive')
+  })
+
+  test('a launch that gives no live process lets go of the start claim, so the next call tries again', () => {
+    const dbPath = world()
+    let calls = 0
+    expect(ensureGraphOwner(repo, dbPath, () => (calls++, null), {})).toBe('failed')
+    expect(ensureGraphOwner(repo, dbPath, () => (calls++, 999_999_999), {})).toBe('failed')
+    expect(() => ensureGraphOwner(repo, dbPath, () => { calls++; throw new Error('spawn failed') }, {})).toThrow('spawn failed')
+    expect(ensureGraphOwner(repo, dbPath, () => (calls++, process.pid), {})).toBe('started')
+    expect(ensureGraphOwner(repo, dbPath, () => (calls++, process.pid), {})).toBe('starting')
+    expect(calls).toBe(4)
   })
 
   test('taking over a silent owner needs two stale readings 10 s apart, kills it only when its start time matches, and raises the generation', async () => {
