@@ -107,7 +107,7 @@ describe('backfilling the flag from a member list', () => {
 describe('a name that only ends in the letters b-o-t', () => {
   test('is a person: only bot as its own word, a -bot or _bot suffix or a camel-case Bot names a bot', () => {
     for (const person of ['abbot', 'talbot', 'sherbot', 'Botanist', 'Robotics Rob', 'Mr Talbot']) expect(namedBot(person)).toBe(false)
-    for (const bot of ['VIBE BOT', 'helper_bot', 'build-bot', 'WelcomeBot', 'MEE6Bot', 'bot']) expect(namedBot(bot)).toBe(true)
+    for (const bot of ['VIBE BOT', 'helper_bot', 'Build-Bot', 'WelcomeBot', 'MEE6Bot', 'bot']) expect(namedBot(bot)).toBe(true)
   })
 
   test('stays visible, and a platform that says not a bot wins over a bot-looking name', () => {
