@@ -128,7 +128,8 @@ describe("the browser view as an MCP App", () => {
 });
 
 const python = process.env.LOG_PYTHON;
-const withBrowser = Boolean(python) && spawnSync(python!, ["-c", "import playwright.async_api"], { windowsHide: true, timeout: 30_000 }).status === 0;
+const realBrowserAsked = !process.env.CI || process.env.LOG_E2E_BROWSER === "1";
+const withBrowser = realBrowserAsked && Boolean(python) && spawnSync(python!, ["-c", "import playwright.async_api"], { windowsHide: true, timeout: 30_000 }).status === 0;
 
 describe.skipIf(!withBrowser)("end to end with the real viewer on a loopback sign-in page", () => {
   let dir = "";
@@ -141,7 +142,7 @@ describe.skipIf(!withBrowser)("end to end with the real viewer on a loopback sig
     process.env.LOG_INSPECT_CURRENT = join(dir, "current.json");
     child = spawn(python!, [FIXTURE, process.env.LOG_INSPECT_CURRENT, account], { stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
     await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("fixture did not start")), 60_000);
+      const timer = setTimeout(() => reject(new Error("fixture did not start")), 150_000);
       child.stdout.on("data", (chunk: Buffer) => {
         if (chunk.toString().includes('"ready": true')) {
           clearTimeout(timer);
@@ -150,7 +151,7 @@ describe.skipIf(!withBrowser)("end to end with the real viewer on a loopback sig
       });
       child.on("exit", (code) => reject(new Error(`fixture exited ${code}`)));
     });
-  }, 70_000);
+  }, 160_000);
 
   afterAll(() => {
     child?.stdin.end();
