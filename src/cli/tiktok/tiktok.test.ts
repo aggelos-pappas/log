@@ -96,6 +96,29 @@ describe("log tiktok stats", () => {
   });
 });
 
+describe("log tiktok scrape", () => {
+  const id = "7676887069293153566";
+  const args = ["tiktok", "scrape", "--account", "tiktokOne", "--url", `https://www.tiktok.com/@creator/video/${id}`, "--json"];
+
+  test("exports comments and replies inside the video", async () => {
+    const data = { id, comments: [{ id: "100", text: "Question", replies: [{ id: "101", text: "Answer" }] }] };
+    const r = await run(args, { answer: { ok: true, data }, refreshed: null });
+    expect(r.code).toBe(0);
+    expect(r.calls).toEqual(["tiktokOne:details"]);
+    expect(JSON.parse(r.out)).toMatchObject({ videos: [data], extractedCount: 1, extractionComplete: true });
+  });
+
+  test("retains the video and partial comments after a comment request is throttled", async () => {
+    const data = { id, comments: [{ id: "100", text: "Question", replies: [] }] };
+    const r = await run(args, { answer: { ok: false, code: "tiktokBlocked", status: 429, data }, refreshed: null });
+    expect(r.code).toBe(1);
+    expect(r.calls).toEqual(["tiktokOne:details"]);
+    expect(JSON.parse(r.out)).toMatchObject({
+      videos: [data], extractedCount: 0, extractionComplete: false, failures: [{ status: 429 }],
+    });
+  });
+});
+
 function clip(): string {
   const dir = mkdtempSync(join(tmpdir(), "tiktokPost"));
   const path = join(dir, "clip.mp4");

@@ -10,9 +10,11 @@ TikTok account sessions and recorded browser video search. Rules 83, 117 and 123
 
 ### REQ-TIKTOK-07: Full video exports preserve the bundled upstream scraper schema
 
-`log tiktok scrape` accepts either a query or a canonical video/photo link. Query discovery uses the existing browser search command. Each discovered link is extracted sequentially by the shared governed TikTok engine using the bundled omkarcloud signer, single-request transport and `parsers.video` normalizer. The adapter sends the selected account’s cookies and configured proxy. No HTTP service or second checkout is required. Upstream retry and country/identity rotation paths are excluded. Detail records are returned unchanged inside one collection's `videos` array. Missing fields are not synthesized. Collection metadata records failures, pending links and bounded search coverage. An output file is atomically checkpointed after every attempted extraction. Refusals, rate limits, server errors and connection failures stop further engine calls. Platform blocks update the shared governor cooldown.
+`log tiktok scrape` accepts either a query or a canonical video/photo link. Query discovery uses the existing browser search command. Each discovered link is extracted sequentially by the shared governed TikTok engine using the bundled omkarcloud signer, single-request transport and `parsers.video` normalizer. The adapter sends the selected account’s cookies and configured proxy. Upstream video fields are preserved in the collection's `videos` array. Collection metadata records failures, pending links and bounded search coverage. An output file is atomically checkpointed after every attempted extraction. Refusals, rate limits, server errors and connection failures stop further engine calls. Platform blocks update the shared governor cooldown.
 
 Checked by: code, schema-preservation checks and live bundled extraction
+
+Each video object also has a `comments` array. Log follows TikTok's pagination cursors for top-level comments and for replies, normalizes both with the bundled comment parser, and nests replies under their parent comment's `replies` array. A comment or reply request failure retains the video and collected comments, adds a failure for the link, and stops the export with incomplete coverage.
 
 ### REQ-TIKTOK-05: Text and hashtag searches use the existing account browser
 

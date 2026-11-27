@@ -12,11 +12,15 @@ export function videoId(link: string): string {
 }
 
 export function fetchDetails(link: string, extract: (id: string) => PlatformAnswer) {
-  const answer = extract(videoId(link))
-  if (!answer.ok) return { ok: false as const, status: typeof answer.status === 'number' ? answer.status : null, error: `${answer.code ?? 'extractionFailed'}: ${answer.detail ?? 'Video extraction failed'}`, stop: answer.code !== 'videoNotFound' }
+  const id = videoId(link)
+  const answer = extract(id)
   const data = answer.data
-  if (!data || typeof data !== 'object' || Array.isArray(data) || !('id' in data) || data.id !== videoId(link)) return { ok: false as const, status: null, error: 'The scraper returned no matching video-detail object', stop: true }
-  return { ok: true as const, data: data as Record<string, unknown> }
+  const detail = data && typeof data === 'object' && !Array.isArray(data) && 'id' in data && data.id === id
+    ? data as Record<string, unknown>
+    : undefined
+  if (!answer.ok) return { ok: false as const, status: typeof answer.status === 'number' ? answer.status : null, error: `${answer.code ?? 'extractionFailed'}: ${answer.detail ?? 'Video extraction failed'}`, stop: answer.code !== 'videoNotFound', data: detail }
+  if (!detail) return { ok: false as const, status: null, error: 'The scraper returned no matching video-detail object', stop: true, data: undefined }
+  return { ok: true as const, data: detail }
 }
 
 export function saveExport(path: string, data: unknown): void {

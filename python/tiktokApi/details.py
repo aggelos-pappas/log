@@ -12,10 +12,50 @@ from tiktok import fetch, parsers
 from identity import accountRoute, browserIdentity
 
 
+def collectComments(client, videoId, output, commentId=None):
+    path = "/api/comment/list/"
+    params = {"aid": 1988, "count": 50, "aweme_id": videoId}
+    if commentId is not None:
+        path = "/api/comment/list/reply/"
+        params = {"aid": 1988, "count": 50, "item_id": videoId, "comment_id": commentId}
+
+    cursor = 0
+    seenCursors = {cursor}
+    seenIds = set()
+    while True:
+        payload = fetch._api_once(client, path, {**params, "cursor": cursor}, signed=False, base=False, host=fetch.WWW, referer=fetch.WWW + "/")
+        status = fetch.status_of(payload)
+        if status:
+            raise fetch.TikTokBlocked(f"HTTP {status} on {path}" if status in (401, 403, 429) else f"TikTok comment status {status}")
+        more = payload.get("has_more")
+        rows = payload.get("comments")
+        if rows is None and more in (0, False):
+            rows = []
+        if not isinstance(rows, list) or more not in (0, 1):
+            raise fetch.TikTokUpstreamError("TikTok returned an invalid comment page")
+        comments = parsers.comments(rows)
+        if len(comments) != len(rows):
+            raise fetch.TikTokUpstreamError("TikTok returned a comment without an ID")
+        for comment in comments:
+            if comment["id"] not in seenIds:
+                seenIds.add(comment["id"])
+                output.append(comment)
+        if not more:
+            return
+        nextCursor = payload.get("cursor")
+        if not isinstance(nextCursor, (int, str)) or not re.fullmatch(r"\d+", str(nextCursor)):
+            raise fetch.TikTokUpstreamError("TikTok returned an invalid comment cursor")
+        cursor = int(nextCursor)
+        if cursor in seenCursors:
+            raise fetch.TikTokUpstreamError("TikTok repeated a comment cursor")
+        seenCursors.add(cursor)
+
+
 def extractDetails(spec, cookies):
     videoId = str(spec.get("videoId") or "")
     if not re.fullmatch(r"\d{15,25}", videoId):
         return {"ok": False, "code": "videoIdInvalid", "detail": "Use a canonical TikTok video or photo link", "status": 400}
+    data = None
     try:
         with accountRoute.session("tiktok") as session:
             identity = browserIdentity.resolve("tiktok")
@@ -33,14 +73,22 @@ def extractDetails(spec, cookies):
             item = (payload.get("itemInfo") or {}).get("itemStruct")
             if not isinstance(item, dict) or str(item.get("id")) != videoId:
                 return {"ok": False, "code": "videoDetailMissing", "detail": "TikTok returned no matching video detail"}
-            return {"ok": True, "data": parsers.video(item)}
+            data = parsers.video(item)
+            data["comments"] = []
+            collectComments(client, videoId, data["comments"])
+            for comment in data["comments"]:
+                comment["replies"] = []
+                if comment["reply_count"]:
+                    collectComments(client, videoId, comment["replies"], comment["id"])
+            return {"ok": True, "data": data}
     except ImportError:
         return {"ok": False, "code": "scraperDependencyMissing", "detail": "Install vendor/tiktokScraper/requirements.txt into LOG_PYTHON"}
     except fetch.TikTokBlocked as error:
         match = re.search(r"HTTP (401|403|429)\b", str(error))
         status = int(match[1]) if match else None
-        return {"ok": False, "code": "tiktokBlocked", "detail": str(error), "status": status, "event": "throttled" if status == 429 else "automated"}
+        return {"ok": False, "code": "tiktokBlocked", "detail": str(error), "status": status, "event": "throttled" if status == 429 else "automated", "data": data}
     except fetch.TikTokBadRequest as error:
-        return {"ok": False, "code": "videoRequestRejected", "detail": str(error), "status": 400}
+        return {"ok": False, "code": "videoRequestRejected", "detail": str(error), "status": 400, "data": data}
     except fetch.TikTokUpstreamError:
-        return {"ok": False, "code": "upstreamFailed", "detail": "TikTok detail request failed", "status": None}
+        detail = "TikTok detail request failed" if data is None else "TikTok comment extraction failed"
+        return {"ok": False, "code": "upstreamFailed", "detail": detail, "status": None, "data": data}

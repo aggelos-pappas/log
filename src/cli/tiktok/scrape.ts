@@ -55,11 +55,12 @@ export const tiktokScrapeCommand: Command = {
       const persist = () => { if (output) saveExport(output, collection) }
       persist()
       for (const url of links) {
-        context.err(`${account.accountName}: extracting video ${links.indexOf(url) + 1}/${links.length} through Log’s bundled scraper`)
+        context.err(`${account.accountName}: extracting video ${links.indexOf(url) + 1}/${links.length} and its comments`)
         let stop = false
         try {
           const result = fetchDetails(url, (id) => context.directTiktok!(account, { action: 'details', videoId: id }).answer)
-          if (result.ok) collection.videos.push(result.data)
+          if (result.data) collection.videos.push(result.data)
+          if (result.ok) collection.extractedCount += 1
           else {
             collection.failures.push({ link: url, error: result.error, status: result.status })
             stop = result.stop
@@ -69,7 +70,6 @@ export const tiktokScrapeCommand: Command = {
           stop = true
         }
         collection.pending.shift()
-        collection.extractedCount = collection.videos.length
         persist()
         if (stop) { collection.stopped = 'engineRefusalOrFailure'; break }
       }
